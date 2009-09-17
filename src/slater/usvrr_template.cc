@@ -18,7 +18,7 @@ void SlaterBatch::perform_USVRR1() {
     const int ii = screening_[j];
 
     const double cw = weights_[ii] * roots_[ii];
-    datay_[ii] = coeffy_[ii] * cw;
+    data2_[ii] = coeffy_[ii] * cw;
     data_[ii]  = coeff_[ii] * (weights_[ii] - cw);
 
   }
@@ -90,9 +90,9 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
-        datay_[ii3    ] = scale0 * x0 + scale1 * x1;
-        datay_[ii3 + 1] = scale0 * y0 + scale1 * y1;
-        datay_[ii3 + 2] = scale0 * z0 + scale1 * z1;
+        data2_[ii3    ] = scale0 * x0 + scale1 * x1;
+        data2_[ii3 + 1] = scale0 * y0 + scale1 * y1;
+        data2_[ii3 + 2] = scale0 * z0 + scale1 * z1;
       }
     }
   } else if (ang == 32) { // (0, 0, 1, 0)
@@ -140,9 +140,9 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
-        datay_[ii3    ] = scale0 * x0 + scale1 * x1;
-        datay_[ii3 + 1] = scale0 * y0 + scale1 * y1;
-        datay_[ii3 + 2] = scale0 * z0 + scale1 * z1;
+        data2_[ii3    ] = scale0 * x0 + scale1 * x1;
+        data2_[ii3 + 1] = scale0 * y0 + scale1 * y1;
+        data2_[ii3 + 2] = scale0 * z0 + scale1 * z1;
       }
     }
   } else if (ang == 65536) {
@@ -200,17 +200,17 @@ void SlaterBatch::perform_USVRR2() {
         current_data[5] = scale0 * z4      + scale1 * z5      ; // zz 
       }
       {
-        double* current_data_y = &datay_[data_offset_ii];
+        double* current_data2 = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double y2s0 = y2 * scale0;
         const double y3s1 = y3 * scale1;
-        current_data_y[0] = scale0 * x4      + scale1 * x5      ; // xx 
-        current_data_y[1] = y2s0   * x2      + y3s1   * x3      ; // xy 
-        current_data_y[2] = scale0 * y4      + scale1 * y5      ; // yy 
-        current_data_y[3] = scale0 * x2 * z2 + scale1 * x3 * z3 ; // xz
-        current_data_y[4] = y2s0   * z2      + y3s1   * z3      ; // yz 
-        current_data_y[5] = scale0 * z4      + scale1 * z5      ; // zz 
+        current_data2[0] = scale0 * x4      + scale1 * x5      ; // xx 
+        current_data2[1] = y2s0   * x2      + y3s1   * x3      ; // xy 
+        current_data2[2] = scale0 * y4      + scale1 * y5      ; // yy 
+        current_data2[3] = scale0 * x2 * z2 + scale1 * x3 * z3 ; // xz
+        current_data2[4] = y2s0   * z2      + y3s1   * z3      ; // yz 
+        current_data2[5] = scale0 * z4      + scale1 * z5      ; // zz 
       }
     }
   } else if (ang == 64) {
@@ -270,7 +270,7 @@ void SlaterBatch::perform_USVRR2() {
         current_data[5] = scale0 * z4      + scale1 * z5      ; // zz 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double y2s0 = y2 * scale0;
@@ -346,7 +346,7 @@ void SlaterBatch::perform_USVRR2() {
         current_data[8] = scale0 * z4      + scale1 * z5      ; // zz 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double y2s0 = y2 * scale0;
@@ -424,7 +424,7 @@ void SlaterBatch::perform_USVRR2() {
         current_data[8] = scale0 * z4      + scale1 * z5      ; // zz 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double y2s0 = y2 * scale0;
@@ -519,7 +519,7 @@ void SlaterBatch::perform_USVRR2() {
         current_data[8] = z6 *      scale0 + z7 *      scale1 ; // z|z 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double x2s0 = x2 * scale0;
@@ -651,7 +651,7 @@ void SlaterBatch::perform_USVRR3() {
         current_data[15] = z9      * scale0  + z10      * scale1  + z11 * scale2; // zzz 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0;
         const double scale1 = coeffy_[ii] * wr1;
         const double scale2 = coeffy_[ii] * wr2;
@@ -776,7 +776,7 @@ void SlaterBatch::perform_USVRR3() {
         current_data[15] = z9      * scale0  + z10      * scale1 + z11 * scale2; // zzz 
       }
       {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double scale0 = coeffy_[ii] * wr0; 
         const double scale1 = coeffy_[ii] * wr1; 
         const double scale2 = coeffy_[ii] * wr2; 
@@ -952,7 +952,7 @@ void SlaterBatch::perform_USVRR3() {
           current_data[17] = s0z15            + s1z16             + s2z17; // z|zz 
         }
         {
-          double* current_data = &datay_[data_offset_ii];
+          double* current_data = &data2_[data_offset_ii];
           const double s0 = coeffy_[ii] * wr0;
           const double s1 = coeffy_[ii] * wr1;
           const double s2 = coeffy_[ii] * wr2;
@@ -1155,7 +1155,7 @@ void SlaterBatch::perform_USVRR3() {
         current_data[25] = s0z12 * y3       + s1z13 * y4        + s2z14 * y5; // z|yz 
         current_data[26] = s0z15            + s1z16             + s2z17; // z|zz 
         } {
-        double* current_data = &datay_[data_offset_ii];
+        double* current_data = &data2_[data_offset_ii];
         const double s0 = coeffy_[ii] * wr0;
         const double s1 = coeffy_[ii] * wr1;
         const double s2 = coeffy_[ii] * wr2;
@@ -1368,7 +1368,7 @@ void SlaterBatch::perform_USVRR3() {
       current_data[25] = s0y2 * z[12]        + s1y4 * z[13]         + s2y5 * z[14]; // zz|y
       current_data[26] = s0 * z[15]         + s1 * z[16]          + s2 * z[17]; // zz|z
       }{
-      double* current_data = &datay_[data_offset_ii];
+      double* current_data = &data2_[data_offset_ii];
       const double s0 = coeffy_[ii] * wr0;
       const double s1 = coeffy_[ii] * wr1;
       const double s2 = coeffy_[ii] * wr2;
@@ -1571,7 +1571,7 @@ void SlaterBatch::perform_USVRR3() {
       current_data[16] = s0y2 * z[12]       + s1y4 * z[13]        + s2y5 * z[14]; // zz|y
       current_data[17] = s0 * z[15]         + s1 * z[16]          + s2 * z[17]; // zz|z
       }{
-      double* current_data = &datay_[data_offset_ii];
+      double* current_data = &data2_[data_offset_ii];
       const double s0 = coeffy_[ii] * wr0;
       const double s1 = coeffy_[ii] * wr1;
       const double s2 = coeffy_[ii] * wr2;
@@ -1628,7 +1628,7 @@ void SlaterBatch::perform_USVRR3() {
   const int svrr_index = amax_ * ANG_VRR_END + cmax_;
 
   double* workx = new double[worksize];
-  double* workx_y = new double[worksize];
+  double* workx2 = new double[worksize];
   double* worky = new double[worksize];
   double* workz = new double[worksize];
   double iyiz[3];
@@ -1639,7 +1639,7 @@ void SlaterBatch::perform_USVRR3() {
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
-    double* current_data_y = &datay_[data_offset_ii];
+    double* current_data2 = &data2_[data_offset_ii];
 
     const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
@@ -1657,7 +1657,7 @@ void SlaterBatch::perform_USVRR3() {
     womt[0] = weights_[offset + 0]  - wt[0];
     womt[1] = weights_[offset + 1]  - wt[1];
     womt[2] = weights_[offset + 2]  - wt[2];
-    cix.scale_data_t(workx_y, wt, coeffy_[ii]);
+    cix.scale_data_t(workx2, wt, coeffy_[ii]);
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
@@ -1688,9 +1688,9 @@ void SlaterBatch::perform_USVRR3() {
                 current_data[ijposition] = iyiz[0] * workx[offsetx + 0]; 
                 current_data[ijposition] += iyiz[1] * workx[offsetx + 1]; 
                 current_data[ijposition] += iyiz[2] * workx[offsetx + 2]; 
-                current_data_y[ijposition] = iyiz[0] * workx_y[offsetx + 0]; 
-                current_data_y[ijposition] += iyiz[1] * workx_y[offsetx + 1]; 
-                current_data_y[ijposition] += iyiz[2] * workx_y[offsetx + 2]; 
+                current_data2[ijposition] = iyiz[0] * workx2[offsetx + 0]; 
+                current_data2[ijposition] += iyiz[1] * workx2[offsetx + 1]; 
+                current_data2[ijposition] += iyiz[2] * workx2[offsetx + 2]; 
               }
             }
           }
@@ -1702,7 +1702,7 @@ void SlaterBatch::perform_USVRR3() {
   delete[] workz;
   delete[] worky;
   delete[] workx;
-  delete[] workx_y;
+  delete[] workx2;
   }
 }
 

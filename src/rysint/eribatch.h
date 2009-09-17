@@ -51,15 +51,12 @@ class ERIBatch : public RysInt {
     void perform_VRR13();
     void perform_VRR();
 
-    void perform_contraction_batch(const int, const double*, const int, const int, double*,
-                                   const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
-                                   const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
     void perform_contraction_new_outer(const int, const double*, const int, const int, double*,
-                                       const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
-                                       const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
     void perform_contraction_new_inner(const int, const double*, const int, const int, double*,
-                                       const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
-                                       const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
 
     void perform_HRR(const int, const double*, const double*, const double*, double*);
 

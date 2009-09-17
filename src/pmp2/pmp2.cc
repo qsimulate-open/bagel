@@ -8,6 +8,8 @@
 #include <src/scf/scf_macros.h>
 #include <cstring>
 #include <algorithm>
+#include <src/slater/slaterbatch.h>
+#include <src/util/paircompfile.h>
 
 typedef boost::shared_ptr<Atom> RefAtom;
 typedef boost::shared_ptr<PGeometry> RefGeom;
@@ -37,13 +39,21 @@ PMP2::~PMP2() {
 
 void PMP2::compute() {
 
-  // fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
+  // AO ERI has been computed in the SCF class.
+
+  // Fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
   eri_aa_ii_ = ao_eri_->mo_transform(coeff_,
                                      nfrc_, nocc_,
                                      nfrc_, nocc_,
                                      nocc_, nbasis_,
                                      nocc_, nbasis_);
+
+  // Compute the conventional MP2 contribution
   compute_conv_mp2();
+
+  // Calculate Yukawa potential integrals
+//shared_ptr<PCompFile<SlaterBatch> > slater(new PCompFile<SlaterBatch>(geom_));
+  shared_ptr<PairCompFile<SlaterBatch> > slater_and_yukawa(new PairCompFile<SlaterBatch>(geom_));
 
 }
 
@@ -90,7 +100,7 @@ void PMP2::compute_conv_mp2() {
               for (int b = nocc_; b != nbasis_; ++b, ++cnt1, cnt2 += ov) {
                 const complex<double> v1 = workoovv1[cnt1];
                 const complex<double> v2 = workoovv2[cnt2];
-                energy += (real(v1 * conj(v1)) * 2 - real(v1 * conj(v2))) / (ei[i] + ej[j] - ea[a] - eb[b]);
+                energy += (real(v1 * conj(v1 + v1 - v2))) / (ei[i] + ej[j] - ea[a] - eb[b]);
               }
             }
           }
@@ -98,7 +108,7 @@ void PMP2::compute_conv_mp2() {
       }
     }
   }
-  cout << "  MP2 energy: " << setprecision(10) << energy / (max(pow(2.0 * K, 3.0), 1.0))  << endl;
+  cout << "  MP2 energy: " << setprecision(10) << energy / (max(pow(2.0 * K, 3.0), 1.0))  << endl << endl;
   delete[] workoovv1;
   delete[] workoovv2;
 

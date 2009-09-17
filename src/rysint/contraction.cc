@@ -12,49 +12,9 @@
 
 using namespace std;
 
-void ERIBatch::perform_contraction_batch(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
-                                         const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
-                                         const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
-
-  // transformation of index1
-  double* work = new double[cdim1 * pdim0];
-  double* current_cont = cont;
-  int poffset = 0;
-  for (int n = 0; n != nsize; ++n) {
-    double* work_pointer = work;
-    for (int i = 0; i != pdim0; ++i, poffset += pdim1) { 
-      const double* current_prim = &prim[poffset];
-      for (int j = 0; j != cdim1; ++j, ++work_pointer) {
-        const int begin = lower1[j];
-        const int end   = upper1[j];
-        *work_pointer = 0.0;
-        for (int k = begin; k != end; ++k) {
-          *work_pointer += coeff1[j][k] * current_prim[k]; 
-        }
-      }
-    }
-    // transformation of index2
-    work_pointer = work;
-    for (int i = 0; i != cdim0; ++i, current_cont += cdim1) {
-      const int begin = lower0[i];
-      const int end   = upper0[i];
-      if (begin == end - 1) {
-        memcpy(current_cont, &work_pointer[begin * cdim1], cdim1 * sizeof(double));
-      } else {
-        for (int j = begin; j != end; ++j) {
-          const int unit = 1;
-          daxpy_(&cdim1, &coeff0[i][j], &work_pointer[j * cdim1], &unit, current_cont, &unit); 
-        }
-      }
-    }
-  } 
-  delete[] work;
-}
-
-
 void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
-                                             const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
-                                             const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
+                       const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
+                       const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int unit = 1;
   const int zeroint = 0;
   const double zero = 0.0;
@@ -83,8 +43,8 @@ void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim
 
 
 void ERIBatch::perform_contraction_new_inner(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
-                                             const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
-                                             const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
+                       const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
+                       const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   // transformation of index1
   const int unit = 1;
   const double zero = 0.0;

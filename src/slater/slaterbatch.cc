@@ -24,8 +24,6 @@ using namespace boost;
 
 typedef boost::shared_ptr<Shell> RefShell;
 
-// TODO 
-
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa) :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
   const double integral_thresh = PRIM_SCREEN_THRESH * max_density; 
@@ -132,7 +130,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
   data_ = new double[size_alloc_];
-  datay_ = new double[size_alloc_];
+  data2_ = new double[size_alloc_];
 
   buff_ = new double[(rank_ * 2 + 12) * primsize_];
   double* pointer = buff_; 
@@ -422,7 +420,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
 
 SlaterBatch::~SlaterBatch() {
-  delete[] datay_;
+  delete[] data2_;
   delete[] data_;
   delete[] buff_;
   delete[] screening_;

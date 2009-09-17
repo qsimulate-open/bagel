@@ -51,8 +51,8 @@ void ERIBatch::compute() {
   {
     const int m = prim2size_ * prim3size_ * asize_ * csize_; 
     perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_, 
-                                  basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
-                                  basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
+      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+      basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
   }
 
   // contract indices 23 
@@ -60,8 +60,8 @@ void ERIBatch::compute() {
   {
     const int n = cont0size_ * cont1size_;
     perform_contraction_new_inner(n, bkup_, prim2size_, prim3size_, data_, 
-                                  basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
-                                  basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
+      basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+      basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }
 
   // HRR to indices 01

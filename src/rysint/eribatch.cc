@@ -131,6 +131,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density) :  Ry
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
   data_ = new double[size_alloc_];
+  data2_ = NULL;
 
   buff_ = new double[(rank_ * 2 + 10) * primsize_];
   double* pointer = buff_; 
@@ -291,9 +292,11 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density) :  Ry
         weights_[i] = erfsqt * SQRTPI2 / sqrtt;
       }
     }
+#if 0
   } else if (rank_ <= -1) {
     struct ERIRootList eriroot;
     eriroot.rootfunc_call(rank_, T_, roots_, weights_, &ps); 
+#endif
   } else {
     rysroot_(T_, roots_, weights_, &rank_, &ps);
   }

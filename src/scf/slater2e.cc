@@ -127,7 +127,9 @@ void Fock::slater_two_electron_part() {
           ERIBatch eribatch(input, 0.0);
           eribatch.compute();
           const double* eridata = eribatch.data();
+          assert(!eribatch.data2_exists()) {
           assert((int)eribatch.data_size() == b0size * b1size * b2size * b3size);
+#if 0
 if (i0 == 1 && i1 == 2 && i2 == 5 && i3 == 6) {
   int i = 0;
   for (int z0 = 0; z0 != b0size; ++z0) {
@@ -141,11 +143,13 @@ if (i0 == 1 && i1 == 2 && i2 == 5 && i3 == 6) {
   }
   assert(false);
 }
+#endif
 #else
           SlaterBatch slaterbatch(input, 0.0, 1.5, true);
           slaterbatch.compute();
           const double* eridata = slaterbatch.data();
-          const double* eridatay = slaterbatch.datay();
+          assert(slaterbatch.data2_exists());
+          const double* eridatay = slaterbatch.data2();
 #if 0
 if (i0 == 1 && i1 == 2 && i2 == 5 && i3 == 6) {
   int i = 0;

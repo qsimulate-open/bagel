@@ -19,7 +19,6 @@ class SlaterBatch : public RysInt {
   protected:
     SVRRList svrr_;
 
-    double* datay_;
     bool yukawa_;
 
     bool swap01_, swap23_;
@@ -43,7 +42,7 @@ class SlaterBatch : public RysInt {
     /// buffer and intermediate storage
     double *buff_;
     double *bkup_;
-    double *bkupy_;
+    double *bkup2_;
 
     void perform_SVRR1();
     void perform_SVRR2();
@@ -94,9 +93,6 @@ class SlaterBatch : public RysInt {
 
     /// compute a batch of integrals
     void compute();
-
-    /// data for yukawa
-    const double* datay() const { return datay_; };
 
 };
 

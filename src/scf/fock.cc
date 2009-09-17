@@ -24,7 +24,7 @@ Fock::Fock(const RefGeometry geom, const RefFock previous, const RefAODensity de
 
   init(); // zero here
 
-#define SLATERDEBUG
+//#define SLATERDEBUG
 #ifdef SLATERDEBUG
   slater_two_electron_part();
 #else

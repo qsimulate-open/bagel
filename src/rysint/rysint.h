@@ -25,6 +25,7 @@ class RysInt {
 
     std::vector<boost::shared_ptr<Shell> > basisinfo_;
     double *data_;
+    double *data2_;
     unsigned int size_final_;
 
     /// info for Rys quadruture
@@ -44,6 +45,8 @@ class RysInt {
 
     /// retrieve a batch of integrals
     const double* data() const { return data_; };
+    const double* data2() const { return data2_; };
+    const bool data2_exists() const { return data2_ != NULL; };
     const unsigned int data_size() const { return size_final_; };
 
 };

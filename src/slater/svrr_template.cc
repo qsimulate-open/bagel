@@ -1204,7 +1204,7 @@ void SlaterBatch::perform_SVRR3() {
       int data_offset_ii = ii * acsize;
 
       double* current_data = &data_[data_offset_ii];
-      double* current_data_y = &datay_[data_offset_ii];
+      double* current_data2 = &data2_[data_offset_ii];
 
       const int ii3 = 3 * ii;
       const double cxp = xp_[ii];

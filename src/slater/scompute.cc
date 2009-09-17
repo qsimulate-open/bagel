@@ -24,15 +24,15 @@ void SlaterBatch::compute() {
 
   bkup_ = new double[size_alloc_];
   if (yukawa_) 
-    bkupy_ = new double[size_alloc_];
+    bkup2_ = new double[size_alloc_];
   
   const int size = size_alloc_;
   dcopy_(&size, &zero, &zeroint, data_, &unit);
   if (yukawa_) 
-    dcopy_(&size, &zero, &zeroint, datay_, &unit);
+    dcopy_(&size, &zero, &zeroint, data2_, &unit);
 
   // perform VRR
-  // data_ and datay_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
+  // data_ and data2_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
   if (yukawa_) {
     switch (rank_) {
       case 1: perform_USVRR1(); break;
@@ -75,12 +75,12 @@ void SlaterBatch::compute() {
     const int m = prim2size_ * prim3size_ * asize_ * csize_; 
     const int bkupsize = m * cont0size_ * cont1size_; 
     perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_, 
-                                  basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
-                                  basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
+            basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+            basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
     if (yukawa_)
-      perform_contraction_new_outer(m, datay_, prim0size_, prim1size_, bkupy_, 
-                                  basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
-                                  basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
+      perform_contraction_new_outer(m, data2_, prim0size_, prim1size_, bkup2_, 
+              basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+              basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
   }
   // contract indices 23 
   // data will be stored in data_: cont01{ cont23{ xyz{ } } }
@@ -88,12 +88,12 @@ void SlaterBatch::compute() {
     const int n = cont0size_ * cont1size_;
     const int datasize = n * cont2size_ * cont3size_ * asize_ * csize_; 
     perform_contraction_new_inner(n, bkup_, prim2size_, prim3size_, data_, 
-                                  basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
-                                  basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
+            basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+            basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
     if (yukawa_)
-      perform_contraction_new_inner(n, bkupy_, prim2size_, prim3size_, datay_, 
-                                  basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
-                                  basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
+      perform_contraction_new_inner(n, bkup2_, prim2size_, prim3size_, data2_, 
+              basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+              basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }
 
   // HRR to indices 01
@@ -103,7 +103,7 @@ void SlaterBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr_.hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
       if (yukawa_)
-        hrr_.hrrfunc_call(hrr_index, contsize_ * csize_, datay_, AB_, bkupy_);
+        hrr_.hrrfunc_call(hrr_index, contsize_ * csize_, data2_, AB_, bkup2_);
     } else {
       swapped = true;
     }
@@ -133,11 +133,11 @@ void SlaterBatch::compute() {
     if (!swapped) {
       carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
       if (yukawa_) 
-        carsphlist.carsphfunc_call(carsphindex, nloops, bkupy_, datay_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_); 
     } else {
       carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
       if (yukawa_) 
-        carsphlist.carsphfunc_call(carsphindex, nloops, datay_, bkupy_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_); 
     }
     swapped = (swapped ^ true); 
   }
@@ -155,13 +155,13 @@ void SlaterBatch::compute() {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
         mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
         if (yukawa_) 
-          mytranspose_(&datay_[offset], &m, &n, &bkupy_[offset]);
+          mytranspose_(&data2_[offset], &m, &n, &bkup2_[offset]);
       }
     } else {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
         mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
         if (yukawa_) 
-          mytranspose_(&bkupy_[offset], &m, &n, &datay_[offset]);
+          mytranspose_(&bkup2_[offset], &m, &n, &data2_[offset]);
       }
     }
   }
@@ -178,10 +178,10 @@ void SlaterBatch::compute() {
       else                             hrr_.hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
 
       if (yukawa_) { 
-        if (swapped && spherical_)       hrr_.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkupy_, CD_, datay_);
-        else if (swapped)                hrr_.hrrfunc_call(hrr_index, contsize_ * a * b, bkupy_, CD_, datay_);
-        else if (!swapped && spherical_) hrr_.hrrfunc_call(hrr_index, contsize_ * asph * bsph, datay_, CD_, bkupy_);
-        else                             hrr_.hrrfunc_call(hrr_index, contsize_ * a * b, datay_, CD_, bkupy_);
+        if (swapped && spherical_)       hrr_.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup2_, CD_, data2_);
+        else if (swapped)                hrr_.hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
+        else if (!swapped && spherical_) hrr_.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data2_, CD_, bkup2_);
+        else                             hrr_.hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
       }
     } else {
       swapped = (swapped ^ true); 
@@ -196,11 +196,11 @@ void SlaterBatch::compute() {
     if (swapped) {
       carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
       if (yukawa_)
-        carsphlist.carsphfunc_call(carsphindex, nloops, datay_, bkupy_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_); 
     } else {
       carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
       if (yukawa_)
-        carsphlist.carsphfunc_call(carsphindex, nloops, bkupy_, datay_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_); 
     }
     swapped = (swapped ^ true);
     a = asph;
@@ -211,8 +211,8 @@ void SlaterBatch::compute() {
 
   double *data_now = swapped ? bkup_ : data_;
   double *bkup_now = swapped ? data_ : bkup_;
-  double *data_now_y = swapped ? bkupy_ : datay_;
-  double *bkup_now_y = swapped ? datay_ : bkupy_;
+  double *data_now_2 = swapped ? bkup2_ : data2_;
+  double *bkup_now_2 = swapped ? data2_ : bkup2_;
 
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
@@ -221,7 +221,7 @@ void SlaterBatch::compute() {
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
     sort_.sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
     if (yukawa_)
-      sort_.sortfunc_call(index, data_now_y, bkup_now_y, cont3size_, cont2size_, nloop, swap23_);
+      sort_.sortfunc_call(index, data_now_2, bkup_now_2, cont3size_, cont2size_, nloop, swap23_);
   }
 
   // transpose batch
@@ -231,7 +231,7 @@ void SlaterBatch::compute() {
     const int n = a * b * cont0size_ * cont1size_; 
     mytranspose_(data_now, &m, &n, bkup_now);
     if (yukawa_)
-      mytranspose_(data_now_y, &m, &n, bkup_now_y);
+      mytranspose_(data_now_2, &m, &n, bkup_now_2);
   }
 
   // Sort cont01 and xyzab
@@ -241,13 +241,13 @@ void SlaterBatch::compute() {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
     if (yukawa_)
-      sort_.sortfunc_call(index, data_now_y, bkup_now_y, cont1size_, cont0size_, nloop, swap01_);
+      sort_.sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
   }
   
   if (swapped) {
     dcopy_(&size, bkup_, &unit, data_, &unit); 
     if (yukawa_)
-      dcopy_(&size, bkupy_, &unit, datay_, &unit); 
+      dcopy_(&size, bkup2_, &unit, data2_, &unit); 
   }
 
   delete[] bkup_;

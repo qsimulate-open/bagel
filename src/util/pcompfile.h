@@ -3,7 +3,7 @@
 // Date   : August 2009
 //
 
-// compressed file of real floating points
+// compressed file of double 
 
 #ifndef __src_util_pcompfile_h
 #define __src_util_pcompfile_h
@@ -26,11 +26,11 @@
 template<class T>
 class PCompFile {
   protected:
-    std::fstream* file_;
+    boost::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
-
     std::vector<double> schwarz_;
+
     const boost::shared_ptr<PGeometry> geom_;
     std::vector<size_t> num_int_each_;
 
@@ -42,20 +42,22 @@ class PCompFile {
     int K_, L_, S_;
 
   public:
-    PCompFile(boost::shared_ptr<PGeometry>); 
+    PCompFile(boost::shared_ptr<PGeometry>, const bool late_init = false);
     ~PCompFile(); 
 
-    std::vector<double> schwarz() const { return schwarz_; };
-    const double schwarz(const int i) const { return schwarz_[i]; };
-    void add_block(const long, const long, const double*);
-    void put_block(const long, const long, const double*);
-    void get_block(const long, const long, double*);
+    // create file...
+    const std::string filename() const { return filename_; };
     void append(const long, const double*);
     void eval_new_block(double*, int, int, int);
 
-    const std::string filename() const { return filename_; };
+    // append mode cannot be read, hence reopen. Add, Put and Get operation has been implemented
     void reopen_with_inout();
+    void add_block(const long, const long, const double*);
+    void put_block(const long, const long, const double*);
+    void get_block(const long, const long, double*);
 
+    // some misc infos
+    const double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
     std::vector<boost::shared_ptr<Shell> > basis() const { return basis_; };
@@ -63,10 +65,15 @@ class PCompFile {
     const size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
     const int basissize() const { return basis_.size(); };
 
+    // calculate integrals here
     std::vector<size_t> num_int_each() const { return num_int_each_; };
     const size_t num_int_each(const int i) const { return num_int_each_[i]; };
     void calculate_num_int_each();
     void store_integrals();
+
+    // or import integrals computed externally
+    void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie; };
+    void set_integrals(boost::shared_ptr<std::fstream> inp) { file_ = inp; };
 
     const size_t max_num_int() const { assert(max_num_int_ != 0lu); return max_num_int_; };
 
@@ -74,6 +81,7 @@ class PCompFile {
     const int L() const { return L_; };
     const int S() const { return S_; };
 
+    // AO-to-MO integral transformation...
     boost::shared_ptr<PFile<std::complex<double> > > 
                 mo_transform(boost::shared_ptr<PCoeff>,
                              const int istart, const int ifence,
@@ -84,12 +92,14 @@ class PCompFile {
 
 
 template<class T>
-PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm) : geom_(gm) {
+PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const bool late_init)
+ : geom_(gm) {
 
   Filename tmpf;
   filename_ = tmpf.filename_next(); 
 
-  file_ = new std::fstream(filename_.c_str(), std::ios::out | std::ios::binary);
+  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::binary));
+  file_ = tmp;
 
   { // prepare offset and basis
     typedef boost::shared_ptr<Atom> RefAtom;
@@ -109,14 +119,16 @@ PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm) : geom_(gm) {
   L_ = geom_->L();
   K_ = geom_->K();
 
-  init_schwarz();
-  calculate_num_int_each();
+  // late_init is true when constructed from PairCompFile class
+  if (!late_init) {
+    init_schwarz();
+    calculate_num_int_each();
+  }
 };
 
 
 template<class T>
 PCompFile<T>::~PCompFile() {
-  delete file_;
   unlink(filename_.c_str());
 };
 
@@ -239,8 +251,8 @@ void PCompFile<T>::calculate_num_int_each() {
                 const int b3offset = offset_[i3]; 
                 const int b3size = basis_[i3]->nbasis();
 
-                const double integral_bound = this->schwarz_[(m1 + K_) * size * size + i0 * size + i1]
-                                            * this->schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
+                const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
+                                            * schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
@@ -403,7 +415,10 @@ boost::shared_ptr<PFile<std::complex<double> > >
   const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
-  std::cout << "  Creating ERI_AA_II of size " << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>) << " GB" << std::endl << std::endl;
+  std::cout << "  Creating ERI_AA_II of size "
+            << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>)
+            << " GB"
+            << std::endl << std::endl;
   boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_));
 
   // we are assuming that the two-electron integrals for a unit cell can be 
@@ -493,7 +508,6 @@ boost::shared_ptr<PFile<std::complex<double> > >
 
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 assert(integral_bound >= 0.0);
-                assert(skip_schwarz == false);
 
                 if (!skip_schwarz) { 
                   for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
