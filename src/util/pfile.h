@@ -17,7 +17,7 @@
 template<class T>
 class PFile {
   protected:
-    std::fstream* file_;
+    boost::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
 
@@ -49,7 +49,9 @@ PFile<T>::PFile(const long fsize, const int k) : filesize_(fsize), K_(k) {
   T* work = (T*) work_char;
   std::fill(work, work + cachesize, czero);
 
-  file_ = new std::fstream(filename_.c_str(), std::ios::binary | std::ios::out);
+  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::binary | std::ios::out));
+  file_ = tmp;
+
   long remaining = filesize_;
   while (remaining > 0L) {
     const size_t writesize = std::min(cachesize, remaining) * sizeof(T);
@@ -66,7 +68,6 @@ PFile<T>::PFile(const long fsize, const int k) : filesize_(fsize), K_(k) {
 
 template<class T>
 PFile<T>::~PFile() {
-  delete file_;
   unlink(filename_.c_str());
 };
 

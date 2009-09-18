@@ -76,7 +76,8 @@ void PMP2::compute_conv_mp2() {
   complex<double>* workoovv2 = new complex<double>[noovv_];
 
   double energy = 0.0;
-  for (int kb = -K, nbja = 0; kb != maxK1; ++kb) {
+  int nbja = 0;
+  for (int kb = -K; kb < maxK1; ++kb) {
     const double* eb = eig_ + (kb + K) * nbasis_;
 
     for (int kj = -K; kj != maxK1; ++kj) {
@@ -98,7 +99,9 @@ void PMP2::compute_conv_mp2() {
           eri_aa_ii_->get_block(noovv_ * tmp2, noovv_, workoovv2);
         }
 
-        for (int i = nfrc_, xi = 0; i != nocc_; ++i, ++xi) {
+        #pragma omp parallel for reduction(+:energy) 
+        for (int i = nfrc_; i < nocc_; ++i) {
+          const int xi = i - nfrc_;
           for (int a = nocc_; a != nbasis_; ++a) {
             for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {
               for (int b = nocc_; b != nbasis_; ++b) {
