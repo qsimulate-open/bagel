@@ -124,7 +124,7 @@ void Fock::slater_two_electron_part() {
 
 //#define COMPUTE_ERI
 #ifdef COMPUTE_ERI
-          ERIBatch eribatch(input, 0.0);
+          ERIBatch eribatch(input, 1.0e100);
           eribatch.compute();
           const double* eridata = eribatch.data();
           assert(!eribatch.data2_exists()) {

@@ -9,7 +9,3 @@ Molecule: D2h
 Basis:
   cc-pVDZ
 
-Periodiac:
-  Period 3.0
-  K = 0
-

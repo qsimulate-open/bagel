@@ -162,7 +162,7 @@ void PSCF::init_schwarz() {
 void PSCF::print_eig(const double* eig) const {
   int icount = 0;
   for (int i = -geom_->K(); i != 1; ++i, ++icount) {
-    cout << "  " << i << ":" << endl;
+    cout << "  " << setw(3) << i << ": " ;
     for (int j = 0; j != min(geom_->nbasis(), 15); ++j) cout << "  " << setprecision(6) << eig[icount * geom_->nbasis() + j] << " ";
     cout << endl;
   }

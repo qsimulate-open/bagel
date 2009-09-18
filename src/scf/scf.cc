@@ -139,7 +139,7 @@ void SCF::init_shwarz() {
       input.push_back(b0);
       input.push_back(b1);
       input.push_back(b0);
-      ERIBatch eribatch(input, 0.0);
+      ERIBatch eribatch(input, 1.0);
       eribatch.compute();
       const double* eridata = eribatch.data();
       const int datasize = eribatch.data_size();
