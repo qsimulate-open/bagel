@@ -231,14 +231,15 @@ void PCompFile<T>::calculate_num_int_each() {
 
   unsigned long data_written = 0ul;
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
-  std::vector<size_t>::iterator niter = num_int_each_.begin();
   const int size = basis_.size(); // number of shells
 
+  #pragma omp parallel for
   for (int m1 = - S_; m1 <= S_; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
+    size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);
     for (int m2 = 0; m2 <= L_; ++m2) { // use bra-ket symmetry!!!
       const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
-      for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++niter) {
+      for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++offset) {
         const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
         size_t thisblock = 0ul; 
         for (int i0 = 0; i0 != size; ++i0) {
@@ -267,7 +268,7 @@ void PCompFile<T>::calculate_num_int_each() {
             }
           }
         }
-        *niter = thisblock;
+        num_int_each_[offset] = thisblock;
       }
     }
   }
