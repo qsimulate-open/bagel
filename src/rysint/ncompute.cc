@@ -41,7 +41,7 @@ void NAIBatch::compute() {
   double r2[20];
 
   const int alc = size_alloc_; 
-  dcopy_(&alc, &zero, &zeroint, data_, &unit);
+  fill(data_, data_ + alc, zero);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);

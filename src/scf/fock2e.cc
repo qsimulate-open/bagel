@@ -105,14 +105,12 @@ void Fock::fock_two_electron_part() {
           const int b3offset = offset[i3]; 
           const int b3size = b3->nbasis();
 
-// shwarz prescreening >>>>
           const double mulfactor = max(max(max(density_change_01, density_change_02), 
                                            max(density_change_12, density_change_23)), 
                                            max(density_change_03, density_change_13));
           const double integral_bound = mulfactor * shwarz_[i01] * shwarz_[i23];
           const bool skip_shwarz = integral_bound < SCHWARZ_THRESH;
           if (skip_shwarz) continue;
-// <<<<
 
           vector<RefShell> input;
           input.push_back(b3);

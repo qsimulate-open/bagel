@@ -37,19 +37,22 @@ PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
 
 PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
   PMatrix1e out(geom_);
-  for (int j = 0; j != totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
+  #pragma omp parallel for
+  for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
   return out;
 }
 
 
 PMatrix1e& PMatrix1e::operator=(const PMatrix1e& source) {
-  for (int j = 0; j != totalsize_; ++j) (*data_)[j] = (*source.data_)[j]; 
+  ::memcpy(data_->front(), source.data_->front(), totalsize_ * sizeof(Complex)); 
   return *this; 
 }
 
 
 PMatrix1e& PMatrix1e::operator+=(const PMatrix1e& source) {
-  for (int j = 0; j != totalsize_; ++j) (*data_)[j] += (*source.data_)[j]; 
+  const int unit = 1;
+  const Complex one(1.0, 0.0);
+  zaxpy_(&totalsize_, &one, source.data_->front(), &unit, data_->front(), &unit);
   return *this; 
 }
 
@@ -58,7 +61,7 @@ PMatrix1e PMatrix1e::ft() const {
   PMatrix1e out(geom_);
 
   const int unit = 1;
-  for (int k = -K(); k != max(K(), 1); ++k) {
+  for (int k = -K(); k < max(K(), 1); ++k) {
     const Complex kq(0.0, K() != 0 ? (DPI * k) / K() : 0.0);
     const int boffset = (k + K()) * blocksize_;
     for (int m = -S(), mcount = 0; m <= S(); ++m, ++mcount) {
@@ -76,7 +79,8 @@ PMatrix1e PMatrix1e::bft() const {
 
   const int unit = 1;
   if (K() != 0) {
-    for (int m = -K(), mcount = 0; m <= K(); ++m, ++mcount) {
+    for (int m = -K(); m <= K(); ++m) {
+      const int mcount = m + K();
       const int moffset = mcount * blocksize_;
       for (int k = -K(), kcount = 0; k != K(); ++k, ++kcount) {
         const Complex kq(0.0, (DPI * k) / K());
@@ -99,7 +103,8 @@ void PMatrix1e::init() {
   const std::vector<RefAtom> atoms = geom_->atoms(); 
 
   const std::vector<std::vector<int> > offsets = geom_->offsets();
-  for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
+  #pragma omp parallel for
+  for (int iatom0 = 0; iatom0 < geom_->natom(); ++iatom0) {
     const RefAtom catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const std::vector<int> coffset0 = offsets[iatom0];
@@ -147,8 +152,8 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
   PMatrix1e out(geom_);
   const boost::shared_ptr<PData> odata = o.data();
   boost::shared_ptr<PData> outdata = out.data_;
-  int icount = 0;
-  for (int i = -K(); i <= K(); ++i, ++icount) {
+  for (int i = -K(); i <= K(); ++i) {
+    const int icount = i + K();
     const int boffset = icount * blocksize_;
     const Complex* cdata = data_->pointer(boffset); 
     const Complex* codata = odata->pointer(boffset); 
@@ -173,8 +178,8 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
   const boost::shared_ptr<PData> odata = o.data();
   boost::shared_ptr<PData> outdata = out.data_;
 
-  int icount = 0;
-  for (int i = -K(); i <= K(); ++i, ++icount) {
+  for (int i = -K(); i <= K(); ++i) {
+    const int icount = i + K();
     const int boffset = icount * blocksize_;
     const Complex* cdata = data_->pointer(boffset);
     const Complex* codata = odata->pointer(boffset); 
@@ -190,11 +195,12 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
 
 void PMatrix1e::diagonalize(double* eig) {
   const int lwork = nbasis_ * 6;
-  Complex* work = new Complex[lwork];
-  double* rwork = new double[nbasis_ * 3 - 2];
 
-  int icount = 0;
-  for (int i = -K(); i <= K(); ++i, ++icount) {
+  #pragma omp parallel for
+  for (int i = -K(); i <= K(); ++i) {
+    Complex* work = new Complex[lwork];
+    double* rwork = new double[nbasis_ * 3 - 2];
+    const int icount = i + K();
     const int boffset = icount * blocksize_;
     const int eoffset = icount * nbasis_;
     Complex* cdata = data_->pointer(boffset);
@@ -203,10 +209,10 @@ void PMatrix1e::diagonalize(double* eig) {
     int info_diagonalize = 0;
     zheev_("V", "L", &ndim_, cdata, &nbasis_, ceig, work, &lwork, rwork, &info_diagonalize); 
     assert(info_diagonalize == 0);
+    delete[] work;
+    delete[] rwork;
   }
 
-  delete[] work;
-  delete[] rwork;
 }
 
 
@@ -241,8 +247,9 @@ void PMatrix1e::rprint() const {
 
 
 void PMatrix1e::hermite() {
-  int kcount = 0;
-  for (int k = -K(); k <= K(); ++k, ++kcount) {
+  #pragma omp parallel for
+  for (int k = -K(); k <= K(); ++k) {
+    const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
     Complex* dat = data_->pointer(koffset);
     for (int i = 0; i != nbasis_; ++i) {
@@ -258,8 +265,9 @@ void PMatrix1e::hermite() {
 
 
 void PMatrix1e::real() {
-  int kcount = 0;
-  for (int k = -K(); k <= K(); ++k, ++kcount) {
+  #pragma omp parallel for
+  for (int k = -K(); k <= K(); ++k) {
+    const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
     Complex* dat = data_->pointer(koffset);
     for (int i = 0; i != nbasis_; ++i) {

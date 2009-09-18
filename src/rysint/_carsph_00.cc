@@ -4,12 +4,9 @@
 //
 
 #include "carsphlist.h"
-#include "f77.h"
-
+#include <cstring>
 
 void CarSphList::carsph_00(const int nloop, const double* source, double* target) {
-  const int size = nloop;
-  const int unit = 1;
-  dcopy_(&size, source, &unit, target, &unit);
+  ::memcpy(target, source, nloop * sizeof(double));
 }
 

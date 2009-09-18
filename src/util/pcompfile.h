@@ -292,32 +292,37 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
   const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
 
   const int size = basis_.size(); // number of shells
-  size_t data_acc = 0lu;
+  int* blocks = new int[size * size * size * size + 1];
+  blocks[0] = 0;
+  int iall = 0;
   for (int i0 = 0; i0 != size; ++i0) {
-    const RefShell b0 = basis_[i0]; // b0 is the center cell
-    const int b0offset_ = offset_[i0]; 
-    const int b0size = b0->nbasis();
-
+    const int b0size = basis_[i0]->nbasis();
     for (int i1 = 0; i1 != size; ++i1) {
-      const RefShell b1 = basis_[i1]->move_atom(m1disp); 
-      const int b1offset_ = offset_[i1];
-      const int b1size = b1->nbasis();
-
+      const int b1size = basis_[i1]->nbasis();
       for (int i2 = 0; i2 != size; ++i2) {
-        const RefShell b2 = basis_[i2]->move_atom(m2disp);
-        const int b2offset_ = offset_[i2];
-        const int b2size = b2->nbasis();
-
-        for (int i3 = 0; i3 != size; ++i3) {
-          const RefShell b3 = basis_[i3]->move_atom(m3disp);
-          const int b3offset_ = offset_[i3]; 
-          const int b3size = b3->nbasis();
-        
+        const int b2size = basis_[i2]->nbasis();
+        for (int i3 = 0; i3 != size; ++i3, ++iall) {
+          const int b3size = basis_[i3]->nbasis();
           const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
                                       * schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
           const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-          assert(integral_bound >= 0.0 && SCHWARZ_THRESH >= 0);
-          if (skip_schwarz) continue;
+          blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+        }
+      }
+    }
+  }
+  #pragma omp parallel for
+  for (int i0 = 0; i0 < size; ++i0) {
+    int offset = i0 * size * size * size; 
+    const RefShell b0 = basis_[i0]; // b0 is the center cell
+    for (int i1 = 0; i1 != size; ++i1) {
+      const RefShell b1 = basis_[i1]->move_atom(m1disp); 
+      for (int i2 = 0; i2 != size; ++i2) {
+        const RefShell b2 = basis_[i2]->move_atom(m2disp);
+        for (int i3 = 0; i3 < size; ++i3, ++offset) {
+          const RefShell b3 = basis_[i3]->move_atom(m3disp);
+
+          if (blocks[offset] == blocks[offset + 1]) continue;
 
           std::vector<RefShell> input;
           input.push_back(b3);
@@ -325,33 +330,40 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           input.push_back(b1);
           input.push_back(b0);
 
-          // template class T must have void T::compute() function
-          // TODO needs to think about Yukawa potential integrals.
           T batch(input, 1.0);
           batch.compute();
           const double* bdata = batch.data();
-          size_t current_size = b0size * b1size * b2size * b3size;
-          ::memcpy(out + data_acc, bdata, current_size * sizeof(double));
-          data_acc += current_size; 
+          ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));
         }
       }
     }
   }
+  delete[] blocks;
 };
 
 
 template<class T>
 void PCompFile<T>::store_integrals() {
-  double* dcache = new double[max_num_int()];
-  size_t cnt = 0;
+  const size_t cachesize = std::max(100000000lu, max_num_int_);
+  double* dcache = new double[cachesize];
+  size_t remaining = cachesize;
+  size_t current = 0lu;
+  size_t cnt = 0lu;
   for (int m1 = -S_; m1 <= S_; ++m1) {
     for (int m2 = 0; m2 <= L_; ++m2) { // use bra-ket symmetry!!!
       for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++cnt) {
-        eval_new_block(dcache, m1, m2, m3);
-        append(num_int_each(cnt), dcache);
+        if (remaining < num_int_each(cnt)) {
+          append(current, dcache);
+          current = 0lu;
+          remaining = cachesize;
+        }
+        eval_new_block(&dcache[current], m1, m2, m3);
+        current += num_int_each(cnt);
+        remaining -= num_int_each(cnt);
       }
     }
   } 
+  append(current, dcache);
   delete[] dcache;
 };
 
@@ -364,6 +376,7 @@ void PCompFile<T>::init_schwarz() {
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));
 
+  #pragma omp prallel for
   for (int m = - K_; m <= K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * A_};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
@@ -400,8 +413,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
                              const int astart, const int afence,
                              const int bstart, const int bfence,
                              const std::string jobname) {
-// Load a (2K * 2K * nov) quantity on memory 
-#define KK_ON_MEMORY
+// Loading a (2K * 2K * nov) quantity on memory 
 
   const int isize = ifence - istart;
   const int jsize = jfence - jstart;
@@ -434,9 +446,12 @@ boost::shared_ptr<PFile<std::complex<double> > >
   // held in core. If that is not the case, this must be rewritten.
 
   // allocating a temp array
-  std::complex<double>* data = new std::complex<double>[nbasis4]; 
-  std::complex<double>* datas = new std::complex<double>[nbasis4]; 
+  std::complex<double>* data = new std::complex<double>[nbasis4 * KK]; 
+  std::complex<double>* datas = new std::complex<double>[nbasis4 * KK]; 
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
+
+  const int size = basis_.size();
+  int* blocks = new int[size * size * size * size + 1];
 
   const int nv = nbasis3 * bsize;
   const int nov = nbasis2 * jsize * bsize;
@@ -452,20 +467,12 @@ boost::shared_ptr<PFile<std::complex<double> > >
   size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end()); 
 
   std::complex<double>* intermediate_mmK = new std::complex<double>[nv * std::max(KK, 1)];
-#ifdef KK_ON_MEMORY
   std::complex<double>* intermediate_mKK = new std::complex<double>[nov * std::max(KK * KK, 1)];
-#else
-  PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), K_);
-#endif
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_);
 
   for (int q1 = -S_; q1 <= S_; ++q1) {
     const int m1 = q1;
-#ifdef KK_ON_MEMORY
     fill(intermediate_mKK, intermediate_mKK + nov * std::max(KK * KK, 1), czero);
-#else
-    intermediate_mKK.clear();
-#endif
     for (int q2 = -L_; q2 <= L_; ++q2) {
       const int m2 = q2;
       fill(intermediate_mmK, intermediate_mmK + nv * std::max(KK, 1), czero);
@@ -487,24 +494,18 @@ boost::shared_ptr<PFile<std::complex<double> > >
           std::cout << "  Loop " << loop_mod10 * 10lu << " percent done" << std::endl;
         }
 
-        const int size = basis_.size();
         size_t local_counter = 0lu;
 
+        blocks[0] = 0;
+        int iall = 0;
         for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = offset(i0); 
-          const int b0size = nbasis(i0);
-
+          const int b0size = basis_[i0]->nbasis();
           for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = offset(i1);
-            const int b1size = nbasis(i1);
-
+            const int b1size = basis_[i1]->nbasis();
             for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = offset(i2); 
-              const int b2size = nbasis(i2);
-
-              for (int i3 = 0; i3 != size; ++i3) {
-                const int b3offset = offset(i3); 
-                const int b3size = nbasis(i3);
+              const int b2size = basis_[i2]->nbasis();
+              for (int i3 = 0; i3 != size; ++i3, ++iall) {
+                const int b3size = basis_[i3]->nbasis();
 
                 double integral_bound;
                 if (m2 >= 0) { 
@@ -514,20 +515,38 @@ boost::shared_ptr<PFile<std::complex<double> > >
                   integral_bound = schwarz_[((q1 + K_) * size + i2) * size + i3]
                                  * schwarz_[((q3 + K_) * size + i0) * size + i1];
                 }
-
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-                assert(integral_bound >= 0.0);
+                blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+              }
+            }
+          }
+        }
 
-                if (!skip_schwarz) { 
+        #pragma omp parallel for
+        for (int i0 = 0; i0 < size; ++i0) {
+          int noffset = i0 * size * size * size;
+          const int b0offset = offset(i0); 
+          const int b0size = nbasis(i0);
+          for (int i1 = 0; i1 != size; ++i1) {
+            const int b1offset = offset(i1);
+            const int b1size = nbasis(i1);
+            for (int i2 = 0; i2 != size; ++i2) {
+              const int b2offset = offset(i2); 
+              const int b2size = nbasis(i2);
+              for (int i3 = 0; i3 != size; ++i3, ++noffset) {
+                const int b3offset = offset(i3); 
+                const int b3size = nbasis(i3);
+
+                if (blocks[noffset] != blocks[noffset + 1]) { 
+                  const double* ndata = cdata + blocks[noffset];
                   for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
                     const size_t jjjj0 = j0 * nbasis3;
                     for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
                       const size_t jjj1 = j1 * nbasis2 + jjjj0;
                       for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                         const size_t jj2 = j2 * nbasis1 + jjj1;
-                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++cdata) {  
-                          data[j3 + jj2] = static_cast<std::complex<double> >(*cdata);
-                          ++local_counter;
+                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++ndata) {  
+                          data[j3 + jj2] = static_cast<std::complex<double> >(*ndata);
                         }
                       }
                     }
@@ -549,16 +568,16 @@ boost::shared_ptr<PFile<std::complex<double> > >
             }
           }
         } // end of shell loops; now data is ready
-        assert(local_counter == num_int_each_[key]); 
 
         if (m2 >= 0) { // start from j & b contractions -- needs transposition
           const int mn = nbasis2;          
           mytranspose_complex_(data, &mn, &mn, datas);
           ::memcpy(data, datas, nbasis4 * sizeof(std::complex<double>));
         }
-        std::fill(datas, datas + nv, czero); 
 
-        for (int nkb = -K_, nkbc = 0; nkb != maxK1; ++nkb, ++nkbc) {
+        #pragma omp parallel for
+        for (int nkb = -K_; nkb < maxK1; ++nkb) {
+          const int nkbc = nkb + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m3 * nkb * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           int offset1 = 0;
@@ -566,34 +585,31 @@ boost::shared_ptr<PFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += nbasis3,
                                                 offset2 += nbasis2 * bsize) {
             zgemm_("N", "N", &nbasis2, &bsize, &nbasis1, &prefac, data + offset1, &nbasis2,
-                                                         coeff->bp(nkb) + nbasis1 * bstart, &nbasis1, &czero,
-                                                         datas + offset2, &nbasis2);
+                                                         coeff->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
+                                                         intermediate_mmK + nv * nkbc + offset2, &nbasis2);
           }
-          assert(offset1 == nbasis4 && offset2 == nv);
-          zaxpy_(&nv, &cone, datas, &unit, intermediate_mmK + nv * nkbc, &unit);
         } // end of contraction b for given m3
 
       } // end of m3 loop
 
       // intermediate_mmK is ready
-      for (int nkb = -K_, nkbc = 0, nbj = 0; nkb != maxK1; ++nkb, ++nkbc) {
+      #pragma omp parallel for
+      for (int nkb = -K_; nkb < maxK1; ++nkb) {
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
+        const int nkbc = nkb + K_; 
+        int nbj = nkbc * KK;
         for (int nkj = -K_, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {
-          fill(datas, datas + nov, czero); 
           const std::complex<double> exponent(0.0, K_ != 0 ? (- m2 * nkj * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
 
           const std::complex<double>* jdata = coeff->bp(nkj) + nbasis1 * jstart;
-          for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc[ii] = conj(jdata[ii]);
+          for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
           const int nsize = nbasis2 * bsize;
           zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, intermediate_mmK + nv * nkbc, &nsize,
-                                                              conjc, &nbasis1, &czero,
-                                                              datas, &nsize);
-#ifdef KK_ON_MEMORY 
-          zaxpy_(&nov, &cone, datas, &unit, intermediate_mKK + nov * nbj, &unit);
-#else
-          intermediate_mKK.add_block(nov * nbj, nov, datas);
-#endif
+                                                              conjc2, &nbasis1, &cone,
+                                                              intermediate_mKK + nov * nbj, &nsize);
         }
+        delete[] conjc2;
       } // end of contraction j for given m2
 
     } // end of m2 loop
@@ -601,11 +617,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
     // intermediate_mKK is ready
     for (int nkb = -K_, nbja = 0, nbj = 0; nkb != maxK1; ++nkb) {
       for (int nkj = -K_; nkj != maxK1; ++nkj, ++nbj) {
-#ifdef KK_ON_MEMORY
         ::memcpy(datas, intermediate_mKK + nov * nbj, nov * sizeof(std::complex<double>));
-#else
-        intermediate_mKK.get_block(nov * nbj, nov, datas);
-#endif
         {
           const int m = nbasis2; 
           const int n = jsize * bsize;
@@ -613,7 +625,9 @@ boost::shared_ptr<PFile<std::complex<double> > >
           std::fill(datas, datas + novv, czero);
         }
 
-        for (int nka = -K_, nkac = 0; nka != maxK1; ++nka, ++nkac, ++nbja) {
+        #pragma omp parallel for
+        for (int nka = -K_; nka < maxK1; ++nka) {
+          const int nkac = nka + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m1 * nka * pi)/ K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
@@ -623,34 +637,40 @@ boost::shared_ptr<PFile<std::complex<double> > >
                                                 offset2 += nsize * asize) {
             zgemm_("N", "N", &nsize, &asize, &nbasis1, &prefac, data + offset1, &nsize,
                                                                 coeff->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
-                                                                datas + offset2, &nsize);
+                                                                datas + nkac * novv + offset2, &nsize);
           }
-          assert(offset1 == nov && offset2 == novv);
-          intermediate_KKK.add_block(novv * nbja, novv, datas);
         }
+        intermediate_KKK.add_block(novv * nbja, novv * KK, datas);
+        nbja += KK;
       }
     } // end of contraction a for given m1
 
   } // end of m1 loop
 
   // now intermediate_KKK is ready.
-  for (int nkb = -K_, nbja = 0; nkb != maxK1; ++nkb) {
+  for (int nkb = -K_; nkb != maxK1; ++nkb) {
+    int nbja = (nkb + K_) * KK * KK;
     for (int nkj = -K_; nkj != maxK1; ++nkj) {
-      for (int nka = -K_; nka != maxK1; ++nka, ++nbja) {
-        intermediate_KKK.get_block(novv * nbja, novv, data);
+      intermediate_KKK.get_block(novv * nbja, novv * KK, data);
+      #pragma omp parallel for
+      for (int nka = -K_; nka < maxK1; ++nka) {
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
+
         // momentum conservation
         int nki = nka + nkb - nkj; 
         if (nki < - K_) nki += K_ * 2; 
         else if (nki >=  K_) nki -= K_ * 2; 
 
         const std::complex<double>* idata = coeff->bp(nki) + nbasis1 * istart;
-        for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc[ii] = conj(idata[ii]);
+        for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data, &nsize,
-                                                          conjc, &nbasis1, &czero,
-                                                          datas, &nsize);
-        mo_int->put_block(noovv * nbja, noovv, datas);
+        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data + novv * (nka + K_), &nsize,
+                                                          conjc2, &nbasis1, &czero,
+                                                          datas + noovv * (nka + K_), &nsize);
+        delete[] conjc2;
       }
+      mo_int->put_block(noovv * nbja, noovv * KK, datas);
+      nbja += KK; 
     }
   } // end of contraction i
 
@@ -658,9 +678,8 @@ boost::shared_ptr<PFile<std::complex<double> > >
   delete[] datas;
   delete[] conjc;
   delete[] intermediate_mmK;
-#ifdef KK_ON_MEMORY
   delete[] intermediate_mKK;
-#endif
+  delete[] blocks;
 
   std::cout << std::endl;
   return mo_int;

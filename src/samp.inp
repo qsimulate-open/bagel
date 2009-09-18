@@ -9,5 +9,8 @@ Basis: cartesian
 
 Periodic:
   Period 4.656457145400281 
-  K = 10
+  K = 16
+
+MP2:
+  frozen
 

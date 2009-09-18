@@ -25,7 +25,7 @@ void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = lower0[i];
     const int end0   = upper0[i];
-    dcopy_(&worksize, &zero, &zeroint, work, &unit); 
+    fill(work, work + worksize, zero);
     for (int j = begin0; j != end0; ++j) 
       daxpy_(&worksize, &coeff0[i][j], &prim[j * worksize], &unit, work, &unit); 
 
@@ -61,7 +61,7 @@ void ERIBatch::perform_contraction_new_inner(const int nsize, const double* prim
 
       const int begin0 = lower0[i];
       const int end0   = upper0[i];
-      dcopy_(&worksize, &zero, &zeroint, work, &unit); 
+      fill(work, work + worksize, zero);
       for (int j = begin0; j != end0; ++j) 
         daxpy_(&worksize, &coeff0[i][j], &current_prim[j * worksize], &unit, work, &unit); 
 

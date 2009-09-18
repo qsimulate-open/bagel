@@ -18,6 +18,7 @@ c      quick return if possible
       nresidual=mod(n,10)
       mlim=m-mresidual-1
       nlim=n-nresidual-1
+c$omp parallel do
       do i=1,nlim,10
        do j=1,mlim,10
         vec(i  ,j  )=h(j  ,i  )

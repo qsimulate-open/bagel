@@ -24,7 +24,8 @@ void NAIBatch::perform_contraction(const int asize, const double* prim, const in
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    dcopy_(&worksize, &zero, &zeroint, work, &unit); 
+//  dcopy_(&worksize, &zero, &zeroint, work, &unit); 
+    std::fill(work, work + worksize, zero);
     for (int j = begin0; j != end0; ++j) 
       daxpy_(&worksize, &coeff0[i][j], &prim[j * worksize], &unit, work, &unit); 
 

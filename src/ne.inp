@@ -1,12 +1,12 @@
 Molecule: C1
-  Atom(He,  0.0, 0.0, 0.0),
+  Atom(Ne,  0.0, 0.0, 0.0),
 
 Basis: cartesian
-  6-31gdp
+  6-31g
 
 Periodic:
-  Period 2.0
-  K = 5
+  Period 5.0
+  K = 10
 
 MP2:
 

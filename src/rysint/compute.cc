@@ -25,7 +25,7 @@ void ERIBatch::compute() {
   bkup_ = new double[size_alloc_];
   
   const int size = size_alloc_;
-  dcopy_(&size, &zero, &zeroint, data_, &unit);
+  fill(data_, data_ + size, zero);
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
@@ -179,7 +179,7 @@ void ERIBatch::compute() {
     sort_.sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
   }
   
-  if (swapped) dcopy_(&size, bkup_, &unit, data_, &unit); 
+  if (swapped) ::memcpy(data_, bkup_, size * sizeof(double)); 
 
   delete[] bkup_;
 }
