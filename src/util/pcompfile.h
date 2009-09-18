@@ -29,6 +29,7 @@ class PCompFile {
     boost::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
+    std::string jobname_;
     std::vector<double> schwarz_;
 
     const boost::shared_ptr<PGeometry> geom_;
@@ -37,12 +38,12 @@ class PCompFile {
     std::vector<boost::shared_ptr<Shell> > basis_;
     std::vector<int> offset_;
     size_t max_num_int_;
-    void init_schwarz();
 
     int K_, L_, S_;
+    double A_;
 
   public:
-    PCompFile(boost::shared_ptr<PGeometry>, const bool late_init = false);
+    PCompFile(boost::shared_ptr<PGeometry>, const bool late_init = false, const std::string jobname = "source");
     ~PCompFile(); 
 
     // create file...
@@ -56,7 +57,7 @@ class PCompFile {
     void put_block(const long, const long, const double*);
     void get_block(const long, const long, double*);
 
-    // some misc infos
+    // returns some misc infos
     const double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
@@ -66,13 +67,16 @@ class PCompFile {
     const int basissize() const { return basis_.size(); };
 
     // calculate integrals here
+    void init_schwarz();
     std::vector<size_t> num_int_each() const { return num_int_each_; };
     const size_t num_int_each(const int i) const { return num_int_each_[i]; };
     void calculate_num_int_each();
     void store_integrals();
 
     // or import integrals computed externally
-    void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie; };
+    void set_schwarz(const std::vector<double>& a) { schwarz_ = a; };
+    void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie; 
+                                                            max_num_int_ = *std::max_element(nie.begin(), nie.end()); };
     void set_integrals(boost::shared_ptr<std::fstream> inp) { file_ = inp; };
 
     const size_t max_num_int() const { assert(max_num_int_ != 0lu); return max_num_int_; };
@@ -80,6 +84,7 @@ class PCompFile {
     const int K() const { return K_; };
     const int L() const { return L_; };
     const int S() const { return S_; };
+    const double A() const { return A_; };
 
     // AO-to-MO integral transformation...
     boost::shared_ptr<PFile<std::complex<double> > > 
@@ -87,13 +92,13 @@ class PCompFile {
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
-                             const int bstart, const int bfence);
+                             const int bstart, const int bfence, const std::string jobname = "intermediate");
 };
 
 
 template<class T>
-PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const bool late_init)
- : geom_(gm) {
+PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const bool late_init, const std::string jobname)
+ : geom_(gm), jobname_(jobname) {
 
   Filename tmpf;
   filename_ = tmpf.filename_next(); 
@@ -118,6 +123,7 @@ PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const bool late_init)
   S_ = geom_->S();
   L_ = geom_->L();
   K_ = geom_->K();
+  A_ = geom_->A();
 
   // late_init is true when constructed from PairCompFile class
   if (!late_init) {
@@ -229,11 +235,11 @@ void PCompFile<T>::calculate_num_int_each() {
   const int size = basis_.size(); // number of shells
 
   for (int m1 = - S_; m1 <= S_; ++m1) {
-    const double m1disp[3] = {0.0, 0.0, m1 * geom_->A()}; 
+    const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
     for (int m2 = 0; m2 <= L_; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * geom_->A()}; 
+      const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
       for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++niter) {
-        const double m3disp[3] = {0.0, 0.0, m3 * geom_->A()}; 
+        const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
         size_t thisblock = 0ul; 
         for (int i0 = 0; i0 != size; ++i0) {
           const int b0offset = offset_[i0]; 
@@ -268,7 +274,9 @@ void PCompFile<T>::calculate_num_int_each() {
 
   max_num_int_ = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
-  std::cout << "  Will use " << data_written * 8.0e-9 << " GB hard disk storage." << std::endl << std::endl; 
+  std::cout << "  Using " << data_written * 8.0e-9 << " GB hard disk for storing \""
+            << jobname_ << "\"" << std::endl; 
+  std::cout << std::endl;
   assert(data_written < 5.0e9); // 40GB
 };
 
@@ -278,9 +286,9 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
   typedef boost::shared_ptr<Shell> RefShell;
 
-  const double m1disp[3] = {0.0, 0.0, m1 * geom_->A()}; 
-  const double m2disp[3] = {0.0, 0.0, m2 * geom_->A()}; 
-  const double m3disp[3] = {0.0, 0.0, m3 * geom_->A()}; 
+  const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
+  const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
+  const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
 
   const int size = basis_.size(); // number of shells
   size_t data_acc = 0lu;
@@ -356,7 +364,7 @@ void PCompFile<T>::init_schwarz() {
   schwarz_.resize(size * size * (2 * K_ + 1));
 
   for (int m = - K_; m <= K_; ++m) { 
-    const double disp[3] = {0.0, 0.0, m * geom_->A()};
+    const double disp[3] = {0.0, 0.0, m * A_};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
       const RefShell b0 = basis_[i0];
       for (int i1 = 0; i1 != size; ++i1) {
@@ -367,13 +375,13 @@ void PCompFile<T>::init_schwarz() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 0.0);
+        T batch(input, 1.0e100);
         batch.compute();
         const double* data = batch.data();
         const int datasize = batch.data_size();
         double cmax = 0.0;
         for (int xi = 0; xi != datasize; ++xi, ++data) {
-          const double absed = (*data) > 0 ? *data : -*data;
+          const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
         schwarz_[(m + K_) * size * size + i0 * size + i1] = cmax;
@@ -389,7 +397,8 @@ boost::shared_ptr<PFile<std::complex<double> > >
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
-                             const int bstart, const int bfence) {
+                             const int bstart, const int bfence,
+                             const std::string jobname) {
 // Load a (2K * 2K * nov) quantity on memory 
 #define KK_ON_MEMORY
 
@@ -415,10 +424,9 @@ boost::shared_ptr<PFile<std::complex<double> > >
   const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
-  std::cout << "  Creating ERI_AA_II of size "
-            << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>)
-            << " GB"
-            << std::endl << std::endl;
+  std::cout << "  Creating " << jobname << "  of size "
+            << std::setprecision(5) << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>)
+            << " GB" << std::endl;
   boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_));
 
   // we are assuming that the two-electron integrals for a unit cell can be 
@@ -653,6 +661,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
   delete[] intermediate_mKK;
 #endif
 
+  std::cout << std::endl;
   return mo_int;
 };
 

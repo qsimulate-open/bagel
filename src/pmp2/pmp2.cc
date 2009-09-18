@@ -27,7 +27,7 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const double* eg, const shared_p
   nocc_act_ = nocc_ - nfrc_;
   nbasis_ = geom_->nbasis();
   nvir_ = nbasis_ - nocc_;
-  noovv_ = nocc_act_ * nocc_act_ * nvir_ * nvir_;
+  noovv_ = nocc_act_ * nocc_act_ * nbasis_ * nbasis_;
 
 }
 
@@ -42,19 +42,25 @@ void PMP2::compute() {
   // AO ERI has been computed in the SCF class.
 
   // Fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
-  eri_aa_ii_ = ao_eri_->mo_transform(coeff_,
-                                     nfrc_, nocc_,
-                                     nfrc_, nocc_,
-                                     nocc_, nbasis_,
-                                     nocc_, nbasis_);
+  eri_aa_ii_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                             0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
 
   // Compute the conventional MP2 contribution
   compute_conv_mp2();
 
   // Calculate Yukawa potential integrals
-//shared_ptr<PCompFile<SlaterBatch> > slater(new PCompFile<SlaterBatch>(geom_));
-  shared_ptr<PairCompFile<SlaterBatch> > slater_and_yukawa(new PairCompFile<SlaterBatch>(geom_));
+  shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, 1.5, "Slater and Yukawa ints"));
+  stg_yp->store_integrals();
+  stg_yp->reopen_with_inout();
+  shared_ptr<PCompFile<SlaterBatch> > stg = stg_yp->first();
+  shared_ptr<PCompFile<SlaterBatch> > yp  = stg_yp->second();
 
+  // V intermediate OBS part
+  typedef shared_ptr<PFile<complex<double> > > RefPFile;
+  RefPFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                               nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
+  RefPFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                 0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
 }
 
 
@@ -90,14 +96,12 @@ void PMP2::compute_conv_mp2() {
           eri_aa_ii_->get_block(noovv_ * tmp2, noovv_, workoovv2);
         }
 
-        int cnt1 = 0;
-        const int ov = nocc_act_ * nvir_;
         for (int i = nfrc_, xi = 0; i != nocc_; ++i, ++xi) {
-          for (int a = nocc_, xa = 0; a != nbasis_; ++a, ++xa) {
+          for (int a = nocc_; a != nbasis_; ++a) {
             for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {
-              int cnt2 = xa + nvir_ * (xj + ov * xi);
-
-              for (int b = nocc_; b != nbasis_; ++b, ++cnt1, cnt2 += ov) {
+              for (int b = nocc_; b != nbasis_; ++b) {
+                int cnt1 = b + nbasis_ * (xj + nocc_act_ * (a + nbasis_ * xi));
+                int cnt2 = a + nbasis_ * (xj + nocc_act_ * (b + nbasis_ * xi));
                 const complex<double> v1 = workoovv1[cnt1];
                 const complex<double> v2 = workoovv2[cnt2];
                 energy += (real(v1 * conj(v1 + v1 - v2))) / (ei[i] + ej[j] - ea[a] - eb[b]);

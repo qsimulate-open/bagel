@@ -26,7 +26,7 @@ typedef boost::shared_ptr<Shell> RefShell;
 
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa) :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
-  const double integral_thresh = PRIM_SCREEN_THRESH * max_density; 
+  const double integral_thresh = PRIM_SCREEN_THRESH / max_density; 
 
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {

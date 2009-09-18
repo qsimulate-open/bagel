@@ -25,7 +25,7 @@ typedef boost::shared_ptr<Shell> RefShell;
 
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density) :  RysInt(_info) {
 
-  const double integral_thresh = PRIM_SCREEN_THRESH * max_density; 
+  const double integral_thresh = PRIM_SCREEN_THRESH / max_density; 
 //const double integral_thresh = 0.0; 
 
   // swap 01 indices when needed: Larger angular momentum function comes first
