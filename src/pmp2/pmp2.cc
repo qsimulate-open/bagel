@@ -41,6 +41,7 @@ void PMP2::compute() {
 
   // AO ERI has been computed in the SCF class.
 
+  cout << "  === Periodic MP2 calculation ===" << endl << endl;
   // Fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
   eri_aa_ii_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                              0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
@@ -48,6 +49,7 @@ void PMP2::compute() {
   // Compute the conventional MP2 contribution
   compute_conv_mp2();
 
+  cout << "  === Periodic MP2-R12 calculation ===" << endl << endl;
   // Calculate Yukawa potential integrals
   shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, 1.5, "Slater and Yukawa ints"));
   stg_yp->store_integrals();
