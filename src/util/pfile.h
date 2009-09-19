@@ -24,13 +24,15 @@ class PFile {
     const int K_;
 
   public:
-    PFile(const long, const int); 
+    PFile(const long, const int, const bool late_init = false); 
     ~PFile(); 
 
+    void append(const long, const T*);
     void add_block(const long, const long, const T*);
     void put_block(const long, const long, const T*);
     void get_block(const long, const long, T*);
     void clear();
+    void reopen_with_inout();
 
     const std::string filename() const { return filename_; };
     const int K() const { return K_; };
@@ -38,30 +40,31 @@ class PFile {
 
 
 template<class T>
-PFile<T>::PFile(const long fsize, const int k) : filesize_(fsize), K_(k) {
+PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_(fsize), K_(k) {
 
   {
     Filename tmpf;
     filename_ = tmpf.filename_next();
   }
 
-  const T czero = static_cast<T>(0.0);
-  T* work = (T*) work_char;
-  std::fill(work, work + cachesize, czero);
-
   boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::binary | std::ios::out));
   file_ = tmp;
 
-  long remaining = filesize_;
-  while (remaining > 0L) {
-    const size_t writesize = std::min(cachesize, remaining) * sizeof(T);
-    file_->write((const char*)work, writesize);
-    remaining -= cachesize;
-  }
-  file_->close();
+  if (!late_init) {
+    const T czero = static_cast<T>(0.0);
+    T* work = (T*) work_char;
+    std::fill(work, work + cachesize, czero);
 
-  // reopen with in/out/binary
-  file_->open(filename_.c_str(), std::ios::binary | std::ios::in | std::ios::out);
+    long remaining = filesize_;
+    while (remaining > 0L) {
+      const size_t writesize = std::min(cachesize, remaining) * sizeof(T);
+      file_->write((const char*)work, writesize);
+      remaining -= cachesize;
+    }
+
+    // reopen with in/out/binary
+    reopen_with_inout();
+  }
 
 };
 
@@ -69,6 +72,30 @@ PFile<T>::PFile(const long fsize, const int k) : filesize_(fsize), K_(k) {
 template<class T>
 PFile<T>::~PFile() {
   unlink(filename_.c_str());
+};
+
+
+template<class T>
+void PFile<T>::reopen_with_inout() {
+  file_->close();
+  file_->open(filename_.c_str(), std::ios::binary | std::ios::in | std::ios::out);
+};
+
+
+template<class T>
+void PFile<T>::append(const long length, const T* data) {
+  file_->clear();
+  file_->seekp(0, std::ios::end);
+  long remaining = length;
+  long current = 0L;
+
+  while (remaining > 0L) {
+    const long writesize = std::min(remaining, cachesize) * sizeof(T);
+    file_->write((const char*)(data + current), writesize); 
+
+    remaining -= cachesize;
+    current += cachesize;
+  } 
 };
 
 

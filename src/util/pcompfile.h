@@ -440,7 +440,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
   std::cout << "  Creating " << jobname << "  of size "
             << std::setprecision(5) << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>)
             << " GB" << std::endl;
-  boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_));
+  boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_, true));
 
   // we are assuming that the two-electron integrals for a unit cell can be 
   // held in core. If that is not the case, this must be rewritten.
@@ -468,9 +468,10 @@ boost::shared_ptr<PFile<std::complex<double> > >
 
   std::complex<double>* intermediate_mmK = new std::complex<double>[nv * std::max(KK, 1)];
   std::complex<double>* intermediate_mKK = new std::complex<double>[nov * std::max(KK * KK, 1)];
-  PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_);
+  PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_, true);
 
   for (int q1 = -S_; q1 <= S_; ++q1) {
+    const bool q1_front = (q1 == -S_);
     const int m1 = q1;
     fill(intermediate_mKK, intermediate_mKK + nov * std::max(KK * KK, 1), czero);
     for (int q2 = -L_; q2 <= L_; ++q2) {
@@ -539,28 +540,29 @@ boost::shared_ptr<PFile<std::complex<double> > >
 
                 if (blocks[noffset] != blocks[noffset + 1]) { 
                   const double* ndata = cdata + blocks[noffset];
-                  for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-                    const size_t jjjj0 = j0 * nbasis3;
-                    for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-                      const size_t jjj1 = j1 * nbasis2 + jjjj0;
-                      for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                        const size_t jj2 = j2 * nbasis1 + jjj1;
-                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++ndata) {  
-                          data[j3 + jj2] = static_cast<std::complex<double> >(*ndata);
+                  std::complex<double>* label = data + b3offset + nbasis1 * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
+                  for (int j0 = 0; j0 != b0size; ++j0, label += nbasis3) {
+                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {  
+                      for (int j2 = 0; j2 != b2size; ++j2, label += nbasis1) {
+                        for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {  
+                          *label = static_cast<std::complex<double> >(*ndata);
                         }
+                        label -= b3size;
                       }
+                      label -= b2size * nbasis1;
                     }
+                    label -= b1size * nbasis2;
                   }
                 } else {
-                  for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-                    const size_t jjjj0 = j0 * nbasis3;
-                    for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-                      const size_t jjj1 = j1 * nbasis2 + jjjj0;
-                      for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                        const size_t jj2 = j2 * nbasis1 + jjj1 + b3offset;
-                        fill(data + jj2, data + jj2 + b3size, czero); 
+                  std::complex<double>* label = data + b3offset + nbasis1 * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
+                  for (int j0 = 0; j0 != b0size; ++j0, label += nbasis3) {
+                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {  
+                      for (int j2 = 0; j2 != b2size; ++j2, label += nbasis1) {
+                        std::fill(label, label + b3size, czero); 
                       }
+                      label -= b2size * nbasis1;
                     }
+                    label -= b1size * nbasis2;
                   }
                 } // end of if skip_schwarz
 
@@ -640,10 +642,16 @@ boost::shared_ptr<PFile<std::complex<double> > >
                                                                 datas + nkac * novv + offset2, &nsize);
           }
         }
-        intermediate_KKK.add_block(novv * nbja, novv * KK, datas);
+        if (q1_front)
+          intermediate_KKK.append(novv * KK, datas);
+        else
+          intermediate_KKK.add_block(novv * nbja, novv * KK, datas);
         nbja += KK;
       }
     } // end of contraction a for given m1
+
+    if (q1_front)
+      intermediate_KKK.reopen_with_inout();
 
   } // end of m1 loop
 
@@ -669,7 +677,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
                                                           datas + noovv * (nka + K_), &nsize);
         delete[] conjc2;
       }
-      mo_int->put_block(noovv * nbja, noovv * KK, datas);
+      mo_int->append(noovv * KK, datas);
       nbja += KK; 
     }
   } // end of contraction i
@@ -682,6 +690,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
   delete[] blocks;
 
   std::cout << std::endl;
+  mo_int->reopen_with_inout();
   return mo_int;
 };
 

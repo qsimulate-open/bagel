@@ -6,7 +6,7 @@ Basis: cartesian
 
 Periodic:
   Period 5.0
-  K = 10
+  K = 5
 
 MP2:
 
