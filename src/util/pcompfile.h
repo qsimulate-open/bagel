@@ -275,8 +275,17 @@ void PCompFile<T>::calculate_num_int_each() {
 
   max_num_int_ = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
-  std::cout << "  Using " << data_written * 8.0e-9 << " GB hard disk for storing \""
-            << jobname_ << "\"" << std::endl; 
+  std::cout << "  Using ";
+  const size_t data_written_byte = data_written * sizeof(double);
+  if (data_written_byte > 1.0e9) {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
+  } else if (data_written_byte > 1.0e6) {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
+  } else {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
+  }
+
+  std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl; 
   std::cout << std::endl;
   assert(data_written < 5.0e9); // 40GB
 };
@@ -437,17 +446,23 @@ boost::shared_ptr<PFile<std::complex<double> > >
   const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
-  std::cout << "  Creating " << jobname << "  of size "
-            << std::setprecision(5) << static_cast<double>(filesize) / 1.0e9 * sizeof(std::complex<double>)
-            << " GB" << std::endl;
+  std::cout << "  Creating " << jobname << "  of size ";
+  const size_t filesize_byte = filesize * sizeof(std::complex<double>);
+  if (filesize > 1.0e9) {
+    std::cout << std::setprecision(1) << filesize_byte / 1.0e9 << " GB" << std::endl;
+  } else if (filesize > 1.0e6) {
+    std::cout << std::setprecision(1) << filesize_byte / 1.0e6 << " MB" << std::endl;
+  } else {
+    std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
+  }
   boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_, true));
 
   // we are assuming that the two-electron integrals for a unit cell can be 
   // held in core. If that is not the case, this must be rewritten.
 
   // allocating a temp array
-  std::complex<double>* data = new std::complex<double>[nbasis4 * KK]; 
-  std::complex<double>* datas = new std::complex<double>[nbasis4 * KK]; 
+  std::complex<double>* data = new std::complex<double>[nbasis4 * std::max(KK, 1)]; 
+  std::complex<double>* datas = new std::complex<double>[nbasis4 * std::max(KK, 1)]; 
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
 
   const int size = basis_.size();
@@ -643,10 +658,10 @@ boost::shared_ptr<PFile<std::complex<double> > >
           }
         }
         if (q1_front)
-          intermediate_KKK.append(novv * KK, datas);
+          intermediate_KKK.append(novv * std::max(KK, 1), datas);
         else
-          intermediate_KKK.add_block(novv * nbja, novv * KK, datas);
-        nbja += KK;
+          intermediate_KKK.add_block(novv * nbja, novv * std::max(KK, 1), datas);
+        nbja += std::max(KK, 1);
       }
     } // end of contraction a for given m1
 
@@ -659,7 +674,7 @@ boost::shared_ptr<PFile<std::complex<double> > >
   for (int nkb = -K_; nkb != maxK1; ++nkb) {
     int nbja = (nkb + K_) * KK * KK;
     for (int nkj = -K_; nkj != maxK1; ++nkj) {
-      intermediate_KKK.get_block(novv * nbja, novv * KK, data);
+      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), data);
       #pragma omp parallel for
       for (int nka = -K_; nka < maxK1; ++nka) {
         std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
@@ -677,8 +692,8 @@ boost::shared_ptr<PFile<std::complex<double> > >
                                                           datas + noovv * (nka + K_), &nsize);
         delete[] conjc2;
       }
-      mo_int->append(noovv * KK, datas);
-      nbja += KK; 
+      mo_int->append(noovv * std::max(KK, 1), datas);
+      nbja += std::max(KK, 1);
     }
   } // end of contraction i
 

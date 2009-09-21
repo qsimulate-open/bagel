@@ -5,8 +5,8 @@ Basis: cartesian
   6-31g
 
 Periodic:
-  Period 5.0
-  K = 5
+  Period 1002.0
+  K = 0
 
 MP2:
 
