@@ -196,8 +196,18 @@ void PairCompFile<T>::calculate_num_int_each() {
   first->set_num_int_each(num_int_each1);
   second->set_num_int_each(num_int_each2);
 
-  std::cout << "  Using " << (data_written1 + data_written2) * 8.0e-9 << " GB hard disk for storing \"" 
-            << jobname_ << "\"" << std::endl << std::endl; 
+  std::cout << "  Using ";
+  const size_t data_written_byte = (data_written1 + data_written2) * sizeof(double);
+  if (data_written_byte > 1.0e9) {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
+  } else if (data_written_byte > 1.0e6) {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
+  } else {
+    std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
+  }
+
+  std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl; 
+  std::cout << std::endl;
   assert(std::max(data_written1, data_written2) < 5.0e9); // 40GB
 };
 
