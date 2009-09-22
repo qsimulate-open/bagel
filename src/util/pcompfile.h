@@ -18,7 +18,7 @@
 #include <src/macros.h>
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/pcoeff.h>
-#include <src/util/pfile.h>
+#include <src/util/pmofile.h>
 #include <src/util/filename.h>
 #include <src/util/cache.h>
 #include <src/util/f77.h>
@@ -87,7 +87,7 @@ class PCompFile {
     const double A() const { return A_; };
 
     // AO-to-MO integral transformation...
-    boost::shared_ptr<PFile<std::complex<double> > > 
+    boost::shared_ptr<PMOFile<std::complex<double> > > 
                 mo_transform(boost::shared_ptr<PCoeff>,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
@@ -415,7 +415,7 @@ void PCompFile<T>::init_schwarz() {
 
 
 template<class T>
-boost::shared_ptr<PFile<std::complex<double> > > 
+boost::shared_ptr<PMOFile<std::complex<double> > > 
   PCompFile<T>::mo_transform(boost::shared_ptr<PCoeff> coeff,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
@@ -455,7 +455,10 @@ boost::shared_ptr<PFile<std::complex<double> > >
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
-  boost::shared_ptr<PFile<std::complex<double> > > mo_int(new PFile<std::complex<double> >(filesize, K_, true));
+  boost::shared_ptr<PMOFile<std::complex<double> > >
+    mo_int(new PMOFile<std::complex<double> >(filesize, K_, 
+                                              istart, ifence, jstart, jfence,
+                                              astart, afence, bstart, bfence, true));
 
   // we are assuming that the two-electron integrals for a unit cell can be 
   // held in core. If that is not the case, this must be rewritten.

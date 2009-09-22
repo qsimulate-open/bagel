@@ -34,6 +34,8 @@ class PFile {
     void clear();
     void reopen_with_inout();
 
+    void sort_inside_blocks();
+
     const std::string filename() const { return filename_; };
     const int K() const { return K_; };
 };
@@ -177,6 +179,7 @@ void PFile<T>::clear() {
     current += cachesize;
   } 
 };
+
 
 #endif
 

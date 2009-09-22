@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <src/slater/slaterbatch.h>
 #include <src/util/paircompfile.h>
+#include <src/util/pmofile.h>
 
 typedef boost::shared_ptr<Atom> RefAtom;
 typedef boost::shared_ptr<PGeometry> RefGeom;
@@ -43,8 +44,9 @@ void PMP2::compute() {
 
   cout << "  === Periodic MP2 calculation ===" << endl << endl;
   // Fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
-  eri_aa_ii_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+  eri_ii_pp_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                              0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
+  eri_ii_pp_->sort_inside_blocks();
 
   // Compute the conventional MP2 contribution
   compute_conv_mp2();
@@ -58,17 +60,27 @@ void PMP2::compute() {
   shared_ptr<PCompFile<SlaterBatch> > yp  = stg_yp->second();
 
   // V intermediate OBS part
-  typedef shared_ptr<PFile<complex<double> > > RefPFile;
-  RefPFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                               nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
-  RefPFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                 0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
+  typedef shared_ptr<PMOFile<complex<double> > > RefPMOFile;
+  RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                 nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
+  yp_ii_ii->sort_inside_blocks();
+  RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                   0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
+  stg_ii_pp->sort_inside_blocks();
+#if 0
+  RefPMOFile stg_times_eri_ii_ii = stg_ii_pp->product(eri_ii_pp_,
+                                                      nfrc_, nocc_, nfrc_, nocc_,
+                                                      0, nbasis_, 0, nbasis_,
+                                                      nfrc_, nocc_, nfrc_, nocc_,
+                                                      0, nbasis_, 0, nbasis_, "F * v (ii/ii)");
+#endif
+
 }
 
 
 void PMP2::compute_conv_mp2() {
   cout << "  Now computing mp2 energy" << endl << endl;
-  const int K = eri_aa_ii_->K();
+  const int K = eri_ii_pp_->K();
   const int maxK1 = max(K, 1);
   const int KK = K + K;
 
@@ -95,18 +107,18 @@ void PMP2::compute_conv_mp2() {
 
         {
           const long tmp2 = kb + K + KK * (kj + K + KK * (ka + K)); 
-          eri_aa_ii_->get_block(noovv_ * nbja, noovv_, workoovv1);
-          eri_aa_ii_->get_block(noovv_ * tmp2, noovv_, workoovv2);
+          eri_ii_pp_->get_block(noovv_ * nbja, noovv_, workoovv1);
+          eri_ii_pp_->get_block(noovv_ * tmp2, noovv_, workoovv2);
         }
 
         #pragma omp parallel for reduction(+:energy) 
         for (int i = nfrc_; i < nocc_; ++i) {
           const int xi = i - nfrc_;
-          for (int a = nocc_; a != nbasis_; ++a) {
-            for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {
+          for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {
+            for (int a = nocc_; a != nbasis_; ++a) {
               for (int b = nocc_; b != nbasis_; ++b) {
-                int cnt1 = b + nbasis_ * (xj + nocc_act_ * (a + nbasis_ * xi));
-                int cnt2 = a + nbasis_ * (xj + nocc_act_ * (b + nbasis_ * xi));
+                int cnt1 = b + nbasis_ * (a + nbasis_ * (xj + nocc_act_ * xi));
+                int cnt2 = a + nbasis_ * (b + nbasis_ * (xj + nocc_act_ * xi));
                 const complex<double> v1 = workoovv1[cnt1];
                 const complex<double> v2 = workoovv2[cnt2];
                 energy += (real(v1 * conj(v1 + v1 - v2))) / (ei[i] + ej[j] - ea[a] - eb[b]);

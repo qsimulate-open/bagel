@@ -20,7 +20,7 @@ class PMP2 {
     const double* eig_;
 
     boost::shared_ptr<PCompFile<ERIBatch> > ao_eri_;
-    boost::shared_ptr<PFile<std::complex<double> > > eri_aa_ii_;
+    boost::shared_ptr<PMOFile<std::complex<double> > > eri_ii_pp_;
     int nbasis_;
     int nfrc_;
     int nocc_act_;
