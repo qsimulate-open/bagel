@@ -73,7 +73,7 @@ PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_
 
 template<class T>
 PFile<T>::~PFile() {
-  unlink(filename_.c_str());
+//unlink(filename_.c_str());
 };
 
 

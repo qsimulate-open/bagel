@@ -61,19 +61,15 @@ void PMP2::compute() {
 
   // V intermediate OBS part
   typedef shared_ptr<PMOFile<complex<double> > > RefPMOFile;
+  typedef shared_ptr<PMODiagFile<complex<double> > > RefPMODiagFile;
   RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                  nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
   yp_ii_ii->sort_inside_blocks();
   RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
-#if 0
-  RefPMOFile stg_times_eri_ii_ii = stg_ii_pp->product(eri_ii_pp_,
-                                                      nfrc_, nocc_, nfrc_, nocc_,
-                                                      0, nbasis_, 0, nbasis_,
-                                                      nfrc_, nocc_, nfrc_, nocc_,
-                                                      0, nbasis_, 0, nbasis_, "F * v (ii/ii)");
-#endif
+
+  RefPMODiagFile stg_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, "F * v (ii/ii)");
 
 }
 

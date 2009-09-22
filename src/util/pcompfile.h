@@ -448,9 +448,9 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
   std::cout << "  Creating " << jobname << "  of size ";
   const size_t filesize_byte = filesize * sizeof(std::complex<double>);
-  if (filesize > 1.0e9) {
+  if (filesize_byte > 1.0e9) {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e9 << " GB" << std::endl;
-  } else if (filesize > 1.0e6) {
+  } else if (filesize_byte > 1.0e6) {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e6 << " MB" << std::endl;
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
