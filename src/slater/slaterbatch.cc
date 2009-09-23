@@ -22,6 +22,8 @@
 using namespace std;
 using namespace boost;
 
+#define GM1_THRESH 1.0e-15
+
 typedef boost::shared_ptr<Shell> RefShell;
 
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa) :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
@@ -326,8 +328,13 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         }
       }
 
-      weights_[ii] = gm1; 
-      roots_[ii] = g0 / gm1;
+      if (gm1 > GM1_THRESH) {
+        weights_[ii] = gm1; 
+        roots_[ii] = g0 / gm1;
+      } else {
+        weights_[ii] = 0.0; 
+        roots_[ii] = 0.0;
+      }
     }
   } else if (rank_ == 2) {
     const double prefac = SQRTPI2 * 0.5;
@@ -374,30 +381,39 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
           g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
         }
       }
-      double x[2];
-      double w[1];
-      x[0] = g0 / gm1;
-      const double sigma11 = g1 - x[0] * g0; 
-      const double sigma12 = g2 - x[0] * g1; 
-      x[1] = sigma12 / sigma11 - x[0]; 
-      w[0] = sigma11 / gm1;
 
-      const double dd = x[0] + x[1];
-      double g = x[0] - x[1];
-      g = ::sqrt(g * g + 4.0 * w[0]);
-      const double s = (dd - g) * 0.5;
-      const double c = (dd + g) * 0.5;
-      const double bb = w[0];
-      const double p = x[0] - s;
-      const double f = x[0] - c;
-      const double lp1 = bb / (p * p + bb);
-      const double lp2 = bb / (f * f + bb);
+      if (gm1 < GM1_THRESH) {
+        const int offset =  ii + ii;
+        roots_[offset] = 0.0;
+        roots_[offset + 1] = 0.0;
+        weights_[offset] = 0.0;
+        weights_[offset + 1] = 0.0;
+      } else {
+        double x[2];
+        double w[1];
+        x[0] = g0 / gm1;
+        const double sigma11 = g1 - x[0] * g0; 
+        const double sigma12 = g2 - x[0] * g1; 
+        x[1] = sigma12 / sigma11 - x[0]; 
+        w[0] = sigma11 / gm1;
 
-      const int offset =  ii + ii;
-      roots_[offset] = s;
-      roots_[offset + 1] = c;
-      weights_[offset] = lp1 * gm1;
-      weights_[offset + 1] = lp2 * gm1;
+        const double dd = x[0] + x[1];
+        double g = x[0] - x[1];
+        g = ::sqrt(g * g + 4.0 * w[0]);
+        const double s = (dd - g) * 0.5;
+        const double c = (dd + g) * 0.5;
+        const double bb = w[0];
+        const double p = x[0] - s;
+        const double f = x[0] - c;
+        const double lp1 = bb / (p * p + bb);
+        const double lp2 = bb / (f * f + bb);
+
+        const int offset =  ii + ii;
+        roots_[offset] = s;
+        roots_[offset + 1] = c;
+        weights_[offset] = lp1 * gm1;
+        weights_[offset + 1] = lp2 * gm1;
+      }
     }
   } else {
     int ps = (int)primsize_; 

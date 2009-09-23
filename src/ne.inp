@@ -1,12 +1,12 @@
 Molecule: C1
-  Atom(Ne,  0.0, 0.0, 0.0),
+  Atom(He,  0.0, 0.0, 0.0),
 
-Basis: cartesian
-  6-31g
+Basis:
+  aug-cc-pVDZ
 
 Periodic:
-  Period 5.0
-  K = 5
+  Period 102.0
+  K = 2
 
 MP2:
   frozen

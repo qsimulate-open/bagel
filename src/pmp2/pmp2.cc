@@ -66,14 +66,20 @@ void PMP2::compute() {
                                                  nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
   yp_ii_ii->sort_inside_blocks();
   RefPMODiagFile yp_ii_ii_diag = yp_ii_ii->reduce_to_diag();
+yp_ii_ii_diag->print();
   RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
 
-  RefPMODiagFile stg_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, "F * v (ii/ii)");
-  RefPMODiagFile V_obs(new PMODiagFile<complex<double> >(*yp_ii_ii_diag - *stg_times_eri_ii_ii)); 
+  RefPMODiagFile stg_dag_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, "F * v (ii/ii)");
+stg_dag_times_eri_ii_ii->print();
+  RefPMODiagFile V_obs(new PMODiagFile<complex<double> >(*yp_ii_ii_diag - *stg_dag_times_eri_ii_ii)); 
 
-  V_obs->print();
+//V_obs->print();
+
+  double en_vt = (V_obs->get_energy_one_amp()).real();
+  // direct contribution to R12 energy
+  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt << endl;
 
 }
 
@@ -115,10 +121,11 @@ void PMP2::compute_conv_mp2() {
         for (int i = nfrc_; i < nocc_; ++i) {
           const int xi = i - nfrc_;
           for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {
+            const int ijoffset = nbasis_ * (xj + nocc_act_ * xi);
             for (int a = nocc_; a != nbasis_; ++a) {
               for (int b = nocc_; b != nbasis_; ++b) {
-                int cnt1 = b + nbasis_ * (a + nbasis_ * (xj + nocc_act_ * xi));
-                int cnt2 = a + nbasis_ * (b + nbasis_ * (xj + nocc_act_ * xi));
+                int cnt1 = b + nbasis_ * (a + ijoffset);
+                int cnt2 = a + nbasis_ * (b + ijoffset);
                 const complex<double> v1 = workoovv1[cnt1];
                 const complex<double> v2 = workoovv2[cnt2];
                 energy += (real(v1 * conj(v1 + v1 - v2))) / (ei[i] + ej[j] - ea[a] - eb[b]);
