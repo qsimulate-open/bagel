@@ -9,7 +9,8 @@
 
 #include <src/util/pfile.h>
 #include <src/pscf/f77.h>
-#include <src/util/pmodiagfile.h>
+
+#define GEMINAL_EXP 1.5
 
 template<class T>
 class PMOFile : public PFile<T> {
