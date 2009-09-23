@@ -30,7 +30,7 @@ class PFile {
     void append(const long, const T*);
     void add_block(const long, const long, const T*);
     void put_block(const long, const long, const T*);
-    void get_block(const long, const long, T*);
+    void get_block(const long, const long, T*) const;
     void clear();
     void reopen_with_inout();
 
@@ -73,7 +73,7 @@ PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_
 
 template<class T>
 PFile<T>::~PFile() {
-//unlink(filename_.c_str());
+  unlink(filename_.c_str());
 };
 
 
@@ -127,7 +127,7 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
 
 
 template<class T>
-void PFile<T>::get_block(const long position, const long length, T* data) {
+void PFile<T>::get_block(const long position, const long length, T* data) const {
   long remaining = length;
   long current = 0L;
 

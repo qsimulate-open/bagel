@@ -65,11 +65,15 @@ void PMP2::compute() {
   RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                  nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
   yp_ii_ii->sort_inside_blocks();
+  RefPMODiagFile yp_ii_ii_diag = yp_ii_ii->reduce_to_diag();
   RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
 
   RefPMODiagFile stg_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, "F * v (ii/ii)");
+  RefPMODiagFile V_obs(new PMODiagFile<complex<double> >(*yp_ii_ii_diag - *stg_times_eri_ii_ii)); 
+
+  V_obs->print();
 
 }
 
