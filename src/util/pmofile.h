@@ -31,9 +31,16 @@ class PMOFile : public PFile<T> {
     ~PMOFile(); 
 
     void sort_inside_blocks();
+    PMOFile<T> operator+(const PMOFile<T>&) const;
+    PMOFile<T> operator-(const PMOFile<T>&) const;
 
-    boost::shared_ptr<PMODiagFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
-    boost::shared_ptr<PMODiagFile<T> > reduce_to_diag();
+    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >,
+                                            const int, const int,
+                                            const int, const int, std::string);
+
+    void print() const;
+    void rprint() const;
+    T get_energy_one_amp() const;
 };
 
 
@@ -96,90 +103,69 @@ void PMOFile<T>::sort_inside_blocks() {
 
 
 template<class T>
-boost::shared_ptr<PMODiagFile<T> > PMOFile<T>::reduce_to_diag() {
-  // should be used for square matrices only
-  assert(istart_ == astart_ && ifence_ == afence_ && jstart_ == bstart_ && jfence_ == bfence_ 
-                                                  && istart_ == bstart_ && ifence_ == bfence_);
-
-  const int k = this->K_;
-  const int KKK8 = std::max(k * k * k * 8, 1);
-  assert(this->filesize_ % KKK8 == 0);
-  const size_t blocksize = this->filesize_ / KKK8;
-
-  const int isize = ifence_ - istart_;
-  const int jsize = jfence_ - jstart_;
-  const int ijsize = isize * jsize;
-  const size_t out_blocksize = ijsize * ijsize;
-  assert(blocksize == out_blocksize);
-
-  T* buffer = new T[blocksize];
-
-  const size_t out_filesize = std::max(k * k * 4, 1) * out_blocksize; 
-  boost::shared_ptr<PMODiagFile<T> > out(new PMODiagFile<T>(out_filesize, k, istart_, ifence_, jstart_, jfence_, false));
-
-  const int kk = std::max(k + k, 1);
-  for (int ki = -k, xki = 0; ki != std::max(k, 1); ++ki, ++xki) {
-    for (int kj = -k, xkj = 0; kj != std::max(k, 1); ++kj, ++xkj) {
-      const size_t read_block = xki + kk * (xkj + kk * xki);
-      const size_t write_block = xkj + kk * xki;
-      this->get_block(read_block * blocksize, blocksize, buffer);
-      out->put_block(write_block * blocksize, blocksize, buffer);
-    }
-  }
-
-  delete[] buffer;
-
-  return out;
-};
-
-
-template<class T>
-boost::shared_ptr<PMODiagFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other, std::string jobname) {
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other,
+                                                    const int mstart, const int mfence,
+                                                    const int nstart, const int nfence, std::string jobname) {
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
   const int KKK8 = std::max(k * k * k * 8, 1);
   assert(this->filesize_ % KKK8 == 0);
-  const size_t blocksize = this->filesize_ / KKK8;
+  const size_t blocksize1 = this->filesize_ / KKK8;
+  const size_t blocksize2 = other->filesize_ / KKK8;
 
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
+  T* buffer1 = new T[blocksize1];
+  T* buffer2 = new T[blocksize2];
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
+  const int msize = mfence - mstart;
+  const int nsize = nfence - nstart;
   const int ijsize = isize * jsize;
   const int absize = asize * bsize;
-  assert(ijsize * absize == blocksize);
+  const int mnsize = msize * nsize;
 
-  T* target = new T[ijsize * ijsize];
+  assert(blocksize1 == ijsize * absize && blocksize2 == mnsize * absize);
 
-  const size_t out_blocksize = ijsize * ijsize;
-  const size_t out_filesize = std::max(k * k * 4, 1) * out_blocksize; 
-  boost::shared_ptr<PMODiagFile<T> > out(new PMODiagFile<T>(out_filesize, k, istart_, ifence_, jstart_, jfence_, false));
+  T* target = new T[ijsize * mnsize];
+
+  const size_t out_blocksize = ijsize * mnsize;
+  const size_t out_filesize = KKK8 * out_blocksize; 
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(out_filesize, k, istart_, ifence_, jstart_, jfence_,
+                                                                     mstart, mfence, nstart, nfence, false));
+
+  const int k2 = std::max(k + k, 1);
 
   size_t current = 0lu; 
-  for (int kb = -k; kb < std::max(k, 1); ++kb) { 
-    for (int kj = -k; kj < std::max(k, 1); ++kj) { 
-      for (int ka = -k; ka < std::max(k, 1); ++ka, current += blocksize) { 
-        int ki = ka + kb - kj; 
-        if (ki < - k) ki += k * 2; 
-        else if (ki >=  k) ki -= k * 2; 
+  for (int kj = -k; kj < std::max(k, 1); ++kj) { 
+    for (int ki = -k; ki < std::max(k, 1); ++ki) {
+      for (int kn = -k; kn < std::max(k, 1); ++kn) { 
+        for (int km = -k; km < std::max(k, 1); ++km) {
+          if ((km + kn - ki - kj) % k2 != 0) continue; 
 
-        this->get_block(current, blocksize, buffer1);
-        other->get_block(current, blocksize, buffer2);
+          // block index is in Physicists' notation!!!
+          const T zero = 0.0;
+          fill(target, target + ijsize * mnsize, zero);
 
-        const T one = 1.0;
-        const T zero = 0.0;
+          for (int ka = -k; ka < std::max(k, 1); ++ka) {
+            for (int kb = -k; kb < std::max(k, 1); ++kb) {
+              if ((ka + kb - ki - kj) % k2 != 0) continue; 
 
-        // TODO how to deal with this???
-        // assuming complex<double>....
-        zgemm_("C", "N", &ijsize, &ijsize, &absize, &one, buffer1, &absize, buffer2, &absize, &zero, target, &ijsize);
+              this->get_block(blocksize1 * (kb + k + k2 * (ki + k + k2 * (ka + k))), blocksize1, buffer1);
+              other->get_block(blocksize2 * (kb + k + k2 * (km + k + k2 * (ka + k))), blocksize2, buffer2);
 
-        const size_t kij = (ki + k) + (kj + k) * std::max(k + k, 1);
-        out->add_block(kij * out_blocksize, out_blocksize, target);
+              const T one = 1.0;
+              // TODO how to deal with this???
+              // assuming complex<double>....
+              zgemm_("C", "N", &ijsize, &mnsize, &absize, &one, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
+            }
+          }
 
+          const size_t kinj = ki + k + k2 * (kn + k + k2 * (kj + k));
+          out->put_block(kinj * out_blocksize, out_blocksize, target);
+        }
       }
     }
   }
@@ -194,6 +180,210 @@ boost::shared_ptr<PMODiagFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFil
   return out;
 };
 
+
+template<class T>
+PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
+  const int k = this->K_;
+  const size_t fsize = this->filesize_;
+  const int kkk8 = std::max(k * k * k * 8, 1);
+  const size_t blocksize = fsize / kkk8;
+  T* buffer1 = new T[blocksize];
+  T* buffer2 = new T[blocksize];
+  assert(fsize % kkk8 == 0);
+
+  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+
+  size_t current = 0lu;
+  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1); 
+    other.get_block(current, blocksize, buffer2);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize; ++i) buffer1[i] -= buffer2[i];
+
+    out.put_block(current, blocksize, buffer1); 
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return out;
+};
+
+
+template<class T>
+PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
+  const int k = this->K_;
+  const size_t fsize = this->filesize_;
+  const int kkk8 = std::max(k * k * k * 8, 1);
+  const size_t blocksize = fsize / kkk8;
+  T* buffer1 = new T[blocksize];
+  T* buffer2 = new T[blocksize];
+  assert(fsize % kkk8 == 0);
+
+  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+
+  size_t current = 0lu;
+  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1); 
+    other.get_block(current, blocksize, buffer2);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize; ++i) buffer1[i] += buffer2[i];
+
+    out.put_block(current, blocksize, buffer1); 
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return out;
+};
+
+
+template<class T>
+void PMOFile<T>::print() const {
+  const int isize = ifence_ - istart_;  
+  const int jsize = jfence_ - jstart_;  
+  const size_t ijsize = isize * jsize;
+  const int k = this->K_;
+  T* buffer = new T[ijsize * ijsize];
+
+  // I will print out in ne case...
+  if (isize * jsize <= 25) {
+    int iall = 0;
+    for (int ki = -k; ki != std::max(k, 1); ++ki) {
+      for (int kj = -k; kj != std::max(k, 1); ++kj) {
+        for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
+          std::cout << "  block " << ki << " : " << kj << " : " << ka << " : " << ki + kj - ka << std::endl;
+          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
+          const T* cbuf = buffer;
+          for (int i = 0; i != ijsize; ++i) {
+            for (int j = 0; j != ijsize; ++j, ++cbuf) {
+              std::cout << std::setprecision(3) << *cbuf;
+            }
+            std::cout << std::endl;
+          }
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+  delete[] buffer;
+};
+
+
+template<class T>
+void PMOFile<T>::rprint() const {
+  const int isize = ifence_ - istart_;  
+  const int jsize = jfence_ - jstart_;  
+  const size_t ijsize = isize * jsize;
+  const int k = this->K_;
+  T* buffer = new T[ijsize * ijsize];
+
+  // I will print out in Ne or H2O cases...
+  // singlet
+  if (isize * jsize <= 25) {
+    int iall = 0;
+    for (int ki = -k; ki != std::max(k, 1); ++ki) {
+      for (int kj = -k; kj != std::max(k, 1); ++kj) {
+        for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
+          std::cout << "  block " << ki << " : " << kj << " : " << ka << std::endl;
+          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
+          const T* cbuf = buffer;
+          for (int i = 0; i != ijsize; ++i) {
+            for (int j = 0; j != ijsize; ++j, ++cbuf) {
+              std::cout << std::setprecision(5) << std::setw(9) << (*cbuf).real();
+            }
+            std::cout << std::endl;
+          }
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+  // triplet
+  if (isize * jsize <= 25) {
+    int iall = 0;
+    for (int ki = -k; ki != std::max(k, 1); ++ki) {
+      for (int kj = -k; kj != std::max(k, 1); ++kj) {
+        for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
+          std::cout << "  block " << ki << " : " << kj << " : " << ka << std::endl;
+          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
+          for (int i1 = 0; i1 < isize; ++i1) {
+            for (int i2 = 0; i2 < i1; ++i2) {
+              const int xi1 = i2 + i1 * isize;
+              const int xi2 = i1 + i2 * isize;
+              for (int j1 = 0; j1 < jsize; ++j1) {
+                for (int j2 = 0; j2 < j1; ++j2) {
+                  const int xj = j2 + j1 * jsize;
+                  std::cout << std::setprecision(5) << std::setw(9) << (buffer[xi1 * ijsize + xj] - buffer[xi2 * ijsize + xj]).real();
+                }
+              }
+              std::cout << std::endl;
+            }
+          }
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+  delete[] buffer;
+};
+
+
+template<class T>
+T PMOFile<T>::get_energy_one_amp() const {
+  const int isize = ifence_ - istart_;  
+  const int jsize = jfence_ - jstart_;  
+  const size_t ijsize = isize * jsize;
+  assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
+  const int k = this->K_;
+  T* buffer = new T[ijsize * ijsize];
+  T* coeff  = new T[ijsize * ijsize];
+
+  T* c_coeff = coeff;
+  // inefficient code
+  const double geminal_exp = GEMINAL_EXP;
+  for (int i1 = 0; i1 != isize; ++i1) {
+    for (int i2 = 0; i2 != isize; ++i2) {
+      for (int j1 = 0; j1 != isize; ++j1) {
+        for (int j2 = 0; j2 != isize; ++j2, ++c_coeff) {
+          if (i1 == j1 && i2 == j2 && i1 == i2) *c_coeff = 0.5 / (-geminal_exp);
+          else if (i1 == j1 && i2 == j2) *c_coeff = 0.375 / (-geminal_exp);
+          else if (i1 == j2 && i2 == j1) *c_coeff = 0.125 / (-geminal_exp);
+          else *c_coeff = 0.0;
+        }
+      }
+    }
+  }
+
+  int iblock = 0;
+  T en = 0.0;
+  for (int ki = -k; ki != std::max(k, 1); ++ki) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
+        this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+//    #pragma omp parallel for reduction(+: en) schedule(dynamic, 100)
+        for (int i1 = 0; i1 != isize; ++i1) {
+          for (int i2 = 0; i2 != isize; ++i2) {
+            const int xi1 = i2 + i1 * isize;
+            const int xi2 = i1 + i2 * isize;
+            for (int j1 = 0; j1 != isize; ++j1) {
+              for (int j2 = 0; j2 != isize; ++j2) {
+                const int xj = j2 + j1 * isize;
+                en += buffer[xi1 * ijsize + xj] * (coeff[xi1 * ijsize + xj] * 2.0 - coeff[xi2 * ijsize + xj]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  delete[] buffer;
+  delete[] coeff;
+
+  return en;
+};
 
 #endif
 

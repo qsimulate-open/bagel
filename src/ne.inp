@@ -1,12 +1,12 @@
 Molecule: C1
-  Atom(He,  0.0, 0.0, 0.0),
+  Atom(Ne,  0.0, 0.0, 0.0),
 
 Basis:
   aug-cc-pVDZ
 
 Periodic:
   Period 102.0
-  K = 2
+  K = 0
 
 MP2:
   frozen

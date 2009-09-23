@@ -61,21 +61,18 @@ void PMP2::compute() {
 
   // V intermediate OBS part
   typedef shared_ptr<PMOFile<complex<double> > > RefPMOFile;
-  typedef shared_ptr<PMODiagFile<complex<double> > > RefPMODiagFile;
   RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                  nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
   yp_ii_ii->sort_inside_blocks();
-  RefPMODiagFile yp_ii_ii_diag = yp_ii_ii->reduce_to_diag();
-yp_ii_ii_diag->print();
   RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
 
-  RefPMODiagFile stg_dag_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, "F * v (ii/ii)");
-stg_dag_times_eri_ii_ii->print();
-  RefPMODiagFile V_obs(new PMODiagFile<complex<double> >(*yp_ii_ii_diag - *stg_dag_times_eri_ii_ii)); 
+  RefPMOFile stg_dag_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_,
+                                                                       nfrc_, nocc_, "F * v (ii/ii)");
+  RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *stg_dag_times_eri_ii_ii)); 
 
-//V_obs->print();
+  V_obs->rprint();
 
   double en_vt = (V_obs->get_energy_one_amp()).real();
   // direct contribution to R12 energy
