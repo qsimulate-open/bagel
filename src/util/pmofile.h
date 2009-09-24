@@ -158,9 +158,10 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
               other->get_block(blocksize2 * (kb + k + k2 * (km + k + k2 * (ka + k))), blocksize2, buffer2);
 
               const T one = 1.0;
+              const T prefac = one / static_cast<T>(k2);
               // TODO how to deal with this???
               // assuming complex<double>....
-              zgemm_("C", "N", &ijsize, &mnsize, &absize, &one, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
+              zgemm_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
             }
           }
 
@@ -363,8 +364,7 @@ T PMOFile<T>::get_energy_one_amp() const {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
       for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
         this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
-//    #pragma omp parallel for reduction(+: en) schedule(dynamic, 100)
-        for (int i1 = 0; i1 != isize; ++i1) {
+        for (int i1 = 0; i1 < isize; ++i1) {
           for (int i2 = 0; i2 != isize; ++i2) {
             const int xi1 = i2 + i1 * isize;
             const int xi2 = i1 + i2 * isize;
