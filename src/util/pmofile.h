@@ -165,7 +165,7 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
             }
           }
 
-          const size_t kinj = ki + k + k2 * (kn + k + k2 * (kj + k));
+          const size_t kinj = kj + k + k2 * (km + k + k2 * (ki + k));
           out->put_block(kinj * out_blocksize, out_blocksize, target);
         }
       }
@@ -247,6 +247,7 @@ void PMOFile<T>::print() const {
   const int jsize = jfence_ - jstart_;  
   const size_t ijsize = isize * jsize;
   const int k = this->K_;
+  const int kk = std::max(k + k, 1);
   T* buffer = new T[ijsize * ijsize];
 
   // I will print out in ne case...
@@ -255,12 +256,12 @@ void PMOFile<T>::print() const {
     for (int ki = -k; ki != std::max(k, 1); ++ki) {
       for (int kj = -k; kj != std::max(k, 1); ++kj) {
         for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
-          std::cout << "  block " << ki << " : " << kj << " : " << ka << " : " << ki + kj - ka << std::endl;
+          std::cout << std::endl;
           this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
             for (int j = 0; j != ijsize; ++j, ++cbuf) {
-              std::cout << std::setprecision(3) << *cbuf;
+              std::cout << std::setprecision(3) << std::setw(15) << *cbuf;
             }
             std::cout << std::endl;
           }
@@ -296,32 +297,6 @@ void PMOFile<T>::rprint() const {
               std::cout << std::setprecision(5) << std::setw(9) << (*cbuf).real();
             }
             std::cout << std::endl;
-          }
-          std::cout << std::endl;
-        }
-      }
-    }
-  }
-  // triplet
-  if (isize * jsize <= 25) {
-    int iall = 0;
-    for (int ki = -k; ki != std::max(k, 1); ++ki) {
-      for (int kj = -k; kj != std::max(k, 1); ++kj) {
-        for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
-          std::cout << "  block " << ki << " : " << kj << " : " << ka << std::endl;
-          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
-          for (int i1 = 0; i1 < isize; ++i1) {
-            for (int i2 = 0; i2 < i1; ++i2) {
-              const int xi1 = i2 + i1 * isize;
-              const int xi2 = i1 + i2 * isize;
-              for (int j1 = 0; j1 < jsize; ++j1) {
-                for (int j2 = 0; j2 < j1; ++j2) {
-                  const int xj = j2 + j1 * jsize;
-                  std::cout << std::setprecision(5) << std::setw(9) << (buffer[xi1 * ijsize + xj] - buffer[xi2 * ijsize + xj]).real();
-                }
-              }
-              std::cout << std::endl;
-            }
           }
           std::cout << std::endl;
         }
@@ -383,6 +358,7 @@ T PMOFile<T>::get_energy_one_amp() const {
   delete[] buffer;
   delete[] coeff;
 
+  en /= static_cast<T>(std::max(k * k * k * 8, 1));
   return en;
 };
 
