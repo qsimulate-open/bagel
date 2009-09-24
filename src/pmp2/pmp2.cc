@@ -72,7 +72,7 @@ void PMP2::compute() {
                                                                        nfrc_, nocc_, "F * v (ii/ii)");
   RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *stg_dag_times_eri_ii_ii)); 
 
-  V_obs->print();
+//V_obs->print();
 //yp_ii_ii->print();
 
   double en_vt = (V_obs->get_energy_one_amp()).real();

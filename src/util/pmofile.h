@@ -315,39 +315,49 @@ T PMOFile<T>::get_energy_one_amp() const {
   assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
   const int k = this->K_;
   T* buffer = new T[ijsize * ijsize];
-  T* coeff  = new T[ijsize * ijsize];
 
-  T* c_coeff = coeff;
-  // inefficient code
-  const double geminal_exp = GEMINAL_EXP;
-  for (int i1 = 0; i1 != isize; ++i1) {
-    for (int i2 = 0; i2 != isize; ++i2) {
-      for (int j1 = 0; j1 != isize; ++j1) {
-        for (int j2 = 0; j2 != isize; ++j2, ++c_coeff) {
-          if (i1 == j1 && i2 == j2 && i1 == i2) *c_coeff = 0.5 / (-geminal_exp);
-          else if (i1 == j1 && i2 == j2) *c_coeff = 0.375 / (-geminal_exp);
-          else if (i1 == j2 && i2 == j1) *c_coeff = 0.125 / (-geminal_exp);
-          else *c_coeff = 0.0;
-        }
-      }
-    }
-  }
+  const double ciiii = - 0.5 / GEMINAL_EXP;
+  const double cijij = - 0.375 / GEMINAL_EXP;
+  const double cijji = - 0.125 / GEMINAL_EXP;
 
   int iblock = 0;
   T en = 0.0;
-  for (int ki = -k; ki != std::max(k, 1); ++ki) {
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
       for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
-        this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
-        for (int i1 = 0; i1 < isize; ++i1) {
-          for (int i2 = 0; i2 != isize; ++i2) {
-            const int xi1 = i2 + i1 * isize;
-            const int xi2 = i1 + i2 * isize;
-            for (int j1 = 0; j1 != isize; ++j1) {
-              for (int j2 = 0; j2 != isize; ++j2) {
-                const int xj = j2 + j1 * isize;
-                en += buffer[xi1 * ijsize + xj] * (coeff[xi1 * ijsize + xj] * 2.0 - coeff[xi2 * ijsize + xj]);
+        if (kb == kj && kb == ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              if (i1 == i2) {
+                const int xi = i2 + i1 * isize;
+                const int xj = i2 + i1 * isize;
+                en += buffer[xi * ijsize + xj] * ciiii;
+              } else {
+                const int xi = i2 + i1 * isize;
+                const int xj1 = i2 + i1 * isize;
+                const int xj2 = i1 + i2 * isize;
+                en += buffer[xi * ijsize + xj1] * (2 * cijij - cijji);
+                en += buffer[xi * ijsize + xj2] * (2 * cijji - cijij);
               }
+            }
+          }
+        } else if (kb == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i2 + i1 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijij - cijji);
+            }
+          }
+        } else if (ka == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i1 + i2 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijji - cijij);
             }
           }
         }
@@ -356,9 +366,8 @@ T PMOFile<T>::get_energy_one_amp() const {
   }
 
   delete[] buffer;
-  delete[] coeff;
 
-  en /= static_cast<T>(std::max(k * k * k * 8, 1));
+  en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
 

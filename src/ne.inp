@@ -1,12 +1,13 @@
 Molecule: C1
-  Atom(Be,  0.0, 0.0, 0.0),
+  Atom(Ne,  0.0, 0.0, 0.0),
 
 Basis:
   cc-pVDZ
 
 Periodic:
-  Period 30.0
-  K = 0
+  Period 5.0
+  K = 5
 
 MP2:
+  frozen
 
