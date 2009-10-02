@@ -11,6 +11,7 @@
 #include <src/slater/slaterbatch.h>
 #include <src/util/paircompfile.h>
 #include <src/util/pmofile.h>
+#include <iostream>
 
 typedef boost::shared_ptr<Atom> RefAtom;
 typedef boost::shared_ptr<PGeometry> RefGeom;
@@ -29,6 +30,11 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const double* eg, const shared_p
   nbasis_ = geom_->nbasis();
   nvir_ = nbasis_ - nocc_;
   noovv_ = nocc_act_ * nocc_act_ * nbasis_ * nbasis_;
+
+  assert(geom_->ncabs() != 0);
+// just to check
+//const vector<RefAtom> tmp = geom_->cabs_atoms();
+//for (vector<RefAtom>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) (*iter)->print_basis();
 
 }
 
@@ -75,9 +81,11 @@ void PMP2::compute() {
 //V_obs->print();
 //yp_ii_ii->print();
 
-  double en_vt = (V_obs->get_energy_one_amp()).real();
+  complex<double> en_vt = V_obs->get_energy_one_amp();
   // direct contribution to R12 energy
-  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt << endl;
+  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl;
+
+  cout << en_vt << endl; 
 
 }
 

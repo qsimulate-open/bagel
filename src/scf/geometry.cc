@@ -69,11 +69,19 @@ Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s)
       const bool found = regex_search(start, end, what, reg);
       const string tmpstr(what[1].first, what[1].second);
       basisfile_ = tmpstr; 
+
+      start = what[0].second;
+      if(regex_search(start, end, what, reg)) {
+        const string cabsstr(what[1].first, what[1].second);
+        cabsfile_ = cabsstr;
+      }
+      
       break;
     }
   }
 
   assert(!basisfile_.empty());
+  ifs.clear();
   ifs.seekg(0);
 
   AtomMap tmp;
@@ -81,6 +89,7 @@ Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s)
 
   // read geometry
   nbasis_ = 0;
+  ncabs_ = 0;
   nocc_ = 0;
   nfrc_ = 0;
 
@@ -119,27 +128,50 @@ Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s)
           positions.push_back(lexical_cast<double>(y_str));
           positions.push_back(lexical_cast<double>(z_str));
 
-          RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
+          {
+            RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
 
-          map<string, int>::const_iterator aiter = amap.find(aname);
-          assert(aiter != amap.end());
-          nocc_ += aiter->second;
-          if (aiter->second > 2 && frozen) nfrc_ += 2;
+            map<string, int>::const_iterator aiter = amap.find(aname);
+            assert(aiter != amap.end());
+            nocc_ += aiter->second;
+            if (aiter->second > 2 && frozen) nfrc_ += 2;
 
-          const vector<RefShell> tmp = catom->shells(); 
-          int cc = 0;
-          vector<int> coffsets;
-          for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-            coffsets.push_back(nbasis_ + cc);
-            const int ang = (*iter)->angular_number();
-            const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
-            cc += angsize * (*iter)->num_contracted();
+            const vector<RefShell> tmp = catom->shells(); 
+            int cc = 0;
+            vector<int> coffsets;
+            for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
+              coffsets.push_back(nbasis_ + cc);
+              const int ang = (*iter)->angular_number();
+              const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
+              cc += angsize * (*iter)->num_contracted();
+            }
+
+            lmax_ = max(lmax_, catom->lmax());
+            nbasis_ += catom->nbasis();
+            offsets_.push_back(coffsets);
+            atoms_.push_back(catom); 
           }
+          if (!cabsfile_.empty()){
+            RefAtom catom(new Atom(spherical_, aname, positions, cabsfile_));
 
-          lmax_ = max(lmax_, catom->lmax());
-          nbasis_ += catom->nbasis();
-          offsets_.push_back(coffsets);
-          atoms_.push_back(catom); 
+            map<string, int>::const_iterator aiter = amap.find(aname);
+            assert(aiter != amap.end());
+
+            const vector<RefShell> tmp = catom->shells(); 
+            int cc = 0;
+            vector<int> coffsets;
+            for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
+              coffsets.push_back(ncabs_ + cc);
+              const int ang = (*iter)->angular_number();
+              const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
+              cc += angsize * (*iter)->num_contracted();
+            }
+
+            cabs_lmax_ = max(lmax_, catom->lmax());
+            ncabs_ += catom->nbasis();
+            cabs_offsets_.push_back(coffsets);
+            cabs_atoms_.push_back(catom); 
+          }
         } else {
           break; 
         }

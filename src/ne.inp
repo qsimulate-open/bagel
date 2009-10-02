@@ -2,7 +2,7 @@ Molecule: C1
   Atom(Ne,  0.0, 0.0, 0.0),
 
 Basis:
-  cc-pVDZ
+  cc-pVDZ 6-31g 
 
 Periodic:
   Period 5.0
