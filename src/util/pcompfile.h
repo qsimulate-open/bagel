@@ -233,7 +233,7 @@ void PCompFile<T>::calculate_num_int_each() {
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
   const int size = basis_.size(); // number of shells
 
-  #pragma omp parallel for
+  #pragma omp parallel for reduction(+:data_written)
   for (int m1 = - S_; m1 <= S_; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
     size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <src/slater/slaterbatch.h>
 #include <src/util/paircompfile.h>
+#include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>
 #include <iostream>
 
@@ -85,7 +86,8 @@ void PMP2::compute() {
   // direct contribution to R12 energy
   cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl;
 
-  cout << en_vt << endl; 
+  // CABS integrals
+  shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
 
 }
 

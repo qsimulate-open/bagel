@@ -119,8 +119,6 @@ void PairCompFile<T>::calculate_num_int_each() {
   const int L = files_.first->L();
   std::vector<size_t> num_int_each1((S + S + 1) * (S + S + 1) * (L + 1));
   std::vector<size_t> num_int_each2((S + S + 1) * (S + S + 1) * (L + 1));
-  std::vector<size_t>::iterator niter1 = num_int_each1.begin();
-  std::vector<size_t>::iterator niter2 = num_int_each2.begin();
 
   size_t data_written1 = 0ul;
   size_t data_written2 = 0ul;
@@ -130,12 +128,14 @@ void PairCompFile<T>::calculate_num_int_each() {
   boost::shared_ptr<PCompFile<T> > first = files_.first;
   boost::shared_ptr<PCompFile<T> > second = files_.second;
 
+  #pragma omp parallel for reduction(+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
     const double A = first->A();
     const double m1disp[3] = {0.0, 0.0, m1 * A}; 
+    size_t offset = (m1 + S) * (L + 1) * (S * 2 + 1);
     for (int m2 = 0; m2 <= L; ++m2) { // use bra-ket symmetry!!!
       const double m2disp[3] = {0.0, 0.0, m2 * A}; 
-      for (int m3 = m2 - S; m3 <= m2 + S; ++m3, ++niter1, ++niter2) {
+      for (int m3 = m2 - S; m3 <= m2 + S; ++m3, ++offset) {
         const double m3disp[3] = {0.0, 0.0, m3 * A}; 
         size_t thisblock1 = 0ul; 
         size_t thisblock2 = 0ul; 
@@ -178,8 +178,8 @@ void PairCompFile<T>::calculate_num_int_each() {
             }
           }
         }
-        *niter1 = thisblock1;
-        *niter2 = thisblock2;
+        num_int_each1[offset] = thisblock1;
+        num_int_each2[offset] = thisblock2;
       }
     }
   }
