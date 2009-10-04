@@ -353,7 +353,8 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
 template<class T>
 void PCompFile<T>::store_integrals() {
-  const size_t cachesize = std::max(100000000lu, max_num_int_);
+  const size_t cachesize_max = 100000000lu;
+  const size_t cachesize = std::max(cachesize_max, max_num_int_);
   double* dcache = new double[cachesize];
   size_t remaining = cachesize;
   size_t current = 0lu;
@@ -411,7 +412,7 @@ void PCompFile<T>::init_schwarz() {
       }
     }
   }
-}
+};
 
 
 template<class T>

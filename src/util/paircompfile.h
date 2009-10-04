@@ -79,7 +79,7 @@ void PairCompFile<T>::init_schwarz() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 0.0, param_, true);
+        T batch(input, 1.0e100, param_, true);
         batch.compute();
         const double* data1 = batch.data();
         const double* data2 = batch.data2();
@@ -106,7 +106,7 @@ void PairCompFile<T>::init_schwarz() {
   std::cout << std::scientific << files_.first->schwarz(0) << std::endl;
 #endif
    
-}
+};
 
 
 template<class T>
@@ -256,7 +256,7 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           const bool skip_schwarz1 = integral_bound1 < SCHWARZ_THRESH;
           const bool skip_schwarz2 = integral_bound2 < SCHWARZ_THRESH;
 
-          const bool skip_schwarz = std::min(integral_bound1, integral_bound2) < SCHWARZ_THRESH;
+          const bool skip_schwarz = std::max(integral_bound1, integral_bound2) < SCHWARZ_THRESH;
           assert(integral_bound1 >= 0.0 && integral_bound2 >= 0.0 && SCHWARZ_THRESH >= 0);
           if (skip_schwarz) continue;
 
@@ -266,7 +266,14 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           input.push_back(b1);
           input.push_back(b0);
 
-          if (!skip_schwarz1 && !skip_schwarz2) {
+          if (!skip_schwarz1 && skip_schwarz2) {
+            T batch(input, 1.0, param_, false);
+            batch.compute();
+            const double* bdata1 = batch.data();
+            size_t current_size = b0size * b1size * b2size * b3size;
+            ::memcpy(out1 + data_acc1, bdata1, current_size * sizeof(double));
+            data_acc1 += current_size; 
+          } else {
             T batch(input, 1.0, param_, true);
             batch.compute();
             const double* bdata1 = batch.data();
@@ -276,16 +283,6 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
             ::memcpy(out2 + data_acc2, bdata2, current_size * sizeof(double));
             data_acc1 += current_size; 
             data_acc2 += current_size; 
-          } else if (!skip_schwarz1 && skip_schwarz2) {
-            T batch(input, 1.0, param_, false);
-            batch.compute();
-            const double* bdata1 = batch.data();
-            size_t current_size = b0size * b1size * b2size * b3size;
-            ::memcpy(out1 + data_acc1, bdata1, current_size * sizeof(double));
-            data_acc1 += current_size; 
-          } else {
-            // Yukawa is expected to be always smaller than Slater funciton...
-            assert(false);
           }
 
         }
