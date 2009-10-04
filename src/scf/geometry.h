@@ -66,6 +66,7 @@ class Geometry {
     const std::vector<std::vector<int> > offsets() const { return offsets_; };
     const std::vector<std::vector<int> > cabs_offsets() const { return cabs_offsets_; };
     const std::vector<int> offset(const unsigned int i) const { return offsets_.at(i); };
+    const std::vector<int> cabs_offset(const unsigned int i) const { return cabs_offsets_.at(i); };
 
     void print_atoms() const;
     boost::shared_ptr<Petite> plist() { return plist_; }; 

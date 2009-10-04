@@ -70,7 +70,7 @@ class PCompFile {
     void init_schwarz();
     std::vector<size_t> num_int_each() const { return num_int_each_; };
     const size_t num_int_each(const int i) const { return num_int_each_[i]; };
-    void calculate_num_int_each();
+    virtual void calculate_num_int_each();
     void store_integrals();
 
     // or import integrals computed externally
