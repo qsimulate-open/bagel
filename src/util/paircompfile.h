@@ -227,12 +227,41 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
   const double m3disp[3] = {0.0, 0.0, m3 * A}; 
 
   const int size = first->basissize(); // number of shells
-  size_t data_acc1 = 0lu;
-  size_t data_acc2 = 0lu;
+  int* blocks1 = new int[size * size * size * size + 1];
+  int* blocks2 = new int[size * size * size * size + 1];
+  blocks1[0] = 0;
+  blocks2[0] = 0;
+  int iall = 0;
   for (int i0 = 0; i0 != size; ++i0) {
+    const int b0size = first->basis(i0)->nbasis();
+    for (int i1 = 0; i1 != size; ++i1) {
+      const int b1size = first->basis(i1)->nbasis();
+      for (int i2 = 0; i2 != size; ++i2) {
+        const int b2size = first->basis(i2)->nbasis();
+        for (int i3 = 0; i3 != size; ++i3, ++iall) {
+          const int b3size = first->basis(i3)->nbasis();
+          {
+            const double integral_bound = first->schwarz((m1 + K) * size * size + i0 * size + i1)
+                                        * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
+            const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+            blocks1[iall + 1] = blocks1[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+          }
+          {
+            const double integral_bound = second->schwarz((m1 + K) * size * size + i0 * size + i1)
+                                        * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
+            const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+            blocks2[iall + 1] = blocks2[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+          }
+        }
+      }
+    }
+  }
+  #pragma omp parallel for
+  for (int i0 = 0; i0 < size; ++i0) {
     const RefShell b0 = first->basis(i0); // b0 is the center cell
     const int b0offset_ = first->offset(i0); 
     const int b0size = b0->nbasis();
+    int offset = i0 * size * size * size; 
 
     for (int i1 = 0; i1 != size; ++i1) {
       const RefShell b1 = first->basis(i1)->move_atom(m1disp); 
@@ -244,21 +273,14 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
         const int b2offset_ = first->offset(i2);
         const int b2size = b2->nbasis();
 
-        for (int i3 = 0; i3 != size; ++i3) {
+        for (int i3 = 0; i3 != size; ++i3, ++offset) {
           const RefShell b3 = first->basis(i3)->move_atom(m3disp);
           const int b3offset_ = first->offset(i3);
           const int b3size = b3->nbasis();
         
-          const double integral_bound1 = first->schwarz((m1      + K) * size * size + i0 * size + i1)
-                                       * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-          const double integral_bound2 = second->schwarz((m1      + K) * size * size + i0 * size + i1)
-                                       * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-          const bool skip_schwarz1 = integral_bound1 < SCHWARZ_THRESH;
-          const bool skip_schwarz2 = integral_bound2 < SCHWARZ_THRESH;
-
-          const bool skip_schwarz = std::max(integral_bound1, integral_bound2) < SCHWARZ_THRESH;
-          assert(integral_bound1 >= 0.0 && integral_bound2 >= 0.0 && SCHWARZ_THRESH >= 0);
-          if (skip_schwarz) continue;
+          const bool skip_schwarz1 = blocks1[offset] == blocks1[offset + 1];
+          const bool skip_schwarz2 = blocks2[offset] == blocks2[offset + 1];
+          if (skip_schwarz1 && skip_schwarz2) continue;
 
           std::vector<RefShell> input;
           input.push_back(b3);
@@ -271,24 +293,25 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
             batch.compute();
             const double* bdata1 = batch.data();
             size_t current_size = b0size * b1size * b2size * b3size;
-            ::memcpy(out1 + data_acc1, bdata1, current_size * sizeof(double));
-            data_acc1 += current_size; 
+            ::memcpy(out1 + blocks1[offset], bdata1, current_size * sizeof(double));
           } else {
             T batch(input, 1.0, param_, true);
             batch.compute();
             const double* bdata1 = batch.data();
             const double* bdata2 = batch.data2();
             size_t current_size = b0size * b1size * b2size * b3size;
-            ::memcpy(out1 + data_acc1, bdata1, current_size * sizeof(double));
-            ::memcpy(out2 + data_acc2, bdata2, current_size * sizeof(double));
-            data_acc1 += current_size; 
-            data_acc2 += current_size; 
+            if (!skip_schwarz1)
+              ::memcpy(out1 + blocks1[offset], bdata1, current_size * sizeof(double));
+            if (!skip_schwarz2)
+              ::memcpy(out2 + blocks2[offset], bdata2, current_size * sizeof(double));
           }
 
         }
       }
     }
   }
+  delete[] blocks1;
+  delete[] blocks2;
 };
 
 
