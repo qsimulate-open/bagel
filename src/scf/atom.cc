@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cassert>
 #include <algorithm>
+#include <stdexcept>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -53,7 +54,8 @@ Atom::Atom(const Atom& old, const double* displacement)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const vector<double>& p, const string basis_file) : spherical_(sph), name_(nm), position_(p) {
+Atom::Atom(const bool sph, const string nm, const vector<double>& p, const string basis_file)
+: spherical_(sph), name_(nm), position_(p) {
 
   ifstream ifs;
   string bfile = basis_file;
@@ -70,8 +72,8 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
   // this will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
 
-  if(!ifs.is_open()) {
-    cout << "Basis file not found" << endl;
+  if (!ifs.is_open()) {
+    throw std::runtime_error("Basis file not found");
   } else {
     regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9\\.]+)\\s+"); 
     regex other_line("^\\s*([0-9\\.-]+)\\s+"); 
@@ -238,6 +240,9 @@ void Atom::print_basis() const {
 
 
 void Atom::print() const {
-  cout << "  " + name_ << fixed << setprecision(10) << setw(15) << position_[0] << setw(15) << position_[1] << setw(15) << position_[2] <<  endl; 
+  cout << "  " + name_ << fixed << setprecision(10) <<
+      setw(15) << position_[0] <<
+      setw(15) << position_[1] <<
+      setw(15) << position_[2] <<  endl;
 }
 

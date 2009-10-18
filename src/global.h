@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <stdexcept>
 #include <boost/regex.hpp>
 
 void print_header() {
@@ -30,23 +31,28 @@ void print_footer() {
 
 
 const int count_string(const std::string inputfile, const std::string keyword) {
-  std::ifstream ifs;
-  ifs.open(inputfile.c_str());
-  assert(ifs.is_open());
+  try {
+    std::ifstream ifs;
+    ifs.open(inputfile.c_str());
+    if (!ifs.is_open())
+      throw std::runtime_error("input file cannot be opened.");
 
-  boost::smatch what;
-  boost::regex reg(keyword);
-  int out = 0;
-  while(!ifs.eof()) {
-    std::string sline;
-    getline(ifs, sline);
-    std::string::const_iterator start = sline.begin();
-    std::string::const_iterator end   = sline.end();
-    if (boost::regex_search(start, end, what, reg)) ++out;
+    boost::smatch what;
+    boost::regex reg(keyword);
+    int out = 0;
+    while(!ifs.eof()) {
+      std::string sline;
+      getline(ifs, sline);
+      std::string::const_iterator start = sline.begin();
+      std::string::const_iterator end   = sline.end();
+      if (boost::regex_search(start, end, what, reg)) ++out;
+    }
+
+    ifs.close();
+    return out;
+  } catch (...) {
+    throw;
   }
-
-  ifs.close();
-  return out;
 }
 
 #endif
