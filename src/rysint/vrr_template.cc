@@ -15,11 +15,10 @@ using namespace std;
 
 void ERIBatch::perform_VRR3() {
 
-// TODO
+// TODO some cases haven't been rewritten..
 // (4, 0, 0, 0) and (0, 0, 0, 4) hasn't been rewritten (using the generated code);
 // just copy (3, 1, 0, 0) etc and delete the first part!
 
-// TODO
 // (3, 0, 1, 0) and (1, 0, 3, 0) hasn't been rewritten yet 
 // (2, 1, 1, 0) and (1, 0, 2, 1) hasn't been rewritten yet 
 

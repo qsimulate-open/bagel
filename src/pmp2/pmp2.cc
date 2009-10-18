@@ -84,10 +84,11 @@ void PMP2::compute() {
 
   complex<double> en_vt = V_obs->get_energy_one_amp();
   // direct contribution to R12 energy
-  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl;
+  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
 
   // CABS integrals
-  shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
+  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
+  eri_cabs_->store_integrals();
 
 }
 

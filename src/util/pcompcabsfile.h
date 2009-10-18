@@ -16,7 +16,6 @@ class PCompCABSFile : public PCompFile<T> {
     std::vector<double> cabs_schwarz_;
     std::vector<boost::shared_ptr<Shell> > cabs_basis_;
     std::vector<int> cabs_offset_;
-    void calculate_num_int_each();
 
   public:
     PCompCABSFile(boost::shared_ptr<PGeometry>, const bool late_init = false, const std::string jobname = "source");
@@ -24,6 +23,11 @@ class PCompCABSFile : public PCompFile<T> {
     const double cabs_schwarz(int i) const { return cabs_schwarz_[i]; };
     std::vector<int> cabs_offset() const { return cabs_offset_; };
     int cabs_offset(size_t i) const { return cabs_offset_[i]; };
+
+    // virtual functions
+    void calculate_num_int_each();
+    void store_integrals();
+    void eval_new_block(double*, int, int, int);
 
 };
 
@@ -163,6 +167,107 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   std::cout << " hard disk for storing \"" << this->jobname_ << "\"" << std::endl; 
   std::cout << std::endl;
   assert(data_written < 5.0e9); // 40GB
+};
+
+
+template<class T>
+void PCompCABSFile<T>::store_integrals() {
+  const size_t cachesize_max = 100000000lu;
+  const size_t cachesize = std::max(cachesize_max, this->max_num_int_);
+
+  const int s = this->S_;
+  const int l = this->L_;
+  const int k = this->K_;
+
+  double* dcache = new double[cachesize];
+
+  size_t remaining = cachesize;
+  size_t current = 0lu;
+  size_t cnt = 0lu;
+  for (int m1 = -s; m1 <= s; ++m1) {
+    for (int m2 = -l; m2 <= l; ++m2) { // NO bra-ket symmetry owing to CABS index!!!
+      for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++cnt) {
+        const size_t blocksize = this->num_int_each(cnt);;
+        if (remaining < blocksize) {
+          this->append(current, dcache);
+          current = 0lu;
+          remaining = cachesize;
+        }
+        eval_new_block(&dcache[current], m1, m2, m3);
+        current += blocksize;
+        remaining -= blocksize;
+      }
+    }
+  }
+  this->append(current, dcache);
+  delete[] dcache;
+};
+
+
+template<class T>
+void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
+
+  typedef boost::shared_ptr<Shell> RefShell;
+
+  const int s = this->S_;
+  const int l = this->L_;
+  const int k = this->K_;
+  const double a = this->A_;
+
+  const double m1disp[3] = {0.0, 0.0, m1 * a};
+  const double m2disp[3] = {0.0, 0.0, m2 * a};
+  const double m3disp[3] = {0.0, 0.0, m3 * a};
+
+  const int size = this->basis_.size(); // number of shells
+  const int cabs_size = cabs_basis_.size(); // number of shells
+
+  int* blocks = new int[size * size * size * size + 1];
+  blocks[0] = 0;
+  int iall = 0;
+  for (int i0 = 0; i0 != size; ++i0) {
+    const int b0size = this->basis_[i0]->nbasis();
+    for (int i1 = 0; i1 != size; ++i1) {
+      const int b1size = this->basis_[i1]->nbasis();
+      for (int i2 = 0; i2 != size; ++i2) {
+        const int b2size = this->basis_[i2]->nbasis();
+        for (int i3 = 0; i3 != cabs_size; ++i3, ++iall) {
+          const int b3size = cabs_basis_[i3]->nbasis();
+          const double integral_bound = this->schwarz_[(m1 + k) * size * size + i0 * size + i1]
+                                      * cabs_schwarz_[(m3 - m2 + k) * size * size + i2 * size + i3];
+          const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+          blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
+        }
+      }
+    }
+  }
+  #pragma omp parallel for
+  for (int i0 = 0; i0 < size; ++i0) {
+    int offset = i0 * size * size * size;
+    const RefShell b0 = this->basis_[i0]; // b0 is the center cell
+    for (int i1 = 0; i1 != size; ++i1) {
+      const RefShell b1 = this->basis_[i1]->move_atom(m1disp);
+      for (int i2 = 0; i2 != size; ++i2) {
+        const RefShell b2 = this->basis_[i2]->move_atom(m2disp);
+        for (int i3 = 0; i3 < cabs_size; ++i3, ++offset) {
+          const RefShell b3 = cabs_basis_[i3]->move_atom(m3disp);
+
+          if (blocks[offset] == blocks[offset + 1]) continue;
+
+          std::vector<RefShell> input;
+          input.push_back(b3);
+          input.push_back(b2);
+          input.push_back(b1);
+          input.push_back(b0);
+
+          T batch(input, 1.0);
+          batch.compute();
+          const double* bdata = batch.data();
+          ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));
+        }
+      }
+    }
+  }
+  delete[] blocks;
 };
 
 #endif

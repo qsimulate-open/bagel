@@ -60,8 +60,6 @@ int main(int argc, char** argv) {
   } catch (const exception &e) {
     cout << "Caught : " << e.what() << endl;
     cout << "Type   : " << typeid(e).name() << endl;
-  } catch (...) {
-    cout << "Runtime error" << endl;
   }
 
   return 0;

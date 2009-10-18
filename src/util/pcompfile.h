@@ -49,7 +49,8 @@ class PCompFile {
     // create file...
     const std::string filename() const { return filename_; };
     void append(const long, const double*);
-    void eval_new_block(double*, int, int, int);
+    // evaluates one block of integrals.
+    virtual void eval_new_block(double*, int, int, int);
 
     // append mode cannot be read, hence reopen. Add, Put and Get operation has been implemented
     void reopen_with_inout();
@@ -70,8 +71,9 @@ class PCompFile {
     void init_schwarz();
     std::vector<size_t> num_int_each() const { return num_int_each_; };
     const size_t num_int_each(const int i) const { return num_int_each_[i]; };
+    // will be redefined in the derived classes
     virtual void calculate_num_int_each();
-    void store_integrals();
+    virtual void store_integrals();
 
     // or import integrals computed externally
     void set_schwarz(const std::vector<double>& a) { schwarz_ = a; };

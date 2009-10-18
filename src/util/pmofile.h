@@ -63,8 +63,9 @@ PMOFile<T>::~PMOFile() {
 };
 
 
+// TODO conflicts in notation
 // sort to chemist notations... but outermost block loops remain unchanged...
-// that is unfavorable and needs some fix in PCompFile::mo_transform... TODO
+// that is unfavorable and needs some fix in PCompFile::mo_transform...
 template<class T>
 void PMOFile<T>::sort_inside_blocks() {
   const int k = this->K_;
