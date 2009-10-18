@@ -3,16 +3,16 @@
 // Date   : August 2009
 //
 
+#include <cstring>
+#include <iostream>
+#include <algorithm>
 #include <src/pmp2/pmp2.h>
 #include <src/macros.h>
 #include <src/scf/scf_macros.h>
-#include <cstring>
-#include <algorithm>
 #include <src/slater/slaterbatch.h>
 #include <src/util/paircompfile.h>
 #include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>
-#include <iostream>
 
 typedef boost::shared_ptr<Atom> RefAtom;
 typedef boost::shared_ptr<PGeometry> RefGeom;
@@ -83,12 +83,13 @@ void PMP2::compute() {
 //yp_ii_ii->print();
 
   complex<double> en_vt = V_obs->get_energy_one_amp();
-  // direct contribution to R12 energy
+  // Direct contribution to R12 energy
   cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
 
   // CABS integrals
   shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
   eri_cabs_->store_integrals();
+  eri_cabs_->reopen_with_inout();
 
 }
 
