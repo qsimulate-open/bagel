@@ -16,19 +16,21 @@ class PGeometry : public Geometry {
     int K_; // number of K points (= number of unit cell in the *half* first Brillouin zone)  
     double A_; // fundamental vector
 
+    // Computes the nuclear repulsion energy per unit cell.
     double pnuclear_repulsion_;
+    const double compute_pnuclear_repulsion();
 
   public:
     PGeometry(const std::string, const int);
     ~PGeometry() {};
 
+    // Some constants for periodic calculations.
     const int L() const { return L_; };
     const int S() const { return S_; };
     const int K() const { return K_; };
     const double A() const { return A_; };
 
-    const double compute_pnuclear_repulsion();
-
+    // Returns nuclear repulsion energies.
     const double nuclear_repulsion() const { return pnuclear_repulsion_; }; 
 };
 

@@ -17,6 +17,8 @@
 using namespace std;
 using namespace boost;
 
+
+// olp is real-space quantity.
 PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
 
   PMatrix1e overlap_m = olp->ft();
@@ -26,6 +28,9 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
   shared_ptr<PData> odata = overlap_m.data();
   const complex<double> cone(1.0, 0.0);
   const complex<double> czero(0.0, 0.0);
+
+  vector<double> max_eig;
+  vector<double> min_eig;
 
   int mcount = 0;
   for (int m = -K(); m != max(K(), 1); ++m, ++mcount) {
@@ -54,7 +59,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
       else break;
     }
     if (cnt != 0) 
-      cout << "  Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s") << " in orthogonalization (m = " << m << ")" << endl << endl;
+      cout << "  Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
+           << " in orthogonalization (m = " << m << ")" << endl << endl;
   
     for (int i = cnt; i != ndim_; ++i) {
       assert(eig[i] > 0);
@@ -64,6 +70,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
         cdata[j + offset] *= scale;
       }
     }
+    min_eig.push_back(eig[cnt]);
+    max_eig.push_back(eig[ndim_-1]);
     delete[] eig;
     mdim_ = ndim_ - cnt;
     if (cnt != 0) { 
@@ -73,6 +81,10 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     }
     
   }
+  cout << setprecision(15);
+  cout << "  Maximum residual in orthogonalization: " << *max_element(max_eig.begin(), max_eig.end()) << endl;
+  cout << "  Minimum residual in orthogonalization: " << *min_element(min_eig.begin(), min_eig.end()) << endl;
+  cout << endl;
 
 }
 

@@ -14,13 +14,23 @@
 
 class Geometry {
   protected:
+    // Spherical or Cartesian basis set.
     bool spherical_;
 
+    // Input file name.
     std::string input_;
+
+    // Atoms, which contains basis-set info also.
     std::vector<boost::shared_ptr<Atom> > atoms_;
     std::vector<boost::shared_ptr<Atom> > cabs_atoms_;
-    double nuclear_repulsion_;
+    bool cabs_merged_;
 
+    // Nuclear repulsion energy.
+    double nuclear_repulsion_;
+    // Computes the nuclear repulsion energy.
+    const double compute_nuclear_repulsion();
+
+    // Some shared info for basis sets.
     int nbasis_;
     int nocc_;
     int nfrc_;
@@ -30,12 +40,11 @@ class Geometry {
     std::vector<std::vector<int> > offsets_;
     std::vector<std::vector<int> > cabs_offsets_;
 
-    const double compute_nuclear_repulsion();
-
     int level_;
     std::string basisfile_;
     std::string cabsfile_;
 
+    // Symmetry can be used for molecular calculation.
     std::string symmetry_;
     boost::shared_ptr<Petite> plist_;
     int nirrep_;
@@ -44,10 +53,12 @@ class Geometry {
     Geometry(const std::string, const int level);
     ~Geometry();
 
+    // Returns shared pointers of Atom objects, which contains basis-set info.
     std::vector<boost::shared_ptr<Atom> > atoms() const { return atoms_; };
     std::vector<boost::shared_ptr<Atom> > cabs_atoms() const { return cabs_atoms_; };
     boost::shared_ptr<Atom> atoms(const unsigned int i) const { return atoms_[i]; };
 
+    // Returns a constant
     const int natom() const { return atoms_.size(); };
     const int nbasis() const { return nbasis_; };
     const int nocc() const { return nocc_; };
@@ -63,13 +74,33 @@ class Geometry {
     const std::string basisfile() const { return basisfile_; };
     const std::string cabsfile() const { return cabsfile_; };
 
+    // The position of the specific funciton in the basis set.
     const std::vector<std::vector<int> > offsets() const { return offsets_; };
     const std::vector<std::vector<int> > cabs_offsets() const { return cabs_offsets_; };
     const std::vector<int> offset(const unsigned int i) const { return offsets_.at(i); };
     const std::vector<int> cabs_offset(const unsigned int i) const { return cabs_offsets_.at(i); };
 
+    // Printing out some info
     void print_atoms() const;
+
+    // Returns the Petite list.
     boost::shared_ptr<Petite> plist() { return plist_; }; 
+
+    // In R12 methods, we need to construct a union of OBS and CABS.
+    // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
+    // After this, compute_nuclear_repulsion() should not be called.
+    // Not undo-able.
+    void merge_obs_cabs() {
+      cabs_merged_ = true;
+      atoms_.insert(atoms_.end(), cabs_atoms_.begin(), cabs_atoms_.end());
+      for (std::vector<std::vector<int> >::iterator iter = cabs_offsets_.begin(); iter != cabs_offsets_.end(); ++iter) {
+        for (std::vector<int>::iterator citer = iter->begin(); citer != iter->end(); ++citer) {
+          *citer += nbasis_;
+        }
+      }
+      offsets_.insert(offsets_.end(), cabs_offsets_.begin(), cabs_offsets_.end());
+      nbasis_ += ncabs_;
+    };
 };
 
 #endif

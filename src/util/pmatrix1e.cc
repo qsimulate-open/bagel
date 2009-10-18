@@ -3,20 +3,21 @@
 // Date   : July 2009
 //
 
-#include <src/util/pmatrix1e.h>
-#include <src/pscf/f77.h>
-#include <src/macros.h>
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <src/util/pmatrix1e.h>
+#include <src/pscf/f77.h>
+#include <src/macros.h>
 
 typedef std::complex<double> Complex;
 
 using namespace std;
 
 PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg) 
-: geom_(pg), nbasis_(pg->nbasis()), blocksize_(pg->nbasis() * pg->nbasis()), totalsize_((2 * pg->K() + 1) * pg->nbasis() * pg->nbasis()) {
+: geom_(pg), nbasis_(pg->nbasis()),
+  blocksize_(pg->nbasis() * pg->nbasis()), totalsize_((2 * pg->K() + 1) * pg->nbasis() * pg->nbasis()) {
 
   mdim_ = ndim_ = nbasis_;
   boost::shared_ptr<PData> tmp(new PData(totalsize_));
@@ -100,11 +101,12 @@ void PMatrix1e::init() {
   typedef boost::shared_ptr<Atom> RefAtom;
   typedef boost::shared_ptr<Shell> RefShell;
 
-  const std::vector<RefAtom> atoms = geom_->atoms(); 
+  const std::vector<RefAtom> atoms = geom_->atoms();
 
   const std::vector<std::vector<int> > offsets = geom_->offsets();
-  #pragma omp parallel for
-  for (int iatom0 = 0; iatom0 < geom_->natom(); ++iatom0) {
+  const int natom = geom_->natom();
+  //#pragma omp parallel for
+  for (int iatom0 = 0; iatom0 < natom; ++iatom0) {
     const RefAtom catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const std::vector<int> coffset0 = offsets[iatom0];

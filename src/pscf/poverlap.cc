@@ -22,7 +22,9 @@ POverlap::~POverlap() {
 
 }
 
-void POverlap::computebatch(const vector<shared_ptr<Shell> >& input, const int offsetb0, const int offsetb1, const int nbasis, const int blockoffset) {
+void POverlap::computebatch(const vector<shared_ptr<Shell> >& input,
+    const int offsetb0, const int offsetb1,
+    const int nbasis, const int blockoffset) {
 
   // input = [b1, b0]
   // because of the convention in integral codes

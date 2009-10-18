@@ -7,6 +7,8 @@
 #include <iostream>
 #include <algorithm>
 #include <src/pmp2/pmp2.h>
+#include <src/pscf/poverlap.h>
+#include <src/pscf/ptildex.h>
 #include <src/macros.h>
 #include <src/scf/scf_macros.h>
 #include <src/slater/slaterbatch.h>
@@ -90,6 +92,19 @@ void PMP2::compute() {
   shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
   eri_cabs_->store_integrals();
   eri_cabs_->reopen_with_inout();
+
+ // PMatrix1e overlap;
+  {
+    RefGeom union_geom(new PGeometry(*geom_));
+    union_geom->merge_obs_cabs();
+    shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
+    shared_ptr<PTildeX> cabs_coeff(new PTildeX(union_overlap));
+
+#if 1
+    PMatrix1e tmp = *cabs_coeff % union_overlap->ft() * *cabs_coeff;
+    tmp.print();
+#endif
+  }
 
 }
 

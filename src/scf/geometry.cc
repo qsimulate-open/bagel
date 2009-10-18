@@ -3,8 +3,6 @@
 // Date  : May 2009
 //
 
-#include <src/scf/geometry.h>
-#include <src/scf/atommap.h>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -13,6 +11,8 @@
 #include <algorithm>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
+#include <src/scf/geometry.h>
+#include <src/scf/atommap.h>
 
 using namespace std;
 using namespace boost;
@@ -20,7 +20,8 @@ using namespace boost;
 typedef shared_ptr<Shell> RefShell;
 typedef shared_ptr<Atom> RefAtom;
 
-Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s), level_(levl), lmax_(0) {
+Geometry::Geometry(const string s, const int levl)
+  : spherical_(true), input_(s), level_(levl), lmax_(0) {
   // open input file
   ifstream ifs;
   ifs.open(input_.c_str());
@@ -178,7 +179,8 @@ Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s)
       }
       break;
     } 
-  }    
+  }
+  ifs.close();
 
   if (level_ == 0) print_atoms();
   nuclear_repulsion_ = compute_nuclear_repulsion();
@@ -186,11 +188,9 @@ Geometry::Geometry(const string s, const int levl) : spherical_(true), input_(s)
   // symmetry set-up
   shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
   plist_ = tmpp;
-
   nirrep_ = plist_->nirrep();
-
-  ifs.close();
-
+  // Misc
+  cabs_merged_ = false;
 }
 
 Geometry::~Geometry() {
