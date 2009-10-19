@@ -93,7 +93,9 @@ void PMP2::compute() {
   eri_cabs_->store_integrals();
   eri_cabs_->reopen_with_inout();
 
-  // PMatrix1e overlap;
+  // Construction of CABS;
+  shared_ptr<PMatrix1e> cabs_obs;
+  shared_ptr<PMatrix1e> cabs_aux;
   {
     typedef shared_ptr<PMatrix1e> RefMatrix;
     RefGeom union_geom(new PGeometry(*geom_));
@@ -114,10 +116,11 @@ void PMP2::compute() {
 
     pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
     cabs_coeff->print();
-    RefMatrix cabs_obs = cabs_coeff_spl.first;
-    RefMatrix cabs_aux = cabs_coeff_spl.second;
-
+    cabs_obs = cabs_coeff_spl.first;
+    cabs_aux = cabs_coeff_spl.second;
   }
+
+
 
 }
 

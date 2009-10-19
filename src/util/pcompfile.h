@@ -463,7 +463,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 
-  // we are assuming that the two-electron integrals for a unit cell can be 
+  // we are assuming that the (c.c. two-electron integrals for a unit cell)*K^2 can be
   // held in core. If that is not the case, this must be rewritten.
 
   // allocating a temp array
