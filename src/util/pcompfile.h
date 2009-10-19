@@ -752,7 +752,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
                                       const int bstart, const int bfence,
                                       const std::string jobname) {
 
-// Loading a (2K * 2K * nov) quantity on memory
+  // What is different is that the coefficient of b3 is replaced by cabs_coeff.
+  // Other than that, they should be the same as mo_transform.
+
+  // Loading a (2K * 2K * nov) quantity on memory
+
+  assert(bfence <= cabs_coeff->mdim());
 
   const int isize = ifence - istart;
   const int jsize = jfence - jstart;
@@ -798,8 +803,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // held in core. If that is not the case, this must be rewritten.
 
   // allocating a temp array
-  std::complex<double>* data = new std::complex<double>[nbasis4 * std::max(KK, 1)];
-  std::complex<double>* datas = new std::complex<double>[nbasis4 * std::max(KK, 1)];
+  std::complex<double>* data = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
+  std::complex<double>* datas = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)];
   double* data_read = new double[this->max_num_int_ * (s*2+1)];
 
@@ -823,7 +828,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   std::complex<double>* intermediate_mKK = new std::complex<double>[nov * std::max(KK * KK, 1)];
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), k, true);
 
-#if 0
   for (int q1 = -S_; q1 <= S_; ++q1) {
     const bool q1_front = (q1 == -S_);
     const int m1 = q1;
@@ -955,7 +959,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += nbasis3,
                                                 offset2 += nbasis2 * bsize) {
             zgemm_("N", "N", &nbasis2, &bsize, &nbasis1, &prefac, data + offset1, &nbasis2,
-                                                         coeff->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
+                                                         cabs_coeff->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
                                                          intermediate_mmK + nv * nkbc + offset2, &nbasis2);
           }
         } // end of contraction b for given m3
@@ -1049,7 +1053,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       nbja += std::max(KK, 1);
     }
   } // end of contraction i
-#endif
 
   delete[] data;
   delete[] datas;

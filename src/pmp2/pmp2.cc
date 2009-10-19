@@ -118,7 +118,6 @@ void PMP2::compute() {
     RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
 
     pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
-    cabs_coeff->print();
     cabs_obs = cabs_coeff_spl.first;
     cabs_aux = cabs_coeff_spl.second;
 
@@ -126,10 +125,11 @@ void PMP2::compute() {
     ncabs_ = cabs_obs->mdim();
   }
   assert(cabs_obs->mdim() == ncabs_);
-  RefPMOFile eri_ii_ii = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
+  cabs_obs->print();
+  RefPMOFile eri_ix_ii = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                         nfrc_, nocc_, nfrc_, nocc_,
                                                         nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
-
+  eri_ix_ii->sort_inside_blocks();
 
 }
 

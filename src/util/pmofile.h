@@ -266,10 +266,13 @@ void PMOFile<T>::print() const {
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
   const size_t ijsize = isize * jsize;
+  const size_t absize = asize * bsize;
   const int k = this->K_;
   const int kk = std::max(k + k, 1);
-  T* buffer = new T[ijsize * ijsize];
+  T* buffer = new T[ijsize * absize];
 
   // I will print out in ne case...
   if (isize * jsize <= 25) {
@@ -278,10 +281,10 @@ void PMOFile<T>::print() const {
       for (int kj = -k; kj != std::max(k, 1); ++kj) {
         for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
           std::cout << std::endl;
-          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
+          this->get_block(iall * ijsize * absize, ijsize * absize, buffer);
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
-            for (int j = 0; j != ijsize; ++j, ++cbuf) {
+            for (int j = 0; j != absize; ++j, ++cbuf) {
               std::cout << std::setprecision(3) << std::setw(15) << *cbuf;
             }
             std::cout << std::endl;

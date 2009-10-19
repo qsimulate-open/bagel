@@ -59,7 +59,7 @@ class PMatrix1e {
     void hermite();
     void real();
     void scale(const std::complex<double>);
-    const std::complex<double>* bp(const int k) { return data_->pointer((k + geom_->K()) * nbasis_ * nbasis_); }; 
+    const std::complex<double>* bp(const int k) { return data_->pointer((k + geom_->K()) * nbasis_ * nbasis_); };
 
     const int nbasis() const { return nbasis_; };
     const int K() const { return geom_->K(); };
