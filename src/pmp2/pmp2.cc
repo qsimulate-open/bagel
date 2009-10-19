@@ -124,7 +124,7 @@ void PMP2::compute() {
     // Setting actual number of CABS.
     ncabs_ = cabs_obs->mdim();
   }
-  assert(cabs_obs->mdim() == ncabs_);
+
   cabs_obs->print();
   RefPMOFile eri_ix_ii = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                         nfrc_, nocc_, nfrc_, nocc_,

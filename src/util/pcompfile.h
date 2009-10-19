@@ -736,7 +736,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   delete[] intermediate_mKK;
   delete[] blocks;
 
-  std::cout << std::endl;
+  std::cout << "  done" << std::endl << std::endl;
   mo_int->reopen_with_inout();
   return mo_int;
 };
@@ -1062,7 +1062,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   delete[] intermediate_mKK;
   delete[] blocks;
 
-  std::cout << std::endl;
+  std::cout << "  done" << std::endl <<std::endl;
   mo_int->reopen_with_inout();
   return mo_int;
 

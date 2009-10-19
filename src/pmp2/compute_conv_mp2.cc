@@ -5,18 +5,8 @@
  *      Author: shiozaki
  */
 
-#include <cstring>
 #include <iostream>
-#include <algorithm>
 #include <src/pmp2/pmp2.h>
-#include <src/pscf/poverlap.h>
-#include <src/pscf/ptildex.h>
-#include <src/macros.h>
-#include <src/scf/scf_macros.h>
-#include <src/slater/slaterbatch.h>
-#include <src/util/paircompfile.h>
-#include <src/util/pcompcabsfile.h>
-#include <src/util/pmofile.h>
 
 using namespace std;
 
