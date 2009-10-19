@@ -23,15 +23,12 @@ class PMOFile : public PFile<T> {
     const int jfence_;
     const int afence_;
     const int bfence_;
-    const bool cabs_in_aux_;
-    const bool cabs_in_obs_;
 
   public:
     PMOFile(const long, const int, const int, const int,
                                    const int, const int,
                                    const int, const int,
-                                   const int, const int, const bool late_init = false,
-                                   const bool ca = false, const bool co = false);
+                                   const int, const int, const bool late_init = false);
     ~PMOFile(); 
 
     void sort_inside_blocks();
@@ -41,9 +38,6 @@ class PMOFile : public PFile<T> {
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >,
                                             const int, const int,
                                             const int, const int, std::string);
-
-    const bool cabs_in_aux() const { return cabs_in_aux_; };
-    const bool cabs_in_obs() const { return cabs_in_obs_; };
 
     void print() const;
     void rprint() const;
@@ -58,10 +52,9 @@ PMOFile<T>::PMOFile(const long fsize, const int k,
                     const int jstrt, const int jfen,
                     const int astrt, const int afen,
                     const int bstrt, const int bfen,
-                    const bool late_init, const bool c, const bool cobs)
+                    const bool late_init)
  : PFile<T>(fsize, k, late_init), istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
-                                  astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen),
-                                  cabs_in_aux_(c), cabs_in_obs_(cobs) {
+                                  astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen) {
 
 
 };
@@ -117,8 +110,6 @@ template<class T>
 boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other,
                                                     const int mstart, const int mfence,
                                                     const int nstart, const int nfence, std::string jobname) {
-
-  assert(cabs_in_obs_ == other->cabs_in_obs() && cabs_in_aux_ == other->cabs_in_obs());
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
@@ -198,8 +189,6 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 template<class T>
 PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 
-  assert(cabs_in_obs_ == other.cabs_in_obs() && cabs_in_aux_ == other.cabs_in_obs());
-
   const int k = this->K_;
   const size_t fsize = this->filesize_;
   const int kkk8 = std::max(k * k * k * 8, 1);
@@ -229,8 +218,6 @@ PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 
 template<class T>
 PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
-
-  assert(cabs_in_obs_ == other.cabs_in_obs() && cabs_in_aux_ == other.cabs_in_obs());
 
   const int k = this->K_;
   const size_t fsize = this->filesize_;
@@ -262,8 +249,6 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 template<class T>
 void PMOFile<T>::print() const {
 
-  std::cout << "  Does this PMOFile have a CABS index? " << (cabs_in_obs_ || cabs_in_aux_) << std::endl;
-
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
   const int asize = afence_ - astart_;
@@ -285,7 +270,7 @@ void PMOFile<T>::print() const {
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
             for (int j = 0; j != absize; ++j, ++cbuf) {
-              std::cout << std::setprecision(3) << std::setw(15) << *cbuf;
+              std::cout << std::setprecision(10) << std::setw(15) << *cbuf;
             }
             std::cout << std::endl;
           }

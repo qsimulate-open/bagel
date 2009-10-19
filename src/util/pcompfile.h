@@ -797,7 +797,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   boost::shared_ptr<PMOFile<std::complex<double> > >
     mo_int(new PMOFile<std::complex<double> >(filesize, k,
                                               istart, ifence, jstart, jfence,
-                                              astart, afence, bstart, bfence, true, false, true));
+                                              astart, afence, bstart, bfence, true));
 
   // we are assuming that the (c.a. two-electron integrals for a unit cell)*K^2 can be
   // held in core. If that is not the case, this must be rewritten.

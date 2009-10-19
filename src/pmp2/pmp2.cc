@@ -82,7 +82,7 @@ void PMP2::compute() {
                                                                        nfrc_, nocc_, "F * v (ii/ii)");
   RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *stg_dag_times_eri_ii_ii)); 
 
-//V_obs->print();
+  V_obs->print();
 //yp_ii_ii->print();
 
   complex<double> en_vt = V_obs->get_energy_one_amp();
@@ -90,9 +90,9 @@ void PMP2::compute() {
   cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
 
   // CABS integrals
-  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs_(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
-  eri_cabs_->store_integrals();
-  eri_cabs_->reopen_with_inout();
+  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
+  eri_cabs->store_integrals();
+  eri_cabs->reopen_with_inout();
 
   // Construction of CABS;
   shared_ptr<PMatrix1e> cabs_obs;
@@ -125,12 +125,17 @@ void PMP2::compute() {
     ncabs_ = cabs_obs->mdim();
   }
 
-  cabs_obs->print();
-  RefPMOFile eri_ix_ii = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
+  RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                         nfrc_, nocc_, nfrc_, nocc_,
                                                         nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
-  eri_ix_ii->sort_inside_blocks();
+  eri_ii_ip->sort_inside_blocks();
 
+  RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux,
+                                                         nfrc_, nocc_, nfrc_, nocc_,
+                                                         nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
+  eri_ii_ix->sort_inside_blocks();
+  RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
+  eri_ii_iA->print();
 }
 
 
