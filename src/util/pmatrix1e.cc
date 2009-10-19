@@ -14,33 +14,33 @@
 typedef std::complex<double> Complex;
 
 using namespace std;
-
+using namespace boost;
 
 // I have supposed that ndim_ is the leading dimension in the data.
 
-PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg) 
+PMatrix1e::PMatrix1e(const shared_ptr<PGeometry> pg)
 : geom_(pg), nbasis_(pg->nbasis()),
   blocksize_(pg->nbasis() * pg->nbasis()), totalsize_((2 * pg->K() + 1) * pg->nbasis() * pg->nbasis()) {
 
   mdim_ = ndim_ = nbasis_;
-  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp; 
 }
 
 
-PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg, const int ldn, const int ldm)
+PMatrix1e::PMatrix1e(const shared_ptr<PGeometry> pg, const int ldn, const int ldm)
 : geom_(pg), nbasis_(pg->nbasis()),
   blocksize_(ldn * ldm), totalsize_((2 * pg->K() + 1) * ldn * ldm) {
 
   mdim_ = ldm;
   ndim_ = ldn;
-  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;
 }
 
 
 // Changes the leading dimension, filling zero.
-PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm)
+PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int ldn, const int ldm)
 : geom_(source->geom()), nbasis_(source->nbasis()),
   blocksize_(ldn * ldm), totalsize_((2 * source->K() + 1) * ldn * ldm) {
 
@@ -48,9 +48,9 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, c
 
   ndim_ = ldn;
   mdim_ = ldm;
-  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;
-  const boost::shared_ptr<PData> sdata = source->data();
+  const shared_ptr<PData> sdata = source->data();
   const int ld_source = source->ndim();
   const int sblocksize = source->blocksize();
 
@@ -66,7 +66,7 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, c
 
 
 // Changes number of columns; removes first ncut columns.
-PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int mcut)
+PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int mcut)
 : geom_(source->geom()), nbasis_(source->nbasis()),
   blocksize_(source->ndim() * (source->mdim()-mcut)),
   totalsize_((2 * source->K() + 1) * source->ndim() * (source->mdim()-mcut)) {
@@ -75,9 +75,9 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int mcut)
 
   ndim_ = source->ndim();
   mdim_ = source->mdim()-mcut;
-  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;
-  const boost::shared_ptr<PData> sdata = source->data();
+  const shared_ptr<PData> sdata = source->data();
   const int sblocksize = source->blocksize();
 
   for (int i = -K(); i != max(K(), 1); ++i) {
@@ -167,8 +167,8 @@ PMatrix1e PMatrix1e::bft() const {
 
 
 void PMatrix1e::init() {
-  typedef boost::shared_ptr<Atom> RefAtom;
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef shared_ptr<Atom> RefAtom;
+  typedef shared_ptr<Shell> RefShell;
 
   const std::vector<RefAtom> atoms = geom_->atoms();
 
@@ -221,8 +221,8 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
   const int n = o.mdim();
 
   PMatrix1e out(geom_, l, n);
-  const boost::shared_ptr<PData> odata = o.data();
-  boost::shared_ptr<PData> outdata = out.data();
+  const shared_ptr<PData> odata = o.data();
+  shared_ptr<PData> outdata = out.data();
 
   for (int i = -K(); i <= K(); ++i) {
     const int icount = i + K();
@@ -248,10 +248,10 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
   const int m = ndim_; 
   assert(ndim_ == o.ndim());
   const int n = o.mdim(); 
-  const boost::shared_ptr<PData> odata = o.data();
+  const shared_ptr<PData> odata = o.data();
 
   PMatrix1e out(geom_, l, n);
-  boost::shared_ptr<PData> outdata = out.data();
+  shared_ptr<PData> outdata = out.data();
 
   for (int i = -K(); i <= K(); ++i) {
     const int icount = i + K();
@@ -268,7 +268,7 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
 }
 
 
-void PMatrix1e::svd(boost::shared_ptr<PMatrix1e> U, boost::shared_ptr<PMatrix1e> V) {
+void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
   assert(V->ndim() == mdim_ && V->mdim() == mdim_);
   const int lwork = 5 * min(ndim_, mdim_) + max(ndim_, mdim_);
@@ -393,7 +393,7 @@ void PMatrix1e::zaxpy(const Complex a, const PMatrix1e& o) {
 }
 
 
-void PMatrix1e::zaxpy(const Complex a, const boost::shared_ptr<PMatrix1e> o) {
+void PMatrix1e::zaxpy(const Complex a, const shared_ptr<PMatrix1e> o) {
   const int unit = 1;
   const Complex* odata = o->data()->front();
   zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit); 
@@ -414,7 +414,7 @@ const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
 }
 
 
-const Complex PMatrix1e::zdotc(const boost::shared_ptr<PMatrix1e> o) const {
+const Complex PMatrix1e::zdotc(const shared_ptr<PMatrix1e> o) const {
   assert(o->totalsize() == totalsize_);
   const int unit = 1;
   const Complex* odata = o->data()->front();
@@ -449,6 +449,29 @@ const double PMatrix1e::trace() const {
       out += ((*data_)[boffset + i * nbasis_ + i]).real(); 
   }
   return out;
+}
+
+
+pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int nrow1, const int nrow2) {
+  shared_ptr<PMatrix1e> out1(new PMatrix1e(geom_, nrow1, mdim_));
+  shared_ptr<PMatrix1e> out2(new PMatrix1e(geom_, nrow2, mdim_));
+
+  assert(nrow1+nrow2 == ndim_);
+  assert(blocksize_ == out1->blocksize() + out2->blocksize());
+  assert(blocksize_ == ndim_ * mdim_);
+
+  Complex* source = data_->front();
+  Complex* data1 = out1->data()->front();
+  Complex* data2 = out2->data()->front();
+
+  for (int i = -K(); i <= K(); ++i) {
+    for (int m = 0; m != mdim_; ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim_) {
+      copy(source,       source+nrow1,       data1);
+      copy(source+nrow1, source+nrow1+nrow2, data2);
+    }
+  }
+
+  return make_pair(out1, out2);
 }
 
 

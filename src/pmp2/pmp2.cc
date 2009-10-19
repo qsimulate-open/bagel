@@ -95,23 +95,28 @@ void PMP2::compute() {
 
   // PMatrix1e overlap;
   {
+    typedef shared_ptr<PMatrix1e> RefMatrix;
     RefGeom union_geom(new PGeometry(*geom_));
     union_geom->merge_obs_cabs();
 
     shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
     shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
 
-    shared_ptr<PMatrix1e> ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
+    RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
 
-    PMatrix1e tmp = *ri_coeff % union_overlap->ft() * *ri_reshaped;
-    shared_ptr<PMatrix1e> U(new PMatrix1e(geom_, tmp.ndim(), tmp.ndim()));
-    shared_ptr<PMatrix1e> V(new PMatrix1e(geom_, tmp.mdim(), tmp.mdim()));
-    tmp.svd(U, V);
+    RefMatrix tmp(new PMatrix1e(*ri_coeff % union_overlap->ft() * *ri_reshaped));
+    RefMatrix U(new PMatrix1e(geom_, tmp->ndim(), tmp->ndim()));
+    RefMatrix V(new PMatrix1e(geom_, tmp->mdim(), tmp->mdim()));
+    tmp->svd(U, V);
 
-    shared_ptr<PMatrix1e> Ured(new PMatrix1e(U, tmp.mdim()));
-    shared_ptr<PMatrix1e> cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));;
+    RefMatrix Ured(new PMatrix1e(U, tmp->mdim()));
+    RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
 
+    pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
     cabs_coeff->print();
+    RefMatrix cabs_obs = cabs_coeff_spl.first;
+    RefMatrix cabs_aux = cabs_coeff_spl.second;
+
   }
 
 }

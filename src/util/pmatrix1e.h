@@ -85,7 +85,10 @@ class PMatrix1e {
     const std::complex<double> zdotc(const boost::shared_ptr<PMatrix1e>) const;
    
     const double rms() const;
-    const double trace() const; 
+    const double trace() const;
+
+    std::pair<boost::shared_ptr<PMatrix1e>, boost::shared_ptr<PMatrix1e> >
+      split(const int nrow1, const int nrow2);
 
 }; 
 
