@@ -109,10 +109,10 @@ void PMP2::compute() {
 
     U->print();
 
-#if 0
-    PMatrix1e tmp = *cabs_coeff % union_overlap->ft() * *cabs_coeff;
-    tmp.print();
-#endif
+    shared_ptr<PMatrix1e> Ured(new PMatrix1e(U, tmp.mdim()));
+
+    Ured->print();
+
   }
 
 }

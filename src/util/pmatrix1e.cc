@@ -39,7 +39,7 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg, const int ldn, const
 }
 
 
-// Changes the leading dimension.
+// Changes the leading dimension, filling zero.
 PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm)
 : geom_(source->geom()), nbasis_(source->nbasis()),
   blocksize_(ldn * ldm), totalsize_((2 * source->K() + 1) * ldn * ldm) {
@@ -61,6 +61,30 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, c
     for (int j = 0; j != mdim_; ++j, current+=ldn, csource+=ld_source) {
       copy(csource, csource+ld_source, current);
     }
+  }
+}
+
+
+// Changes number of columns; removes first ncut columns.
+PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int mcut)
+: geom_(source->geom()), nbasis_(source->nbasis()),
+  blocksize_(source->ndim() * (source->mdim()-mcut)),
+  totalsize_((2 * source->K() + 1) * source->ndim() * (source->mdim()-mcut)) {
+
+  assert(mcut < source->mdim());
+
+  ndim_ = source->ndim();
+  mdim_ = source->mdim()-mcut;
+  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  data_ = tmp;
+  const boost::shared_ptr<PData> sdata = source->data();
+  const int sblocksize = source->blocksize();
+
+  for (int i = -K(); i != max(K(), 1); ++i) {
+    complex<double>* current = data_->front() + (i + K()) * blocksize_;
+    complex<double>* csource = sdata->front() + (i + K()) * sblocksize;
+
+    copy(csource+ndim_*mcut, csource+ndim_*(mdim_+mcut), current);
   }
 }
 
@@ -299,7 +323,7 @@ void PMatrix1e::print() const {
     cout << "K = " << setw(2) << k << ":" << endl;
     for (int i = 0; i != mdim_; ++i) {
       for (int j = 0; j != ndim_; ++j, ++index) {
-        cout << setw(14) << setprecision(2) << (*data_)[index] << " ";
+        cout << setw(14) << setprecision(6) << (*data_)[index] << " ";
       }
       cout << endl;
     }

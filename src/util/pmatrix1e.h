@@ -40,7 +40,10 @@ class PMatrix1e {
   public:
     PMatrix1e(const boost::shared_ptr<PGeometry>);
     PMatrix1e(const boost::shared_ptr<PGeometry>, const int ldn, const int ldm);
+    // Constructing PMatrix1e while increasing the leading dimension, or ndim_.
     PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm);
+    // Constructing PMatrix1e while reducing the number of columns
+    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int mcut);
     ~PMatrix1e(); 
 
     PMatrix1e operator*(const PMatrix1e&) const;

@@ -32,6 +32,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
   vector<double> max_eig;
   vector<double> min_eig;
 
+  cout << "  Orthogonalizing overlap matrix" << endl;
+
   int mcount = 0;
   for (int m = -K(); m != max(K(), 1); ++m, ++mcount) {
     const int boffset = mcount * blocksize_;
@@ -58,9 +60,10 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
       if (fabs(eig[i]) < largest * THRESH_OVERLAP) ++cnt;
       else break;
     }
-    if (cnt != 0) 
-      cout << "  Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
-           << " in orthogonalization (m = " << m << ")" << endl << endl;
+    if (cnt != 0) {
+      cout << "   Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
+           << " in orthogonalization (m = " << m << ")" << endl;
+    }
   
     for (int i = cnt; i != ndim_; ++i) {
       assert(eig[i] > 0);
@@ -81,7 +84,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     }
     
   }
-  cout << setprecision(15);
+  cout << setprecision(15) << endl;
   cout << "  Maximum residual in orthogonalization: " << *max_element(max_eig.begin(), max_eig.end()) << endl;
   cout << "  Minimum residual in orthogonalization: " << *min_element(min_eig.begin(), min_eig.end()) << endl;
   cout << endl;
