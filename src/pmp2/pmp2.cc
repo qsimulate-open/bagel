@@ -33,6 +33,7 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const double* eg, const shared_p
   nbasis_ = geom_->nbasis();
   nvir_ = nbasis_ - nocc_;
   noovv_ = nocc_act_ * nocc_act_ * nbasis_ * nbasis_;
+  ncabs_ = geom_->ncabs();
 
   assert(geom_->ncabs() != 0);
 // just to check
@@ -98,14 +99,16 @@ void PMP2::compute() {
   shared_ptr<PMatrix1e> cabs_aux;
   {
     typedef shared_ptr<PMatrix1e> RefMatrix;
+
+    // Form RI space which is a union of OBS and CABS.
     RefGeom union_geom(new PGeometry(*geom_));
     union_geom->merge_obs_cabs();
 
     shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
     shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
-
     RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
 
+    // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
     RefMatrix tmp(new PMatrix1e(*ri_coeff % union_overlap->ft() * *ri_reshaped));
     RefMatrix U(new PMatrix1e(geom_, tmp->ndim(), tmp->ndim()));
     RefMatrix V(new PMatrix1e(geom_, tmp->mdim(), tmp->mdim()));
@@ -118,8 +121,14 @@ void PMP2::compute() {
     cabs_coeff->print();
     cabs_obs = cabs_coeff_spl.first;
     cabs_aux = cabs_coeff_spl.second;
-  }
 
+    // Setting actual number of CABS.
+    ncabs_ = cabs_obs->mdim();
+  }
+  assert(cabs_obs->mdim() == ncabs_);
+  RefPMOFile eri_ii_ii = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
+                                                        nfrc_, nocc_, nfrc_, nocc_,
+                                                        nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
 
 
 }

@@ -76,7 +76,11 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     min_eig.push_back(eig[cnt]);
     max_eig.push_back(eig[ndim_-1]);
     delete[] eig;
+
+    // TODO FATAL: CHECK THAT ALL BLOCKS HAVE SAME NUMBER OF CABS
+    // this line needs attention....
     mdim_ = ndim_ - cnt;
+
     if (cnt != 0) { 
       for (int i = 0; i != mdim_; ++i) {
         zcopy_(&ndim_, &cdata[(i + cnt) * ndim_], &unit, &cdata[i * ndim_], &unit); 

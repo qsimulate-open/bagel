@@ -26,6 +26,7 @@ class PMP2 {
     int nocc_act_;
     int nocc_;
     int nvir_;
+    int ncabs_;
     size_t noovv_;
 
   public:
