@@ -44,4 +44,3 @@ PMatrix1e PCoeff::form_density_rhf() {
 
   return out;
 }
-

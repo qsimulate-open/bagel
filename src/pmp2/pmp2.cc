@@ -93,14 +93,23 @@ void PMP2::compute() {
   eri_cabs_->store_integrals();
   eri_cabs_->reopen_with_inout();
 
- // PMatrix1e overlap;
+  // PMatrix1e overlap;
   {
     RefGeom union_geom(new PGeometry(*geom_));
     union_geom->merge_obs_cabs();
     shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
     shared_ptr<PTildeX> cabs_coeff(new PTildeX(union_overlap));
 
-#if 1
+    shared_ptr<PMatrix1e> coeff_reshaped(new PMatrix1e(coeff_, cabs_coeff->ndim(), coeff_->mdim()));
+
+    PMatrix1e tmp = *cabs_coeff % union_overlap->ft() * *coeff_reshaped;
+    shared_ptr<PMatrix1e> U(new PMatrix1e(geom_, tmp.ndim(), tmp.ndim()));
+    shared_ptr<PMatrix1e> V(new PMatrix1e(geom_, tmp.mdim(), tmp.mdim()));
+    tmp.svd(U, V);
+
+    U->print();
+
+#if 0
     PMatrix1e tmp = *cabs_coeff % union_overlap->ft() * *cabs_coeff;
     tmp.print();
 #endif

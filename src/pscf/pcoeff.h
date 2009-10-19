@@ -16,6 +16,7 @@ class PCoeff : public PMatrix1e {
     ~PCoeff();
 
     PMatrix1e form_density_rhf();
+
 };
 
 #endif

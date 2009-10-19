@@ -24,18 +24,23 @@ class PMatrix1e {
   protected:
     boost::shared_ptr<PGeometry> geom_;
     const int nbasis_;
+    // # of row
     int ndim_;
+    // # of column
     int mdim_;
     const int blocksize_;
     const int totalsize_;
 
     virtual void init();
-    virtual void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int, const int) { assert(false); };
+    virtual void computebatch(const std::vector<boost::shared_ptr<Shell> >&,
+        const int, const int, const int, const int) { assert(false); };
 
     boost::shared_ptr<PData> data_;
 
   public:
-    PMatrix1e(const boost::shared_ptr<PGeometry>); 
+    PMatrix1e(const boost::shared_ptr<PGeometry>);
+    PMatrix1e(const boost::shared_ptr<PGeometry>, const int ldn, const int ldm);
+    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm);
     ~PMatrix1e(); 
 
     PMatrix1e operator*(const PMatrix1e&) const;
@@ -66,6 +71,7 @@ class PMatrix1e {
 
     const boost::shared_ptr<PGeometry> geom() const { return geom_; };
     void diagonalize(double*);
+    void svd(boost::shared_ptr<PMatrix1e> U, boost::shared_ptr<PMatrix1e> V);
 
     void print() const;
     void rprint() const;

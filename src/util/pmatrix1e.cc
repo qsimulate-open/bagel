@@ -15,6 +15,9 @@ typedef std::complex<double> Complex;
 
 using namespace std;
 
+
+// I have supposed that ndim_ is the leading dimension in the data.
+
 PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg) 
 : geom_(pg), nbasis_(pg->nbasis()),
   blocksize_(pg->nbasis() * pg->nbasis()), totalsize_((2 * pg->K() + 1) * pg->nbasis() * pg->nbasis()) {
@@ -25,11 +28,50 @@ PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg)
 }
 
 
+PMatrix1e::PMatrix1e(const boost::shared_ptr<PGeometry> pg, const int ldn, const int ldm)
+: geom_(pg), nbasis_(pg->nbasis()),
+  blocksize_(ldn * ldm), totalsize_((2 * pg->K() + 1) * ldn * ldm) {
+
+  mdim_ = ldm;
+  ndim_ = ldn;
+  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  data_ = tmp;
+}
+
+
+// Changes the leading dimension.
+PMatrix1e::PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm)
+: geom_(source->geom()), nbasis_(source->nbasis()),
+  blocksize_(ldn * ldm), totalsize_((2 * source->K() + 1) * ldn * ldm) {
+
+  assert(ldn >= nbasis_);
+
+  ndim_ = ldn;
+  mdim_ = ldm;
+  boost::shared_ptr<PData> tmp(new PData(totalsize_));
+  data_ = tmp;
+  const boost::shared_ptr<PData> sdata = source->data();
+  const int ld_source = source->ndim();
+  const int sblocksize = source->blocksize();
+
+  for (int i = -K(); i != max(K(), 1); ++i) {
+    complex<double>* current = data_->front() + (i + K()) * blocksize_;
+    complex<double>* csource = sdata->front() + (i + K()) * sblocksize;
+
+    for (int j = 0; j != mdim_; ++j, current+=ldn, csource+=ld_source) {
+      copy(csource, csource+ld_source, current);
+    }
+  }
+}
+
+
+
 PMatrix1e::~PMatrix1e() {
 }
 
 
 PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
+  assert(add.totalsize() == totalsize_);
   PMatrix1e out(geom_);
   for (int j = 0; j != totalsize_; ++j) (*out.data_)[j] = (*add.data_)[j] + (*data_)[j]; 
   return out;
@@ -37,6 +79,7 @@ PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
 
 
 PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
+  assert(sub.totalsize() == totalsize_);
   PMatrix1e out(geom_);
   #pragma omp parallel for
   for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
@@ -45,12 +88,14 @@ PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
 
 
 PMatrix1e& PMatrix1e::operator=(const PMatrix1e& source) {
+  assert(source.totalsize() == totalsize_);
   ::memcpy(data_->front(), source.data_->front(), totalsize_ * sizeof(Complex)); 
   return *this; 
 }
 
 
 PMatrix1e& PMatrix1e::operator+=(const PMatrix1e& source) {
+  assert(source.totalsize() == totalsize_);
   const int unit = 1;
   const Complex one(1.0, 0.0);
   zaxpy_(&totalsize_, &one, source.data_->front(), &unit, data_->front(), &unit);
@@ -151,25 +196,27 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
   assert(mdim_ == o.ndim());
   const int n = o.mdim();
 
-  PMatrix1e out(geom_);
+  PMatrix1e out(geom_, l, n);
   const boost::shared_ptr<PData> odata = o.data();
-  boost::shared_ptr<PData> outdata = out.data_;
+  boost::shared_ptr<PData> outdata = out.data();
+
   for (int i = -K(); i <= K(); ++i) {
     const int icount = i + K();
-    const int boffset = icount * blocksize_;
-    const Complex* cdata = data_->pointer(boffset); 
-    const Complex* codata = odata->pointer(boffset); 
-    Complex* coutdata = outdata->pointer(boffset);
-    zgemm_("N", "N", &l, &n, &m, &one, cdata, &nbasis_, codata, &nbasis_, &zero, coutdata, &nbasis_); 
+    const int boffset1 = icount * blocksize_;
+    const int boffset2 = icount * o.blocksize();
+    const int boffset3 = icount * out.blocksize();
+    const Complex* cdata = data_->pointer(boffset1);
+    const Complex* codata = odata->pointer(boffset2);
+    Complex* coutdata = outdata->pointer(boffset3);
+    zgemm_("N", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &mdim_, &zero, coutdata, &ndim_);
   }
-  out.ndim_ = l;
-  out.mdim_ = n; 
+
   return out;
 };
 
 
 PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
-  PMatrix1e out(geom_);
+
   const int unit = 1;
   const Complex one(1.0, 0.0);
   const Complex zero(0.0, 0.0);
@@ -178,24 +225,52 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
   assert(ndim_ == o.ndim());
   const int n = o.mdim(); 
   const boost::shared_ptr<PData> odata = o.data();
-  boost::shared_ptr<PData> outdata = out.data_;
+
+  PMatrix1e out(geom_, l, n);
+  boost::shared_ptr<PData> outdata = out.data();
 
   for (int i = -K(); i <= K(); ++i) {
     const int icount = i + K();
-    const int boffset = icount * blocksize_;
-    const Complex* cdata = data_->pointer(boffset);
-    const Complex* codata = odata->pointer(boffset); 
-    Complex* coutdata = outdata->pointer(boffset);
-    zgemm_("C", "N", &l, &n, &m, &one, cdata, &nbasis_, codata, &nbasis_, &zero, coutdata, &nbasis_); 
+    const int boffset1 = icount * blocksize_;
+    const int boffset2 = icount * o.blocksize();
+    const int boffset3 = icount * out.blocksize();
+    const Complex* cdata = data_->pointer(boffset1);
+    const Complex* codata = odata->pointer(boffset2);
+    Complex* coutdata = outdata->pointer(boffset3);
+    zgemm_("C", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &ndim_, &zero, coutdata, &mdim_);
   }
 
-  out.ndim_ = l;
-  out.mdim_ = n;
   return out;
 }
 
 
+void PMatrix1e::svd(boost::shared_ptr<PMatrix1e> U, boost::shared_ptr<PMatrix1e> V) {
+  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
+  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+  const int lwork = 5 * min(ndim_, mdim_) + max(ndim_, mdim_);
+  complex<double>* work = new complex<double>[lwork];
+  double* rwork = new double[lwork];
+  double* S = new double[min(ndim_, mdim_)];
+/*
+  SUBROUTINE ZGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
+ $                   WORK, LWORK, RWORK, INFO )
+ */
+  for (int i = -K(); i < max(K(), 1); ++i) {
+    complex<double>* cblock = data_->pointer(blocksize_ * (i + K()));
+    complex<double>* ublock = U->data()->pointer(U->blocksize() * (i + K()));
+    complex<double>* vblock = V->data()->pointer(V->blocksize() * (i + K()));
+    int info = 0;
+    zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, &info);
+    assert(info == 0);
+  }
+  delete[] S;
+  delete[] work;
+  delete[] rwork;
+}
+
+
 void PMatrix1e::diagonalize(double* eig) {
+  assert(ndim_ == mdim_);
   const int lwork = nbasis_ * 6;
 
   #pragma omp parallel for
@@ -222,8 +297,8 @@ void PMatrix1e::print() const {
   int index = 0;
   for (int k = -K(); k <= K(); ++k) {
     cout << "K = " << setw(2) << k << ":" << endl;
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != nbasis_; ++j, ++index) {
+    for (int i = 0; i != mdim_; ++i) {
+      for (int j = 0; j != ndim_; ++j, ++index) {
         cout << setw(14) << setprecision(2) << (*data_)[index] << " ";
       }
       cout << endl;
@@ -237,8 +312,8 @@ void PMatrix1e::rprint() const {
   int index = 0;
   for (int k = -K(); k <= K(); ++k) {
     cout << "K = " << setw(2) << k << ":" << endl;
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != nbasis_; ++j, ++index) {
+    for (int i = 0; i != mdim_; ++i) {
+      for (int j = 0; j != ndim_; ++j, ++index) {
         cout << setw(10) << setprecision(6) << (*data_)[index].real() * 2.0 << " ";
       }
       cout << endl;
@@ -302,6 +377,7 @@ void PMatrix1e::zaxpy(const Complex a, const boost::shared_ptr<PMatrix1e> o) {
 
 
 const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
+  assert(o.totalsize() == totalsize_);
   const int unit = 1;
   const Complex* odata = o.data()->front();
   Complex out;
@@ -315,6 +391,7 @@ const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
 
 
 const Complex PMatrix1e::zdotc(const boost::shared_ptr<PMatrix1e> o) const {
+  assert(o->totalsize() == totalsize_);
   const int unit = 1;
   const Complex* odata = o->data()->front();
   Complex out;

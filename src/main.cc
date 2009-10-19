@@ -57,9 +57,18 @@ int main(int argc, char** argv) {
       PMP2 pmp2(pscf->geom(), pscf->coeff(), pscf->eig(), pscf->ao_eri());
       pmp2.compute();
     }
-  } catch (const exception &e) {
-    cout << "Caught : " << e.what() << endl;
-    cout << "Type   : " << typeid(e).name() << endl;
+
+  } catch (bad_alloc &e) {
+    cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
+         << e.what() << endl;
+    throw;
+  } catch (exception &e) {
+    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
+         << e.what() << endl;
+    throw;
+  } catch (...) {
+    cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
+    throw;
   }
 
   return 0;
