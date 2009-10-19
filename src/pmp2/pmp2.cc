@@ -107,11 +107,11 @@ void PMP2::compute() {
     shared_ptr<PMatrix1e> V(new PMatrix1e(geom_, tmp.mdim(), tmp.mdim()));
     tmp.svd(U, V);
 
-    U->print();
-
     shared_ptr<PMatrix1e> Ured(new PMatrix1e(U, tmp.mdim()));
 
-    Ured->print();
+    // unsure. Make sure about dimensions of cabs_coeff
+    // and match to Ured. I want to shrink cabs_coeff, though not sure possible or not.
+    (*cabs_coeff * *Ured).print();
 
   }
 

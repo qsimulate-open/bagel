@@ -323,7 +323,7 @@ void PMatrix1e::print() const {
     cout << "K = " << setw(2) << k << ":" << endl;
     for (int i = 0; i != mdim_; ++i) {
       for (int j = 0; j != ndim_; ++j, ++index) {
-        cout << setw(14) << setprecision(6) << (*data_)[index] << " ";
+        cout << setw(14) << setprecision(2) << (*data_)[index] << " ";
       }
       cout << endl;
     }
