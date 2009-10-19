@@ -27,7 +27,8 @@ class Shell {
     int nbasis_;
 
   public:
-    Shell(const bool, std::vector<double>, int, std::vector<double>, std::vector<std::vector<double> >, std::vector<std::pair<int, int> >); 
+    Shell(const bool, std::vector<double>, int, std::vector<double>,
+        std::vector<std::vector<double> >, std::vector<std::pair<int, int> >);
 
     ~Shell();
 

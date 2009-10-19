@@ -5,6 +5,7 @@
 
 #include <src/scf/shell.h>
 #include <iostream>
+#include <sstream>
 #include <boost/lexical_cast.hpp>
 
 using namespace std;
@@ -12,7 +13,8 @@ using namespace boost;
 
 Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> _expo, 
                        vector<vector<double> > _contr,  vector<pair<int, int> > _range)
- : spherical_(sph), position_(_position), angular_number_(_ang), exponents_(_expo), contractions_(_contr), contraction_ranges_(_range) {
+ : spherical_(sph), position_(_position), angular_number_(_ang),
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range) {
 
   for (vector<pair<int, int> >::iterator piter = _range.begin(); piter != _range.end(); ++piter) {
     contraction_lower_.push_back(piter->first);  
@@ -21,9 +23,9 @@ Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> 
 
 
   if (spherical_)
-    nbasis_ = (angular_number_ * 2 + 1) * num_contracted();
+    nbasis_ = (angular_number_*2+1) * num_contracted();
   else
-    nbasis_ = (angular_number_ + 1) * (angular_number_ + 2) / 2 * num_contracted();
+    nbasis_ = (angular_number_+1) * (angular_number_+2) / 2 * num_contracted();
 
 }
 
@@ -52,20 +54,21 @@ boost::shared_ptr<Shell> Shell::move_atom(const double* displacement) {
 
 
 const string Shell::show() const {
-  string out;
-  out += "position: ";
-  out += lexical_cast<string>(position_[0]) + " " + lexical_cast<string>(position_[1]) + " " +lexical_cast<string>(position_[2]) + "\n";
-  out += "angular: " + lexical_cast<string>(angular_number_) + "\n"; 
-  out += "exponents: ";
+  stringstream ss;
+  ss << "position: ";
+  ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
+  ss << "angular: "  << angular_number_ << endl;
+  ss << "exponents: ";
   for (int i = 0; i != exponents_.size(); ++i) {
-    out += " " + lexical_cast<string>(exponents_[i]);
+    ss << " " << exponents_[i];
   }
-  out += "\n"; 
+  ss << endl;
   for (int i = 0; i != contractions_.size(); ++i) {
-    out += " (" + lexical_cast<string>(contraction_ranges_[i].first) + "," + lexical_cast<string>(contraction_ranges_[i].second) + ") "; 
+    ss << " (" << contraction_ranges_[i].first << "," << contraction_ranges_[i].second << ") ";
     for (int j = contraction_ranges_[i].first; j != contraction_ranges_[i].second; ++j)
-      out += lexical_cast<string>(contractions_[i][j]) + " "; 
-  } 
-  return out;
+      ss << contractions_[i][j] << " ";
+  }
+
+  return ss.str();
 }
 

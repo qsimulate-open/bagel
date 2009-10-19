@@ -107,19 +107,19 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   const int k = this->K_;
   const double a = this->A_;
   unsigned long data_written = 0ul;
-  this->num_int_each_.resize((s + s + 1) * (s + s + 1) * (l + l + 1));
+  this->num_int_each_.resize((s+s+1) * (s+s+1) * (l+l+1));
 
   const int size = this->basis_.size(); // number of shells
   const int cabs_size = cabs_basis_.size(); // number of shells
 
   #pragma omp parallel for reduction(+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
-    const double m1disp[3] = {0.0, 0.0, m1 * a}; 
+    const double m1disp[3] = {0.0, 0.0, m1*a};
     size_t offset = (m1 + s) * (l + 1) * (s * 2 + 1);
     for (int m2 = - l; m2 <= l; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * a}; 
+      const double m2disp[3] = {0.0, 0.0, m2*a};
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3 * a}; 
+        const double m3disp[3] = {0.0, 0.0, m3*a};
         size_t thisblock = 0ul; 
         for (int i0 = 0; i0 != size; ++i0) {
           const int b0offset = this->offset_[i0]; 
@@ -221,7 +221,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
   const int size = this->basis_.size(); // number of shells
   const int cabs_size = cabs_basis_.size(); // number of shells
 
-  int* blocks = new int[size * size * size * size + 1];
+  int* blocks = new int[size*size*size*cabs_size+1];
   blocks[0] = 0;
   int iall = 0;
   for (int i0 = 0; i0 != size; ++i0) {
@@ -240,15 +240,15 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
       }
     }
   }
-  #pragma omp parallel for
+//  #pragma omp parallel for
   for (int i0 = 0; i0 < size; ++i0) {
-    int offset = i0 * size * size * size;
+    int offset = i0 * size * size * cabs_size;
     const RefShell b0 = this->basis_[i0]; // b0 is the center cell
     for (int i1 = 0; i1 != size; ++i1) {
       const RefShell b1 = this->basis_[i1]->move_atom(m1disp);
       for (int i2 = 0; i2 != size; ++i2) {
         const RefShell b2 = this->basis_[i2]->move_atom(m2disp);
-        for (int i3 = 0; i3 < cabs_size; ++i3, ++offset) {
+        for (int i3 = 0; i3 != cabs_size; ++i3, ++offset) {
           const RefShell b3 = cabs_basis_[i3]->move_atom(m3disp);
 
           if (blocks[offset] == blocks[offset + 1]) continue;

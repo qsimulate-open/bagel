@@ -97,22 +97,21 @@ void PMP2::compute() {
   {
     RefGeom union_geom(new PGeometry(*geom_));
     union_geom->merge_obs_cabs();
+
     shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
-    shared_ptr<PTildeX> cabs_coeff(new PTildeX(union_overlap));
+    shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
 
-    shared_ptr<PMatrix1e> coeff_reshaped(new PMatrix1e(coeff_, cabs_coeff->ndim(), coeff_->mdim()));
+    shared_ptr<PMatrix1e> ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
 
-    PMatrix1e tmp = *cabs_coeff % union_overlap->ft() * *coeff_reshaped;
+    PMatrix1e tmp = *ri_coeff % union_overlap->ft() * *ri_reshaped;
     shared_ptr<PMatrix1e> U(new PMatrix1e(geom_, tmp.ndim(), tmp.ndim()));
     shared_ptr<PMatrix1e> V(new PMatrix1e(geom_, tmp.mdim(), tmp.mdim()));
     tmp.svd(U, V);
 
     shared_ptr<PMatrix1e> Ured(new PMatrix1e(U, tmp.mdim()));
+    shared_ptr<PMatrix1e> cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));;
 
-    // unsure. Make sure about dimensions of cabs_coeff
-    // and match to Ured. I want to shrink cabs_coeff, though not sure possible or not.
-    (*cabs_coeff * *Ured).print();
-
+    cabs_coeff->print();
   }
 
 }

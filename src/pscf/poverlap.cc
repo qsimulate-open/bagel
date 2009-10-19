@@ -13,8 +13,9 @@ using namespace std;
 using namespace boost;
 
 POverlap::POverlap(const RefPGeometry g) : PMatrix1e(g) {
-
+cout << "in" << endl;
   init();
+  cout << "out" << endl;
 
 }
 
