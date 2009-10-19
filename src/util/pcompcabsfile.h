@@ -240,7 +240,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
       }
     }
   }
-//  #pragma omp parallel for
+  #pragma omp parallel for
   for (int i0 = 0; i0 < size; ++i0) {
     int offset = i0 * size * size * cabs_size;
     const RefShell b0 = this->basis_[i0]; // b0 is the center cell
