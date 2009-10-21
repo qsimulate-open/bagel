@@ -197,17 +197,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
 
-        // only exponential part is evaluated...
-        if (integral_thresh != 0.0) {
-          const double rho = cxp_min * cxq / (cxp_min + cxq);
-          const double T = rho * min_pq_sq;
-          const double U = gamma_ * gamma_ * 0.25 / rho;
-          const double ssss = Ecd_save[index23] * min_Eab * exp(U - gamma_ * min_pq_sq);
-          if (ssss > integral_thresh)
-            indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
-        } else {
-          indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
-        }
+        indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
       }
     }
   }
@@ -235,14 +225,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
       const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
-
-      if (integral_thresh != 0.0) {
-        const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
-        const double T_sc = rho_sc * min_pq_sq; 
-        const double U_sc = gamma_ * gamma_ * 0.25 / rho_sc;
-        const double ssss = min_Ecd * Eab * exp(U_sc - gamma_ * min_pq_sq);
-        if (ssss <= integral_thresh) continue;
-      }
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
