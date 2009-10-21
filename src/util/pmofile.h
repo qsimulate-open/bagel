@@ -207,8 +207,6 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 
               const T one = 1.0;
               const T prefac = one / static_cast<T>(k2);
-              // TODO how to deal with this???
-              // assuming complex<double>....
               zgemm_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
             }
           }

@@ -26,9 +26,12 @@ using namespace boost;
 
 typedef boost::shared_ptr<Shell> RefShell;
 
-SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa) :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
+SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
+:  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
-  const double integral_thresh = PRIM_SCREEN_THRESH / max_density; 
+  // We need none-zero threshold; otherwise, overflow occurs.
+  // And the screening here is not rigorous -- so scaling with the factor of 1.0e-5.
+  const double integral_thresh = std::max(1.0e-20, PRIM_SCREEN_THRESH * 1.0e-5);// / max_density;
 
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
@@ -193,25 +196,18 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
-#if 0
+
+        // only exponential part is evaluated...
         if (integral_thresh != 0.0) {
           const double rho = cxp_min * cxq / (cxp_min + cxq);
-          const double T = rho * min_pq_sq; 
-          const double onepqp_q = 1.0 / (::sqrt(cxp_min + cxq) * cxp_min * cxq);
-          const double abcd_sc = min_ab * cd;
-          const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-          const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
-          const double tsqrt = ::sqrt(T);
-          const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
-                              * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : PIMHALF);
+          const double T = rho * min_pq_sq;
+          const double U = gamma_ * gamma_ * 0.25 / rho;
+          const double ssss = Ecd_save[index23] * min_Eab * exp(U - gamma_ * min_pq_sq);
           if (ssss > integral_thresh)
             indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
         } else {
-#endif
           indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
-#if 0
         }
-#endif
       }
     }
   }
@@ -239,20 +235,14 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
       const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
-#if 0
+
       if (integral_thresh != 0.0) {
         const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
         const double T_sc = rho_sc * min_pq_sq; 
-        const double onepqp_q_sc = 1.0 / (::sqrt(cxp + cxq_min) * cxp * cxq_min);
-        const double tsqrt = ::sqrt(T_sc);
-        const double abcd_sc = ab * min_cd;
-        const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-        const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
-        const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
-                          * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : PIMHALF);
+        const double U_sc = gamma_ * gamma_ * 0.25 / rho_sc;
+        const double ssss = min_Ecd * Eab * exp(U_sc - gamma_ * min_pq_sq);
         if (ssss <= integral_thresh) continue;
       }
-#endif
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
@@ -272,8 +262,11 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
           const double xpq = qx_save[index23] - px;
           const double ypq = qy_save[index23] - py;
           const double zpq = qz_save[index23] - pz;
-          const double T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
+          const double pq_sq = xpq * xpq + ypq * ypq + zpq * zpq;
           const double U = 0.25 * gamma_ * gamma_ / rho;
+          if (coeffy_[index] * exp(U - gamma_ * pq_sq) < integral_thresh) continue;
+
+          const double T = rho * pq_sq;
           coeff_[index] = coeffy_[index] * twogamma * U;
           const int index3 = index * 3;
           p_[index3] = px; 
