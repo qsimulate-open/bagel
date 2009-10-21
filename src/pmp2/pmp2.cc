@@ -78,21 +78,14 @@ void PMP2::compute() {
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
 
-  RefPMOFile stg_dag_times_eri_ii_ii = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_,
-                                                                       nfrc_, nocc_, "F * v (ii/ii)");
-  RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *stg_dag_times_eri_ii_ii)); 
-
-  V_obs->print();
-//yp_ii_ii->print();
-
-  complex<double> en_vt = V_obs->get_energy_one_amp();
-  // Direct contribution to R12 energy
-  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
-
   // CABS integrals
   shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
   eri_cabs->store_integrals();
   eri_cabs->reopen_with_inout();
+
+  shared_ptr<PCompCABSFile<SlaterBatch> >stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, false, "Slater CABS"));
+  stg_cabs->store_integrals();
+  stg_cabs->reopen_with_inout();
 
   // Construction of CABS;
   shared_ptr<PMatrix1e> cabs_obs;
@@ -117,25 +110,58 @@ void PMP2::compute() {
     RefMatrix Ured(new PMatrix1e(U, tmp->mdim()));
     RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
 
+#if 0
+    RefMatrix debug(new PMatrix1e(*cabs_coeff % union_overlap->ft() * *cabs_coeff));
+    debug->print();
+#endif
+
     pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
     cabs_obs = cabs_coeff_spl.first;
     cabs_aux = cabs_coeff_spl.second;
 
     // Setting actual number of CABS.
     ncabs_ = cabs_obs->mdim();
+    assert(ncabs_ == cabs_aux->mdim());
   }
 
+  // MO transformation for ERI
   RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                         nfrc_, nocc_, nfrc_, nocc_,
-                                                        nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
+                                                        0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
   eri_ii_ip->sort_inside_blocks();
 
   RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux,
                                                          nfrc_, nocc_, nfrc_, nocc_,
-                                                         nfrc_, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
+                                                         0, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
   eri_ii_ix->sort_inside_blocks();
   RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
-  eri_ii_iA->print();
+
+
+  // MO transformation for STG
+  RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
+  stg_ii_ip->sort_inside_blocks();
+  RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux,
+                                                         nfrc_, nocc_, nfrc_, nocc_,
+                                                         0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
+  stg_ii_ix->sort_inside_blocks();
+  RefPMOFile stg_ii_iA(new PMOFile<complex<double> >(*stg_ii_ix + *stg_ii_ip));
+
+  {
+    RefPMOFile vF = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
+    RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *vF));
+
+    RefPMOFile V_cabs = stg_ii_iA->contract(eri_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
+
+    RefPMOFile V(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
+    complex<double> en_vt = V->get_energy_one_amp();
+    // Direct contribution to R12 energy
+    cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
+    V->print();
+  }
+
+
 }
 
 

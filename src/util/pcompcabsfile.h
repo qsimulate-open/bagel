@@ -100,7 +100,7 @@ void PCompCABSFile<T>::init_cabs_schwarz() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        cabs_schwarz_[(m + this->K_) * size * cabs_size + i0 * cabs_size + i1] = cmax;
+        cabs_schwarz_[((m + this->K_) * size + i0) * cabs_size + i1] = cmax;
       }
     }
   }
@@ -148,7 +148,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
                 const int b3size = cabs_basis_[i3]->nbasis();
 
                 const double integral_bound = this->schwarz_[(m1 + k) * size * size + i0 * size + i1]
-                                            * cabs_schwarz_[(m3 - m2 + k) * size * cabs_size + i2 * cabs_size + i3];
+                                            * cabs_schwarz_[((m3 - m2 + k) * size + i2) * cabs_size + i3];
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
@@ -243,7 +243,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
         for (int i3 = 0; i3 != cabs_size; ++i3, ++iall) {
           const int b3size = cabs_basis_[i3]->nbasis();
           const double integral_bound = this->schwarz_[(m1 + k) * size * size + i0 * size + i1]
-                                      * cabs_schwarz_[(m3 - m2 + k) * size * size + i2 * size + i3];
+                                      * cabs_schwarz_[((m3 - m2 + k) * size + i2) * cabs_size + i3];
           const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
           blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
         }
@@ -319,12 +319,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const int unit = 1;
 
   const int nbasis1 = this->geom_->nbasis();
-  const int cabs_nbasis1 = cabs_coeff->ndim();
   const int nbasis2 = nbasis1 * nbasis1;
-  const int cabs_nbasis2 = nbasis1 * cabs_nbasis1;
   const int nbasis3 = nbasis2 * nbasis1;
-  const int cabs_nbasis3 = nbasis2 * cabs_nbasis1;
   const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
+  const int cabs_nbasis1 = cabs_coeff->ndim();
+  const int cabs_nbasis2 = nbasis1 * cabs_nbasis1;
+  const int cabs_nbasis3 = nbasis2 * cabs_nbasis1;
   const size_t cabs_nbasis4 = static_cast<size_t>(cabs_nbasis1) * nbasis3;
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
@@ -385,7 +385,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const double* cdata;
 
         if (q3 == -s) {
-          const size_t key = sizem1 * ((q2+s) + sizem2 * (q1+s));
+          const size_t key = sizem1 * ((q2+l) + sizem2 * (q1+s));
           size_t readsize = 0lu;
           for (int i = 0; i <= s*2; ++i) readsize += this->num_int_each_[key + i];
           size_t datasize_acc = 0lu;
@@ -394,7 +394,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           cdata = data_read;
         } else {
           cdata = data_read;
-          const size_t key = s + sizem1 * ((q2+s) + sizem2 * (q1+s));
+          const size_t key = s + sizem1 * ((q2+l) + sizem2 * (q1+s));
           for (int i = key - s; i != key + q3; ++i) cdata += this->num_int_each_[i];
         }
 
@@ -402,8 +402,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           loop_mod10++;
           std::cout << "  Loop " << loop_mod10 * 10lu << " percent done" << std::endl;
         }
-
-        size_t local_counter = 0lu;
 
         blocks[0] = 0;
         int iall = 0;
@@ -417,7 +415,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
                 const int b3size = cabs_basis_[i3]->nbasis();
 
                 double integral_bound = this->schwarz_[((q1 + k) * size + i0) * size + i1]
-                                      * cabs_schwarz_[((q3 + k) * size + i2) * size + i3];
+                                      * cabs_schwarz_[((q3 + k) * size + i2) * cabs_size + i3];
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
               }

@@ -62,7 +62,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     }
     if (cnt != 0) {
       cout << "   Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
-           << " in orthogonalization (m = " << m << ")" << endl;
+           << " in orthogonalization (m = " << m << ")" << setprecision(15) << eig[0] << endl;
     }
   
     for (int i = cnt; i != ndim_; ++i) {

@@ -34,6 +34,8 @@ class PMOFile : public PFile<T> {
     void sort_inside_blocks();
     PMOFile<T> operator+(const PMOFile<T>&) const;
     PMOFile<T> operator-(const PMOFile<T>&) const;
+    PMOFile<T> operator*(const std::complex<double>&) const;
+    boost::shared_ptr<PMOFile<T> > flip() const;
 
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >,
                                             const int, const int,
@@ -103,6 +105,49 @@ void PMOFile<T>::sort_inside_blocks() {
 
   delete[] buffer1;
   delete[] buffer2;
+};
+
+
+template<class T>
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
+  const int k = this->K_;
+  const int KKK8 = std::max(k * k * k * 8, 1);
+  assert(this->filesize_ % KKK8 == 0);
+
+  const size_t blocksize = this->filesize_ / KKK8;
+  size_t current = 0lu;
+
+  T* buffer1 = new T[blocksize];
+  T* buffer2 = new T[blocksize];
+
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
+
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(this->filesize_, k, jstart_, jfence_, istart_, ifence_,
+                                                                        bstart_, bfence_, astart_, afence_, false));
+
+  for (int iblock = 0; iblock != KKK8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1);
+    T* cbuf1 = buffer1;
+    for (int i = 0; i < isize; ++i) {
+      for (int j = 0; j < jsize; ++j) {
+        for (int a = 0; a < asize; ++a) {
+          for (int b = 0; b < bsize; ++b, ++cbuf1) {
+            T* cbuf2 = buffer2 + a + asize * (b + bsize * (i + isize * j));
+            assert(cbuf1 == buffer1 + b + bsize * (a + asize * (j + jsize * i)));
+            *cbuf2 = *cbuf1;
+          }
+        }
+      }
+    }
+    out->put_block(current, blocksize, buffer2);
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return out;
 };
 
 
@@ -247,6 +292,33 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 
 
 template<class T>
+PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
+
+  const int k = this->K_;
+  const size_t fsize = this->filesize_;
+  const int kkk8 = std::max(k * k * k * 8, 1);
+  const size_t blocksize = fsize / kkk8;
+  T* buffer1 = new T[blocksize];
+  assert(fsize % kkk8 == 0);
+
+  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+
+  size_t current = 0lu;
+  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize; ++i) buffer1[i] *= a;
+
+    out.put_block(current, blocksize, buffer1);
+  }
+
+  delete[] buffer1;
+  return out;
+};
+
+
+template<class T>
 void PMOFile<T>::print() const {
 
   const int isize = ifence_ - istart_;
@@ -270,7 +342,7 @@ void PMOFile<T>::print() const {
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
             for (int j = 0; j != absize; ++j, ++cbuf) {
-              std::cout << std::setprecision(10) << std::setw(15) << *cbuf;
+              std::cout << std::setprecision(4) << std::setw(15) << *cbuf;
             }
             std::cout << std::endl;
           }
