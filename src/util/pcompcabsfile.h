@@ -125,8 +125,8 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   #pragma omp parallel for reduction(+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1*a};
-    size_t offset = (m1 + s) * (l + 1) * (s * 2 + 1);
-    for (int m2 = - l; m2 <= l; ++m2) { // use bra-ket symmetry!!!
+    size_t offset = (m1+s) * (l*2+1) * (s*2+1);
+    for (int m2 = - l; m2 <= l; ++m2) { // NO bra-ket symmetry!!!
       const double m2disp[3] = {0.0, 0.0, m2*a};
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++offset) {
         const double m3disp[3] = {0.0, 0.0, m3*a};

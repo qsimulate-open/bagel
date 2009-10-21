@@ -158,7 +158,6 @@ void PMP2::compute() {
     complex<double> en_vt = V->get_energy_one_amp();
     // Direct contribution to R12 energy
     cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
-    V->print();
   }
 
 
