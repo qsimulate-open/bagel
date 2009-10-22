@@ -7,8 +7,6 @@
 #include <iostream>
 #include <algorithm>
 #include <src/pmp2/pmp2.h>
-#include <src/pscf/poverlap.h>
-#include <src/pscf/ptildex.h>
 #include <src/macros.h>
 #include <src/scf/scf_macros.h>
 #include <src/slater/slaterbatch.h>
@@ -20,6 +18,7 @@ typedef boost::shared_ptr<Atom> RefAtom;
 typedef boost::shared_ptr<PGeometry> RefGeom;
 typedef boost::shared_ptr<PCoeff> RefPCoeff;
 typedef boost::shared_ptr<Shell> RefShell;
+typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
 
 using namespace std;
 using namespace boost;
@@ -59,19 +58,27 @@ void PMP2::compute() {
                                              0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
   eri_ii_pp_->sort_inside_blocks();
 
+  ///////////////////////////////////////////////
   // Compute the conventional MP2 contribution
+  /////////////////////////////////////////////
   compute_conv_mp2();
 
   cout << "  === Periodic MP2-R12 calculation ===" << endl << endl;
-  // Calculate Yukawa potential integrals
+
+
+  ////////// //////////////////////////////
+  // Slater & Yukawa potential integrals
+  ///////////////////////////////////////
   shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, gamma, "Slater and Yukawa ints"));
   stg_yp->store_integrals();
   stg_yp->reopen_with_inout();
   shared_ptr<PCompFile<SlaterBatch> > stg = stg_yp->first();
   shared_ptr<PCompFile<SlaterBatch> > yp  = stg_yp->second();
 
-  // V intermediate OBS part
-  typedef shared_ptr<PMOFile<complex<double> > > RefPMOFile;
+
+  //////////////////////////////////////
+  // Yukawa ii/ii for V intermediate
+  ////////////////////////////////////
   RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                                  nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
   yp_ii_ii->sort_inside_blocks();
@@ -79,7 +86,10 @@ void PMP2::compute() {
                                                    0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
   stg_ii_pp->sort_inside_blocks();
 
+
+  ////////////////////
   // CABS integrals
+  //////////////////
   shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, "ERI CABS"));
   eri_cabs->store_integrals();
   eri_cabs->reopen_with_inout();
@@ -88,44 +98,20 @@ void PMP2::compute() {
   stg_cabs->store_integrals();
   stg_cabs->reopen_with_inout();
 
-  // Construction of CABS;
-  shared_ptr<PMatrix1e> cabs_obs;
-  shared_ptr<PMatrix1e> cabs_aux;
-  {
-    typedef shared_ptr<PMatrix1e> RefMatrix;
 
-    // Form RI space which is a union of OBS and CABS.
-    RefGeom union_geom(new PGeometry(*geom_));
-    union_geom->merge_obs_cabs();
+  ///////////////////////////
+  // Coefficients of CABS;
+  /////////////////////////
+  pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > cabs_pairs = generate_CABS();
+  shared_ptr<PMatrix1e> cabs_obs = cabs_pairs.first;
+  shared_ptr<PMatrix1e> cabs_aux = cabs_pairs.second;
+  // Setting actual number of CABS.
+  ncabs_ = cabs_obs->mdim();
 
-    shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
-    shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
-    RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
 
-    // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
-    RefMatrix tmp(new PMatrix1e(*ri_coeff % union_overlap->ft() * *ri_reshaped));
-    RefMatrix U(new PMatrix1e(geom_, tmp->ndim(), tmp->ndim()));
-    RefMatrix V(new PMatrix1e(geom_, tmp->mdim(), tmp->mdim()));
-    tmp->svd(U, V);
-
-    RefMatrix Ured(new PMatrix1e(U, tmp->mdim()));
-    RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
-
-#if 0
-    RefMatrix debug(new PMatrix1e(*cabs_coeff % union_overlap->ft() * *cabs_coeff));
-    debug->print();
-#endif
-
-    pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
-    cabs_obs = cabs_coeff_spl.first;
-    cabs_aux = cabs_coeff_spl.second;
-
-    // Setting actual number of CABS.
-    ncabs_ = cabs_obs->mdim();
-    assert(ncabs_ == cabs_aux->mdim());
-  }
-
+  ///////////////////////////////
   // MO transformation for ERI
+  /////////////////////////////
   RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                         nfrc_, nocc_, nfrc_, nocc_,
                                                         0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
@@ -137,8 +123,9 @@ void PMP2::compute() {
   eri_ii_ix->sort_inside_blocks();
   RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
 
-
+  ///////////////////////////////
   // MO transformation for STG
+  /////////////////////////////
   RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs,
                                                     nfrc_, nocc_, nfrc_, nocc_,
                                                     0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
@@ -149,19 +136,55 @@ void PMP2::compute() {
   stg_ii_ix->sort_inside_blocks();
   RefPMOFile stg_ii_iA(new PMOFile<complex<double> >(*stg_ii_ix + *stg_ii_ip));
 
-  {
-    RefPMOFile vF = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
-    RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *vF));
 
-    RefPMOFile V_cabs = stg_ii_iA->contract(eri_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
+  //////////////////////
+  // V intermediate
+  ////////////////////
+  RefPMOFile vF = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
+  RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *vF));
 
-    RefPMOFile V(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
-    complex<double> en_vt = V->get_energy_one_amp();
-    // Direct contribution to R12 energy
-    cout << "  * Built V intermediate." << endl;
-    cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
-  }
+  RefPMOFile V_cabs = stg_ii_iA->contract(eri_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
 
+  RefPMOFile V(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
+  complex<double> en_vt = V->get_energy_one_amp();
+
+
+  ///////////////////////////////////////
+  // Direct contribution to R12 energy
+  /////////////////////////////////////
+  cout << "  * Built V intermediate." << endl;
+  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
+
+
+  /////////////////////////////////////
+  // Slater & Yukawa ints with 2gamma
+  ///////////////////////////////////
+  shared_ptr<PairCompFile<SlaterBatch> >
+    stg_yp2(new PairCompFile<SlaterBatch>(geom_, 2.0 * gamma, "Slater and Yukawa ints (2gamma)"));
+  stg_yp2->store_integrals();
+  stg_yp2->reopen_with_inout();
+  shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
+  shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
+
+
+  ////////////////////
+  // X intermediate
+  //////////////////
+  RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                     nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii) 2gamma");
+  stg2_ii_ii->sort_inside_blocks();
+  RefPMOFile FF = stg_ii_pp->contract(stg_ii_pp, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) OBS");
+  RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
+
+  RefPMOFile X_cabs = stg_ii_iA->contract(stg_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) CABS");
+  RefPMOFile X(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
+
+
+#ifdef LOCAL_DEBUG_PMP2
+  V->print();
+  cout << endl;
+  X->rprint();
+#endif
 
 }
 

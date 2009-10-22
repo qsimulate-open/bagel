@@ -29,6 +29,8 @@ class PMP2 {
     int ncabs_;
     size_t noovv_;
 
+    std::pair<boost::shared_ptr<PMatrix1e>, boost::shared_ptr<PMatrix1e> > generate_CABS();
+
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>, const double*, boost::shared_ptr<PCompFile<ERIBatch> >);
     ~PMP2();
