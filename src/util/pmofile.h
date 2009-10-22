@@ -7,10 +7,9 @@
 #ifndef __src_util_pmofile_h
 #define __src_util_pmofile_h
 
+#include <src/pscf/pgeometry.h>
 #include <src/util/pfile.h>
 #include <src/pscf/f77.h>
-
-#define GEMINAL_EXP 1.5
 
 template<class T>
 class PMOFile : public PFile<T> {
@@ -24,11 +23,15 @@ class PMOFile : public PFile<T> {
     const int afence_;
     const int bfence_;
 
+    const boost::shared_ptr<PGeometry> geom_;
+
   public:
-    PMOFile(const long, const int, const int, const int,
-                                   const int, const int,
-                                   const int, const int,
-                                   const int, const int, const bool late_init = false);
+    PMOFile(const boost::shared_ptr<PGeometry>,
+        const long, const int, const int, const int,
+        const int, const int,
+        const int, const int,
+        const int, const int,
+        const bool late_init = false);
     ~PMOFile(); 
 
     void sort_inside_blocks();
@@ -49,14 +52,16 @@ class PMOFile : public PFile<T> {
 
 
 template<class T>
-PMOFile<T>::PMOFile(const long fsize, const int k,
+PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
+                    const long fsize, const int k,
                     const int istrt, const int ifen,
                     const int jstrt, const int jfen,
                     const int astrt, const int afen,
                     const int bstrt, const int bfen,
                     const bool late_init)
- : PFile<T>(fsize, k, late_init), istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
-                                  astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen) {
+ : PFile<T>(fsize, k, late_init), geom_(gm),
+   istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
+   astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen) {
 
 
 };
@@ -125,8 +130,9 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
 
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(this->filesize_, k, jstart_, jfence_, istart_, ifence_,
-                                                                        bstart_, bfence_, astart_, afence_, false));
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, k,
+                                                    jstart_, jfence_, istart_, ifence_,
+                                                    bstart_, bfence_, astart_, afence_, false));
 
   for (int iblock = 0; iblock != KKK8; ++iblock, current += blocksize) {
     this->get_block(current, blocksize, buffer1);
@@ -182,8 +188,8 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 
   const size_t out_blocksize = ijsize * mnsize;
   const size_t out_filesize = KKK8 * out_blocksize; 
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(out_filesize, k, istart_, ifence_, jstart_, jfence_,
-                                                                     mstart, mfence, nstart, nfence, false));
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
+                                                    mstart, mfence, nstart, nfence, false));
 
   const int k2 = std::max(k + k, 1);
 
@@ -240,7 +246,7 @@ PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
   T* buffer2 = new T[blocksize];
   assert(fsize % kkk8 == 0);
 
-  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
   size_t current = 0lu;
   for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
@@ -270,7 +276,7 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
   T* buffer2 = new T[blocksize];
   assert(fsize % kkk8 == 0);
 
-  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
   size_t current = 0lu;
   for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
@@ -299,7 +305,7 @@ PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
   T* buffer1 = new T[blocksize];
   assert(fsize % kkk8 == 0);
 
-  PMOFile out(fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
   size_t current = 0lu;
   for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
@@ -394,18 +400,18 @@ T PMOFile<T>::get_energy_one_amp() const {
   assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
   const int k = this->K_;
   T* buffer = new T[ijsize * ijsize];
-
-  const double ciiii = - 0.5 / GEMINAL_EXP;
-  const double cijij = - 0.375 / GEMINAL_EXP;
-  const double cijji = - 0.125 / GEMINAL_EXP;
-
+  assert(geom_->gamma() > 0.0);
+  const double gamma = geom_->gamma();
+  const double ciiii = - 0.5 / gamma;
+  const double cijij = - 0.375 / gamma;
+  const double cijji = - 0.125 / gamma;
   int iblock = 0;
   T en = 0.0;
   for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
       for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
         if (kb == kj && kb == ka) {
-          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
               if (i1 == i2) {
@@ -422,7 +428,7 @@ T PMOFile<T>::get_energy_one_amp() const {
             }
           }
         } else if (kb == kj && kb != ka) {
-          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
               const int xi = i2 + i1 * isize;
@@ -431,7 +437,7 @@ T PMOFile<T>::get_energy_one_amp() const {
             }
           }
         } else if (ka == kj && kb != ka) {
-          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer); 
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
               const int xi = i2 + i1 * isize;
@@ -443,12 +449,8 @@ T PMOFile<T>::get_energy_one_amp() const {
       }
     }
   }
-
   delete[] buffer;
-
   en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
-
 #endif
-

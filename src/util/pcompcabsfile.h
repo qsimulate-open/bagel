@@ -18,7 +18,8 @@ class PCompCABSFile : public PCompFile<T> {
     std::vector<int> cabs_offset_;
 
   public:
-    PCompCABSFile(boost::shared_ptr<PGeometry>, const bool late_init = false, const std::string jobname = "source");
+    PCompCABSFile(boost::shared_ptr<PGeometry>, const double,
+        const bool late_init = false, const std::string jobname = "source");
 
     const double cabs_schwarz(int i) const { return cabs_schwarz_[i]; };
     std::vector<int> cabs_offset() const { return cabs_offset_; };
@@ -43,8 +44,9 @@ class PCompCABSFile : public PCompFile<T> {
 
 
 template<class T>
-PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const bool late_init, const std::string jobname)
- : PCompFile<T>(pg, true, jobname) {
+PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double gam,
+    const bool late_init, const std::string jobname)
+ : PCompFile<T>(pg, gam, true, jobname) {
 
   { // prepare offset and basis
     typedef boost::shared_ptr<Atom> RefAtom;
@@ -269,7 +271,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           input.push_back(b1);
           input.push_back(b0);
 
-          T batch(input, 1.0);
+          T batch(input, 1.0, this->geom_->gamma());
           batch.compute();
           const double* bdata = batch.data();
           ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));
@@ -338,7 +340,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
   boost::shared_ptr<PMOFile<std::complex<double> > >
-    mo_int(new PMOFile<std::complex<double> >(filesize, k,
+    mo_int(new PMOFile<std::complex<double> >(this->geom_, filesize, k,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 

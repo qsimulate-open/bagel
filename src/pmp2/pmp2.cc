@@ -49,6 +49,7 @@ PMP2::~PMP2() {
 
 
 void PMP2::compute() {
+  const double gamma = geom_->gamma();
 
   // AO ERI has been computed in the SCF class.
 
@@ -63,7 +64,7 @@ void PMP2::compute() {
 
   cout << "  === Periodic MP2-R12 calculation ===" << endl << endl;
   // Calculate Yukawa potential integrals
-  shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, 1.5, "Slater and Yukawa ints"));
+  shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, gamma, "Slater and Yukawa ints"));
   stg_yp->store_integrals();
   stg_yp->reopen_with_inout();
   shared_ptr<PCompFile<SlaterBatch> > stg = stg_yp->first();
@@ -79,11 +80,11 @@ void PMP2::compute() {
   stg_ii_pp->sort_inside_blocks();
 
   // CABS integrals
-  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, false, "ERI CABS"));
+  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, "ERI CABS"));
   eri_cabs->store_integrals();
   eri_cabs->reopen_with_inout();
 
-  shared_ptr<PCompCABSFile<SlaterBatch> >stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, false, "Slater CABS"));
+  shared_ptr<PCompCABSFile<SlaterBatch> >stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, "Slater CABS"));
   stg_cabs->store_integrals();
   stg_cabs->reopen_with_inout();
 

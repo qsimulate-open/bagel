@@ -35,7 +35,7 @@ PSCF_DISK::~PSCF_DISK() {
 
 void PSCF_DISK::store_ERI() {
 
-  shared_ptr<PCompFile<ERIBatch> > tmpae(new PCompFile<ERIBatch>(geom_)); 
+  shared_ptr<PCompFile<ERIBatch> > tmpae(new PCompFile<ERIBatch>(geom_, geom_->gamma()));
   ao_eri_ = tmpae;
   ao_eri_->store_integrals();
   ao_eri_->reopen_with_inout();

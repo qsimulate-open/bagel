@@ -22,6 +22,10 @@ typedef shared_ptr<Atom> RefAtom;
 
 Geometry::Geometry(const string s, const int levl)
   : spherical_(true), input_(s), level_(levl), lmax_(0) {
+
+  // TODO need keyword for R12 exponent
+  gamma_ = 1.5;
+
   // open input file
   ifstream ifs;
   ifs.open(input_.c_str());

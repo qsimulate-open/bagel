@@ -42,8 +42,12 @@ class PCompFile {
     int K_, L_, S_;
     double A_;
 
+    // exponent of STG. Can be different from geom_->gamma()
+    const double gamma_;
+
   public:
-    PCompFile(boost::shared_ptr<PGeometry>, const bool late_init = false, const std::string jobname = "source");
+    PCompFile(boost::shared_ptr<PGeometry>,  const double gam,
+        const bool late_init = false, const std::string jobname = "source");
     ~PCompFile(); 
 
     // create file...
@@ -109,8 +113,8 @@ class PCompFile {
 
 
 template<class T>
-PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const bool late_init, const std::string jobname)
- : geom_(gm), jobname_(jobname) {
+PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const double gam, const bool late_init, const std::string jobname)
+ : geom_(gm), gamma_(gam), jobname_(jobname) {
 
   Filename tmpf;
   filename_ = tmpf.filename_next(); 
@@ -469,7 +473,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
   boost::shared_ptr<PMOFile<std::complex<double> > >
-    mo_int(new PMOFile<std::complex<double> >(filesize, K_, 
+    mo_int(new PMOFile<std::complex<double> >(geom_, filesize, K_,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 
@@ -795,7 +799,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
   boost::shared_ptr<PMOFile<std::complex<double> > >
-    mo_int(new PMOFile<std::complex<double> >(filesize, k,
+    mo_int(new PMOFile<std::complex<double> >(geom_, filesize, k,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 

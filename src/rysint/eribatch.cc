@@ -23,7 +23,8 @@ using namespace boost;
 
 typedef boost::shared_ptr<Shell> RefShell;
 
-ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density) :  RysInt(_info) {
+ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy)
+:  RysInt(_info) {
 
   const double integral_thresh = PRIM_SCREEN_THRESH / max_density; 
 //const double integral_thresh = 0.0; 

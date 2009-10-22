@@ -49,6 +49,9 @@ class Geometry {
     boost::shared_ptr<Petite> plist_;
     int nirrep_;
 
+    // for R12 calculations
+    double gamma_;
+
   public:
     Geometry(const std::string, const int level);
     ~Geometry();
@@ -68,6 +71,7 @@ class Geometry {
     const int cabs_lmax() const { return cabs_lmax_; };
     const bool spherical() const { return spherical_; };
     const int nirrep() const { return nirrep_; };
+    const double gamma() const {return gamma_; };
     const std::string symmetry() const { return symmetry_; };
     virtual const double nuclear_repulsion() const { return nuclear_repulsion_; };
     const int level() const { return level_; };
