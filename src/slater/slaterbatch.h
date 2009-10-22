@@ -88,7 +88,7 @@ class SlaterBatch : public RysInt {
 
   public:
     
-    SlaterBatch(const std::vector<boost::shared_ptr<Shell> >, const double, const double gamma = 1.5, const bool doyukawa = false);
+    SlaterBatch(const std::vector<boost::shared_ptr<Shell> >, const double, const double gamma, const bool doyukawa = false);
     ~SlaterBatch();
 
     /// compute a batch of integrals

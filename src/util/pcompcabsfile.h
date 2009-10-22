@@ -93,7 +93,7 @@ void PCompCABSFile<T>::init_cabs_schwarz() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 1.0e100);
+        T batch(input, 1.0, this->gamma_);
         batch.compute();
         const double* data = batch.data();
         const int datasize = batch.data_size();

@@ -42,12 +42,12 @@ class PCompFile {
     int K_, L_, S_;
     double A_;
 
-    // exponent of STG. Can be different from geom_->gamma()
+    // Exponent of STG for this file. Can be different from geom_->gamma()
     const double gamma_;
 
   public:
     PCompFile(boost::shared_ptr<PGeometry>,  const double gam,
-        const bool late_init = false, const std::string jobname = "source");
+        const bool late_init = false, const std::string jobname = "");
     ~PCompFile(); 
 
     // create file...
@@ -291,19 +291,19 @@ void PCompFile<T>::calculate_num_int_each() {
 
   max_num_int_ = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
-  std::cout << "  Using ";
-  const size_t data_written_byte = data_written * sizeof(double);
-  if (data_written_byte > 1.0e9) {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
-  } else if (data_written_byte > 1.0e6) {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
-  } else {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
-  }
+  if (jobname_ != "PAIR") {
+    std::cout << "  Using ";
+    const size_t data_written_byte = data_written * sizeof(double);
+    if (data_written_byte > 1.0e9) {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
+    } else if (data_written_byte > 1.0e6) {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
+    } else {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
+    }
 
-  std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl; 
-  std::cout << std::endl;
-  assert(data_written < 5.0e9); // 40GB
+    std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl;
+  }
 };
 
 
@@ -355,7 +355,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           input.push_back(b1);
           input.push_back(b0);
 
-          T batch(input, 1.0);
+          T batch(input, 1.0, gamma_);
           batch.compute();
           const double* bdata = batch.data();
           ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));
@@ -415,7 +415,7 @@ void PCompFile<T>::init_schwarz() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 1.0e100);
+        T batch(input, 1.0, gamma_);
         batch.compute();
         const double* data = batch.data();
         const int datasize = batch.data_size();

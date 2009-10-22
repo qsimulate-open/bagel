@@ -13,7 +13,7 @@
 template<class T>
 class PairCompFile {
   protected:
-    const double param_;
+    const double gamma_;
     const std::string jobname_;
     std::pair<boost::shared_ptr<PCompFile<T> >,
               boost::shared_ptr<PCompFile<T> > > files_;
@@ -35,11 +35,11 @@ class PairCompFile {
 
 
 template<class T>
-PairCompFile<T>::PairCompFile(boost::shared_ptr<PGeometry> gm, const double pr, const std::string jobname)
- : param_(pr), jobname_(jobname) {
+PairCompFile<T>::PairCompFile(boost::shared_ptr<PGeometry> gm, const double gam, const std::string jobname)
+ : gamma_(gam), jobname_(jobname) {
   // late_init = "true"
-  boost::shared_ptr<PCompFile<T> > first(new PCompFile<T>(gm, true)); 
-  boost::shared_ptr<PCompFile<T> > second(new PCompFile<T>(gm, true)); 
+  boost::shared_ptr<PCompFile<T> > first(new PCompFile<T>(gm, gamma_, true));
+  boost::shared_ptr<PCompFile<T> > second(new PCompFile<T>(gm, gamma_, true));
   files_ = std::make_pair(first, second);
 
   // set schwarz for both pcompfiles.
@@ -79,7 +79,7 @@ void PairCompFile<T>::init_schwarz() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 1.0e100, param_, true);
+        T batch(input, 1.0, gamma_, true);
         batch.compute();
         const double* data1 = batch.data();
         const double* data2 = batch.data2();
@@ -206,9 +206,7 @@ void PairCompFile<T>::calculate_num_int_each() {
     std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
   }
 
-  std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl; 
-  std::cout << std::endl;
-  assert(std::max(data_written1, data_written2) < 5.0e9); // 40GB
+  std::cout << " hard disk for storing \"" << jobname_ << "\"" << std::endl << std::endl;
 };
 
 
@@ -289,13 +287,13 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           input.push_back(b0);
 
           if (!skip_schwarz1 && skip_schwarz2) {
-            T batch(input, 1.0, param_, false);
+            T batch(input, 1.0, gamma_, false);
             batch.compute();
             const double* bdata1 = batch.data();
             size_t current_size = b0size * b1size * b2size * b3size;
             ::memcpy(out1 + blocks1[offset], bdata1, current_size * sizeof(double));
           } else {
-            T batch(input, 1.0, param_, true);
+            T batch(input, 1.0, gamma_, true);
             batch.compute();
             const double* bdata1 = batch.data();
             const double* bdata2 = batch.data2();

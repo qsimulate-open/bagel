@@ -158,6 +158,7 @@ void PMP2::compute() {
     RefPMOFile V(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
     complex<double> en_vt = V->get_energy_one_amp();
     // Direct contribution to R12 energy
+    cout << "  * Built V intermediate." << endl;
     cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
   }
 
