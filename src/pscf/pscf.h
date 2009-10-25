@@ -30,6 +30,7 @@ class PSCF {
     virtual void init_schwarz();
     bool direct_;
 
+    // created at constructor, deleted at destructor.
     double* eig_;
     void print_eig(const double*) const;
     boost::shared_ptr<PCompFile<ERIBatch> > ao_eri_;
@@ -45,6 +46,7 @@ class PSCF {
     const boost::shared_ptr<PCoeff> coeff() { return coeff_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 
+    // Returning a copy of eig_. Returns std::vector<double>
     const std::vector<double> eig() const {
       const size_t length = (2*geom_->K()+1) * geom_->nbasis();
       const std::vector<double> out(eig_, eig_+length);
