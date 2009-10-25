@@ -8,20 +8,24 @@
 #include <src/pmp2/pmp2.h>
 #include <src/pscf/poverlap.h>
 #include <src/pscf/ptildex.h>
+#include <src/pscf/phcore.h>
 
 using namespace std;
 using namespace boost;
 
 typedef shared_ptr<PMatrix1e> RefMatrix;
-typedef boost::shared_ptr<PGeometry> RefGeom;
+typedef shared_ptr<PGeometry> RefGeom;
+typedef shared_ptr<PHcore> RefHcore;
+typedef shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
 
 pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
 
   // Form RI space which is a union of OBS and CABS.
-  RefGeom union_geom(new PGeometry(*geom_));
-  union_geom->merge_obs_cabs();
+  RefGeom newgeom(new PGeometry(*geom_));
+  union_geom_ = newgeom;
+  union_geom_->merge_obs_cabs();
 
-  shared_ptr<POverlap> union_overlap(new POverlap(union_geom));
+  shared_ptr<POverlap> union_overlap(new POverlap(union_geom_));
   shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
   RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
 
@@ -40,8 +44,18 @@ pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
 }
 
 
-// Hartree-weighted (i.e., Fock - exchange) index space to be used in B intermediate evaluator.
-pair<RefMatrix, RefMatrix> PMP2::generate_hJ() {
+// Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
+pair<RefMatrix, RefMatrix> PMP2::generate_hJ_iA() {
+
+  // Computes hcore in k-space.
+  RefHcore union_hcore(new PHcore(union_geom_));
+  RefMatrix hcore(new PMatrix1e(union_hcore->ft()));
+
+  // "false" means it returns the k-space density matrix.
+  RefMatrix density(new PMatrix1e(coeff_->form_density_rhf(false)));
+
+
+
   pair<RefMatrix, RefMatrix> out;
   return out;
 }

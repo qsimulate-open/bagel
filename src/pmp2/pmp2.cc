@@ -77,12 +77,16 @@ void PMP2::compute() {
   //////////////////////////////////////
   // Yukawa ii/ii for V intermediate
   ////////////////////////////////////
-  RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                 nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
-  yp_ii_ii->sort_inside_blocks();
-  RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                   0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
-  stg_ii_pp->sort_inside_blocks();
+  {
+    RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                   nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
+    yp_ii_ii->sort_inside_blocks();
+    yp_ii_ii_ = yp_ii_ii;
+    RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                     0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
+    stg_ii_pp->sort_inside_blocks();
+    stg_ii_pp_ = stg_ii_pp;
+  }
 
 
   ////////////////////
@@ -110,41 +114,50 @@ void PMP2::compute() {
   ///////////////////////////////
   // MO transformation for ERI
   /////////////////////////////
-  RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
-                                                        nfrc_, nocc_, nfrc_, nocc_,
-                                                        0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
-  eri_ii_ip->sort_inside_blocks();
+  {
+    RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
+                                                          nfrc_, nocc_, nfrc_, nocc_,
+                                                          0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
+    eri_ii_ip->sort_inside_blocks();
 
-  RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
-                                                         nfrc_, nocc_, nfrc_, nocc_,
-                                                         0, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
-  eri_ii_ix->sort_inside_blocks();
-  RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
+    RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+                                                           nfrc_, nocc_, nfrc_, nocc_,
+                                                           0, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
+    eri_ii_ix->sort_inside_blocks();
+    RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
+    eri_ii_iA_ = eri_ii_iA;
+  }
 
   ///////////////////////////////
   // MO transformation for STG
   /////////////////////////////
-  RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs_,
-                                                    nfrc_, nocc_, nfrc_, nocc_,
-                                                    0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
-  stg_ii_ip->sort_inside_blocks();
-  RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
-                                                         nfrc_, nocc_, nfrc_, nocc_,
-                                                         0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
-  stg_ii_ix->sort_inside_blocks();
-  RefPMOFile stg_ii_iA(new PMOFile<complex<double> >(*stg_ii_ix + *stg_ii_ip));
+  {
+    RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs_,
+                                                      nfrc_, nocc_, nfrc_, nocc_,
+                                                      0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
+    stg_ii_ip->sort_inside_blocks();
+    RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+                                                           nfrc_, nocc_, nfrc_, nocc_,
+                                                           0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
+    stg_ii_ix->sort_inside_blocks();
+    RefPMOFile stg_ii_iA(new PMOFile<complex<double> >(*stg_ii_ix + *stg_ii_ip));
+    stg_ii_iA_ = stg_ii_iA;
+  }
 
 
   //////////////////////
   // V intermediate
   ////////////////////
-  RefPMOFile vF = stg_ii_pp->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
-  RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii - *vF));
+  {
+    RefPMOFile vF = stg_ii_pp_->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
+    RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii_ - *vF));
 
-  RefPMOFile V_cabs = stg_ii_iA->contract(eri_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
+    RefPMOFile V_cabs = stg_ii_iA_->contract(eri_ii_iA_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
 
-  RefPMOFile V(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
-  complex<double> en_vt = V->get_energy_one_amp();
+    RefPMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
+    V_ = V_pre;
+  }
+  complex<double> en_vt = V_->get_energy_one_amp();
 
 
   ///////////////////////////////////////
@@ -168,26 +181,30 @@ void PMP2::compute() {
   ////////////////////
   // X intermediate
   //////////////////
-  RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                     nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
-  stg2_ii_ii->sort_inside_blocks();
-  RefPMOFile FF = stg_ii_pp->contract(stg_ii_pp, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) OBS");
-  RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
+  {
+    RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                       nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
+    stg2_ii_ii->sort_inside_blocks();
+    stg2_ii_ii_ = stg2_ii_ii;
+    RefPMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) OBS");
+    RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 
-  RefPMOFile X_cabs = stg_ii_iA->contract(stg_ii_iA, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) CABS");
-  RefPMOFile X(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
+    RefPMOFile X_cabs = stg_ii_iA_->contract(stg_ii_iA_, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) CABS");
+    RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
+    X_ = X_pre;
+  }
 
 
   /////////////////////
   // B intermediate
   ///////////////////
+  {
+    // T intermediate (direct)
+    RefPMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
 
-  // T intermediate (direct)
-  RefPMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii * (gamma*gamma)));
-  T->rprint();
-
-  // Q intermediate (made of X * h)
-  pair<RefMatrix, RefMatrix> hj = generate_hJ();
+    // Q intermediate (made of X * h)
+    pair<RefMatrix, RefMatrix> hj_iA = generate_hJ_iA();
+  }
 
 #ifdef LOCAL_DEBUG_PMP2
   V->print();

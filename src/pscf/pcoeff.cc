@@ -23,7 +23,7 @@ PCoeff::~PCoeff() {
 
 }
 
-PMatrix1e PCoeff::form_density_rhf() {
+PMatrix1e PCoeff::form_density_rhf(const bool return_ao) {
   const int nocc = geom_->nocc() / 2;
   assert(geom_->nocc() % 2 == 0);
   const Complex one(1.0, 0.0);
@@ -40,7 +40,8 @@ PMatrix1e PCoeff::form_density_rhf() {
   }
 
   // back Fourier transform
-  PMatrix1e out = k_density.bft(); 
-
-  return out;
+  if (return_ao)
+      return k_density.bft();
+  else
+      return k_density;
 }
