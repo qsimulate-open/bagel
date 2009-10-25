@@ -35,9 +35,6 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const double* eg, const shared_p
   ncabs_ = geom_->ncabs();
 
   assert(geom_->ncabs() != 0);
-// just to check
-//const vector<RefAtom> tmp = geom_->cabs_atoms();
-//for (vector<RefAtom>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) (*iter)->print_basis();
 
 }
 
@@ -171,7 +168,7 @@ void PMP2::compute() {
   // X intermediate
   //////////////////
   RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                     nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii) 2gamma");
+                                                     nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
   stg2_ii_ii->sort_inside_blocks();
   RefPMOFile FF = stg_ii_pp->contract(stg_ii_pp, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) OBS");
   RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
@@ -180,10 +177,18 @@ void PMP2::compute() {
   RefPMOFile X(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
 
 
+  /////////////////////
+  // B intermediate
+  ///////////////////
+
+  // Q intermediate
+  RefPMOFile Q(new PMOFile<complex<double> >(*stg2_ii_ii * (gamma*gamma)));
+  Q->rprint();
+
 #ifdef LOCAL_DEBUG_PMP2
   V->print();
   cout << endl;
-  X->rprint();
+  X->print();
 #endif
 
 }
