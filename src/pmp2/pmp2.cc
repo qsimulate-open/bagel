@@ -50,7 +50,7 @@ void PMP2::compute() {
   // AO ERI has been computed in the SCF class.
 
   cout << "  === Periodic MP2 calculation ===" << endl << endl;
-  // Fully transform aa/ii integrals and dump them to disk (... forcus is on MP2-R12).
+  // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
   eri_ii_pp_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
                                              0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
   eri_ii_pp_->sort_inside_blocks();
@@ -181,9 +181,11 @@ void PMP2::compute() {
   // B intermediate
   ///////////////////
 
-  // Q intermediate
-  RefPMOFile Q(new PMOFile<complex<double> >(*stg2_ii_ii * (gamma*gamma)));
-  Q->rprint();
+  // T intermediate (direct)
+  RefPMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii * (gamma*gamma)));
+  T->rprint();
+
+  // Q intermediate (made of X * h)
 
 #ifdef LOCAL_DEBUG_PMP2
   V->print();
