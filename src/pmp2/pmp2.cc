@@ -19,12 +19,13 @@ typedef boost::shared_ptr<PGeometry> RefGeom;
 typedef boost::shared_ptr<PCoeff> RefPCoeff;
 typedef boost::shared_ptr<Shell> RefShell;
 typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
+typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 using namespace std;
 using namespace boost;
 
-PMP2::PMP2(const RefGeom g, const RefPCoeff co, const double* eg, const shared_ptr<PCompFile<ERIBatch> > fl)
- : geom_(g), coeff_(co), eig_(eg), ao_eri_(fl) {
+PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl)
+ : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), ao_eri_(fl) {
 
   nfrc_ = geom_->nfrc() / 2;
   nocc_ = geom_->nocc() / 2;
@@ -99,22 +100,22 @@ void PMP2::compute() {
   ///////////////////////////
   // Coefficients of CABS;
   /////////////////////////
-  pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > cabs_pairs = generate_CABS();
-  shared_ptr<PMatrix1e> cabs_obs = cabs_pairs.first;
-  shared_ptr<PMatrix1e> cabs_aux = cabs_pairs.second;
+  pair<RefMatrix, RefMatrix> cabs_pairs = generate_CABS();
+  cabs_obs_ = cabs_pairs.first;
+  cabs_aux_ = cabs_pairs.second;
   // Setting actual number of CABS.
-  ncabs_ = cabs_obs->mdim();
+  ncabs_ = cabs_obs_->mdim();
 
 
   ///////////////////////////////
   // MO transformation for ERI
   /////////////////////////////
-  RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs,
+  RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
                                                         nfrc_, nocc_, nfrc_, nocc_,
                                                         0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
   eri_ii_ip->sort_inside_blocks();
 
-  RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux,
+  RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
                                                          nfrc_, nocc_, nfrc_, nocc_,
                                                          0, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
   eri_ii_ix->sort_inside_blocks();
@@ -123,11 +124,11 @@ void PMP2::compute() {
   ///////////////////////////////
   // MO transformation for STG
   /////////////////////////////
-  RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs,
+  RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs_,
                                                     nfrc_, nocc_, nfrc_, nocc_,
                                                     0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
   stg_ii_ip->sort_inside_blocks();
-  RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux,
+  RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
                                                          nfrc_, nocc_, nfrc_, nocc_,
                                                          0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
   stg_ii_ix->sort_inside_blocks();
@@ -186,6 +187,7 @@ void PMP2::compute() {
   T->rprint();
 
   // Q intermediate (made of X * h)
+  pair<RefMatrix, RefMatrix> hj = generate_hJ();
 
 #ifdef LOCAL_DEBUG_PMP2
   V->print();

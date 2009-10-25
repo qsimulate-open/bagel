@@ -22,18 +22,18 @@ void PMP2::compute_conv_mp2() {
   double energy = 0.0;
   int nbja = 0;
   for (int kb = -K; kb < maxK1; ++kb) {
-    const double* eb = eig_ + (kb + K) * nbasis_;
+    vector<double>::const_iterator eb = eig_.begin() + (kb + K) * nbasis_;
 
     for (int kj = -K; kj != maxK1; ++kj) {
-      const double* ej = eig_ + (kj + K) * nbasis_;
+      vector<double>::const_iterator ej = eig_.begin() + (kj + K) * nbasis_;
 
       for (int ka = -K; ka != maxK1; ++ka, ++nbja) {
-        const double* ea = eig_ + (ka + K) * nbasis_;
+        vector<double>::const_iterator ea = eig_.begin() + (ka + K) * nbasis_;
 
         int ki = ka + kb - kj;
         if (ki < -K) ki += K * 2;
         else if (ki >= K) ki -= K * 2;
-        const double* ei = eig_ + (ki + K) * nbasis_;
+        vector<double>::const_iterator ei = eig_.begin() + (ki + K) * nbasis_;
 
         assert(K == 0 || (ki < K && ki >= -K));
 

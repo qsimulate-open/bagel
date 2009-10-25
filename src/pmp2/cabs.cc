@@ -38,3 +38,11 @@ pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
 
   return cabs_coeff_spl;
 }
+
+
+// Hartree-weighted (i.e., Fock - exchange) index space to be used in B intermediate evaluator.
+pair<RefMatrix, RefMatrix> PMP2::generate_hJ() {
+  pair<RefMatrix, RefMatrix> out;
+  return out;
+}
+

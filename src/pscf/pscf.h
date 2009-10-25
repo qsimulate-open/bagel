@@ -45,7 +45,11 @@ class PSCF {
     const boost::shared_ptr<PCoeff> coeff() { return coeff_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 
-    const double* eig() const {return eig_;};
+    const std::vector<double> eig() const {
+      const size_t length = (2*geom_->K()+1) * geom_->nbasis();
+      const std::vector<double> out(eig_, eig_+length);
+      return out;
+    }
     boost::shared_ptr<PCompFile<ERIBatch> > ao_eri() { return ao_eri_; };
 };
 
