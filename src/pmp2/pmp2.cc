@@ -21,6 +21,12 @@ typedef boost::shared_ptr<Shell> RefShell;
 typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
 typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
+
+////////////////////////////////////////////////////////////////////////////
+// toggles whether we symmetrize explicitly or not (12|34)<->(21|43)
+//#define EXPLICITLY_HERMITE
+////////////////////////////////////////////////////////////////////////////
+
 using namespace std;
 using namespace boost;
 
@@ -156,8 +162,10 @@ void PMP2::compute() {
     RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii_ - *vF));
 
     RefPMOFile V_cabs = stg_ii_iA_->contract(eri_ii_iA_, "F * v (ii/ii) CABS");
+
     V_cabs->flip_symmetry();
     RefPMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
+
     V_ = V_pre;
   }
   complex<double> en_vt = V_->get_energy_one_amp();
@@ -194,9 +202,12 @@ void PMP2::compute() {
     RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 
     RefPMOFile X_cabs = stg_ii_iA_->contract(stg_ii_iA_, "F * F (ii/ii) CABS");
+
     X_cabs->flip_symmetry();
     RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
+
     X_ = X_pre;
+    X_->rprint();
   }
 
 
@@ -225,6 +236,7 @@ void PMP2::compute() {
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
       X_ii_ih->sort_inside_blocks();
 
+
 // might not be needed since we are using fixed amplitudes.
 #ifdef EXPLICITLY_HERMITE
       // TODO In the case of non-fixed amplitude, we need to symmetrize X explicitly. Since we don't have it in integrals,
@@ -234,13 +246,15 @@ void PMP2::compute() {
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 2/2");
       X_ih_ii->sort_inside_blocks();
       *X_ii_ih += *X_ih_ii;
+#else
+      X_ii_ih->scale(2.0);
 #endif
 
       X_ii_ih->flip_symmetry();
       RefPMOFile Q(new PMOFile<complex<double> >(*X_ii_ih));
-      Q->scale(2.0);
-//      Q->rprint();
+      Q->rprint();
     }
+
 #if 0
     {
       // Should be able to reuse eri_ii_iA. I know...
