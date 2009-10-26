@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cmath>
 #include <src/util/pmatrix1e.h>
 #include <src/pscf/f77.h>
 #include <src/macros.h>
@@ -65,16 +66,17 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int ldn, const in
 }
 
 
-// Changes number of columns; removes first ncut columns.
-PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int mcut)
+// Changes number of columns; keeps only [mcut.first mcut.second) columns.
+PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, pair<int, int> mcut)
 : geom_(source->geom()), nbasis_(source->nbasis()),
-  blocksize_(source->ndim() * (source->mdim()-mcut)),
-  totalsize_((2 * source->K() + 1) * source->ndim() * (source->mdim()-mcut)) {
+  blocksize_(source->ndim() * (mcut.second-mcut.first)),
+  totalsize_((2 * source->K() + 1) * source->ndim() * (mcut.second-mcut.first)) {
 
-  assert(mcut < source->mdim());
+  assert(mcut.second <= source->mdim());
+  assert(mcut.first >= 0 && mcut.first < mcut.second);
 
   ndim_ = source->ndim();
-  mdim_ = source->mdim()-mcut;
+  mdim_ = mcut.second-mcut.first;
   shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;
   const shared_ptr<PData> sdata = source->data();
@@ -84,7 +86,7 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int mcut)
     complex<double>* current = data_->front() + (i + K()) * blocksize_;
     complex<double>* csource = sdata->front() + (i + K()) * sblocksize;
 
-    copy(csource+ndim_*mcut, csource+ndim_*(mdim_+mcut), current);
+    copy(csource+ndim_*mcut.first, csource+ndim_*mcut.second, current);
   }
 }
 
@@ -332,13 +334,13 @@ void PMatrix1e::print() const {
 }
 
 
-void PMatrix1e::rprint() const {
+void PMatrix1e::rprint(const int precision) const {
   int index = 0;
   for (int k = -K(); k <= K(); ++k) {
     cout << "K = " << setw(2) << k << ":" << endl;
     for (int i = 0; i != mdim_; ++i) {
       for (int j = 0; j != ndim_; ++j, ++index) {
-        cout << setw(10) << setprecision(6) << (*data_)[index].real() * 2.0 << " ";
+        cout << setw(precision+3) << setprecision(precision) << (*data_)[index].real() * 2.0 << " ";
       }
       cout << endl;
     }
@@ -472,6 +474,45 @@ pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int n
   }
 
   return make_pair(out1, out2);
+}
+
+shared_ptr<PMatrix1e> PMatrix1e::mo_transform(shared_ptr<PMatrix1e> coeff,
+                         const int istart, const int ifence,
+                         const int jstart, const int jfence) const {
+  assert(coeff->ndim() == ndim_);
+  assert(coeff->ndim() == mdim_);
+
+  const int isize = ifence-istart;
+  const int jsize = jfence-jstart;
+
+  const Complex one(1.0, 0.0);
+  const Complex zero(0.0, 0.0);
+
+  shared_ptr<PMatrix1e> out(new PMatrix1e(geom_, jfence-jstart, ifence-istart));
+
+  Complex* tmp = new Complex[ndim_ * isize];
+  Complex* tmp2 = new Complex[ndim_ * isize];
+  const int kk = std::max(geom_->K(), 1);
+
+  for (int k = -K(); k != kk; ++k) {
+    const Complex* data = this->bp(k);
+    const Complex* co = coeff->bp(k);
+    Complex* outdata = out->bpw(k);
+
+    int iall = 0;
+    for (int i = istart*ndim_; i != ifence*ndim_; ++i, ++iall) tmp[iall] = conj(co[i]);
+
+    zgemm_("N", "N", &ndim_, &isize, &ndim_, &one, data, &ndim_, tmp, &ndim_, &zero, tmp2, &ndim_);
+
+    const int unit = 1;
+    for (int i = 0; i != isize; ++i) {
+      zgemm_("C", "N", &unit, &jsize, &ndim_, &one, tmp2+i*ndim_, &unit, co+jstart*ndim_, &ndim_, &zero, outdata+i*jsize, &unit);
+    }
+  }
+  delete[] tmp;
+  delete[] tmp2;
+  return out;
+
 }
 
 

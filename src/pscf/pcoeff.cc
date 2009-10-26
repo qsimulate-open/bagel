@@ -23,7 +23,7 @@ PCoeff::~PCoeff() {
 
 }
 
-PMatrix1e PCoeff::form_density_rhf(const bool return_ao) {
+PMatrix1e PCoeff::form_density_rhf(const bool return_ao) const {
   const int nocc = geom_->nocc() / 2;
   assert(geom_->nocc() % 2 == 0);
   const Complex one(1.0, 0.0);

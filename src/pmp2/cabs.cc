@@ -16,7 +16,7 @@ using namespace boost;
 typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
-typedef shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
+typedef shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
 
 pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
 
@@ -35,7 +35,7 @@ pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
   RefMatrix V(new PMatrix1e(geom_, tmp->mdim(), tmp->mdim()));
   tmp->svd(U, V);
 
-  RefMatrix Ured(new PMatrix1e(U, tmp->mdim()));
+  RefMatrix Ured(new PMatrix1e(U, make_pair(tmp->mdim(), tmp->ndim())));
   RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
 
   pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
@@ -45,17 +45,32 @@ pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
 
 
 // Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
-pair<RefMatrix, RefMatrix> PMP2::generate_hJ_iA() {
+RefMatrix PMP2::generate_hJ_obs(RefMOFile eri_Ip_Ip) {
+
+  // Computes hcore in k-space.
+  RefHcore hc(new PHcore(geom_));
+  RefMatrix aohcore(new PMatrix1e(hc->ft()));
+  RefMatrix mohcore(new PMatrix1e(*coeff_ % *aohcore * *coeff_));
+
+  RefMatrix coulomb = eri_Ip_Ip->contract_density_J();
+  RefMatrix hartree(new PMatrix1e(*mohcore + *coulomb));
+
+  return hartree;
+}
+
+
+// Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
+pair<RefMatrix, RefMatrix> PMP2::generate_hJ_iA(RefMOFile eri_Ii_IA) {
 
   // Computes hcore in k-space.
   RefHcore union_hcore(new PHcore(union_geom_));
   RefMatrix hcore(new PMatrix1e(union_hcore->ft()));
 
-  // "false" means it returns the k-space density matrix (-K <= k <= K).
-  RefMatrix density(new PMatrix1e(coeff_->form_density_rhf(false)));
+//hcore->rprint(4);
 
-  RefMatrix coulomb = eri_ii_iA_->contract12(density);
+  RefMatrix coulomb = eri_Ii_IA->contract_density_J();
 
+  coulomb->rprint(4);
 
   pair<RefMatrix, RefMatrix> out;
   return out;

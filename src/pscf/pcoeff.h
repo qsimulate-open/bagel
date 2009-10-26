@@ -15,7 +15,7 @@ class PCoeff : public PMatrix1e {
     PCoeff(const PMatrix1e&);
     ~PCoeff();
 
-    PMatrix1e form_density_rhf(const bool return_ao=true);
+    PMatrix1e form_density_rhf(const bool return_ao=true) const;
 
 };
 

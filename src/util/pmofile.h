@@ -38,13 +38,12 @@ class PMOFile : public PFile<T> {
     PMOFile<T> operator+(const PMOFile<T>&) const;
     PMOFile<T> operator-(const PMOFile<T>&) const;
     PMOFile<T> operator*(const std::complex<double>&) const;
+    void scale(double a);
     boost::shared_ptr<PMOFile<T> > flip() const;
 
-    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string,
-                                            const int i = 0, const int j = 0, const int a = 0, const int b = 0,
-                                            const int m = 0, const int n = 0);
+    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
 
-    boost::shared_ptr<PMatrix1e> contract12(const boost::shared_ptr<PMatrix1e>) const;
+    boost::shared_ptr<PMatrix1e> contract_density_J() const;
 
     void print() const;
     void rprint() const;
@@ -160,10 +159,7 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other, std::string jobname,
-                                                    const int ioffset, const int joffset,
-                                                    const int aoffset, const int boffset,
-                                                    const int moffset, const int noffset) {
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other, std::string jobname) {
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
@@ -330,6 +326,30 @@ PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
 
 
 template<class T>
+void PMOFile<T>::scale(double a) {
+
+  const int k = this->K_;
+  const size_t fsize = this->filesize_;
+  const int kkk8 = std::max(k * k * k * 8, 1);
+  const size_t blocksize = fsize / kkk8;
+  T* buffer1 = new T[blocksize];
+  assert(fsize % kkk8 == 0);
+
+  size_t current = 0lu;
+  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize; ++i) buffer1[i] *= a;
+
+    this->put_block(current, blocksize, buffer1);
+  }
+
+  delete[] buffer1;
+};
+
+
+template<class T>
 void PMOFile<T>::print() const {
 
   const int isize = ifence_ - istart_;
@@ -464,11 +484,14 @@ T PMOFile<T>::get_energy_one_amp() const {
 
 // PMatrix1e assumes complex<double>.
 template <class T>
-boost::shared_ptr<PMatrix1e> PMOFile<T>::contract12(const boost::shared_ptr<PMatrix1e> density) const {
+boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
   // designed for operations like:
-  // d^a_i * v^ij_ab -> h^j_b
+  // d^j_i * v^ip_jq -> h^p_q
+
+  const int nocc = geom_->nocc() / 2;
+  std::cout << nocc << std::endl;
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
@@ -478,7 +501,8 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract12(const boost::shared_ptr<PMat
   const size_t absize = asize * bsize;
 
   // will be removed.
-  assert(isize == asize);
+  assert(istart_ == 0 && ifence_ == geom_->nocc()/2);
+  assert(astart_ == 0 && afence_ == geom_->nocc()/2);
 
   RefMatrix out(new PMatrix1e(geom_, bsize, jsize));
 
@@ -502,8 +526,6 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract12(const boost::shared_ptr<PMat
         if (ko < -k) ko += k*2;
         else if (ko >= k) ko -= k*2;
 
-
-        const std::complex<double>* dblock = density->bp(kd);
         std::complex<double>* oblock = out->bpw(ko);
 
         this->get_block(iall*blocksize, blocksize, buffer);
@@ -512,8 +534,8 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract12(const boost::shared_ptr<PMat
         for (int i = 0; i != isize; ++i) {
           for (int j = 0; j != jsize; ++j) {
             for (int a = 0; a != asize; ++a) {
-              const std::complex<double> cden = dblock[i + isize*a];
-              for (int b = 0; b != bsize; ++b, +cbuf) {
+              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0 : 0.0;
+              for (int b = 0; b != bsize; ++b, ++cbuf) {
                 oblock[b + bsize*j] += *cbuf * cden;
               }
             }

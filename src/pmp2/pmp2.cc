@@ -117,12 +117,12 @@ void PMP2::compute() {
   {
     RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
                                                           nfrc_, nocc_, nfrc_, nocc_,
-                                                          0, nocc_, 0, ncabs_, "V^ia'_ii, OBS part");
+                                                          0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
 
     RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
-                                                           0, nocc_, 0, ncabs_, "V^ia'_ii, auxiliary functions");
+                                                           0, nocc_, 0, ncabs_, "v^ia'_ii, auxiliary functions");
     eri_ii_ix->sort_inside_blocks();
     RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
     eri_ii_iA_ = eri_ii_iA;
@@ -203,7 +203,38 @@ void PMP2::compute() {
     RefPMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
 
     // Q intermediate (made of X * h)
-    pair<RefMatrix, RefMatrix> hj_iA = generate_hJ_iA();
+    {
+      // Hartree builder
+      RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, 0, nocc_, 0, nbasis_,
+                                                           0, nocc_, 0, nbasis_, "h+J builder (OBS)");
+      eri_Ip_Ip->sort_inside_blocks();
+      RefMatrix hj_obs = generate_hJ_obs(eri_Ip_Ip);
+
+      RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(nfrc_, nocc_)));
+      RefMatrix chj_ip(new PMatrix1e(*coeff_ * *hj_ip));
+      chj_ip->scale(0.5);
+      chj_ip->rprint();
+
+      RefPMOFile X_ii_ip = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
+                                                      nfrc_, nocc_, 0, nbasis_, "Q intermediate: stg2 (OBS)");
+      X_ii_ip->sort_inside_blocks();
+    }
+#if 0
+    {
+      // Should be able to reuse eri_ii_iA. I know...
+      RefPMOFile eri_Ii_Ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
+                                                            0, nocc_, nfrc_, nocc_,
+                                                            0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
+      eri_Ii_Ip->sort_inside_blocks();
+      RefPMOFile eri_Ii_Ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+                                                             0, nocc_, nfrc_, nocc_,
+                                                             0, nocc_, 0, ncabs_, "v^Ia'_Ii, auxiliary functions (redundant)");
+      eri_Ii_Ix->sort_inside_blocks();
+      RefPMOFile eri_Ii_IA(new PMOFile<complex<double> >(*eri_Ii_Ix + *eri_Ii_Ip));
+      pair<RefMatrix, RefMatrix> hj_iA = generate_hJ_iA(eri_Ii_IA);
+    }
+#endif
+
   }
 
 #ifdef LOCAL_DEBUG_PMP2

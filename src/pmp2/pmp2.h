@@ -59,7 +59,8 @@ class PMP2 {
     size_t noovv_;
 
     std::pair<RefMatrix, RefMatrix> generate_CABS();
-    std::pair<RefMatrix, RefMatrix> generate_hJ_iA();
+    std::pair<RefMatrix, RefMatrix> generate_hJ_iA(RefMOFile);
+    RefMatrix generate_hJ_obs(RefMOFile);
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,

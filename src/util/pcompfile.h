@@ -647,7 +647,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       // intermediate_mmK is ready
       #pragma omp parallel for
       for (int nkb = -K_; nkb < maxK1; ++nkb) {
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * jsize];
         const int nkbc = nkb + K_; 
         int nbj = nkbc * KK;
         for (int nkj = -K_, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {

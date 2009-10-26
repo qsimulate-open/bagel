@@ -43,7 +43,7 @@ class PMatrix1e {
     // Constructing PMatrix1e while increasing the leading dimension, or ndim_.
     PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm);
     // Constructing PMatrix1e while reducing the number of columns
-    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int mcut);
+    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const std::pair<int, int> mcut);
     ~PMatrix1e(); 
 
     PMatrix1e operator*(const PMatrix1e&) const;
@@ -59,7 +59,7 @@ class PMatrix1e {
     void hermite();
     void real();
     void scale(const std::complex<double>);
-    const std::complex<double>* bp(const int k) { return data_->pointer((k + geom_->K()) * blocksize_); };
+    const std::complex<double>* bp(const int k) const { return data_->pointer((k + geom_->K()) * blocksize_); };
     std::complex<double>* bpw(const int k) { return data_->pointer((k + geom_->K()) * blocksize_); };
 
     const int nbasis() const { return nbasis_; };
@@ -78,7 +78,7 @@ class PMatrix1e {
     void svd(boost::shared_ptr<PMatrix1e> U, boost::shared_ptr<PMatrix1e> V);
 
     void print() const;
-    void rprint() const;
+    void rprint(const int precision=6) const;
 
     void zaxpy(const std::complex<double>, const PMatrix1e&);
     void zaxpy(const std::complex<double>, const boost::shared_ptr<PMatrix1e>);
@@ -90,6 +90,11 @@ class PMatrix1e {
 
     std::pair<boost::shared_ptr<PMatrix1e>, boost::shared_ptr<PMatrix1e> >
       split(const int nrow1, const int nrow2);
+
+    // AO-to-MO integral transformation...
+    boost::shared_ptr<PMatrix1e> mo_transform(boost::shared_ptr<PMatrix1e>,
+                             const int istart, const int ifence,
+                             const int jstart, const int jfence) const;
 
 }; 
 
