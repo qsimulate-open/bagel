@@ -149,10 +149,10 @@ void PMP2::compute() {
   // V intermediate
   ////////////////////
   {
-    RefPMOFile vF = stg_ii_pp_->contract(eri_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) OBS");
+    RefPMOFile vF = stg_ii_pp_->contract(eri_ii_pp_, "F * v (ii/ii) OBS");
     RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii_ - *vF));
 
-    RefPMOFile V_cabs = stg_ii_iA_->contract(eri_ii_iA_, nfrc_, nocc_, nfrc_, nocc_, "F * v (ii/ii) CABS");
+    RefPMOFile V_cabs = stg_ii_iA_->contract(eri_ii_iA_, "F * v (ii/ii) CABS");
 
     RefPMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
     V_ = V_pre;
@@ -186,10 +186,10 @@ void PMP2::compute() {
                                                        nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
     stg2_ii_ii->sort_inside_blocks();
     stg2_ii_ii_ = stg2_ii_ii;
-    RefPMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) OBS");
+    RefPMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, "F * F (ii/ii) OBS");
     RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 
-    RefPMOFile X_cabs = stg_ii_iA_->contract(stg_ii_iA_, nfrc_, nocc_, nfrc_, nocc_, "F * F (ii/ii) CABS");
+    RefPMOFile X_cabs = stg_ii_iA_->contract(stg_ii_iA_, "F * F (ii/ii) CABS");
     RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
     X_ = X_pre;
   }

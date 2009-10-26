@@ -40,9 +40,9 @@ class PMOFile : public PFile<T> {
     PMOFile<T> operator*(const std::complex<double>&) const;
     boost::shared_ptr<PMOFile<T> > flip() const;
 
-    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >,
-                                            const int, const int,
-                                            const int, const int, std::string);
+    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string,
+                                            const int i = 0, const int j = 0, const int a = 0, const int b = 0,
+                                            const int m = 0, const int n = 0);
 
     boost::shared_ptr<PMatrix1e> contract12(const boost::shared_ptr<PMatrix1e>) const;
 
@@ -160,9 +160,10 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other,
-                                                    const int mstart, const int mfence,
-                                                    const int nstart, const int nfence, std::string jobname) {
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other, std::string jobname,
+                                                    const int ioffset, const int joffset,
+                                                    const int aoffset, const int boffset,
+                                                    const int moffset, const int noffset) {
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
@@ -178,7 +179,11 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
   const int jsize = jfence_ - jstart_;
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
+  const int mfence = other->ifence_;
+  const int mstart = other->istart_;
   const int msize = mfence - mstart;
+  const int nfence = other->jfence_;
+  const int nstart = other->jstart_;
   const int nsize = nfence - nstart;
   const int ijsize = isize * jsize;
   const int absize = asize * bsize;
