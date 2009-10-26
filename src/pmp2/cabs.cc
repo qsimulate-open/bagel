@@ -51,9 +51,10 @@ pair<RefMatrix, RefMatrix> PMP2::generate_hJ_iA() {
   RefHcore union_hcore(new PHcore(union_geom_));
   RefMatrix hcore(new PMatrix1e(union_hcore->ft()));
 
-  // "false" means it returns the k-space density matrix.
+  // "false" means it returns the k-space density matrix (-K <= k <= K).
   RefMatrix density(new PMatrix1e(coeff_->form_density_rhf(false)));
 
+  RefMatrix coulomb = eri_ii_iA_->contract12(density);
 
 
   pair<RefMatrix, RefMatrix> out;

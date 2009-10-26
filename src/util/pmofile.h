@@ -44,6 +44,8 @@ class PMOFile : public PFile<T> {
                                             const int, const int,
                                             const int, const int, std::string);
 
+    boost::shared_ptr<PMatrix1e> contract12(const boost::shared_ptr<PMatrix1e>) const;
+
     void print() const;
     void rprint() const;
     T get_energy_one_amp() const;
@@ -453,4 +455,71 @@ T PMOFile<T>::get_energy_one_amp() const {
   en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
+
+
+// PMatrix1e assumes complex<double>.
+template <class T>
+boost::shared_ptr<PMatrix1e> PMOFile<T>::contract12(const boost::shared_ptr<PMatrix1e> density) const {
+  typedef boost::shared_ptr<PMatrix1e> RefMatrix;
+
+  // designed for operations like:
+  // d^a_i * v^ij_ab -> h^j_b
+
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
+  const size_t ijsize = isize * jsize;
+  const size_t absize = asize * bsize;
+
+  // will be removed.
+  assert(isize == asize);
+
+  RefMatrix out(new PMatrix1e(geom_, bsize, jsize));
+
+  const int k = this->K_;
+  const size_t blocksize = absize*ijsize;
+  std::complex<double>* buffer = new std::complex<double>[blocksize];
+  assert(this->filesize_/std::max(k*k*k*8, 1) == absize*ijsize);
+
+  for (int kb = -k, iall = 0; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
+        int ki = ka+kb-kj;
+        if (ki < -k) ki += k*2;
+        else if (ki >=  k) ki -= k*2;
+
+        int kd = ki-ka;
+        if (kd < -k) kd += k*2;
+        else if (kd >= k) kd -= k*2;
+
+        int ko = kb-kj;
+        if (ko < -k) ko += k*2;
+        else if (ko >= k) ko -= k*2;
+
+
+        const std::complex<double>* dblock = density->bp(kd);
+        std::complex<double>* oblock = out->bpw(ko);
+
+        this->get_block(iall*blocksize, blocksize, buffer);
+        const std::complex<double>* cbuf = buffer;
+        // Assumes that it is already sorted.
+        for (int i = 0; i != isize; ++i) {
+          for (int j = 0; j != jsize; ++j) {
+            for (int a = 0; a != asize; ++a) {
+              const std::complex<double> cden = dblock[i + isize*a];
+              for (int b = 0; b != bsize; ++b, +cbuf) {
+                oblock[b + bsize*j] += *cbuf * cden;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  delete[] buffer;
+  return out;
+};
+
 #endif
