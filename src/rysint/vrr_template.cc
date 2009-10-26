@@ -15,7 +15,7 @@ using namespace std;
 
 void ERIBatch::perform_VRR3() {
 
-// TODO some cases haven't been rewritten..
+// some cases haven't been rewritten..
 // (4, 0, 0, 0) and (0, 0, 0, 4) hasn't been rewritten (using the generated code);
 // just copy (3, 1, 0, 0) etc and delete the first part!
 

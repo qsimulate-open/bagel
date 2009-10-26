@@ -10,7 +10,7 @@ typedef std::complex<double> Complex;
 
 using namespace std;
 
-PCoeff::PCoeff(const PMatrix1e& inp) : PMatrix1e(inp.geom()) {
+PCoeff::PCoeff(const PMatrix1e& inp) : PMatrix1e(inp.geom(), inp.ndim(), inp.mdim()) {
 
   const int unit = 1;
   const int ndim_ = inp.ndim();

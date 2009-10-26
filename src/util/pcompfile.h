@@ -95,10 +95,14 @@ class PCompFile {
     // AO-to-MO integral transformation...
     boost::shared_ptr<PMOFile<std::complex<double> > > 
                 mo_transform(boost::shared_ptr<PCoeff>,
+                             boost::shared_ptr<PCoeff>,
+                             boost::shared_ptr<PCoeff>,
+                             boost::shared_ptr<PCoeff>,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
-                             const int bstart, const int bfence, const std::string jobname = "intermediate");
+                             const int bstart, const int bfence,
+                             const std::string jobname = "intermediate");
 
     boost::shared_ptr<PMOFile<std::complex<double> > >
       mo_transform_cabs_obs(boost::shared_ptr<PCoeff>,
@@ -433,7 +437,10 @@ void PCompFile<T>::init_schwarz() {
 
 template<class T>
 boost::shared_ptr<PMOFile<std::complex<double> > > 
-  PCompFile<T>::mo_transform(boost::shared_ptr<PCoeff> coeff,
+  PCompFile<T>::mo_transform(boost::shared_ptr<PCoeff> coeff_i,
+                             boost::shared_ptr<PCoeff> coeff_j,
+                             boost::shared_ptr<PCoeff> coeff_a,
+                             boost::shared_ptr<PCoeff> coeff_b,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
@@ -637,7 +644,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += nbasis3,
                                                 offset2 += nbasis2 * bsize) {
             zgemm_("N", "N", &nbasis2, &bsize, &nbasis1, &prefac, data + offset1, &nbasis2,
-                                                         coeff->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
+                                                         coeff_b->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
                                                          intermediate_mmK + nv * nkbc + offset2, &nbasis2);
           }
         } // end of contraction b for given m3
@@ -654,7 +661,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double> exponent(0.0, K_ != 0 ? (- m2 * nkj * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
 
-          const std::complex<double>* jdata = coeff->bp(nkj) + nbasis1 * jstart;
+          const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis1 * jstart;
           for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
           const int nsize = nbasis2 * bsize;
           zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, intermediate_mmK + nv * nkbc, &nsize,
@@ -688,7 +695,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += nsize * nbasis1,
                                                 offset2 += nsize * asize) {
             zgemm_("N", "N", &nsize, &asize, &nbasis1, &prefac, data + offset1, &nsize,
-                                                                coeff->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
+                                                                coeff_a->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
                                                                 datas + nkac * novv + offset2, &nsize);
           }
         }
@@ -719,7 +726,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         if (nki < - K_) nki += K_ * 2; 
         else if (nki >=  K_) nki -= K_ * 2; 
 
-        const std::complex<double>* idata = coeff->bp(nki) + nbasis1 * istart;
+        const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
         for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
         zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data + novv * (nka + K_), &nsize,

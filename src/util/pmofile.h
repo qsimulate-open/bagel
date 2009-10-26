@@ -36,10 +36,13 @@ class PMOFile : public PFile<T> {
 
     void sort_inside_blocks();
     PMOFile<T> operator+(const PMOFile<T>&) const;
+    PMOFile<T>& operator+=(const PMOFile<T>&);
     PMOFile<T> operator-(const PMOFile<T>&) const;
     PMOFile<T> operator*(const std::complex<double>&) const;
     void scale(double a);
-    boost::shared_ptr<PMOFile<T> > flip() const;
+
+    // Flip and add to this.
+    void flip_symmetry();
 
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
 
@@ -115,12 +118,12 @@ void PMOFile<T>::sort_inside_blocks() {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
+void PMOFile<T>::flip_symmetry() {
   const int k = this->K_;
-  const int KKK8 = std::max(k * k * k * 8, 1);
-  assert(this->filesize_ % KKK8 == 0);
+  const int k2 = k*2;
+  assert(this->filesize_ % std::max(k*k*k*8, 1) == 0);
 
-  const size_t blocksize = this->filesize_ / KKK8;
+  const size_t blocksize = this->filesize_ / std::max(k*k*k*8, 1);
   size_t current = 0lu;
 
   T* buffer1 = new T[blocksize];
@@ -131,30 +134,36 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip() const {
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
 
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, k,
-                                                    jstart_, jfence_, istart_, ifence_,
-                                                    bstart_, bfence_, astart_, afence_, false));
+  assert(asize == bsize && isize == jsize);
 
-  for (int iblock = 0; iblock != KKK8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1);
-    T* cbuf1 = buffer1;
-    for (int i = 0; i < isize; ++i) {
-      for (int j = 0; j < jsize; ++j) {
-        for (int a = 0; a < asize; ++a) {
-          for (int b = 0; b < bsize; ++b, ++cbuf1) {
-            T* cbuf2 = buffer2 + a + asize * (b + bsize * (i + isize * j));
-            assert(cbuf1 == buffer1 + b + bsize * (a + asize * (j + jsize * i)));
-            *cbuf2 = *cbuf1;
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka) {
+        int ki = ka+kb-kj;
+        if (ki < -k) ki += k*2;
+        else if (ki >=  k) ki -= k*2;
+
+        const size_t current = blocksize*(ka+k+k2*(kj+k+k2*(kb+k)));
+        this->get_block(current, blocksize, buffer1);
+        this->get_block(blocksize*(kb+k+k2*(ki+k+k2*(ka+k))), blocksize, buffer2);
+
+        T* cbuf = buffer1;
+        for (int i = 0; i < isize; ++i) {
+          for (int j = 0; j < jsize; ++j) {
+            for (int a = 0; a < asize; ++a) {
+              for (int b = 0; b < bsize; ++b, ++cbuf) {
+                *cbuf += buffer2[a+asize*(b+bsize*(i+isize*j))];
+              }
+            }
           }
         }
+        this->put_block(current, blocksize, buffer1);
       }
     }
-    out->put_block(current, blocksize, buffer2);
   }
 
   delete[] buffer1;
   delete[] buffer2;
-  return out;
 };
 
 
@@ -295,6 +304,34 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
   delete[] buffer1;
   delete[] buffer2;
   return out;
+};
+
+
+template<class T>
+PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
+
+  const int k = this->K_;
+  const size_t fsize = this->filesize_;
+  const int kkk8 = std::max(k * k * k * 8, 1);
+  const size_t blocksize = fsize / kkk8;
+  T* buffer1 = new T[blocksize];
+  T* buffer2 = new T[blocksize];
+  assert(fsize % kkk8 == 0);
+
+  size_t current = 0lu;
+  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
+    this->get_block(current, blocksize, buffer1);
+    other.get_block(current, blocksize, buffer2);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize; ++i) buffer1[i] += buffer2[i];
+
+    this->put_block(current, blocksize, buffer1);
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return *this;
 };
 
 
@@ -491,7 +528,6 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   // d^j_i * v^ip_jq -> h^p_q
 
   const int nocc = geom_->nocc() / 2;
-  std::cout << nocc << std::endl;
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;

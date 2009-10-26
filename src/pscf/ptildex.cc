@@ -34,6 +34,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
 
   cout << "  Orthogonalizing overlap matrix" << endl;
 
+  vector<double> removed;
+
   int mcount = 0;
   for (int m = -K(); m != max(K(), 1); ++m, ++mcount) {
     const int boffset = mcount * blocksize_;
@@ -79,6 +81,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
 
     // TODO FATAL: CHECK THAT ALL BLOCKS HAVE SAME NUMBER OF CABS
     // this line needs attention....
+    removed.push_back(cnt);
     mdim_ = ndim_ - cnt;
 
     if (cnt != 0) { 
@@ -92,6 +95,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
   cout << "  Maximum residual in orthogonalization: " << *max_element(max_eig.begin(), max_eig.end()) << endl;
   cout << "  Minimum residual in orthogonalization: " << *min_element(min_eig.begin(), min_eig.end()) << endl;
   cout << endl;
+
+  assert(*max_element(removed.begin(), removed.end()) == *min_element(removed.begin(), removed.end()));
 
 }
 

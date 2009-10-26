@@ -52,8 +52,9 @@ void PMP2::compute() {
 
   cout << "  === Periodic MP2 calculation ===" << endl << endl;
   // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
-  eri_ii_pp_ = ao_eri_->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                             0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
+  eri_ii_pp_ = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                     nfrc_, nocc_, nfrc_, nocc_,
+                                     0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
   eri_ii_pp_->sort_inside_blocks();
 
   ///////////////////////////////////////////////
@@ -78,12 +79,14 @@ void PMP2::compute() {
   // Yukawa ii/ii for V intermediate
   ////////////////////////////////////
   {
-    RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                   nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
+    RefPMOFile yp_ii_ii = yp->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                           nfrc_, nocc_, nfrc_, nocc_,
+                                           nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
     yp_ii_ii->sort_inside_blocks();
     yp_ii_ii_ = yp_ii_ii;
-    RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                     0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
+    RefPMOFile stg_ii_pp = stg->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                             nfrc_, nocc_, nfrc_, nocc_,
+                                             0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
     stg_ii_pp->sort_inside_blocks();
     stg_ii_pp_ = stg_ii_pp;
   }
@@ -153,8 +156,8 @@ void PMP2::compute() {
     RefPMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii_ - *vF));
 
     RefPMOFile V_cabs = stg_ii_iA_->contract(eri_ii_iA_, "F * v (ii/ii) CABS");
-
-    RefPMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs - *(V_cabs->flip())));
+    V_cabs->flip_symmetry();
+    RefPMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
     V_ = V_pre;
   }
   complex<double> en_vt = V_->get_energy_one_amp();
@@ -182,15 +185,17 @@ void PMP2::compute() {
   // X intermediate
   //////////////////
   {
-    RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                       nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
+    RefPMOFile stg2_ii_ii = stg2->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                               nfrc_, nocc_, nfrc_, nocc_,
+                                               nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
     stg2_ii_ii->sort_inside_blocks();
     stg2_ii_ii_ = stg2_ii_ii;
     RefPMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, "F * F (ii/ii) OBS");
     RefPMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 
     RefPMOFile X_cabs = stg_ii_iA_->contract(stg_ii_iA_, "F * F (ii/ii) CABS");
-    RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs - *(X_cabs->flip())));
+    X_cabs->flip_symmetry();
+    RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
     X_ = X_pre;
   }
 
@@ -205,19 +210,36 @@ void PMP2::compute() {
     // Q intermediate (made of X * h)
     {
       // Hartree builder
-      RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, 0, nocc_, 0, nbasis_,
-                                                           0, nocc_, 0, nbasis_, "h+J builder (OBS)");
+      RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                                   0, nocc_, 0, nbasis_,
+                                                   0, nocc_, 0, nbasis_, "h+J builder (OBS)");
       eri_Ip_Ip->sort_inside_blocks();
       RefMatrix hj_obs = generate_hJ_obs(eri_Ip_Ip);
 
-      RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(nfrc_, nocc_)));
-      RefMatrix chj_ip(new PMatrix1e(*coeff_ * *hj_ip));
+      RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(0, nocc_)));
+      RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
       chj_ip->scale(0.5);
-      chj_ip->rprint();
 
-      RefPMOFile X_ii_ip = stg2->mo_transform(coeff_, nfrc_, nocc_, nfrc_, nocc_,
-                                                      nfrc_, nocc_, 0, nbasis_, "Q intermediate: stg2 (OBS)");
-      X_ii_ip->sort_inside_blocks();
+      RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
+      X_ii_ih->sort_inside_blocks();
+
+// might not be needed since we are using fixed amplitudes.
+#ifdef EXPLICITLY_HERMITE
+      // TODO In the case of non-fixed amplitude, we need to symmetrize X explicitly. Since we don't have it in integrals,
+      // need to MO-transform explicitly again.
+      RefPMOFile X_ih_ii = stg2->mo_transform(coeff_, chj_ip, coeff_, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 2/2");
+      X_ih_ii->sort_inside_blocks();
+      *X_ii_ih += *X_ih_ii;
+#endif
+
+      X_ii_ih->flip_symmetry();
+      RefPMOFile Q(new PMOFile<complex<double> >(*X_ii_ih));
+      Q->scale(2.0);
+//      Q->rprint();
     }
 #if 0
     {
