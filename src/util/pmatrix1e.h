@@ -41,9 +41,11 @@ class PMatrix1e {
     PMatrix1e(const boost::shared_ptr<PGeometry>);
     PMatrix1e(const boost::shared_ptr<PGeometry>, const int ldn, const int ldm);
     // Constructing PMatrix1e while increasing the leading dimension, or ndim_.
-    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn, const int ldm);
+    PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const int ldn);
     // Constructing PMatrix1e while reducing the number of columns
     PMatrix1e(const boost::shared_ptr<PMatrix1e> source, const std::pair<int, int> mcut);
+    // Constructing Pmatrix merging two matrices
+    PMatrix1e(const boost::shared_ptr<PMatrix1e>, const boost::shared_ptr<PMatrix1e>);
     ~PMatrix1e(); 
 
     PMatrix1e operator*(const PMatrix1e&) const;

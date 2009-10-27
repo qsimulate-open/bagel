@@ -40,15 +40,15 @@ PMatrix1e::PMatrix1e(const shared_ptr<PGeometry> pg, const int ldn, const int ld
 }
 
 
-// Changes the leading dimension, filling zero.
-PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int ldn, const int ldm)
+// Changes the leading dimension, filling zero if expanding.
+PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, const int ldn)
 : geom_(source->geom()), nbasis_(source->nbasis()),
-  blocksize_(ldn * ldm), totalsize_((2 * source->K() + 1) * ldn * ldm) {
+  blocksize_(ldn * source->mdim()), totalsize_((2 * source->K() + 1) * ldn * source->mdim()) {
 
   assert(ldn >= nbasis_);
 
   ndim_ = ldn;
-  mdim_ = ldm;
+  mdim_ = source->mdim();
   shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;
   const shared_ptr<PData> sdata = source->data();
@@ -91,6 +91,31 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, pair<int, int> mcut)
 }
 
 
+// Changes number of columns; keeps only [mcut.first mcut.second) columns.
+PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source1, const shared_ptr<PMatrix1e> source2)
+: geom_(source1->geom()), nbasis_(source1->nbasis()), ndim_(source1->ndim()), mdim_(source1->mdim()+source2->mdim()),
+  blocksize_(source1->ndim() * (source1->mdim()+source2->mdim())),
+  totalsize_((2*source1->K()+1)*source1->ndim()*(source1->mdim()+source2->mdim())) {
+
+  assert(source1->ndim() == source2->ndim());
+
+  shared_ptr<PData> tmp(new PData(totalsize_));
+  data_ = tmp;
+  const shared_ptr<PData> sdata1 = source1->data();
+  const shared_ptr<PData> sdata2 = source2->data();
+  const size_t sblocksize1 = source1->blocksize();
+  const size_t sblocksize2 = source2->blocksize();
+
+  for (int i = -K(); i != max(K(), 1); ++i) {
+    complex<double>* current = data_->front() + (i + K()) * blocksize_;
+    complex<double>* csource1 = sdata1->front() + (i + K()) * sblocksize1;
+    complex<double>* csource2 = sdata2->front() + (i + K()) * sblocksize2;
+
+    copy(csource1, csource1+sblocksize1, current);
+    copy(csource2, csource2+sblocksize2, current+sblocksize1);
+  }
+}
+
 
 PMatrix1e::~PMatrix1e() {
 }
@@ -98,7 +123,7 @@ PMatrix1e::~PMatrix1e() {
 
 PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
   assert(add.totalsize() == totalsize_);
-  PMatrix1e out(geom_);
+  PMatrix1e out(geom_, ndim_, mdim_);
   for (int j = 0; j != totalsize_; ++j) (*out.data_)[j] = (*add.data_)[j] + (*data_)[j]; 
   return out;
 }
@@ -106,7 +131,7 @@ PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
 
 PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
   assert(sub.totalsize() == totalsize_);
-  PMatrix1e out(geom_);
+  PMatrix1e out(geom_, ndim_, mdim_);
   #pragma omp parallel for
   for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
   return out;

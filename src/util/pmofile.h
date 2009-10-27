@@ -78,7 +78,7 @@ PMOFile<T>::~PMOFile() {
 };
 
 
-// TODO conflicts in notation
+// XXX conflicts in notation
 // sort to chemist notations... but outermost block loops remain unchanged...
 // that is unfavorable and needs some fix in PCompFile::mo_transform...
 template<class T>

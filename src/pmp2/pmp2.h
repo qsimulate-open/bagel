@@ -27,11 +27,13 @@ class PMP2 {
     boost::shared_ptr<PGeometry> union_geom_;
 
     // Coefficients for MO.
-    const boost::shared_ptr<PCoeff> coeff_;
+    RefCoeff coeff_;
 
     // Coefficients for CABS (OBS / auxiliary part respectively)
     RefCoeff cabs_obs_;
     RefCoeff cabs_aux_;
+    RefCoeff coeff_cabs_;
+    RefMatrix coeff_entire_;
 
     // HF orbital energies
     const std::vector<double> eig_;
@@ -60,7 +62,7 @@ class PMP2 {
     size_t noovv_;
 
     std::pair<RefCoeff, RefCoeff> generate_CABS();
-    std::pair<RefMatrix, RefMatrix> generate_hJ_iA(RefMOFile);
+    RefMatrix generate_hJ_cabs(RefMOFile);
     RefMatrix generate_hJ_obs(RefMOFile);
 
   public:

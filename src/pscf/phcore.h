@@ -14,8 +14,12 @@ class PHcore : public PMatrix1e {
   protected:
     void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int, const int);
 
+    // unfortunately, my implementation of CABS duplicates atoms... That means that
+    // the nuclear attraction potential needs to be halved in Hcore that includes CABS.
+    const bool cabs_;
+
   public:
-    PHcore(const boost::shared_ptr<PGeometry>);
+    PHcore(const boost::shared_ptr<PGeometry>, const bool cabs = false);
     ~PHcore();
 
 };

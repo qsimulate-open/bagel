@@ -29,18 +29,27 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
   shared_ptr<POverlap> union_overlap(new POverlap(union_geom_));
   shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
-  RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim(), coeff_->mdim()));
+  RefMatrix ri_reshaped(new PMatrix1e(coeff_, ri_coeff->ndim()));
 
   // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
   RefMatrix tmp(new PMatrix1e(*ri_coeff % union_overlap->ft() * *ri_reshaped));
-  RefMatrix U(new PMatrix1e(geom_, tmp->ndim(), tmp->ndim()));
-  RefMatrix V(new PMatrix1e(geom_, tmp->mdim(), tmp->mdim()));
+
+  const int tmdim = tmp->mdim();
+  const int tndim = tmp->ndim();
+
+  RefMatrix U(new PMatrix1e(geom_, tndim, tndim));
+  RefMatrix V(new PMatrix1e(geom_, tmdim, tmdim));
   tmp->svd(U, V);
 
-  RefMatrix Ured(new PMatrix1e(U, make_pair(tmp->mdim(), tmp->ndim())));
-  RefCoeff cabs_coeff(new PCoeff(*ri_coeff * *Ured));
+  RefMatrix Ured(new PMatrix1e(U, make_pair(tmdim, tndim)));
+  RefCoeff coeff_cabs(new PCoeff(*ri_coeff * *Ured));
+  coeff_cabs_ = coeff_cabs;
 
-  pair<RefCoeff, RefCoeff> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
+  RefMatrix coeff_fit(new PMatrix1e(coeff_, tndim));
+  RefMatrix coeff_entire(new PMatrix1e(coeff_fit, coeff_cabs_));
+  coeff_entire_ = coeff_entire;
+
+  pair<RefCoeff, RefCoeff> cabs_coeff_spl = coeff_cabs_->split(geom_->nbasis(), geom_->ncabs());
 
   return cabs_coeff_spl;
 }
@@ -54,31 +63,31 @@ RefMatrix PMP2::generate_hJ_obs(RefMOFile eri_Ip_Ip) {
   RefMatrix aohcore(new PMatrix1e(hc->ft()));
   RefMatrix mohcore(new PMatrix1e(*coeff_ % *aohcore * *coeff_));
 
-#if 1
   RefMatrix coulomb = eri_Ip_Ip->contract_density_J();
   RefMatrix hartree(new PMatrix1e(*mohcore + *coulomb));
 
   return hartree;
-#else
-  return mohcore;
-#endif
 }
 
 
 // Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
-pair<RefMatrix, RefMatrix> PMP2::generate_hJ_iA(RefMOFile eri_Ii_IA) {
+RefMatrix PMP2::generate_hJ_cabs(RefMOFile eri_Ip_IA) {
 
   // Computes hcore in k-space.
-  RefHcore union_hcore(new PHcore(union_geom_));
-  RefMatrix hcore(new PMatrix1e(union_hcore->ft()));
+  // Needs to pass that this PHcore is for union_geom_ (i.e. true in the second argument)
+  // Assuming that the cost for this operation is negligible.
+  RefHcore uhc(new PHcore(union_geom_, true));
+  RefMatrix aohcore(new PMatrix1e(uhc->ft()));
+  RefMatrix mohcore(new PMatrix1e(*coeff_entire_ % *aohcore * *coeff_entire_));
 
-//hcore->rprint(4);
+  RefMatrix mohcore_cabs = mohcore->split(geom_->nbasis(), geom_->ncabs()).second;
+  RefMatrix mohcore_obs_cabs_block(new PMatrix1e(mohcore_cabs, make_pair(0, geom_->nbasis())));
+  mohcore_obs_cabs_block->rprint();
 
-  RefMatrix coulomb = eri_Ii_IA->contract_density_J();
+  RefMatrix coulomb = eri_Ip_IA->contract_density_J();
+  coulomb->rprint();
+  RefMatrix hartree(new PMatrix1e(*mohcore_obs_cabs_block + *coulomb));
 
-  coulomb->rprint(4);
-
-  pair<RefMatrix, RefMatrix> out;
-  return out;
+  return hartree;
 }
 
