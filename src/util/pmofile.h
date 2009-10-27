@@ -10,6 +10,7 @@
 #include <src/pscf/pgeometry.h>
 #include <src/util/pfile.h>
 #include <src/pscf/f77.h>
+#include <map>
 
 template<class T>
 class PMOFile : public PFile<T> {
@@ -24,6 +25,8 @@ class PMOFile : public PFile<T> {
     const int bfence_;
 
     const boost::shared_ptr<PGeometry> geom_;
+    size_t blocksize_;
+    std::map<size_t, size_t> offset_;
 
   public:
     PMOFile(const boost::shared_ptr<PGeometry>,
@@ -33,6 +36,25 @@ class PMOFile : public PFile<T> {
         const int, const int,
         const bool late_init = false);
     ~PMOFile(); 
+
+    std::map<size_t, size_t>::const_iterator oiter(int i, int j, int a, int b) const {
+      const int k = this->K_;
+      const int kk = k * 2;
+      assert((i+j-a-b) % std::max(kk,1) == 0);
+      const size_t tag = a+k+kk*(j+k+kk*(b+k));
+      std::map<size_t, size_t>::const_iterator iter = offset_.find(tag);
+      assert(iter != offset_.end());
+      return iter;
+    };
+    void get_block2(int i, int j, int a, int b, T* data) const {
+      this->get_block(oiter(i,j,a,b)->second, blocksize_, data);
+    };
+    void put_block2(int i, int j, int a, int b, const T* data) {
+      this->put_block(oiter(i,j,a,b)->second, blocksize_, data);
+    };
+    void add_block2(int i, int j, int a, int b, const T* data) {
+      this->add_block(oiter(i,j,a,b)->second, blocksize_, data);
+    };
 
     void sort_inside_blocks();
     PMOFile<T> operator+(const PMOFile<T>&) const;
@@ -69,6 +91,17 @@ PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
    istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
    astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen) {
 
+  // current convention...
+  blocksize_ = fsize / std::max(k*k*k*8, 1);
+  size_t tag = 0;
+  size_t current = 0;
+  for (int b = -k; b != std::max(k,1); ++b) {
+    for (int j = -k; j != std::max(k,1); ++j) {
+      for (int a = -k; a != std::max(k,1); ++a, ++tag, current += blocksize_) {
+        offset_.insert(std::make_pair(tag, current));
+      }
+    }
+  }
 
 };
 
@@ -83,15 +116,9 @@ PMOFile<T>::~PMOFile() {
 // that is unfavorable and needs some fix in PCompFile::mo_transform...
 template<class T>
 void PMOFile<T>::sort_inside_blocks() {
-  const int k = this->K_;
-  const int KKK8 = std::max(k * k * k * 8, 1);
-  assert(this->filesize_ % KKK8 == 0);
 
-  const size_t blocksize = this->filesize_ / KKK8;
-  size_t current = 0lu; 
-
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[blocksize_];
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
@@ -99,8 +126,8 @@ void PMOFile<T>::sort_inside_blocks() {
   const int bsize = bfence_ - bstart_;
   const size_t absize = asize * bsize;
 
-  for (int iblock = 0; iblock != KKK8; ++iblock, current += blocksize) { 
-    this->get_block(current, blocksize, buffer1); 
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
     #pragma omp parallel for
     for (int i = 0; i < isize; ++i) {
       const T* cbuf = buffer1 + bsize * asize * jsize * i;
@@ -111,7 +138,7 @@ void PMOFile<T>::sort_inside_blocks() {
         }
       }
     }
-    this->put_block(current, blocksize, buffer2);
+    this->put_block(iter->second, blocksize_, buffer2);
   }
 
   delete[] buffer1;
@@ -124,18 +151,12 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
   boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
                                                     astart_, afence_, bstart_, bfence_, false));
-  const int k = this->K_;
-  const int kkk8 = std::max(k*k*k*8, 1);
-  assert(this->filesize_ % kkk8 == 0);
-  const size_t blocksize = this->filesize_ / kkk8;
 
-  T* buffer = new T[blocksize];
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer);
-    out->put_block(current, blocksize, buffer);
+  T* buffer = new T[blocksize_];
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer);
+    out->put_block(iter->second, blocksize_, buffer);
   }
-
   delete[] buffer;
   return out;
 }
@@ -144,15 +165,11 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
 template<class T>
 void PMOFile<T>::flip_symmetry() {
   const int k = this->K_;
-  const int k2 = k*2;
-  assert(this->filesize_ % std::max(k*k*k*8, 1) == 0);
 
-  const size_t blocksize = this->filesize_ / std::max(k*k*k*8, 1);
-  size_t current = 0lu;
   boost::shared_ptr<PMOFile<T> > other = this->copy();
 
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[other->blocksize_];
 
   const int isize = ifence_ - istart_;
   const int jsize = jfence_ - jstart_;
@@ -168,9 +185,8 @@ void PMOFile<T>::flip_symmetry() {
         if (ki < -k) ki += k*2;
         else if (ki >=  k) ki -= k*2;
 
-        const size_t current = blocksize*(ka+k+k2*(kj+k+k2*(kb+k)));
-        this->get_block(current, blocksize, buffer1);
-        other->get_block(blocksize*(kb+k+k2*(ki+k+k2*(ka+k))), blocksize, buffer2);
+        get_block2(ki, kj, ka, kb, buffer1);
+        other->get_block2(kj, ki, kb, ka, buffer2);
 
         T* cbuf = buffer1;
         for (int i = 0; i < isize; ++i) {
@@ -182,7 +198,7 @@ void PMOFile<T>::flip_symmetry() {
             }
           }
         }
-        this->put_block(current, blocksize, buffer1);
+        put_block2(ki, kj, ka, kb, buffer1);
       }
     }
   }
@@ -197,10 +213,9 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
-  const int KKK8 = std::max(k * k * k * 8, 1);
-  assert(this->filesize_ % KKK8 == 0);
-  const size_t blocksize1 = this->filesize_ / KKK8;
-  const size_t blocksize2 = other->filesize_ / KKK8;
+  const int kkk8 = std::max(k*k*k*8, 1);
+  const size_t blocksize1 = blocksize_;
+  const size_t blocksize2 = other->blocksize_;
 
   T* buffer1 = new T[blocksize1];
   T* buffer2 = new T[blocksize2];
@@ -224,11 +239,11 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
   T* target = new T[ijsize * mnsize];
 
   const size_t out_blocksize = ijsize * mnsize;
-  const size_t out_filesize = KKK8 * out_blocksize; 
+  const size_t out_filesize = kkk8 * out_blocksize;
   boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
                                                     mstart, mfence, nstart, nfence, false));
 
-  const int k2 = std::max(k + k, 1);
+  const int k2 = std::max(k+k, 1);
 
   size_t current = 0lu; 
   for (int kj = -k; kj < std::max(k, 1); ++kj) { 
@@ -245,17 +260,14 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
             for (int kb = -k; kb < std::max(k, 1); ++kb) {
               if ((ka + kb - ki - kj) % k2 != 0) continue; 
 
-              this->get_block(blocksize1 * (kb + k + k2 * (ki + k + k2 * (ka + k))), blocksize1, buffer1);
-              other->get_block(blocksize2 * (kb + k + k2 * (km + k + k2 * (ka + k))), blocksize2, buffer2);
-
+              get_block2(kj, ki, kb, ka, buffer1);
+              other->get_block2(kn, km, kb, ka, buffer2);
               const T one = 1.0;
               const T prefac = one / static_cast<T>(k2);
               zgemm_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
             }
           }
-
-          const size_t kinj = kj + k + k2 * (km + k + k2 * (ki + k));
-          out->put_block(kinj * out_blocksize, out_blocksize, target);
+          out->put_block2(kn, km, kj, ki, target);
         }
       }
     }
@@ -275,25 +287,19 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 template<class T>
 PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 
-  const int k = this->K_;
-  const size_t fsize = this->filesize_;
-  const int kkk8 = std::max(k * k * k * 8, 1);
-  const size_t blocksize = fsize / kkk8;
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
-  assert(fsize % kkk8 == 0);
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[blocksize_];
 
-  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1); 
-    other.get_block(current, blocksize, buffer2);
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
+    other.get_block(iter->second, blocksize_, buffer2);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize; ++i) buffer1[i] -= buffer2[i];
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] -= buffer2[i];
 
-    out.put_block(current, blocksize, buffer1); 
+    out.put_block(iter->second, blocksize_, buffer1);
   }
 
   delete[] buffer1;
@@ -305,25 +311,19 @@ PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 template<class T>
 PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 
-  const int k = this->K_;
-  const size_t fsize = this->filesize_;
-  const int kkk8 = std::max(k * k * k * 8, 1);
-  const size_t blocksize = fsize / kkk8;
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
-  assert(fsize % kkk8 == 0);
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[blocksize_];
 
-  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1); 
-    other.get_block(current, blocksize, buffer2);
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
+    other.get_block(iter->second, blocksize_, buffer2);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize; ++i) buffer1[i] += buffer2[i];
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] += buffer2[i];
 
-    out.put_block(current, blocksize, buffer1); 
+    out.put_block(iter->second, blocksize_, buffer1);
   }
 
   delete[] buffer1;
@@ -335,23 +335,17 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 template<class T>
 PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
 
-  const int k = this->K_;
-  const size_t fsize = this->filesize_;
-  const int kkk8 = std::max(k * k * k * 8, 1);
-  const size_t blocksize = fsize / kkk8;
-  T* buffer1 = new T[blocksize];
-  T* buffer2 = new T[blocksize];
-  assert(fsize % kkk8 == 0);
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[blocksize_];
 
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1);
-    other.get_block(current, blocksize, buffer2);
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
+    other.get_block(iter->second, blocksize_, buffer2);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize; ++i) buffer1[i] += buffer2[i];
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] += buffer2[i];
 
-    this->put_block(current, blocksize, buffer1);
+    this->put_block(iter->second, blocksize_, buffer1);
   }
 
   delete[] buffer1;
@@ -363,23 +357,17 @@ PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
 template<class T>
 PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
 
-  const int k = this->K_;
-  const size_t fsize = this->filesize_;
-  const int kkk8 = std::max(k * k * k * 8, 1);
-  const size_t blocksize = fsize / kkk8;
-  T* buffer1 = new T[blocksize];
-  assert(fsize % kkk8 == 0);
+  T* buffer1 = new T[blocksize_];
 
-  PMOFile out(geom_, fsize, k, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
 
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1);
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize; ++i) buffer1[i] *= a;
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
-    out.put_block(current, blocksize, buffer1);
+    out.put_block(iter->second, blocksize_, buffer1);
   }
 
   delete[] buffer1;
@@ -390,21 +378,15 @@ PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
 template<class T>
 void PMOFile<T>::scale(double a) {
 
-  const int k = this->K_;
-  const size_t fsize = this->filesize_;
-  const int kkk8 = std::max(k * k * k * 8, 1);
-  const size_t blocksize = fsize / kkk8;
-  T* buffer1 = new T[blocksize];
-  assert(fsize % kkk8 == 0);
+  T* buffer1 = new T[blocksize_];
 
-  size_t current = 0lu;
-  for (int iblock = 0; iblock != kkk8; ++iblock, current += blocksize) {
-    this->get_block(current, blocksize, buffer1);
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize; ++i) buffer1[i] *= a;
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
-    this->put_block(current, blocksize, buffer1);
+    this->put_block(iter->second, blocksize_, buffer1);
   }
 
   delete[] buffer1;
@@ -464,7 +446,10 @@ void PMOFile<T>::rprint() const {
       for (int kj = -k; kj != std::max(k, 1); ++kj) {
         for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
           std::cout << "  block " << ki << " : " << kj << " : " << ka << std::endl;
-          this->get_block(iall * ijsize * ijsize, ijsize * ijsize, buffer); 
+          int kb = ki + kj - ka;
+          if (kb < -k) kb += 2*k;
+          else if (kb >= k) kb -= 2*k;
+          get_block2(ki, kj, ka, kb, buffer);
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
             for (int j = 0; j != ijsize; ++j, ++cbuf) {
@@ -569,9 +554,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   RefMatrix out(new PMatrix1e(geom_, bsize, jsize));
 
   const int k = this->K_;
-  const size_t blocksize = absize*ijsize;
-  std::complex<double>* buffer = new std::complex<double>[blocksize];
-  assert(this->filesize_/std::max(k*k*k*8, 1) == absize*ijsize);
+  std::complex<double>* buffer = new std::complex<double>[blocksize_];
 
   for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
@@ -588,7 +571,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
 
         const int iall = ka+k+(k+k)*(kj+k+(k+k)*(kb+k));
 
-        this->get_block(iall*blocksize, blocksize, buffer);
+        get_block2(ki, kj, ka, kb, buffer);
         const std::complex<double>* cbuf = buffer;
         // Assumes that it is already sorted.
         for (int i = 0; i != isize; ++i) {
