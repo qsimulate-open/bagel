@@ -551,6 +551,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
 
   // designed for operations like:
   // d^j_i * v^ip_jq -> h^p_q
+  // d is assumed to be diagonal in Bloch orbitals.
 
   const int nocc = geom_->nocc() / 2;
 
@@ -572,22 +573,20 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   std::complex<double>* buffer = new std::complex<double>[blocksize];
   assert(this->filesize_/std::max(k*k*k*8, 1) == absize*ijsize);
 
-  for (int kb = -k, iall = 0; kb != std::max(k, 1); ++kb) {
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
-      for (int ka = -k; ka != std::max(k, 1); ++ka, ++iall) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka) {
+
         int ki = ka+kb-kj;
         if (ki < -k) ki += k*2;
-        else if (ki >=  k) ki -= k*2;
+        else if (ki >= k) ki -= k*2;
 
-        int kd = ki-ka;
-        if (kd < -k) kd += k*2;
-        else if (kd >= k) kd -= k*2;
+        if (ki != ka) continue;
+        if (kb != kj) continue;
 
-        int ko = kb-kj;
-        if (ko < -k) ko += k*2;
-        else if (ko >= k) ko -= k*2;
+        std::complex<double>* oblock = out->bpw(kb);
 
-        std::complex<double>* oblock = out->bpw(ko);
+        const int iall = ka+k+(k+k)*(kj+k+(k+k)*(kb+k));
 
         this->get_block(iall*blocksize, blocksize, buffer);
         const std::complex<double>* cbuf = buffer;
@@ -595,7 +594,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
         for (int i = 0; i != isize; ++i) {
           for (int j = 0; j != jsize; ++j) {
             for (int a = 0; a != asize; ++a) {
-              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0 : 0.0;
+              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0/(k+k) : 0.0;
               for (int b = 0; b != bsize; ++b, ++cbuf) {
                 oblock[b + bsize*j] += *cbuf * cden;
               }

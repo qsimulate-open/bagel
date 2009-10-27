@@ -54,10 +54,14 @@ RefMatrix PMP2::generate_hJ_obs(RefMOFile eri_Ip_Ip) {
   RefMatrix aohcore(new PMatrix1e(hc->ft()));
   RefMatrix mohcore(new PMatrix1e(*coeff_ % *aohcore * *coeff_));
 
+#if 1
   RefMatrix coulomb = eri_Ip_Ip->contract_density_J();
   RefMatrix hartree(new PMatrix1e(*mohcore + *coulomb));
 
   return hartree;
+#else
+  return mohcore;
+#endif
 }
 
 

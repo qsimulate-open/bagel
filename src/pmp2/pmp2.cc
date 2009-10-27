@@ -229,6 +229,7 @@ void PMP2::compute() {
       RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(0, nocc_)));
       RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
       chj_ip->scale(0.5);
+      chj_ip->rprint();
 
       RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
                                               nfrc_, nocc_, nfrc_, nocc_,
@@ -251,7 +252,7 @@ void PMP2::compute() {
 
       X_ii_ih->flip_symmetry();
       RefPMOFile Q(new PMOFile<complex<double> >(*X_ii_ih));
-      Q->rprint();
+ //     Q->rprint();
     }
 
 #if 0
