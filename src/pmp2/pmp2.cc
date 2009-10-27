@@ -188,7 +188,8 @@ void PMP2::compute() {
   shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
   shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
 
-  shared_ptr<PCompCABSFile<SlaterBatch> >stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, "Slater CABS (2gamma)"));
+  shared_ptr<PCompCABSFile<SlaterBatch> >
+    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, "Slater CABS (2gamma)"));
   stg2_cabs->store_integrals();
   stg2_cabs->reopen_with_inout();
 
@@ -222,11 +223,12 @@ void PMP2::compute() {
     RefPMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
 
     // Q intermediate (made of X * h)
+    RefPMOFile Q;
     {
       // Hartree builder
       RefMatrix hj_obs;
       {
-        // TODO INEFFICIENT CODE!!! Needs to be constructed in AO basis.
+        // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
         RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                      0, nocc_, 0, nbasis_,
                                                      0, nocc_, 0, nbasis_, "h+J builder (OBS)");
@@ -238,7 +240,7 @@ void PMP2::compute() {
 
       RefMatrix hj_cabs;
       {
-        // TODO INEFFICIENT CODE!!! Needs to be constructed in AO basis.
+        // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
         RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
                                                      0, nocc_, 0, nbasis_,
                                                      0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
@@ -260,21 +262,18 @@ void PMP2::compute() {
 
       *chj_ip += *chj_iA_obs;
       chj_ip->scale(0.5);
-      chj_ip->rprint();
       RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
       X_ii_ih->sort_inside_blocks();
 
       chj_iA_cabs->scale(0.5);
-      chj_iA_cabs->rprint();
       RefPMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, chj_iA_cabs,
                                                                  nfrc_, nocc_, nfrc_, nocc_,
                                                                  nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
       X_ii_ih_cabs->sort_inside_blocks();
 
       *X_ii_ih += *X_ii_ih_cabs;
-
 
 // might not be needed since we are using fixed amplitudes.
 #ifdef EXPLICITLY_HERMITE
@@ -290,11 +289,13 @@ void PMP2::compute() {
 #endif
 
       X_ii_ih->flip_symmetry();
-      RefPMOFile Q(new PMOFile<complex<double> >(*X_ii_ih));
-      Q->rprint();
-    }
+      RefPMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_ih));
+      Q = Qtmp;
+    } // end of Q intermediate construction.
 
-  }
+    Q->rprint();
+
+  } // end of B intermediate construction.
 
 #ifdef LOCAL_DEBUG_PMP2
   V->print();

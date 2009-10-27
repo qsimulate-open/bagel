@@ -82,7 +82,6 @@ RefMatrix PMP2::generate_hJ_cabs(RefMOFile eri_Ip_IA) {
 
   RefMatrix mohcore_cabs = mohcore->split(geom_->nbasis(), geom_->ncabs()).second;
   RefMatrix mohcore_obs_cabs_block(new PMatrix1e(mohcore_cabs, make_pair(0, geom_->nbasis())));
-  mohcore_obs_cabs_block->rprint();
 
   RefMatrix coulomb = eri_Ip_IA->contract_density_J();
   RefMatrix hartree(new PMatrix1e(*mohcore_obs_cabs_block + *coulomb));
