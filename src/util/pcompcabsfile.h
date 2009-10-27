@@ -33,7 +33,9 @@ class PCompCABSFile : public PCompFile<T> {
 
     boost::shared_ptr<PMOFile<std::complex<double> > >
       mo_transform_cabs_aux(boost::shared_ptr<PCoeff>,
-                            boost::shared_ptr<PMatrix1e>,
+                            boost::shared_ptr<PCoeff>,
+                            boost::shared_ptr<PCoeff>,
+                            boost::shared_ptr<PCoeff>,
                             const int istart, const int ifence,
                             const int jstart, const int jfence,
                             const int astart, const int afence,
@@ -285,8 +287,10 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
 template<class T>
 boost::shared_ptr<PMOFile<std::complex<double> > >
-  PCompCABSFile<T>::mo_transform_cabs_aux(boost::shared_ptr<PCoeff> coeff,
-                                          boost::shared_ptr<PMatrix1e> cabs_coeff,
+  PCompCABSFile<T>::mo_transform_cabs_aux(boost::shared_ptr<PCoeff> coeff_i,
+                                          boost::shared_ptr<PCoeff> coeff_j,
+                                          boost::shared_ptr<PCoeff> coeff_a,
+                                          boost::shared_ptr<PCoeff> coeff_b,
                                           const int istart, const int ifence,
                                           const int jstart, const int jfence,
                                           const int astart, const int afence,
@@ -298,7 +302,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   // Loading a (2K * 2K * nov) quantity on memory
 
-  assert(bfence <= cabs_coeff->mdim());
+  assert(bfence <= coeff_b->mdim());
 
   const int isize = ifence - istart;
   const int jsize = jfence - jstart;
@@ -324,7 +328,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const int nbasis2 = nbasis1 * nbasis1;
   const int nbasis3 = nbasis2 * nbasis1;
   const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
-  const int cabs_nbasis1 = cabs_coeff->ndim();
+  const int cabs_nbasis1 = coeff_b->ndim();
   const int cabs_nbasis2 = nbasis1 * cabs_nbasis1;
   const int cabs_nbasis3 = nbasis2 * cabs_nbasis1;
   const size_t cabs_nbasis4 = static_cast<size_t>(cabs_nbasis1) * nbasis3;
@@ -492,7 +496,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += cabs_nbasis3,
                                                 offset2 += nbasis2 * bsize) {
             zgemm_("N", "N", &nbasis2, &bsize, &cabs_nbasis1, &prefac, data + offset1, &nbasis2,
-                                               cabs_coeff->bp(nkb) + cabs_nbasis1 * bstart, &cabs_nbasis1, &cone,
+                                               coeff_b->bp(nkb) + cabs_nbasis1 * bstart, &cabs_nbasis1, &cone,
                                                intermediate_mmK + nv * nkbc + offset2, &nbasis2);
           }
         } // end of contraction b for given m3
@@ -502,14 +506,14 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       // intermediate_mmK is ready
       #pragma omp parallel for
       for (int nkb = -k; nkb < maxK1; ++nkb) {
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize];
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * jsize];
         const int nkbc = nkb + k;
         int nbj = nkbc * KK;
         for (int nkj = -k, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {
           const std::complex<double> exponent(0.0, k != 0 ? (- m2 * nkj * pi) / k : 0.0);
           const std::complex<double> prefac = exp(exponent);
 
-          const std::complex<double>* jdata = coeff->bp(nkj) + nbasis1 * jstart;
+          const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis1 * jstart;
           for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
           const int nsize = nbasis2 * bsize;
           zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, intermediate_mmK + nv * nkbc, &nsize,
@@ -543,7 +547,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii != nbasis1; ++ii, offset1 += nsize * nbasis1,
                                                 offset2 += nsize * asize) {
             zgemm_("N", "N", &nsize, &asize, &nbasis1, &prefac, data + offset1, &nsize,
-                                                                coeff->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
+                                                                coeff_a->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
                                                                 datas + nkac * novv + offset2, &nsize);
           }
         }
@@ -574,7 +578,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         if (nki < - k) nki += k * 2;
         else if (nki >=  k) nki -= k * 2;
 
-        const std::complex<double>* idata = coeff->bp(nki) + nbasis1 * istart;
+        const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
         for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
         zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data + novv * (nka + k), &nsize,

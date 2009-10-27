@@ -9,6 +9,7 @@
 #include <src/pscf/poverlap.h>
 #include <src/pscf/ptildex.h>
 #include <src/pscf/phcore.h>
+#include <src/pscf/pcoeff.h>
 
 using namespace std;
 using namespace boost;
@@ -16,9 +17,10 @@ using namespace boost;
 typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
+typedef shared_ptr<PCoeff> RefCoeff;
 typedef shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
 
-pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
+pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
   // Form RI space which is a union of OBS and CABS.
   RefGeom newgeom(new PGeometry(*geom_));
@@ -36,9 +38,9 @@ pair<RefMatrix, RefMatrix> PMP2::generate_CABS() {
   tmp->svd(U, V);
 
   RefMatrix Ured(new PMatrix1e(U, make_pair(tmp->mdim(), tmp->ndim())));
-  RefMatrix cabs_coeff(new PMatrix1e(*ri_coeff * *Ured));
+  RefCoeff cabs_coeff(new PCoeff(*ri_coeff * *Ured));
 
-  pair<RefMatrix, RefMatrix> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefCoeff, RefCoeff> cabs_coeff_spl = cabs_coeff->split(geom_->nbasis(), geom_->ncabs());
 
   return cabs_coeff_spl;
 }

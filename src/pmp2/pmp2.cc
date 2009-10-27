@@ -113,7 +113,7 @@ void PMP2::compute() {
   ///////////////////////////
   // Coefficients of CABS;
   /////////////////////////
-  pair<RefMatrix, RefMatrix> cabs_pairs = generate_CABS();
+  pair<RefCoeff, RefCoeff> cabs_pairs = generate_CABS();
   cabs_obs_ = cabs_pairs.first;
   cabs_aux_ = cabs_pairs.second;
   // Setting actual number of CABS.
@@ -129,7 +129,7 @@ void PMP2::compute() {
                                                           0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
 
-    RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+    RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
                                                            0, nocc_, 0, ncabs_, "v^ia'_ii, auxiliary functions");
     eri_ii_ix->sort_inside_blocks();
@@ -145,7 +145,7 @@ void PMP2::compute() {
                                                       nfrc_, nocc_, nfrc_, nocc_,
                                                       0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
     stg_ii_ip->sort_inside_blocks();
-    RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+    RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
                                                            0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
     stg_ii_ix->sort_inside_blocks();
@@ -262,7 +262,7 @@ void PMP2::compute() {
                                                             0, nocc_, nfrc_, nocc_,
                                                             0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
       eri_Ii_Ip->sort_inside_blocks();
-      RefPMOFile eri_Ii_Ix = eri_cabs->mo_transform_cabs_aux(coeff_, cabs_aux_,
+      RefPMOFile eri_Ii_Ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                              0, nocc_, nfrc_, nocc_,
                                                              0, nocc_, 0, ncabs_, "v^Ia'_Ii, auxiliary functions (redundant)");
       eri_Ii_Ix->sort_inside_blocks();

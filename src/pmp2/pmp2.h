@@ -16,6 +16,7 @@
 
 class PMP2 {
   typedef boost::shared_ptr<PMatrix1e> RefMatrix;
+  typedef boost::shared_ptr<PCoeff> RefCoeff;
   typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
 
   protected:
@@ -29,8 +30,8 @@ class PMP2 {
     const boost::shared_ptr<PCoeff> coeff_;
 
     // Coefficients for CABS (OBS / auxiliary part respectively)
-    RefMatrix cabs_obs_;
-    RefMatrix cabs_aux_;
+    RefCoeff cabs_obs_;
+    RefCoeff cabs_aux_;
 
     // HF orbital energies
     const std::vector<double> eig_;
@@ -58,7 +59,7 @@ class PMP2 {
     int ncabs_;
     size_t noovv_;
 
-    std::pair<RefMatrix, RefMatrix> generate_CABS();
+    std::pair<RefCoeff, RefCoeff> generate_CABS();
     std::pair<RefMatrix, RefMatrix> generate_hJ_iA(RefMOFile);
     RefMatrix generate_hJ_obs(RefMOFile);
 
