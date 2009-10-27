@@ -594,7 +594,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
         for (int i = 0; i != isize; ++i) {
           for (int j = 0; j != jsize; ++j) {
             for (int a = 0; a != asize; ++a) {
-              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0/(k+k) : 0.0;
+              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
               for (int b = 0; b != bsize; ++b, ++cbuf) {
                 oblock[b + bsize*j] += *cbuf * cden;
               }

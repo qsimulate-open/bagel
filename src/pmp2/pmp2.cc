@@ -24,7 +24,7 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 ////////////////////////////////////////////////////////////////////////////
 // toggles whether we symmetrize explicitly or not (12|34)<->(21|43)
-#define EXPLICITLY_HERMITE
+//#define EXPLICITLY_HERMITE
 ////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -220,11 +220,23 @@ void PMP2::compute() {
     // Q intermediate (made of X * h)
     {
       // Hartree builder
-      RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                                   0, nocc_, 0, nbasis_,
-                                                   0, nocc_, 0, nbasis_, "h+J builder (OBS)");
-      eri_Ip_Ip->sort_inside_blocks();
-      RefMatrix hj_obs = generate_hJ_obs(eri_Ip_Ip);
+      RefMatrix hj_obs;
+      {
+        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                                     0, nocc_, 0, nbasis_,
+                                                     0, nocc_, 0, nbasis_, "h+J builder (OBS)");
+        eri_Ip_Ip->sort_inside_blocks();
+        hj_obs = generate_hJ_obs(eri_Ip_Ip);
+      }
+#if 0
+      {
+        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
+                                                              0, nocc_, 0, nbasis_,
+                                                              0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
+        eri_Ip_Ip->sort_inside_blocks();
+//        *hj_obs +=
+      }
+#endif
 
       RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(0, nocc_)));
       RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
