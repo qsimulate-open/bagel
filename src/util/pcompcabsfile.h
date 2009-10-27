@@ -273,7 +273,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           input.push_back(b1);
           input.push_back(b0);
 
-          T batch(input, 1.0, this->geom_->gamma());
+          T batch(input, 1.0, this->gamma_);
           batch.compute();
           const double* bdata = batch.data();
           ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));

@@ -124,9 +124,9 @@ void PMP2::compute() {
   // MO transformation for ERI
   /////////////////////////////
   {
-    RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
-                                                          nfrc_, nocc_, nfrc_, nocc_,
-                                                          0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
+    RefPMOFile eri_ii_ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+                                                 nfrc_, nocc_, nfrc_, nocc_,
+                                                 0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
 
     RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
@@ -141,9 +141,9 @@ void PMP2::compute() {
   // MO transformation for STG
   /////////////////////////////
   {
-    RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
-                                                      nfrc_, nocc_, nfrc_, nocc_,
-                                                      0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
+    RefPMOFile stg_ii_ip = stg->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+                                             nfrc_, nocc_, nfrc_, nocc_,
+                                             0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
     stg_ii_ip->sort_inside_blocks();
     RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
@@ -187,6 +187,10 @@ void PMP2::compute() {
   stg_yp2->reopen_with_inout();
   shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
   shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
+
+  shared_ptr<PCompCABSFile<SlaterBatch> >stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, "Slater CABS (2gamma)"));
+  stg2_cabs->store_integrals();
+  stg2_cabs->reopen_with_inout();
 
 
   ////////////////////
@@ -235,9 +239,9 @@ void PMP2::compute() {
       RefMatrix hj_cabs;
       {
         // TODO INEFFICIENT CODE!!! Needs to be constructed in AO basis.
-        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
-                                                              0, nocc_, 0, nbasis_,
-                                                              0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
+        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+                                                     0, nocc_, 0, nbasis_,
+                                                     0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
         RefPMOFile eri_Ip_Ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                                0, nocc_, 0, nbasis_,
                                                                0, nocc_, 0, ncabs_, "v^Ia'_Ii, auxiliary functions (redundant)");
@@ -252,18 +256,24 @@ void PMP2::compute() {
 
       pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->ncabs());
       RefMatrix chj_iA_obs = chj_iA.first;
-      RefMatrix chj_iA_cabs = chj_iA.second;
+      RefCoeff chj_iA_cabs(new PCoeff(*chj_iA.second));
 
       *chj_ip += *chj_iA_obs;
       chj_ip->scale(0.5);
-      chj_iA_cabs->scale(0.5);
       chj_ip->rprint();
-      chj_iA_cabs->rprint();
-
       RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
       X_ii_ih->sort_inside_blocks();
+
+      chj_iA_cabs->scale(0.5);
+      chj_iA_cabs->rprint();
+      RefPMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, chj_iA_cabs,
+                                                                 nfrc_, nocc_, nfrc_, nocc_,
+                                                                 nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
+      X_ii_ih_cabs->sort_inside_blocks();
+
+      *X_ii_ih += *X_ii_ih_cabs;
 
 
 // might not be needed since we are using fixed amplitudes.

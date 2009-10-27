@@ -104,6 +104,8 @@ class PCompFile {
                              const int bstart, const int bfence,
                              const std::string jobname = "intermediate");
 
+// This is deplicated.
+#if 0
     boost::shared_ptr<PMOFile<std::complex<double> > >
       mo_transform_cabs_obs(boost::shared_ptr<PCoeff>,
                             boost::shared_ptr<PCoeff>,
@@ -114,6 +116,7 @@ class PCompFile {
                             const int astart, const int afence,
                             const int bstart, const int bfence,
                             const std::string jobname = "intermediate");
+#endif
 
 };
 
@@ -490,8 +493,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // held in core. If that is not the case, this must be rewritten.
 
   // allocating a temp array
-  std::complex<double>* data = new std::complex<double>[nbasis4 * std::max(KK, 1)]; 
-  std::complex<double>* datas = new std::complex<double>[nbasis4 * std::max(KK, 1)]; 
+  std::complex<double>* data = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
+  std::complex<double>* datas = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
   double* data_read = new double[max_num_int_ * (S_ + S_ + 1)];
 
@@ -755,6 +758,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 };
 
 
+// Deprecated.
+#if 0
 template<class T>
 boost::shared_ptr<PMOFile<std::complex<double> > >
   PCompFile<T>::mo_transform_cabs_obs(boost::shared_ptr<PCoeff> coeff_i,
@@ -1082,6 +1087,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   return mo_int;
 
 };
+#endif
 
 
 #endif
