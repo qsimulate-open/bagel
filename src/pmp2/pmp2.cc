@@ -24,7 +24,7 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 ////////////////////////////////////////////////////////////////////////////
 // toggles whether we symmetrize explicitly or not (12|34)<->(21|43)
-//#define EXPLICITLY_HERMITE
+#define EXPLICITLY_HERMITE
 ////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -124,7 +124,7 @@ void PMP2::compute() {
   // MO transformation for ERI
   /////////////////////////////
   {
-    RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, cabs_obs_,
+    RefPMOFile eri_ii_ip = ao_eri_->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
                                                           nfrc_, nocc_, nfrc_, nocc_,
                                                           0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
@@ -141,7 +141,7 @@ void PMP2::compute() {
   // MO transformation for STG
   /////////////////////////////
   {
-    RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, cabs_obs_,
+    RefPMOFile stg_ii_ip = stg->mo_transform_cabs_obs(coeff_, coeff_, coeff_, cabs_obs_,
                                                       nfrc_, nocc_, nfrc_, nocc_,
                                                       0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
     stg_ii_ip->sort_inside_blocks();
@@ -207,7 +207,6 @@ void PMP2::compute() {
     RefPMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
 
     X_ = X_pre;
-    X_->rprint();
   }
 
 
