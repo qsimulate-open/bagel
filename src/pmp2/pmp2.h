@@ -68,11 +68,16 @@ class PMP2 {
     RefMatrix hJ_obs_obs_;
     RefMatrix hJ_obs_cabs_;
     RefMatrix K_obs_obs_;
+    RefMatrix K_obs_cabs_;
+    RefMatrix K_cabs_obs_;
+    RefMatrix K_cabs_cabs_;
     // Hartree builder
     RefMatrix generate_hJ_obs_cabs();
     RefMatrix generate_hJ_obs_obs();
     // Exchange builder
     RefMatrix generate_K_obs_obs();
+    RefMatrix generate_K_obs_cabs();
+    std::pair<RefMatrix, RefMatrix> generate_K_cabs_pair();
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,

@@ -478,18 +478,20 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // we are assuming that the (c.c. two-electron integrals for a unit cell)*K^2 can be
   // held in core. If that is not the case, this must be rewritten.
 
+  const int nv = nbasis3 * bsize;
+  const int nov = nbasis2 * jsize * bsize;
+  const int novv = nbasis1 * jsize * asize * bsize;
   // allocating a temp array
-  std::complex<double>* data = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
-  std::complex<double>* datas = new std::complex<double>[nbasis3 * std::max(nbasis1, bsize) * std::max(KK, 1)];
+
+  const size_t alloc = std::max((size_t)novv, nbasis4) * std::max(KK, 1);
+
+  std::complex<double>* data = new std::complex<double>[alloc];
+  std::complex<double>* datas = new std::complex<double>[alloc];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
   double* data_read = new double[max_num_int_ * (S_ + S_ + 1)];
 
   const int size = basis_.size();
   int* blocks = new int[size * size * size * size + 1];
-
-  const int nv = nbasis3 * bsize;
-  const int nov = nbasis2 * jsize * bsize;
-  const int novv = nbasis1 * jsize * asize * bsize;
 
   const size_t sizem1 = S_ + S_ + 1lu;
   const size_t sizem2 = L_ + L_ + 1lu;

@@ -91,7 +91,6 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source, pair<int, int> mcut)
 }
 
 
-// Changes number of columns; keeps only [mcut.first mcut.second) columns.
 PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source1, const shared_ptr<PMatrix1e> source2)
 : geom_(source1->geom()), nbasis_(source1->nbasis()), ndim_(source1->ndim()), mdim_(source1->mdim()+source2->mdim()),
   blocksize_(source1->ndim() * (source1->mdim()+source2->mdim())),
@@ -479,7 +478,7 @@ const double PMatrix1e::trace() const {
 }
 
 
-pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int nrow1, const int nrow2) {
+pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int nrow1, const int nrow2) const {
   shared_ptr<PMatrix1e> out1(new PMatrix1e(geom_, nrow1, mdim_));
   shared_ptr<PMatrix1e> out2(new PMatrix1e(geom_, nrow2, mdim_));
 
@@ -487,7 +486,7 @@ pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int n
   assert(blocksize_ == out1->blocksize() + out2->blocksize());
   assert(blocksize_ == ndim_ * mdim_);
 
-  Complex* source = data_->front();
+  const Complex* source = data_->cfront();
   Complex* data1 = out1->data()->front();
   Complex* data2 = out2->data()->front();
 
@@ -500,6 +499,26 @@ pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int n
 
   return make_pair(out1, out2);
 }
+
+
+shared_ptr<PMatrix1e> PMatrix1e::merge(const shared_ptr<PMatrix1e> in2) const {
+  assert(mdim_ == in2->mdim_);
+  shared_ptr<PMatrix1e> out(new PMatrix1e(geom_, ndim_+in2->ndim_, mdim_));
+
+  Complex* outdata = out->data_->front();
+  const Complex* data1 = data_->cfront();
+  const Complex* data2 = in2->data_->cfront();
+
+  for (int i = -K(); i <= K(); ++i) {
+    for (int m = 0; m != mdim_; ++m, data1+=ndim_, data2+=in2->ndim_, outdata+=out->ndim_) {
+      copy(data1, data1+ndim_,      outdata);
+      copy(data2, data2+in2->ndim_, outdata+ndim_);
+    }
+  }
+
+  return out;
+}
+
 
 shared_ptr<PMatrix1e> PMatrix1e::mo_transform(shared_ptr<PMatrix1e> coeff,
                          const int istart, const int ifence,

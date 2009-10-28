@@ -274,8 +274,22 @@ void PMP2::compute() {
       // Exchange builder (needs modification!!!)
       // nbasis * nbasis size
       K_obs_obs_ = generate_K_obs_obs();
+      //(*hJ_obs_obs_ - *K_obs_obs_).rprint();
       // nbasis * ncabs size
-//    RefMatrix K_cabs_obs = generate_K_obs_cabs();
+      K_obs_cabs_ = generate_K_obs_cabs();
+
+      pair<RefMatrix, RefMatrix> p = generate_K_cabs_pair();
+      // ncabs * nbasis size
+      K_cabs_obs_ = p.first;
+      // ncabs * ncabs size
+      K_cabs_cabs_ = p.second;
+
+      // construct entire matrix:
+      RefMatrix K_obs_ri(new PMatrix1e(K_obs_obs_, K_cabs_obs_));
+      RefMatrix K_cabs_ri(new PMatrix1e(K_obs_cabs_, K_cabs_cabs_));
+      RefMatrix K_entire = K_obs_ri->merge(K_cabs_ri);
+      RefPCoeff cK_AA(new PCoeff(*coeff_entire_ * *K_entire));
+      cK_AA->rprint();
 
 
     }

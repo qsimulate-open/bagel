@@ -91,7 +91,8 @@ class PMatrix1e {
     const double trace() const;
 
     std::pair<boost::shared_ptr<PMatrix1e>, boost::shared_ptr<PMatrix1e> >
-      split(const int nrow1, const int nrow2);
+      split(const int nrow1, const int nrow2) const;
+    boost::shared_ptr<PMatrix1e> merge(const boost::shared_ptr<PMatrix1e>) const;
 
     // AO-to-MO integral transformation...
     boost::shared_ptr<PMatrix1e> mo_transform(boost::shared_ptr<PMatrix1e>,

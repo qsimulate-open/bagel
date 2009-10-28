@@ -24,6 +24,7 @@ class PData {
     std::complex<double>& operator[] (int i) { assert(i < length_ && i >= 0); return data_[i]; };
 
     std::complex<double>* front() { return data_; };
+    const std::complex<double>* cfront() const { return data_; };
     std::complex<double>* pointer(size_t j) { return data_ + j; };
 
 };
