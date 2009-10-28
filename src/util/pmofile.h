@@ -599,8 +599,6 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
 
         std::complex<double>* oblock = out->bpw(kb);
 
-        const int iall = ka+k+(k+k)*(kj+k+(k+k)*(kb+k));
-
         get_block2(ki, kj, ka, kb, buffer);
         const std::complex<double>* cbuf = buffer;
         // Assumes that it is already sorted.
