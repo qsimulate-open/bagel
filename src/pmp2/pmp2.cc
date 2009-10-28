@@ -21,11 +21,7 @@ typedef boost::shared_ptr<Shell> RefShell;
 typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefPMOFile;
 typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
-
-////////////////////////////////////////////////////////////////////////////
-// toggles whether we symmetrize explicitly or not (12|34)<->(21|43)
-//#define EXPLICITLY_HERMITE
-////////////////////////////////////////////////////////////////////////////
+// TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
 using namespace std;
 using namespace boost;
@@ -103,14 +99,14 @@ void PMP2::compute() {
   //////////////////
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, false, true, false, "ERI CABS"));
+      eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, true, false, false, "ERI CABS"));
     eri_cabs->store_integrals();
     eri_cabs->reopen_with_inout();
     eri_cabs_ = eri_cabs;
   }
 
   shared_ptr<PCompCABSFile<SlaterBatch> >
-    stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, false, true, false, "Slater CABS"));
+    stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, false, false, "Slater CABS"));
   stg_cabs->store_integrals();
   stg_cabs->reopen_with_inout();
 
@@ -129,14 +125,14 @@ void PMP2::compute() {
   // MO transformation for ERI
   /////////////////////////////
   {
-    RefPMOFile eri_ii_ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+    RefPMOFile eri_ii_ip = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                                   nfrc_, nocc_, nfrc_, nocc_,
-                                                  0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
+                                                  0, ncabs_, 0, nocc_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
 
-    RefPMOFile eri_ii_ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
-                                                           nfrc_, nocc_, nfrc_, nocc_,
-                                                           0, nocc_, 0, ncabs_, "v^ia'_ii, auxiliary functions");
+    RefPMOFile eri_ii_ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                            nfrc_, nocc_, nfrc_, nocc_,
+                                                            0, ncabs_, 0, nocc_, "v^ia'_ii, auxiliary functions");
     eri_ii_ix->sort_inside_blocks();
     RefPMOFile eri_ii_iA(new PMOFile<complex<double> >(*eri_ii_ix + *eri_ii_ip));
     eri_ii_iA_ = eri_ii_iA;
@@ -146,13 +142,13 @@ void PMP2::compute() {
   // MO transformation for STG
   /////////////////////////////
   {
-    RefPMOFile stg_ii_ip = stg->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+    RefPMOFile stg_ii_ip = stg->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                              nfrc_, nocc_, nfrc_, nocc_,
-                                             0, nocc_, 0, ncabs_, "F^ia'_ii, OBS part");
+                                             0, ncabs_, 0, nocc_, "F^ia'_ii, OBS part");
     stg_ii_ip->sort_inside_blocks();
-    RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
+    RefPMOFile stg_ii_ix = stg_cabs->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
-                                                           0, nocc_, 0, ncabs_, "F^ia'_ii, auxiliary functions");
+                                                           0, ncabs_, 0, nocc_, "F^ia'_ii, auxiliary functions");
     stg_ii_ix->sort_inside_blocks();
     RefPMOFile stg_ii_iA(new PMOFile<complex<double> >(*stg_ii_ix + *stg_ii_ip));
     stg_ii_iA_ = stg_ii_iA;
@@ -194,7 +190,7 @@ void PMP2::compute() {
   shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
 
   shared_ptr<PCompCABSFile<SlaterBatch> >
-    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, false, true,
+    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
                                              false, "Slater CABS (2gamma)"));
   stg2_cabs->store_integrals();
   stg2_cabs->reopen_with_inout();
@@ -254,34 +250,24 @@ void PMP2::compute() {
       chj_iA_cabs->scale(0.5);
 
       // MO transform using Hartree-weighted index
-      RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
+      RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
       X_ii_ih->sort_inside_blocks();
-      RefPMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, chj_iA_cabs,
+      RefPMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
                                                                  nfrc_, nocc_, nfrc_, nocc_,
                                                                  nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
       X_ii_ih_cabs->sort_inside_blocks();
 
       *X_ii_ih += *X_ii_ih_cabs;
 
-// might not be needed since we are using fixed amplitudes.
-#ifdef EXPLICITLY_HERMITE
-      RefPMOFile X_ih_ii = stg2->mo_transform(coeff_, chj_ip, coeff_, coeff_,
-                                              nfrc_, nocc_, nfrc_, nocc_,
-                                              nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 2/2");
-      X_ih_ii->sort_inside_blocks();
-      *X_ii_ih += *X_ih_ii;
-#else
-      X_ii_ih->scale(2.0);
-#endif
-
       X_ii_ih->flip_symmetry();
       RefPMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_ih));
       Q = Qtmp;
+      Q->scale(2.0);
     } // end of Q intermediate construction.
 
-    //Q->rprint();
+    Q->rprint();
 
     // P0 intermediate R^PQ_ij K^R_P R^kl_RQ
     {

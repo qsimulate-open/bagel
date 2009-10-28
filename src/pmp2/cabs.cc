@@ -60,8 +60,8 @@ RefMatrix PMP2::generate_hJ_obs_obs() {
 
   // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
   RefMOFile eri_Ip_Ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                               0, nocc_, 0, nbasis_,
-                                               0, nocc_, 0, nbasis_, "h+J builder (OBS-OBS)");
+                                               0, nbasis_, 0, nocc_,
+                                               0, nbasis_, 0, nocc_, "h+J builder (OBS-OBS)");
   eri_Ip_Ip->sort_inside_blocks();
 
   // Computes hcore in k-space.
@@ -80,12 +80,12 @@ RefMatrix PMP2::generate_hJ_obs_obs() {
 RefMatrix PMP2::generate_hJ_obs_cabs() {
 
   // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
-  RefMOFile eri_Ip_Ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
-                                               0, nocc_, 0, nbasis_,
-                                               0, nocc_, 0, ncabs_, "h+J builder (OBS-CABS; redundant)");
-  RefMOFile eri_Ip_Ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
-                                                         0, nocc_, 0, nbasis_,
-                                                         0, nocc_, 0, ncabs_, "h+J builder (OBS-CABS; redundant)");
+  RefMOFile eri_Ip_Ip = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
+                                               0, nbasis_, 0, nocc_,
+                                               0, ncabs_, 0, nocc_, "h+J builder (OBS-CABS; redundant)");
+  RefMOFile eri_Ip_Ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                         0, nbasis_, 0, nocc_,
+                                                         0, ncabs_, 0, nocc_, "h+J builder (OBS-CABS; redundant)");
 
   eri_Ip_Ip->sort_inside_blocks();
   eri_Ip_Ix->sort_inside_blocks();

@@ -566,7 +566,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
   // designed for operations like:
-  // d^j_i * v^ip_jq -> h^p_q
+  // d^j_i * v^pi_qj -> h^p_q
   // d is assumed to be diagonal in Bloch orbitals.
 
   const int nocc = geom_->nocc() / 2;
@@ -578,7 +578,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   const size_t ijsize = isize * jsize;
   const size_t absize = asize * bsize;
 
-  RefMatrix out(new PMatrix1e(geom_, bsize, jsize));
+  RefMatrix out(new PMatrix1e(geom_, asize, isize));
 
   const int k = this->K_;
   std::complex<double>* buffer = new std::complex<double>[blocksize_];
@@ -594,7 +594,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
         if (ki != ka) continue;
         if (kb != kj) continue;
 
-        std::complex<double>* oblock = out->bpw(kb);
+        std::complex<double>* oblock = out->bpw(ka);
 
         get_block2(ki, kj, ka, kb, buffer);
         const std::complex<double>* cbuf = buffer;
@@ -602,9 +602,9 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
         for (int i = 0; i != isize; ++i) {
           for (int j = 0; j != jsize; ++j) {
             for (int a = 0; a != asize; ++a) {
-              const double cden = (i == a && i+istart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
               for (int b = 0; b != bsize; ++b, ++cbuf) {
-                oblock[b + bsize*j] += *cbuf * cden;
+                const double cden = (j == b && j+jstart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
+                oblock[a + asize*i] += *cbuf * cden;
               }
             }
           }
