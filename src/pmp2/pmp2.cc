@@ -233,16 +233,16 @@ void PMP2::compute() {
     {
       // Hartree builder (needs modification!!!)
       // nbasis * nbasis size
-      RefMatrix hj_obs = generate_hJ_obs_obs();
+      hJ_obs_obs_ = generate_hJ_obs_obs();
       // nbasis * ncabs size
-      RefMatrix hj_cabs = generate_hJ_obs_cabs();
+      hJ_obs_cabs_ = generate_hJ_obs_cabs();
 
 
       // Hartree weighted index
-      RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(0, nocc_)));
+      RefMatrix hj_ip(new PMatrix1e(hJ_obs_obs_, make_pair(0, nocc_)));
       RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
 
-      RefMatrix hj_iA(new PMatrix1e(hj_cabs, make_pair(0, nocc_)));
+      RefMatrix hj_iA(new PMatrix1e(hJ_obs_cabs_, make_pair(0, nocc_)));
       RefPCoeff chj_iA_comb(new PCoeff(*coeff_cabs_ * *hj_iA));
 
       pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->ncabs());
@@ -281,7 +281,18 @@ void PMP2::compute() {
       Q = Qtmp;
     } // end of Q intermediate construction.
 
-    Q->rprint();
+    //Q->rprint();
+
+    // P0 intermediate R^PQ_ij K^R_P R^kl_RQ
+    {
+      // Exchange builder (needs modification!!!)
+      // nbasis * nbasis size
+      K_obs_obs_ = generate_K_obs_obs();
+      // nbasis * ncabs size
+//    RefMatrix K_cabs_obs = generate_K_obs_cabs();
+
+
+    }
 
   } // end of B intermediate construction.
 

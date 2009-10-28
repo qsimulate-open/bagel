@@ -77,6 +77,7 @@ class PMOFile : public PFile<T> {
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
 
     boost::shared_ptr<PMatrix1e> contract_density_J() const;
+    boost::shared_ptr<PMatrix1e> contract_density_K() const;
 
     void print() const;
     void rprint() const;
@@ -577,10 +578,6 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   const size_t ijsize = isize * jsize;
   const size_t absize = asize * bsize;
 
-  // will be removed.
-  assert(istart_ == 0 && ifence_ == geom_->nocc()/2);
-  assert(astart_ == 0 && afence_ == geom_->nocc()/2);
-
   RefMatrix out(new PMatrix1e(geom_, bsize, jsize));
 
   const int k = this->K_;
@@ -605,7 +602,7 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
         for (int i = 0; i != isize; ++i) {
           for (int j = 0; j != jsize; ++j) {
             for (int a = 0; a != asize; ++a) {
-              const std::complex<double> cden = (i == a && i+istart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
+              const double cden = (i == a && i+istart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
               for (int b = 0; b != bsize; ++b, ++cbuf) {
                 oblock[b + bsize*j] += *cbuf * cden;
               }
@@ -619,5 +616,64 @@ boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
   delete[] buffer;
   return out;
 };
+
+
+// PMatrix1e assumes complex<double>.
+template <class T>
+boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_K() const {
+  typedef boost::shared_ptr<PMatrix1e> RefMatrix;
+
+  // designed for operations like:
+  // d^j_i * v^ip_qj -> K^p_q
+  // d is assumed to be diagonal in Bloch orbitals.
+
+  const int nocc = geom_->nocc() / 2;
+
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
+  const size_t ijsize = isize * jsize;
+  const size_t absize = asize * bsize;
+
+  RefMatrix out(new PMatrix1e(geom_, asize, jsize));
+
+  const int k = this->K_;
+  std::complex<double>* buffer = new std::complex<double>[blocksize_];
+
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka) {
+
+        int ki = ka+kb-kj;
+        if (ki < -k) ki += k*2;
+        else if (ki >= k) ki -= k*2;
+
+        if (ki != kb) continue;
+        if (ka != kj) continue;
+
+        std::complex<double>* oblock = out->bpw(ka);
+
+        get_block2(ki, kj, ka, kb, buffer);
+        const std::complex<double>* cbuf = buffer;
+        // Assumes that it is already sorted.
+        for (int i = 0; i != isize; ++i) {
+          for (int j = 0; j != jsize; ++j) {
+            for (int a = 0; a != asize; ++a) {
+              for (int b = 0; b != bsize; ++b, ++cbuf) {
+                const double cden = (i == b && i+istart_ <= nocc) ? 1.0/std::max(k+k,1) : 0.0;
+                oblock[a + asize*j] += *cbuf * cden;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  delete[] buffer;
+  return out;
+};
+
 
 #endif

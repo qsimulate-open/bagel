@@ -108,4 +108,16 @@ RefMatrix PMP2::generate_hJ_obs_cabs() {
 }
 
 
+RefMatrix PMP2::generate_K_obs_obs() {
+  // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
+  RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                               0, nocc_, 0, nbasis_,
+                                               0, nbasis_, 0, nocc_, "K builder (OBS-OBS)");
+  eri_Ip_pI->sort_inside_blocks();
+
+  RefMatrix exchange = eri_Ip_pI->contract_density_K();
+  return exchange;
+}
+
+
 
