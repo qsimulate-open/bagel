@@ -35,6 +35,12 @@ class PMOFile : public PFile<T> {
         const int, const int,
         const int, const int,
         const bool late_init = false);
+    PMOFile(const boost::shared_ptr<PGeometry>,
+        const long, const int, const int, const int,
+        const int, const int,
+        const int, const int,
+        const int, const int,
+        const std::map<size_t, size_t>&, const bool late_init = false);
     ~PMOFile(); 
 
     std::map<size_t, size_t>::const_iterator oiter(int i, int j, int a, int b) const {
@@ -91,7 +97,7 @@ PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
    istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
    astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen) {
 
-  // current convention...
+// current convention...
   blocksize_ = fsize / std::max(k*k*k*8, 1);
   size_t tag = 0;
   size_t current = 0;
@@ -102,6 +108,24 @@ PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
       }
     }
   }
+
+};
+
+
+template<class T>
+PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
+                    const long fsize, const int k,
+                    const int istrt, const int ifen,
+                    const int jstrt, const int jfen,
+                    const int astrt, const int afen,
+                    const int bstrt, const int bfen,
+                    const std::map<size_t, size_t>& of, const bool late_init)
+ : PFile<T>(fsize, k, late_init), geom_(gm),
+   istart_(istrt), ifence_(ifen), jstart_(jstrt), jfence_(jfen),
+   astart_(astrt), afence_(afen), bstart_(bstrt), bfence_(bfen), offset_(of) {
+
+// current convention...
+  blocksize_ = fsize / std::max(k*k*k*8, 1);
 
 };
 
@@ -150,7 +174,8 @@ template<class T>
 boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
   boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
-                                                    astart_, afence_, bstart_, bfence_, false));
+                                                    astart_, afence_, bstart_, bfence_,
+                                                    offset_, false));
 
   T* buffer = new T[blocksize_];
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
@@ -287,10 +312,12 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 template<class T>
 PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 
+  assert(offset_.size() == other.offset_.size());
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[blocksize_];
 
-  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_,
+                                                astart_, afence_, bstart_, bfence_, offset_, false);
 
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
@@ -311,10 +338,12 @@ PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
 template<class T>
 PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 
+  assert(offset_.size() == other.offset_.size());
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[blocksize_];
 
-  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_,
+                                                astart_, afence_, bstart_, bfence_, offset_, false);
 
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
@@ -335,6 +364,7 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
 template<class T>
 PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
 
+  assert(offset_.size() == other.offset_.size());
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[blocksize_];
 
@@ -358,8 +388,8 @@ template<class T>
 PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
 
   T* buffer1 = new T[blocksize_];
-
-  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_, astart_, afence_, bstart_, bfence_, false);
+  PMOFile out(geom_, this->filesize_, this->K_, istart_, ifence_, jstart_, jfence_,
+                                                astart_, afence_, bstart_, bfence_, offset_, false);
 
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
