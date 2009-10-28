@@ -7,21 +7,50 @@
 #ifndef __src_util_pcompcabsfile_h
 #define __src_util_pcompcabsfile_h
 
+#include <vector>
 #include <src/util/pcompfile.h>
 
 template<class T>
 class PCompCABSFile : public PCompFile<T> {
   protected:
-    void init_cabs_schwarz();
-    std::vector<double> cabs_schwarz_;
+    void init_schwarz_jb();
+    void init_schwarz_ia();
+    std::vector<double> schwarz_jb_;
+    std::vector<double> schwarz_ia_;
     std::vector<boost::shared_ptr<Shell> > cabs_basis_;
     std::vector<int> cabs_offset_;
 
+    const bool i_is_cabs_;
+    const bool j_is_cabs_;
+    const bool a_is_cabs_;
+    const bool b_is_cabs_;
+
+    std::vector<int> offset_i_;
+    std::vector<int> offset_j_;
+    std::vector<int> offset_a_;
+    std::vector<int> offset_b_;
+
+    std::vector<boost::shared_ptr<Shell> > basis_i_;
+    std::vector<boost::shared_ptr<Shell> > basis_j_;
+    std::vector<boost::shared_ptr<Shell> > basis_a_;
+    std::vector<boost::shared_ptr<Shell> > basis_b_;
+
+    int size_i_;
+    int size_j_;
+    int size_a_;
+    int size_b_;
+
+    int nbasis_i_;
+    int nbasis_j_;
+    int nbasis_a_;
+    int nbasis_b_;
+
   public:
-    PCompCABSFile(boost::shared_ptr<PGeometry>, const double,
+    PCompCABSFile(boost::shared_ptr<PGeometry> geom, const double gamma,
+        const bool i_is_cabs, const bool j_is_cabs, const bool a_is_cabs, const bool b_is_cabs,
         const bool late_init = false, const std::string jobname = "source");
 
-    const double cabs_schwarz(int i) const { return cabs_schwarz_[i]; };
+    const double cabs_schwarz(int i) const { return schwarz_jb_[i]; };
     std::vector<int> cabs_offset() const { return cabs_offset_; };
     int cabs_offset(size_t i) const { return cabs_offset_[i]; };
     const size_t cabs_nbasis(size_t i) const { return cabs_basis_[i]->nbasis(); };
@@ -47,8 +76,9 @@ class PCompCABSFile : public PCompFile<T> {
 
 template<class T>
 PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double gam,
+    const bool i_c, const bool j_c, const bool a_c, const bool b_c,
     const bool late_init, const std::string jobname)
- : PCompFile<T>(pg, gam, true, jobname) {
+ : PCompFile<T>(pg, gam, true, jobname), i_is_cabs_(i_c), j_is_cabs_(j_c), a_is_cabs_(a_c), b_is_cabs_(b_c) {
 
   { // prepare offset and basis
     typedef boost::shared_ptr<Atom> RefAtom;
@@ -63,9 +93,39 @@ PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double ga
       cabs_offset_.insert(cabs_offset_.end(), tmpoff.begin(), tmpoff.end());
     }
   }
+
+  {
+    const std::vector<int> tmpi = i_is_cabs_ ? cabs_offset_ : this->offset_;
+    const std::vector<int> tmpj = j_is_cabs_ ? cabs_offset_ : this->offset_;
+    const std::vector<int> tmpa = a_is_cabs_ ? cabs_offset_ : this->offset_;
+    const std::vector<int> tmpb = b_is_cabs_ ? cabs_offset_ : this->offset_;
+    offset_i_.insert(offset_i_.end(), tmpi.begin(), tmpi.end());
+    offset_j_.insert(offset_j_.end(), tmpj.begin(), tmpj.end());
+    offset_a_.insert(offset_a_.end(), tmpa.begin(), tmpa.end());
+    offset_b_.insert(offset_b_.end(), tmpb.begin(), tmpb.end());
+  }
+  {
+    const std::vector<boost::shared_ptr<Shell> > tmpi = i_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<boost::shared_ptr<Shell> > tmpj = j_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<boost::shared_ptr<Shell> > tmpa = a_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<boost::shared_ptr<Shell> > tmpb = b_is_cabs_ ? cabs_basis_ : this->basis_;
+    basis_i_.insert(basis_i_.end(), tmpi.begin(), tmpi.end());
+    basis_j_.insert(basis_j_.end(), tmpj.begin(), tmpj.end());
+    basis_a_.insert(basis_a_.end(), tmpa.begin(), tmpa.end());
+    basis_b_.insert(basis_b_.end(), tmpb.begin(), tmpb.end());
+    size_i_ = basis_i_.size();
+    size_j_ = basis_j_.size();
+    size_a_ = basis_a_.size();
+    size_b_ = basis_b_.size();
+    nbasis_i_ = i_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
+    nbasis_j_ = j_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
+    nbasis_a_ = a_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
+    nbasis_b_ = b_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
+  }
+
   if (!late_init) {
-    this->init_schwarz();
-    init_cabs_schwarz();
+    init_schwarz_ia();
+    init_schwarz_jb();
     calculate_num_int_each();
   }
 
@@ -73,22 +133,21 @@ PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double ga
 
 
 template<class T>
-void PCompCABSFile<T>::init_cabs_schwarz() {
+void PCompCABSFile<T>::init_schwarz_jb() {
   typedef boost::shared_ptr<Shell> RefShell;
   typedef boost::shared_ptr<Atom> RefAtom;
 
   const int size = this->basis_.size(); // the number of shells per unit cell
-  const int cabs_size = cabs_basis_.size();
 
-  cabs_schwarz_.resize(size * cabs_size * (2 * this->K_ + 1));
+  schwarz_jb_.resize(size_b_ * size_j_ * (2 * this->K_ + 1));
 
   #pragma omp prallel for
   for (int m = - this->K_; m <= this->K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * this->A_};
-    for (int i0 = 0; i0 != size; ++i0) { // center unit cell
-      const RefShell b0 = this->basis_[i0];
-      for (int i1 = 0; i1 != cabs_size; ++i1) {
-        const RefShell b1 = cabs_basis_[i1]->move_atom(disp);
+    for (int i0 = 0; i0 != size_j_; ++i0) { // center unit cell
+      const RefShell b0 = basis_j_[i0];
+      for (int i1 = 0; i1 != size_b_; ++i1) {
+        const RefShell b1 = basis_b_[i1]->move_atom(disp);
 
         std::vector<RefShell> input;
         input.push_back(b0);
@@ -104,7 +163,43 @@ void PCompCABSFile<T>::init_cabs_schwarz() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        cabs_schwarz_[((m + this->K_) * size + i0) * cabs_size + i1] = cmax;
+        schwarz_jb_[((m + this->K_) * size_j_ + i0) * size_b_ + i1] = cmax;
+      }
+    }
+  }
+};
+
+
+template<class T>
+void PCompCABSFile<T>::init_schwarz_ia() {
+  typedef boost::shared_ptr<Shell> RefShell;
+  typedef boost::shared_ptr<Atom> RefAtom;
+
+  schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
+
+  #pragma omp prallel for
+  for (int m = - this->K_; m <= this->K_; ++m) {
+    const double disp[3] = {0.0, 0.0, m * this->A_};
+    for (int i0 = 0; i0 != size_i_; ++i0) { // center unit cell
+      const RefShell b0 = basis_i_[i0];
+      for (int i1 = 0; i1 != size_a_; ++i1) {
+        const RefShell b1 = basis_a_[i1]->move_atom(disp);
+
+        std::vector<RefShell> input;
+        input.push_back(b0);
+        input.push_back(b1);
+        input.push_back(b0);
+        input.push_back(b1);
+        T batch(input, 1.0, this->gamma_);
+        batch.compute();
+        const double* data = batch.data();
+        const int datasize = batch.data_size();
+        double cmax = 0.0;
+        for (int xi = 0; xi != datasize; ++xi, ++data) {
+          const double absed = (*data) > 0.0 ? *data : -*data;
+          if (absed > cmax) cmax = absed;
+        }
+        schwarz_ia_[((m + this->K_) * size_i_ + i0) * size_a_ + i1] = cmax;
       }
     }
   }
@@ -123,9 +218,6 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   unsigned long data_written = 0ul;
   this->num_int_each_.resize((s+s+1) * (s+s+1) * (l+l+1));
 
-  const int size = this->basis_.size(); // number of shells
-  const int cabs_size = cabs_basis_.size(); // number of shells
-
   #pragma omp parallel for reduction(+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1*a};
@@ -135,24 +227,24 @@ void PCompCABSFile<T>::calculate_num_int_each() {
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++offset) {
         const double m3disp[3] = {0.0, 0.0, m3*a};
         size_t thisblock = 0ul; 
-        for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = this->offset_[i0]; 
-          const int b0size = this->basis_[i0]->nbasis();
+        for (int i0 = 0; i0 != size_i_; ++i0) {
+          const int b0offset = offset_i_[i0];
+          const int b0size = basis_i_[i0]->nbasis();
 
-          for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = this->offset_[i1];
-            const int b1size = this->basis_[i1]->nbasis();
+          for (int i1 = 0; i1 != size_a_; ++i1) {
+            const int b1offset = offset_a_[i1];
+            const int b1size = basis_a_[i1]->nbasis();
 
-            for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = this->offset_[i2];
-              const int b2size = this->basis_[i2]->nbasis();
+            for (int i2 = 0; i2 != size_j_; ++i2) {
+              const int b2offset = offset_j_[i2];
+              const int b2size = basis_j_[i2]->nbasis();
 
-              for (int i3 = 0; i3 != cabs_size; ++i3) {
-                const int b3offset = cabs_offset_[i3]; 
-                const int b3size = cabs_basis_[i3]->nbasis();
+              for (int i3 = 0; i3 != size_b_; ++i3) {
+                const int b3offset = offset_b_[i3];
+                const int b3size = basis_b_[i3]->nbasis();
 
-                const double integral_bound = this->schwarz_[(m1 + k) * size * size + i0 * size + i1]
-                                            * cabs_schwarz_[((m3 - m2 + k) * size + i2) * cabs_size + i3];
+                const double integral_bound = schwarz_ia_[((m1 + k) * size_i_ + i0) * size_a_ + i1]
+                                            * schwarz_jb_[((m3 - m2 + k) * size_j_ + i2) * size_b_ + i3];
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
@@ -232,22 +324,19 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
   const double m2disp[3] = {0.0, 0.0, m2 * a};
   const double m3disp[3] = {0.0, 0.0, m3 * a};
 
-  const int size = this->basis_.size(); // number of shells
-  const int cabs_size = cabs_basis_.size(); // number of shells
-
-  int* blocks = new int[size*size*size*cabs_size+1];
+  int* blocks = new int[size_i_*size_j_*size_a_*size_b_+1];
   blocks[0] = 0;
   int iall = 0;
-  for (int i0 = 0; i0 != size; ++i0) {
-    const int b0size = this->basis_[i0]->nbasis();
-    for (int i1 = 0; i1 != size; ++i1) {
-      const int b1size = this->basis_[i1]->nbasis();
-      for (int i2 = 0; i2 != size; ++i2) {
-        const int b2size = this->basis_[i2]->nbasis();
-        for (int i3 = 0; i3 != cabs_size; ++i3, ++iall) {
-          const int b3size = cabs_basis_[i3]->nbasis();
-          const double integral_bound = this->schwarz_[(m1 + k) * size * size + i0 * size + i1]
-                                      * cabs_schwarz_[((m3 - m2 + k) * size + i2) * cabs_size + i3];
+  for (int i0 = 0; i0 != size_i_; ++i0) {
+    const int b0size = basis_i_[i0]->nbasis();
+    for (int i1 = 0; i1 != size_a_; ++i1) {
+      const int b1size = basis_a_[i1]->nbasis();
+      for (int i2 = 0; i2 != size_j_; ++i2) {
+        const int b2size = basis_j_[i2]->nbasis();
+        for (int i3 = 0; i3 != size_b_; ++i3, ++iall) {
+          const int b3size = basis_b_[i3]->nbasis();
+          const double integral_bound = schwarz_ia_[((m1 + k) * size_i_ + i0) * size_a_ + i1]
+                                      * schwarz_jb_[((m3 - m2 + k) * size_j_ + i2) * size_b_ + i3];
           const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
           blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
         }
@@ -255,15 +344,15 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
     }
   }
   #pragma omp parallel for
-  for (int i0 = 0; i0 < size; ++i0) {
-    int offset = i0 * size * size * cabs_size;
-    const RefShell b0 = this->basis_[i0]; // b0 is the center cell
-    for (int i1 = 0; i1 != size; ++i1) {
-      const RefShell b1 = this->basis_[i1]->move_atom(m1disp);
-      for (int i2 = 0; i2 != size; ++i2) {
-        const RefShell b2 = this->basis_[i2]->move_atom(m2disp);
-        for (int i3 = 0; i3 != cabs_size; ++i3, ++offset) {
-          const RefShell b3 = cabs_basis_[i3]->move_atom(m3disp);
+  for (int i0 = 0; i0 < size_i_; ++i0) {
+    int offset = i0 * size_j_ * size_a_ * size_b_;
+    const RefShell b0 = basis_i_[i0]; // b0 is the center cell
+    for (int i1 = 0; i1 != size_a_; ++i1) {
+      const RefShell b1 = basis_a_[i1]->move_atom(m1disp);
+      for (int i2 = 0; i2 != size_j_; ++i2) {
+        const RefShell b2 = basis_j_[i2]->move_atom(m2disp);
+        for (int i3 = 0; i3 != size_b_; ++i3, ++offset) {
+          const RefShell b3 = basis_b_[i3]->move_atom(m3disp);
 
           if (blocks[offset] == blocks[offset + 1]) continue;
 
@@ -323,15 +412,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const std::complex<double> cone(1.0, 0.0);
 
   const int unit = 1;
-
-  const int nbasis1 = this->geom_->nbasis();
-  const int nbasis2 = nbasis1 * nbasis1;
-  const int nbasis3 = nbasis2 * nbasis1;
-  const size_t nbasis4 = static_cast<size_t>(nbasis2) * nbasis2;
-  const int cabs_nbasis1 = coeff_b->ndim();
-  const int cabs_nbasis2 = nbasis1 * cabs_nbasis1;
-  const int cabs_nbasis3 = nbasis2 * cabs_nbasis1;
-  const size_t cabs_nbasis4 = static_cast<size_t>(cabs_nbasis1) * nbasis3;
+  const size_t nbasismax = std::max(std::max(nbasis_i_, nbasis_j_), std::max(nbasis_a_, nbasis_b_));
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
   std::cout << "  Creating " << jobname << "  of size ";
@@ -351,20 +432,18 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // we are assuming that the (c.a. two-electron integrals for a unit cell)*K^2 can be
   // held in core. If that is not the case, this must be rewritten.
 
+  const int nv = nbasis_i_ * nbasis_a_ * nbasis_j_ * bsize;
+  const int nov = nbasis_i_ * nbasis_a_ * jsize * bsize;
+  const int novv = nbasis_i_ * jsize * asize * bsize;
+
   // allocating a temp array
-  const int bsizemax = std::max(std::max(nbasis1, bsize), cabs_nbasis1);
-  std::complex<double>* data = new std::complex<double>[nbasis3 * bsizemax * std::max(KK, 1)];
-  std::complex<double>* datas = new std::complex<double>[nbasis3 * bsizemax * std::max(KK, 1)];
-  std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)];
+  const size_t alloc = std::max(novv, nbasis_a_ * nbasis_i_ * nbasis_b_ * nbasis_j_) * std::max(KK, 1);
+  std::complex<double>* data = new std::complex<double>[alloc];
+  std::complex<double>* datas = new std::complex<double>[alloc];
+  std::complex<double>* conjc = new std::complex<double>[std::max(isize * nbasis_i_, jsize * nbasis_j_)];
   double* data_read = new double[this->max_num_int_ * (s*2+1)];
 
-  const int size = this->basis_.size();
-  const int cabs_size = cabs_basis_.size();
-  int* blocks = new int[size * size * size * cabs_size + 1];
-
-  const int nv = nbasis3 * bsize;
-  const int nov = nbasis2 * jsize * bsize;
-  const int novv = nbasis1 * jsize * asize * bsize;
+  int* blocks = new int[size_i_ * size_j_ * size_a_ * size_b_ + 1];
 
   const size_t sizem1 = s*2+1lu;
   const size_t sizem2 = l*2+1lu;
@@ -411,17 +490,17 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
         blocks[0] = 0;
         int iall = 0;
-        for (int i0 = 0; i0 != size; ++i0) {
-          const int b0size = this->basis_[i0]->nbasis();
-          for (int i1 = 0; i1 != size; ++i1) {
-            const int b1size = this->basis_[i1]->nbasis();
-            for (int i2 = 0; i2 != size; ++i2) {
-              const int b2size = this->basis_[i2]->nbasis();
-              for (int i3 = 0; i3 != cabs_size; ++i3, ++iall) {
-                const int b3size = cabs_basis_[i3]->nbasis();
+        for (int i0 = 0; i0 != size_i_; ++i0) {
+          const int b0size = basis_i_[i0]->nbasis();
+          for (int i1 = 0; i1 != size_a_; ++i1) {
+            const int b1size = basis_a_[i1]->nbasis();
+            for (int i2 = 0; i2 != size_j_; ++i2) {
+              const int b2size = basis_j_[i2]->nbasis();
+              for (int i3 = 0; i3 != size_b_; ++i3, ++iall) {
+                const int b3size = basis_b_[i3]->nbasis();
 
-                double integral_bound = this->schwarz_[((q1 + k) * size + i0) * size + i1]
-                                      * cabs_schwarz_[((q3 + k) * size + i2) * cabs_size + i3];
+                double integral_bound = schwarz_ia_[((q1 + k) * size_i_ + i0) * size_a_ + i1]
+                                      * schwarz_jb_[((q3 + k) * size_j_ + i2) * size_b_ + i3];
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
               }
@@ -430,47 +509,50 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         }
 
         #pragma omp parallel for
-        for (int i0 = 0; i0 < size; ++i0) {
-          int noffset = i0 * size * size * cabs_size;
-          const int b0offset = this->offset(i0);
-          const int b0size = this->nbasis(i0);
-          for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = this->offset(i1);
-            const int b1size = this->nbasis(i1);
-            for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = this->offset(i2);
-              const int b2size = this->nbasis(i2);
-              for (int i3 = 0; i3 != cabs_size; ++i3, ++noffset) {
-                const int b3offset = cabs_offset(i3);
-                const int b3size = cabs_nbasis(i3);
+        for (int i0 = 0; i0 < size_i_; ++i0) {
+          int noffset = i0 * size_j_ * size_a_ * size_b_;
+          const int b0offset = offset_i_[i0];
+          const int b0size = basis_i_[i0]->nbasis();
+          for (int i1 = 0; i1 != size_a_; ++i1) {
+            const int b1offset = offset_a_[i1];
+            const int b1size = basis_a_[i1]->nbasis();
+            for (int i2 = 0; i2 != size_j_; ++i2) {
+              const int b2offset = offset_j_[i2];
+              const int b2size = basis_j_[i2]->nbasis();
+              for (int i3 = 0; i3 != size_b_; ++i3, ++noffset) {
+                const int b3offset = offset_b_[i3];
+                const int b3size = basis_b_[i3]->nbasis();
 
+                const size_t cn3 = nbasis_a_ * nbasis_j_ * nbasis_b_;
+                const size_t cn2 = nbasis_j_ * nbasis_b_;
+                const size_t cn1 = nbasis_b_;
                 if (blocks[noffset] != blocks[noffset + 1]) {
                   const double* ndata = cdata + blocks[noffset];
-                  std::complex<double>* label = data + b3offset + cabs_nbasis1
-                      * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
-                  for (int j0 = 0; j0 != b0size; ++j0, label += cabs_nbasis3) {
-                    for (int j1 = 0; j1 != b1size; ++j1, label += cabs_nbasis2) {
-                      for (int j2 = 0; j2 != b2size; ++j2, label += cabs_nbasis1) {
+                  std::complex<double>* label = data + b3offset + nbasis_b_
+                      * (b2offset + nbasis_j_ * (b1offset + nbasis_a_ * b0offset));
+                  for (int j0 = 0; j0 != b0size; ++j0, label += cn3) {
+                    for (int j1 = 0; j1 != b1size; ++j1, label += cn2) {
+                      for (int j2 = 0; j2 != b2size; ++j2, label += cn1) {
                         for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {
                           *label = static_cast<std::complex<double> >(*ndata);
                         }
                         label -= b3size;
                       }
-                      label -= b2size * cabs_nbasis1;
+                      label -= b2size * cn1;
                     }
-                    label -= b1size * cabs_nbasis2;
+                    label -= b1size * cn2;
                   }
                 } else {
-                  std::complex<double>* label = data + b3offset + cabs_nbasis1
-                      * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
-                  for (int j0 = 0; j0 != b0size; ++j0, label += cabs_nbasis3) {
-                    for (int j1 = 0; j1 != b1size; ++j1, label += cabs_nbasis2) {
-                      for (int j2 = 0; j2 != b2size; ++j2, label += cabs_nbasis1) {
+                  std::complex<double>* label = data + b3offset + nbasis_b_
+                      * (b2offset + nbasis_j_ * (b1offset + nbasis_a_ * b0offset));
+                  for (int j0 = 0; j0 != b0size; ++j0, label += cn3) {
+                    for (int j1 = 0; j1 != b1size; ++j1, label += cn2) {
+                      for (int j2 = 0; j2 != b2size; ++j2, label += cn1) {
                         std::fill(label, label + b3size, czero);
                       }
-                      label -= b2size * cabs_nbasis1;
+                      label -= b2size * cn1;
                     }
-                    label -= b1size * cabs_nbasis2;
+                    label -= b1size * cn2;
                   }
                 } // end of if skip_schwarz
 
@@ -480,10 +562,10 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         } // end of shell loops; now data is ready
 
         if (true) { // start from j & b contractions -- needs transposition
-          const int mn = nbasis2;
-          const int mnc = cabs_nbasis2;
+          const int mn = nbasis_i_ * nbasis_a_;
+          const int mnc = nbasis_j_ * nbasis_b_;
           mytranspose_complex_(data, &mnc, &mn, datas);
-          ::memcpy(data, datas, cabs_nbasis4 * sizeof(std::complex<double>));
+          ::memcpy(data, datas, mn * mnc * sizeof(std::complex<double>));
         }
 
         #pragma omp parallel for
@@ -493,11 +575,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double> prefac = exp(exponent);
           int offset1 = 0;
           int offset2 = 0;
-          for (int ii = 0; ii != nbasis1; ++ii, offset1 += cabs_nbasis3,
-                                                offset2 += nbasis2 * bsize) {
-            zgemm_("N", "N", &nbasis2, &bsize, &cabs_nbasis1, &prefac, data + offset1, &nbasis2,
-                                               coeff_b->bp(nkb) + cabs_nbasis1 * bstart, &cabs_nbasis1, &cone,
-                                               intermediate_mmK + nv * nkbc + offset2, &nbasis2);
+          const int cn2 = nbasis_i_ * nbasis_a_;
+          for (int ii = 0; ii != nbasis_j_; ++ii, offset1 += cn2 * nbasis_b_,
+                                                  offset2 += cn2 * bsize) {
+            zgemm_("N", "N", &cn2, &bsize, &nbasis_b_, &prefac, data + offset1, &cn2,
+                                           coeff_b->bp(nkb) + nbasis_b_ * bstart, &nbasis_b_, &cone,
+                                           intermediate_mmK + nv * nkbc + offset2, &cn2);
           }
         } // end of contraction b for given m3
 
@@ -506,19 +589,19 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       // intermediate_mmK is ready
       #pragma omp parallel for
       for (int nkb = -k; nkb < maxK1; ++nkb) {
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * jsize];
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis_j_ * jsize];
         const int nkbc = nkb + k;
         int nbj = nkbc * KK;
         for (int nkj = -k, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {
           const std::complex<double> exponent(0.0, k != 0 ? (- m2 * nkj * pi) / k : 0.0);
           const std::complex<double> prefac = exp(exponent);
 
-          const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis1 * jstart;
-          for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
-          const int nsize = nbasis2 * bsize;
-          zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, intermediate_mmK + nv * nkbc, &nsize,
-                                                              conjc2, &nbasis1, &cone,
-                                                              intermediate_mKK + nov * nbj, &nsize);
+          const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis_j_ * jstart;
+          for (int ii = 0; ii != nbasis_j_ * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
+          const int nsize = nbasis_a_ * nbasis_i_ * bsize;
+          zgemm_("N", "N", &nsize, &jsize, &nbasis_j_, &prefac, intermediate_mmK + nv * nkbc, &nsize,
+                                                                conjc2, &nbasis_j_, &cone,
+                                                                intermediate_mKK + nov * nbj, &nsize);
         }
         delete[] conjc2;
       } // end of contraction j for given m2
@@ -530,7 +613,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       for (int nkj = -k; nkj != maxK1; ++nkj, ++nbj) {
         ::memcpy(datas, intermediate_mKK + nov * nbj, nov * sizeof(std::complex<double>));
         {
-          const int m = nbasis2;
+          const int m = nbasis_i_ * nbasis_a_;
           const int n = jsize * bsize;
           mytranspose_complex_(datas, &m, &n, data);
           std::fill(datas, datas + novv, czero);
@@ -544,10 +627,10 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const int nsize = jsize * bsize;
           int offset1 = 0;
           int offset2 = 0;
-          for (int ii = 0; ii != nbasis1; ++ii, offset1 += nsize * nbasis1,
-                                                offset2 += nsize * asize) {
-            zgemm_("N", "N", &nsize, &asize, &nbasis1, &prefac, data + offset1, &nsize,
-                                                                coeff_a->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
+          for (int ii = 0; ii != nbasis_i_; ++ii, offset1 += nsize * nbasis_a_,
+                                                  offset2 += nsize * asize) {
+            zgemm_("N", "N", &nsize, &asize, &nbasis_a_, &prefac, data + offset1, &nsize,
+                                                                coeff_a->bp(nka) + nbasis_a_ * astart, &nbasis_a_, &czero,
                                                                 datas + nkac * novv + offset2, &nsize);
           }
         }
@@ -571,19 +654,19 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), data);
       #pragma omp parallel for
       for (int nka = -k; nka < maxK1; ++nka) {
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize];
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis_i_ * isize];
 
         // momentum conservation
         int nki = nka + nkb - nkj;
         if (nki < - k) nki += k * 2;
         else if (nki >=  k) nki -= k * 2;
 
-        const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
-        for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
+        const std::complex<double>* idata = coeff_i->bp(nki) + nbasis_i_ * istart;
+        for (int ii = 0; ii != nbasis_i_ * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data + novv * (nka + k), &nsize,
-                                                          conjc2, &nbasis1, &czero,
-                                                          datas + noovv * (nka + k), &nsize);
+        zgemm_("N", "N", &nsize, &isize, &nbasis_i_, &cone, data + novv * (nka + k), &nsize,
+                                                            conjc2, &nbasis_i_, &czero,
+                                                            datas + noovv * (nka + k), &nsize);
         delete[] conjc2;
       }
       mo_int->append(noovv * std::max(KK, 1), datas);

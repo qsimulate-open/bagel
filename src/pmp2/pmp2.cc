@@ -31,7 +31,7 @@ using namespace std;
 using namespace boost;
 
 PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl)
- : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), ao_eri_(fl) {
+ : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl) {
 
   nfrc_ = geom_->nfrc() / 2;
   nocc_ = geom_->nocc() / 2;
@@ -58,9 +58,9 @@ void PMP2::compute() {
 
   cout << "  === Periodic MP2 calculation ===" << endl << endl;
   // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
-  eri_ii_pp_ = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                     nfrc_, nocc_, nfrc_, nocc_,
-                                     0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
+  eri_ii_pp_ = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                      nfrc_, nocc_, nfrc_, nocc_,
+                                      0, nbasis_, 0, nbasis_, "ERI (pp/ii)");
   eri_ii_pp_->sort_inside_blocks();
 
   ///////////////////////////////////////////////
@@ -101,11 +101,16 @@ void PMP2::compute() {
   ////////////////////
   // CABS integrals
   //////////////////
-  shared_ptr<PCompCABSFile<ERIBatch> >eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, "ERI CABS"));
-  eri_cabs->store_integrals();
-  eri_cabs->reopen_with_inout();
+  {
+    shared_ptr<PCompCABSFile<ERIBatch> >
+      eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, false, true, false, "ERI CABS"));
+    eri_cabs->store_integrals();
+    eri_cabs->reopen_with_inout();
+    eri_cabs_ = eri_cabs;
+  }
 
-  shared_ptr<PCompCABSFile<SlaterBatch> >stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, "Slater CABS"));
+  shared_ptr<PCompCABSFile<SlaterBatch> >
+    stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, false, true, false, "Slater CABS"));
   stg_cabs->store_integrals();
   stg_cabs->reopen_with_inout();
 
@@ -124,12 +129,12 @@ void PMP2::compute() {
   // MO transformation for ERI
   /////////////////////////////
   {
-    RefPMOFile eri_ii_ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
-                                                 nfrc_, nocc_, nfrc_, nocc_,
-                                                 0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
+    RefPMOFile eri_ii_ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+                                                  nfrc_, nocc_, nfrc_, nocc_,
+                                                  0, nocc_, 0, ncabs_, "v^ia'_ii, OBS part");
     eri_ii_ip->sort_inside_blocks();
 
-    RefPMOFile eri_ii_ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
+    RefPMOFile eri_ii_ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
                                                            nfrc_, nocc_, nfrc_, nocc_,
                                                            0, nocc_, 0, ncabs_, "v^ia'_ii, auxiliary functions");
     eri_ii_ix->sort_inside_blocks();
@@ -189,7 +194,8 @@ void PMP2::compute() {
   shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
 
   shared_ptr<PCompCABSFile<SlaterBatch> >
-    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, "Slater CABS (2gamma)"));
+    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, false, true,
+                                             false, "Slater CABS (2gamma)"));
   stg2_cabs->store_integrals();
   stg2_cabs->reopen_with_inout();
 
@@ -225,34 +231,17 @@ void PMP2::compute() {
     // Q intermediate (made of X * h)
     RefPMOFile Q;
     {
-      // Hartree builder
-      RefMatrix hj_obs;
-      {
-        // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
-        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                                     0, nocc_, 0, nbasis_,
-                                                     0, nocc_, 0, nbasis_, "h+J builder (OBS)");
-        eri_Ip_Ip->sort_inside_blocks();
-        hj_obs = generate_hJ_obs(eri_Ip_Ip);
-      }
+      // Hartree builder (needs modification!!!)
+      // nbasis * nbasis size
+      RefMatrix hj_obs = generate_hJ_obs_obs();
+      // nbasis * ncabs size
+      RefMatrix hj_cabs = generate_hJ_obs_cabs();
+
+
+      // Hartree weighted index
       RefMatrix hj_ip(new PMatrix1e(hj_obs, make_pair(0, nocc_)));
       RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
 
-      RefMatrix hj_cabs;
-      {
-        // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
-        RefPMOFile eri_Ip_Ip = ao_eri_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
-                                                     0, nocc_, 0, nbasis_,
-                                                     0, nocc_, 0, ncabs_, "v^Ia'_Ii, OBS part (redundant)");
-        RefPMOFile eri_Ip_Ix = eri_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
-                                                               0, nocc_, 0, nbasis_,
-                                                               0, nocc_, 0, ncabs_, "v^Ia'_Ii, auxiliary functions (redundant)");
-        eri_Ip_Ip->sort_inside_blocks();
-        eri_Ip_Ix->sort_inside_blocks();
-        RefPMOFile eri_Ip_IA(new PMOFile<complex<double> >(*eri_Ip_Ix + *eri_Ip_Ip));
-
-        hj_cabs = generate_hJ_cabs(eri_Ip_IA);
-      }
       RefMatrix hj_iA(new PMatrix1e(hj_cabs, make_pair(0, nocc_)));
       RefPCoeff chj_iA_comb(new PCoeff(*coeff_cabs_ * *hj_iA));
 
@@ -262,12 +251,13 @@ void PMP2::compute() {
 
       *chj_ip += *chj_iA_obs;
       chj_ip->scale(0.5);
+      chj_iA_cabs->scale(0.5);
+
+      // MO transform using Hartree-weighted index
       RefPMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_, coeff_, chj_ip,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
       X_ii_ih->sort_inside_blocks();
-
-      chj_iA_cabs->scale(0.5);
       RefPMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, coeff_, chj_iA_cabs,
                                                                  nfrc_, nocc_, nfrc_, nocc_,
                                                                  nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
@@ -277,8 +267,6 @@ void PMP2::compute() {
 
 // might not be needed since we are using fixed amplitudes.
 #ifdef EXPLICITLY_HERMITE
-      // TODO In the case of non-fixed amplitude, we need to symmetrize X explicitly. Since we don't have it in integrals,
-      // need to MO-transform explicitly again.
       RefPMOFile X_ih_ii = stg2->mo_transform(coeff_, chj_ip, coeff_, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 2/2");

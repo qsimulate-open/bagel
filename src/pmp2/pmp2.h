@@ -12,6 +12,7 @@
 #include <src/pscf/pgeometry.h>
 #include <src/util/pfile.h>
 #include <src/util/pcompfile.h>
+#include <src/util/pcompcabsfile.h>
 #include <src/rysint/eribatch.h>
 
 class PMP2 {
@@ -39,7 +40,8 @@ class PMP2 {
     const std::vector<double> eig_;
 
     // AO integrals used in several places
-    boost::shared_ptr<PCompFile<ERIBatch> > ao_eri_;
+    boost::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
+    boost::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
     RefMOFile eri_ii_pp_;
     RefMOFile eri_ii_iA_;
     RefMOFile stg_ii_pp_;
@@ -62,8 +64,8 @@ class PMP2 {
     size_t noovv_;
 
     std::pair<RefCoeff, RefCoeff> generate_CABS();
-    RefMatrix generate_hJ_cabs(RefMOFile);
-    RefMatrix generate_hJ_obs(RefMOFile);
+    RefMatrix generate_hJ_obs_cabs();
+    RefMatrix generate_hJ_obs_obs();
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,

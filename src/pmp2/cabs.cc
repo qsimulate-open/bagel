@@ -56,7 +56,13 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
 
 // Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
-RefMatrix PMP2::generate_hJ_obs(RefMOFile eri_Ip_Ip) {
+RefMatrix PMP2::generate_hJ_obs_obs() {
+
+  // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
+  RefMOFile eri_Ip_Ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                               0, nocc_, 0, nbasis_,
+                                               0, nocc_, 0, nbasis_, "h+J builder (OBS-OBS)");
+  eri_Ip_Ip->sort_inside_blocks();
 
   // Computes hcore in k-space.
   RefHcore hc(new PHcore(geom_));
@@ -71,7 +77,19 @@ RefMatrix PMP2::generate_hJ_obs(RefMOFile eri_Ip_Ip) {
 
 
 // Hartree-weighted (i.e., Fock except exchange) index space to be used in B intermediate evaluator.
-RefMatrix PMP2::generate_hJ_cabs(RefMOFile eri_Ip_IA) {
+RefMatrix PMP2::generate_hJ_obs_cabs() {
+
+  // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
+  RefMOFile eri_Ip_Ip = eri_obs_->mo_transform(coeff_, coeff_, coeff_, cabs_obs_,
+                                               0, nocc_, 0, nbasis_,
+                                               0, nocc_, 0, ncabs_, "h+J builder (OBS-CABS; redundant)");
+  RefMOFile eri_Ip_Ix = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, coeff_, cabs_aux_,
+                                                         0, nocc_, 0, nbasis_,
+                                                         0, nocc_, 0, ncabs_, "h+J builder (OBS-CABS; redundant)");
+
+  eri_Ip_Ip->sort_inside_blocks();
+  eri_Ip_Ix->sort_inside_blocks();
+  RefMOFile eri_Ip_IA(new PMOFile<complex<double> >(*eri_Ip_Ix + *eri_Ip_Ip));
 
   // Computes hcore in k-space.
   // Needs to pass that this PHcore is for union_geom_ (i.e. true in the second argument)
@@ -88,4 +106,6 @@ RefMatrix PMP2::generate_hJ_cabs(RefMOFile eri_Ip_IA) {
 
   return hartree;
 }
+
+
 
