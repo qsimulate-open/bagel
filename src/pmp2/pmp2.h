@@ -46,6 +46,7 @@ class PMP2 {
     boost::shared_ptr<PCompFile<SlaterBatch> > yp_;
     boost::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
     boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
+    boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs2_;
     RefMOFile eri_ii_pp_;
     RefMOFile eri_ii_Ai_;
     RefMOFile stg_ii_pp_;
