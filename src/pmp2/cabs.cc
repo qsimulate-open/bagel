@@ -176,10 +176,10 @@ pair<RefMatrix, RefMatrix> PMP2::generate_K_cabs_pair() {
                                                  0, ncabs_, 0, nocc_, "K builder (CABS-CABS; pp)");
     RefMOFile eri_Ix_pI = eri_cabs_d->mo_transform_cabs_aux(coeff_, cabs_aux_, cabs_obs_, coeff_,
                                                             0, nocc_, 0, ncabs_,
-                                                            0, ncabs_, 0, nocc_, "K builder (CABS-OBS; xp)");
+                                                            0, ncabs_, 0, nocc_, "K builder (CABS-CABS; xp)");
     RefMOFile eri_Ip_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, cabs_obs_, cabs_aux_, coeff_,
                                                            0, nocc_, 0, ncabs_,
-                                                           0, ncabs_, 0, nocc_, "K builder (OBS-CABS; px)");
+                                                           0, ncabs_, 0, nocc_, "K builder (CABS-CABS; px)");
     eri_Ip_pI->sort_inside_blocks();
     eri_Ix_pI->sort_inside_blocks();
     eri_Ip_xI->sort_inside_blocks();

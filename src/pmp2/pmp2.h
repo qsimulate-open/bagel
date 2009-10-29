@@ -14,6 +14,7 @@
 #include <src/util/pcompfile.h>
 #include <src/util/pcompcabsfile.h>
 #include <src/rysint/eribatch.h>
+#include <src/slater/slaterbatch.h>
 
 class PMP2 {
   typedef boost::shared_ptr<PMatrix1e> RefMatrix;
@@ -41,11 +42,14 @@ class PMP2 {
 
     // AO integrals used in several places
     boost::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
+    boost::shared_ptr<PCompFile<SlaterBatch> > stg_;
+    boost::shared_ptr<PCompFile<SlaterBatch> > yp_;
     boost::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
+    boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
     RefMOFile eri_ii_pp_;
-    RefMOFile eri_ii_iA_;
+    RefMOFile eri_ii_Ai_;
     RefMOFile stg_ii_pp_;
-    RefMOFile stg_ii_iA_;
+    RefMOFile stg_ii_Ai_;
     RefMOFile yp_ii_ii_;
     RefMOFile stg2_ii_ii_;
 

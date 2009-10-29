@@ -412,7 +412,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const std::complex<double> cone(1.0, 0.0);
 
   const int unit = 1;
-  const size_t nbasismax = std::max(std::max(nbasis_i_, nbasis_j_), std::max(nbasis_a_, nbasis_b_));
 
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
   std::cout << "  Creating " << jobname << "  of size ";
@@ -684,6 +683,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   std::cout << "  done" << std::endl <<std::endl;
   mo_int->reopen_with_inout();
+
   return mo_int;
 
 };

@@ -286,14 +286,14 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
             for (int kb = -k; kb < std::max(k, 1); ++kb) {
               if ((ka + kb - ki - kj) % k2 != 0) continue; 
 
-              get_block2(kj, ki, kb, ka, buffer1);
-              other->get_block2(kn, km, kb, ka, buffer2);
+              get_block2(ki, kj, ka, kb, buffer1);
+              other->get_block2(km, kn, ka, kb, buffer2);
               const T one = 1.0;
               const T prefac = one / static_cast<T>(k2);
               zgemm_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
             }
           }
-          out->put_block2(kn, km, kj, ki, target);
+          out->put_block2(km, kn, ki, kj, target);
         }
       }
     }
@@ -466,8 +466,11 @@ void PMOFile<T>::rprint() const {
   const int isize = ifence_ - istart_;  
   const int jsize = jfence_ - jstart_;  
   const size_t ijsize = isize * jsize;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
+  const size_t absize = asize * bsize;
   const int k = this->K_;
-  T* buffer = new T[ijsize * ijsize];
+  T* buffer = new T[ijsize * absize];
 
   // I will print out in Ne or H2O cases...
   // singlet
@@ -483,7 +486,7 @@ void PMOFile<T>::rprint() const {
           get_block2(ki, kj, ka, kb, buffer);
           const T* cbuf = buffer;
           for (int i = 0; i != ijsize; ++i) {
-            for (int j = 0; j != ijsize; ++j, ++cbuf) {
+            for (int j = 0; j != absize; ++j, ++cbuf) {
               std::cout << std::setprecision(5) << std::setw(9) << (*cbuf).real();
             }
             std::cout << std::endl;
