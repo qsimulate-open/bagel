@@ -283,7 +283,7 @@ void PMP2::compute() {
       fock_obs_obs_ = fobs;
       fock_obs_cabs_ = fcabs;
     }
-    // P intermediate R^PQ_ij K^R_P R^kl_RQ
+
     {
 #if 0
       // construct entire matrix:
@@ -316,23 +316,31 @@ void PMP2::compute() {
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
     RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));
     // P3 intermediate R^mA_ij f^n_m R^kl_nA
-    // not yet // P5A intermediate R^mA_ij f^P_m R^kl_PA
     {
-       RefMOFile p3_1 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, cfobs,
-                                           nfrc_, nocc_, nfrc_, nocc_,
-                                           0, ncabs_, 0, nocc_, "P3: R^Am_ij f^m_n R^kl_An, 1/2, OBS");
-       *p3_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, cfobs,
-                                                   nfrc_, nocc_, nfrc_, nocc_,
-                                                   0, ncabs_, 0, nocc_, "P3: R^mA_ij f^m_n R^kl_nA, 1/2, CABS"));
-       RefMOFile p3_2 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
-                                           nfrc_, nocc_, nfrc_, nocc_,
-                                           0, ncabs_, 0, nocc_, "P3: R^Am_ij f^m_n R^kl_An, 2/2, OBS");
-       *p3_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
-                                                   nfrc_, nocc_, nfrc_, nocc_,
-                                                   0, ncabs_, 0, nocc_, "P3: R^mA_ij f^m_n R^kl_nA, 2/2, CABS"));
-       RefPMOFile p3 = p3_1->contract(p3_2, "P3: R^Am_ij f^m_n R^kl_An");
-       p3->flip_symmetry();
-       p3->rprint();
+      RefMOFile p3_ket;
+      {
+        RefMOFile p3_1 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, cfobs,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, ncabs_, 0, nocc_, "P3: R^Am_ij f^m_n R^kl_An, 1/2, OBS");
+        *p3_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, cfobs,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, ncabs_, 0, nocc_, "P3: R^mA_ij f^m_n R^kl_nA, 1/2, CABS"));
+        RefMOFile p3_2 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, ncabs_, 0, nocc_, "P3: R^Am_ij f^m_n R^kl_An, 2/2, OBS");
+        *p3_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, ncabs_, 0, nocc_, "P3: R^mA_ij f^m_n R^kl_nA, 2/2, CABS"));
+        RefPMOFile p3 = p3_1->contract(p3_2, "P3: R^Am_ij f^m_n R^kl_An");
+        p3->flip_symmetry();
+        p3->rprint();
+        p3_ket = p3_2;
+      }
+
+       // P5A intermediate R^mA_ij f^P_m R^kl_PA
+      {
+
+      }
      }
 
     pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->ncabs());
@@ -340,7 +348,6 @@ void PMP2::compute() {
     RefCoeff cfcabs_aux = p.second;
     // P4 intermediate R^pb_ij f^r_p R^kl_rb
     {
-
       RefMOFile p4_ket;
       {
         RefMOFile p4_1 = stg_->mo_transform(coeff_, coeff_, cfobs, coeff_,

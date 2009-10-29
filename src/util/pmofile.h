@@ -69,10 +69,12 @@ class PMOFile : public PFile<T> {
     PMOFile<T> operator*(const std::complex<double>&) const;
 
     boost::shared_ptr<PMOFile<T> > copy() const;
+    boost::shared_ptr<PMOFile<T> > clone() const;
     void scale(double a);
 
     // Flip and add to this.
     void flip_symmetry();
+    boost::shared_ptr<PMOFile<T> > flip_sort() const;
 
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
 
@@ -185,7 +187,17 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
   }
   delete[] buffer;
   return out;
-}
+};
+
+
+template<class T>
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::clone() const {
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+                                                    istart_, ifence_, jstart_, jfence_,
+                                                    astart_, afence_, bstart_, bfence_,
+                                                    offset_, false));
+  return out;
+};
 
 
 template<class T>
@@ -231,6 +243,55 @@ void PMOFile<T>::flip_symmetry() {
 
   delete[] buffer1;
   delete[] buffer2;
+};
+
+
+
+
+template<class T>
+boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
+  const int k = this->K_;
+
+  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+                                                    jstart_, jfence_, istart_, ifence_,
+                                                    bstart_, bfence_, astart_, afence_,
+                                                    false));
+
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[out->blocksize_];
+
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const int asize = afence_ - astart_;
+  const int bsize = bfence_ - bstart_;
+
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka) {
+        int ki = ka+kb-kj;
+        if (ki < -k) ki += k*2;
+        else if (ki >=  k) ki -= k*2;
+
+        get_block2(ki, kj, ka, kb, buffer1);
+
+        T* cbuf = buffer1;
+        for (int i = 0; i < isize; ++i) {
+          for (int j = 0; j < jsize; ++j) {
+            for (int a = 0; a < asize; ++a) {
+              for (int b = 0; b < bsize; ++b, ++cbuf) {
+                buffer2[a+asize*(b+bsize*(i+isize*j))] = *cbuf;
+              }
+            }
+          }
+        }
+        out->put_block2(kj, ki, kb, ka, buffer2);
+      }
+    }
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return out;
 };
 
 
