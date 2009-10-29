@@ -63,7 +63,6 @@ RefMatrix PMP2::generate_hJ_obs_obs() {
   RefMOFile eri_pI_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                0, nbasis_, 0, nocc_,
                                                0, nbasis_, 0, nocc_, "h+J builder (OBS-OBS; pp)");
-  eri_pI_pI->sort_inside_blocks();
 
   // Computes hcore in k-space.
   RefHcore hc(new PHcore(geom_));
@@ -87,9 +86,6 @@ RefMatrix PMP2::generate_hJ_obs_cabs() {
   RefMOFile eri_pI_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
                                                          0, nbasis_, 0, nocc_,
                                                          0, ncabs_, 0, nocc_, "h+J builder (OBS-CABS; px)");
-
-  eri_pI_pI->sort_inside_blocks();
-  eri_pI_xI->sort_inside_blocks();
   RefMOFile eri_pI_AI(new PMOFile<complex<double> >(*eri_pI_xI + *eri_pI_pI));
 
   // Computes hcore in k-space.
@@ -114,7 +110,6 @@ RefMatrix PMP2::generate_K_obs_obs() {
   RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                0, nocc_, 0, nbasis_,
                                                0, nbasis_, 0, nocc_, "K builder (OBS-OBS; pp)");
-  eri_Ip_pI->sort_inside_blocks();
   RefMatrix exchange = eri_Ip_pI->contract_density_K();
   return exchange;
 }
@@ -128,8 +123,6 @@ RefMatrix PMP2::generate_K_obs_cabs() {
   RefMOFile eri_Ip_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
                                                          0, nocc_, 0, nbasis_,
                                                          0, ncabs_, 0, nocc_, "K builder (OBS-CABS; px)");
-  eri_Ip_pI->sort_inside_blocks();
-  eri_Ip_xI->sort_inside_blocks();
   RefMOFile eri_Ip_AI(new PMOFile<complex<double> >(*eri_Ip_xI + *eri_Ip_pI));
   RefMatrix exchange = eri_Ip_AI->contract_density_K();
   return exchange;
@@ -153,8 +146,6 @@ pair<RefMatrix, RefMatrix> PMP2::generate_K_cabs_pair() {
     RefMOFile eri_Ix_pI = eri_cabs_d->mo_transform_cabs_aux(coeff_, cabs_aux_, coeff_, coeff_,
                                                             0, nocc_, 0, ncabs_,
                                                             0, nbasis_, 0, nocc_, "K builder (CABS-OBS; xp)");
-    eri_Ip_pI->sort_inside_blocks();
-    eri_Ix_pI->sort_inside_blocks();
     RefMOFile eri_IA_pI(new PMOFile<complex<double> >(*eri_Ix_pI + *eri_Ip_pI));
     exchange1 = eri_IA_pI->contract_density_K();
   }
@@ -180,10 +171,6 @@ pair<RefMatrix, RefMatrix> PMP2::generate_K_cabs_pair() {
     RefMOFile eri_Ip_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, cabs_obs_, cabs_aux_, coeff_,
                                                            0, nocc_, 0, ncabs_,
                                                            0, ncabs_, 0, nocc_, "K builder (CABS-CABS; px)");
-    eri_Ip_pI->sort_inside_blocks();
-    eri_Ix_pI->sort_inside_blocks();
-    eri_Ip_xI->sort_inside_blocks();
-    eri_Ix_xI->sort_inside_blocks();
     RefMOFile eri_IA_AI(new PMOFile<complex<double> >(*eri_Ip_pI + *eri_Ix_pI + *eri_Ip_xI + *eri_Ix_xI));
     exchange2 = eri_IA_AI->contract_density_K();
   }

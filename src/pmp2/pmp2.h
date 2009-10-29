@@ -75,6 +75,7 @@ class PMP2 {
     RefMatrix K_obs_cabs_;
     RefMatrix K_cabs_obs_;
     RefMatrix K_cabs_cabs_;
+    RefMatrix fock_obs_obs_;
     // Hartree builder
     RefMatrix generate_hJ_obs_cabs();
     RefMatrix generate_hJ_obs_obs();

@@ -742,6 +742,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   std::cout << "  done" << std::endl << std::endl;
   mo_int->reopen_with_inout();
+  mo_int->sort_inside_blocks();
   return mo_int;
 };
 
