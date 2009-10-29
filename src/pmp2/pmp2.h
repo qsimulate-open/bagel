@@ -43,6 +43,7 @@ class PMP2 {
     // AO integrals used in several places
     boost::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
     boost::shared_ptr<PCompFile<SlaterBatch> > stg_;
+    boost::shared_ptr<PCompFile<SlaterBatch> > stg2_;
     boost::shared_ptr<PCompFile<SlaterBatch> > yp_;
     boost::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
     boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
@@ -72,18 +73,23 @@ class PMP2 {
     // Hartree and exchange matrix
     RefMatrix hJ_obs_obs_;
     RefMatrix hJ_obs_cabs_;
+    RefMatrix hJ_cabs_obs_;
+    RefMatrix hJ_cabs_cabs_;
     RefMatrix K_obs_obs_;
     RefMatrix K_obs_cabs_;
     RefMatrix K_cabs_obs_;
     RefMatrix K_cabs_cabs_;
     RefMatrix fock_obs_obs_;
     RefMatrix fock_obs_cabs_;
+    RefMatrix fock_cabs_obs_;
+    RefMatrix fock_cabs_cabs_;
     // Hartree builder
     RefMatrix generate_hJ_obs_cabs();
     RefMatrix generate_hJ_obs_obs();
     // Exchange builder
     RefMatrix generate_K_obs_obs();
     RefMatrix generate_K_obs_cabs();
+    std::pair<RefMatrix, RefMatrix> generate_hJ_cabs_pair();
     std::pair<RefMatrix, RefMatrix> generate_K_cabs_pair();
 
   public:

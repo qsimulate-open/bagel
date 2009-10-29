@@ -105,6 +105,75 @@ RefMatrix PMP2::generate_hJ_obs_cabs() {
 }
 
 
+
+
+pair<RefMatrix, RefMatrix> PMP2::generate_hJ_cabs_pair() {
+
+  // Computes hcore in k-space.
+  // Needs to pass that this PHcore is for union_geom_ (i.e. true in the second argument)
+  // Assuming that the cost for this operation is negligible.
+  RefHcore uhc(new PHcore(union_geom_, true));
+  RefMatrix aohcore(new PMatrix1e(uhc->ft()));
+  RefMatrix mohcore(new PMatrix1e(*coeff_entire_ % *aohcore * *coeff_entire_));
+
+  RefMatrix mohcore_cabs_ri(new PMatrix1e(mohcore, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
+
+  pair<RefMatrix, RefMatrix> p = mohcore_cabs_ri->split(geom_->nbasis(), geom_->ncabs());
+  RefMatrix hcore1 = p.first;
+  RefMatrix hcore2 = p.second;
+
+  RefMatrix coulomb1;
+  RefMatrix coulomb2;
+  {
+    const double gamma = geom_->gamma();
+    shared_ptr<PCompCABSFile<ERIBatch> >
+      eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "ERI CABS(j)"));
+    eri_cabs_d->store_integrals();
+    eri_cabs_d->reopen_with_inout();
+
+    // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
+    // Note there is no bra-ket symmetry in periodic calculations.
+    {
+      RefMOFile eri_AI_pI = eri_obs_->mo_transform(cabs_obs_, coeff_, coeff_, coeff_,
+                                                   0, ncabs_, 0, nocc_,
+                                                   0, nbasis_, 0, nocc_, "hJ builder (CABS-OBS; pp)");
+      *eri_AI_pI += *(eri_cabs_d->mo_transform_cabs_aux(cabs_aux_, coeff_, coeff_, coeff_,
+                                                        0, ncabs_, 0, nocc_,
+                                                        0, nbasis_, 0, nocc_, "hJ builder (CABS-OBS; xp)"));
+      coulomb1 = eri_AI_pI->contract_density_J();
+    }
+
+    shared_ptr<PCompCABSFile<ERIBatch> >
+      eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "ERI CABS(ja)"));
+    eri_cabs_t->store_integrals();
+    eri_cabs_t->reopen_with_inout();
+
+    // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
+    // Note there is no bra-ket symmetry in periodic calculations.
+    {
+      RefMOFile eri_AI_AI = eri_cabs_t->mo_transform_cabs_aux(cabs_aux_, coeff_, cabs_aux_, coeff_,
+                                                              0, ncabs_, 0, nocc_,
+                                                              0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; xx)");
+      *eri_AI_AI += *(eri_obs_->mo_transform(cabs_obs_, coeff_, cabs_obs_, coeff_,
+                                             0, ncabs_, 0, nocc_,
+                                             0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; pp)"));
+      *eri_AI_AI += *(eri_cabs_d->mo_transform_cabs_aux(cabs_aux_, coeff_, cabs_obs_, coeff_,
+                                                        0, ncabs_, 0, nocc_,
+                                                        0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; xp)"));
+      *eri_AI_AI += *(eri_cabs_->mo_transform_cabs_aux(cabs_obs_, coeff_, cabs_aux_, coeff_,
+                                                       0, ncabs_, 0, nocc_,
+                                                       0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; px)"));
+      coulomb2 = eri_AI_AI->contract_density_J();
+    }
+  }
+  *hcore1 += *coulomb1;
+  *hcore2 += *coulomb2;
+  return make_pair(hcore1, hcore2);
+}
+
+
+
+
 RefMatrix PMP2::generate_K_obs_obs() {
   // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
   RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,

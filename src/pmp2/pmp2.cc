@@ -171,40 +171,35 @@ void PMP2::compute() {
     RefMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
 
     V_ = V_pre;
-    V_->rprint();
   }
-  complex<double> en_vt = V_->get_energy_one_amp();
 
 
   ///////////////////////////////////////
   // Direct contribution to R12 energy
   /////////////////////////////////////
   cout << "  * Built V intermediate." << endl;
+  complex<double> en_vt = V_->get_energy_one_amp();
   cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
 
 
   /////////////////////////////////////
   // Slater & Yukawa ints with 2gamma
   ///////////////////////////////////
-  shared_ptr<PairCompFile<SlaterBatch> >
-    stg_yp2(new PairCompFile<SlaterBatch>(geom_, 2.0 * gamma, "Slater and Yukawa ints (2gamma)"));
-  stg_yp2->store_integrals();
-  stg_yp2->reopen_with_inout();
-  shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
-  shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
-
-  shared_ptr<PCompCABSFile<SlaterBatch> >
-    stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
-                                             false, "Slater CABS (2gamma)"));
-  stg2_cabs->store_integrals();
-  stg2_cabs->reopen_with_inout();
-
+  {
+    shared_ptr<PairCompFile<SlaterBatch> >
+      stg_yp2(new PairCompFile<SlaterBatch>(geom_, 2.0 * gamma, "Slater and Yukawa ints (2gamma)"));
+    stg_yp2->store_integrals();
+    stg_yp2->reopen_with_inout();
+    shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
+    shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
+    stg2_ = stg2;
+  }
 
   ////////////////////
   // X intermediate
   //////////////////
   {
-    RefMOFile stg2_ii_ii = stg2->mo_transform(coeff_, coeff_, coeff_, coeff_,
+    RefMOFile stg2_ii_ii = stg2_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                nfrc_, nocc_, nfrc_, nocc_,
                                                nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
     stg2_ii_ii_ = stg2_ii_ii;
@@ -237,6 +232,12 @@ void PMP2::compute() {
       // nbasis * ncabs size
       hJ_obs_cabs_ = generate_hJ_obs_cabs();
 
+      pair<RefMatrix, RefMatrix> p = generate_hJ_cabs_pair();
+      // ncabs * nbasis size
+      hJ_cabs_obs_ = p.first;
+      // ncabs * ncabs size
+      hJ_cabs_cabs_ = p.second;
+
 
       // Hartree weighted index
       RefMatrix hj_ip(new PMatrix1e(hJ_obs_obs_, make_pair(0, nocc_)));
@@ -253,13 +254,25 @@ void PMP2::compute() {
       chj_ip->scale(0.5);
       chj_iA_cabs->scale(0.5);
 
+
+
       // MO transform using Hartree-weighted index
-      RefMOFile X_ii_ih = stg2->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
+      RefMOFile X_ii_ih = stg2_->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
-      RefMOFile X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
-                                                                 nfrc_, nocc_, nfrc_, nocc_,
-                                                                 nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
+
+      // integral evaluation...
+      RefMOFile X_ii_ih_cabs;
+      {
+        shared_ptr<PCompCABSFile<SlaterBatch> >
+          stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
+                                                   false, "Slater CABS (2gamma)"));
+        stg2_cabs->store_integrals();
+        stg2_cabs->reopen_with_inout();
+        X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
+                                                        nfrc_, nocc_, nfrc_, nocc_,
+                                                        nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
+      }
 
       *X_ii_ih += *X_ii_ih_cabs;
 
@@ -285,10 +298,18 @@ void PMP2::compute() {
       // ncabs * ncabs size
       K_cabs_cabs_ = p.second;
 
-      RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
-      RefMatrix fcabs(new PMatrix1e(*hJ_obs_cabs_ - *K_obs_cabs_));
-      fock_obs_obs_ = fobs;
-      fock_obs_cabs_ = fcabs;
+      {
+        RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
+        RefMatrix fcabs(new PMatrix1e(*hJ_obs_cabs_ - *K_obs_cabs_));
+        fock_obs_obs_ = fobs;
+        fock_obs_cabs_ = fcabs;
+      }
+      {
+        RefMatrix fobs(new PMatrix1e(*hJ_cabs_obs_ - *K_cabs_obs_));
+        RefMatrix fcabs(new PMatrix1e(*hJ_cabs_cabs_ - *K_cabs_cabs_));
+        fock_cabs_obs_ = fobs;
+        fock_cabs_cabs_ = fcabs;
+      }
     }
 
     {
@@ -321,11 +342,60 @@ void PMP2::compute() {
     }
 
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
-    RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));
 
+    RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));
     pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->ncabs());
     RefCoeff cfcabs_obs = p.first;
     RefCoeff cfcabs_aux = p.second;
+    RefCoeff cfcabs_obs_fold(new PCoeff(*cfobs + *cfcabs_obs));
+
+    // OBS * CABS quantity
+    RefCoeff xfobs(new PCoeff(*coeff_ * *fock_cabs_obs_));
+
+    // RI * CABS quantity.
+    RefCoeff xfri(new PCoeff(*coeff_cabs_ * *fock_cabs_cabs_));
+    // Split into OBS*CABS & CABS*CABS quantities.
+    pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->ncabs());
+    RefCoeff xfcabs_obs = q.first;
+    RefCoeff xfcabs_aux = q.second;
+    RefCoeff xfcabs_obs_fold(new PCoeff(*xfobs + *xfcabs_obs));
+
+    // P2 intermediate R^Pm_ij f^Q_P R^kl_Qm
+    {
+      RefMOFile p2;
+      // first, evaluate R^pm_ij f^Q_p R^kl_Qm
+      {
+        RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, OBS 1/3");
+        RefMOFile p2_2 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs_fold, coeff_,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, OBS 2/3");
+        *p2_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, CABS 2/3"));
+        p2 = p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)");
+      }
+      // then, evaluate R^Am_ij f^Q_A R^kl_Qm
+      {
+        RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, OBS 1/4");
+        *p2_1 += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                   nfrc_, nocc_, nfrc_, nocc_,
+                                                   0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 2/4");
+        RefMOFile p2_2 = stg_->mo_transform(coeff_, coeff_, xfcabs_obs_fold, coeff_,
+                                            nfrc_, nocc_, nfrc_, nocc_,
+                                            0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, OBS 3/4");
+        *p2_2 += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, xfcabs_aux, coeff_,
+                                                   nfrc_, nocc_, nfrc_, nocc_,
+                                                   0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 4/4");
+        *p2 += *(p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
+      }
+      p2->flip_symmetry();
+      p2->rprint();
+    }
+
     // P3 intermediate R^mA_ij f^n_m R^kl_nA
     {
       RefMOFile p3_ket;
@@ -350,8 +420,6 @@ void PMP2::compute() {
 
        // P5A intermediate R^mA_ij f^P_m R^kl_PA
       {
-        RefCoeff cfcabs_obs_fold(new PCoeff(*cfobs + *cfcabs_obs));
-
         RefMOFile p5a_1 = stg_cabs2_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, cfcabs_aux,
                                                             nfrc_, nocc_, nfrc_, nocc_,
                                                             0, ncabs_, 0, nocc_, "P5A: R^mA_ij f^P_m R^kl_PA, 1/4 CABS_CABS");
