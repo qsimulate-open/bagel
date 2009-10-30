@@ -164,16 +164,16 @@ void PSCF::print_eig(const double* eig) const {
     const int ii = i + geom_->K();
     const int outsize = min(10, abs(i)+1);
     const int bsize = min(geom_->nbasis(), 15);
-    cout << "    K   ";
+    cout << "      K ";
     for (int j = 0; j != outsize; ++j) {
       cout << setw(12) << ii+j;
     }
     cout << endl;
     for (int k = 0; k != bsize; ++k) {
       if (k == geom_->nocc()/2 - 1) {
-        cout << "  HOCO  ";
+        cout << "   HOCO ";
       } else if (k == geom_->nocc()/2) {
-        cout << "  LUCO  ";
+        cout << "   LUCO ";
       } else {
         cout << "        ";
       }
