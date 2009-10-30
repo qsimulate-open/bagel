@@ -546,10 +546,10 @@ void PMP2::compute() {
       {
         RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
                                              nfrc_, nocc_, nfrc_, nocc_,
-                                             0, nbasis_, nocc_, nbasis_, "P5: R^Ab_ij f^p_A R^kl_pb, 1/1, OBS");
+                                             0, nbasis_, nocc_, nbasis_, "P5: R^Ab_ij f^p_A R^kl_pb, 1/2, OBS");
         *p5b_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
                                                      nfrc_, nocc_, nfrc_, nocc_,
-                                                     0, nbasis_, nocc_, nbasis_, "R^Ab_ij f^p_A R^kl_pb, 1/1, CABS"));
+                                                     0, nbasis_, nocc_, nbasis_, "P5: R^Ab_ij f^p_A R^kl_pb, 2/2, CABS"));
         RefMOFile p5b = p5b_1->contract(p4_ket, "R^Ab_ij f^p_A R^kl_pb");
         p5b->flip_symmetry();
         p5b->scale(2.0);
