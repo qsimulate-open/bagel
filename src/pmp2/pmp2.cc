@@ -174,14 +174,6 @@ void PMP2::compute() {
   }
 
 
-  ///////////////////////////////////////
-  // Direct contribution to R12 energy
-  /////////////////////////////////////
-  cout << "  * Built V intermediate." << endl;
-  complex<double> en_vt = V_->get_energy_one_amp();
-  cout << "  F12 energy (Vt): " << setprecision(10) << en_vt.real() << endl << endl;
-
-
   /////////////////////////////////////
   // Slater & Yukawa ints with 2gamma
   ///////////////////////////////////
@@ -496,9 +488,8 @@ void PMP2::compute() {
         p3_ket = p3_2;
         RefMOFile p3 = p3_1->contract(p3_2, "P3: R^Am_ij f^m_n R^kl_An");
         p3->flip_symmetry();
-        p3->scale(-1.0);
 
-        *P += *p3;
+        *P -= *p3;
       }
 
        // P5A intermediate R^mA_ij f^P_m R^kl_PA
@@ -546,10 +537,10 @@ void PMP2::compute() {
       {
         RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
                                              nfrc_, nocc_, nfrc_, nocc_,
-                                             0, nbasis_, nocc_, nbasis_, "P5: R^Ab_ij f^p_A R^kl_pb, 1/2, OBS");
+                                             0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 1/2, OBS");
         *p5b_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
                                                      nfrc_, nocc_, nfrc_, nocc_,
-                                                     0, nbasis_, nocc_, nbasis_, "P5: R^Ab_ij f^p_A R^kl_pb, 2/2, CABS"));
+                                                     0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 2/2, CABS"));
         RefMOFile p5b = p5b_1->contract(p4_ket, "R^Ab_ij f^p_A R^kl_pb");
         p5b->flip_symmetry();
         p5b->scale(2.0);
@@ -563,13 +554,27 @@ void PMP2::compute() {
 
   } // end of B intermediate construction.
 
-#define LOCAL_DEBUG_PMP2
+
+  ///////////////////////////////////////
+  // R12 energy contribution
+  /////////////////////////////////////
+  const complex<double> en_vt = V_->get_energy_one_amp();
+  const complex<double> en_xtt = X_->get_energy_two_amp_X(eig_);
+  const complex<double> en_btt = B_->get_energy_two_amp_B();
+  cout << "  ------------------------------------------" << endl;
+  cout << "    R12 contribution  : " << fixed << setw(15) << setprecision(10) << (en_vt * 2.0 + en_btt - en_xtt).real()
+       << endl << endl;
+  cout << "      >> V*t          : " << fixed << setw(15) << setprecision(10) << en_vt.real() << endl;
+  cout << "      >> t*(ei+ej)X*t : " << fixed << setw(15) << setprecision(10) << en_xtt.real() << endl;
+  cout << "      >> t*B*t        : " << fixed << setw(15) << setprecision(10) << en_btt.real() << endl;
+  cout << "  ------------------------------------------" << endl << endl;
+
+//#define LOCAL_DEBUG_PMP2
 #ifdef LOCAL_DEBUG_PMP2
   V_->rprint();
   X_->rprint();
   B_->rprint();
 #endif
-
 }
 
 

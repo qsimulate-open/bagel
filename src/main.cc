@@ -58,6 +58,8 @@ int main(int argc, char** argv) {
       pmp2.compute();
     }
 
+    print_footer();
+
   } catch (bad_alloc &e) {
     cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
          << e.what() << endl;

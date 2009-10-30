@@ -15,7 +15,7 @@
 void print_header() {
   std::cout << std::endl; 
   std::cout << "  --------------------------------------------------" << std::endl;
-  std::cout << "  This is the developer-version of NEWPROGRAM" << std::endl; 
+  std::cout << "  This is the package       ** Poly-R12 **          " << std::endl;
   std::cout << "  written by Toru Shiozaki (shiozaki.toru@gmail.com)" << std::endl;
   std::cout << "  --------------------------------------------------" << std::endl;
   std::cout << std::endl;

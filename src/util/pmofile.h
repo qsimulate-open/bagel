@@ -65,6 +65,7 @@ class PMOFile : public PFile<T> {
     void sort_inside_blocks();
     PMOFile<T> operator+(const PMOFile<T>&) const;
     PMOFile<T>& operator+=(const PMOFile<T>&);
+    PMOFile<T>& operator-=(const PMOFile<T>&);
     PMOFile<T> operator-(const PMOFile<T>&) const;
     PMOFile<T> operator*(const std::complex<double>&) const;
 
@@ -84,6 +85,8 @@ class PMOFile : public PFile<T> {
     void print() const;
     void rprint() const;
     T get_energy_one_amp() const;
+    T get_energy_two_amp_B() const;
+    T get_energy_two_amp_X(const std::vector<double> eig) const;
 
 };
 
@@ -447,6 +450,29 @@ PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
 
 
 template<class T>
+PMOFile<T>& PMOFile<T>::operator-=(const PMOFile<T>& other) {
+
+  assert(offset_.size() == other.offset_.size());
+  T* buffer1 = new T[blocksize_];
+  T* buffer2 = new T[blocksize_];
+
+  for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
+    this->get_block(iter->second, blocksize_, buffer1);
+    other.get_block(iter->second, blocksize_, buffer2);
+
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < blocksize_; ++i) buffer1[i] -= buffer2[i];
+
+    this->put_block(iter->second, blocksize_, buffer1);
+  }
+
+  delete[] buffer1;
+  delete[] buffer2;
+  return *this;
+};
+
+
+template<class T>
 PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
 
   T* buffer1 = new T[blocksize_];
@@ -622,6 +648,139 @@ T PMOFile<T>::get_energy_one_amp() const {
   en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
+
+
+template<class T>
+T PMOFile<T>::get_energy_two_amp_X(const std::vector<double> eig) const {
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const size_t ijsize = isize * jsize;
+  assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
+  const int k = this->K_;
+  T* buffer = new T[ijsize * ijsize];
+  assert(geom_->gamma() > 0.0);
+  const double gamma = geom_->gamma();
+  const double ciiii = 0.25 / gamma / gamma; // 1/4
+  const double cijij = 0.15625 / gamma / gamma; // 10/64
+  const double cijji = 0.09375 / gamma / gamma; //  6/64
+  int iblock = 0;
+  T en = 0.0;
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
+        int ki = ka + kb - kj;
+        if (ki < -k) ki += 2*k;
+        else if (ki >= k) ki -= 2*k;
+
+        std::vector<double>::const_iterator ei = eig.begin() + (ki + k) * geom_->nbasis() + istart_;
+        std::vector<double>::const_iterator ej = eig.begin() + (kj + k) * geom_->nbasis() + jstart_;
+        if (kb == kj && kb == ka) { // ki == ka
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              if (i1 == i2) {
+                const int xi = i2 + i1 * isize;
+                const int xj = i2 + i1 * isize;
+                en += buffer[xi * ijsize + xj] * ciiii * (*(ei+i1) + *(ej+i2));
+              } else {
+                const int xi = i2 + i1 * isize;
+                const int xj1 = i2 + i1 * isize;
+                const int xj2 = i1 + i2 * isize;
+                en += buffer[xi * ijsize + xj1] * (2 * cijij - cijji) * (*(ei+i1) + *(ej+i2));
+                en += buffer[xi * ijsize + xj2] * (2 * cijji - cijij) * (*(ei+i1) + *(ej+i2));
+              }
+            }
+          }
+        } else if (kb == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i2 + i1 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijij - cijji) * (*(ei+i1) + *(ej+i2));
+            }
+          }
+        } else if (ka == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i1 + i2 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijji - cijij) * (*(ei+i1) + *(ej+i2));
+            }
+          }
+        }
+      }
+    }
+  }
+  delete[] buffer;
+  en /= static_cast<T>(std::max(k * k * 4, 1));
+  return en;
+};
+
+
+template<class T>
+T PMOFile<T>::get_energy_two_amp_B() const {
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
+  const size_t ijsize = isize * jsize;
+  assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
+  const int k = this->K_;
+  T* buffer = new T[ijsize * ijsize];
+  assert(geom_->gamma() > 0.0);
+  const double gamma = geom_->gamma();
+  const double ciiii = 0.25 / gamma / gamma; // 1/4
+  const double cijij = 0.15625 / gamma / gamma; // 10/64
+  const double cijji = 0.09375 / gamma / gamma; //  6/64
+  int iblock = 0;
+  T en = 0.0;
+  for (int kb = -k; kb != std::max(k, 1); ++kb) {
+    for (int kj = -k; kj != std::max(k, 1); ++kj) {
+      for (int ka = -k; ka != std::max(k, 1); ++ka, ++iblock) {
+        if (kb == kj && kb == ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              if (i1 == i2) {
+                const int xi = i2 + i1 * isize;
+                const int xj = i2 + i1 * isize;
+                en += buffer[xi * ijsize + xj] * ciiii;
+              } else {
+                const int xi = i2 + i1 * isize;
+                const int xj1 = i2 + i1 * isize;
+                const int xj2 = i1 + i2 * isize;
+                en += buffer[xi * ijsize + xj1] * (2 * cijij - cijji);
+                en += buffer[xi * ijsize + xj2] * (2 * cijji - cijij);
+              }
+            }
+          }
+        } else if (kb == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i2 + i1 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijij - cijji);
+            }
+          }
+        } else if (ka == kj && kb != ka) {
+          this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
+          for (int i1 = 0; i1 != isize; ++i1) { // i
+            for (int i2 = 0; i2 != isize; ++i2) { // j
+              const int xi = i2 + i1 * isize;
+              const int xj = i1 + i2 * isize;
+              en += buffer[xi * ijsize + xj] * (2 * cijji - cijij);
+            }
+          }
+        }
+      }
+    }
+  }
+  delete[] buffer;
+  en /= static_cast<T>(std::max(k * k * 4, 1));
+  return en;
+};
+
 
 
 // PMatrix1e assumes complex<double>.
