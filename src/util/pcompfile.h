@@ -483,8 +483,9 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const int novv = nbasis1 * jsize * asize * bsize;
   // allocating a temp array
 
-  const size_t alloc = std::max((size_t)novv, nbasis4) * std::max(KK, 1);
+  const int nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
 
+  const size_t alloc = nmax * std::max(KK, 1);
   std::complex<double>* data = new std::complex<double>[alloc];
   std::complex<double>* datas = new std::complex<double>[alloc];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 

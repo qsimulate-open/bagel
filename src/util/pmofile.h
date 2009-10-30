@@ -160,11 +160,14 @@ void PMOFile<T>::sort_inside_blocks() {
     this->get_block(iter->second, blocksize_, buffer1);
     #pragma omp parallel for
     for (int i = 0; i < isize; ++i) {
-      const T* cbuf = buffer1 + bsize * asize * jsize * i;
       for (int a = 0; a != asize; ++a) {
-        T* cbuf2 = buffer2 + bsize * (a + asize * (0 + jsize * i));
-        for (int j = 0; j != jsize; ++j, cbuf += bsize, cbuf2 += absize) {
-          ::memcpy(cbuf2, cbuf, bsize * sizeof(T));
+        for (int j = 0; j != jsize; ++j) {
+          for (int b = 0; b != bsize; ++b) {
+            const size_t out = b+bsize*(a+asize*(j+jsize*i));
+            const size_t in = b+bsize*(j+jsize*(a+asize*i));
+            buffer2[out] = buffer1[in];
+
+          }
         }
       }
     }

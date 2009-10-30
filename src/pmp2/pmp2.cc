@@ -349,6 +349,7 @@ void PMP2::compute() {
         *p1_3 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
                                                     nfrc_, nocc_, nfrc_, nocc_,
                                                     0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, CABS 2/6"));
+        p1_5_ket = p1_3;
         RefMOFile p1_4 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, cfcabs_obs_fold,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, OBS 3/6");
@@ -363,8 +364,6 @@ void PMP2::compute() {
                                                      nfrc_, nocc_, nfrc_, nocc_,
                                                      0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, CABS2 6/6"));
         *p1 += *(p1_3->contract(p1_4, "P1: R^PQ_ij K^R_P R^kl_RQ case2"));
-
-        p1_5_ket = p1_3;
       }
       // third, evaluate R^Pq_ij K^A_P R^kl_Aq
       {
