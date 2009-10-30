@@ -553,20 +553,21 @@ void PMP2::compute() {
         RefMOFile p5b = p5b_1->contract(p4_ket, "R^Ab_ij f^p_A R^kl_pb");
         p5b->flip_symmetry();
         p5b->scale(2.0);
-        p5b->rprint();
 
         *P += *p5b;
       }
     }
 
-    P->rprint();
+    RefMOFile btmp(new PMOFile<complex<double> >(*T + *Q - *P));
+    B_ = btmp;
 
   } // end of B intermediate construction.
 
+#define LOCAL_DEBUG_PMP2
 #ifdef LOCAL_DEBUG_PMP2
-  V->print();
-  cout << endl;
-  X->print();
+  V_->rprint();
+  X_->rprint();
+  B_->rprint();
 #endif
 
 }
