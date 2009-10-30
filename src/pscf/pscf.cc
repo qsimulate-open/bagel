@@ -160,13 +160,13 @@ void PSCF::init_schwarz() {
 
 
 void PSCF::print_eig(const double* eig) const {
-  for (int i = -geom_->K(); i <= 0; i += 10) {
+  for (int i = 0; i >= -geom_->K(); i -= 10) {
     const int ii = i + geom_->K();
-    const int outsize = min(10, abs(i)+1);
+    const int outsize = min(10, geom_->K()+1-i);
     const int bsize = min(geom_->nbasis(), 15);
     cout << "      K ";
     for (int j = 0; j != outsize; ++j) {
-      cout << setw(12) << ii+j;
+      cout << setw(12) << abs(i)+j;
     }
     cout << endl;
     for (int k = 0; k != bsize; ++k) {
@@ -178,7 +178,7 @@ void PSCF::print_eig(const double* eig) const {
         cout << "        ";
       }
       for (int j = 0; j != outsize; ++j) {
-        cout << fixed << setw(12) << setprecision(6) << eig[(ii+j) * geom_->nbasis() + k];
+        cout << fixed << setw(12) << setprecision(6) << eig[(ii-j) * geom_->nbasis() + k];
       }
       cout << endl;
     }
