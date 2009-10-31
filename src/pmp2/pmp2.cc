@@ -21,6 +21,8 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
+#define DEBUG_PRINT
+
 using namespace std;
 using namespace boost;
 
@@ -171,6 +173,7 @@ void PMP2::compute() {
     RefMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
 
     V_ = V_pre;
+//    cout << "V contrib   " << setprecision(10) <<  V_obs->get_energy_one_amp().real() << endl;
   }
 
 
@@ -206,6 +209,8 @@ void PMP2::compute() {
     X_ = X_pre;
   }
 
+//  cout << "X contrib   " << setprecision(10) << X_->get_energy_two_amp_B() << endl;
+
 
   /////////////////////
   // B intermediate
@@ -214,6 +219,10 @@ void PMP2::compute() {
   {
     // T intermediate (direct)
     RefMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
+
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  T contrib. " << setprecision(10) << T->get_energy_two_amp_B().real() << endl;
+#endif
 
     // Q intermediate (made of X * h)
     RefMOFile Q;
@@ -274,6 +283,9 @@ void PMP2::compute() {
       Q->scale(2.0);
     } // end of Q intermediate construction.
 
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  Q contrib.: " << setprecision(10) << Q->get_energy_two_amp_B().real() << endl;
+#endif
     //Q->rprint();
 
     // some preparation for P intermediate.

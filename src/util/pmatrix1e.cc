@@ -312,6 +312,8 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
     int info = 0;
     zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, &info);
     assert(info == 0);
+    for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(1) << fixed << S[j] << " ";
+    cout << endl;
   }
   delete[] S;
   delete[] work;
