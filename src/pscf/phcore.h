@@ -17,9 +17,10 @@ class PHcore : public PMatrix1e {
     // unfortunately, my implementation of CABS duplicates atoms... That means that
     // the nuclear attraction potential needs to be halved in Hcore that includes CABS.
     const bool cabs_;
+    const bool kinetic_only_;
 
   public:
-    PHcore(const boost::shared_ptr<PGeometry>, const bool cabs = false);
+    PHcore(const boost::shared_ptr<PGeometry>, const bool cabs = false, const bool kinetic_only = false);
     ~PHcore();
 
 };

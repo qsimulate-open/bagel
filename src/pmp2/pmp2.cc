@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
+#include <boost/tuple/tuple.hpp>
 #include <src/pmp2/pmp2.h>
 #include <src/macros.h>
 #include <src/scf/scf_macros.h>
@@ -22,6 +23,7 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
 #define DEBUG_PRINT
+//#define OBS_ONLY
 
 using namespace std;
 using namespace boost;
@@ -224,83 +226,32 @@ void PMP2::compute() {
     cout << "**** debug ****  T contrib. " << setprecision(10) << T->get_energy_two_amp_B().real() << endl;
 #endif
 
-    // Q intermediate (made of X * h)
-    RefMOFile Q;
-    {
-      // Hartree builder (needs modification!!!)
-      // nbasis * nbasis size
-      hJ_obs_obs_ = generate_hJ_obs_obs();
-      // nbasis * ncabs size
-      hJ_obs_cabs_ = generate_hJ_obs_cabs();
-
-      pair<RefMatrix, RefMatrix> p = generate_hJ_cabs_pair();
-      // ncabs * nbasis size
-      hJ_cabs_obs_ = p.first;
-      // ncabs * ncabs size
-      hJ_cabs_cabs_ = p.second;
-
-
-      // Hartree weighted index
-      RefMatrix hj_ip(new PMatrix1e(hJ_obs_obs_, make_pair(0, nocc_)));
-      RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
-
-      RefMatrix hj_iA(new PMatrix1e(hJ_obs_cabs_, make_pair(0, nocc_)));
-      RefPCoeff chj_iA_comb(new PCoeff(*coeff_cabs_ * *hj_iA));
-
-      pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->ncabs());
-      RefMatrix chj_iA_obs = chj_iA.first;
-      RefCoeff chj_iA_cabs(new PCoeff(*chj_iA.second));
-
-      *chj_ip += *chj_iA_obs;
-      chj_ip->scale(0.5);
-      chj_iA_cabs->scale(0.5);
-
-
-
-      // MO transform using Hartree-weighted index
-      RefMOFile X_ii_ih = stg2_->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
-                                              nfrc_, nocc_, nfrc_, nocc_,
-                                              nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
-
-      // integral evaluation...
-      RefMOFile X_ii_ih_cabs;
-      {
-        shared_ptr<PCompCABSFile<SlaterBatch> >
-          stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
-                                                   false, "Slater CABS (2gamma)"));
-        stg2_cabs->store_integrals();
-        stg2_cabs->reopen_with_inout();
-        X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
-                                                        nfrc_, nocc_, nfrc_, nocc_,
-                                                        nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
-      }
-
-      *X_ii_ih += *X_ii_ih_cabs;
-
-      X_ii_ih->flip_symmetry();
-      RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_ih));
-      Q = Qtmp;
-      Q->scale(2.0);
-    } // end of Q intermediate construction.
-
-#ifdef DEBUG_PRINT
-    cout << "**** debug ****  Q contrib.: " << setprecision(10) << Q->get_energy_two_amp_B().real() << endl;
-#endif
-    //Q->rprint();
-
     // some preparation for P intermediate.
     {
-      // Exchange builder (needs modification!!!)
-      // nbasis * nbasis size
-      K_obs_obs_ = generate_K_obs_obs();
-      // nbasis * ncabs size
-      K_obs_cabs_ = generate_K_obs_cabs();
 
-      pair<RefMatrix, RefMatrix> p = generate_K_cabs_pair();
+      // Hartree builder (needs modification!!!)
+      // Index convention is *_upper_lower
+
+      const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> hJ4 = generate_hJ();
+      // nbasis * nbasis size
+      hJ_obs_obs_ = get<0>(hJ4);
+      // nbasis * ncabs size
+      hJ_obs_cabs_ = get<1>(hJ4);
       // ncabs * nbasis size
-      K_cabs_obs_ = p.first;
+      hJ_cabs_obs_ = get<2>(hJ4);
       // ncabs * ncabs size
-      K_cabs_cabs_ = p.second;
+      hJ_cabs_cabs_ = get<3>(hJ4);
+
+      // Exchange builder (needs modification!!!)
+      const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> K4 = generate_K();
+      // nbasis * nbasis size
+      K_obs_obs_ = get<0>(K4);
+      // nbasis * ncabs size
+      K_obs_cabs_ = get<1>(K4);
+      // ncabs * nbasis size
+      K_cabs_obs_ = get<2>(K4);
+      // ncabs * ncabs size
+      K_cabs_cabs_ = get<3>(K4);
 
       {
         RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
@@ -315,6 +266,55 @@ void PMP2::compute() {
         fock_cabs_cabs_ = fcabs;
       }
     }
+
+    // Q intermediate (made of X * h)
+    RefMOFile Q;
+    {
+      RefMatrix hj_ip(new PMatrix1e(hJ_obs_obs_, make_pair(0, nocc_)));
+      RefPCoeff chj_ip(new PCoeff(*coeff_ * *hj_ip));
+
+
+      RefMatrix hj_iA(new PMatrix1e(hJ_obs_cabs_, make_pair(0, nocc_)));
+      RefPCoeff chj_iA_comb(new PCoeff(*coeff_cabs_ * *hj_iA));
+
+      pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->ncabs());
+      RefMatrix chj_iA_obs = chj_iA.first;
+      RefCoeff chj_iA_cabs(new PCoeff(*chj_iA.second));
+
+      *chj_ip += *chj_iA_obs;
+      chj_ip->scale(0.5);
+      chj_iA_cabs->scale(0.5);
+
+      // MO transform using Hartree-weighted index
+      RefMOFile X_ii_ih = stg2_->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
+#ifndef OBS_ONLY
+      // integral evaluation...
+      RefMOFile X_ii_ih_cabs;
+      {
+        shared_ptr<PCompCABSFile<SlaterBatch> >
+          stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
+                                                   false, "Slater CABS (2gamma)"));
+        stg2_cabs->store_integrals();
+        stg2_cabs->reopen_with_inout();
+        X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
+                                                        nfrc_, nocc_, nfrc_, nocc_,
+                                                        nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
+      }
+      *X_ii_ih += *X_ii_ih_cabs;
+#endif
+
+      X_ii_ih->flip_symmetry();
+      RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_ih));
+      Q = Qtmp;
+      Q->scale(2.0);
+    } // end of Q intermediate construction.
+
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  Q contrib.: " << setprecision(10) << Q->get_energy_two_amp_B().real() << endl;
+#endif
+    //Q->rprint();
 
 
     // P1 intermediate R^PQ_ij K^R_P R^kl_RQ

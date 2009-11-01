@@ -148,7 +148,7 @@ PMatrix1e& PMatrix1e::operator+=(const PMatrix1e& source) {
   assert(source.totalsize() == totalsize_);
   const int unit = 1;
   const Complex one(1.0, 0.0);
-  zaxpy_(&totalsize_, &one, source.data_->front(), &unit, data_->front(), &unit);
+  zaxpy_(&totalsize_, &one, source.data_->cfront(), &unit, data_->front(), &unit);
   return *this; 
 }
 
@@ -376,17 +376,18 @@ void PMatrix1e::rprint(const int precision) const {
 
 
 void PMatrix1e::hermite() {
+  assert(ndim_ == mdim_);
   #pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
     Complex* dat = data_->pointer(koffset);
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != nbasis_; ++j) {
-        const Complex a = dat[j + i * nbasis_]; 
-        const Complex b = dat[i + j * nbasis_]; 
-        dat[j + i * nbasis_] = (a + conj(b)) * 0.5;
-        dat[i + j * nbasis_] = (b + conj(a)) * 0.5;
+    for (int i = 0; i != ndim_; ++i) {
+      for (int j = 0; j != ndim_; ++j) {
+        const Complex a = dat[j + i * ndim_];
+        const Complex b = dat[i + j * ndim_];
+        dat[j + i * ndim_] = (a + conj(b)) * 0.5;
+        dat[i + j * ndim_] = (b + conj(a)) * 0.5;
       }
     }
   }

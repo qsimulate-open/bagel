@@ -13,7 +13,8 @@ typedef boost::shared_ptr<PGeometry> RefPGeometry;
 using namespace std;
 using namespace boost;
 
-PHcore::PHcore(const RefPGeometry g, const bool cabs) : PMatrix1e(g), cabs_(cabs) {
+PHcore::PHcore(const RefPGeometry g, const bool cabs, const bool kinetic_only)
+: PMatrix1e(g), cabs_(cabs), kinetic_only_(kinetic_only) {
 
   init();
 
@@ -39,7 +40,8 @@ void PHcore::computebatch(const vector<shared_ptr<Shell> >& input,
   nai.compute();
   const double* ndata = nai.data();
 
-  const double scale = cabs_ ? 0.5 : 1.0;
+  double scale = cabs_ ? 0.5 : 1.0;
+  if (kinetic_only_) scale = 0.0;
 
   int cnt = 0;
   for (int j = offsetb0; j != dimb0 + offsetb0; ++j) { // atoms in unit cell 0

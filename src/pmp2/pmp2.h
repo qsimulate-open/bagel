@@ -7,6 +7,7 @@
 #define __src_pmp2_pmp2_h
 
 #include <vector>
+#include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include <src/pscf/pcoeff.h>
 #include <src/pscf/pgeometry.h>
@@ -84,13 +85,9 @@ class PMP2 {
     RefMatrix fock_cabs_obs_;
     RefMatrix fock_cabs_cabs_;
     // Hartree builder
-    RefMatrix generate_hJ_obs_cabs();
-    RefMatrix generate_hJ_obs_obs();
+    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_hJ() const;
     // Exchange builder
-    RefMatrix generate_K_obs_obs();
-    RefMatrix generate_K_obs_cabs();
-    std::pair<RefMatrix, RefMatrix> generate_hJ_cabs_pair();
-    std::pair<RefMatrix, RefMatrix> generate_K_cabs_pair();
+    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K() const;
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,
