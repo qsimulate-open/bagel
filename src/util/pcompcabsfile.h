@@ -456,13 +456,13 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   size_t allocsize = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
   std::complex<double>* intermediate_mmK = new std::complex<double>[nv * std::max(KK, 1)];
-  std::complex<double>* intermediate_mKK = new std::complex<double>[nov * std::max(KK * KK, 1)];
+  PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), k, false);
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), k, true);
 
   for (int q1 = -s; q1 <= s; ++q1) {
     const bool q1_front = (q1 == -s);
     const int m1 = q1;
-    fill(intermediate_mKK, intermediate_mKK + nov * std::max(KK * KK, 1), czero);
+    intermediate_mKK.clear();
     for (int q2 = -l; q2 <= l; ++q2) {
       const int m2 = q2;
       fill(intermediate_mmK, intermediate_mmK + nv * std::max(KK, 1), czero);
@@ -590,12 +590,13 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       } // end of m3 loop
 
       // intermediate_mmK is ready
-      #pragma omp parallel for
+      //#pragma omp parallel for
       for (int nkb = -k; nkb < maxK1; ++nkb) {
         std::complex<double>* conjc2 = new std::complex<double>[nbasis_j_ * jsize];
         const int nkbc = nkb + k;
-        int nbj = nkbc * KK;
-        for (int nkj = -k, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {
+        const int nbj = nkbc * KK;
+        fill(datas, datas+std::max(nov*KK, nov), czero);
+        for (int nkj = -k; nkj != maxK1; ++nkj) {
           const double img = k != 0 ? ((- m2 * nkj * pi) / k) : 0.0;
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
@@ -605,8 +606,9 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const int nsize = nbasis_a_ * nbasis_i_ * bsize;
           zgemm_("N", "N", &nsize, &jsize, &nbasis_j_, &prefac, intermediate_mmK + nv * nkbc, &nsize,
                                                                 conjc2, &nbasis_j_, &cone,
-                                                                intermediate_mKK + nov * nbj, &nsize);
+                                                                datas+(nkj+k)*nov, &nsize);
         }
+        intermediate_mKK.put_block(nbj*nov, std::max(nov*KK, nov), datas);
         delete[] conjc2;
       } // end of contraction j for given m2
 
@@ -615,7 +617,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     // intermediate_mKK is ready
     for (int nkb = -k, nbja = 0, nbj = 0; nkb != maxK1; ++nkb) {
       for (int nkj = -k; nkj != maxK1; ++nkj, ++nbj) {
-        ::memcpy(datas, intermediate_mKK + nov * nbj, nov * sizeof(std::complex<double>));
+        intermediate_mKK.get_block(nov*nbj, std::max(nov*KK, nov), datas);
         {
           const int m = nbasis_i_ * nbasis_a_;
           const int n = jsize * bsize;
@@ -683,7 +685,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   delete[] datas;
   delete[] data_read;
   delete[] intermediate_mmK;
-  delete[] intermediate_mKK;
   delete[] blocks;
 
   std::cout << "  done" << std::endl <<std::endl;
