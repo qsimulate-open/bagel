@@ -75,9 +75,9 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
   if (!ifs.is_open()) {
     throw std::runtime_error("Basis file not found");
   } else {
-    regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9\\.]+)\\s+"); 
-    regex other_line("^\\s*([0-9\\.-]+)\\s+"); 
-    regex coeff_line("([0-9\\.-]+)\\s*");
+    regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
+    regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
+    regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
     regex atom_line("Atom:" + nm );
  
     string buffer;
