@@ -66,7 +66,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 
   map<string, int> atommap = atommap_.atommap;
   map<string, int>::iterator tmpiter = atommap.find(nm); 
-  assert(tmpiter != atommap.end());
+  if (tmpiter == atommap.end()) throw runtime_error("Unknown atom specified.");
   atom_number_ = tmpiter->second; 
 
   // this will be used in the construction of Basis_batch
@@ -140,7 +140,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
         break;
       }
     }
-    assert(basis_found);
+    if (!basis_found) throw runtime_error("Basis was not found.");
 
     // convert basis_info to vector<Shell> 
     vector<tuple<string, vector<double>, vector<vector<double> > > >::const_iterator biter; 
@@ -153,7 +153,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
       for (biter = basis_info.begin(); biter != basis_info.end(); ++biter) {
         map<string, int> angmap = atommap_.angmap;
         map<string, int>::iterator miter = angmap.find(biter->get<0>());  
-        assert(miter != angmap.end());
+        if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
         const int angular = miter->second; 
         if (angular != i) continue;
         

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
+#include <stdexcept>
 #include <boost/tuple/tuple.hpp>
 #include <src/pmp2/pmp2.h>
 #include <src/macros.h>
@@ -39,7 +40,9 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const s
   noovv_ = nocc_act_ * nocc_act_ * nbasis_ * nbasis_;
   ncabs_ = geom_->ncabs();
 
-  assert(geom_->ncabs() != 0);
+  if (geom_->ncabs() == 0) {
+    throw runtime_error("CABS should be specified.");
+  }
 
 }
 

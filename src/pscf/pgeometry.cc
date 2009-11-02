@@ -8,6 +8,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cmath>
@@ -18,7 +19,7 @@ using namespace boost;
 PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil, levl) {
   ifstream ifs;
   ifs.open(fil.c_str());
-  assert(ifs.is_open());
+  if(!ifs.is_open()) throw runtime_error("input file could not be opened.");
 
   smatch what;
   regex reg("Periodic");

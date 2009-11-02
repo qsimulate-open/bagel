@@ -8,6 +8,7 @@
 
 #include <list>
 #include <cassert>
+#include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include <complex>
 #include <src/pscf/f77.h>
@@ -89,7 +90,7 @@ class DIIS {
       const int cdim = cnum + 1;
       int info_in_diis;
       zhesv_("U", &cdim, &unit, matrix_, &nld_, ipiv_, coeff_, &nld_, work_, &lwork_, &info_in_diis);
-      assert(info_in_diis == 0);
+      if(info_in_diis != 0) throw std::runtime_error("DHESV in DIIS failed");
 
       RefT out(new T(e->geom())); 
 

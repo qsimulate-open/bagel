@@ -60,16 +60,10 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (bad_alloc &e) {
-    cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
-         << e.what() << endl;
-    throw;
-  } catch (exception &e) {
-    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
-         << e.what() << endl;
+  } catch (const exception &e) {
+    cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
     throw;
   } catch (...) {
-    cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
     throw;
   }
 
