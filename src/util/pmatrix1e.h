@@ -60,6 +60,8 @@ class PMatrix1e {
 
     void hermite();
     void real();
+    void conj();
+    void conj_transpose();
     void scale(const std::complex<double>);
     const std::complex<double>* bp(const int k) const { return data_->pointer((k + geom_->K()) * blocksize_); };
     std::complex<double>* bpw(const int k) { return data_->pointer((k + geom_->K()) * blocksize_); };

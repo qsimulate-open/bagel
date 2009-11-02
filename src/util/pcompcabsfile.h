@@ -397,6 +397,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const int jsize = jfence - jstart;
   const int asize = afence - astart;
   const int bsize = bfence - bstart;
+
   const size_t noovv = static_cast<size_t>(isize) * jsize * asize * bsize;
   assert(noovv > 0);
 
@@ -442,7 +443,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const size_t alloc = nmax * std::max(KK, 1);
   std::complex<double>* data = new std::complex<double>[alloc];
   std::complex<double>* datas = new std::complex<double>[alloc];
-  std::complex<double>* conjc = new std::complex<double>[std::max(isize * nbasis_i_, jsize * nbasis_j_)];
   double* data_read = new double[this->max_num_int_ * (s*2+1)];
 
   int* blocks = new int[nbasis4 + 1];
@@ -573,7 +573,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         #pragma omp parallel for
         for (int nkb = -k; nkb < maxK1; ++nkb) {
           const int nkbc = nkb + k;
-          const std::complex<double> exponent(0.0, k != 0 ? (m3 * nkb * pi) / k : 0.0);
+          const double img = k != 0 ? ((m3 * nkb * pi) / k) : 0.0;
+          const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
           int offset1 = 0;
           int offset2 = 0;
@@ -595,7 +596,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const int nkbc = nkb + k;
         int nbj = nkbc * KK;
         for (int nkj = -k, nkjc = 0; nkj != maxK1; ++nkj, ++nbj, ++nkjc) {
-          const std::complex<double> exponent(0.0, k != 0 ? (- m2 * nkj * pi) / k : 0.0);
+          const double img = k != 0 ? ((- m2 * nkj * pi) / k) : 0.0;
+          const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
 
           const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis_j_ * jstart;
@@ -624,7 +626,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         #pragma omp parallel for
         for (int nka = -k; nka < maxK1; ++nka) {
           const int nkac = nka + k;
-          const std::complex<double> exponent(0.0, k != 0 ? (m1 * nka * pi)/ k : 0.0);
+          const double img = k != 0 ? ((m1 * nka * pi)/ k) : 0.0;
+          const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
           int offset1 = 0;
@@ -679,7 +682,6 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   delete[] data;
   delete[] datas;
   delete[] data_read;
-  delete[] conjc;
   delete[] intermediate_mmK;
   delete[] intermediate_mKK;
   delete[] blocks;

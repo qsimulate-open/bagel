@@ -251,6 +251,7 @@ void SlaterBatch::compute() {
   }
 
   delete[] bkup_;
+  if (yukawa_) delete[] bkup2_;
 }
 
 

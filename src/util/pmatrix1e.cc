@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <cstring>
 #include <cmath>
+#include <stdexcept>
+#include <complex>
 #include <src/util/pmatrix1e.h>
 #include <src/pscf/f77.h>
 #include <src/macros.h>
@@ -311,8 +313,8 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
     complex<double>* vblock = V->data()->pointer(V->blocksize() * (i + K()));
     int info = 0;
     zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, &info);
-    assert(info == 0);
-    for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(1) << fixed << S[j] << " ";
+    if (info != 0) throw runtime_error("zgesvd failed in PMatrix1e::svd");
+    for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(10) << fixed << S[j] << " ";
     cout << endl;
   }
   delete[] S;
@@ -366,7 +368,7 @@ void PMatrix1e::rprint(const int precision) const {
     cout << "K = " << setw(2) << k << ":" << endl;
     for (int i = 0; i != mdim_; ++i) {
       for (int j = 0; j != ndim_; ++j, ++index) {
-        cout << setw(precision+3) << setprecision(precision) << (*data_)[index].real() * 2.0 << " ";
+        cout << setw(precision+3) << setprecision(precision) << (*data_)[index].real() << " ";
       }
       cout << endl;
     }
@@ -386,8 +388,8 @@ void PMatrix1e::hermite() {
       for (int j = 0; j != ndim_; ++j) {
         const Complex a = dat[j + i * ndim_];
         const Complex b = dat[i + j * ndim_];
-        dat[j + i * ndim_] = (a + conj(b)) * 0.5;
-        dat[i + j * ndim_] = (b + conj(a)) * 0.5;
+        dat[j + i * ndim_] = (a + std::conj(b)) * 0.5;
+        dat[i + j * ndim_] = (b + std::conj(a)) * 0.5;
       }
     }
   }
@@ -400,11 +402,45 @@ void PMatrix1e::real() {
     const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
     Complex* dat = data_->pointer(koffset);
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != nbasis_; ++j) {
-        dat[j + i * nbasis_] = (dat[j + i * nbasis_]).real();
+    for (int i = 0; i != mdim_; ++i) {
+      for (int j = 0; j != ndim_; ++j) {
+        dat[j + i * ndim_] = (dat[j + i * ndim_]).real();
       }
     }
+  }
+}
+
+
+void PMatrix1e::conj() {
+  #pragma omp parallel for
+  for (int k = -K(); k <= K(); ++k) {
+    const int kcount = k + K();
+    const int koffset = kcount * blocksize_;
+    Complex* dat = data_->pointer(koffset);
+    for (int i = 0; i != mdim_; ++i) {
+      for (int j = 0; j != ndim_; ++j) {
+        dat[j + i * ndim_] = std::conj(dat[j + i * ndim_]);
+      }
+    }
+  }
+}
+
+
+void PMatrix1e::conj_transpose() {
+  assert(ndim_ == mdim_);
+  #pragma omp parallel for
+  for (int k = -K(); k <= K(); ++k) {
+    Complex* work = new Complex[blocksize_];
+    const int kcount = k + K();
+    const int koffset = kcount * blocksize_;
+    Complex* dat = data_->pointer(koffset);
+    copy(dat, dat+blocksize_, work);
+    for (int i = 0; i != mdim_; ++i) {
+      for (int j = 0; j != ndim_; ++j) {
+        dat[j + i * ndim_] = std::conj(work[i + j * ndim_]);
+      }
+    }
+    delete[] work;
   }
 }
 
@@ -470,12 +506,13 @@ const double PMatrix1e::rms() const {
 
 
 const double PMatrix1e::trace() const {
+  assert(ndim_ == mdim_);
   double out = 0.0;
   int scount = 0;
   for (int s = -L(); s <= L(); ++s, ++scount) {
     const int boffset =  scount * blocksize_; 
-    for (int i = 0; i != nbasis_; ++i)
-      out += ((*data_)[boffset + i * nbasis_ + i]).real(); 
+    for (int i = 0; i != ndim_; ++i)
+      out += ((*data_)[boffset + i * ndim_ + i]).real();
   }
   return out;
 }
@@ -547,7 +584,7 @@ shared_ptr<PMatrix1e> PMatrix1e::mo_transform(shared_ptr<PMatrix1e> coeff,
     Complex* outdata = out->bpw(k);
 
     int iall = 0;
-    for (int i = istart*ndim_; i != ifence*ndim_; ++i, ++iall) tmp[iall] = conj(co[i]);
+    for (int i = istart*ndim_; i != ifence*ndim_; ++i, ++iall) tmp[iall] = std::conj(co[i]);
 
     zgemm_("N", "N", &ndim_, &isize, &ndim_, &one, data, &ndim_, tmp, &ndim_, &zero, tmp2, &ndim_);
 

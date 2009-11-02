@@ -286,27 +286,29 @@ void PMP2::compute() {
       chj_iA_cabs->scale(0.5);
 
       // MO transform using Hartree-weighted index
-      RefMOFile X_ii_ih = stg2_->mo_transform(coeff_, coeff_,  chj_ip, coeff_,
+      RefMOFile X_ii_hi = stg2_->mo_transform(coeff_, coeff_, chj_ip, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
+
 #ifndef OBS_ONLY
       // integral evaluation...
-      RefMOFile X_ii_ih_cabs;
+      RefMOFile X_ii_hi_cabs;
       {
         shared_ptr<PCompCABSFile<SlaterBatch> >
           stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
                                                    false, "Slater CABS (2gamma)"));
         stg2_cabs->store_integrals();
         stg2_cabs->reopen_with_inout();
-        X_ii_ih_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_,  chj_iA_cabs, coeff_,
+
+        X_ii_hi_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, chj_iA_cabs, coeff_,
                                                         nfrc_, nocc_, nfrc_, nocc_,
                                                         nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
       }
-      *X_ii_ih += *X_ii_ih_cabs;
+      *X_ii_hi += *X_ii_hi_cabs;
 #endif
 
-      X_ii_ih->flip_symmetry();
-      RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_ih));
+      X_ii_hi->flip_symmetry();
+      RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_hi));
       Q = Qtmp;
       Q->scale(2.0);
     } // end of Q intermediate construction.
@@ -352,6 +354,9 @@ void PMP2::compute() {
                                                     0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, CABS 3/3"));
         p1 = p1_1->contract(p1_2, "P1: R^PQ_ij K^R_P R^kl_RQ case1");
       }
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P1 case1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
+#endif
       // second, evaluate R^PA_ij K^r_P R^kl_rA
       RefMOFile p1_5_ket;
       {
@@ -422,6 +427,9 @@ void PMP2::compute() {
       }
       p1->flip_symmetry();
       P = p1;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
+#endif
     }
 
 
@@ -478,6 +486,9 @@ void PMP2::compute() {
       }
       p2->flip_symmetry();
       *P += *p2;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P2 contrib.: " << setprecision(10) << p2->get_energy_two_amp_B().real() << endl;
+#endif
     }
 
     // P3 intermediate R^mA_ij f^n_m R^kl_nA
@@ -501,6 +512,9 @@ void PMP2::compute() {
         p3->flip_symmetry();
 
         *P -= *p3;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P3 contrib.: " << setprecision(10) << p3->get_energy_two_amp_B().real() << endl;
+#endif
       }
 
        // P5A intermediate R^mA_ij f^P_m R^kl_PA
@@ -523,6 +537,9 @@ void PMP2::compute() {
         p5a->scale(2.0);
         //p5a->rprint();
         *P += *p5a;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P5a contrib.: " << setprecision(10) << p5a->get_energy_two_amp_B().real() << endl;
+#endif
       }
     }
 
@@ -542,6 +559,9 @@ void PMP2::compute() {
         //p4->rprint();
 
         *P += *p4;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P4 contrib.: " << setprecision(10) << p4->get_energy_two_amp_B().real() << endl;
+#endif
       }
 
       // P5b intermediate  R^Ab_ij f^p_A R^kl_pb
@@ -557,6 +577,9 @@ void PMP2::compute() {
         p5b->scale(2.0);
 
         *P += *p5b;
+#ifdef DEBUG_PRINT
+    cout << "**** debug ****  P5b contrib.: " << setprecision(10) << p5b->get_energy_two_amp_B().real() << endl;
+#endif
       }
     }
 

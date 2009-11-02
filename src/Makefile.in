@@ -48,9 +48,9 @@ PROGRAMS = $(bin_PROGRAMS)
 am_NEWPROGRAM_OBJECTS = main.$(OBJEXT)
 NEWPROGRAM_OBJECTS = $(am_NEWPROGRAM_OBJECTS)
 am__DEPENDENCIES_1 =
-NEWPROGRAM_DEPENDENCIES = scf/libscf.a rysint/librysint.a \
-	osint/libosint.a slater/libslater.a pscf/libpscf.a \
-	pmp2/libpmp2.a util/libutil.a $(am__DEPENDENCIES_1)
+NEWPROGRAM_DEPENDENCIES = util/libutil.a scf/libscf.a \
+	rysint/librysint.a osint/libosint.a slater/libslater.a \
+	pscf/libpscf.a pmp2/libpmp2.a $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -197,7 +197,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = rysint osint scf slater pscf pmp2 util
 NEWPROGRAM_SOURCES = main.cc
-NEWPROGRAM_LDADD = scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a $(FLIBS) -lblas -llapack
+NEWPROGRAM_LDADD = util/libutil.a scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a $(FLIBS) -lblas -llapack
 all: all-recursive
 
 .SUFFIXES:
