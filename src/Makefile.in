@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = NEWPROGRAM$(EXEEXT)
+bin_PROGRAMS = PolyR12$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -45,12 +45,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_NEWPROGRAM_OBJECTS = main.$(OBJEXT)
-NEWPROGRAM_OBJECTS = $(am_NEWPROGRAM_OBJECTS)
+am_PolyR12_OBJECTS = main.$(OBJEXT)
+PolyR12_OBJECTS = $(am_PolyR12_OBJECTS)
 am__DEPENDENCIES_1 =
-NEWPROGRAM_DEPENDENCIES = util/libutil.a scf/libscf.a \
-	rysint/librysint.a osint/libosint.a slater/libslater.a \
-	pscf/libpscf.a pmp2/libpmp2.a $(am__DEPENDENCIES_1)
+PolyR12_DEPENDENCIES = scf/libscf.a rysint/librysint.a \
+	osint/libosint.a slater/libslater.a pscf/libpscf.a \
+	pmp2/libpmp2.a util/libutil.a $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -60,8 +60,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(NEWPROGRAM_SOURCES)
-DIST_SOURCES = $(NEWPROGRAM_SOURCES)
+SOURCES = $(PolyR12_SOURCES)
+DIST_SOURCES = $(PolyR12_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -196,8 +196,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = rysint osint scf slater pscf pmp2 util
-NEWPROGRAM_SOURCES = main.cc
-NEWPROGRAM_LDADD = util/libutil.a scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a $(FLIBS) -lblas -llapack
+PolyR12_SOURCES = main.cc
+PolyR12_LDADD = scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a $(FLIBS) -lblas -llapack
 all: all-recursive
 
 .SUFFIXES:
@@ -269,9 +269,9 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-NEWPROGRAM$(EXEEXT): $(NEWPROGRAM_OBJECTS) $(NEWPROGRAM_DEPENDENCIES) 
-	@rm -f NEWPROGRAM$(EXEEXT)
-	$(CXXLINK) $(NEWPROGRAM_OBJECTS) $(NEWPROGRAM_LDADD) $(LIBS)
+PolyR12$(EXEEXT): $(PolyR12_OBJECTS) $(PolyR12_DEPENDENCIES) 
+	@rm -f PolyR12$(EXEEXT)
+	$(CXXLINK) $(PolyR12_OBJECTS) $(PolyR12_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
