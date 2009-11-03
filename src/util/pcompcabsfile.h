@@ -608,7 +608,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
                                                                 conjc2, &nbasis_j_, &cone,
                                                                 datas+(nkj+k)*nov, &nsize);
         }
-        intermediate_mKK.put_block(nbj*nov, std::max(nov*KK, nov), datas);
+        intermediate_mKK.add_block(nbj*nov, std::max(nov*KK, nov), datas);
         delete[] conjc2;
       } // end of contraction j for given m2
 
@@ -617,7 +617,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     // intermediate_mKK is ready
     for (int nkb = -k, nbja = 0, nbj = 0; nkb != maxK1; ++nkb) {
       for (int nkj = -k; nkj != maxK1; ++nkj, ++nbj) {
-        intermediate_mKK.get_block(nov*nbj, std::max(nov*KK, nov), datas);
+        intermediate_mKK.get_block(nov*nbj, nov, datas);
         {
           const int m = nbasis_i_ * nbasis_a_;
           const int n = jsize * bsize;
