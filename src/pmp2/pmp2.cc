@@ -426,7 +426,7 @@ void PMP2::compute() {
                                                      nfrc_, nocc_, nfrc_, nocc_,
                                                      0, ncabs_, 0, ncabs_, "P1: R^PQ_ij K^R_P R^kl_RQ case4, CABS2 7/7"));
 
-        *p1 += *(p1_7->contract(p1_8, "P1: R^PQ_ij K^R_P R^kl_RQ case3"));
+        *p1 += *(p1_7->contract(p1_8, "P1: R^PQ_ij K^R_P R^kl_RQ case4"));
       }
       p1->flip_symmetry();
       P = p1;
