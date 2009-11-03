@@ -278,7 +278,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
 
 template<class T>
 void PCompCABSFile<T>::store_integrals() {
-  const size_t cachesize_max = 100000000lu;
+  const size_t cachesize_max = 10000000lu;
   const size_t cachesize = std::max(cachesize_max, this->max_num_int_);
 
   const int s = this->S_;
@@ -590,13 +590,14 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       } // end of m3 loop
 
       // intermediate_mmK is ready
-      //#pragma omp parallel for
+
       for (int nkb = -k; nkb < maxK1; ++nkb) {
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis_j_ * jsize];
         const int nkbc = nkb + k;
         const int nbj = nkbc * KK;
         fill(datas, datas+std::max(nov*KK, nov), czero);
-        for (int nkj = -k; nkj != maxK1; ++nkj) {
+        #pragma omp parallel for
+        for (int nkj = -k; nkj < maxK1; ++nkj) {
+          std::complex<double>* conjc2 = new std::complex<double>[nbasis_j_ * jsize];
           const double img = k != 0 ? ((- m2 * nkj * pi) / k) : 0.0;
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
@@ -607,9 +608,9 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           zgemm_("N", "N", &nsize, &jsize, &nbasis_j_, &prefac, intermediate_mmK + nv * nkbc, &nsize,
                                                                 conjc2, &nbasis_j_, &cone,
                                                                 datas+(nkj+k)*nov, &nsize);
+          delete[] conjc2;
         }
         intermediate_mKK.add_block(nbj*nov, std::max(nov*KK, nov), datas);
-        delete[] conjc2;
       } // end of contraction j for given m2
 
     } // end of m2 loop
