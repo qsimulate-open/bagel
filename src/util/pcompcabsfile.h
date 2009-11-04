@@ -50,7 +50,29 @@ class PCompCABSFile : public PCompFile<T> {
         const bool i_is_cabs, const bool j_is_cabs, const bool a_is_cabs, const bool b_is_cabs,
         const bool late_init = false, const std::string jobname = "source");
 
-    const double cabs_schwarz(int i) const { return schwarz_jb_[i]; };
+    int offset_i(const size_t i) const { return offset_i_[i]; };
+    int offset_j(const size_t j) const { return offset_j_[j]; };
+    int offset_a(const size_t a) const { return offset_a_[a]; };
+    int offset_b(const size_t b) const { return offset_b_[b]; };
+
+    const boost::shared_ptr<Shell> basis_i(const size_t i) const { return basis_i_[i]; };
+    const boost::shared_ptr<Shell> basis_j(const size_t j) const { return basis_j_[j]; };
+    const boost::shared_ptr<Shell> basis_a(const size_t a) const { return basis_a_[a]; };
+    const boost::shared_ptr<Shell> basis_b(const size_t b) const { return basis_b_[b]; };
+
+    int size_i() const { return size_i_; };
+    int size_j() const { return size_j_; };
+    int size_a() const { return size_a_; };
+    int size_b() const { return size_b_; };
+
+    int nbasis_i() const { return nbasis_i_; };
+    int nbasis_j() const { return nbasis_j_; };
+    int nbasis_a() const { return nbasis_a_; };
+    int nbasis_b() const { return nbasis_b_; };
+
+    const double schwarz_ia(const size_t i) const { return schwarz_ia_[i]; };
+    const double schwarz_jb(const size_t i) const { return schwarz_jb_[i]; };
+
     std::vector<int> cabs_offset() const { return cabs_offset_; };
     int cabs_offset(size_t i) const { return cabs_offset_[i]; };
     const size_t cabs_nbasis(size_t i) const { return cabs_basis_[i]->nbasis(); };
