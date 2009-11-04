@@ -70,7 +70,7 @@ ARFLAGS = cru
 libpmp2_a_AR = $(AR) $(ARFLAGS)
 libpmp2_a_LIBADD =
 am_libpmp2_a_OBJECTS = pmp2.$(OBJEXT) compute_conv_mp2.$(OBJEXT) \
-	cabs.$(OBJEXT)
+	cabs.$(OBJEXT) coulomb_runtime.$(OBJEXT)
 libpmp2_a_OBJECTS = $(am_libpmp2_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -179,7 +179,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libpmp2.a
-libpmp2_a_SOURCES = pmp2.cc compute_conv_mp2.cc cabs.cc
+libpmp2_a_SOURCES = pmp2.cc compute_conv_mp2.cc cabs.cc coulomb_runtime.cc
 all: all-am
 
 .SUFFIXES:
@@ -259,6 +259,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cabs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compute_conv_mp2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coulomb_runtime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmp2.Po@am__quote@
 
 .cc.o:
