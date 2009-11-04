@@ -90,6 +90,7 @@ class PMP2 {
     const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K() const;
 
     RefMatrix coulomb_runtime_OBS() const;
+    RefMatrix exchange_runtime_OBS() const;
     RefMatrix coulomb_runtime() const;
 
   public:
