@@ -61,13 +61,18 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ() const {
   // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
 
+#define USE_BUILDER
   // hcore contribution.
   RefHcore uhc(new PHcore(union_geom_, true));
   RefMatrix aohcore(new PMatrix1e(uhc->ft()));
+
+
   RefMatrix mohcore(new PMatrix1e(*coeff_entire_ % *aohcore * *coeff_entire_));
 
   // coulomb obs_obs block
+
   RefMatrix coulomb_oo;
+#ifndef USE_BUILDER
   {
     RefMOFile eri_pI_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                  0, nbasis_, 0, nocc_,
@@ -75,7 +80,15 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ
 
 
     coulomb_oo = eri_pI_pI->contract_density_J();
+    coulomb_oo->print();
   }
+#else
+  {
+    RefMatrix ao_coulomb = coulomb_runtime_OBS();
+    RefMatrix mo_coulomb(new PMatrix1e(*coeff_ % *ao_coulomb * *coeff_));
+    coulomb_oo = mo_coulomb;
+  }
+#endif
 
   // coulomb obs_cabs block
   RefMatrix coulomb_oc;
@@ -229,4 +242,109 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K(
 
   return make_tuple(h_exchange_o_pair.first, h_exchange_o_pair.second, h_exchange_c_pair.first, h_exchange_c_pair.second);
 }
+
+
+
+RefMatrix PMP2::coulomb_runtime_OBS() const {
+
+  RefMatrix density(new PMatrix1e(coeff_->form_density_rhf()));
+  const complex<double>* den = density->data()->front();
+
+  RefMatrix coulomb_real_space(new PMatrix1e(geom_));
+  complex<double>* data = coulomb_real_space->data()->front();
+
+  size_t allocsize = eri_obs_->max_num_int();
+  double* diskdata = new double[allocsize];
+
+  const int s = geom_->S();
+  const int l = geom_->L();
+
+  long file_position = 0l;
+  size_t mcnt = 0lu;
+  for (int m1 = -s; m1 <= s; ++m1) {
+    for (int m2 = 0; m2 <= l; ++m2) { // use bra-ket symmetry!!!
+      for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++mcnt) {
+
+        const int k = geom_->K();
+        const size_t b = coulomb_real_space->blocksize();
+        assert(coulomb_real_space->blocksize() == density->blocksize());
+        const int n = geom_->nbasis();
+
+        const int m1________k____b = (m1      + k) * b;
+        const int m1___m2___k____b = (m1 - m2 + k) * b;
+        const int m2___m1___k____b = (m2 - m1 + k) * b;
+        const int m2___m3___k____b = (m2 - m3 + k) * b;
+        const int m3___m2___k____b = (m3 - m2 + k) * b;
+        const int m3________k____b = (m3      + k) * b;
+        const int _____m1___k____b = (   - m1 + k) * b;
+        const int _____m3___k____b = (   - m3 + k) * b;
+
+        {
+          eri_obs_->get_block(file_position, eri_obs_->num_int_each(mcnt), diskdata);
+          file_position += eri_obs_->num_int_each(mcnt);
+          const double* cdata = diskdata;
+
+          const int size = eri_obs_->basissize(); // number of shells
+          for (int i0 = 0; i0 != size; ++i0) {
+            const int b0offset = eri_obs_->offset(i0);
+            const int b0size = eri_obs_->nbasis(i0);
+
+            for (int i1 = 0; i1 != size; ++i1) {
+              const int b1offset = eri_obs_->offset(i1);
+              const int b1size = eri_obs_->nbasis(i1);
+
+              for (int i2 = 0; i2 != size; ++i2) {
+                const int b2offset = eri_obs_->offset(i2);
+                const int b2size = eri_obs_->nbasis(i2);
+
+                for (int i3 = 0; i3 != size; ++i3) {
+                  const int b3offset = eri_obs_->offset(i3);
+                  const int b3size = eri_obs_->nbasis(i3);
+
+                  const double integral_bound = eri_obs_->schwarz(((m1      + k) * size + i0) * size + i1)
+                                              * eri_obs_->schwarz(((m3 - m2 + k) * size + i2) * size + i3);
+                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                  if (skip_schwarz) continue;
+
+                  if (m2 != 0) {
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
+                            const double integral2 = *cdata + *cdata;
+                            data[m1________k____b + j0n + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
+                            data[m3___m2___k____b + j2n + j3] += den[_____m1___k____b + j1n + j0] * integral2;
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
+                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
+                            const double integral2 = *cdata + *cdata;
+                            data[m1________k____b + j0n + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                }
+              }
+            }
+          }
+        }
+
+      }
+    }
+  }
+
+  delete[] diskdata;
+  RefMatrix out(new PMatrix1e(coulomb_real_space->ft()));
+  return out;
+}
+
+
 

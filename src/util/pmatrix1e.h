@@ -71,7 +71,7 @@ class PMatrix1e {
     const int L() const { return geom_->L(); };
     const int S() const { return geom_->S(); };
     const double A() const { return geom_->A(); };
-    const boost::shared_ptr<PData> data() const { return data_; };
+    boost::shared_ptr<PData> data() const { return data_; };
     const int ndim() const { return ndim_; };
     const int mdim() const { return mdim_; };
     const int blocksize() const { return blocksize_; };

@@ -89,6 +89,8 @@ class PMP2 {
     // Exchange builder
     const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K() const;
 
+    RefMatrix coulomb_runtime_OBS() const;
+
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,
          const std::vector<double>, boost::shared_ptr<PCompFile<ERIBatch> >);
