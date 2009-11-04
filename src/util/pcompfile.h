@@ -489,7 +489,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   std::complex<double>* data = new std::complex<double>[alloc];
   std::complex<double>* datas = new std::complex<double>[alloc];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
-  double* data_read = new double[max_num_int_ * (S_ + S_ + 1)];
+  double* data_read = new double[nbasis4];
 
   const int size = basis_.size();
   int* blocks = new int[size * size * size * size + 1];
@@ -518,20 +518,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const int m3 = m2 + q3; 
 
         const double* cdata;
-
-        if (q2 >= 0 && q3 == -S_) {
-          const size_t key = sizem1 * (q2 + sizem2abs * (q1 + S_));
-          size_t readsize = 0lu; 
-          for (int i = 0; i <= S_ * 2; ++i) readsize += num_int_each_[key + i];
+        if (q2 >= 0) {
+          const size_t key = q3 + S_ + sizem1 * (q2 + sizem2abs * (q1 + S_));
           size_t datasize_acc = 0lu;
           for (int i = 0; i != key; ++i) datasize_acc += num_int_each_[i];
-          get_block(datasize_acc, readsize, data_read);
+          get_block(datasize_acc, num_int_each_[key], data_read);
           cdata = data_read;
-        } 
-        else if (q2 >= 0) {
-          cdata = data_read;
-          const size_t key = S_ + sizem1 * (q2 + sizem2abs * (q1 + S_));
-          for (int i = key - S_; i != key + q3; ++i) cdata += num_int_each_[i]; 
         }
         else { // q2 < 0
           const size_t key = q1 + S_ + sizem1 * (- q2 + sizem2abs * (q3 + S_));
