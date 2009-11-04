@@ -47,7 +47,7 @@ PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_
     filename_ = tmpf.filename_next();
   }
 
-  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::binary | std::ios::out));
+  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
   file_ = tmp;
 
   if (!late_init) {
@@ -78,7 +78,7 @@ PFile<T>::~PFile() {
 template<class T>
 void PFile<T>::reopen_with_inout() {
   file_->close();
-  file_->open(filename_.c_str(), std::ios::binary | std::ios::in | std::ios::out);
+  file_->open(filename_.c_str(), std::ios::in | std::ios::out | std::ios::binary);
 };
 
 
