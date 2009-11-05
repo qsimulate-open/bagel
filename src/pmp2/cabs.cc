@@ -21,7 +21,6 @@ typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
 typedef shared_ptr<PCoeff> RefCoeff;
-typedef shared_ptr<PMOFile<complex<double> > > RefMOFile;
 
 pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
@@ -60,89 +59,12 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
 const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ() const {
 
-#define USE_BUILDER
-  // hcore contribution.
   RefHcore uhc(new PHcore(union_geom_, true));
-
-#ifdef USE_BUILDER
 
   RefMatrix ao_hJ(new PMatrix1e((*uhc + *coulomb_runtime()).ft()));
   RefMatrix hJ(new PMatrix1e(*coeff_entire_ % *ao_hJ * *coeff_entire_));
 
-#else
-  RefMatrix aohcore(new PMatrix1e(uhc->ft()));
-  RefMatrix mohcore(new PMatrix1e(*coeff_entire_ % *aohcore * *coeff_entire_));
-  // coulomb obs_obs block
-  RefMatrix coulomb_oo;
-  {
-    RefMOFile eri_pI_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                                 0, nbasis_, 0, nocc_,
-                                                 0, nbasis_, 0, nocc_, "h+J builder (OBS-OBS; pp)");
-
-
-    coulomb_oo = eri_pI_pI->contract_density_J();
-  }
-
-  // coulomb obs_cabs block
-  RefMatrix coulomb_oc;
-  {
-    RefMOFile eri_pI_pI = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
-                                                 0, nbasis_, 0, nocc_,
-                                                 0, ncabs_, 0, nocc_, "h+J builder (OBS-CABS; pp)");
-    RefMOFile eri_pI_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
-                                                           0, nbasis_, 0, nocc_,
-                                                           0, ncabs_, 0, nocc_, "h+J builder (OBS-CABS; px)");
-    RefMOFile eri_pI_AI(new PMOFile<complex<double> >(*eri_pI_xI + *eri_pI_pI));
-
-    coulomb_oc = eri_pI_AI->contract_density_J();
-  }
-
-
-  const double gamma = geom_->gamma();
-  shared_ptr<PCompCABSFile<ERIBatch> >
-    eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "ERI CABS(j)"));
-  eri_cabs_d->store_integrals();
-  eri_cabs_d->reopen_with_inout();
-
-  // coulomb cabs_obs block
-  RefMatrix coulomb_co;
-  {
-    RefMOFile eri_AI_pI = eri_obs_->mo_transform(cabs_obs_, coeff_, coeff_, coeff_,
-                                                 0, ncabs_, 0, nocc_,
-                                                 0, nbasis_, 0, nocc_, "hJ builder (CABS-OBS; pp)");
-    *eri_AI_pI += *(eri_cabs_d->mo_transform_cabs_aux(cabs_aux_, coeff_, coeff_, coeff_,
-                                                      0, ncabs_, 0, nocc_,
-                                                      0, nbasis_, 0, nocc_, "hJ builder (CABS-OBS; xp)"));
-    coulomb_co = eri_AI_pI->contract_density_J();
-  }
-
-  shared_ptr<PCompCABSFile<ERIBatch> >
-    eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "ERI CABS(ja)"));
-  eri_cabs_t->store_integrals();
-  eri_cabs_t->reopen_with_inout();
-
-  // coulomb cabs_cabs block
-  RefMatrix coulomb_cc;
-  {
-    RefMOFile eri_AI_AI = eri_cabs_t->mo_transform_cabs_aux(cabs_aux_, coeff_, cabs_aux_, coeff_,
-                                                            0, ncabs_, 0, nocc_,
-                                                            0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; xx)");
-    *eri_AI_AI += *(eri_obs_->mo_transform(cabs_obs_, coeff_, cabs_obs_, coeff_,
-                                           0, ncabs_, 0, nocc_,
-                                           0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; pp)"));
-    *eri_AI_AI += *(eri_cabs_d->mo_transform_cabs_aux(cabs_aux_, coeff_, cabs_obs_, coeff_,
-                                                      0, ncabs_, 0, nocc_,
-                                                      0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; xp)"));
-    *eri_AI_AI += *(eri_cabs_->mo_transform_cabs_aux(cabs_obs_, coeff_, cabs_aux_, coeff_,
-                                                     0, ncabs_, 0, nocc_,
-                                                     0, ncabs_, 0, nocc_, "hJ builder (CABS-CABS; px)"));
-    coulomb_cc = eri_AI_AI->contract_density_J();
-  }
-
-  RefMatrix coulomb(new PMatrix1e(coulomb_oo->merge(coulomb_oc), coulomb_co->merge(coulomb_cc)));
-  coulomb->conj();
-  RefMatrix hJ(new PMatrix1e(*coulomb+*mohcore));
-#endif
+  hJ->hermite();
 
   RefMatrix h_hJ_o(new PMatrix1e(hJ, make_pair(0, geom_->nbasis())));
   RefMatrix h_hJ_c(new PMatrix1e(hJ, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
@@ -154,86 +76,12 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ
 }
 
 
-
-
 const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K() const {
-  // TODO INEFFICIENT CODE!!! Hartree matrix needs to be constructed in AO basis.
 
-  // obs_obs block
-  RefMatrix exchange_oo;
-#if 0
-  {
-    RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                                 0, nocc_, 0, nbasis_,
-                                                 0, nbasis_, 0, nocc_, "K builder (OBS-OBS; pp)");
-    exchange_oo = eri_Ip_pI->contract_density_K();
-  }
-#else
-  RefMatrix tmp(new PMatrix1e(*coeff_ % *exchange_runtime_OBS() * *coeff_));
-  exchange_oo = tmp;
-  exchange_oo->conj();
-#endif
+  RefMatrix ao_K(new PMatrix1e(exchange_runtime()->ft()));
+  RefMatrix exchange(new PMatrix1e(*coeff_entire_ % *ao_K * *coeff_entire_));
 
-  // obs_cabs block
-  RefMatrix exchange_oc;
-  {
-    RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
-                                                 0, nocc_, 0, nbasis_,
-                                                 0, ncabs_, 0, nocc_, "K builder (OBS-CABS; pp)");
-    RefMOFile eri_Ip_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
-                                                           0, nocc_, 0, nbasis_,
-                                                           0, ncabs_, 0, nocc_, "K builder (OBS-CABS; px)");
-    RefMOFile eri_Ip_AI(new PMOFile<complex<double> >(*eri_Ip_xI + *eri_Ip_pI));
-    exchange_oc = eri_Ip_AI->contract_density_K();
-  }
-
-  const double gamma = geom_->gamma();
-  shared_ptr<PCompCABSFile<ERIBatch> >
-    eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, false, true, false, false, false, "ERI CABS(j)"));
-  eri_cabs_d->store_integrals();
-  eri_cabs_d->reopen_with_inout();
-
-  //  cabs_obs block
-  RefMatrix exchange_co;
-  {
-    RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, cabs_obs_, coeff_, coeff_,
-                                                 0, nocc_, 0, ncabs_,
-                                                 0, nbasis_, 0, nocc_, "K builder (CABS-OBS; pp)");
-    RefMOFile eri_Ix_pI = eri_cabs_d->mo_transform_cabs_aux(coeff_, cabs_aux_, coeff_, coeff_,
-                                                            0, nocc_, 0, ncabs_,
-                                                            0, nbasis_, 0, nocc_, "K builder (CABS-OBS; xp)");
-    RefMOFile eri_IA_pI(new PMOFile<complex<double> >(*eri_Ix_pI + *eri_Ip_pI));
-    exchange_co = eri_IA_pI->contract_density_K();
-  }
-
-  shared_ptr<PCompCABSFile<ERIBatch> >
-    eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, false, true, true, false, false, "ERI CABS(ja)"));
-  eri_cabs_t->store_integrals();
-  eri_cabs_t->reopen_with_inout();
-
-  // cabs-cabs block
-  RefMatrix exchange_cc;
-  {
-    RefMOFile eri_Ix_xI = eri_cabs_t->mo_transform_cabs_aux(coeff_, cabs_aux_, cabs_aux_, coeff_,
-                                                            0, nocc_, 0, ncabs_,
-                                                            0, ncabs_, 0, nocc_, "K builder (CABS-CABS; xx)");
-    RefMOFile eri_Ip_pI = eri_obs_->mo_transform(coeff_, cabs_obs_, cabs_obs_, coeff_,
-                                                 0, nocc_, 0, ncabs_,
-                                                 0, ncabs_, 0, nocc_, "K builder (CABS-CABS; pp)");
-    RefMOFile eri_Ix_pI = eri_cabs_d->mo_transform_cabs_aux(coeff_, cabs_aux_, cabs_obs_, coeff_,
-                                                            0, nocc_, 0, ncabs_,
-                                                            0, ncabs_, 0, nocc_, "K builder (CABS-CABS; xp)");
-    RefMOFile eri_Ip_xI = eri_cabs_->mo_transform_cabs_aux(coeff_, cabs_obs_, cabs_aux_, coeff_,
-                                                           0, nocc_, 0, ncabs_,
-                                                           0, ncabs_, 0, nocc_, "K builder (CABS-CABS; px)");
-    RefMOFile eri_IA_AI(new PMOFile<complex<double> >(*eri_Ip_pI + *eri_Ix_pI + *eri_Ip_xI + *eri_Ix_xI));
-    exchange_cc = eri_IA_AI->contract_density_K();
-  }
-
-  // first form entire matrix
-  RefMatrix exchange(new PMatrix1e(exchange_oo->merge(exchange_oc), exchange_co->merge(exchange_cc)));
-  // this is an important step!!!
-  exchange->conj();
+  exchange->hermite();
 
   RefMatrix h_exchange_o(new PMatrix1e(exchange, make_pair(0, geom_->nbasis())));
   RefMatrix h_exchange_c(new PMatrix1e(exchange, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
@@ -243,111 +91,3 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K(
 
   return make_tuple(h_exchange_o_pair.first, h_exchange_o_pair.second, h_exchange_c_pair.first, h_exchange_c_pair.second);
 }
-
-
-RefMatrix PMP2::exchange_runtime_OBS() const {
-
-  RefMatrix density(new PMatrix1e(coeff_->form_density_rhf()));
-  const complex<double>* den = density->data()->front();
-
-  RefMatrix exchange_real_space(new PMatrix1e(geom_));
-  complex<double>* data = exchange_real_space->data()->front();
-
-  size_t allocsize = eri_obs_->max_num_int();
-  double* diskdata = new double[allocsize];
-
-  const int s = geom_->S();
-  const int l = geom_->L();
-
-  long file_position = 0l;
-  size_t mcnt = 0lu;
-  for (int m1 = -s; m1 <= s; ++m1) {
-    for (int m2 = 0; m2 <= l; ++m2) { // use bra-ket symmetry!!!
-      for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++mcnt) {
-
-        const int k = geom_->K();
-        const size_t b = exchange_real_space->blocksize();
-        assert(exchange_real_space->blocksize() == density->blocksize());
-        const int n = geom_->nbasis();
-
-        const int m1________k____b = (m1      + k) * b;
-        const int m1___m2___k____b = (m1 - m2 + k) * b;
-        const int m2___m1___k____b = (m2 - m1 + k) * b;
-        const int m2___m3___k____b = (m2 - m3 + k) * b;
-        const int m3___m2___k____b = (m3 - m2 + k) * b;
-        const int m3________k____b = (m3      + k) * b;
-        const int _____m1___k____b = (   - m1 + k) * b;
-        const int _____m3___k____b = (   - m3 + k) * b;
-
-        const bool m2m1in = abs(m2 - m1) <= k;
-        const bool m3in = abs(m3) <= k;
-        const bool mmmin = m2m1in && m3in;
-
-        {
-          eri_obs_->get_block(file_position, eri_obs_->num_int_each(mcnt), diskdata);
-          file_position += eri_obs_->num_int_each(mcnt);
-          const double* cdata = diskdata;
-
-          const int size = eri_obs_->basissize(); // number of shells
-          for (int i0 = 0; i0 != size; ++i0) {
-            const int b0offset = eri_obs_->offset(i0);
-            const int b0size = eri_obs_->nbasis(i0);
-
-            for (int i1 = 0; i1 != size; ++i1) {
-              const int b1offset = eri_obs_->offset(i1);
-              const int b1size = eri_obs_->nbasis(i1);
-
-              for (int i2 = 0; i2 != size; ++i2) {
-                const int b2offset = eri_obs_->offset(i2);
-                const int b2size = eri_obs_->nbasis(i2);
-
-                for (int i3 = 0; i3 != size; ++i3) {
-                  const int b3offset = eri_obs_->offset(i3);
-                  const int b3size = eri_obs_->nbasis(i3);
-
-                  const double integral_bound = eri_obs_->schwarz(((m1      + k) * size + i0) * size + i1)
-                                              * eri_obs_->schwarz(((m3 - m2 + k) * size + i2) * size + i3);
-                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-                  if (skip_schwarz) continue;
-
-                  if (m2 != 0 && mmmin) {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
-                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
-                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            data[m3________k____b + j0n + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
-                            data[m1___m2___k____b + j2n + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
-                          }
-                        }
-                      }
-                    }
-                  } else if (mmmin) {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
-                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset                    ; j3 != b3offset + b3size; ++j3, ++cdata) {
-                            data[m3________k____b + j0n + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
-                          }
-                        }
-                      }
-                    }
-                  } else {
-                    cdata += b0size * b1size * b2size * b3size;
-                  }
-
-                }
-              }
-            }
-          }
-        }
-
-      }
-    }
-  }
-
-  delete[] diskdata;
-  RefMatrix out(new PMatrix1e(exchange_real_space->ft()));
-  return out;
-}
-
-

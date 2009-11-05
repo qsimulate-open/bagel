@@ -92,6 +92,7 @@ class PMP2 {
     RefMatrix coulomb_runtime_OBS() const;
     RefMatrix exchange_runtime_OBS() const;
     RefMatrix coulomb_runtime() const;
+    RefMatrix exchange_runtime() const;
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,

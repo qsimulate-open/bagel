@@ -1,5 +1,5 @@
 /*
- * coulomb_builder.cc
+ * exchange_runtime.cc
  *
  *  Created on: Nov 4, 2009
  *      Author: shiozaki
@@ -20,14 +20,14 @@ typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
 typedef shared_ptr<PCoeff> RefCoeff;
 
-RefMatrix PMP2::coulomb_runtime() const {
+RefMatrix PMP2::exchange_runtime() const {
 
   const double gamma = geom_->gamma();
   RefMatrix density(new PMatrix1e(coeff_->form_density_rhf()));
   const complex<double>* den = density->data()->front();
 
-  RefMatrix coulomb_real_space(new PMatrix1e(union_geom_));
-  complex<double>* data = coulomb_real_space->data()->front();
+  RefMatrix exchange_real_space(new PMatrix1e(union_geom_));
+  complex<double>* data = exchange_real_space->data()->front();
 
   const int s = geom_->S();
   const int l = geom_->L();
@@ -45,18 +45,22 @@ RefMatrix PMP2::coulomb_runtime() const {
 
           const int k = geom_->K();
           const size_t b = density->blocksize();
-          const size_t qb = coulomb_real_space->blocksize();
+          const size_t qb = exchange_real_space->blocksize();
 
           const int n = geom_->nbasis();
           const int q = union_geom_->nbasis();
 
+          const bool m2m1in = abs(m2 - m1) <= k;
+          const bool m3in = abs(m3) <= k;
+          const bool mmmin = m2m1in && m3in;
+
           // for density.
-          const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
+          const int m2___m1___k____b = (m2 - m1 + k) * b;
+          const int _____m3___k____b = (   - m3 + k) * b;
 
           {
-            const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
+            const int m3________k____qb = (m3      + k) * qb;
+            const int m1___m2___k____qb = (m1 - m2 + k) * qb;
 
             eri_obs_->get_block(file_position, eri_obs_->num_int_each(mcnt), diskdata_o);
             file_position += eri_obs_->num_int_each(mcnt);
@@ -84,29 +88,29 @@ RefMatrix PMP2::coulomb_runtime() const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    if (m2 != 0) {
+                    if (m2 != 0 && mmmin) {
                       for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
                         for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
                           for (int j2 = b2offset, j2q = b2offset * q; j2 != b2offset + b2size; ++j2, j2q += q) {
                             for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                              const double integral2 = *cdata + *cdata;
-                              data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
-                              data[m3___m2___k____qb + j2q + j3] += den[_____m1___k____b + j1n + j0] * integral2;
+                              data[m3________k____qb + j0q + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
+                              data[m1___m2___k____qb + j2q + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
+                            }
+                          }
+                        }
+                      }
+                    } else if (mmmin) {
+                      for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
+                        for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                          for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
+                            for (int j3 = b3offset                    ; j3 != b3offset + b3size; ++j3, ++cdata) {
+                              data[m3________k____qb + j0q + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
                             }
                           }
                         }
                       }
                     } else {
-                      for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
-                        for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                          for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                            for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                              const double integral2 = *cdata + *cdata;
-                              data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
-                            }
-                          }
-                        }
-                      }
+                      cdata += b0size * b1size * b2size * b3size;
                     }
 
                   }
@@ -135,18 +139,20 @@ RefMatrix PMP2::coulomb_runtime() const {
 
           const int k = geom_->K();
           const size_t b = density->blocksize();
-          const size_t qb = coulomb_real_space->blocksize();
+          const size_t qb = exchange_real_space->blocksize();
 
           const int n = geom_->nbasis();
           const int q = union_geom_->nbasis();
 
+          const bool m2m1in = abs(m2 - m1) <= k;
+          const bool m3in = abs(m3) <= k;
+          const bool mmmin = m2m1in && m3in;
+
           // for density.
-          const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
+          const int _____m3___k____b = (   - m3 + k) * b;
 
           {
-            const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
+            const int m1___m2___k____qb = (m1 - m2 + k) * qb;
 
             eri_cabs_->get_block(file_position, eri_cabs_->num_int_each(mcnt), diskdata_cs);
             file_position += eri_cabs_->num_int_each(mcnt);
@@ -177,15 +183,18 @@ RefMatrix PMP2::coulomb_runtime() const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
+                    if (mmmin) {
+                      for (int j0 = b0offset                    ; j0 != b0offset + b0size; ++j0          ) { // center unit cell
+                        for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
+                          for (int j2 = b2offset, j2q = b2offset * q; j2 != b2offset + b2size; ++j2, j2q += q) {
+                            for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
+                              data[m1___m2___k____qb + j2q + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
+                            }
                           }
                         }
                       }
+                    } else {
+                      cdata += b0size * b1size * b2size * b3size;
                     }
 
                   }
@@ -201,10 +210,10 @@ RefMatrix PMP2::coulomb_runtime() const {
   }
   /// ooco loop ends.
 
-  /// cooo loop starts here.
+  /// ocoo loop starts here.
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "ERI CABS(i)"));
+      eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, false, true, false, false, false, "ERI CABS(j)"));
     eri_cabs_d->store_integrals();
     eri_cabs_d->reopen_with_inout();
     const size_t allocsize_cs = eri_cabs_d->max_num_int();
@@ -218,26 +227,28 @@ RefMatrix PMP2::coulomb_runtime() const {
 
           const int k = geom_->K();
           const size_t b = density->blocksize();
-          const size_t qb = coulomb_real_space->blocksize();
+          const size_t qb = exchange_real_space->blocksize();
 
           const int n = geom_->nbasis();
           const int q = union_geom_->nbasis();
 
+          const bool m2m1in = abs(m2 - m1) <= k;
+          const bool m3in = abs(m3) <= k;
+          const bool mmmin = m2m1in && m3in;
+
           // for density.
-          const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
+          const int _____m3___k____b = (   - m3 + k) * b;
 
           {
-            const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
+            const int m1___m2___k____qb = (m1 - m2 + k) * qb;
 
             eri_cabs_d->get_block(file_position, eri_cabs_d->num_int_each(mcnt), diskdata_cs);
             file_position += eri_cabs_d->num_int_each(mcnt);
             const double* cdata = diskdata_cs;
 
             const int size_i = eri_cabs_d->size_i();
-            for (int i0 = 0; i0 != size_i; ++i0) { // CABS!!!!
-              const int b0offset = eri_cabs_d->offset_i(i0) + geom_->nbasis();
+            for (int i0 = 0; i0 != size_i; ++i0) { // OBS
+              const int b0offset = eri_cabs_d->offset_i(i0);
               const int b0size = eri_cabs_d->basis_i(i0)->nbasis();
 
               const int size_a = eri_cabs_d->size_a();
@@ -246,8 +257,8 @@ RefMatrix PMP2::coulomb_runtime() const {
                 const int b1size = eri_cabs_d->basis_a(i1)->nbasis();
 
                 const int size_j = eri_cabs_d->size_j();
-                for (int i2 = 0; i2 != size_j; ++i2) { // OBS
-                  const int b2offset = eri_cabs_d->offset_j(i2);
+                for (int i2 = 0; i2 != size_j; ++i2) { // CABS!!!!
+                  const int b2offset = eri_cabs_d->offset_j(i2) + geom_->nbasis();
                   const int b2size = eri_cabs_d->basis_j(i2)->nbasis();
 
                   const int size_b = eri_cabs_d->size_b();
@@ -260,15 +271,18 @@ RefMatrix PMP2::coulomb_runtime() const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
+                    if (mmmin) {
+                      for (int j0 = b0offset                    ; j0 != b0offset + b0size; ++j0          ) { // center unit cell
+                        for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
+                          for (int j2 = b2offset, j2q = b2offset * q; j2 != b2offset + b2size; ++j2, j2q += q) {
+                            for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
+                              data[m1___m2___k____qb + j2q + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
+                            }
                           }
                         }
                       }
+                    } else {
+                      cdata += b0size * b1size * b2size * b3size;
                     }
 
                   }
@@ -282,12 +296,12 @@ RefMatrix PMP2::coulomb_runtime() const {
     }
     delete[] diskdata_cs;
   }
-  /// cooo loop ends.
+  /// ocoo loop ends.
 
-  /// coco loop starts here.
+  /// occo loop starts here.
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "ERI CABS(ia)"));
+      eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, false, true, true, false, false, "ERI CABS(ja)"));
     eri_cabs_t->store_integrals();
     eri_cabs_t->reopen_with_inout();
     const size_t allocsize_cs = eri_cabs_t->max_num_int();
@@ -301,26 +315,28 @@ RefMatrix PMP2::coulomb_runtime() const {
 
           const int k = geom_->K();
           const size_t b = density->blocksize();
-          const size_t qb = coulomb_real_space->blocksize();
+          const size_t qb = exchange_real_space->blocksize();
 
           const int n = geom_->nbasis();
           const int q = union_geom_->nbasis();
 
+          const bool m2m1in = abs(m2 - m1) <= k;
+          const bool m3in = abs(m3) <= k;
+          const bool mmmin = m2m1in && m3in;
+
           // for density.
-          const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
+          const int _____m3___k____b = (   - m3 + k) * b;
 
           {
-            const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
+            const int m1___m2___k____qb = (m1 - m2 + k) * qb;
 
             eri_cabs_t->get_block(file_position, eri_cabs_t->num_int_each(mcnt), diskdata_cs);
             file_position += eri_cabs_t->num_int_each(mcnt);
             const double* cdata = diskdata_cs;
 
             const int size_i = eri_cabs_t->size_i();
-            for (int i0 = 0; i0 != size_i; ++i0) { // CABS!!!!
-              const int b0offset = eri_cabs_t->offset_i(i0) + geom_->nbasis();
+            for (int i0 = 0; i0 != size_i; ++i0) { // OBS
+              const int b0offset = eri_cabs_t->offset_i(i0);
               const int b0size = eri_cabs_t->basis_i(i0)->nbasis();
 
               const int size_a = eri_cabs_t->size_a();
@@ -329,8 +345,8 @@ RefMatrix PMP2::coulomb_runtime() const {
                 const int b1size = eri_cabs_t->basis_a(i1)->nbasis();
 
                 const int size_j = eri_cabs_t->size_j();
-                for (int i2 = 0; i2 != size_j; ++i2) { // OBS
-                  const int b2offset = eri_cabs_t->offset_j(i2);
+                for (int i2 = 0; i2 != size_j; ++i2) { // CABS!!!
+                  const int b2offset = eri_cabs_t->offset_j(i2) + geom_->nbasis();
                   const int b2size = eri_cabs_t->basis_j(i2)->nbasis();
 
                   const int size_b = eri_cabs_t->size_b();
@@ -343,15 +359,18 @@ RefMatrix PMP2::coulomb_runtime() const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
+                    if (mmmin) {
+                      for (int j0 = b0offset                    ; j0 != b0offset + b0size; ++j0          ) { // center unit cell
+                        for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
+                          for (int j2 = b2offset, j2q = b2offset * q; j2 != b2offset + b2size; ++j2, j2q += q) {
+                            for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
+                              data[m1___m2___k____qb + j2q + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
+                            }
                           }
                         }
                       }
+                    } else {
+                      cdata += b0size * b1size * b2size * b3size;
                     }
 
                   }
@@ -366,17 +385,17 @@ RefMatrix PMP2::coulomb_runtime() const {
     delete[] diskdata_cs;
   }
 
-  return coulomb_real_space;
+  return exchange_real_space;
 }
 
 
-RefMatrix PMP2::coulomb_runtime_OBS() const {
+RefMatrix PMP2::exchange_runtime_OBS() const {
 
   RefMatrix density(new PMatrix1e(coeff_->form_density_rhf()));
   const complex<double>* den = density->data()->front();
 
-  RefMatrix coulomb_real_space(new PMatrix1e(geom_));
-  complex<double>* data = coulomb_real_space->data()->front();
+  RefMatrix exchange_real_space(new PMatrix1e(geom_));
+  complex<double>* data = exchange_real_space->data()->front();
 
   size_t allocsize = eri_obs_->max_num_int();
   double* diskdata = new double[allocsize];
@@ -391,8 +410,8 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++mcnt) {
 
         const int k = geom_->K();
-        const size_t b = coulomb_real_space->blocksize();
-        assert(coulomb_real_space->blocksize() == density->blocksize());
+        const size_t b = exchange_real_space->blocksize();
+        assert(exchange_real_space->blocksize() == density->blocksize());
         const int n = geom_->nbasis();
 
         const int m1________k____b = (m1      + k) * b;
@@ -403,6 +422,10 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
         const int m3________k____b = (m3      + k) * b;
         const int _____m1___k____b = (   - m1 + k) * b;
         const int _____m3___k____b = (   - m3 + k) * b;
+
+        const bool m2m1in = abs(m2 - m1) <= k;
+        const bool m3in = abs(m3) <= k;
+        const bool mmmin = m2m1in && m3in;
 
         {
           eri_obs_->get_block(file_position, eri_obs_->num_int_each(mcnt), diskdata);
@@ -431,29 +454,29 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
                   const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                   if (skip_schwarz) continue;
 
-                  if (m2 != 0) {
+                  if (m2 != 0 && mmmin) {
                     for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
                       for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
                         for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {
                           for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____b + j0n + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
-                            data[m3___m2___k____b + j2n + j3] += den[_____m1___k____b + j1n + j0] * integral2;
+                            data[m3________k____b + j0n + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
+                            data[m1___m2___k____b + j2n + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
+                          }
+                        }
+                      }
+                    }
+                  } else if (mmmin) {
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
+                          for (int j3 = b3offset                    ; j3 != b3offset + b3size; ++j3, ++cdata) {
+                            data[m3________k____b + j0n + j3] += den[m2___m1___k____b + j1n + j2] * *cdata;
                           }
                         }
                       }
                     }
                   } else {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____b + j0n + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
-                          }
-                        }
-                      }
-                    }
+                    cdata += b0size * b1size * b2size * b3size;
                   }
 
                 }
@@ -467,9 +490,7 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
   }
 
   delete[] diskdata;
-  RefMatrix out(new PMatrix1e(coulomb_real_space->ft()));
+  RefMatrix out(new PMatrix1e(exchange_real_space->ft()));
   return out;
 }
-
-
 
