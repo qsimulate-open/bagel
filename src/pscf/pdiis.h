@@ -60,6 +60,7 @@ class PDIIS {
     RefT extrapolate(const std::pair<RefT, RefT> input) {
       RefT v = input.first;
       RefT e = input.second;
+      e->scale(1.0e10);
       data_.push_back(input);
       const int unit = 1;
       const int size = nld_ * nld_;

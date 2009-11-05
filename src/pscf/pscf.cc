@@ -58,7 +58,7 @@ void PSCF::compute() {
 
   RefPMatrix1e densitychange = aodensity_; // assumes hcore guess...
 
-  PDIIS<PMatrix1e> diis(5, 0.0);
+  PDIIS<PMatrix1e> diis(5, 0.1);
   cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ")===" << endl << indent << endl;
 
   bool conv1 = false;
