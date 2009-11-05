@@ -101,20 +101,20 @@ void PSCF::compute() {
     }
 
     RefPMatrix1e diis_density;
-#define SKIP
-#ifndef SKIP
-    if (iter > 5 && iter % 2 == 1) {
-#endif
-      diis_density = diis.extrapolate(make_pair(new_density, error_vector));
-#ifndef SKIP
+    if (iter < 15) {
+      if (iter > 5 && iter % 2 == 1) {
+        diis_density = diis.extrapolate(make_pair(new_density, error_vector));
+      } else {
+        const double a = 1.0;
+        new_density->scale(a);
+        RefPMatrix1e tmp(new PMatrix1e(*new_density + *aodensity_));
+        tmp->scale(1.0 / (1.0 + a));
+        diis_density = tmp;
+      }
     } else {
-      const double a = 1.0;
-      new_density->scale(a);
-      RefPMatrix1e tmp(new PMatrix1e(*new_density + *aodensity_));
-      tmp->scale(1.0 / (1.0 + a));
-      diis_density = tmp;
+      diis_density = diis.extrapolate(make_pair(new_density, error_vector));
     }
-#endif
+
     RefPMatrix1e dtmp(new PMatrix1e(*diis_density - *aodensity_));
     densitychange = dtmp; 
     aodensity_ = diis_density;
