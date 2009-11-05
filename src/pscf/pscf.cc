@@ -58,7 +58,7 @@ void PSCF::compute() {
 
   RefPMatrix1e densitychange = aodensity_; // assumes hcore guess...
 
-  DIIS<PMatrix1e> diis(5, 0.2);
+  PDIIS<PMatrix1e> diis(5, 0.0);
   cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ")===" << endl << indent << endl;
 
   for (int iter = 0; iter != MAX_ITER_SCF; ++iter) { 
@@ -101,15 +101,20 @@ void PSCF::compute() {
     }
 
     RefPMatrix1e diis_density;
+#define SKIP
+#ifndef SKIP
     if (iter > 5 && iter % 2 == 1) {
+#endif
       diis_density = diis.extrapolate(make_pair(new_density, error_vector));
+#ifndef SKIP
     } else {
       const double a = 1.0;
       new_density->scale(a);
-      RefPMatrix1e tmp(new PMatrix1e(*new_density + *aodensity_)); 
+      RefPMatrix1e tmp(new PMatrix1e(*new_density + *aodensity_));
       tmp->scale(1.0 / (1.0 + a));
       diis_density = tmp;
     }
+#endif
     RefPMatrix1e dtmp(new PMatrix1e(*diis_density - *aodensity_));
     densitychange = dtmp; 
     aodensity_ = diis_density;

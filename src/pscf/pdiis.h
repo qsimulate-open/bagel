@@ -20,7 +20,7 @@
 // Complex version
 
 template <class T>
-class DIIS {
+class PDIIS {
   typedef boost::shared_ptr<T> RefT;
   typedef std::list<std::pair<RefT, RefT> > Container_type_;
   typedef typename Container_type_::iterator iterator;
@@ -41,7 +41,7 @@ class DIIS {
     const int lwork_;
   
   public:
-    DIIS(const int ndiis, const double dump = 0.0) : ndiis_(ndiis), nld_(ndiis + 1), lwork_(nld_ * nld_), dumping_(dump) {
+    PDIIS(const int ndiis, const double dump) : ndiis_(ndiis), nld_(ndiis + 1), lwork_(nld_ * nld_), dumping_(dump) {
       matrix_ = new Complex[nld_ * nld_]; 
       matrix_save_ = new Complex[nld_ * nld_]; 
       coeff_ = new Complex[nld_]; 
@@ -49,7 +49,7 @@ class DIIS {
       ipiv_ = new int[nld_];
     };  
 
-    ~DIIS() {
+    ~PDIIS() {
       delete[] matrix_;
       delete[] matrix_save_;
       delete[] coeff_;
