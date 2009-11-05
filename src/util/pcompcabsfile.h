@@ -303,7 +303,8 @@ void PCompCABSFile<T>::calculate_num_int_each() {
 
 template<class T>
 void PCompCABSFile<T>::store_integrals() {
-  const size_t cachesize_max = 40000000lu;
+  // TODO control the cache size.
+  const size_t cachesize_max = 120000000lu;
   const size_t cachesize = std::max(cachesize_max, this->max_num_int_);
 
   const int s = this->S_;
