@@ -23,9 +23,6 @@ typedef shared_ptr<Atom> RefAtom;
 Geometry::Geometry(const string s, const int levl)
   : spherical_(true), input_(s), level_(levl), lmax_(0) {
 
-  // TODO need keyword for R12 exponent
-  gamma_ = 1.5;
-
   // open input file
   ifstream ifs;
   ifs.open(input_.c_str());
@@ -46,6 +43,30 @@ Geometry::Geometry(const string s, const int levl)
     }
   }
   ifs.clear(); 
+  ifs.seekg(0);
+
+  regex gamma_str("gamma");
+  regex gamma_num("[0-9\\.eE\\+-]+");
+  double gamma = 1.5;
+  while(!ifs.eof()) {
+    string sline;
+    getline(ifs, sline);
+    if(sline.empty()) continue;
+    string::const_iterator start = sline.begin();
+    string::const_iterator end = sline.end();
+    smatch what;
+    if (regex_search(start, end, what, gamma_str)) {
+      start = what[0].second;
+      if (regex_search(start, end, what, gamma_num)) {
+        const string gamma_str(what[0].first, what[0].second);
+        gamma = lexical_cast<double>(gamma_str);
+        break;
+      }
+    }
+  }
+  gamma_ = gamma;
+  cout << gamma_ << endl;
+  ifs.clear();
   ifs.seekg(0); 
 
   // read basis file

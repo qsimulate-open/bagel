@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
 
     const bool periodic = (bool)count_string(input, "Periodic");
     const bool domp2 = (bool)count_string(input, "MP2");
+    const bool use_hy2 = (bool)count_string(input, "HY2");
 
     typedef boost::shared_ptr<Geometry> RefGeom;
     typedef boost::shared_ptr<PGeometry> RefPGeom;
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
     }
 
     if (periodic && domp2) {
-      PMP2 pmp2(pscf->geom(), pscf->coeff(), pscf->eig(), pscf->ao_eri());
+      PMP2 pmp2(pscf->geom(), pscf->coeff(), pscf->eig(), pscf->ao_eri(), use_hy2);
       pmp2.compute();
     }
 

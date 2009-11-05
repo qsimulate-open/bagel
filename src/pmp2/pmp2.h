@@ -62,6 +62,7 @@ class PMP2 {
     RefMOFile B_;
 
     // Some misc constants
+    bool use_hy2_;
     int nbasis_;
     int nfrc_;
     int nocc_act_;
@@ -96,7 +97,7 @@ class PMP2 {
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,
-         const std::vector<double>, boost::shared_ptr<PCompFile<ERIBatch> >);
+         const std::vector<double>, boost::shared_ptr<PCompFile<ERIBatch> >, const bool);
     ~PMP2();
 
     void compute();

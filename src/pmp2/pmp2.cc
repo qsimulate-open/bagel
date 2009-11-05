@@ -24,13 +24,12 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
 //#define DEBUG_PRINT
-//#define OBS_ONLY
 
 using namespace std;
 using namespace boost;
 
-PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl)
- : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl) {
+PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl, const bool hy2)
+ : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl), use_hy2_(hy2) {
 
   nfrc_ = geom_->nfrc() / 2;
   nocc_ = geom_->nocc() / 2;
@@ -117,7 +116,7 @@ void PMP2::compute() {
     stg_cabs->reopen_with_inout();
     stg_cabs_ = stg_cabs;
   }
-  {
+  if (use_hy2_) {
     shared_ptr<PCompCABSFile<SlaterBatch> >
       stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
     stg_cabs2->store_integrals();
@@ -178,7 +177,6 @@ void PMP2::compute() {
     RefMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
 
     V_ = V_pre;
-//    cout << "V contrib   " << setprecision(10) <<  V_obs->get_energy_one_amp().real() << endl;
   }
 
 
@@ -293,7 +291,6 @@ void PMP2::compute() {
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (OBS) 1/2");
 
-#ifndef OBS_ONLY
       // integral evaluation...
       RefMOFile X_ii_hi_cabs;
       {
@@ -308,7 +305,6 @@ void PMP2::compute() {
                                                         nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
       }
       *X_ii_hi += *X_ii_hi_cabs;
-#endif
 
       X_ii_hi->flip_symmetry();
       RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_hi));
@@ -363,6 +359,15 @@ void PMP2::compute() {
       // second, evaluate R^PA_ij K^r_P R^kl_rA
       RefMOFile p1_5_ket;
       {
+        if (stg_cabs2_.get() == NULL) {
+          // in HY2, this only appears here.
+          shared_ptr<PCompCABSFile<SlaterBatch> >
+            stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
+          stg_cabs2->store_integrals();
+          stg_cabs2->reopen_with_inout();
+          stg_cabs2_ = stg_cabs2;
+        }
+
         RefMOFile p1_3 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, OBS 1/6");
@@ -397,7 +402,9 @@ void PMP2::compute() {
         *p1 += *(p1_5->contract(p1_6, "P1: R^PQ_ij K^R_P R^kl_RQ case3"));
       }
       // then, evaluate R^PB_ij K^A_P R^kl_AB
-      {
+
+      if (!use_hy2_) {
+
         RefMOFile p1_7 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, cabs_obs_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, ncabs_, 0, ncabs_, "P1: R^PQ_ij K^R_P R^kl_RQ case4, OBS 1/7");
@@ -428,12 +435,14 @@ void PMP2::compute() {
 
         *p1 += *(p1_7->contract(p1_8, "P1: R^PQ_ij K^R_P R^kl_RQ case4"));
       }
+
       p1->flip_symmetry();
       P = p1;
 #ifdef DEBUG_PRINT
-    cout << "**** debug ****  P1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
+      cout << "**** debug ****  P1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
 #endif
     }
+
 
 
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
@@ -494,8 +503,8 @@ void PMP2::compute() {
 #endif
     }
 
-    // P3 intermediate R^mA_ij f^n_m R^kl_nA
-    {
+    // P3 intermediate R^mA_ij f^n_m R^kl_nA; will be neglected in HY2 approximation
+    if (!use_hy2_) {
       RefMOFile p3_ket;
       {
         RefMOFile p3_1 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, cfobs,
@@ -546,6 +555,7 @@ void PMP2::compute() {
       }
     }
 
+
     // P4 intermediate R^pb_ij f^r_p R^kl_rb
     {
       RefMOFile p4_ket;
@@ -556,7 +566,9 @@ void PMP2::compute() {
         RefMOFile p4_2 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, nbasis_, nocc_ , nbasis_, "P4: R^pb_ij f^r_p R^kl_rb, 2/2");
-        p4_ket = p4_2;
+
+        if (!use_hy2_) p4_ket = p4_2;
+
         RefMOFile p4 = p4_1->contract(p4_2, "P4: R^pb_ij f^r_p R^ij_rb");
         p4->flip_symmetry();
         //p4->rprint();
@@ -569,13 +581,30 @@ void PMP2::compute() {
 
       // P5b intermediate  R^Ab_ij f^p_A R^kl_pb
       {
-        RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
-                                             nfrc_, nocc_, nfrc_, nocc_,
-                                             0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 1/2, OBS");
-        *p5b_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
-                                                     nfrc_, nocc_, nfrc_, nocc_,
-                                                     0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 2/2, CABS"));
-        RefMOFile p5b = p5b_1->contract(p4_ket, "R^Ab_ij f^p_A R^kl_pb");
+        RefMOFile p5b;
+        if (!use_hy2_) {
+
+          RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
+                                               nfrc_, nocc_, nfrc_, nocc_,
+                                               0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 1/2, OBS");
+          *p5b_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
+                                                       nfrc_, nocc_, nfrc_, nocc_,
+                                                       0, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 2/2, CABS"));
+          p5b = p5b_1->contract(p4_ket, "R^Ab_ij f^p_A R^kl_pb");
+
+        } else {
+          // P5b intermediate  R^Ab_ij f^p_A R^kl_pb approximated by R^Ab_ij f^a_A R^kl_ab
+          RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
+                                               nfrc_, nocc_, nfrc_, nocc_,
+                                               nocc_, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 1/3, OBS");
+          *p5b_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
+                                                       nfrc_, nocc_, nfrc_, nocc_,
+                                                       nocc_, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 2/3, CABS"));
+          RefMOFile p5b_2 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
+                                               nfrc_, nocc_, nfrc_, nocc_,
+                                               nocc_, nbasis_, nocc_, nbasis_, "P5B: R^Ab_ij f^p_A R^kl_pb, 3/3, OBS");
+          p5b = p5b_1->contract(p5b_2, "R^Ab_ij f^p_A R^kl_pb");
+        }
         p5b->flip_symmetry();
         p5b->scale(2.0);
 
