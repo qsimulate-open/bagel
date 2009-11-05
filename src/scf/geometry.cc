@@ -65,7 +65,6 @@ Geometry::Geometry(const string s, const int levl)
     }
   }
   gamma_ = gamma;
-  cout << gamma_ << endl;
   ifs.clear();
   ifs.seekg(0); 
 

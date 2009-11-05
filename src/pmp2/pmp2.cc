@@ -31,6 +31,13 @@ using namespace boost;
 PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl, const bool hy2)
  : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl), use_hy2_(hy2) {
 
+  cout << "  === Periodic MP2 calculation ===" << endl << endl;
+
+  cout << "    >> Gamma = " << geom_->gamma() << " is used in the MP2-R12 calculation." << endl << endl;
+  if (use_hy2_) {
+    cout << "    >> Hybrid approximation HY2 is invoked." << endl << endl;
+  }
+
   nfrc_ = geom_->nfrc() / 2;
   nocc_ = geom_->nocc() / 2;
   nocc_act_ = nocc_ - nfrc_;
@@ -56,7 +63,6 @@ void PMP2::compute() {
 
   // AO ERI has been computed in the SCF class.
 
-  cout << "  === Periodic MP2 calculation ===" << endl << endl;
   // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
   eri_ii_pp_ = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                       nfrc_, nocc_, nfrc_, nocc_,
