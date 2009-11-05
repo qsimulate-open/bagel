@@ -204,9 +204,7 @@ RefMatrix PMP2::coulomb_runtime() const {
   /// cooo loop starts here.
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "ERI CABS(i)"));
-    eri_cabs_d->store_integrals();
-    eri_cabs_d->reopen_with_inout();
+      eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "NULL"));
     const size_t allocsize_cs = eri_cabs_d->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
 
@@ -231,8 +229,7 @@ RefMatrix PMP2::coulomb_runtime() const {
             const int m1________k____qb = (m1      + k) * qb;
             const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
-            eri_cabs_d->get_block(file_position, eri_cabs_d->num_int_each(mcnt), diskdata_cs);
-            file_position += eri_cabs_d->num_int_each(mcnt);
+            eri_cabs_d->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
 
             const int size_i = eri_cabs_d->size_i();
@@ -287,9 +284,7 @@ RefMatrix PMP2::coulomb_runtime() const {
   /// coco loop starts here.
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "ERI CABS(ia)"));
-    eri_cabs_t->store_integrals();
-    eri_cabs_t->reopen_with_inout();
+      eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "NULL"));
     const size_t allocsize_cs = eri_cabs_t->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
 
@@ -314,8 +309,7 @@ RefMatrix PMP2::coulomb_runtime() const {
             const int m1________k____qb = (m1      + k) * qb;
             const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
-            eri_cabs_t->get_block(file_position, eri_cabs_t->num_int_each(mcnt), diskdata_cs);
-            file_position += eri_cabs_t->num_int_each(mcnt);
+            eri_cabs_t->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
 
             const int size_i = eri_cabs_t->size_i();

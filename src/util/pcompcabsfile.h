@@ -282,19 +282,21 @@ void PCompCABSFile<T>::calculate_num_int_each() {
 
   this->max_num_int_ = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
-  std::cout << "  Using ";
-  const size_t data_written_byte = data_written * sizeof(double);
-  if (data_written_byte > 1.0e9) {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
-  } else if (data_written_byte > 1.0e6) {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
-  } else {
-    std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
+  if (this->jobname_ != "NULL") {
+    std::cout << "  Using ";
+    const size_t data_written_byte = data_written * sizeof(double);
+    if (data_written_byte > 1.0e9) {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
+    } else if (data_written_byte > 1.0e6) {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e6 << " MB";
+    } else {
+      std::cout << std::setprecision(1) << data_written_byte / 1.0e3 << " KB";
+    }
+
+    std::cout << " hard disk for storing \"" << this->jobname_ << "\"" << std::endl;
+    std::cout << std::endl;
   }
 
-  std::cout << " hard disk for storing \"" << this->jobname_ << "\"" << std::endl; 
-  std::cout << std::endl;
-  assert(data_written < 5.0e9); // 40GB
 };
 
 
