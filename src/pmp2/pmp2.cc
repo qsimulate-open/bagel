@@ -23,7 +23,7 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 
 using namespace std;
 using namespace boost;
@@ -195,7 +195,7 @@ void PMP2::compute() {
     stg_yp2->store_integrals();
     stg_yp2->reopen_with_inout();
     shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
-    shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();
+    shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();  // TODO delete YP from here.
     stg2_ = stg2;
   }
 
@@ -301,12 +301,11 @@ void PMP2::compute() {
         shared_ptr<PCompCABSFile<SlaterBatch> >
           stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
                                                    false, "Slater CABS (2gamma)"));
-        stg2_cabs->store_integrals();
-        stg2_cabs->reopen_with_inout();
-
+        // Use integral-direct mo transform.
         X_ii_hi_cabs = stg2_cabs->mo_transform_cabs_aux(coeff_, coeff_, chj_iA_cabs, coeff_,
                                                         nfrc_, nocc_, nfrc_, nocc_,
-                                                        nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2 (CABS) 1/2");
+                                                        nfrc_, nocc_, nfrc_, nocc_, "Q intermediate: stg2, direct (CABS) 2/2",
+                                                        true);
       }
       *X_ii_hi += *X_ii_hi_cabs;
 
@@ -384,8 +383,8 @@ void PMP2::compute() {
                                                      0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, CABS2 6/6"));
         *p1 += *(p1_3->contract(p1_4, "P1: R^PQ_ij K^R_P R^kl_RQ case2"));
 
-      } else {  // R^PA_ij K^r_P R^kl_rA, approximated by R^pA_ij K^r_p R^kl_rA
-
+      } else {
+        // In HY2, R^PA_ij K^r_P R^kl_rA has been approximated by R^pA_ij K^r_p R^kl_rA
         RefMOFile p1_3 = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, ncabs_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case2, OBS 1/4");
@@ -589,13 +588,10 @@ void PMP2::compute() {
         RefMOFile p4_2 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, nbasis_, nocc_ , nbasis_, "P4: R^pb_ij f^r_p R^kl_rb, 2/2");
-
         if (!use_hy2_) p4_ket = p4_2;
 
         RefMOFile p4 = p4_1->contract(p4_2, "P4: R^pb_ij f^r_p R^ij_rb");
         p4->flip_symmetry();
-        //p4->rprint();
-
         *P += *p4;
 #ifdef DEBUG_PRINT
         cout << "**** debug ****  P4 contrib.: " << setprecision(10) << p4->get_energy_two_amp_B().real() << endl;
@@ -630,8 +626,8 @@ void PMP2::compute() {
         }
         p5b->flip_symmetry();
         p5b->scale(2.0);
-
         *P += *p5b;
+
 #ifdef DEBUG_PRINT
         cout << "**** debug ****  P5b contrib.: " << setprecision(10) << p5b->get_energy_two_amp_B().real() << endl;
 #endif

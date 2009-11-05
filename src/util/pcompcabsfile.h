@@ -91,7 +91,8 @@ class PCompCABSFile : public PCompFile<T> {
                             const int jstart, const int jfence,
                             const int astart, const int afence,
                             const int bstart, const int bfence,
-                            const std::string jobname = "intermediate");
+                            const std::string jobname = "intermediate",
+                            const bool direct = false);
 
 };
 
@@ -408,7 +409,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
                                           const int jstart, const int jfence,
                                           const int astart, const int afence,
                                           const int bstart, const int bfence,
-                                          const std::string jobname) {
+                                          const std::string jobname,
+                                          const bool direct) {
 
   // What is different is that the coefficient of b3 is replaced by cabs_coeff.
   // Other than that, they should be the same as mo_transform.
@@ -494,11 +496,14 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const int m3 = m2 + q3;
 
         const double* cdata;
-        {
+        if (!direct) {
           const size_t key = q3 + s + sizem1 * (q2 + l + sizem2 * (q1 + s));
           size_t datasize_acc = 0lu;
           for (int i = 0; i != key; ++i) datasize_acc += this->num_int_each_[i];
           this->get_block(datasize_acc, this->num_int_each_[key], data_read);
+          cdata = data_read;
+        } else {
+          this->eval_new_block(data_read, m1, m2, m3);
           cdata = data_read;
         }
 
