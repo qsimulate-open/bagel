@@ -61,6 +61,9 @@ void PSCF::compute() {
   PDIIS<PMatrix1e> diis(5, 0.0);
   cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ")===" << endl << indent << endl;
 
+  bool conv1 = false;
+  double prev_error = 0.0;
+
   for (int iter = 0; iter != MAX_ITER_SCF; ++iter) { 
     int start = ::clock();
 
@@ -76,17 +79,16 @@ void PSCF::compute() {
     RefPMatrix1e new_density(new PMatrix1e(coeff_->form_density_rhf()));
     new_density->real();
     RefPMatrix1e error_vector;
-/*  if (iter < 10) { 
+
+    if (conv1) {
+      RefPMatrix1e evr(new PMatrix1e(*new_density - *aodensity_));
+      error_vector = evr;
+    } else {
       PMatrix1e denft = aodensity_->ft();
       PMatrix1e ovrft = overlap_->ft();
       RefPMatrix1e evr(new PMatrix1e(*fock * denft * ovrft - ovrft * denft * *fock));
       error_vector = evr;
-    } else {
-*/  {
-      RefPMatrix1e evr(new PMatrix1e(*new_density - *aodensity_));
-      error_vector = evr;
     }
-
 
     int end = ::clock();
     const double energy = obtain_energy(*hcore_, fock->bft(), *new_density); 
@@ -99,6 +101,9 @@ void PSCF::compute() {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       break;
     }
+
+    if (fabs(prev_error / error - 1.0) < 0.01) conv1 = true;
+    prev_error = error;
 
     RefPMatrix1e diis_density;
     if (iter < 15) {
