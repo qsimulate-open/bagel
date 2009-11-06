@@ -244,7 +244,7 @@ void PCompFile<T>::calculate_num_int_each() {
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
   const int size = basis_.size(); // number of shells
 
-  #pragma omp parallel for reduction(+:data_written)
+  #pragma omp parallel for reduction (+:data_written)
   for (int m1 = - S_; m1 <= S_; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
     size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);
@@ -398,7 +398,7 @@ void PCompFile<T>::init_schwarz() {
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));
 
-  #pragma omp prallel for
+  #pragma omp parallel for
   for (int m = - K_; m <= K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * A_};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell

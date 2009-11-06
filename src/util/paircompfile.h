@@ -128,7 +128,7 @@ void PairCompFile<T>::calculate_num_int_each() {
   boost::shared_ptr<PCompFile<T> > first = files_.first;
   boost::shared_ptr<PCompFile<T> > second = files_.second;
 
-  #pragma omp parallel for reduction(+:data_written1, data_written2)
+  #pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
     const double A = first->A();
     const double m1disp[3] = {0.0, 0.0, m1 * A}; 

@@ -164,7 +164,7 @@ void PCompCABSFile<T>::init_schwarz_jb() {
 
   schwarz_jb_.resize(size_b_ * size_j_ * (2 * this->K_ + 1));
 
-  #pragma omp prallel for
+  #pragma omp parallel for
   for (int m = - this->K_; m <= this->K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * this->A_};
     for (int i0 = 0; i0 != size_j_; ++i0) { // center unit cell
@@ -200,7 +200,7 @@ void PCompCABSFile<T>::init_schwarz_ia() {
 
   schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
 
-  #pragma omp prallel for
+  #pragma omp parallel for
   for (int m = - this->K_; m <= this->K_; ++m) {
     const double disp[3] = {0.0, 0.0, m * this->A_};
     for (int i0 = 0; i0 != size_i_; ++i0) { // center unit cell
@@ -241,7 +241,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   unsigned long data_written = 0ul;
   this->num_int_each_.resize((s+s+1) * (s+s+1) * (l+l+1));
 
-  #pragma omp parallel for reduction(+:data_written)
+  #pragma omp parallel for reduction (+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1*a};
     size_t offset = (m1+s) * (l*2+1) * (s*2+1);
