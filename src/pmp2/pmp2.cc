@@ -23,7 +23,7 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
-//#define DEBUG_PRINT
+#define DEBUG_PRINT
 
 using namespace std;
 using namespace boost;

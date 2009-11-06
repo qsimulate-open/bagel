@@ -485,10 +485,10 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // allocating a temp array
 
   const int nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
+  std::complex<double>* data = new std::complex<double>[nmax];
+  const size_t nalloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv)*std::max(KK, 1));
 
-  const size_t alloc = nmax * std::max(KK, 1);
-  std::complex<double>* data = new std::complex<double>[alloc];
-  std::complex<double>* datas = new std::complex<double>[alloc];
+  std::complex<double>* datas = new std::complex<double>[nalloc];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
   double* data_read = new double[nbasis4];
 
@@ -504,7 +504,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end()); 
 
-  std::complex<double>* intermediate_mmK = new std::complex<double>[nv * std::max(KK, 1)];
+  std::complex<double>* intermediate_mmK = new std::complex<double>[std::max(nv, novv) * std::max(KK, 1)];
+  std::complex<double>* intermediate_novv = intermediate_mmK; // reusing the same area.
   PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), K_, false);
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_, true);
 
@@ -705,7 +706,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   for (int nkb = -K_; nkb != maxK1; ++nkb) {
     int nbja = (nkb + K_) * KK * KK;
     for (int nkj = -K_; nkj != maxK1; ++nkj) {
-      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), data);
+      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), intermediate_novv);
       #pragma omp parallel for
       for (int nka = -K_; nka < maxK1; ++nka) {
         std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
@@ -718,7 +719,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
         for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, data + novv * (nka + K_), &nsize,
+        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, intermediate_novv + novv * (nka + K_), &nsize,
                                                           conjc2, &nbasis1, &czero,
                                                           datas + noovv * (nka + K_), &nsize);
         delete[] conjc2;

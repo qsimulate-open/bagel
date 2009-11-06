@@ -467,8 +467,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const int nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
 
   // allocating a temp array
-  const size_t alloc = nmax * std::max(KK, 1);
-  std::complex<double>* data = new std::complex<double>[alloc];
+  const size_t alloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv) * std::max(KK, 1));
+  std::complex<double>* data = new std::complex<double>[nmax];
   std::complex<double>* datas = new std::complex<double>[alloc];
   double* data_read = new double[nbasis4];
 
@@ -482,7 +482,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   size_t allocsize = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
-  std::complex<double>* intermediate_mmK = new std::complex<double>[nv * std::max(KK, 1)];
+  std::complex<double>* intermediate_mmK = new std::complex<double>[std::max(novv, nv) * std::max(KK, 1)];
+  std::complex<double>* intermediate_novv = intermediate_mmK;
   PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), k, false);
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), k, true);
 
@@ -682,7 +683,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   for (int nkb = -k; nkb != maxK1; ++nkb) {
     int nbja = (nkb + k) * KK * KK;
     for (int nkj = -k; nkj != maxK1; ++nkj) {
-      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), data);
+      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), intermediate_novv);
       #pragma omp parallel for
       for (int nka = -k; nka < maxK1; ++nka) {
         std::complex<double>* conjc2 = new std::complex<double>[nbasis_i_ * isize];
@@ -695,7 +696,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const std::complex<double>* idata = coeff_i->bp(nki) + nbasis_i_ * istart;
         for (int ii = 0; ii != nbasis_i_ * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis_i_, &cone, data + novv * (nka + k), &nsize,
+        zgemm_("N", "N", &nsize, &isize, &nbasis_i_, &cone, intermediate_novv + novv * (nka + k), &nsize,
                                                             conjc2, &nbasis_i_, &czero,
                                                             datas + noovv * (nka + k), &nsize);
         delete[] conjc2;
