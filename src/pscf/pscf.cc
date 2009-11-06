@@ -33,6 +33,19 @@ PSCF::PSCF(const RefPGeometry g) : geom_(g), overlap_(new POverlap(g)), hcore_(n
 
 }
 
+
+PSCF::PSCF(const RefPGeometry g, RefPMatrix1e dens)
+: geom_(g), overlap_(new POverlap(g)), hcore_(new PHcore(g)), aodensity_(dens) {
+
+  RefPTildeX tildex_tmp(new PTildeX(overlap_));
+  tildex_ = tildex_tmp;
+
+  direct_ = false;
+  eig_ = new double[(2 * geom_->K() + 1) * geom_->nbasis()];
+
+}
+
+
 PSCF::~PSCF() {
   delete[] eig_;
 }
@@ -43,26 +56,40 @@ void PSCF::compute() {
   const string indent = "  ";
   const string space3 = "   ";
 
+  const bool density_provided = aodensity_.get() != NULL;
+
+  RefPMatrix1e provided_density;
   RefPFock previous_fock;
   {
-    RefPFock fock(new PFock(geom_, hcore_)); 
-    previous_fock = fock;
+    if (!density_provided) {
+      RefPFock fock(new PFock(geom_, hcore_));
+      previous_fock = fock;
+    } else {
+      RefPFock fockp(new PFock(geom_, hcore_));
+      RefPFock fock(new PFock(geom_, fockp, aodensity_, schwarz_, geom_->S(), direct_, ao_eri_));
+      previous_fock = fock;
+      provided_density = aodensity_;
+    }
 
-    PMatrix1e intermediate = *tildex_ % *fock * *tildex_;
+    PMatrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
     intermediate.hermite();
     intermediate.diagonalize(eig_);
     RefPCoeff new_coeff(new PCoeff(*tildex_ * intermediate));
     RefPMatrix1e den(new PMatrix1e(new_coeff->form_density_rhf()));
+
     aodensity_ = den;
   }
 
-  RefPMatrix1e densitychange = aodensity_; // assumes hcore guess...
+  RefPMatrix1e densitychange;
+  if (!density_provided) {
+    densitychange = aodensity_; // assumes hcore guess...
+  } else {
+    RefPMatrix1e tmp(new PMatrix1e(*aodensity_ - *provided_density));
+    densitychange = tmp;
+  }
 
   PDIIS<PMatrix1e> diis(5, 0.1);
   cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ")===" << endl << indent << endl;
-
-  bool conv1 = false;
-  double prev_error = 0.0;
 
   for (int iter = 0; iter != MAX_ITER_SCF; ++iter) { 
     int start = ::clock();
@@ -80,15 +107,14 @@ void PSCF::compute() {
     new_density->real();
     RefPMatrix1e error_vector;
 
-    if (conv1) {
-      RefPMatrix1e evr(new PMatrix1e(*new_density - *aodensity_));
-      error_vector = evr;
-    } else {
-      PMatrix1e denft = aodensity_->ft();
-      PMatrix1e ovrft = overlap_->ft();
-      RefPMatrix1e evr(new PMatrix1e(*fock * denft * ovrft - ovrft * denft * *fock));
-      error_vector = evr;
-    }
+    RefPMatrix1e evr(new PMatrix1e(*new_density - *aodensity_));
+    error_vector = evr;
+#if 0
+    PMatrix1e denft = aodensity_->ft();
+    PMatrix1e ovrft = overlap_->ft();
+    RefPMatrix1e evr(new PMatrix1e(*fock * denft * ovrft - ovrft * denft * *fock));
+    error_vector = evr;
+#endif
 
     int end = ::clock();
     const double energy = obtain_energy(*hcore_, fock->bft(), *new_density); 
@@ -101,9 +127,6 @@ void PSCF::compute() {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       break;
     }
-
-    if (fabs(prev_error / error - 1.0) < 0.01) conv1 = true;
-    prev_error = error;
 
     RefPMatrix1e diis_density;
     if (iter < 15) {

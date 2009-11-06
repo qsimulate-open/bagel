@@ -8,6 +8,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <src/pscf/pscf.h>
+#include <src/util/pmatrix1e.h>
 #include <src/util/pcompfile.h>
 
 class PSCF_DISK : public PSCF {
@@ -16,6 +17,7 @@ class PSCF_DISK : public PSCF {
 
   public:
     PSCF_DISK(const boost::shared_ptr<PGeometry>);
+    PSCF_DISK(const boost::shared_ptr<PGeometry>, boost::shared_ptr<PMatrix1e>);
     ~PSCF_DISK();
 
 

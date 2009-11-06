@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include <src/pscf/pgeometry.h>
+#include <src/pscf/poverlap.h>
 #include <src/pscf/pscf.h>
 #include <src/pscf/pscf_disk.h>
 #include <src/pmp2/pmp2.h>
@@ -17,6 +18,7 @@
 #include <src/global.h>
 
 using namespace std;
+using namespace boost;
 
 int main(int argc, char** argv) {
 
@@ -41,17 +43,52 @@ int main(int argc, char** argv) {
 
     RefPSCF_DISK pscf;
 
-    for (int i = depth_basis - 1; i != -1; --i) {
+    if (depth_basis == 2) {
       if (!periodic) {
-        RefGeom geom(new Geometry(input, i));
+        throw runtime_error("Haven't supported projection in molecular cases.");
+      } else {
+        RefPGeom pgeom(new PGeometry(input, 0));
+        RefPGeom pgeom2(new PGeometry(input, 1));
+        RefPSCF_DISK pscf2(new PSCF_DISK(pgeom2));
+        pscf2->compute();
+
+        // DO PROJECTION!
+        shared_ptr<PMatrix1e> density_new;
+        {
+          RefPGeom uniongeom(new PGeometry(*pgeom2));
+          uniongeom->merge_obs_cabs();
+          POverlap union_overlap_r(uniongeom);
+          PMatrix1e union_overlap(union_overlap_r.ft());
+          const int nold = pgeom2->nbasis();
+          const int nnew = pgeom2->ncabs();
+          PMatrix1e s_new_old(union_overlap.split(nold, nnew).first, make_pair(nold, nold+nnew));
+          PMatrix1e s_new_new(union_overlap.split(nold, nnew).second, make_pair(nold, nold+nnew));
+          PMatrix1e s_new_new_inv = *s_new_new.inverse();
+          PMatrix1e density_old = pscf2->coeff()->form_density_rhf(false);
+          PMatrix1e transform = s_new_old * s_new_new_inv;
+          PMatrix1e density_new_k = transform % density_old * transform;
+
+          density_new_k.set_geom(pgeom);
+          shared_ptr<PMatrix1e> density_new_i(new PMatrix1e(density_new_k.bft()));
+          density_new = density_new_i;
+        }
+        RefPSCF_DISK tmp(new PSCF_DISK(pgeom, density_new));
+        pscf = tmp;
+        pscf->compute();
+      }
+    } else if (depth_basis == 1) {
+      if (!periodic) {
+        RefGeom geom(new Geometry(input, 0));
         SCF scf(geom);
         scf.compute();
       } else {
-        RefPGeom pgeom(new PGeometry(input, i));
+        RefPGeom pgeom(new PGeometry(input, 0));
         RefPSCF_DISK tmp(new PSCF_DISK(pgeom));
         pscf = tmp;
         pscf->compute();
       }
+    } else {
+      throw runtime_error("Haven't supported triple basis sets..");
     }
 
     if (periodic && domp2) {
@@ -61,7 +98,7 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (const exception &e) {
+  } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
     throw;
   } catch (...) {

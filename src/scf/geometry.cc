@@ -72,6 +72,7 @@ Geometry::Geometry(const string s, const int levl)
   // this will be read from the input
   string basis_name("Basis");
   for (int i = 0; i != level_; ++i) basis_name = "G" + basis_name;
+  basis_name = "\\b" + basis_name;
   const regex basis_reg(basis_name);
 
   while(!ifs.eof()) {

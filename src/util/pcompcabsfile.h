@@ -284,7 +284,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   this->max_num_int_ = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
   if (this->jobname_ != "NULL") {
-    std::cout << "  Using ";
+    std::cout << std::fixed << "  Using ";
     const size_t data_written_byte = data_written * sizeof(double);
     if (data_written_byte > 1.0e9) {
       std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";

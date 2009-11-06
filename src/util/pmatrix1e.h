@@ -58,6 +58,8 @@ class PMatrix1e {
     PMatrix1e ft() const; 
     PMatrix1e bft() const; 
 
+    void set_geom(boost::shared_ptr<PGeometry> a) {geom_ = a; };
+
     void hermite();
     void real();
     void conj();
@@ -79,6 +81,7 @@ class PMatrix1e {
 
     const boost::shared_ptr<PGeometry> geom() const { return geom_; };
     void diagonalize(double*);
+    boost::shared_ptr<PMatrix1e> inverse() const;
     void svd(boost::shared_ptr<PMatrix1e> U, boost::shared_ptr<PMatrix1e> V);
 
     void print() const;

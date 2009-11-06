@@ -39,6 +39,7 @@ class PSCF {
 
   public:
     PSCF(const boost::shared_ptr<PGeometry>);
+    PSCF(const boost::shared_ptr<PGeometry>, boost::shared_ptr<PMatrix1e>);
     ~PSCF();
 
     virtual void compute();

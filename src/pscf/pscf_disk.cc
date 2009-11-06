@@ -28,6 +28,13 @@ PSCF_DISK::PSCF_DISK(const RefPGeometry g) : PSCF(g) {
 
 }
 
+
+PSCF_DISK::PSCF_DISK(const RefPGeometry g, RefPMatrix1e a) : PSCF(g, a) {
+
+  store_ERI();
+
+}
+
 PSCF_DISK::~PSCF_DISK() {
 
 }

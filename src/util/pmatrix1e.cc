@@ -325,25 +325,56 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
 
 void PMatrix1e::diagonalize(double* eig) {
   assert(ndim_ == mdim_);
-  const int lwork = nbasis_ * 6;
+  const int lwork = ndim_ * 6;
 
   #pragma omp parallel for
   for (int i = -K(); i <= K(); ++i) {
     Complex* work = new Complex[lwork];
-    double* rwork = new double[nbasis_ * 3 - 2];
+    double* rwork = new double[ndim_ * 3 - 2];
     const int icount = i + K();
     const int boffset = icount * blocksize_;
-    const int eoffset = icount * nbasis_;
+    const int eoffset = icount * ndim_;
     Complex* cdata = data_->pointer(boffset);
     double* ceig = &eig[eoffset];
 
     int info_diagonalize = 0;
-    zheev_("V", "L", &ndim_, cdata, &nbasis_, ceig, work, &lwork, rwork, &info_diagonalize); 
+    zheev_("V", "L", &ndim_, cdata, &ndim_, ceig, work, &lwork, rwork, &info_diagonalize);
     assert(info_diagonalize == 0);
     delete[] work;
     delete[] rwork;
   }
 
+}
+
+
+boost::shared_ptr<PMatrix1e> PMatrix1e::inverse() const {
+//        SUBROUTINE ZGESV( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+  assert(ndim_ == mdim_);
+  PMatrix1e cpy(geom_, ndim_, mdim_);
+  cpy = *this;
+  shared_ptr<PMatrix1e> out(new PMatrix1e(geom_, ndim_, mdim_));
+
+  #pragma omp parallel for
+  for (int i = -K(); i < std::max(K(), 1); ++i) {
+    int* ipiv = new int[ndim_];
+
+    const int icount = i + K();
+    const int boffset = icount * blocksize_;
+    Complex* cdata = cpy.data()->pointer(boffset);
+
+    Complex* odata = out->data()->pointer(boffset);
+    // setting unit matrix.
+    for (int i = 0; i != ndim_; ++i) {
+      odata[i + i * ndim_] = 1.0;
+    }
+    int info;
+    zgesv_(&ndim_, &ndim_, cdata, &ndim_, ipiv, odata, &ndim_, &info);
+
+    if (info != 0) throw runtime_error("PMatrix1e::inverse() failed.");
+
+    delete[] ipiv;
+  }
+  return out;
 }
 
 

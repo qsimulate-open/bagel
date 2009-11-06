@@ -287,7 +287,7 @@ void PCompFile<T>::calculate_num_int_each() {
   max_num_int_ = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
   if (jobname_ != "NULL") {
-    std::cout << "  Using ";
+    std::cout << std::fixed << "  Using ";
     const size_t data_written_byte = data_written * sizeof(double);
     if (data_written_byte > 1.0e9) {
       std::cout << std::setprecision(1) << data_written_byte / 1.0e9 << " GB";
