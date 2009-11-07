@@ -148,8 +148,7 @@ RefMatrix PMP2::coulomb_runtime() const {
             const int m1________k____qb = (m1      + k) * qb;
             const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
-            eri_cabs_->get_block(file_position, eri_cabs_->num_int_each(mcnt), diskdata_cs);
-            file_position += eri_cabs_->num_int_each(mcnt);
+            eri_cabs_->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
 
             const int size_i = eri_cabs_->size_i();

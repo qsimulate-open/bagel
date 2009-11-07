@@ -92,7 +92,7 @@ class PCompCABSFile : public PCompFile<T> {
                             const int astart, const int afence,
                             const int bstart, const int bfence,
                             const std::string jobname = "intermediate",
-                            const bool direct = false);
+                            const bool direct = true);
 
 };
 

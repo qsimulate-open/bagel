@@ -111,22 +111,16 @@ void PMP2::compute() {
   {
     shared_ptr<PCompCABSFile<ERIBatch> >
       eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, true, false, false, "ERI CABS"));
-    eri_cabs->store_integrals();
-    eri_cabs->reopen_with_inout();
     eri_cabs_ = eri_cabs;
   }
   {
     shared_ptr<PCompCABSFile<SlaterBatch> >
       stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, false, false, "Slater CABS"));
-    stg_cabs->store_integrals();
-    stg_cabs->reopen_with_inout();
     stg_cabs_ = stg_cabs;
   }
   if (!use_hy2_) {
     shared_ptr<PCompCABSFile<SlaterBatch> >
       stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
-    stg_cabs2->store_integrals();
-    stg_cabs2->reopen_with_inout();
     stg_cabs2_ = stg_cabs2;
   }
 
