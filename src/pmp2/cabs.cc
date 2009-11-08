@@ -60,11 +60,11 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ() const {
 
   RefHcore uhc(new PHcore(union_geom_, true));
+  RefMatrix coulombc = coulomb_runtime();
 
-  RefMatrix ao_hJ(new PMatrix1e((*uhc + *coulomb_runtime()).ft()));
-  RefMatrix hJ(new PMatrix1e(*coeff_entire_ % *ao_hJ * *coeff_entire_));
-
-  hJ->hermite();
+  RefMatrix ao_h(new PMatrix1e(uhc->ft()));
+  RefMatrix ao_J(new PMatrix1e(coulombc->ft()));
+  RefMatrix hJ(new PMatrix1e(*coeff_entire_ % (*ao_h+*ao_J) * *coeff_entire_));
 
   RefMatrix h_hJ_o(new PMatrix1e(hJ, make_pair(0, geom_->nbasis())));
   RefMatrix h_hJ_c(new PMatrix1e(hJ, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
@@ -78,10 +78,9 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ
 
 const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K() const {
 
-  RefMatrix ao_K(new PMatrix1e(exchange_runtime()->ft()));
+  RefMatrix exchangec = exchange_runtime();
+  RefMatrix ao_K(new PMatrix1e(exchangec->ft()));
   RefMatrix exchange(new PMatrix1e(*coeff_entire_ % *ao_K * *coeff_entire_));
-
-  exchange->hermite();
 
   RefMatrix h_exchange_o(new PMatrix1e(exchange, make_pair(0, geom_->nbasis())));
   RefMatrix h_exchange_c(new PMatrix1e(exchange, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));

@@ -61,6 +61,72 @@ PMP2::~PMP2() {
 void PMP2::compute() {
   const double gamma = geom_->gamma();
 
+
+  ///////////////////////////
+  // Coefficients of CABS;
+  /////////////////////////
+  pair<RefCoeff, RefCoeff> cabs_pairs = generate_CABS();
+  cabs_obs_ = cabs_pairs.first;
+  cabs_aux_ = cabs_pairs.second;
+  // Setting actual number of CABS.
+  ncabs_ = cabs_obs_->mdim();
+
+  ////////////////////
+  // CABS integrals
+  //////////////////
+  {
+    shared_ptr<PCompCABSFile<ERIBatch> >
+      eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, true, false, false, "ERI CABS"));
+    eri_cabs_ = eri_cabs;
+  }
+  {
+    shared_ptr<PCompCABSFile<SlaterBatch> >
+      stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, false, false, "Slater CABS"));
+    stg_cabs_ = stg_cabs;
+  }
+  if (!use_hy2_) {
+    shared_ptr<PCompCABSFile<SlaterBatch> >
+      stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
+    stg_cabs2_ = stg_cabs2;
+  }
+
+  // some preparation for P intermediate.
+  {
+    // Hartree builder (needs modification!!!)
+    // Index convention is *_upper_lower
+    const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> hJ4 = generate_hJ();
+    // nbasis * nbasis size
+    hJ_obs_obs_ = get<0>(hJ4);
+    // nbasis * ncabs size
+    hJ_obs_cabs_ = get<1>(hJ4);
+    // ncabs * nbasis size
+    hJ_cabs_obs_ = get<2>(hJ4);
+    // ncabs * ncabs size
+    hJ_cabs_cabs_ = get<3>(hJ4);
+    // Exchange builder (needs modification!!!)
+    const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> K4 = generate_K();
+    // nbasis * nbasis size
+    K_obs_obs_ = get<0>(K4);
+    // nbasis * ncabs size
+    K_obs_cabs_ = get<1>(K4);
+    // ncabs * nbasis size
+    K_cabs_obs_ = get<2>(K4);
+    // ncabs * ncabs size
+    K_cabs_cabs_ = get<3>(K4);
+    {
+      RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
+      RefMatrix fcabs(new PMatrix1e(*hJ_obs_cabs_ - *K_obs_cabs_));
+      fock_obs_obs_ = fobs;
+      fock_obs_cabs_ = fcabs;
+    }
+    {
+      RefMatrix fobs(new PMatrix1e(*hJ_cabs_obs_ - *K_cabs_obs_));
+      RefMatrix fcabs(new PMatrix1e(*hJ_cabs_cabs_ - *K_cabs_cabs_));
+      fock_cabs_obs_ = fobs;
+      fock_cabs_cabs_ = fcabs;
+    }
+  }
+
   // AO ERI has been computed in the SCF class.
 
   // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
@@ -103,35 +169,6 @@ void PMP2::compute() {
                                               0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
     stg_ii_pp_ = stg_ii_pp;
   }
-
-
-  ////////////////////
-  // CABS integrals
-  //////////////////
-  {
-    shared_ptr<PCompCABSFile<ERIBatch> >
-      eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, true, false, false, "ERI CABS"));
-    eri_cabs_ = eri_cabs;
-  }
-  {
-    shared_ptr<PCompCABSFile<SlaterBatch> >
-      stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, false, false, "Slater CABS"));
-    stg_cabs_ = stg_cabs;
-  }
-  if (!use_hy2_) {
-    shared_ptr<PCompCABSFile<SlaterBatch> >
-      stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
-    stg_cabs2_ = stg_cabs2;
-  }
-
-  ///////////////////////////
-  // Coefficients of CABS;
-  /////////////////////////
-  pair<RefCoeff, RefCoeff> cabs_pairs = generate_CABS();
-  cabs_obs_ = cabs_pairs.first;
-  cabs_aux_ = cabs_pairs.second;
-  // Setting actual number of CABS.
-  ncabs_ = cabs_obs_->mdim();
 
 
   ///////////////////////////////
@@ -225,47 +262,6 @@ void PMP2::compute() {
     cout << "**** debug ****  T contrib. " << setprecision(10) << T->get_energy_two_amp_B().real() << endl;
 #endif
 
-    // some preparation for P intermediate.
-    {
-
-      // Hartree builder (needs modification!!!)
-      // Index convention is *_upper_lower
-
-      const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> hJ4 = generate_hJ();
-      // nbasis * nbasis size
-      hJ_obs_obs_ = get<0>(hJ4);
-      // nbasis * ncabs size
-      hJ_obs_cabs_ = get<1>(hJ4);
-      // ncabs * nbasis size
-      hJ_cabs_obs_ = get<2>(hJ4);
-      // ncabs * ncabs size
-      hJ_cabs_cabs_ = get<3>(hJ4);
-
-      // Exchange builder (needs modification!!!)
-      const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> K4 = generate_K();
-      // nbasis * nbasis size
-      K_obs_obs_ = get<0>(K4);
-      // nbasis * ncabs size
-      K_obs_cabs_ = get<1>(K4);
-      // ncabs * nbasis size
-      K_cabs_obs_ = get<2>(K4);
-      // ncabs * ncabs size
-      K_cabs_cabs_ = get<3>(K4);
-
-      {
-        RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
-        RefMatrix fcabs(new PMatrix1e(*hJ_obs_cabs_ - *K_obs_cabs_));
-        fock_obs_obs_ = fobs;
-        fock_obs_cabs_ = fcabs;
-      }
-      {
-        RefMatrix fobs(new PMatrix1e(*hJ_cabs_obs_ - *K_cabs_obs_));
-        RefMatrix fcabs(new PMatrix1e(*hJ_cabs_cabs_ - *K_cabs_cabs_));
-        fock_cabs_obs_ = fobs;
-        fock_cabs_cabs_ = fcabs;
-      }
-    }
-
     // Q intermediate (made of X * h)
     RefMOFile Q;
     {
@@ -316,6 +312,7 @@ void PMP2::compute() {
 
     // P1 intermediate R^PQ_ij K^R_P R^kl_RQ
     RefMOFile P;
+
     {
       RefCoeff cfobs(new PCoeff(*coeff_ * *K_obs_obs_));
       RefCoeff cfri(new PCoeff(*coeff_cabs_ * *K_obs_cabs_));
@@ -455,8 +452,6 @@ void PMP2::compute() {
 #endif
     }
 
-
-
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
 
     RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));
@@ -467,9 +462,9 @@ void PMP2::compute() {
 
     // OBS * CABS quantity
     RefCoeff xfobs(new PCoeff(*coeff_ * *fock_cabs_obs_));
-
     // RI * CABS quantity.
     RefCoeff xfri(new PCoeff(*coeff_cabs_ * *fock_cabs_cabs_));
+
     // Split into OBS*CABS & CABS*CABS quantities.
     pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->ncabs());
     RefCoeff xfcabs_obs = q.first;
@@ -509,7 +504,9 @@ void PMP2::compute() {
         *p2 += *(p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
       }
       p2->flip_symmetry();
+
       *P += *p2;
+
 #ifdef DEBUG_PRINT
       cout << "**** debug ****  P2 contrib.: " << setprecision(10) << p2->get_energy_two_amp_B().real() << endl;
 #endif

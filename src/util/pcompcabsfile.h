@@ -283,6 +283,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
 
   this->max_num_int_ = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
+  /*
   if (this->jobname_ != "NULL") {
     std::cout << std::fixed << "  Using ";
     const size_t data_written_byte = data_written * sizeof(double);
@@ -297,6 +298,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
     std::cout << " hard disk for storing \"" << this->jobname_ << "\"" << std::endl;
     std::cout << std::endl;
   }
+  */
 
 };
 
@@ -417,6 +419,11 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // Other than that, they should be the same as mo_transform.
 
   // Loading a (2K * 2K * nov) quantity on memory
+
+  assert(coeff_i->ndim() == nbasis_i_);
+  assert(coeff_j->ndim() == nbasis_j_);
+  assert(coeff_a->ndim() == nbasis_a_);
+  assert(coeff_b->ndim() == nbasis_b_);
 
   assert(bfence <= coeff_b->mdim());
 
