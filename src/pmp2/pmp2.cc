@@ -434,7 +434,8 @@ void PMP2::compute() {
     // P2 intermediate R^Pm_ij f^Q_P R^kl_Qm
     {
       RefMOFile p2;
-#if USE_OLD
+//#define USE_OLD
+#ifdef USE_OLD
       // first, evaluate R^pm_ij f^Q_p R^kl_Qm
       {
         RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
@@ -500,7 +501,7 @@ void PMP2::compute() {
           *p2_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, fri_obs_cabs, coeff_,
                                                       nfrc_, nocc_, nfrc_, nocc_,
                                                       0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, CABS 4/8"));
-          p2 = p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)");
+          p2 = p2_2->contract(p2_1, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)");
         }
         // then, evaluate R^A(P)m_ij f^Q_A(P) R^kl_Qm
         {
@@ -516,7 +517,7 @@ void PMP2::compute() {
           *p2_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, fri_cabs_cabs, coeff_,
                                                       nfrc_, nocc_, nfrc_, nocc_,
                                                       0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 8/8"));
-          *p2 += *(p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
+          *p2 += *(p2_2->contract(p2_1, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
         }
       }
 #endif

@@ -22,7 +22,9 @@
 using namespace std;
 using namespace boost;
 
+#define MIN_EXPONENT -200.0
 #define GM1_THRESH 1.0e-15
+#define GM1_THRESH_MAX 1.0e+15
 
 typedef boost::shared_ptr<Shell> RefShell;
 
@@ -31,7 +33,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
   // We need none-zero threshold; otherwise, overflow occurs.
   // And the screening here is not rigorous -- so scaling with the factor of 1.0e-5.
-  const double integral_thresh = std::max(1.0e-20, PRIM_SCREEN_THRESH * 1.0e-5);// / max_density;
+  const double integral_thresh = std::max(1.0e-20, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
@@ -192,7 +194,9 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         const double cxq = *expi2 + *expi3;
         const double cd = *expi2 * *expi3;
         const double cxq_inv = 1.0 / cxq;
+
         Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
+        if (-r23_sq * (cd * cxq_inv) < MIN_EXPONENT) continue;
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
@@ -246,7 +250,8 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
           const double zpq = qz_save[index23] - pz;
           const double pq_sq = xpq * xpq + ypq * ypq + zpq * zpq;
           const double U = 0.25 * gamma_ * gamma_ / rho;
-          if (coeffy_[index] * exp(U - gamma_ * pq_sq) < integral_thresh) continue;
+          if (U - gamma_ * sqrt(pq_sq) < MIN_EXPONENT) continue;
+          if (coeffy_[index] * exp(U - gamma_ * sqrt(pq_sq)) < integral_thresh) continue;
 
           const double T = rho * pq_sq;
           coeff_[index] = coeffy_[index] * twogamma * U;
