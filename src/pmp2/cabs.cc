@@ -97,3 +97,44 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K(
 
   return make_tuple(h_exchange_o_pair.first, h_exchange_o_pair.second, h_exchange_c_pair.first, h_exchange_c_pair.second);
 }
+
+
+void PMP2::fill_in_cabs_matices() {
+  // some preparation for P intermediate.
+
+  // Hartree builder (needs modification!!!)
+  // Index convention is *_upper_lower
+  const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> hJ4 = generate_hJ();
+  // nbasis * nbasis size
+  hJ_obs_obs_ = get<0>(hJ4);
+  // nbasis * ncabs size
+  hJ_obs_cabs_ = get<1>(hJ4);
+  // ncabs * nbasis size
+  hJ_cabs_obs_ = get<2>(hJ4);
+  // ncabs * ncabs size
+  hJ_cabs_cabs_ = get<3>(hJ4);
+  // Exchange builder (needs modification!!!)
+  const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> K4 = generate_K();
+  // nbasis * nbasis size
+  K_obs_obs_ = get<0>(K4);
+  // nbasis * ncabs size
+  K_obs_cabs_ = get<1>(K4);
+  // ncabs * nbasis size
+  K_cabs_obs_ = get<2>(K4);
+  // ncabs * ncabs size
+  K_cabs_cabs_ = get<3>(K4);
+  {
+    RefMatrix fobs(new PMatrix1e(*hJ_obs_obs_ - *K_obs_obs_));
+    RefMatrix fcabs(new PMatrix1e(*hJ_obs_cabs_ - *K_obs_cabs_));
+    fock_obs_obs_ = fobs;
+    fock_obs_cabs_ = fcabs;
+  }
+  {
+    RefMatrix fobs(new PMatrix1e(*hJ_cabs_obs_ - *K_cabs_obs_));
+    RefMatrix fcabs(new PMatrix1e(*hJ_cabs_cabs_ - *K_cabs_cabs_));
+    fock_cabs_obs_ = fobs;
+    fock_cabs_cabs_ = fcabs;
+  }
+
+}
+

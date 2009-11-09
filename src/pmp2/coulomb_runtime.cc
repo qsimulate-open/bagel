@@ -287,11 +287,9 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
     const size_t allocsize_cs = eri_cabs_t->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
 
-    long file_position = 0l;
-    size_t mcnt = 0lu;
     for (int m1 = -s; m1 <= s; ++m1) {
       for (int m2 = -l; m2 <= l; ++m2) { // *NOT* using bra-ket symmetry!!!
-        for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++mcnt) {
+        for (int m3 = m2 - s; m3 <= m2 + s; ++m3) {
 
           const int k = geom_->K();
           const size_t b = density->blocksize();

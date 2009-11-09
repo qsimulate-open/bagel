@@ -101,6 +101,8 @@ class PMP2 {
     RefMatrix coulomb_runtime(const bool) const;
     RefMatrix exchange_runtime(const bool) const;
 
+    void fill_in_cabs_matices();
+
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,
          const std::vector<double>, boost::shared_ptr<PCompFile<ERIBatch> >, const bool);
