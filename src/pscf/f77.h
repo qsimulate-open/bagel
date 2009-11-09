@@ -48,6 +48,8 @@ extern "C" {
 
  void zgesvd_(const char*, const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
      std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*);
+ void zgesdd_(const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
+     std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*, int*);
 
 };
 

@@ -564,7 +564,8 @@ void PMOFile<T>::rprint() const {
 
   // I will print out in Ne or H2O cases...
   // singlet
-  if (isize * jsize <= 25) {
+//  if (isize * jsize <= 25) {
+  {
     int iall = 0;
     for (int ki = -k; ki != std::max(k, 1); ++ki) {
       for (int kj = -k; kj != std::max(k, 1); ++kj) {

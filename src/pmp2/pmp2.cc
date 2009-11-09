@@ -61,7 +61,6 @@ PMP2::~PMP2() {
 void PMP2::compute() {
   const double gamma = geom_->gamma();
 
-
   ///////////////////////////
   // Coefficients of CABS;
   /////////////////////////
@@ -474,6 +473,7 @@ void PMP2::compute() {
     // P2 intermediate R^Pm_ij f^Q_P R^kl_Qm
     {
       RefMOFile p2;
+#if USE_OLD
       // first, evaluate R^pm_ij f^Q_p R^kl_Qm
       {
         RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
@@ -503,6 +503,64 @@ void PMP2::compute() {
                                                    0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 4/4");
         *p2 += *(p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
       }
+#else
+      // first, evaluate R^p(P)m_ij f^Q_p(P) R^kl_Qm
+      {
+        const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> ri4 = generate_RI();
+        ri_entire_->rprint();
+        // nbasis * nbasis size
+        RefCoeff ri_obs_obs(new PCoeff(*get<0>(ri4)));
+        // nbasis * ncabs size
+        RefCoeff ri_obs_cabs(new PCoeff(*get<1>(ri4)));
+        // ncabs * nbasis size
+        RefCoeff ri_cabs_obs(new PCoeff(*get<2>(ri4)));
+        // ncabs * ncabs size
+        RefCoeff ri_cabs_cabs(new PCoeff(*get<3>(ri4)));
+
+        const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> fri4 = generate_fock_weighted_RI();
+        // nbasis * nbasis size
+        RefCoeff fri_obs_obs(new PCoeff(*get<0>(fri4)));
+        // nbasis * ncabs size
+        RefCoeff fri_obs_cabs(new PCoeff(*get<1>(fri4)));
+        // ncabs * nbasis size
+        RefCoeff fri_cabs_obs(new PCoeff(*get<2>(fri4)));
+        // ncabs * ncabs size
+        RefCoeff fri_cabs_cabs(new PCoeff(*get<3>(fri4)));
+
+        {
+          // first target is OBS space
+          RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, ri_obs_obs, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, OBS 1/8");
+          *p2_1 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, ri_obs_cabs, coeff_,
+                                                      nfrc_, nocc_, nfrc_, nocc_,
+                                                      0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, CABS 2/8"));
+          RefMOFile p2_2 = stg_->mo_transform(coeff_, coeff_, fri_obs_obs, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, OBS 3/8");
+          *p2_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, fri_obs_cabs, coeff_,
+                                                      nfrc_, nocc_, nfrc_, nocc_,
+                                                      0, nbasis_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=p, CABS 4/8"));
+          p2 = p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)");
+        }
+        // then, evaluate R^A(P)m_ij f^Q_A(P) R^kl_Qm
+        {
+          RefMOFile p2_1 = stg_->mo_transform(coeff_, coeff_, ri_cabs_obs, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, OBS 5/8");
+          *p2_1 += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, ri_cabs_cabs, coeff_,
+                                                     nfrc_, nocc_, nfrc_, nocc_,
+                                                     0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 6/8");
+          RefMOFile p2_2 = stg_->mo_transform(coeff_, coeff_, fri_cabs_obs, coeff_,
+                                              nfrc_, nocc_, nfrc_, nocc_,
+                                              0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, OBS 7/8");
+          *p2_2 += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, fri_cabs_cabs, coeff_,
+                                                     nfrc_, nocc_, nfrc_, nocc_,
+                                                     0, ncabs_, 0, nocc_, "P2: R^Pm_ij f^Q_P R^kl_Qm, P=A, CABS 8/8");
+          *p2 += *(p2_1->contract(p2_2, "P2: R^Pm_ij f^Q_P R^kl_Qm (P=p)"));
+        }
+      }
+#endif
       p2->flip_symmetry();
 
       *P += *p2;

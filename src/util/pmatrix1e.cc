@@ -299,10 +299,11 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
 void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
   assert(V->ndim() == mdim_ && V->mdim() == mdim_);
-  const int lwork = 5 * min(ndim_, mdim_) + max(ndim_, mdim_);
+  const int lwork = 5 * min(ndim_, mdim_)*min(ndim_, mdim_) + 5*max(ndim_, mdim_);
   complex<double>* work = new complex<double>[lwork];
   double* rwork = new double[lwork];
   double* S = new double[min(ndim_, mdim_)];
+  int* iwork = new int[min(ndim_, mdim_)*8];
 /*
   SUBROUTINE ZGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
  $                   WORK, LWORK, RWORK, INFO )
@@ -312,7 +313,12 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
     complex<double>* ublock = U->data()->pointer(U->blocksize() * (i + K()));
     complex<double>* vblock = V->data()->pointer(V->blocksize() * (i + K()));
     int info = 0;
+#define USE_DC
+#ifdef USE_DC
+    zgesdd_("A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, iwork, &info);
+#else
     zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, &info);
+#endif
     if (info != 0) throw runtime_error("zgesvd failed in PMatrix1e::svd");
 //  for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(10) << fixed << S[j] << " ";
 //  cout << endl;
@@ -320,6 +326,7 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
   delete[] S;
   delete[] work;
   delete[] rwork;
+  delete[] iwork;
 }
 
 

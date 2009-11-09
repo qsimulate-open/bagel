@@ -37,6 +37,7 @@ class PMP2 {
     RefCoeff cabs_aux_;
     RefCoeff coeff_cabs_;
     RefMatrix coeff_entire_;
+    RefMatrix ri_entire_;
 
     // HF orbital energies
     const std::vector<double> eig_;
@@ -72,7 +73,12 @@ class PMP2 {
     size_t noovv_;
 
     std::pair<RefCoeff, RefCoeff> generate_CABS();
+    boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_RI();
+    boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_fock_weighted_RI() const;
+
     // Hartree and exchange matrix
+    RefMatrix ao_hJ_;
+    RefMatrix ao_K_;
     RefMatrix hJ_obs_obs_;
     RefMatrix hJ_obs_cabs_;
     RefMatrix hJ_cabs_obs_;
@@ -86,14 +92,14 @@ class PMP2 {
     RefMatrix fock_cabs_obs_;
     RefMatrix fock_cabs_cabs_;
     // Hartree builder
-    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_hJ() const;
+    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_hJ();
     // Exchange builder
-    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K() const;
+    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K();
 
     RefMatrix coulomb_runtime_OBS() const;
     RefMatrix exchange_runtime_OBS() const;
-    RefMatrix coulomb_runtime() const;
-    RefMatrix exchange_runtime() const;
+    RefMatrix coulomb_runtime(const bool) const;
+    RefMatrix exchange_runtime(const bool) const;
 
   public:
     PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,

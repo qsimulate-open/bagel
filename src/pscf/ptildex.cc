@@ -10,6 +10,7 @@
 #include <complex>
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
 #include <src/pscf/ptildex.h>
 #include <src/pscf/f77.h>
 #include <src/pscf/pscf_macros.h>
@@ -50,8 +51,8 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     int info = 0;
     double* rwork = new double[5 * nbasis_];
     double* eig = new double[nbasis_];
-    zheev_("V", "L", &ndim_, cdata, &ndim_, eig, work, &lwork, rwork, &info);
-    assert(info == 0);
+    zheev_("V", "U", &ndim_, cdata, &ndim_, eig, work, &lwork, rwork, &info);
+    if (info != 0) throw runtime_error("zheev in ptildex.cc failed.");
     delete[] rwork;
     delete[] work;
   
