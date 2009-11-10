@@ -1,5 +1,6 @@
 Molecule: C1
   Atom(Ne,  0.0, 0.0, 0.0),
+  Atom(Ne,  0.0, 0.0, 0.0),
 
 Basis:
   cc-pVDZ 6-31g 

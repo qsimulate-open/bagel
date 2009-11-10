@@ -334,16 +334,22 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                            const double integral2 = *cdata + *cdata;
-                            data[m1________k____qb + j0q + j1] += den[m2___m3___k____b + j3n + j2] * integral2;
-                          }
+                    #pragma omp parallel for
+                    for (int j0 = b0offset; j0 < b0offset + b0size; ++j0) { // center unit cell
+                      const size_t j0q = j0 * q;
+                      const double* ccdata = cdata + (j0-b0offset)*b1size*b2size*b3size;
+                      for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                        for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                          const int unit = 1;
+                          const int stride = 2 * n;
+                          const double* den_d = (const double*)(&den[m2___m3___k____b + n*b3offset + j2]);
+                          data[m1________k____qb + j0q + j1] += 2.0 * ddot_(&b3size, ccdata, &unit, den_d, &stride);
+                          ccdata += b3size;
                         }
                       }
                     }
+                    cdata += b0size * b1size * b2size * b3size;
+
 
                   }
                 }

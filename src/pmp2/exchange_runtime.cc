@@ -353,13 +353,18 @@ RefMatrix PMP2::exchange_runtime(const bool do_two_cabs) const {
                     if (skip_schwarz) continue;
 
                     if (mmmin) {
-                      for (int j0 = b0offset                    ; j0 != b0offset + b0size; ++j0          ) { // center unit cell
-                        for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
-                          for (int j2 = b2offset, j2q = b2offset * q; j2 != b2offset + b2size; ++j2, j2q += q) {
-                            for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
-                              data[m1___m2___k____qb + j2q + j1] += den[_____m3___k____b + j3n + j0] * *cdata;
-                            }
+                      for (int j0 = b0offset; j0 != b0offset + b0size; ++j0          ) { // center unit cell
+                        for (int j1 = b1offset; j1 != b1offset + b1size; ++j1          ) {
+                          #pragma omp parallel for
+                          for (int j2 = b2offset; j2 < b2offset + b2size; ++j2) {
+                            const size_t j2q = j2*q;
+                            const double* ccdata = cdata + (j2-b2offset)*b3size;
+                            const int unit = 1;
+                            const int stride = 2 * n;
+                            const double* den_d = (const double*)(&den[_____m3___k____b + n*b3offset + j0]);
+                            data[m1___m2___k____qb + j2q + j1] += ddot_(&b3size, ccdata, &unit, den_d, &stride);
                           }
+                          cdata += b2size * b3size;
                         }
                       }
                     } else {
