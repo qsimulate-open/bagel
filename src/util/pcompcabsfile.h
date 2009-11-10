@@ -372,10 +372,12 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
     }
   }
   #pragma omp parallel for
-  for (int i0 = 0; i0 < size_i_; ++i0) {
-    int offset = i0 * size_j_ * size_a_ * size_b_;
-    const RefShell b0 = basis_i_[i0]; // b0 is the center cell
-    for (int i1 = 0; i1 != size_a_; ++i1) {
+  for (int i01 = 0; i01 < size_i_ * size_a_; ++i01) {
+    const int i1 = i01 % size_a_;
+    const int i0 = (i01 - i1) / size_a_;
+    {
+      int offset = i01 * size_j_ * size_b_;
+      const RefShell b0 = basis_i_[i0]; // b0 is the center cell
       const RefShell b1 = basis_a_[i1]->move_atom(m1disp);
       for (int i2 = 0; i2 != size_j_; ++i2) {
         const RefShell b2 = basis_j_[i2]->move_atom(m2disp);

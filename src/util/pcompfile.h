@@ -332,11 +332,13 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
     }
   }
   #pragma omp parallel for
-  for (int i0 = 0; i0 < size; ++i0) {
-    int offset = i0 * size * size * size; 
-    const RefShell b0 = basis_[i0]; // b0 is the center cell
-    for (int i1 = 0; i1 != size; ++i1) {
-      const RefShell b1 = basis_[i1]->move_atom(m1disp); 
+  for (int i01 = 0; i01 < size * size; ++i01) {
+    const int i1 = i01 % size;
+    const int i0 = (i01 - i1) / size;
+    {
+      int offset = i01 * size * size;
+      const RefShell b0 = basis_[i0]; // b0 is the center cell
+      const RefShell b1 = basis_[i1]->move_atom(m1disp);
       for (int i2 = 0; i2 != size; ++i2) {
         const RefShell b2 = basis_[i2]->move_atom(m2disp);
         for (int i3 = 0; i3 < size; ++i3, ++offset) {
