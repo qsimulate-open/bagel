@@ -3,8 +3,4 @@
 
 #define THRESH_OVERLAP 1.0e-8
 
-#define MAX_ITER_SCF 200
-
-#define SCF_THRESH 1.0e-10
-
 #endif

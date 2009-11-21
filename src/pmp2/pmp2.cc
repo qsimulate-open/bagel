@@ -210,6 +210,15 @@ void PMP2::compute() {
     X_ = X_pre;
   }
 
+#ifdef DEBUG_PRINT
+  {
+    const complex<double> en_vt = V_->get_energy_one_amp();
+    const complex<double> en_xtt = X_->get_energy_two_amp_X(eig_);
+    cout << "**** debug ****  V contrib. " << setprecision(10) << en_vt.real() << endl;
+    cout << "**** debug ****  X contrib. " << setprecision(10) << en_xtt.real() << endl;
+  }
+#endif
+
 
   /////////////////////
   // B intermediate
@@ -295,16 +304,18 @@ void PMP2::compute() {
       RefMOFile p1;
       // first, evaluate R^Pq_ij K^r_P R^kl_rq
       {
+#if 0
         RefMOFile p1_1 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, OBS 1/3");
+#endif
         RefMOFile p1_2 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs_fold, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
-                                            0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, OBS 2/3");
+                                            0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, OBS 1/2");
         *p1_2 += *(stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cfcabs_aux, coeff_,
                                                     nfrc_, nocc_, nfrc_, nocc_,
-                                                    0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, CABS 3/3"));
-        p1 = p1_1->contract(p1_2, "P1: R^PQ_ij K^R_P R^kl_RQ case1");
+                                                    0, nbasis_, 0, nbasis_, "P1: R^PQ_ij K^R_P R^kl_RQ case1, CABS 2/2"));
+        p1 = stg_ii_pp_->contract(p1_2, "P1: R^PQ_ij K^R_P R^kl_RQ case1");
       }
 #ifdef DEBUG_PRINT
       cout << "**** debug ****  P1 case1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
