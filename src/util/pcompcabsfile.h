@@ -186,7 +186,7 @@ void PCompCABSFile<T>::init_schwarz_jb() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        schwarz_jb_[((m + this->K_) * size_j_ + i0) * size_b_ + i1] = cmax;
+        schwarz_jb_[((m + this->K_) * size_j_ + i0) * size_b_ + i1] = std::sqrt(cmax);
       }
     }
   }
@@ -222,7 +222,7 @@ void PCompCABSFile<T>::init_schwarz_ia() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        schwarz_ia_[((m + this->K_) * size_i_ + i0) * size_a_ + i1] = cmax;
+        schwarz_ia_[((m + this->K_) * size_i_ + i0) * size_a_ + i1] = std::sqrt(cmax);
       }
     }
   }

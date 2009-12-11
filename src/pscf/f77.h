@@ -6,6 +6,7 @@
 #include <complex>
 
 extern "C" {
+
  void dcopy_(const int*, const double*, const int*, double*, const int*);
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
 

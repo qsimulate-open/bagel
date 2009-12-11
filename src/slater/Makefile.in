@@ -69,69 +69,70 @@ AR = ar
 ARFLAGS = cru
 libslater_a_AR = $(AR) $(ARFLAGS)
 libslater_a_LIBADD =
-am_libslater_a_OBJECTS = slaterbatch.$(OBJEXT) srootlist.$(OBJEXT) \
-	root1.$(OBJEXT) root2.$(OBJEXT) root3.$(OBJEXT) \
-	root4.$(OBJEXT) root5.$(OBJEXT) root6.$(OBJEXT) \
-	root7.$(OBJEXT) root8.$(OBJEXT) root9.$(OBJEXT) \
-	scompute.$(OBJEXT) svrrlist.$(OBJEXT) scontraction.$(OBJEXT) \
-	svrr.$(OBJEXT) usvrr.$(OBJEXT) svrr_template.$(OBJEXT) \
-	usvrr_template.$(OBJEXT) _svrr_0000.$(OBJEXT) \
-	_svrr_0010.$(OBJEXT) _svrr_0020.$(OBJEXT) _svrr_0030.$(OBJEXT) \
-	_svrr_0040.$(OBJEXT) _svrr_0050.$(OBJEXT) _svrr_0060.$(OBJEXT) \
-	_svrr_0070.$(OBJEXT) _svrr_0080.$(OBJEXT) _svrr_0090.$(OBJEXT) \
-	_svrr_00a0.$(OBJEXT) _svrr_00b0.$(OBJEXT) _svrr_00c0.$(OBJEXT) \
-	_svrr_1000.$(OBJEXT) _svrr_1010.$(OBJEXT) _svrr_1020.$(OBJEXT) \
-	_svrr_1030.$(OBJEXT) _svrr_1040.$(OBJEXT) _svrr_1050.$(OBJEXT) \
-	_svrr_1060.$(OBJEXT) _svrr_1070.$(OBJEXT) _svrr_1080.$(OBJEXT) \
-	_svrr_1090.$(OBJEXT) _svrr_10a0.$(OBJEXT) _svrr_10b0.$(OBJEXT) \
-	_svrr_10c0.$(OBJEXT) _svrr_2000.$(OBJEXT) _svrr_2010.$(OBJEXT) \
-	_svrr_2020.$(OBJEXT) _svrr_2030.$(OBJEXT) _svrr_2040.$(OBJEXT) \
-	_svrr_2050.$(OBJEXT) _svrr_2060.$(OBJEXT) _svrr_2070.$(OBJEXT) \
-	_svrr_2080.$(OBJEXT) _svrr_2090.$(OBJEXT) _svrr_20a0.$(OBJEXT) \
-	_svrr_20b0.$(OBJEXT) _svrr_20c0.$(OBJEXT) _svrr_3000.$(OBJEXT) \
-	_svrr_3010.$(OBJEXT) _svrr_3020.$(OBJEXT) _svrr_3030.$(OBJEXT) \
-	_svrr_3040.$(OBJEXT) _svrr_3050.$(OBJEXT) _svrr_3060.$(OBJEXT) \
-	_svrr_3070.$(OBJEXT) _svrr_3080.$(OBJEXT) _svrr_3090.$(OBJEXT) \
-	_svrr_30a0.$(OBJEXT) _svrr_30b0.$(OBJEXT) _svrr_30c0.$(OBJEXT) \
-	_svrr_4000.$(OBJEXT) _svrr_4010.$(OBJEXT) _svrr_4020.$(OBJEXT) \
-	_svrr_4030.$(OBJEXT) _svrr_4040.$(OBJEXT) _svrr_4050.$(OBJEXT) \
-	_svrr_4060.$(OBJEXT) _svrr_4070.$(OBJEXT) _svrr_4080.$(OBJEXT) \
-	_svrr_4090.$(OBJEXT) _svrr_40a0.$(OBJEXT) _svrr_40b0.$(OBJEXT) \
-	_svrr_40c0.$(OBJEXT) _svrr_5000.$(OBJEXT) _svrr_5010.$(OBJEXT) \
-	_svrr_5020.$(OBJEXT) _svrr_5030.$(OBJEXT) _svrr_5040.$(OBJEXT) \
-	_svrr_5050.$(OBJEXT) _svrr_5060.$(OBJEXT) _svrr_5070.$(OBJEXT) \
-	_svrr_5080.$(OBJEXT) _svrr_5090.$(OBJEXT) _svrr_50a0.$(OBJEXT) \
-	_svrr_50b0.$(OBJEXT) _svrr_50c0.$(OBJEXT) _svrr_6000.$(OBJEXT) \
-	_svrr_6010.$(OBJEXT) _svrr_6020.$(OBJEXT) _svrr_6030.$(OBJEXT) \
-	_svrr_6040.$(OBJEXT) _svrr_6050.$(OBJEXT) _svrr_6060.$(OBJEXT) \
-	_svrr_6070.$(OBJEXT) _svrr_6080.$(OBJEXT) _svrr_6090.$(OBJEXT) \
-	_svrr_60a0.$(OBJEXT) _svrr_60b0.$(OBJEXT) _svrr_60c0.$(OBJEXT) \
-	_svrr_7000.$(OBJEXT) _svrr_7010.$(OBJEXT) _svrr_7020.$(OBJEXT) \
-	_svrr_7030.$(OBJEXT) _svrr_7040.$(OBJEXT) _svrr_7050.$(OBJEXT) \
-	_svrr_7060.$(OBJEXT) _svrr_7070.$(OBJEXT) _svrr_7080.$(OBJEXT) \
-	_svrr_7090.$(OBJEXT) _svrr_70a0.$(OBJEXT) _svrr_70b0.$(OBJEXT) \
-	_svrr_70c0.$(OBJEXT) _svrr_8000.$(OBJEXT) _svrr_8010.$(OBJEXT) \
-	_svrr_8020.$(OBJEXT) _svrr_8030.$(OBJEXT) _svrr_8040.$(OBJEXT) \
-	_svrr_8050.$(OBJEXT) _svrr_8060.$(OBJEXT) _svrr_8070.$(OBJEXT) \
-	_svrr_8080.$(OBJEXT) _svrr_8090.$(OBJEXT) _svrr_80a0.$(OBJEXT) \
-	_svrr_80b0.$(OBJEXT) _svrr_80c0.$(OBJEXT) _svrr_9000.$(OBJEXT) \
-	_svrr_9010.$(OBJEXT) _svrr_9020.$(OBJEXT) _svrr_9030.$(OBJEXT) \
-	_svrr_9040.$(OBJEXT) _svrr_9050.$(OBJEXT) _svrr_9060.$(OBJEXT) \
-	_svrr_9070.$(OBJEXT) _svrr_9080.$(OBJEXT) _svrr_9090.$(OBJEXT) \
-	_svrr_90a0.$(OBJEXT) _svrr_90b0.$(OBJEXT) _svrr_90c0.$(OBJEXT) \
-	_svrr_a000.$(OBJEXT) _svrr_a010.$(OBJEXT) _svrr_a020.$(OBJEXT) \
-	_svrr_a030.$(OBJEXT) _svrr_a040.$(OBJEXT) _svrr_a050.$(OBJEXT) \
-	_svrr_a060.$(OBJEXT) _svrr_a070.$(OBJEXT) _svrr_a080.$(OBJEXT) \
-	_svrr_a090.$(OBJEXT) _svrr_a0a0.$(OBJEXT) _svrr_a0b0.$(OBJEXT) \
-	_svrr_a0c0.$(OBJEXT) _svrr_b000.$(OBJEXT) _svrr_b010.$(OBJEXT) \
-	_svrr_b020.$(OBJEXT) _svrr_b030.$(OBJEXT) _svrr_b040.$(OBJEXT) \
-	_svrr_b050.$(OBJEXT) _svrr_b060.$(OBJEXT) _svrr_b070.$(OBJEXT) \
-	_svrr_b080.$(OBJEXT) _svrr_b090.$(OBJEXT) _svrr_b0a0.$(OBJEXT) \
-	_svrr_b0b0.$(OBJEXT) _svrr_b0c0.$(OBJEXT) _svrr_c000.$(OBJEXT) \
-	_svrr_c010.$(OBJEXT) _svrr_c020.$(OBJEXT) _svrr_c030.$(OBJEXT) \
-	_svrr_c040.$(OBJEXT) _svrr_c050.$(OBJEXT) _svrr_c060.$(OBJEXT) \
-	_svrr_c070.$(OBJEXT) _svrr_c080.$(OBJEXT) _svrr_c090.$(OBJEXT) \
-	_svrr_c0a0.$(OBJEXT) _svrr_c0b0.$(OBJEXT) _svrr_c0c0.$(OBJEXT)
+am_libslater_a_OBJECTS = module.$(OBJEXT) slaterbatch.$(OBJEXT) \
+	srootlist.$(OBJEXT) scompute.$(OBJEXT) svrrlist.$(OBJEXT) \
+	scontraction.$(OBJEXT) svrr.$(OBJEXT) usvrr.$(OBJEXT) \
+	svrr_template.$(OBJEXT) usvrr_template.$(OBJEXT) \
+	_svrr_0000.$(OBJEXT) _svrr_0010.$(OBJEXT) _svrr_0020.$(OBJEXT) \
+	_svrr_0030.$(OBJEXT) _svrr_0040.$(OBJEXT) _svrr_0050.$(OBJEXT) \
+	_svrr_0060.$(OBJEXT) _svrr_0070.$(OBJEXT) _svrr_0080.$(OBJEXT) \
+	_svrr_0090.$(OBJEXT) _svrr_00a0.$(OBJEXT) _svrr_00b0.$(OBJEXT) \
+	_svrr_00c0.$(OBJEXT) _svrr_1000.$(OBJEXT) _svrr_1010.$(OBJEXT) \
+	_svrr_1020.$(OBJEXT) _svrr_1030.$(OBJEXT) _svrr_1040.$(OBJEXT) \
+	_svrr_1050.$(OBJEXT) _svrr_1060.$(OBJEXT) _svrr_1070.$(OBJEXT) \
+	_svrr_1080.$(OBJEXT) _svrr_1090.$(OBJEXT) _svrr_10a0.$(OBJEXT) \
+	_svrr_10b0.$(OBJEXT) _svrr_10c0.$(OBJEXT) _svrr_2000.$(OBJEXT) \
+	_svrr_2010.$(OBJEXT) _svrr_2020.$(OBJEXT) _svrr_2030.$(OBJEXT) \
+	_svrr_2040.$(OBJEXT) _svrr_2050.$(OBJEXT) _svrr_2060.$(OBJEXT) \
+	_svrr_2070.$(OBJEXT) _svrr_2080.$(OBJEXT) _svrr_2090.$(OBJEXT) \
+	_svrr_20a0.$(OBJEXT) _svrr_20b0.$(OBJEXT) _svrr_20c0.$(OBJEXT) \
+	_svrr_3000.$(OBJEXT) _svrr_3010.$(OBJEXT) _svrr_3020.$(OBJEXT) \
+	_svrr_3030.$(OBJEXT) _svrr_3040.$(OBJEXT) _svrr_3050.$(OBJEXT) \
+	_svrr_3060.$(OBJEXT) _svrr_3070.$(OBJEXT) _svrr_3080.$(OBJEXT) \
+	_svrr_3090.$(OBJEXT) _svrr_30a0.$(OBJEXT) _svrr_30b0.$(OBJEXT) \
+	_svrr_30c0.$(OBJEXT) _svrr_4000.$(OBJEXT) _svrr_4010.$(OBJEXT) \
+	_svrr_4020.$(OBJEXT) _svrr_4030.$(OBJEXT) _svrr_4040.$(OBJEXT) \
+	_svrr_4050.$(OBJEXT) _svrr_4060.$(OBJEXT) _svrr_4070.$(OBJEXT) \
+	_svrr_4080.$(OBJEXT) _svrr_4090.$(OBJEXT) _svrr_40a0.$(OBJEXT) \
+	_svrr_40b0.$(OBJEXT) _svrr_40c0.$(OBJEXT) _svrr_5000.$(OBJEXT) \
+	_svrr_5010.$(OBJEXT) _svrr_5020.$(OBJEXT) _svrr_5030.$(OBJEXT) \
+	_svrr_5040.$(OBJEXT) _svrr_5050.$(OBJEXT) _svrr_5060.$(OBJEXT) \
+	_svrr_5070.$(OBJEXT) _svrr_5080.$(OBJEXT) _svrr_5090.$(OBJEXT) \
+	_svrr_50a0.$(OBJEXT) _svrr_50b0.$(OBJEXT) _svrr_50c0.$(OBJEXT) \
+	_svrr_6000.$(OBJEXT) _svrr_6010.$(OBJEXT) _svrr_6020.$(OBJEXT) \
+	_svrr_6030.$(OBJEXT) _svrr_6040.$(OBJEXT) _svrr_6050.$(OBJEXT) \
+	_svrr_6060.$(OBJEXT) _svrr_6070.$(OBJEXT) _svrr_6080.$(OBJEXT) \
+	_svrr_6090.$(OBJEXT) _svrr_60a0.$(OBJEXT) _svrr_60b0.$(OBJEXT) \
+	_svrr_60c0.$(OBJEXT) _svrr_7000.$(OBJEXT) _svrr_7010.$(OBJEXT) \
+	_svrr_7020.$(OBJEXT) _svrr_7030.$(OBJEXT) _svrr_7040.$(OBJEXT) \
+	_svrr_7050.$(OBJEXT) _svrr_7060.$(OBJEXT) _svrr_7070.$(OBJEXT) \
+	_svrr_7080.$(OBJEXT) _svrr_7090.$(OBJEXT) _svrr_70a0.$(OBJEXT) \
+	_svrr_70b0.$(OBJEXT) _svrr_70c0.$(OBJEXT) _svrr_8000.$(OBJEXT) \
+	_svrr_8010.$(OBJEXT) _svrr_8020.$(OBJEXT) _svrr_8030.$(OBJEXT) \
+	_svrr_8040.$(OBJEXT) _svrr_8050.$(OBJEXT) _svrr_8060.$(OBJEXT) \
+	_svrr_8070.$(OBJEXT) _svrr_8080.$(OBJEXT) _svrr_8090.$(OBJEXT) \
+	_svrr_80a0.$(OBJEXT) _svrr_80b0.$(OBJEXT) _svrr_80c0.$(OBJEXT) \
+	_svrr_9000.$(OBJEXT) _svrr_9010.$(OBJEXT) _svrr_9020.$(OBJEXT) \
+	_svrr_9030.$(OBJEXT) _svrr_9040.$(OBJEXT) _svrr_9050.$(OBJEXT) \
+	_svrr_9060.$(OBJEXT) _svrr_9070.$(OBJEXT) _svrr_9080.$(OBJEXT) \
+	_svrr_9090.$(OBJEXT) _svrr_90a0.$(OBJEXT) _svrr_90b0.$(OBJEXT) \
+	_svrr_90c0.$(OBJEXT) _svrr_a000.$(OBJEXT) _svrr_a010.$(OBJEXT) \
+	_svrr_a020.$(OBJEXT) _svrr_a030.$(OBJEXT) _svrr_a040.$(OBJEXT) \
+	_svrr_a050.$(OBJEXT) _svrr_a060.$(OBJEXT) _svrr_a070.$(OBJEXT) \
+	_svrr_a080.$(OBJEXT) _svrr_a090.$(OBJEXT) _svrr_a0a0.$(OBJEXT) \
+	_svrr_a0b0.$(OBJEXT) _svrr_a0c0.$(OBJEXT) _svrr_b000.$(OBJEXT) \
+	_svrr_b010.$(OBJEXT) _svrr_b020.$(OBJEXT) _svrr_b030.$(OBJEXT) \
+	_svrr_b040.$(OBJEXT) _svrr_b050.$(OBJEXT) _svrr_b060.$(OBJEXT) \
+	_svrr_b070.$(OBJEXT) _svrr_b080.$(OBJEXT) _svrr_b090.$(OBJEXT) \
+	_svrr_b0a0.$(OBJEXT) _svrr_b0b0.$(OBJEXT) _svrr_b0c0.$(OBJEXT) \
+	_svrr_c000.$(OBJEXT) _svrr_c010.$(OBJEXT) _svrr_c020.$(OBJEXT) \
+	_svrr_c030.$(OBJEXT) _svrr_c040.$(OBJEXT) _svrr_c050.$(OBJEXT) \
+	_svrr_c060.$(OBJEXT) _svrr_c070.$(OBJEXT) _svrr_c080.$(OBJEXT) \
+	_svrr_c090.$(OBJEXT) _svrr_c0a0.$(OBJEXT) _svrr_c0b0.$(OBJEXT) \
+	_svrr_c0c0.$(OBJEXT) start_up_slater.$(OBJEXT) root1.$(OBJEXT) \
+	root2.$(OBJEXT) root3.$(OBJEXT) root4.$(OBJEXT) \
+	root5.$(OBJEXT) root6.$(OBJEXT) root7.$(OBJEXT) \
+	root8.$(OBJEXT) root9.$(OBJEXT)
 libslater_a_OBJECTS = $(am_libslater_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -142,9 +143,9 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
-F77LD = $(F77)
-F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
 SOURCES = $(libslater_a_SOURCES)
 DIST_SOURCES = $(libslater_a_SOURCES)
@@ -172,6 +173,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EXEEXT = @EXEEXT@
 F77 = @F77@
+FC = @FC@
+FCFLAGS = @FCFLAGS@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 INSTALL = @INSTALL@
@@ -206,6 +209,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
+ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -246,13 +250,14 @@ top_srcdir = @top_srcdir@
 
 #SUBDIRS = vrr_gen vrr_driver_gen
 lib_LIBRARIES = libslater.a
-libslater_a_SOURCES = slaterbatch.cc srootlist.cc root1.f root2.f root3.f root4.f root5.f root6.f root7.f root8.f root9.f scompute.cc svrrlist.cc scontraction.cc svrr.cc usvrr.cc svrr_template.cc usvrr_template.cc \
-_svrr_0000.cc _svrr_0010.cc _svrr_0020.cc _svrr_0030.cc _svrr_0040.cc _svrr_0050.cc _svrr_0060.cc _svrr_0070.cc _svrr_0080.cc _svrr_0090.cc _svrr_00a0.cc _svrr_00b0.cc _svrr_00c0.cc _svrr_1000.cc _svrr_1010.cc _svrr_1020.cc _svrr_1030.cc _svrr_1040.cc _svrr_1050.cc _svrr_1060.cc _svrr_1070.cc _svrr_1080.cc _svrr_1090.cc _svrr_10a0.cc _svrr_10b0.cc _svrr_10c0.cc _svrr_2000.cc _svrr_2010.cc _svrr_2020.cc _svrr_2030.cc _svrr_2040.cc _svrr_2050.cc _svrr_2060.cc _svrr_2070.cc _svrr_2080.cc _svrr_2090.cc _svrr_20a0.cc _svrr_20b0.cc _svrr_20c0.cc _svrr_3000.cc _svrr_3010.cc _svrr_3020.cc _svrr_3030.cc _svrr_3040.cc _svrr_3050.cc _svrr_3060.cc _svrr_3070.cc _svrr_3080.cc _svrr_3090.cc _svrr_30a0.cc _svrr_30b0.cc _svrr_30c0.cc _svrr_4000.cc _svrr_4010.cc _svrr_4020.cc _svrr_4030.cc _svrr_4040.cc _svrr_4050.cc _svrr_4060.cc _svrr_4070.cc _svrr_4080.cc _svrr_4090.cc _svrr_40a0.cc _svrr_40b0.cc _svrr_40c0.cc _svrr_5000.cc _svrr_5010.cc _svrr_5020.cc _svrr_5030.cc _svrr_5040.cc _svrr_5050.cc _svrr_5060.cc _svrr_5070.cc _svrr_5080.cc _svrr_5090.cc _svrr_50a0.cc _svrr_50b0.cc _svrr_50c0.cc _svrr_6000.cc _svrr_6010.cc _svrr_6020.cc _svrr_6030.cc _svrr_6040.cc _svrr_6050.cc _svrr_6060.cc _svrr_6070.cc _svrr_6080.cc _svrr_6090.cc _svrr_60a0.cc _svrr_60b0.cc _svrr_60c0.cc _svrr_7000.cc _svrr_7010.cc _svrr_7020.cc _svrr_7030.cc _svrr_7040.cc _svrr_7050.cc _svrr_7060.cc _svrr_7070.cc _svrr_7080.cc _svrr_7090.cc _svrr_70a0.cc _svrr_70b0.cc _svrr_70c0.cc _svrr_8000.cc _svrr_8010.cc _svrr_8020.cc _svrr_8030.cc _svrr_8040.cc _svrr_8050.cc _svrr_8060.cc _svrr_8070.cc _svrr_8080.cc _svrr_8090.cc _svrr_80a0.cc _svrr_80b0.cc _svrr_80c0.cc _svrr_9000.cc _svrr_9010.cc _svrr_9020.cc _svrr_9030.cc _svrr_9040.cc _svrr_9050.cc _svrr_9060.cc _svrr_9070.cc _svrr_9080.cc _svrr_9090.cc _svrr_90a0.cc _svrr_90b0.cc _svrr_90c0.cc _svrr_a000.cc _svrr_a010.cc _svrr_a020.cc _svrr_a030.cc _svrr_a040.cc _svrr_a050.cc _svrr_a060.cc _svrr_a070.cc _svrr_a080.cc _svrr_a090.cc _svrr_a0a0.cc _svrr_a0b0.cc _svrr_a0c0.cc _svrr_b000.cc _svrr_b010.cc _svrr_b020.cc _svrr_b030.cc _svrr_b040.cc _svrr_b050.cc _svrr_b060.cc _svrr_b070.cc _svrr_b080.cc _svrr_b090.cc _svrr_b0a0.cc _svrr_b0b0.cc _svrr_b0c0.cc _svrr_c000.cc _svrr_c010.cc _svrr_c020.cc _svrr_c030.cc _svrr_c040.cc _svrr_c050.cc _svrr_c060.cc _svrr_c070.cc _svrr_c080.cc _svrr_c090.cc _svrr_c0a0.cc _svrr_c0b0.cc _svrr_c0c0.cc 
+libslater_a_SOURCES = module.f90 slaterbatch.cc srootlist.cc scompute.cc svrrlist.cc scontraction.cc svrr.cc usvrr.cc svrr_template.cc usvrr_template.cc \
+_svrr_0000.cc _svrr_0010.cc _svrr_0020.cc _svrr_0030.cc _svrr_0040.cc _svrr_0050.cc _svrr_0060.cc _svrr_0070.cc _svrr_0080.cc _svrr_0090.cc _svrr_00a0.cc _svrr_00b0.cc _svrr_00c0.cc _svrr_1000.cc _svrr_1010.cc _svrr_1020.cc _svrr_1030.cc _svrr_1040.cc _svrr_1050.cc _svrr_1060.cc _svrr_1070.cc _svrr_1080.cc _svrr_1090.cc _svrr_10a0.cc _svrr_10b0.cc _svrr_10c0.cc _svrr_2000.cc _svrr_2010.cc _svrr_2020.cc _svrr_2030.cc _svrr_2040.cc _svrr_2050.cc _svrr_2060.cc _svrr_2070.cc _svrr_2080.cc _svrr_2090.cc _svrr_20a0.cc _svrr_20b0.cc _svrr_20c0.cc _svrr_3000.cc _svrr_3010.cc _svrr_3020.cc _svrr_3030.cc _svrr_3040.cc _svrr_3050.cc _svrr_3060.cc _svrr_3070.cc _svrr_3080.cc _svrr_3090.cc _svrr_30a0.cc _svrr_30b0.cc _svrr_30c0.cc _svrr_4000.cc _svrr_4010.cc _svrr_4020.cc _svrr_4030.cc _svrr_4040.cc _svrr_4050.cc _svrr_4060.cc _svrr_4070.cc _svrr_4080.cc _svrr_4090.cc _svrr_40a0.cc _svrr_40b0.cc _svrr_40c0.cc _svrr_5000.cc _svrr_5010.cc _svrr_5020.cc _svrr_5030.cc _svrr_5040.cc _svrr_5050.cc _svrr_5060.cc _svrr_5070.cc _svrr_5080.cc _svrr_5090.cc _svrr_50a0.cc _svrr_50b0.cc _svrr_50c0.cc _svrr_6000.cc _svrr_6010.cc _svrr_6020.cc _svrr_6030.cc _svrr_6040.cc _svrr_6050.cc _svrr_6060.cc _svrr_6070.cc _svrr_6080.cc _svrr_6090.cc _svrr_60a0.cc _svrr_60b0.cc _svrr_60c0.cc _svrr_7000.cc _svrr_7010.cc _svrr_7020.cc _svrr_7030.cc _svrr_7040.cc _svrr_7050.cc _svrr_7060.cc _svrr_7070.cc _svrr_7080.cc _svrr_7090.cc _svrr_70a0.cc _svrr_70b0.cc _svrr_70c0.cc _svrr_8000.cc _svrr_8010.cc _svrr_8020.cc _svrr_8030.cc _svrr_8040.cc _svrr_8050.cc _svrr_8060.cc _svrr_8070.cc _svrr_8080.cc _svrr_8090.cc _svrr_80a0.cc _svrr_80b0.cc _svrr_80c0.cc _svrr_9000.cc _svrr_9010.cc _svrr_9020.cc _svrr_9030.cc _svrr_9040.cc _svrr_9050.cc _svrr_9060.cc _svrr_9070.cc _svrr_9080.cc _svrr_9090.cc _svrr_90a0.cc _svrr_90b0.cc _svrr_90c0.cc _svrr_a000.cc _svrr_a010.cc _svrr_a020.cc _svrr_a030.cc _svrr_a040.cc _svrr_a050.cc _svrr_a060.cc _svrr_a070.cc _svrr_a080.cc _svrr_a090.cc _svrr_a0a0.cc _svrr_a0b0.cc _svrr_a0c0.cc _svrr_b000.cc _svrr_b010.cc _svrr_b020.cc _svrr_b030.cc _svrr_b040.cc _svrr_b050.cc _svrr_b060.cc _svrr_b070.cc _svrr_b080.cc _svrr_b090.cc _svrr_b0a0.cc _svrr_b0b0.cc _svrr_b0c0.cc _svrr_c000.cc _svrr_c010.cc _svrr_c020.cc _svrr_c030.cc _svrr_c040.cc _svrr_c050.cc _svrr_c060.cc _svrr_c070.cc _svrr_c080.cc _svrr_c090.cc _svrr_c0a0.cc _svrr_c0b0.cc _svrr_c0c0.cc \
+start_up_slater.f90 root1.f90 root2.f90 root3.f90 root4.f90 root5.f90 root6.f90 root7.f90 root8.f90 root9.f90 
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cc .f .o .obj
+.SUFFIXES: .cc .f90 .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -519,11 +524,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.f.o:
-	$(F77COMPILE) -c -o $@ $<
+.f90.o:
+	$(FCCOMPILE) -c -o $@ $<
 
-.f.obj:
-	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+.f90.obj:
+	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

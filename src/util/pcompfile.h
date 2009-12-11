@@ -422,7 +422,7 @@ void PCompFile<T>::init_schwarz() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        schwarz_[(m + K_) * size * size + i0 * size + i1] = cmax;
+        schwarz_[(m + K_) * size * size + i0 * size + i1] = std::sqrt(cmax);
       }
     }
   }

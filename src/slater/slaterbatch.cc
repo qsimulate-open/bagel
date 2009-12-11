@@ -275,7 +275,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   fill(weights_, weights_ + primsize_, 0.0);
 
   // determine the quadrature grid
-  if (rank_ == 1) {
+  if (rank_ == -1) {
     const double prefac = SQRTPI2 * 0.5;
     for (int i = 0; i != screening_size_; ++i) {
       const int ii = screening_[i];
@@ -316,7 +316,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         roots_[ii] = 0.0;
       }
     }
-  } else if (rank_ == 2) {
+  } else if (rank_ == -2) {
     const double prefac = SQRTPI2 * 0.5;
     for (int i = 0; i != screening_size_; ++i) {
       const int ii = screening_[i];

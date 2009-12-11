@@ -92,8 +92,8 @@ void PairCompFile<T>::init_schwarz() {
           if (absed1 > cmax1) cmax1 = absed1;
           if (absed2 > cmax2) cmax2 = absed2;
         }
-        schwarz1[(m + K) * size * size + i0 * size + i1] = cmax1;
-        schwarz2[(m + K) * size * size + i0 * size + i1] = cmax2;
+        schwarz1[(m + K) * size * size + i0 * size + i1] = std::sqrt(cmax1);
+        schwarz2[(m + K) * size * size + i0 * size + i1] = std::sqrt(cmax2);
       }
     }
   }
