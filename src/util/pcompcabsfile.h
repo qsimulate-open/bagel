@@ -352,7 +352,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
   const double m2disp[3] = {0.0, 0.0, m2 * a};
   const double m3disp[3] = {0.0, 0.0, m3 * a};
 
-  int* blocks = new int[size_i_*size_j_*size_a_*size_b_+1];
+  size_t* blocks = new size_t[size_i_*size_j_*size_a_*size_b_+1];
   blocks[0] = 0;
   int iall = 0;
   for (int i0 = 0; i0 != size_i_; ++i0) {
@@ -469,11 +469,11 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // held in core. If that is not the case, this must be rewritten.
 
   const size_t nbasis4 = nbasis_a_ * nbasis_i_ * nbasis_b_ * nbasis_j_;
-  const int nv = nbasis_i_ * nbasis_a_ * nbasis_j_ * bsize;
-  const int nov = nbasis_i_ * nbasis_a_ * jsize * bsize;
-  const int novv = nbasis_i_ * jsize * asize * bsize;
+  const size_t nv = nbasis_i_ * nbasis_a_ * nbasis_j_ * bsize;
+  const size_t nov = nbasis_i_ * nbasis_a_ * jsize * bsize;
+  const size_t novv = nbasis_i_ * jsize * asize * bsize;
 
-  const int nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
+  const size_t nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
 
   // allocating a temp array
   const size_t alloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv) * std::max(KK, 1));
@@ -481,7 +481,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   std::complex<double>* datas = new std::complex<double>[alloc];
   double* data_read = new double[nbasis4];
 
-  int* blocks = new int[size_i_*size_j_*size_a_*size_b_ + 1];
+  size_t* blocks = new size_t[size_i_*size_j_*size_a_*size_b_ + 1];
 
   const size_t sizem1 = s*2+1lu;
   const size_t sizem2 = l*2+1lu;
@@ -510,7 +510,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         if (!direct) {
           const size_t key = q3 + s + sizem1 * (q2 + l + sizem2 * (q1 + s));
           size_t datasize_acc = 0lu;
-          for (int i = 0; i != key; ++i) datasize_acc += this->num_int_each_[i];
+          for (size_t i = 0; i != key; ++i) datasize_acc += this->num_int_each_[i];
           this->get_block(datasize_acc, this->num_int_each_[key], data_read);
           cdata = data_read;
         } else {

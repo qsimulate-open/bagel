@@ -106,13 +106,13 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
   T* work = (T*) work_char;
 
   while (remaining > 0L) {
-    const int rsize = std::min(remaining, cachesize);
+    const size_t rsize = std::min(remaining, cachesize);
     const size_t readsize = rsize * sizeof(T);
 
     file_->clear();
     file_->seekg((position + current) * sizeof(T));
     file_->read((char*)work, readsize); 
-    for (int i = 0; i != rsize; ++i) work[i] += data[current + i];
+    for (size_t i = 0; i != rsize; ++i) work[i] += data[current + i];
 
     file_->clear();
     file_->seekp((position + current) * sizeof(T));

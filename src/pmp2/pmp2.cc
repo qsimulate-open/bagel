@@ -148,14 +148,13 @@ void PMP2::compute() {
   /////////////////////////////
   {
 #ifndef ONLY_X
-    RefMOFile eri_ii_pi = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
+    RefMOFile eri_ii_Ai = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                                   nfrc_, nocc_, nfrc_, nocc_,
                                                   0, ncabs_, 0, nocc_, "v^ia'_ii, OBS part");
 
-    RefMOFile eri_ii_xi = eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
-                                                            nfrc_, nocc_, nfrc_, nocc_,
-                                                            0, ncabs_, 0, nocc_, "v^ia'_ii, auxiliary functions");
-    RefMOFile eri_ii_Ai(new PMOFile<complex<double> >(*eri_ii_xi + *eri_ii_pi));
+    *eri_ii_Ai += *eri_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, ncabs_, 0, nocc_, "v^ia'_ii, auxiliary functions");
     eri_ii_Ai_ = eri_ii_Ai;
 #endif
   }
@@ -164,13 +163,12 @@ void PMP2::compute() {
   // MO transformation for STG
   /////////////////////////////
   {
-    RefMOFile stg_ii_pi = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
+    RefMOFile stg_ii_Ai = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               0, ncabs_, 0, nocc_, "F^ia'_ii, OBS part");
-    RefMOFile stg_ii_xi = stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
-                                                            nfrc_, nocc_, nfrc_, nocc_,
-                                                            0, ncabs_, 0, nocc_, "F^ia'_ii, auxiliary functions");
-    RefMOFile stg_ii_Ai(new PMOFile<complex<double> >(*stg_ii_xi + *stg_ii_pi));
+    *stg_ii_Ai += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
+                                                    nfrc_, nocc_, nfrc_, nocc_,
+                                                    0, ncabs_, 0, nocc_, "F^ia'_ii, auxiliary functions");
     stg_ii_Ai_ = stg_ii_Ai;
   }
 

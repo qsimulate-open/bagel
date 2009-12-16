@@ -312,7 +312,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
   const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
 
   const int size = basis_.size(); // number of shells
-  int* blocks = new int[size * size * size * size + 1];
+  size_t* blocks = new size_t[size * size * size * size + 1];
   blocks[0] = 0;
   int iall = 0;
   for (int i0 = 0; i0 != size; ++i0) {
@@ -422,7 +422,8 @@ void PCompFile<T>::init_schwarz() {
           const double absed = (*data) > 0.0 ? *data : -*data;
           if (absed > cmax) cmax = absed;
         }
-        schwarz_[(m + K_) * size * size + i0 * size + i1] = std::sqrt(cmax);
+        const size_t boffset = static_cast<size_t>(m + K_) * size * size;
+        schwarz_[boffset + i0 * size + i1] = std::sqrt(cmax);
       }
     }
   }
@@ -481,12 +482,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   // we are assuming that the (c.c. two-electron integrals for a unit cell)*K^2 can be
   // held in core. If that is not the case, this must be rewritten.
 
-  const int nv = nbasis3 * bsize;
-  const int nov = nbasis2 * jsize * bsize;
-  const int novv = nbasis1 * jsize * asize * bsize;
+  const size_t nv = nbasis3 * bsize;
+  const size_t nov = nbasis2 * jsize * bsize;
+  const size_t novv = nbasis1 * jsize * asize * bsize;
   // allocating a temp array
 
-  const int nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
+  const size_t nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
   std::complex<double>* data = new std::complex<double>[nmax];
   const size_t nalloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv)*std::max(KK, 1));
 

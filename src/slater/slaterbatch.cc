@@ -31,9 +31,7 @@ typedef boost::shared_ptr<Shell> RefShell;
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
-  // We need none-zero threshold; otherwise, overflow occurs.
-  // And the screening here is not rigorous -- so scaling with the factor of 1.0e-5.
-  const double integral_thresh = std::max(1.0e-20, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
+  const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
@@ -195,8 +193,8 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         const double cd = *expi2 * *expi3;
         const double cxq_inv = 1.0 / cxq;
 
-        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
         if (-r23_sq * (cd * cxq_inv) < MIN_EXPONENT) continue;
+        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
@@ -211,7 +209,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   fill(coeff_, coeff_ + primsize_, 0.0);
   fill(coeffy_, coeffy_ + primsize_, 0.0);
   fill(T_, T_ + primsize_, -1.0);
-  fill(U_, U_ + primsize_, -1.0);
+  fill(U_, U_ + primsize_, 1.0e-100);
   screening_ = new int[primsize_];
   screening_size_ = 0;
 
@@ -224,6 +222,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
       const double cxp = *expi0 + *expi1;
       const double ab = *expi0 * *expi1; 
       const double cxp_inv = 1.0 / cxp;
+      if (-r01_sq * (ab * cxp_inv) < MIN_EXPONENT) continue;
       const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
       const double coeff_half = 2 * Eab * PITWOHALF;
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
