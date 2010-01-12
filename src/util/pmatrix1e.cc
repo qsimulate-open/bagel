@@ -320,8 +320,10 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
     zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S, ublock, &ndim_, vblock, &mdim_, work, &lwork, rwork, &info);
 #endif
     if (info != 0) throw runtime_error("zgesvd failed in PMatrix1e::svd");
-//  for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(10) << fixed << S[j] << " ";
-//  cout << endl;
+#if 0
+    for (int j = 0; j != min(ndim_, mdim_); ++j) cout << setprecision(10) << fixed << S[j] << " ";
+    cout << endl;
+#endif
   }
   delete[] S;
   delete[] work;

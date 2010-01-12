@@ -67,7 +67,7 @@ class ERIBatch : public RysInt {
   public:
     
     // dummy will never not used.
-    ERIBatch(const std::vector<boost::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0);
+    ERIBatch(const std::vector<boost::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~ERIBatch();
 
     /// compute a batch of integrals

@@ -40,9 +40,9 @@ const int count_string(const std::string inputfile, const std::string keyword) {
     boost::smatch what;
     boost::regex reg(keyword);
     int out = 0;
-    while(!ifs.eof()) {
+    while(true) {
       std::string sline;
-      getline(ifs, sline);
+      if (!getline(ifs, sline)) break;
       std::string::const_iterator start = sline.begin();
       std::string::const_iterator end   = sline.end();
       if (boost::regex_search(start, end, what, reg)) ++out;

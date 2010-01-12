@@ -1368,3 +1368,97 @@ void SlaterBatch::perform_USVRR13() {
 }
 
 
+void SlaterBatch::perform_USVRR() {
+  const int isize = (amax_ + 1) * (cmax_ + 1);
+  const int worksize = rank_ * isize;
+  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
+
+  double* workx = new double[worksize];
+  double* workx2 = new double[worksize];
+  double* worky = new double[worksize];
+  double* workz = new double[worksize];
+  double iyiz[RYS_MAX];
+
+  const int acsize = asize_ * csize_;
+  const double ax = basisinfo_[0]->position(0);
+  const double ay = basisinfo_[0]->position(1);
+  const double az = basisinfo_[0]->position(2);
+  const double bx = basisinfo_[1]->position(0);
+  const double by = basisinfo_[1]->position(1);
+  const double bz = basisinfo_[1]->position(2);
+  const double cx = basisinfo_[2]->position(0);
+  const double cy = basisinfo_[2]->position(1);
+  const double cz = basisinfo_[2]->position(2);
+  const double dx = basisinfo_[3]->position(0);
+  const double dy = basisinfo_[3]->position(1);
+  const double dz = basisinfo_[3]->position(2);
+  for (int j = 0; j != screening_size_; ++j) {
+    const int ii = screening_[j];
+    int offset = ii * rank_;
+    int data_offset_ii = ii * acsize;
+
+    double* current_data = &data_[data_offset_ii];
+    double* current_data2 = &data2_[data_offset_ii];
+
+    const int ii3 = 3 * ii;
+    const double cxp = xp_[ii];
+    const double cxq = xq_[ii];
+    const double oxp2 = 0.5 / cxp;
+    const double oxq2 = 0.5 / cxq;
+    const double opq = 1.0 / (cxp + cxq);
+    const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
+    Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    double womt[RYS_MAX];
+    double wt[RYS_MAX];
+    for (int i = 0; i != rank_; ++i) {
+      wt[i] = weights_[offset + i] * roots_[offset + i];
+      womt[i] = weights_[offset + i]  - wt[i];
+    }
+    cix.scale_data_t(workx2, wt, coeffy_[ii]);
+    cix.scale_data(womt, coeff_[ii]);
+ 
+    const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, svrr_.svrrfunc[svrr_index]);
+ 
+    const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, svrr_.svrrfunc[svrr_index]);
+
+    for (int iz = 0; iz <= cmax_; ++iz) { 
+      for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
+        const int iyz = cmax1_ * (iy + cmax1_ * iz);
+        for (int jz = 0; jz <= amax_; ++jz) { 
+          const int offsetz = rank_ * (amax1_ * iz + jz);
+          for (int jy = 0; jy <= amax_ - jz; ++jy) { 
+            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int jyz = amax1_ * (jy + amax1_ * jz);
+            for (int i = 0; i != rank_; ++i) {
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
+            }
+            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) { 
+              const int iposition = cmapping_[ix + iyz];
+              const int ipos_asize = iposition * asize_;
+              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) { 
+                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int jposition = amapping_[jx + jyz];
+                const int ijposition = jposition + ipos_asize;
+
+                current_data[ijposition] = 0.0;
+                current_data2[ijposition] = 0.0;
+                for (int i = 0; i != rank_; ++i) {
+                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
+                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  delete[] workz;
+  delete[] worky;
+  delete[] workx;
+  delete[] workx2;
+}

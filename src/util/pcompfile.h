@@ -85,7 +85,7 @@ class PCompFile {
                                                             max_num_int_ = *std::max_element(nie.begin(), nie.end()); };
     void set_integrals(boost::shared_ptr<std::fstream> inp) { file_ = inp; };
 
-    const size_t max_num_int() const { assert(max_num_int_ != 0lu); return max_num_int_; };
+    const size_t max_num_int() const { assert(max_num_int_ > 0lu); return max_num_int_; };
 
     const int K() const { return K_; };
     const int L() const { return L_; };
@@ -155,17 +155,16 @@ void PCompFile<T>::add_block(const long position, const long length, const doubl
   long remaining = length;
   long current = 0L;
   const double cone = 1.0;
-  const int unit = 1;
   double* work = (double*) work_char;
 
   while (remaining > 0L) {
     const long readsize = std::min(remaining, cachesize) * sizeof(double);
-    const int rsize = std::min(remaining, cachesize);
+    const long rsize = std::min(remaining, cachesize);
 
     file_->clear();
     file_->seekg((position + current) * sizeof(double));
     file_->read((char*)work_char, readsize); 
-    for (int i = 0; i != rsize; ++i) work[i] += data[current + i];
+    for (long i = 0; i != rsize; ++i) work[i] += data[current + i];
 
     file_->clear();
     file_->seekp((position + current) * sizeof(double));
@@ -186,7 +185,7 @@ void PCompFile<T>::get_block(const long position, const long length, double* dat
     const long readsize = std::min(remaining, cachesize) * sizeof(double);
     file_->clear();
     file_->seekg((position + current) * sizeof(double));
-    file_->read((char*)(&data[current]), readsize); 
+    file_->read((char*)(data + current), readsize);
 
     remaining -= cachesize;
     current += cachesize;
@@ -203,7 +202,7 @@ void PCompFile<T>::put_block(const long position, const long length, const doubl
     const long writesize = std::min(remaining, cachesize) * sizeof(double);
     file_->clear();
     file_->seekp((position + current) * sizeof(double));
-    file_->write((const char*)(&data[current]), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
@@ -220,7 +219,7 @@ void PCompFile<T>::append(const long length, const double* data) {
 
   while (remaining > 0L) {
     const long writesize = std::min(remaining, cachesize) * sizeof(double);
-    file_->write((const char*)(&data[current]), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
@@ -419,7 +418,7 @@ void PCompFile<T>::init_schwarz() {
         const int datasize = batch.data_size();
         double cmax = 0.0;
         for (int xi = 0; xi != datasize; ++xi, ++data) {
-          const double absed = (*data) > 0.0 ? *data : -*data;
+          const double absed = std::fabs(*data);
           if (absed > cmax) cmax = absed;
         }
         const size_t boffset = static_cast<size_t>(m + K_) * size * size;

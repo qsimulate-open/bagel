@@ -134,7 +134,7 @@ void PFile<T>::get_block(const long position, const long length, T* data) const 
 
     file_->clear();
     file_->seekg((position + current) * sizeof(T));
-    file_->read((char*)(&data[current]), readsize); 
+    file_->read((char*)(data + current), readsize);
 
     remaining -= cachesize;
     current += cachesize;

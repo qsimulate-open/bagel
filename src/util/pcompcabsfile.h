@@ -177,13 +177,13 @@ void PCompCABSFile<T>::init_schwarz_jb() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 1.0, this->gamma_);
+        T batch(input, 1.0, this->gamma_, false);
         batch.compute();
         const double* data = batch.data();
         const int datasize = batch.data_size();
         double cmax = 0.0;
         for (int xi = 0; xi != datasize; ++xi, ++data) {
-          const double absed = (*data) > 0.0 ? *data : -*data;
+          const double absed = std::fabs(*data);
           if (absed > cmax) cmax = absed;
         }
         schwarz_jb_[((m + this->K_) * size_j_ + i0) * size_b_ + i1] = std::sqrt(cmax);
@@ -213,13 +213,13 @@ void PCompCABSFile<T>::init_schwarz_ia() {
         input.push_back(b1);
         input.push_back(b0);
         input.push_back(b1);
-        T batch(input, 1.0, this->gamma_);
+        T batch(input, 1.0, this->gamma_, false);
         batch.compute();
         const double* data = batch.data();
         const int datasize = batch.data_size();
         double cmax = 0.0;
         for (int xi = 0; xi != datasize; ++xi, ++data) {
-          const double absed = (*data) > 0.0 ? *data : -*data;
+          const double absed = std::fabs(*data);
           if (absed > cmax) cmax = absed;
         }
         schwarz_ia_[((m + this->K_) * size_i_ + i0) * size_a_ + i1] = std::sqrt(cmax);
@@ -327,7 +327,7 @@ void PCompCABSFile<T>::store_integrals() {
           current = 0lu;
           remaining = cachesize;
         }
-        eval_new_block(&dcache[current], m1, m2, m3);
+        eval_new_block(dcache+current, m1, m2, m3);
         current += blocksize;
         remaining -= blocksize;
       }
@@ -392,7 +392,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           input.push_back(b1);
           input.push_back(b0);
 
-          T batch(input, 1.0, this->gamma_);
+          T batch(input, 1.0, this->gamma_, false);
           batch.compute();
           const double* bdata = batch.data();
           ::memcpy(out + blocks[offset], bdata, (blocks[offset + 1] - blocks[offset]) * sizeof(double));
@@ -473,10 +473,10 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   const size_t nov = nbasis_i_ * nbasis_a_ * jsize * bsize;
   const size_t novv = nbasis_i_ * jsize * asize * bsize;
 
-  const size_t nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
+  const size_t nmax = std::max(nbasis4, std::max(std::max(std::max(nv, nov), novv), noovv));
 
   // allocating a temp array
-  const size_t alloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv) * std::max(KK, 1));
+  const size_t alloc = std::max(nmax, std::max(std::max(nov,novv), noovv) * std::max(KK, 1));
   std::complex<double>* data = new std::complex<double>[nmax];
   std::complex<double>* datas = new std::complex<double>[alloc];
   double* data_read = new double[nbasis4];
@@ -600,7 +600,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const int mn = nbasis_i_ * nbasis_a_;
           const int mnc = nbasis_j_ * nbasis_b_;
           mytranspose_complex_(data, &mnc, &mn, datas);
-          ::memcpy(data, datas, mn * mnc * sizeof(std::complex<double>));
+          ::memcpy(data, datas, nbasis4 * sizeof(std::complex<double>));
         }
 
         #pragma omp parallel for
@@ -609,8 +609,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const double img = k != 0 ? ((m3 * nkb * pi) / k) : 0.0;
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
-          int offset1 = 0;
-          int offset2 = 0;
+          size_t offset1 = 0;
+          size_t offset2 = 0;
           const int cn2 = nbasis_i_ * nbasis_a_;
           for (int ii = 0; ii != nbasis_j_; ++ii, offset1 += cn2 * nbasis_b_,
                                                   offset2 += cn2 * bsize) {
@@ -666,8 +666,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
-          int offset1 = 0;
-          int offset2 = 0;
+          size_t offset1 = 0;
+          size_t offset2 = 0;
           for (int ii = 0; ii != nbasis_i_; ++ii, offset1 += nsize * nbasis_a_,
                                                   offset2 += nsize * asize) {
             zgemm_("N", "N", &nsize, &asize, &nbasis_a_, &prefac, data + offset1, &nsize,

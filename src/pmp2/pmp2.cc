@@ -25,8 +25,21 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
 #define DEBUG_PRINT
+
+#if 0
+
 //#define ONLY_V_X
 //#define ONLY_X
+
+#define ONLY_B
+//#define ONLY_T_Q
+
+#define ONLY_P
+//#define ONLY_P1
+//#define ONLY_P2
+#define ONLY_P3
+
+#endif
 
 using namespace std;
 using namespace boost;
@@ -98,6 +111,8 @@ void PMP2::compute() {
   // AO ERI has been computed in the SCF class.
 
   // Fully transform aa/ii integrals and dump them to disk (... focus is on MP2-R12).
+#ifndef ONLY_B
+#ifndef ONLY_P
 #ifndef ONLY_X
   eri_ii_pp_ = eri_obs_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                       nfrc_, nocc_, nfrc_, nocc_,
@@ -107,6 +122,8 @@ void PMP2::compute() {
   // Compute the conventional MP2 contribution
   /////////////////////////////////////////////
   compute_conv_mp2();
+#endif
+#endif
 #endif
 
   cout << "  === Periodic MP2-R12 calculation ===" << endl << endl;
@@ -122,32 +139,44 @@ void PMP2::compute() {
     shared_ptr<PCompFile<SlaterBatch> > stg = stg_yp->first();
     shared_ptr<PCompFile<SlaterBatch> > yp  = stg_yp->second();
     stg_ = stg;
+#ifndef ONLY_B
+#ifndef ONLY_P
     yp_ = yp;
+#endif
+#endif
   }
 
 
   //////////////////////////////////////
   // Yukawa ii/ii for V intermediate
   ////////////////////////////////////
+#ifndef ONLY_B
+#ifndef ONLY_P2
+#ifndef ONLY_P3
   {
 #ifndef ONLY_X
+#ifndef ONLY_P
     RefMOFile yp_ii_ii = yp_->mo_transform(coeff_, coeff_, coeff_, coeff_,
-                                            nfrc_, nocc_, nfrc_, nocc_,
-                                            nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
+                                           nfrc_, nocc_, nfrc_, nocc_,
+                                           nfrc_, nocc_, nfrc_, nocc_, "Yukawa (ii/ii)");
     yp_ii_ii_ = yp_ii_ii;
+#endif
 #endif
     RefMOFile stg_ii_pp = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                               nfrc_, nocc_, nfrc_, nocc_,
                                               0, nbasis_, 0, nbasis_, "Slater (pp/ii)");
     stg_ii_pp_ = stg_ii_pp;
   }
+#endif
+#endif
 
 
   ///////////////////////////////
   // MO transformation for ERI
   /////////////////////////////
-  {
+#ifndef ONLY_P
 #ifndef ONLY_X
+  {
     RefMOFile eri_ii_Ai = eri_obs_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
                                                   nfrc_, nocc_, nfrc_, nocc_,
                                                   0, ncabs_, 0, nocc_, "v^ia'_ii, OBS part");
@@ -156,26 +185,30 @@ void PMP2::compute() {
                                                     nfrc_, nocc_, nfrc_, nocc_,
                                                     0, ncabs_, 0, nocc_, "v^ia'_ii, auxiliary functions");
     eri_ii_Ai_ = eri_ii_Ai;
-#endif
   }
+#endif
+#endif
 
   ///////////////////////////////
   // MO transformation for STG
   /////////////////////////////
+#ifndef ONLY_P
   {
     RefMOFile stg_ii_Ai = stg_->mo_transform(coeff_, coeff_, cabs_obs_, coeff_,
-                                              nfrc_, nocc_, nfrc_, nocc_,
-                                              0, ncabs_, 0, nocc_, "F^ia'_ii, OBS part");
+                                             nfrc_, nocc_, nfrc_, nocc_,
+                                             0, ncabs_, 0, nocc_, "F^ia'_ii, OBS part");
     *stg_ii_Ai += *stg_cabs_->mo_transform_cabs_aux(coeff_, coeff_, cabs_aux_, coeff_,
                                                     nfrc_, nocc_, nfrc_, nocc_,
                                                     0, ncabs_, 0, nocc_, "F^ia'_ii, auxiliary functions");
     stg_ii_Ai_ = stg_ii_Ai;
   }
+#endif
 
 
   //////////////////////
   // V intermediate
   ////////////////////
+#ifndef ONLY_P
 #ifndef ONLY_X
   {
     RefMOFile vF = stg_ii_pp_->contract(eri_ii_pp_, "F * v (ii/ii) OBS");
@@ -189,11 +222,14 @@ void PMP2::compute() {
     V_ = V_pre;
   }
 #endif
+#endif
+#endif // only_B
 
 
   /////////////////////////////////////
   // Slater & Yukawa ints with 2gamma
   ///////////////////////////////////
+#ifndef ONLY_P
   {
     shared_ptr<PairCompFile<SlaterBatch> >
       stg_yp2(new PairCompFile<SlaterBatch>(geom_, 2.0 * gamma, "Slater and Yukawa ints (2gamma)"));
@@ -203,23 +239,25 @@ void PMP2::compute() {
     shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();  // TODO delete YP from here.
     stg2_ = stg2;
   }
+#endif
 
   ////////////////////
   // X intermediate
   //////////////////
+#ifndef ONLY_P
   {
     RefMOFile stg2_ii_ii = stg2_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                                nfrc_, nocc_, nfrc_, nocc_,
                                                nfrc_, nocc_, nfrc_, nocc_, "Slater (ii/ii) 2gamma");
     stg2_ii_ii_ = stg2_ii_ii;
+#ifndef ONLY_B
 #ifdef ONLY_X
     {
       const complex<double> en_xtt = stg2_ii_ii_->get_energy_two_amp_X(eig_);
       cout << "**** debug ****  X(F2) contrib. " << setprecision(10) << en_xtt << endl;
     }
 #endif
-    RefMOFile stg_ii_pp_2 = stg_ii_pp_->copy();
-    RefMOFile FF = stg_ii_pp_->contract(stg_ii_pp_2, "F * F (ii/ii) OBS");
+    RefMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, "F * F (ii/ii) OBS");
     RefMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 #ifdef ONLY_X
     {
@@ -228,8 +266,7 @@ void PMP2::compute() {
     }
 #endif
 
-    RefMOFile stg_ii_Ai_2 = stg_ii_Ai_->copy();
-    RefMOFile X_cabs = stg_ii_Ai_->contract(stg_ii_Ai_2, "F * F (ii/ii) CABS");
+    RefMOFile X_cabs = stg_ii_Ai_->contract(stg_ii_Ai_, "F * F (ii/ii) CABS");
 
     X_cabs->flip_symmetry();
 #ifdef ONLY_X
@@ -241,8 +278,10 @@ void PMP2::compute() {
     RefMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
 
     X_ = X_pre;
+#endif // ifndef ONLY_B
   }
 
+#ifndef ONLY_B
 #ifdef DEBUG_PRINT
   {
 #ifndef ONLY_X
@@ -254,6 +293,9 @@ void PMP2::compute() {
   }
 #endif
 
+#endif // ifndef ONLY_B
+#endif // ifndef ONLY_P
+
 
 #ifndef ONLY_V_X
   /////////////////////
@@ -261,6 +303,8 @@ void PMP2::compute() {
   ///////////////////
   // Approximation C: Kedzuch et al. IJQC 105, 929 (2005).
   {
+#ifndef ONLY_P3
+#ifndef ONLY_P2
     // T intermediate (direct)
     RefMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
 
@@ -314,6 +358,10 @@ void PMP2::compute() {
     cout << "**** debug ****  Q contrib.: " << setprecision(10) << Q->get_energy_two_amp_B().real() << endl;
 #endif
 
+#endif // only-p3
+#endif // only-p2
+
+#ifndef ONLY_T_Q
 
     // P1 intermediate R^PQ_ij K^R_P R^kl_RQ
     RefMOFile P;
@@ -337,6 +385,8 @@ void PMP2::compute() {
       RefCoeff xfcabs_aux = q.second;
       RefCoeff xfcabs_obs_fold(new PCoeff(*xfobs + *xfcabs_obs));
 
+#ifndef ONLY_P2
+#ifndef ONLY_P3
       RefMOFile p1;
       // first, evaluate R^Pq_ij K^r_P R^kl_rq
       {
@@ -457,6 +507,8 @@ void PMP2::compute() {
 #ifdef DEBUG_PRINT
       cout << "**** debug ****  P1 contrib.: " << setprecision(10) << p1->get_energy_two_amp_B().real() << endl;
 #endif
+#endif // ONLY_P3
+#endif // ONLY_P2
     }
 
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
@@ -480,6 +532,7 @@ void PMP2::compute() {
 
     // P2 intermediate R^Pm_ij f^Q_P R^kl_Qm
     {
+#ifndef ONLY_P3
       RefMOFile p2;
 //#define USE_OLD
 #ifdef USE_OLD
@@ -569,13 +622,17 @@ void PMP2::compute() {
       }
 #endif
       p2->flip_symmetry();
+#ifndef ONLY_P2
       *P += *p2;
+#endif
 
 #ifdef DEBUG_PRINT
       cout << "**** debug ****  P2 contrib.: " << setprecision(10) << p2->get_energy_two_amp_B().real() << endl;
 #endif
+#endif // ONLY_P3
     }
 
+#ifndef ONLY_P2
     // P3 intermediate R^mA_ij f^n_m R^kl_nA;
     {
       RefMOFile p3_ket;
@@ -596,12 +653,14 @@ void PMP2::compute() {
         RefMOFile p3 = p3_1->contract(p3_2, "P3: R^Am_ij f^m_n R^kl_An");
         p3->flip_symmetry();
 
+#ifndef ONLY_P3
         if (use_hy2_) {
           // in HY2, -P3 + 2*P5A is approximated by +P3, which is quite accurate.
           *P += *p3;
         } else {
           *P -= *p3;
         }
+#endif
 #ifdef DEBUG_PRINT
         cout << "**** debug ****  P3 contrib.: " << setprecision(10) << p3->get_energy_two_amp_B().real() << endl;
 #endif
@@ -633,6 +692,7 @@ void PMP2::compute() {
     }
 
 
+#ifndef ONLY_P3
     // P4 intermediate R^pb_ij f^r_p R^kl_rb
     {
       RefMOFile p4_ket;
@@ -643,7 +703,8 @@ void PMP2::compute() {
         RefMOFile p4_2 = stg_->mo_transform(coeff_, coeff_, coeff_, coeff_,
                                             nfrc_, nocc_, nfrc_, nocc_,
                                             0, nbasis_, nocc_ , nbasis_, "P4: R^pb_ij f^r_p R^kl_rb, 2/2");
-        if (!use_hy2_) p4_ket = p4_2;
+        if (true) p4_ket = p4_2;
+        //if (!use_hy2_) p4_ket = p4_2;
 
         RefMOFile p4 = p4_1->contract(p4_2, "P4: R^pb_ij f^r_p R^ij_rb");
         p4->flip_symmetry();
@@ -656,7 +717,8 @@ void PMP2::compute() {
       // P5b intermediate  R^Ab_ij f^p_A R^kl_pb
       {
         RefMOFile p5b;
-        if (!use_hy2_) {
+        //if (!use_hy2_) {
+        if (true) {
 
           RefMOFile p5b_1 = stg_->mo_transform(coeff_, coeff_, cfcabs_obs, coeff_,
                                                nfrc_, nocc_, nfrc_, nocc_,
@@ -691,6 +753,9 @@ void PMP2::compute() {
 
     RefMOFile btmp(new PMOFile<complex<double> >(*T + *Q - *P));
     B_ = btmp;
+#endif // ONLY_P3
+#endif // ONLY_P2
+#endif // ifndef ONLY_T_Q
 
   } // end of B intermediate construction.
 
@@ -698,6 +763,8 @@ void PMP2::compute() {
   ///////////////////////////////////////
   // R12 energy contribution
   /////////////////////////////////////
+#ifndef ONLY_B
+#ifndef ONLY_P
   const complex<double> en_vt = V_->get_energy_one_amp();
   const complex<double> en_xtt = X_->get_energy_two_amp_X(eig_);
   const complex<double> en_btt = B_->get_energy_two_amp_B();
@@ -715,7 +782,9 @@ void PMP2::compute() {
   X_->rprint();
   B_->rprint();
 #endif
+#endif // ifndef ONLY_P2
 #endif
+#endif // ifndef ONLY_B
 }
 
 

@@ -72,6 +72,9 @@ class SlaterBatch : public RysInt {
     void perform_USVRR12();
     void perform_USVRR13();
 
+    void perform_SVRR();
+    void perform_USVRR();
+
     void perform_contraction_batch(const int, const double*, const int, const int, double*,
                                    const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
                                    const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);

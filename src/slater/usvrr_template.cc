@@ -1216,6 +1216,8 @@ void SlaterBatch::perform_USVRR3() {
       }
       }
     }
+// most likely have a bug
+#if 0
   } else if (ang == 32801) { // (1, 0, 1, 1)
     double x[18];
     double y[18];
@@ -1622,6 +1624,7 @@ void SlaterBatch::perform_USVRR3() {
       current_data[17] = s0 * z[15]         + s1 * z[16]          + s2 * z[17]; // zz|z
       }
     }
+#endif
   } else {
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = 3 * isize;
@@ -1661,10 +1664,10 @@ void SlaterBatch::perform_USVRR3() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 3, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, roots_+offset, 3, worksize, worky, svrr_.svrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 3, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, roots_+offset, 3, worksize, workz, svrr_.svrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 

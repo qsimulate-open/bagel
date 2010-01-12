@@ -54,6 +54,8 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   const int ang3 = basisinfo_[3]->angular_number();
 
   rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3)) + 1; // for slater!!
+  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 2);
+
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -166,6 +168,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   const double min_ab = minexp0 * minexp1;
   const double min_cd = minexp2 * minexp3;
 
+#if 0
   // minimum distance between two lines (AB and CD)
   const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1]; 
   const double y_ab_cd = AB_[2] * CD_[0] - AB_[0] * CD_[2]; 
@@ -176,6 +179,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   const double innerproduct = x_n_ac + y_n_ac + z_n_ac; 
   const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
   const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq; 
+#endif
 
   indexpair23_.reserve(prim2size_ * prim3size_);
 
@@ -213,9 +217,11 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   screening_ = new int[primsize_];
   screening_size_ = 0;
 
+#if 0
   const double cxq_min = minexp2 + minexp3; 
   const double cxq_inv_min = 1.0 / cxq_min; 
   const double min_Ecd = ::exp(-r23_sq * min_cd * cxq_inv_min);
+#endif
   const double twogamma = 2.0 / gamma_;
   for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
     for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
@@ -274,7 +280,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   fill(weights_, weights_ + primsize_, 0.0);
 
   // determine the quadrature grid
-  if (rank_ == -1) {
+  if (rank_ == 1) {
     const double prefac = SQRTPI2 * 0.5;
     for (int i = 0; i != screening_size_; ++i) {
       const int ii = screening_[i];
@@ -315,7 +321,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
         roots_[ii] = 0.0;
       }
     }
-  } else if (rank_ == -2) {
+  } else if (rank_ == 2) {
     const double prefac = SQRTPI2 * 0.5;
     for (int i = 0; i != screening_size_; ++i) {
       const int ii = screening_[i];

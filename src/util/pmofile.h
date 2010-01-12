@@ -79,9 +79,6 @@ class PMOFile : public PFile<T> {
 
     boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
 
-    boost::shared_ptr<PMatrix1e> contract_density_J() const;
-    boost::shared_ptr<PMatrix1e> contract_density_K() const;
-
     void print() const;
     void rprint() const;
     T get_energy_one_amp() const;
@@ -215,10 +212,10 @@ void PMOFile<T>::flip_symmetry() {
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[other->blocksize_];
 
-  const int isize = ifence_ - istart_;
-  const int jsize = jfence_ - jstart_;
-  const int asize = afence_ - astart_;
-  const int bsize = bfence_ - bstart_;
+  const size_t isize = ifence_ - istart_;
+  const size_t jsize = jfence_ - jstart_;
+  const size_t asize = afence_ - astart_;
+  const size_t bsize = bfence_ - bstart_;
 
   assert(asize == bsize && isize == jsize);
 
@@ -266,10 +263,10 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[out->blocksize_];
 
-  const int isize = ifence_ - istart_;
-  const int jsize = jfence_ - jstart_;
-  const int asize = afence_ - astart_;
-  const int bsize = bfence_ - bstart_;
+  const size_t isize = ifence_ - istart_;
+  const size_t jsize = jfence_ - jstart_;
+  const size_t asize = afence_ - astart_;
+  const size_t bsize = bfence_ - bstart_;
 
   for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
@@ -486,7 +483,7 @@ PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
     this->get_block(iter->second, blocksize_, buffer1);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize_; ++i) buffer1[i] *= a;
+    for (size_t i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
     out.put_block(iter->second, blocksize_, buffer1);
   }
@@ -505,7 +502,7 @@ void PMOFile<T>::scale(double a) {
     this->get_block(iter->second, blocksize_, buffer1);
 
     #pragma omp parallel for schedule(dynamic, 100)
-    for (int i = 0; i < blocksize_; ++i) buffer1[i] *= a;
+    for (size_t i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
     this->put_block(iter->second, blocksize_, buffer1);
   }
@@ -604,7 +601,7 @@ T PMOFile<T>::get_energy_one_amp() const {
   const double ciiii = - 0.5 / gamma;
   const double cijij = - 0.375 / gamma;
   const double cijji = - 0.125 / gamma;
-  int iblock = 0;
+  size_t iblock = 0;
   T en = 0.0;
   for (int kb = -k; kb != std::max(k, 1); ++kb) {
     for (int kj = -k; kj != std::max(k, 1); ++kj) {
@@ -683,13 +680,13 @@ T PMOFile<T>::get_energy_two_amp_X(const std::vector<double> eig) const {
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
               if (i1 == i2) {
-                const int xi = i2 + i1 * isize;
-                const int xj = i2 + i1 * isize;
+                const size_t xi = i2 + i1 * isize;
+                const size_t xj = i2 + i1 * isize;
                 en += buffer[xi * ijsize + xj] * ciiii * (*(ei+i1) + *(ej+i2));
               } else {
-                const int xi = i2 + i1 * isize;
-                const int xj1 = i2 + i1 * isize;
-                const int xj2 = i1 + i2 * isize;
+                const size_t xi = i2 + i1 * isize;
+                const size_t xj1 = i2 + i1 * isize;
+                const size_t xj2 = i1 + i2 * isize;
                 en += buffer[xi * ijsize + xj1] * (2 * cijij - cijji) * (*(ei+i1) + *(ej+i2));
                 en += buffer[xi * ijsize + xj2] * (2 * cijji - cijij) * (*(ei+i1) + *(ej+i2));
               }
@@ -699,8 +696,8 @@ T PMOFile<T>::get_energy_two_amp_X(const std::vector<double> eig) const {
           this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
-              const int xi = i2 + i1 * isize;
-              const int xj = i2 + i1 * isize;
+              const size_t xi = i2 + i1 * isize;
+              const size_t xj = i2 + i1 * isize;
               en += buffer[xi * ijsize + xj] * (2 * cijij - cijji) * (*(ei+i1) + *(ej+i2));
             }
           }
@@ -708,8 +705,8 @@ T PMOFile<T>::get_energy_two_amp_X(const std::vector<double> eig) const {
           this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
-              const int xi = i2 + i1 * isize;
-              const int xj = i1 + i2 * isize;
+              const size_t xi = i2 + i1 * isize;
+              const size_t xj = i1 + i2 * isize;
               en += buffer[xi * ijsize + xj] * (2 * cijji - cijij) * (*(ei+i1) + *(ej+i2));
             }
           }
@@ -746,13 +743,13 @@ T PMOFile<T>::get_energy_two_amp_B() const {
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
               if (i1 == i2) {
-                const int xi = i2 + i1 * isize;
-                const int xj = i2 + i1 * isize;
+                const size_t xi = i2 + i1 * isize;
+                const size_t xj = i2 + i1 * isize;
                 en += buffer[xi * ijsize + xj] * ciiii;
               } else {
-                const int xi = i2 + i1 * isize;
-                const int xj1 = i2 + i1 * isize;
-                const int xj2 = i1 + i2 * isize;
+                const size_t xi = i2 + i1 * isize;
+                const size_t xj1 = i2 + i1 * isize;
+                const size_t xj2 = i1 + i2 * isize;
                 en += buffer[xi * ijsize + xj1] * (2 * cijij - cijji);
                 en += buffer[xi * ijsize + xj2] * (2 * cijji - cijij);
               }
@@ -762,8 +759,8 @@ T PMOFile<T>::get_energy_two_amp_B() const {
           this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
-              const int xi = i2 + i1 * isize;
-              const int xj = i2 + i1 * isize;
+              const size_t xi = i2 + i1 * isize;
+              const size_t xj = i2 + i1 * isize;
               en += buffer[xi * ijsize + xj] * (2 * cijij - cijji);
             }
           }
@@ -771,8 +768,8 @@ T PMOFile<T>::get_energy_two_amp_B() const {
           this->get_block(iblock * ijsize * ijsize, ijsize * ijsize, buffer);
           for (int i1 = 0; i1 != isize; ++i1) { // i
             for (int i2 = 0; i2 != isize; ++i2) { // j
-              const int xi = i2 + i1 * isize;
-              const int xj = i1 + i2 * isize;
+              const size_t xi = i2 + i1 * isize;
+              const size_t xj = i1 + i2 * isize;
               en += buffer[xi * ijsize + xj] * (2 * cijji - cijij);
             }
           }
@@ -784,123 +781,5 @@ T PMOFile<T>::get_energy_two_amp_B() const {
   en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
-
-
-
-// PMatrix1e assumes complex<double>.
-template <class T>
-boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_J() const {
-  typedef boost::shared_ptr<PMatrix1e> RefMatrix;
-
-  // designed for operations like:
-  // d^j_i * v^pi_qj -> h^p_q
-  // d is assumed to be diagonal in Bloch orbitals.
-
-  const int nocc = geom_->nocc() / 2;
-
-  const int isize = ifence_ - istart_;
-  const int jsize = jfence_ - jstart_;
-  const int asize = afence_ - astart_;
-  const int bsize = bfence_ - bstart_;
-  const size_t ijsize = isize * jsize;
-  const size_t absize = asize * bsize;
-
-  RefMatrix out(new PMatrix1e(geom_, asize, isize));
-
-  const int k = this->K_;
-  std::complex<double>* buffer = new std::complex<double>[blocksize_];
-
-  for (int kb = -k; kb != std::max(k, 1); ++kb) {
-    for (int kj = -k; kj != std::max(k, 1); ++kj) {
-      for (int ka = -k; ka != std::max(k, 1); ++ka) {
-
-        int ki = ka+kb-kj;
-        if (ki < -k) ki += k*2;
-        else if (ki >= k) ki -= k*2;
-
-        if (ki != ka) continue;
-        if (kb != kj) continue;
-
-        std::complex<double>* oblock = out->bpw(ka);
-
-        get_block2(ki, kj, ka, kb, buffer);
-        const std::complex<double>* cbuf = buffer;
-        // Assumes that it is already sorted.
-        for (int i = 0; i != isize; ++i) {
-          for (int j = 0; j != jsize; ++j) {
-            for (int a = 0; a != asize; ++a) {
-              for (int b = 0; b != bsize; ++b, ++cbuf) {
-                const double cden = (j == b && j+jstart_ <= nocc) ? 2.0/std::max(k+k,1) : 0.0;
-                oblock[a + asize*i] += *cbuf * cden;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  delete[] buffer;
-  return out;
-};
-
-
-// PMatrix1e assumes complex<double>.
-template <class T>
-boost::shared_ptr<PMatrix1e> PMOFile<T>::contract_density_K() const {
-  typedef boost::shared_ptr<PMatrix1e> RefMatrix;
-
-  // designed for operations like:
-  // d^j_i * v^ip_qj -> K^p_q
-  // d is assumed to be diagonal in Bloch orbitals.
-
-  const int nocc = geom_->nocc() / 2;
-
-  const int isize = ifence_ - istart_;
-  const int jsize = jfence_ - jstart_;
-  const int asize = afence_ - astart_;
-  const int bsize = bfence_ - bstart_;
-  const size_t ijsize = isize * jsize;
-  const size_t absize = asize * bsize;
-
-  RefMatrix out(new PMatrix1e(geom_, asize, jsize));
-
-  const int k = this->K_;
-  std::complex<double>* buffer = new std::complex<double>[blocksize_];
-
-  for (int kb = -k; kb != std::max(k, 1); ++kb) {
-    for (int kj = -k; kj != std::max(k, 1); ++kj) {
-      for (int ka = -k; ka != std::max(k, 1); ++ka) {
-
-        int ki = ka+kb-kj;
-        if (ki < -k) ki += k*2;
-        else if (ki >= k) ki -= k*2;
-
-        if (ki != kb) continue;
-        if (ka != kj) continue;
-
-        std::complex<double>* oblock = out->bpw(ka);
-
-        get_block2(ki, kj, ka, kb, buffer);
-        const std::complex<double>* cbuf = buffer;
-        // Assumes that it is already sorted.
-        for (int i = 0; i != isize; ++i) {
-          for (int j = 0; j != jsize; ++j) {
-            for (int a = 0; a != asize; ++a) {
-              for (int b = 0; b != bsize; ++b, ++cbuf) {
-                const double cden = (i == b && i+istart_ <= nocc) ? 1.0/std::max(k+k,1) : 0.0;
-                oblock[a + asize*j] += *cbuf * cden;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  delete[] buffer;
-  return out;
-};
-
 
 #endif

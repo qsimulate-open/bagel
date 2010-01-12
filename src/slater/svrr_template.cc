@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <cstring>
 
+//#define LOCAL_DEBUG2
+//#define LOCAL_DEBUG3
+
 using namespace std;
 
 void SlaterBatch::perform_SVRR1() {
@@ -42,6 +45,7 @@ void SlaterBatch::perform_SVRR2() {
   const unsigned int ang2 = basisinfo_[2]->angular_number();
   const unsigned int ang3 = basisinfo_[3]->angular_number();
   const unsigned int ang = (((((ang0 << 5) + ang1) << 5) + ang2) << 5) + ang3; // offsets are 2^5 = 32
+#ifndef LOCAL_DEBUG2
   if (ang == 32768) { // (1, 0, 0, 0)
     for (int j = 0; j != screening_size_; ++j) {
       const int ii = screening_[j];
@@ -404,11 +408,84 @@ void SlaterBatch::perform_SVRR2() {
       current_data[8] = z6 *      scale0 + z7 *      scale1 ; // z|z 
     }
   }
+#else
+  const int isize = (amax_ + 1) * (cmax_ + 1);
+  const int worksize = 2 * isize;
+  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
 
+  double* workx = new double[worksize];
+  double* worky = new double[worksize];
+  double* workz = new double[worksize];
+  double iyiz[2];
+
+  for (int j = 0; j != screening_size_; ++j) {
+    const int ii = screening_[j];
+    int offset = ii * rank_;
+    int data_offset_ii = ii * acsize;
+
+    double* current_data = &data_[data_offset_ii];
+
+    const int ii3 = 3 * ii;
+    const double cxp = xp_[ii];
+    const double cxq = xq_[ii];
+    const double oxp2 = 0.5 / cxp;
+    const double oxq2 = 0.5 / cxq;
+    const double opq = 1.0 / (cxp + cxq);
+    const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
+    Int2D cix(dparamx, &roots_[offset], 2, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    double womt[2];
+    double wt[2];
+    wt[0] = weights_[offset + 0] * roots_[offset + 0];
+    wt[1] = weights_[offset + 1] * roots_[offset + 1];
+    womt[0] = weights_[offset + 0]  - wt[0];
+    womt[1] = weights_[offset + 1]  - wt[1];
+    cix.scale_data(womt, coeff_[ii]);
+ 
+    const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciy(dparamy, &roots_[offset], 2, worksize, worky, svrr_.svrrfunc[svrr_index]);
+ 
+    const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciz(dparamz, &roots_[offset], 2, worksize, workz, svrr_.svrrfunc[svrr_index]);
+
+    for (int iz = 0; iz <= cmax_; ++iz) { 
+      for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
+        const int iyz = cmax1_ * (iy + cmax1_ * iz);
+        for (int jz = 0; jz <= amax_; ++jz) { 
+          const int offsetz = rank_ * (amax1_ * iz + jz);
+          for (int jy = 0; jy <= amax_ - jz; ++jy) { 
+            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int jyz = amax1_ * (jy + amax1_ * jz);
+            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0]; 
+            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1]; 
+            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) { 
+              const int iposition = cmapping_[ix + iyz];
+              const int ipos_asize = iposition * asize_;
+              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) { 
+                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int jposition = amapping_[jx + jyz];
+                const int ijposition = jposition + ipos_asize;
+
+                current_data[ijposition] = iyiz[0] * workx[offsetx + 0]; 
+                current_data[ijposition] += iyiz[1] * workx[offsetx + 1]; 
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  delete[] workz;
+  delete[] worky;
+  delete[] workx;
+#endif
 }
 
 
 void SlaterBatch::perform_SVRR3() {
+
+#ifndef LOCAL_DEBUG3
   const int acsize = asize_ * csize_;
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -504,7 +581,7 @@ void SlaterBatch::perform_SVRR3() {
       current_data[3] = x3 * s0z3         + x4 * s1z4         + x5 * s2z5; // xz 
       current_data[4] = s0y3 * z3         + s1y4 * z4         + s2y5 * z5; // yz 
       current_data[5] = s0z6              + s1z7              + s2z8; // zz 
-      current_data[6] = x9      * scale0  + x10     * scale1  + x11 * scale2; // xxx 
+      current_data[6] = x9      * scale0  + x10     * scale1  + x11 * scale2; // x,x,x
       current_data[7] = x6 * s0y3         + x7 * s1y4         + x8 * s2y5; // xxy
       current_data[8] = x3 * s0y6         + x4 * s1y7         + x5 * s2y8; // xyy
       current_data[9] = y9      * scale0  + y10      * scale1  + y11 * scale2; // yyy 
@@ -591,7 +668,7 @@ void SlaterBatch::perform_SVRR3() {
       current_data[3] = x3 * s0z3         + x4 * s1z4         + x5 * s2z5; // xz 
       current_data[4] = s0y3 * z3         + s1y4 * z4         + s2y5 * z5; // yz 
       current_data[5] = s0z6              + s1z7              + s2z8; // zz 
-      current_data[6] = x9      * scale0  + x10      * scale1 + x11 * scale2; // xxx 
+      current_data[6] = x9      * scale0  + x10      * scale1 + x11 * scale2; // x,x,x
       current_data[7] = x6 * s0y3         + x7 * s1y4         + x8 * s2y5; // xxy
       current_data[8] = x3 * s0y6         + x4 * s1y7         + x5 * s2y8; // xyy
       current_data[9] = y9      * scale0  + y10      * scale1  + y11 * scale2; // yyy 
@@ -895,6 +972,8 @@ void SlaterBatch::perform_SVRR3() {
         current_data[26] = s0z15            + s1z16             + s2z17; // z|zz 
       }
     }
+// most likely have a bug
+#if 0
   } else if (ang == 32801) { // (1, 0, 1, 1)
     double x[18];
     double y[18];
@@ -904,7 +983,7 @@ void SlaterBatch::perform_SVRR3() {
       const int offset = ii * rank_;
       const int data_offset_ii = ii * acsize;
 
-      double* current_data = &data_[data_offset_ii];
+      double* current_data = data_ + data_offset_ii;
 
       const int ii3 = 3 * ii;
 
@@ -1189,6 +1268,23 @@ void SlaterBatch::perform_SVRR3() {
     }
    
   } else {
+#endif
+#else
+  {
+    const int acsize = asize_ * csize_;
+    const double ax = basisinfo_[0]->position(0);
+    const double ay = basisinfo_[0]->position(1);
+    const double az = basisinfo_[0]->position(2);
+    const double bx = basisinfo_[1]->position(0);
+    const double by = basisinfo_[1]->position(1);
+    const double bz = basisinfo_[1]->position(2);
+    const double cx = basisinfo_[2]->position(0);
+    const double cy = basisinfo_[2]->position(1);
+    const double cz = basisinfo_[2]->position(2);
+    const double dx = basisinfo_[3]->position(0);
+    const double dy = basisinfo_[3]->position(1);
+    const double dz = basisinfo_[3]->position(2);
+#endif
     const int isize = (amax_ + 1) * (cmax_ + 1);
     const int worksize = 3 * isize;
     const int svrr_index = amax_ * ANG_VRR_END + cmax_;
@@ -1204,7 +1300,6 @@ void SlaterBatch::perform_SVRR3() {
       int data_offset_ii = ii * acsize;
 
       double* current_data = &data_[data_offset_ii];
-      double* current_data2 = &data2_[data_offset_ii];
 
       const int ii3 = 3 * ii;
       const double cxp = xp_[ii];
@@ -1223,10 +1318,10 @@ void SlaterBatch::perform_SVRR3() {
       womt[1] = weights_[offset + 1]  - wt[1];
       womt[2] = weights_[offset + 2]  - wt[2];
       cix.scale_data(womt, coeff_[ii]);
- 
+
       const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
       Int2D ciy(dparamy, &roots_[offset], 3, worksize, worky, svrr_.svrrfunc[svrr_index]);
- 
+
       const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
       Int2D ciz(dparamz, &roots_[offset], 3, worksize, workz, svrr_.svrrfunc[svrr_index]);
 
