@@ -2,6 +2,7 @@
 #define __src_scf_f77_h
 
 extern "C" {
+ void mytranspose_(const double*, const int*, const int*, double*);
  void dcopy_(const int*, const double*, const int*, double*, const int*);
  void dscal_(const int*, const double*, double*, const int*);
  const double ddot_(const int*, const double*, const int*, const double*, const int*); 

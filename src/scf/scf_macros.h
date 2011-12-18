@@ -5,7 +5,7 @@
 
 #define MAX_ITER_SCF 300
 
-#define SCF_THRESH 1.0e-9
+#define SCF_THRESH 1.0e-14
 
 //#define NDEBUG
 

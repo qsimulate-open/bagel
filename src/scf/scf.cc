@@ -92,7 +92,7 @@ void SCF::compute() {
     for (int i = 0; i != geom_->nocc() / 2; ++i) energy += eig_[i];
 
     int end = ::clock();
-    cout << indent << setw(5) << iter << setw(18) << fixed << setprecision(10) << energy << space3 
+    cout << indent << setw(5) << iter << setw(18) << fixed << setprecision(12) << energy << space3 
                                       << setw(15) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
 
     if (error < SCF_THRESH) {

@@ -488,7 +488,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   const size_t nmax = std::max(nbasis4, std::max((size_t)std::max(std::max(nv, nov), novv), noovv));
   std::complex<double>* data = new std::complex<double>[nmax];
-  const size_t nalloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv)*std::max(KK, 1));
+  const size_t nalloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv));
 
   std::complex<double>* datas = new std::complex<double>[nalloc];
   std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
@@ -506,8 +506,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
 
   size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end()); 
 
-  std::complex<double>* intermediate_mmK = new std::complex<double>[std::max(nv, novv) * std::max(KK, 1)];
-  std::complex<double>* intermediate_novv = intermediate_mmK; // reusing the same area.
+  PFile<std::complex<double> > intermediate_mmK(nv * std::max(KK, 1), K_, false);
+  std::complex<double>* intermediate_novv = new std::complex<double>[novv];
   PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), K_, false);
   PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_, true);
 
@@ -517,7 +517,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     intermediate_mKK.clear();
     for (int q2 = -L_; q2 <= L_; ++q2) {
       const int m2 = q2;
-      fill(intermediate_mmK, intermediate_mmK + nv * std::max(KK, 1), czero);
+      intermediate_mmK.clear(); 
       for (int q3 = -S_; q3 <= S_; ++q3, ++loop_counter) {
         const int m3 = m2 + q3; 
 
@@ -624,19 +624,23 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           ::memcpy(data, datas, nbasis4 * sizeof(std::complex<double>));
         }
 
-        #pragma omp parallel for
+//      #pragma omp parallel for
         for (int nkb = -K_; nkb < maxK1; ++nkb) {
           const int nkbc = nkb + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m3 * nkb * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           int offset1 = 0;
           int offset2 = 0;
-          for (int ii = 0; ii != nbasis1; ++ii, offset1 += nbasis3,
-                                                offset2 += nbasis2 * bsize) {
+          std::fill(datas, datas+nv, 0.0);
+          #pragma omp parallel for
+          for (int ii = 0; ii < nbasis1; ++ii) {
+            const size_t offset1 = nbasis3 * ii;
+            const size_t offset2 = nbasis2 * bsize * ii;
             zgemm_("N", "N", &nbasis2, &bsize, &nbasis1, &prefac, data + offset1, &nbasis2,
                                                          coeff_b->bp(nkb) + nbasis1 * bstart, &nbasis1, &cone,
-                                                         intermediate_mmK + nv * nkbc + offset2, &nbasis2);
+                                                         datas + offset2, &nbasis2);
           }
+          intermediate_mmK.add_block(nv*nkbc, nv, datas);
         } // end of contraction b for given m3
 
       } // end of m3 loop
@@ -644,10 +648,9 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
       // intermediate_mmK is ready
       for (int nkb = -K_; nkb < maxK1; ++nkb) {
         const int nkbc = nkb + K_; 
-        const int nbj = nkbc * KK;
-        fill(datas, datas+nov*std::max(KK,1), czero);
-        #pragma omp parallel for
-        for (int nkj = -K_; nkj < maxK1; ++nkj) {
+        int nbj = nkbc * KK;
+        intermediate_mmK.get_block(nv*nkbc, nv, data);
+        for (int nkj = -K_; nkj < maxK1; ++nkj, ++nbj) {
           std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * jsize];
           const std::complex<double> exponent(0.0, K_ != 0 ? (- m2 * nkj * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
@@ -655,12 +658,13 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis1 * jstart;
           for (int ii = 0; ii != nbasis1 * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
           const int nsize = nbasis2 * bsize;
-          zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, intermediate_mmK + nv * nkbc, &nsize,
+          fill(datas, datas+nov, czero);
+          zgemm_("N", "N", &nsize, &jsize, &nbasis1, &prefac, data, &nsize,
                                                               conjc2, &nbasis1, &cone,
-                                                              datas + nov*(nkj+K_), &nsize);
+                                                              datas, &nsize);
           delete[] conjc2;
+          intermediate_mKK.add_block(nbj*nov, nov, datas);
         }
-        intermediate_mKK.add_block(nbj*nov, std::max(nov*KK, nov), datas);
       } // end of contraction j for given m2
 
     } // end of m2 loop
@@ -669,33 +673,28 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
     for (int nkb = -K_, nbja = 0, nbj = 0; nkb != maxK1; ++nkb) {
       for (int nkj = -K_; nkj != maxK1; ++nkj, ++nbj) {
         intermediate_mKK.get_block(nov*nbj, nov, datas);
-        {
-          const int m = nbasis2; 
-          const int n = jsize * bsize;
-          mytranspose_complex_(datas, &m, &n, data);
-          std::fill(datas, datas + novv, czero);
-        }
+        const int m = nbasis2; 
+        const int n = jsize * bsize;
+        mytranspose_complex_(datas, &m, &n, data);
 
-        #pragma omp parallel for
-        for (int nka = -K_; nka < maxK1; ++nka) {
+        for (int nka = -K_; nka < maxK1; ++nka, ++nbja) {
           const int nkac = nka + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m1 * nka * pi)/ K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
-          int offset1 = 0;
-          int offset2 = 0;
-          for (int ii = 0; ii != nbasis1; ++ii, offset1 += nsize * nbasis1,
-                                                offset2 += nsize * asize) {
+          #pragma omp parallel for
+          for (int ii = 0; ii < nbasis1; ++ii) {
+            const int offset1 = nsize * nbasis1 * ii;
+            const int offset2 = nsize * asize * ii;
             zgemm_("N", "N", &nsize, &asize, &nbasis1, &prefac, data + offset1, &nsize,
                                                                 coeff_a->bp(nka) + nbasis1 * astart, &nbasis1, &czero,
-                                                                datas + nkac * novv + offset2, &nsize);
+                                                                datas + offset2, &nsize);
           }
+          if (q1_front)
+            intermediate_KKK.append(novv, datas);
+          else
+            intermediate_KKK.add_block(novv * nbja, novv, datas);
         }
-        if (q1_front)
-          intermediate_KKK.append(novv * std::max(KK, 1), datas);
-        else
-          intermediate_KKK.add_block(novv * nbja, novv * std::max(KK, 1), datas);
-        nbja += std::max(KK, 1);
       }
     } // end of contraction a for given m1
 
@@ -708,9 +707,8 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   for (int nkb = -K_; nkb != maxK1; ++nkb) {
     int nbja = (nkb + K_) * KK * KK;
     for (int nkj = -K_; nkj != maxK1; ++nkj) {
-      intermediate_KKK.get_block(novv * nbja, novv * std::max(KK, 1), intermediate_novv);
-      #pragma omp parallel for
-      for (int nka = -K_; nka < maxK1; ++nka) {
+      for (int nka = -K_; nka < maxK1; ++nka, ++nbja) {
+        intermediate_KKK.get_block(novv * nbja, novv, intermediate_novv);
         std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
 
         // momentum conservation
@@ -721,13 +719,12 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
         const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
         for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, intermediate_novv + novv * (nka + K_), &nsize,
+        zgemm_("N", "N", &nsize, &isize, &nbasis1, &cone, intermediate_novv, &nsize,
                                                           conjc2, &nbasis1, &czero,
-                                                          datas + noovv * (nka + K_), &nsize);
+                                                          datas, &nsize);
         delete[] conjc2;
+        mo_int->append(noovv, datas);
       }
-      mo_int->append(noovv * std::max(KK, 1), datas);
-      nbja += std::max(KK, 1);
     }
   } // end of contraction i
 
@@ -735,7 +732,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   delete[] datas;
   delete[] data_read;
   delete[] conjc;
-  delete[] intermediate_mmK;
+  delete[] intermediate_novv;
   delete[] blocks;
 
   std::cout << "  done" << std::endl << std::endl;

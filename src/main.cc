@@ -15,6 +15,7 @@
 #include <src/pmp2/pmp2.h>
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
+#include <src/fci/fci.h>
 #include <src/global.h>
 
 using namespace std;
@@ -36,6 +37,8 @@ int main(int argc, char** argv) {
     const bool periodic = (bool)count_string(input, "Periodic");
     const bool domp2 = (bool)count_string(input, "MP2");
     const bool use_hy2 = (bool)count_string(input, "HY2");
+
+    const bool fci_card = (bool)count_string(input, "FCI");
 
     typedef boost::shared_ptr<Geometry> RefGeom;
     typedef boost::shared_ptr<PGeometry> RefPGeom;
@@ -79,8 +82,13 @@ int main(int argc, char** argv) {
     } else if (depth_basis == 1) {
       if (!periodic) {
         RefGeom geom(new Geometry(input, 0));
-        SCF scf(geom);
-        scf.compute();
+        if (!fci_card) {
+          SCF scf(geom);
+          scf.compute();
+        } else {
+          FCI fci(geom);
+          fci.compute();
+        }
       } else {
         RefPGeom pgeom(new PGeometry(input, 0));
         RefPSCF_DISK tmp(new PSCF_DISK(pgeom));

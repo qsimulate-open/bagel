@@ -35,6 +35,8 @@ class SCF {
     void compute();
 
     const boost::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
+    const boost::shared_ptr<Coeff> coeff() { return coeff_; };
+    const boost::shared_ptr<Hcore> hcore() { return hcore_; };
 };
 
 #endif

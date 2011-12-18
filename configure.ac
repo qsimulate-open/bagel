@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([NewProgram], 1.0, [shiozaki.toru@gmail.com])
+AC_INIT([PolyR12], 1.0, [shiozaki.toru@gmail.com])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.cc])
 AM_CONFIG_HEADER([config.h])
@@ -13,6 +13,7 @@ AC_PROG_CXX
 #AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 AC_PROG_CC
+AC_PROG_FC
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -32,11 +33,6 @@ AC_CONFIG_FILES([Makefile
                  src/scf/Makefile
                  src/pmp2/Makefile
                  src/util/Makefile
+                 src/fci/Makefile
                  src/pscf/Makefile])
-#                src/rysint/vrr_gen/Makefile
-#                src/rysint/hrr_gen/Makefile
-#                src/rysint/vrr_driver_gen/Makefile
-#                src/rysint/carsph/Makefile
-#                src/rysint/sort_gen/Makefile
-#                src/rysint/interpolate/Makefile
 AC_OUTPUT
