@@ -22,38 +22,14 @@ FCI::FCI(const shared_ptr<Geometry> geom)
 
   const_lexical_mapping_();
   const_string_lists_();
-  const_phis_();
+  const_phis_<0>(stringa_, phia_);
+  const_phis_<1>(stringb_, phib_);
 }
 
 FCI::~FCI() {
 
 }
 
-
-void FCI::const_phis_() {
-  typedef vector<tuple<unsigned int, int, unsigned int, unsigned int> >::iterator Titer;
-
-  phia_.resize(stringa_.size()*norb_*norb_);
-  Titer piter = phia_.begin();
-
-  for (vector<unsigned int>::const_iterator iter = stringa_.begin(); iter != stringa_.end(); ++iter) {
-    for (unsigned int i = 0; i != norb_; ++i) { // annihilation
-      const unsigned int ibit = (1 << i);
-      if (ibit & *iter) {
-        const unsigned int nbit = (ibit^*iter); // annihilated.
-        for (unsigned int j = 0; j != norb_; ++j) { // creation
-          const unsigned int jbit = (1 << j); 
-          if (!(jbit & *iter)) {
-            const unsigned int mbit = jbit^*iter;
-            *piter = make_tuple(lexicala(mbit), sign(mbit, i, j), j, i); 
-            ++piter;
-          }
-        }
-      }
-    }
-  }
-
-}
 
 void FCI::const_string_lists_() {
   vector<int> data(norb_);
@@ -80,10 +56,10 @@ void FCI::const_string_lists_() {
 
 #if 0
   for (vector<unsigned int>::const_iterator i = stringa_.begin(); i != stringa_.end(); ++i) {
-    cout << lexicala(*i) << endl;
+    cout << lexical<0>(*i) << endl;
   }
   for (vector<unsigned int>::const_iterator i = stringb_.begin(); i != stringb_.end(); ++i) {
-    cout << lexicalb(*i) << endl;
+    cout << lexical<1>(*i) << endl;
   }
 #endif
 
@@ -91,33 +67,30 @@ void FCI::const_string_lists_() {
 
 void FCI::const_lexical_mapping_() {
   // combination numbers up to 31 orbitals (fci/comb.h)
-  zkla_.resize(nelea_ * norb_); 
-  zklb_.resize(neleb_ * norb_);
-  fill(zkla_.begin(), zkla_.end(), 0llu);
-  fill(zklb_.begin(), zklb_.end(), 0llu);
+  zkl_.resize(nelea_ * norb_ + neleb_ * norb_); 
+  fill(zkl_.begin(), zkl_.end(), 0llu);
 
   // this part is 1 offset due to the convention of Knowles & Handy's paper.
   for (int k = 1; k < nelea_; ++k) {
     for (int l = k; l <= norb_-nelea_+k; ++l) {
       for (int m = norb_-l+1; m <= norb_-k; ++m) {
-        zkla(k-1, l-1) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1); 
+        zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1); 
       }
     }
   }
-  for (int l = nelea_; l <= norb_; ++l) zkla(nelea_-1, l-1) = l - nelea_; 
+  for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_; 
 
   if (nelea_ == neleb_) {
-    copy(zkla_.begin(), zkla_.end(), zklb_.begin());
+    copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
   } else {
     for (int k = 1; k <= neleb_; ++k) {
       for (int l = k; l <= norb_-neleb_+k; ++l) {
-        zklb(k-1, l-1) = 0; 
         for (int m = norb_-l+1; m <= norb_-k; ++m) {
-          zklb(k-1, l-1) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1); 
+          zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1); 
         }
       }
     }
-    for (int l = neleb_; l <= norb_; ++l) zklb(neleb_-1, l-1) = l - neleb_; 
+    for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_; 
   }
 }
 
