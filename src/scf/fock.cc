@@ -24,13 +24,7 @@ Fock::Fock(const RefGeometry geom, const RefFock previous, const RefAODensity de
 
   init(); // zero here
 
-//#define SLATERDEBUG
-#ifdef SLATERDEBUG
-  slater_two_electron_part();
-#else
   fock_two_electron_part();
-#endif
-
 
   for (int i = 0; i != ndim_; ++i) {
     const int diagpos = i * nbasis_ + i;

@@ -13,14 +13,17 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/rysint/eribatch.h>
-#include <src/rysint/erirootlist.h>
 #include <src/rysint/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
+#include <src/stackmem.h>
 
 using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
+
+// This object lives in main.cc
+extern StackMem* stack;
 
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
 :  RysInt(_info) {
@@ -29,18 +32,28 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 //const double integral_thresh = 0.0; 
 
   // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()
+   || (basisinfo_[0]->angular_number() == 0 && basisinfo_[1]->angular_number() == 0)) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap01_ = true;
   } else {
     swap01_ = false;
   }
   // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()
+   || (basisinfo_[2]->angular_number() == 0 && basisinfo_[3]->angular_number() == 0)) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap23_ = true;
   } else {
     swap23_ = false;
+  }
+
+  no_transpose_ = false;
+  if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
+    no_transpose_ = true;
+    swap(basisinfo_[0], basisinfo_[2]); 
+    swap(basisinfo_[1], basisinfo_[3]); 
+    swap(swap01_, swap23_); 
   }
 
   const int ang0 = basisinfo_[0]->angular_number();
@@ -130,10 +143,10 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  data_ = new double[size_alloc_];
+  data_ = stack->get(size_alloc_);
   data2_ = NULL;
 
-  buff_ = new double[(rank_ * 2 + 10) * primsize_];
+  buff_ = stack->get((rank_ * 2 + 10) * primsize_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * primsize_)
   double* pointer = buff_; 
   p_ = pointer;     pointer += primsize_ * 3;
   q_ = pointer;     pointer += primsize_ * 3;
@@ -142,21 +155,24 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   coeff_ = pointer; pointer += primsize_;
   T_ = pointer;     pointer += primsize_;
 
-  vector<double>::const_iterator expi0, expi1, expi2, expi3;
-  const vector<double> exp0 = basisinfo_[0]->exponents();
-  const vector<double> exp1 = basisinfo_[1]->exponents();
-  const vector<double> exp2 = basisinfo_[2]->exponents();
-  const vector<double> exp3 = basisinfo_[3]->exponents();
+  const double* exp0 = (basisinfo_[0]->exponents_pointer());
+  const double* exp1 = (basisinfo_[1]->exponents_pointer());
+  const double* exp2 = (basisinfo_[2]->exponents_pointer());
+  const double* exp3 = (basisinfo_[3]->exponents_pointer());
+  const int nexp0 = basisinfo_[0]->num_primitive();
+  const int nexp1 = basisinfo_[1]->num_primitive();
+  const int nexp2 = basisinfo_[2]->num_primitive();
+  const int nexp3 = basisinfo_[3]->num_primitive();
 
-  vector<double> Ecd_save(prim2size_ * prim3size_); 
-  vector<double> qx_save(prim2size_ * prim3size_);
-  vector<double> qy_save(prim2size_ * prim3size_);
-  vector<double> qz_save(prim2size_ * prim3size_);
+  double* Ecd_save = stack->get(prim2size_ * prim3size_); 
+  double* qx_save = stack->get(prim2size_ * prim3size_);
+  double* qy_save = stack->get(prim2size_ * prim3size_);
+  double* qz_save = stack->get(prim2size_ * prim3size_);
 
-  const double minexp0 = *min_element(exp0.begin(), exp0.end());
-  const double minexp1 = *min_element(exp1.begin(), exp1.end());
-  const double minexp2 = *min_element(exp2.begin(), exp2.end());
-  const double minexp3 = *min_element(exp3.begin(), exp3.end());
+  const double minexp0 = *min_element(exp0, exp0+nexp0);
+  const double minexp1 = *min_element(exp1, exp1+nexp1);
+  const double minexp2 = *min_element(exp2, exp2+nexp2);
+  const double minexp3 = *min_element(exp3, exp3+nexp3);
   const double min_ab = minexp0 * minexp1;
   const double min_cd = minexp2 * minexp3;
 
@@ -171,18 +187,19 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
   const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq; 
 
-  indexpair23_.reserve(prim2size_ * prim3size_);
-
   const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]; 
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
+  unsigned int tuple_length = 0u;
+  double* tuple_field = stack->get(nexp2*nexp3*3);
+  int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
   {
     const double cxp_min = minexp0 + minexp1; 
     const double cxp_inv_min = 1.0 / cxp_min; 
     const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
     int index23 = 0;
-    for (expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) { 
-      for (expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) { 
+    for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) { 
+      for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) { 
         const double cxq = *expi2 + *expi3;
         const double cd = *expi2 * *expi3;
         const double cxq_inv = 1.0 / cxq;
@@ -200,10 +217,17 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
           const double tsqrt = ::sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                               * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : PIMHALF);
-          if (ssss > integral_thresh)
-            indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
+          if (ssss > integral_thresh) {
+            tuple_field[tuple_length*2  ] = *expi2;
+            tuple_field[tuple_length*2+1] = *expi3;
+            tuple_index[tuple_length] = index23;
+            ++tuple_length;
+          }
         } else {
-          indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
+          tuple_field[tuple_length*2  ] = *expi2;
+          tuple_field[tuple_length*2+1] = *expi3;
+          tuple_index[tuple_length] = index23;
+          ++tuple_length;
         }
       }
     }
@@ -212,14 +236,14 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   int index = 0;
   int index01 = 0;
   fill(T_, T_ + primsize_, -1.0);
-  screening_ = new int[primsize_];
+  screening_ = (int*)(stack->get(primsize_));
   screening_size_ = 0;
 
   const double cxq_min = minexp2 + minexp3; 
   const double cxq_inv_min = 1.0 / cxq_min; 
   const double min_Ecd = ::exp(-r23_sq * min_cd * cxq_inv_min);
-  for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
-    for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
+  for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) { 
+    for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) { 
       const double cxp = *expi0 + *expi1;
       const double ab = *expi0 * *expi1; 
       const double cxp_inv = 1.0 / cxp;
@@ -243,12 +267,11 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
-      for (vector<tuple<int, double, double> >::const_iterator expi23 = indexpair23_.begin(); 
-                                                               expi23 != indexpair23_.end(); ++expi23) {
-          const int index23 = get<0>(*expi23);
+      for (unsigned int i = 0; i != tuple_length; ++i) {
+          const int index23 = tuple_index[i];
           const int index = index_base + index23;
-          const double exp2value = get<1>(*expi23); 
-          const double exp3value = get<2>(*expi23); 
+          const double exp2value = tuple_field[2*i]; 
+          const double exp3value = tuple_field[2*i+1]; 
           const double cxq = exp2value + exp3value;
           xp_[index] = cxp;
           xq_[index] = cxq; 
@@ -274,13 +297,14 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
     }
   }
 
+  stack->release(nexp2*nexp3*3);
+
   roots_ = pointer; pointer += rank_ * primsize_; 
   weights_ = pointer;
 
   int ps = (int)primsize_; 
 
   // determine the quadrature grid
-
   if (ang0 + ang1 + ang2 + ang3 == 0) { // in this case, roots not needed; avoids exp
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
@@ -292,24 +316,29 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
         weights_[i] = erfsqt * SQRTPI2 / sqrtt;
       }
     }
+  } else if (rank_ == 1) {
+    eriroot1_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 2) {
+    eriroot2_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 3) {
+    eriroot3_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 4) {
+    eriroot4_(T_, roots_, weights_, &ps); 
 #if 0
-  } else if (rank_ <= -1) {
-    struct ERIRootList eriroot;
-    eriroot.rootfunc_call(rank_, T_, roots_, weights_, &ps); 
+  } else if (rank_ == 5) {
+    eriroot5_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 6) {
+    eriroot6_(T_, roots_, weights_, &ps); 
 #endif
   } else {
     rysroot_(T_, roots_, weights_, &rank_, &ps);
   }
 
-//rysroot_gmp(T_, roots_, weights_, rank_, ps);
-
 }
 
 
 ERIBatch::~ERIBatch() {
-  delete[] data_;
-  delete[] buff_;
-  delete[] screening_;
+  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_ + prim2size_ * prim3size_ * 4);
 
 }
 

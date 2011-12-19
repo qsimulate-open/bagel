@@ -84,16 +84,16 @@ void SCF::compute() {
     coeff_ = new_coeff;
     RefMatrix1e new_density(new Matrix1e(coeff_->form_density_rhf()));
 
-//  RefMatrix1e error_vector(new Matrix1e(*fock * *aodensity_ * *overlap_ - *overlap_ * *aodensity_ * *fock));
-    RefMatrix1e error_vector(new Matrix1e(*new_density - *aodensity_));
+    RefMatrix1e error_vector(new Matrix1e(*fock * *aodensity_ * *overlap_ - *overlap_ * *aodensity_ * *fock));
+ // RefMatrix1e error_vector(new Matrix1e(*new_density - *aodensity_));
     const double error = error_vector->rms();
 
     double energy = (*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
     for (int i = 0; i != geom_->nocc() / 2; ++i) energy += eig_[i];
 
     int end = ::clock();
-    cout << indent << setw(5) << iter << setw(18) << fixed << setprecision(12) << energy << space3 
-                                      << setw(15) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(12) << energy << space3 
+                                      << setw(17) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
 
     if (error < SCF_THRESH) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

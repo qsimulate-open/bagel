@@ -7,9 +7,12 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <src/stackmem.h>
 #define DPISQRT 1.7724538509055160
 
 using namespace std;
+
+extern StackMem* stack;
 
 OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
@@ -88,7 +91,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
   for (int i = amin_; i != amax1_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
   asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
-  data_ = new double[cont0_ * cont1_ * max(asize_intermediate_, asize_)];
+  data_ = stack->get(cont0_ * cont1_ * max(asize_intermediate_, asize_));
 
   amapping_.resize(amax1_ * amax1_ * amax1_);
   int cnt = 0;
@@ -106,6 +109,6 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
 }
 
 OSInt::~OSInt() {
-  delete[] data_;
+  stack->release(cont0_ * cont1_ * max(asize_intermediate_, asize_));
 }
 

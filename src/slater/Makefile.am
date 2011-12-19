@@ -28,3 +28,4 @@ _svrr_b060.cc _svrr_b070.cc _svrr_b080.cc _svrr_b090.cc _svrr_b0a0.cc _svrr_b0b0
 _svrr_c000.cc _svrr_c010.cc _svrr_c020.cc _svrr_c030.cc _svrr_c040.cc _svrr_c050.cc \
 _svrr_c060.cc _svrr_c070.cc _svrr_c080.cc _svrr_c090.cc _svrr_c0a0.cc _svrr_c0b0.cc _svrr_c0c0.cc \
 start_up_slater.f90 root1.f90 root2.f90 root3.f90 root4.f90 root5.f90 root6.f90 root7.f90 root8.f90 root9.f90 
+AM_CXXFLAGS=-I$(top_srcdir)

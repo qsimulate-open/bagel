@@ -1,3 +1,7 @@
+c
+c Author : Toru Shiozaki
+c Date   : May 2009
+c
 c t (input array): T 
 c x (output) : array of root positions 
 c w (output) : array of list of weights

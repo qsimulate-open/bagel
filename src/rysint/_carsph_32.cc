@@ -38,56 +38,46 @@ void CarSphList::carsph_32(const int nloop, const double* source, double* target
   const double c5 = 0.39528470752104744;
   const double c21 = 0.30618621784789724;
   for (int iloop = 0; iloop != nloop; ++iloop, target += 35, source += 60) {
-    target[0] =  c0 * source[0] - c0 * source[2] - c1 * source[12]
-                  + c1 * source[14];
+    target[0] =  c0 * (source[0] - source[2]) - c1 * (source[12] - source[14]);
     target[1] =  c2 * source[1] - c3 * source[13];
     target[2] =  c2 * source[3] - c3 * source[15];
     target[3] =  c2 * source[4] - c3 * source[16];
-    target[4] =  c4 * source[5] - c5 * source[0] - c5 * source[2]
-                  - c6 * source[17] + c7 * source[12] + c7 * source[14];
-    target[5] =  c1 * source[6] - c1 * source[8] - c0 * source[18]
-                  + c0 * source[20];
+    target[4] =  c4 * source[5] - c5 * (source[0] + source[2])
+                  - c6 * source[17] + c7 * (source[12] + source[14]);
+    target[5] =  c1 * (source[6] - source[8]) - c0 * (source[18] - source[20]);
     target[6] =  c3 * source[7] - c2 * source[19];
     target[7] =  c3 * source[9] - c2 * source[21];
     target[8] =  c3 * source[10] - c2 * source[22];
-    target[9] =  c6 * source[11] - c7 * source[6] - c7 * source[8]
-                  - c4 * source[23] + c5 * source[18] + c5 * source[20];
-    target[10] =  c8 * source[24] - c8 * source[26] - c8 * source[36]
-                  + c8 * source[38];
-    target[11] =  c9 * source[25] - c9 * source[37];
-    target[12] =  c9 * source[27] - c9 * source[39];
-    target[13] =  c9 * source[28] - c9 * source[40];
-    target[14] =  c10 * source[29] - c11 * source[24] - c11 * source[26]
-                  - c10 * source[41] + c11 * source[36] + c11 * source[38];
-    target[15] =  c9 * source[30] - c9 * source[32];
+    target[9] =  c6 * source[11] - c7 * (source[6] + source[8])
+                  - c4 * source[23] + c5 * (source[18] + source[20]);
+    target[10] =  c8 * (source[24] - source[26] - source[36] + source[38]);
+    target[11] =  c9 * (source[25] - source[37]);
+    target[12] =  c9 * (source[27] - source[39]);
+    target[13] =  c9 * (source[28] - source[40]);
+    target[14] =  c10 * (source[29] - source[41]) - c11 * (source[24] + source[26] - source[36] - source[38]);
+    target[15] =  c9 * (source[30] - source[32]);
     target[16] =  c12 * source[31];
     target[17] =  c12 * source[33];
     target[18] =  c12 * source[34];
-    target[19] =  c13 * source[35] - c10 * source[30] - c10 * source[32];
-    target[20] =  c14 * source[42] - c14 * source[44] - c15 * source[0]
-                  + c15 * source[2] - c15 * source[12] + c15 * source[14];
-    target[21] =  c16 * source[43] - c17 * source[1] - c17 * source[13];
-    target[22] =  c16 * source[45] - c17 * source[3] - c17 * source[15];
-    target[23] =  c16 * source[46] - c17 * source[4] - c17 * source[16];
-    target[24] =  c18 * source[47] - c19 * source[42] - c19 * source[44]
-                  - c20 * source[5] + c21 * source[0] + c21 * source[2]
-                  - c20 * source[17] + c21 * source[12] + c21 * source[14];
-    target[25] =  c14 * source[48] - c14 * source[50] - c15 * source[6]
-                  + c15 * source[8] - c15 * source[18] + c15 * source[20];
-    target[26] =  c16 * source[49] - c17 * source[7] - c17 * source[19];
-    target[27] =  c16 * source[51] - c17 * source[9] - c17 * source[21];
-    target[28] =  c16 * source[52] - c17 * source[10] - c17 * source[22];
-    target[29] =  c18 * source[53] - c19 * source[48] - c19 * source[50]
-                  - c20 * source[11] + c21 * source[6] + c21 * source[8]
-                  - c20 * source[23] + c21 * source[18] + c21 * source[20];
-    target[30] =  c22 * source[54] - c22 * source[56] - c23 * source[24]
-                  + c23 * source[26] - c23 * source[36] + c23 * source[38];
-    target[31] =  c24 * source[55] - c25 * source[25] - c25 * source[37];
-    target[32] =  c24 * source[57] - c25 * source[27] - c25 * source[39];
-    target[33] =  c24 * source[58] - c25 * source[28] - c25 * source[40];
-    target[34] =  source[59] - c26 * source[54] - c26 * source[56]
-                  - c27 * source[29] + c28 * source[24] + c28 * source[26]
-                  - c27 * source[41] + c28 * source[36] + c28 * source[38];
+    target[19] =  c13 * source[35] - c10 * (source[30] + source[32]);
+    target[20] =  c14 * (source[42] - source[44]) - c15 * (source[0] - source[2] + source[12] - source[14]);
+    target[21] =  c16 * source[43] - c17 * (source[1] + source[13]);
+    target[22] =  c16 * source[45] - c17 * (source[3] + source[15]);
+    target[23] =  c16 * source[46] - c17 * (source[4] + source[16]);
+    target[24] =  c18 * source[47] - c19 * (source[42] + source[44])
+                  - c20 * (source[5] + source[17]) + c21 * (source[0] + source[2] + source[12] + source[14]);
+    target[25] =  c14 * (source[48] - source[50]) - c15 * (source[6] - source[8] + source[18] - source[20]);
+    target[26] =  c16 * source[49] - c17 * (source[7] + source[19]);
+    target[27] =  c16 * source[51] - c17 * (source[9] + source[21]);
+    target[28] =  c16 * source[52] - c17 * (source[10] + source[22]);
+    target[29] =  c18 * source[53] - c19 * (source[48] + source[50])
+                  - c20 * (source[11] + source[23]) + c21 * (source[6] + source[8] + source[18] + source[20]);
+    target[30] =  c22 * (source[54] - source[56]) - c23 * (source[24] - source[26] + source[36] - source[38]);
+    target[31] =  c24 * source[55] - c25 * (source[25] + source[37]);
+    target[32] =  c24 * source[57] - c25 * (source[27] + source[39]);
+    target[33] =  c24 * source[58] - c25 * (source[28] + source[40]);
+    target[34] =  source[59] - c26 * (source[54] + source[56])
+                  - c27 * (source[29] + source[41])+ c28 * (source[24] + source[26] + source[36] + source[38]);
   }
 }
 

@@ -8,8 +8,11 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <src/stackmem.h>
 
 using namespace std;
+
+extern StackMem* stack;
 
 void OSInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                                        const vector<vector<double> >& coeff0, const vector<pair<int, int> >& ranges0, const int cdim0, 
@@ -19,7 +22,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
   const double zero = 0.0;
   const int zeroint = 0;
   const int worksize = pdim1 * asize;
-  double* work = new double[worksize];
+  double* work = stack->get(worksize);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
@@ -36,7 +39,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
       }
     }
   }
-  delete[] work;
+  stack->release(worksize);
 }
 
 

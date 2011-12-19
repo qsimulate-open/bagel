@@ -3,6 +3,8 @@
 // Machine Generated Code
 //
 
+#include <cassert>
+#include <string.h>
 #include <src/rysint/sortlist.h>
 
 using namespace std;
@@ -27,22 +29,7 @@ void SortList::sort_indices_00_sph(double* target, const double* source, const i
 
     }
   } else {
-    int offset = 0;
-    const int cont3csize = 1 * c3end;
-    for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
-      double* current_target = &target[offset];
-      const double* current_source = &source[offset];
-
-      for (int c2 = 0; c2 != c2end; ++c2) {
-        for (int c3 = 0; c3 != c3end; ++c3) {
-          const int c3x3end = c3 * 1;
-          const int soffset = 1 * (c3 + c3end * c2);
-          const int toffset = 1 * c2 * cont3csize + c3x3end;
-          current_target[toffset                     ] = current_source[soffset];
-        }
-      }
-
-    }
+    ::memcpy(target, source, c3end*c2end*loopsize*sizeof(double));
   }
 
 }

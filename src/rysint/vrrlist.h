@@ -16,7 +16,7 @@ struct VRRList {
   VRRList();
   ~VRRList();
 //
-// commented-out lines are handwritted, which is implimented in vrr_template.cc 
+// commented-out lines are hand-written, which is implimented in vrr_template.cc 
 //
 //static void _vrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
 //static void _vrr_0010(double*, const double*, const double*, const double*, const double*, const double*);

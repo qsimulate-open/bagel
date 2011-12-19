@@ -13,8 +13,11 @@
 #include <src/rysint/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
+#include <src/stackmem.h>
 
 using namespace std;
+
+extern StackMem* stack;
 
 typedef std::shared_ptr<Atom> RefAtom;
 
@@ -23,13 +26,13 @@ void NAIBatch::compute() {
   const int zeroint = 0;
   const int unit = 1;
 
-  bkup_ = new double[size_alloc_];
+  bkup_ = stack->get(size_alloc_);
 
   const int worksize = rank_ * amax1_;
   
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize);
+  double* worky = stack->get(worksize);
+  double* workz = stack->get(worksize);
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -55,7 +58,6 @@ void NAIBatch::compute() {
     double disp[3];
     disp[0] = disp[1] = 0.0;
     disp[2] = A_ * cell;
-//    const RefAtom catom(new Atom(*(geom_->atoms(iatom)), disp));
     const int offset_iprim = iprim * asize_;
     double* current_data = &data_[offset_iprim];
 
@@ -140,10 +142,7 @@ void NAIBatch::compute() {
     ::memcpy(data_, bkup_, asize_final_ * contsize_ * sizeof(double)); 
   }
 
-  delete[] workx;
-  delete[] worky;
-  delete[] workz;
-  delete[] bkup_;
+  stack->release(size_alloc_ + rank_ * amax1_ * 3);
 }
 
 

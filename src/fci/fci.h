@@ -111,7 +111,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j); 
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            *piter = make_tuple(lexical<spin>(mbit), sign(mbit, i, j), (j<<8)+i, source); 
+            *piter = make_tuple(lexical<spin>(mbit), sign(mbit, i, j), j*norb_+i, source); 
 #if 1
             std::cout << i << j << " " << (*iter & 1)  << ((*iter >> 1) & 1) << ((*iter >> 2) & 1) << ((*iter >> 3) & 1) 
                  << ((*iter >> 4) & 1) << " " << (mbit & 1) << ((mbit >> 1) & 1) << ((mbit >> 2) & 1) <<

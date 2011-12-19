@@ -17,13 +17,19 @@
 #include <src/scf/scf.h>
 #include <src/fci/fci.h>
 #include <src/global.h>
+#include <src/stackmem.h>
 
 using namespace std;
+
+StackMem* stack;
 
 int main(int argc, char** argv) {
 
   try {
     print_header();
+
+    StackMem a(10000000); // 8 MB
+    stack = &a; 
 
     const bool input_provided = argc == 2;
     if (!input_provided) {

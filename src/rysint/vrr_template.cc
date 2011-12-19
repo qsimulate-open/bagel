@@ -7,11 +7,13 @@
 #include <src/rysint/int2d.h>
 #include <iostream>
 #include <iomanip>
+#include <src/stackmem.h>
 
 // if you define USE_ORIGINAL_VERSION, it will use simpler code.
 
 using namespace std;
 
+extern StackMem* stack;
 
 void ERIBatch::perform_VRR3() {
 
@@ -2645,9 +2647,9 @@ void ERIBatch::perform_VRR() {
 
   const int acsize = asize_ * csize_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize;
+  double* workz = worky + worksize;
   double iyiz[RYS_MAX];
 
   // Perform VRR
@@ -2706,9 +2708,7 @@ void ERIBatch::perform_VRR() {
 
   } // end of primsize loop
 
-  delete[] workx;
-  delete[] worky;
-  delete[] workz;
+  stack->release(worksize*3);
 }
 
 

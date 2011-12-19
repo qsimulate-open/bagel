@@ -7,16 +7,16 @@
 
 #include <cassert>
 #include <vector>
-#include <memory>
 #include <src/rysint/int2d.h>
 #include <src/rysint/rysint.h>
 #include <src/rysint/macros.h>
-#include <tuple>
+#include <memory>
 
 class ERIBatch : public RysInt {
 
   protected:
     bool swap01_, swap23_;
+    bool no_transpose_;
 
     double *p_, *q_;
     double *xp_, *xq_, *coeff_;
@@ -29,8 +29,6 @@ class ERIBatch : public RysInt {
     int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
-
-    std::vector<std::tuple<int, double, double> > indexpair23_;
 
     /// buffer and intermediate storage
     double *buff_;
@@ -62,11 +60,9 @@ class ERIBatch : public RysInt {
 
     void sort_indices(double*, const double*, const int, const int, const int, const int, const int, const bool);
 
-//  void rysroot_gmp(const double*, double*, double*, const int, const int);
-
   public:
     
-    // dummy will never not used.
+    // dummy will never used.
     ERIBatch(const std::vector<std::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~ERIBatch();
 

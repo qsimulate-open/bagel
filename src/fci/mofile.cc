@@ -49,6 +49,7 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
 
   const int nocc = nfence - nstart;
+  sizeij_ = nocc*nocc;
   const int size = basis_.size(); // number of shells
   const int nbasis = geom_->nbasis();
   const size_t aointsize = nbasis*nbasis*nbasis*nbasis; 

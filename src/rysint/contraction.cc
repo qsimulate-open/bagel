@@ -9,8 +9,12 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <src/stackmem.h>
 
 using namespace std;
+
+// This object lives in main.cc
+extern StackMem* stack;
 
 void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
@@ -19,7 +23,7 @@ void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim
   const int zeroint = 0;
   const double zero = 0.0;
   const int worksize = nsize * pdim1; 
-  double* work = new double[worksize];
+  double* work = stack->get(worksize);
   double* current_cont = cont;
 
   for (int i = 0; i != cdim0; ++i) {
@@ -38,7 +42,7 @@ void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim
     }
   }
 
-  delete[] work;
+  stack->release(worksize);
 }
 
 
@@ -51,7 +55,7 @@ void ERIBatch::perform_contraction_new_inner(const int nsize, const double* prim
   const int zeroint = 0;
   const int ac = asize_ * csize_;
   const int worksize = pdim1 * ac;
-  double* work = new double[worksize];
+  double* work = stack->get(worksize);
   double* current_cont = cont;
 
   for (int n = 0; n != nsize; ++n) { // loop of cdim * cdim
@@ -75,7 +79,7 @@ void ERIBatch::perform_contraction_new_inner(const int nsize, const double* prim
       }
     }
   } 
-  delete[] work;
+  stack->release(worksize);
 }
 
 

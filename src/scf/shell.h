@@ -41,6 +41,7 @@ class Shell {
     const int angular_number() const { return angular_number_; };
     const double exponents(const int i) const { return exponents_[i]; }; 
     const std::vector<double>& exponents() const { return exponents_; };
+    const double* exponents_pointer() const { return &(exponents_[0]); };
     const std::vector<double> contractions(const int i) const { return contractions_[i]; };
     const std::vector<std::vector<double> >& contractions() const { return contractions_; };
     const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; }; 

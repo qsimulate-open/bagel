@@ -10,49 +10,50 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <src/stackmem.h>
 
 using namespace std;
 
+extern StackMem* stack;
+
 void KineticBatch::compute() {
 
-  double* intermediate_p = new double[prim0_ * prim1_ * asize_intermediate_];
+  double* intermediate_p = stack->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 
-  double* intermediate_c = new double[cont0_ * cont1_ * asize_intermediate_];
+  double* intermediate_c = stack->get(cont0_ * cont1_ * asize_intermediate_);
   fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
   perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c, 
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-  delete[] intermediate_p;
-
   if (spherical_) {
     struct CarSphList carsphlist;
-    double* intermediate_i = new double[cont0_ * cont1_ * asize_final_];
+    double* intermediate_i = stack->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i); 
 
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
-    delete[] intermediate_i;
+    stack->release(cont0_ * cont1_ * asize_final_);
   } else {
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_c, cont1_, cont0_, 1, swap01_);
   }
 
-  delete[] intermediate_c;
+  stack->release(prim0_ * prim1_ * asize_intermediate_ + cont0_ * cont1_ * asize_intermediate_);
 }
 
 
 void KineticBatch::perform_VRR(double* intermediate) {
   const int worksize = amax1_;
-  double* worktx = new double[worksize * worksize];
-  double* workty = new double[worksize * worksize];
-  double* worktz = new double[worksize * worksize];
-  double* worksx = new double[worksize * worksize];
-  double* worksy = new double[worksize * worksize];
-  double* worksz = new double[worksize * worksize];
+  double* worktx = stack->get(worksize * worksize);
+  double* workty = stack->get(worksize * worksize);
+  double* worktz = stack->get(worksize * worksize);
+  double* worksx = stack->get(worksize * worksize);
+  double* worksy = stack->get(worksize * worksize);
+  double* worksz = stack->get(worksize * worksize);
 
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     // Perform VRR
@@ -178,10 +179,5 @@ void KineticBatch::perform_VRR(double* intermediate) {
 
   } // end of prim exponent loop
 
-  delete[] worktx;
-  delete[] workty;
-  delete[] worktz;
-  delete[] worksx;
-  delete[] worksy;
-  delete[] worksz;
+  stack->release(worksize * worksize * 6);
 }

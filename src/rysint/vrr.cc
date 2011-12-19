@@ -10,18 +10,20 @@
 #include <cassert>
 #include <algorithm>
 #include <cstring>
+#include <src/stackmem.h>
 
 using namespace std;
 
+extern StackMem* stack;
 
 void ERIBatch::perform_VRR4() {
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = 4 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[4];
 
   const int acsize = asize_ * csize_;
@@ -92,10 +94,7 @@ void ERIBatch::perform_VRR4() {
     }
 
   }
-
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -104,9 +103,9 @@ void ERIBatch::perform_VRR5() {
   const int worksize = 5 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[5];
 
   const int acsize = asize_ * csize_;
@@ -180,9 +179,7 @@ void ERIBatch::perform_VRR5() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -191,9 +188,9 @@ void ERIBatch::perform_VRR6() {
   const int worksize = 6 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[6];
 
   const int acsize = asize_ * csize_;
@@ -269,9 +266,7 @@ void ERIBatch::perform_VRR6() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -280,9 +275,9 @@ void ERIBatch::perform_VRR7() {
   const int worksize = 7 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[7];
 
   const int acsize = asize_ * csize_;
@@ -360,9 +355,7 @@ void ERIBatch::perform_VRR7() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -371,9 +364,9 @@ void ERIBatch::perform_VRR8() {
   const int worksize = 8 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[8];
 
   const int acsize = asize_ * csize_;
@@ -453,9 +446,7 @@ void ERIBatch::perform_VRR8() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -464,9 +455,9 @@ void ERIBatch::perform_VRR9() {
   const int worksize = 9 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[9];
 
   const int acsize = asize_ * csize_;
@@ -548,9 +539,7 @@ void ERIBatch::perform_VRR9() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -559,9 +548,9 @@ void ERIBatch::perform_VRR10() {
   const int worksize = 10 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[10];
 
   const int acsize = asize_ * csize_;
@@ -645,9 +634,7 @@ void ERIBatch::perform_VRR10() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -656,9 +643,9 @@ void ERIBatch::perform_VRR11() {
   const int worksize = 11 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[11];
 
   const int acsize = asize_ * csize_;
@@ -744,9 +731,7 @@ void ERIBatch::perform_VRR11() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -755,9 +740,9 @@ void ERIBatch::perform_VRR12() {
   const int worksize = 12 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[12];
 
   const int acsize = asize_ * csize_;
@@ -845,9 +830,7 @@ void ERIBatch::perform_VRR12() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 
@@ -856,9 +839,9 @@ void ERIBatch::perform_VRR13() {
   const int worksize = 13 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = new double[worksize];
-  double* worky = new double[worksize];
-  double* workz = new double[worksize];
+  double* workx = stack->get(worksize*3);
+  double* worky = workx + worksize; 
+  double* workz = worky + worksize; 
   double iyiz[13];
 
   const int acsize = asize_ * csize_;
@@ -948,9 +931,7 @@ void ERIBatch::perform_VRR13() {
 
   }
 
-  delete[] workz;
-  delete[] worky;
-  delete[] workx;
+  stack->release(worksize*3);
 }
 
 

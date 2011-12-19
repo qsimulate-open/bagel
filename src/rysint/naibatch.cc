@@ -11,7 +11,7 @@
 #include <src/rysint/naibatch.h>
 #include <src/rysint/f77.h>
 #include <src/rysint/macros.h>
-#include <src/rysint/erirootlist.h>
+#include <src/stackmem.h>
 #define PI 3.1415926535897932
 #define SQRTPI2 0.886226925452758013649083741671
 
@@ -20,6 +20,8 @@ using namespace std;
 typedef std::shared_ptr<Geometry> RefGeometry;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
+
+extern StackMem* stack;
 
 NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int L, const double A)
  :  RysInt(_info), geom_(gm), L_(L), A_(A) {
@@ -84,18 +86,18 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   size_final_ = asize_final_ * contsize_;
   const unsigned int size_intermediate = asize_intermediate_ * primsize_;
   size_alloc_ = max(max(size_start, size_intermediate), size_final_);
-  data_ = new double[size_alloc_];
+  data_ = stack->get(size_alloc_);
   fill(data_, data_ + size_alloc_, 0.0);
   assert(size_final_ <= size_alloc_);
 
-  buff_ = new double[(rank_ * 2 + 6) * primsize_ * natom_];
-  double* pointer = buff_; 
+  buff_ = stack->get((rank_ * 2 + 6) * primsize_ * natom_);
+  double* pointer = buff_;
   p_ = pointer;     pointer += primsize_ * natom_ * 3;
   xp_ = pointer;    pointer += primsize_ * natom_;
   coeff_ = pointer; pointer += primsize_ * natom_;
   T_ = pointer;     pointer += primsize_ * natom_;
 
-  screening_ = new int [primsize_ * natom_];
+  screening_ = (int*)(stack->get(primsize_ * natom_));
   screening_size_ = 0;
 
   vector<double>::const_iterator expi0, expi1, expi2, expi3;
@@ -103,22 +105,8 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   const vector<double> exp1 = basisinfo_[1]->exponents();
 
   int index = 0;
-  vector<RefAtom> atoms;
-  // for periodic calculations
-  if (L == 0) {
-    atoms =  geom_->atoms();
-  } else {
-    vector<RefAtom> tmp =  geom_->atoms();
-    for (int i = -L; i <= L; ++i) {
-      vector<double> disp(3);
-      disp[0] = disp[1] = 0.0;
-      disp[2] = A * i; 
-      for (int j = 0; j != tmp.size(); ++j) {
-        RefAtom newatom(new Atom(*(tmp[j]), disp));
-        atoms.push_back(newatom);
-      }
-    }
-  }
+  vector<RefAtom> atoms = geom_->atoms();
+
   const double onepi2 = 1.0 / (PI * PI);
   const double sqrtpi = ::sqrt(PI);
   for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
@@ -173,8 +161,6 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
 
 NAIBatch::~NAIBatch() {
-  delete[] data_;
-  delete[] buff_;
-  delete[] screening_;
+  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
 }
 

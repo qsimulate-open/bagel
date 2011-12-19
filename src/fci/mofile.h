@@ -17,6 +17,7 @@ class MOFile {
     const std::shared_ptr<Geometry> geom_;
     std::shared_ptr<std::fstream> file_;
     const std::shared_ptr<Coeff> coeff_; 
+    size_t sizeij_;
     long filesize_;
     std::string filename_;
     std::vector<std::shared_ptr<Shell> > basis_;
@@ -30,6 +31,8 @@ class MOFile {
     ~MOFile();
 
     void create_Jiiii(const int, const int);
+    double mo1e(const size_t i) const { return mo1e_[i]; };
+    double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
 
 };
 
