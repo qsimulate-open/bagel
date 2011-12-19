@@ -9,15 +9,15 @@
 #include <list>
 #include <src/scf/f77.h>
 #include <cassert>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
-// boost::shared_ptr<T> is assumed to be a shared_pointer of some class
+// std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have daxpy and ddot functions.
 // T must have geom() function that returns Geometry. 
 
 template <class T>
 class DIIS {
-  typedef boost::shared_ptr<T> RefT;
+  typedef std::shared_ptr<T> RefT;
   typedef std::list<std::pair<RefT, RefT> > Container_type_;
   typedef typename Container_type_::iterator iterator;
 

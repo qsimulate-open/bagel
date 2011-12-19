@@ -11,23 +11,22 @@
 #include <src/rysint/eribatch.h>
 #include <src/scf/scf.h>
 
-using namespace boost;
 using namespace std;
 
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
 
 MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Coeff> cmo) : geom_(geom), coeff_(cmo) {
   {
     Filename tmpf;
     filename_ = tmpf.filename_next();
   }
-  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
+  std::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
   file_ = tmp;
 
   { // prepare offset and basis
-    typedef boost::shared_ptr<Atom> RefAtom;
-    typedef boost::shared_ptr<Shell> RefShell;
+    typedef std::shared_ptr<Atom> RefAtom;
+    typedef std::shared_ptr<Shell> RefShell;
 
     const std::vector<RefAtom> atoms = geom_->atoms();
     int cnt = 0;
@@ -132,4 +131,15 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   mo2e_.resize(mm*mm);
   copy(first,first+mm*mm,&mo2e_[0]);
   delete[] first;
+
+  for (int i=0; i!=nocc; ++i) {
+    for (int j=0; j<=i; ++j) {
+      for (int k=0; k!=nocc; ++k) {
+        mo1e_[i*nocc+j] -= 0.5*mo2e_[(j+k*nocc)*mm+(k+i*nocc)];
+      }
+      mo1e_[j*nocc+i] = mo1e_[i*nocc+j];
+    }
+  } 
+
 }
+

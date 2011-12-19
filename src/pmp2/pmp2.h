@@ -7,8 +7,8 @@
 #define __src_pmp2_pmp2_h
 
 #include <vector>
-#include <boost/tuple/tuple.hpp>
-#include <boost/shared_ptr.hpp>
+#include <tuple>
+#include <memory>
 #include <src/pscf/pcoeff.h>
 #include <src/pscf/pgeometry.h>
 #include <src/util/pfile.h>
@@ -18,16 +18,16 @@
 #include <src/slater/slaterbatch.h>
 
 class PMP2 {
-  typedef boost::shared_ptr<PMatrix1e> RefMatrix;
-  typedef boost::shared_ptr<PCoeff> RefCoeff;
-  typedef boost::shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
+  typedef std::shared_ptr<PMatrix1e> RefMatrix;
+  typedef std::shared_ptr<PCoeff> RefCoeff;
+  typedef std::shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
 
   protected:
     // Shared pointer for geometry.
-    const boost::shared_ptr<PGeometry> geom_;
+    const std::shared_ptr<PGeometry> geom_;
     // PGeomery that has a union of OBS and CABS (in this order)
     // Will be initialized in generate_cabs()
-    boost::shared_ptr<PGeometry> union_geom_;
+    std::shared_ptr<PGeometry> union_geom_;
 
     // Coefficients for MO.
     RefCoeff coeff_;
@@ -43,13 +43,13 @@ class PMP2 {
     const std::vector<double> eig_;
 
     // AO integrals used in several places
-    boost::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
-    boost::shared_ptr<PCompFile<SlaterBatch> > stg_;
-    boost::shared_ptr<PCompFile<SlaterBatch> > stg2_;
-    boost::shared_ptr<PCompFile<SlaterBatch> > yp_;
-    boost::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
-    boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
-    boost::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs2_;
+    std::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
+    std::shared_ptr<PCompFile<SlaterBatch> > stg_;
+    std::shared_ptr<PCompFile<SlaterBatch> > stg2_;
+    std::shared_ptr<PCompFile<SlaterBatch> > yp_;
+    std::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
+    std::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
+    std::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs2_;
     RefMOFile eri_ii_pp_;
     RefMOFile eri_ii_Ai_;
     RefMOFile stg_ii_pp_;
@@ -73,8 +73,8 @@ class PMP2 {
     size_t noovv_;
 
     std::pair<RefCoeff, RefCoeff> generate_CABS();
-    boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_RI();
-    boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_fock_weighted_RI() const;
+    std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_RI();
+    std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_fock_weighted_RI() const;
 
     // Hartree and exchange matrix
     RefMatrix ao_hJ_;
@@ -92,9 +92,9 @@ class PMP2 {
     RefMatrix fock_cabs_obs_;
     RefMatrix fock_cabs_cabs_;
     // Hartree builder
-    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_hJ();
+    const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_hJ();
     // Exchange builder
-    const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K();
+    const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> generate_K();
 
     RefMatrix coulomb_runtime_OBS() const;
     RefMatrix exchange_runtime_OBS() const;
@@ -104,8 +104,8 @@ class PMP2 {
     void fill_in_cabs_matices();
 
   public:
-    PMP2(const boost::shared_ptr<PGeometry>, const boost::shared_ptr<PCoeff>,
-         const std::vector<double>, boost::shared_ptr<PCompFile<ERIBatch> >, const bool);
+    PMP2(const std::shared_ptr<PGeometry>, const std::shared_ptr<PCoeff>,
+         const std::vector<double>, std::shared_ptr<PCompFile<ERIBatch> >, const bool);
     ~PMP2();
 
     void compute();

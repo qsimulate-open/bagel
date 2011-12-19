@@ -17,7 +17,7 @@
 template<class T>
 class PFile {
   protected:
-    boost::shared_ptr<std::fstream> file_;
+    std::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
 
@@ -47,7 +47,7 @@ PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_
     filename_ = tmpf.filename_next();
   }
 
-  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
+  std::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
   file_ = tmp;
 
   if (!late_init) {

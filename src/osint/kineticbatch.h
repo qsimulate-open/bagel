@@ -8,14 +8,14 @@
 
 #include <vector>
 #include <src/osint/osint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class KineticBatch : public OSInt {
   protected:
     void perform_VRR(double*);
 
   public: 
-    KineticBatch(const std::vector<boost::shared_ptr<Shell> >&);
+    KineticBatch(const std::vector<std::shared_ptr<Shell> >&);
     ~KineticBatch();
 
     void compute();

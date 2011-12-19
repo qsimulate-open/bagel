@@ -12,8 +12,8 @@
 #include <cassert>
 
 typedef std::complex<double> Complex;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
 
 
 using namespace std;

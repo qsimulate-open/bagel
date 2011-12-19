@@ -13,10 +13,10 @@
 #include <src/slater/slaterbatch.h>
 #include <src/macros.h>
 
-typedef boost::shared_ptr<Matrix1e> RefDensity;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<Petite> RefPetite;
+typedef std::shared_ptr<Matrix1e> RefDensity;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Petite> RefPetite;
 
 using namespace std;
 

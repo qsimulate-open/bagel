@@ -17,9 +17,9 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
 
 NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int L, const double A)
  :  RysInt(_info), geom_(gm), L_(L), A_(A) {

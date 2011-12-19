@@ -9,11 +9,11 @@
 #include <list>
 #include <cassert>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <complex>
 #include <src/pscf/f77.h>
 
-// boost::shared_ptr<T> is assumed to be a shared_pointer of some class
+// std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have zaxpy and zdotc functions.
 // T must have geom() function that returns Geometry. 
 
@@ -21,7 +21,7 @@
 
 template <class T>
 class PDIIS {
-  typedef boost::shared_ptr<T> RefT;
+  typedef std::shared_ptr<T> RefT;
   typedef std::list<std::pair<RefT, RefT> > Container_type_;
   typedef typename Container_type_::iterator iterator;
   typedef std::complex<double> Complex;

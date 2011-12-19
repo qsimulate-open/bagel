@@ -16,7 +16,7 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Atom> RefAtom;
 
 void NAIBatch::compute() {
   const double zero = 0.0;

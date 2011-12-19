@@ -17,7 +17,6 @@
 typedef std::complex<double> Complex;
 
 using namespace std;
-using namespace boost;
 
 // I have supposed that ndim_ is the leading dimension in the data.
 
@@ -356,7 +355,7 @@ void PMatrix1e::diagonalize(double* eig) {
 }
 
 
-boost::shared_ptr<PMatrix1e> PMatrix1e::inverse() const {
+std::shared_ptr<PMatrix1e> PMatrix1e::inverse() const {
 //        SUBROUTINE ZGESV( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   assert(ndim_ == mdim_);
   PMatrix1e cpy(geom_, ndim_, mdim_);

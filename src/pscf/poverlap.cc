@@ -7,10 +7,9 @@
 #include <src/osint/overlapbatch.h>
 #include <iostream>
 
-typedef boost::shared_ptr<PGeometry> RefPGeometry;
+typedef std::shared_ptr<PGeometry> RefPGeometry;
 
 using namespace std;
-using namespace boost;
 
 POverlap::POverlap(const RefPGeometry g) : PMatrix1e(g) {
 

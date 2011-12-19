@@ -15,13 +15,13 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Matrix1e> RefMatrix1e;
-typedef boost::shared_ptr<Fock> RefFock;
-typedef boost::shared_ptr<Coeff> RefCoeff;
-typedef boost::shared_ptr<TildeX> RefTildeX;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Matrix1e> RefMatrix1e;
+typedef std::shared_ptr<Fock> RefFock;
+typedef std::shared_ptr<Coeff> RefCoeff;
+typedef std::shared_ptr<TildeX> RefTildeX;
 
 SCF::SCF(const RefGeometry geom) : geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
   RefTildeX tildex_tmp(new TildeX(overlap_));

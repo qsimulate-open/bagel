@@ -106,7 +106,7 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil, levl) {
 
 const double PGeometry::compute_pnuclear_repulsion() {
   double out = 0.0;
-  typedef boost::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<Atom> RefAtom;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const vector<double> tmp = (*iter)->position();
     const double c = static_cast<double>((*iter)->atom_number());

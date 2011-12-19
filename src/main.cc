@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <cassert>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/poverlap.h>
 #include <src/pscf/pscf.h>
@@ -19,7 +19,6 @@
 #include <src/global.h>
 
 using namespace std;
-using namespace boost;
 
 int main(int argc, char** argv) {
 
@@ -40,9 +39,9 @@ int main(int argc, char** argv) {
 
     const bool fci_card = (bool)count_string(input, "FCI");
 
-    typedef boost::shared_ptr<Geometry> RefGeom;
-    typedef boost::shared_ptr<PGeometry> RefPGeom;
-    typedef boost::shared_ptr<PSCF_DISK> RefPSCF_DISK;
+    typedef std::shared_ptr<Geometry> RefGeom;
+    typedef std::shared_ptr<PGeometry> RefPGeom;
+    typedef std::shared_ptr<PSCF_DISK> RefPSCF_DISK;
 
     RefPSCF_DISK pscf;
 

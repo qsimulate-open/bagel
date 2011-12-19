@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <tuple>
 #include <src/osint/overlapbatch.h>
 
 #define PI 3.1415926535897932
@@ -22,7 +22,7 @@
 using namespace std;
 using namespace boost;
 
-typedef shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Shell> RefShell;
 
 Atom::Atom(const Atom& old, const vector<double>& displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
@@ -152,12 +152,12 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
       int offset = 0;
       for (biter = basis_info.begin(); biter != basis_info.end(); ++biter) {
         map<string, int> angmap = atommap_.angmap;
-        map<string, int>::iterator miter = angmap.find(biter->get<0>());  
+        map<string, int>::iterator miter = angmap.find(get<0>(*biter));  
         if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
         const int angular = miter->second; 
         if (angular != i) continue;
         
-        const vector<vector<double> > conts = biter->get<2>();
+        const vector<vector<double> > conts = get<2>(*biter);
         for (int j = 0; j != conts.front().size(); ++j) {
           vector<double> current;
           for (vector<vector<double> >::const_iterator citer = conts.begin(); citer != conts.end(); ++citer) 
@@ -179,7 +179,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
           contranges.push_back(make_pair(offset + zerostart, offset + current.size() - zeroend));
           assert(offset + zerostart <= offset + current.size() - zeroend);
         }
-        const vector<double> exp = biter->get<1>();
+        const vector<double> exp = get<1>(*biter);
         exponents.insert(exponents.end(), exp.begin(), exp.end()); 
         offset += exp.size(); 
       }

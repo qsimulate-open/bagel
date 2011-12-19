@@ -10,12 +10,12 @@
 #include <src/scf/geometry.h>
 #include <src/rysint/int2d.h>
 #include <src/rysint/rysint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class NAIBatch : public RysInt {
 
   protected:
-    boost::shared_ptr<Geometry> geom_;
+    std::shared_ptr<Geometry> geom_;
     int natom_;
 
     bool swap01_;
@@ -45,7 +45,7 @@ class NAIBatch : public RysInt {
 
   public:
     
-    NAIBatch(const std::vector<boost::shared_ptr<Shell> >, const boost::shared_ptr<Geometry>, const int L = 0, const double A = 0.0);
+    NAIBatch(const std::vector<std::shared_ptr<Shell> >, const std::shared_ptr<Geometry>, const int L = 0, const double A = 0.0);
     ~NAIBatch();
 
     /// compute a batch of integrals

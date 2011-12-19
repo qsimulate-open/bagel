@@ -8,7 +8,7 @@
 
 #include <vector>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class Shell {
 
@@ -52,8 +52,8 @@ class Shell {
     const std::string show() const;
     const int nbasis() const { return nbasis_; }; 
 
-    boost::shared_ptr<Shell> move_atom(const std::vector<double>&);
-    boost::shared_ptr<Shell> move_atom(const double*);
+    std::shared_ptr<Shell> move_atom(const std::vector<double>&);
+    std::shared_ptr<Shell> move_atom(const double*);
 
 };
 

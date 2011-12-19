@@ -19,9 +19,8 @@
 #include <src/rysint/inline.h>
 
 using namespace std;
-using namespace boost;
 
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Shell> RefShell;
 
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
 :  RysInt(_info) {
@@ -246,10 +245,10 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 
       for (vector<tuple<int, double, double> >::const_iterator expi23 = indexpair23_.begin(); 
                                                                expi23 != indexpair23_.end(); ++expi23) {
-          const int index23 = expi23->get<0>();
+          const int index23 = get<0>(*expi23);
           const int index = index_base + index23;
-          const double exp2value = expi23->get<1>(); 
-          const double exp3value = expi23->get<2>(); 
+          const double exp2value = get<1>(*expi23); 
+          const double exp3value = get<2>(*expi23); 
           const double cxq = exp2value + exp3value;
           xp_[index] = cxp;
           xq_[index] = cxq; 

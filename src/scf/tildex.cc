@@ -16,7 +16,7 @@ using namespace std;
 
 #define USE_CANONICAL
 
-TildeX::TildeX(const boost::shared_ptr<Overlap> olp) : Matrix1e(olp->geom())  {
+TildeX::TildeX(const std::shared_ptr<Overlap> olp) : Matrix1e(olp->geom())  {
 
   // Use canonical orthogonalization (Szabo pp.144)
   nbasis_ = geom_->nbasis();

@@ -6,14 +6,15 @@
 #include <src/scf/symmat.h>
 #include <algorithm>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<Petite> RefPetite;
-typedef boost::shared_ptr<SymRotAbel> RefSymRotAbel;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Petite> RefPetite;
+typedef std::shared_ptr<SymRotAbel> RefSymRotAbel;
 
 SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix1e(gm), petite_(gm->plist()) {
 

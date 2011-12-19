@@ -11,8 +11,8 @@
 #include <src/rysint/rysint.h>
 #include <src/rysint/macros.h>
 #include <src/slater/svrrlist.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <memory>
+#include <tuple>
 
 class SlaterBatch : public RysInt {
 
@@ -37,7 +37,7 @@ class SlaterBatch : public RysInt {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
 
-    std::vector<boost::tuple<int, double, double> > indexpair23_;
+    std::vector<std::tuple<int, double, double> > indexpair23_;
 
     /// buffer and intermediate storage
     double *buff_;
@@ -91,7 +91,7 @@ class SlaterBatch : public RysInt {
 
   public:
     
-    SlaterBatch(const std::vector<boost::shared_ptr<Shell> >, const double, const double gamma, const bool doyukawa = false);
+    SlaterBatch(const std::vector<std::shared_ptr<Shell> >, const double, const double gamma, const bool doyukawa = false);
     ~SlaterBatch();
 
     /// compute a batch of integrals

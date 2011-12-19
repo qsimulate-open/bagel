@@ -8,11 +8,11 @@
 
 #include <src/util/pmatrix1e.h>
 #include <src/pscf/pgeometry.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class PHcore : public PMatrix1e {
   protected:
-    void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int, const int);
+    void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int, const int);
 
     // unfortunately, my implementation of CABS duplicates atoms... That means that
     // the nuclear attraction potential needs to be halved in Hcore that includes CABS.
@@ -20,7 +20,7 @@ class PHcore : public PMatrix1e {
     const bool kinetic_only_;
 
   public:
-    PHcore(const boost::shared_ptr<PGeometry>, const bool cabs = false, const bool kinetic_only = false);
+    PHcore(const std::shared_ptr<PGeometry>, const bool cabs = false, const bool kinetic_only = false);
     ~PHcore();
 
 };

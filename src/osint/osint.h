@@ -9,13 +9,13 @@
 #include <vector>
 #include <src/scf/shell.h>
 #include <src/rysint/sortlist.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class OSInt {
   protected:
     bool spherical_;
 
-    std::vector<boost::shared_ptr<Shell> > basisinfo_;
+    std::vector<std::shared_ptr<Shell> > basisinfo_;
 
     double* data_;
     std::vector<double> xp_, xa_, xb_, rho_, p_; 
@@ -38,7 +38,7 @@ class OSInt {
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
   public:
-    OSInt(const std::vector<boost::shared_ptr<Shell> >&);
+    OSInt(const std::vector<std::shared_ptr<Shell> >&);
     ~OSInt();
 
     virtual void compute() {}; 

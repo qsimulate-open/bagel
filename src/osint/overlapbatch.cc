@@ -9,7 +9,7 @@
 
 using namespace std;
 
-OverlapBatch::OverlapBatch(const vector<boost::shared_ptr<Shell> >& _basis) 
+OverlapBatch::OverlapBatch(const vector<std::shared_ptr<Shell> >& _basis) 
  : OSInt(_basis) {
 
 }  

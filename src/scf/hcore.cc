@@ -13,8 +13,8 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Shell> RefShell;
 
 Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
 

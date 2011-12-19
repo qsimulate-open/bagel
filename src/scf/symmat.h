@@ -13,12 +13,12 @@
 
 class SymMat : public Matrix1e {
   protected:
-    boost::shared_ptr<SymRotAbel> symrot_; 
-    boost::shared_ptr<Petite> petite_; 
-    void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int) {};
+    std::shared_ptr<SymRotAbel> symrot_; 
+    std::shared_ptr<Petite> petite_; 
+    void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int) {};
 
   public:
-    SymMat(const boost::shared_ptr<Geometry>, const int);
+    SymMat(const std::shared_ptr<Geometry>, const int);
     ~SymMat(); 
 
 };

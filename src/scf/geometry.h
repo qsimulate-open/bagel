@@ -10,7 +10,7 @@
 #include <vector>
 #include <src/scf/atom.h>
 #include <src/scf/petite.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class Geometry {
   protected:
@@ -21,8 +21,8 @@ class Geometry {
     std::string input_;
 
     // Atoms, which contains basis-set info also.
-    std::vector<boost::shared_ptr<Atom> > atoms_;
-    std::vector<boost::shared_ptr<Atom> > cabs_atoms_;
+    std::vector<std::shared_ptr<Atom> > atoms_;
+    std::vector<std::shared_ptr<Atom> > cabs_atoms_;
     bool cabs_merged_;
 
     // Nuclear repulsion energy.
@@ -46,7 +46,7 @@ class Geometry {
 
     // Symmetry can be used for molecular calculation.
     std::string symmetry_;
-    boost::shared_ptr<Petite> plist_;
+    std::shared_ptr<Petite> plist_;
     int nirrep_;
 
     // for R12 calculations
@@ -57,9 +57,9 @@ class Geometry {
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
-    std::vector<boost::shared_ptr<Atom> > atoms() const { return atoms_; };
-    std::vector<boost::shared_ptr<Atom> > cabs_atoms() const { return cabs_atoms_; };
-    boost::shared_ptr<Atom> atoms(const unsigned int i) const { return atoms_[i]; };
+    std::vector<std::shared_ptr<Atom> > atoms() const { return atoms_; };
+    std::vector<std::shared_ptr<Atom> > cabs_atoms() const { return cabs_atoms_; };
+    std::shared_ptr<Atom> atoms(const unsigned int i) const { return atoms_[i]; };
 
     // Returns a constant
     const int natom() const { return atoms_.size(); };
@@ -88,7 +88,7 @@ class Geometry {
     void print_atoms() const;
 
     // Returns the Petite list.
-    boost::shared_ptr<Petite> plist() { return plist_; }; 
+    std::shared_ptr<Petite> plist() { return plist_; }; 
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

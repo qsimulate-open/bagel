@@ -16,7 +16,6 @@
 #include <src/pscf/pscf_macros.h>
 
 using namespace std;
-using namespace boost;
 
 
 // olp is real-space quantity.

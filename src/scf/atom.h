@@ -10,7 +10,7 @@
 #include <string>
 #include <src/scf/shell.h>
 #include <src/scf/atommap.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class Atom {
   protected:
@@ -18,7 +18,7 @@ class Atom {
 
     std::string name_;
     std::vector<double> position_;
-    std::vector<boost::shared_ptr<Shell> > shells_; 
+    std::vector<std::shared_ptr<Shell> > shells_; 
     int atom_number_;
     int nbasis_;
     int lmax_;
@@ -35,7 +35,7 @@ class Atom {
     const int atom_number() const { return atom_number_;};
     const std::vector<double> position() const { return position_; };
     const double position(const unsigned int i) const { return position_[i]; };
-    const std::vector<boost::shared_ptr<Shell> > shells() const { return shells_; };
+    const std::vector<std::shared_ptr<Shell> > shells() const { return shells_; };
     const int nshell() const { return shells_.size(); };
 
     const int nbasis() const { return nbasis_; };

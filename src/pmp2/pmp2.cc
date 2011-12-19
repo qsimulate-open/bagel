@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/tuple/tuple.hpp>
+#include <tuple>
 #include <src/pmp2/pmp2.h>
 #include <src/pmp2/f77.h>
 #include <src/macros.h>
@@ -16,11 +16,11 @@
 #include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>
 
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<PGeometry> RefGeom;
-typedef boost::shared_ptr<PCoeff> RefPCoeff;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<PMatrix1e> RefMatrix;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<PGeometry> RefGeom;
+typedef std::shared_ptr<PCoeff> RefPCoeff;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<PMatrix1e> RefMatrix;
 
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
@@ -39,7 +39,6 @@ typedef boost::shared_ptr<PMatrix1e> RefMatrix;
 //#define ONLY_P3
 
 using namespace std;
-using namespace boost;
 
 PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl, const bool hy2)
  : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl), use_hy2_(hy2) {

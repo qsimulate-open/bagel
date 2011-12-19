@@ -9,23 +9,23 @@
 #ifndef __NEWINT_FCI_FCI_H
 #define __NEWINT_FCI_FCI_H
 
-#include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <tuple>
 #include <src/scf/scf.h>
 #ifdef USE_SSE42_INTRINSICS
 #include <nmmintrin.h>
 #endif
 #include <cassert>
 #include <iostream>
+#include <memory>
 
 class FCI {
   protected:
-    boost::shared_ptr<SCF> ref_;
-    const boost::shared_ptr<Geometry> geom_;
+    std::shared_ptr<SCF> ref_;
+    const std::shared_ptr<Geometry> geom_;
 
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
-    // string list
+    // string lists
     std::vector<unsigned int> stringa_;
     std::vector<unsigned int> stringb_;
 
@@ -37,7 +37,7 @@ class FCI {
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<unsigned int>&,
-                     std::vector<boost::tuple<unsigned int, int, unsigned int, unsigned int> >&);
+                     std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >&);
 
     // numbers of electrons
     const int nelea_;
@@ -46,8 +46,8 @@ class FCI {
     const int norb_;
 
     // configuration list
-    std::vector<boost::tuple<unsigned int, int, unsigned int, unsigned int> > phia_;
-    std::vector<boost::tuple<unsigned int, int, unsigned int, unsigned int> > phib_;
+    std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> > phia_;
+    std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> > phib_;
 
     int numofbits(unsigned int bits) { //
 #ifndef USE_SSE42_INTRINSICS
@@ -80,8 +80,10 @@ class FCI {
     unsigned int stringa(int i) const { return stringa_[i]; };
     unsigned int stringb(int i) const { return stringb_[i]; };
 
+    void print_header() const;
+
   public:
-    FCI(const boost::shared_ptr<Geometry>);
+    FCI(const std::shared_ptr<Geometry>);
     ~FCI();
     void compute();
 
@@ -94,10 +96,10 @@ class FCI {
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
 void FCI::const_phis_(const std::vector<unsigned int>& string,
-                      std::vector<boost::tuple<unsigned int, int, unsigned int, unsigned int> >& phi) {
+                      std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >& phi) {
 
   phi.resize(string.size()*norb_*norb_);
-  std::vector<boost::tuple<unsigned int, int, unsigned int, unsigned int> >::iterator piter = phi.begin();
+  std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >::iterator piter = phi.begin();
 
   for (std::vector<unsigned int>::const_iterator iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
@@ -109,7 +111,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j); 
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            *piter = boost::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), j << 4 + i, source); 
+            *piter = make_tuple(lexical<spin>(mbit), sign(mbit, i, j), (j<<8)+i, source); 
 #if 1
             std::cout << i << j << " " << (*iter & 1)  << ((*iter >> 1) & 1) << ((*iter >> 2) & 1) << ((*iter >> 3) & 1) 
                  << ((*iter >> 4) & 1) << " " << (mbit & 1) << ((mbit >> 1) & 1) << ((mbit >> 2) & 1) <<

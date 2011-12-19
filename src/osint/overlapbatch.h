@@ -9,7 +9,7 @@
 #include <vector>
 #include <src/osint/osint.h>
 #include <src/rysint/hrrlist.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class OverlapBatch : public OSInt {
   protected:
@@ -17,7 +17,7 @@ class OverlapBatch : public OSInt {
     void perform_VRR(double*);
 
   public: 
-    OverlapBatch(const std::vector<boost::shared_ptr<Shell> >&);
+    OverlapBatch(const std::vector<std::shared_ptr<Shell> >&);
     ~OverlapBatch();
 
     void compute();

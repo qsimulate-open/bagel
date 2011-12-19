@@ -17,8 +17,8 @@
 using namespace std;
 using namespace boost;
 
-typedef shared_ptr<Shell> RefShell;
-typedef shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Atom> RefAtom;
 
 Geometry::Geometry(const string s, const int levl)
   : spherical_(true), input_(s), level_(levl), lmax_(0) {
@@ -211,7 +211,7 @@ Geometry::Geometry(const string s, const int levl)
   nuclear_repulsion_ = compute_nuclear_repulsion();
 
   // symmetry set-up
-  shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
+  std::shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
   plist_ = tmpp;
   nirrep_ = plist_->nirrep();
   // Misc

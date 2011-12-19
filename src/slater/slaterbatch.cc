@@ -20,13 +20,12 @@
 #include <src/slater/sinline.h>
 
 using namespace std;
-using namespace boost;
 
 #define MIN_EXPONENT -200.0
 #define GM1_THRESH 1.0e-15
 #define GM1_THRESH_MAX 1.0e+15
 
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Shell> RefShell;
 
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
@@ -239,10 +238,10 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
       for (vector<tuple<int, double, double> >::const_iterator expi23 = indexpair23_.begin(); 
                                                                expi23 != indexpair23_.end(); ++expi23) {
-          const int index23 = expi23->get<0>();
+          const int index23 = get<0>(*expi23);
           const int index = index_base + index23;
-          const double exp2value = expi23->get<1>(); 
-          const double exp3value = expi23->get<2>(); 
+          const double exp2value = get<1>(*expi23); 
+          const double exp3value = get<2>(*expi23); 
           const double cxq = exp2value + exp3value;
           xp_[index] = cxp;
           xq_[index] = cxq; 

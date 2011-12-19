@@ -13,7 +13,7 @@
 #include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class RysInt {
   protected:
@@ -23,7 +23,7 @@ class RysInt {
 
     bool spherical_;
 
-    std::vector<boost::shared_ptr<Shell> > basisinfo_;
+    std::vector<std::shared_ptr<Shell> > basisinfo_;
     double *data_;
     double *data2_;
     unsigned int size_final_;
@@ -38,7 +38,7 @@ class RysInt {
     int screening_size_;
 
   public:
-    RysInt(const std::vector<boost::shared_ptr<Shell> >);
+    RysInt(const std::vector<std::shared_ptr<Shell> >);
     ~RysInt();
 
     virtual void compute() {};

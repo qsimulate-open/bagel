@@ -4,7 +4,7 @@
 //
 
 #include <src/scf/petite.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <iostream>
 #include <cassert>
 #include <cmath>
@@ -12,10 +12,10 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Petite> RefPetite;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<Symmetry> RefSymmetry;
+typedef std::shared_ptr<Petite> RefPetite;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Symmetry> RefSymmetry;
 
 static inline vector<double> matmul33(const vector<double>& a, const vector<double>& b) {
   assert(a.size() == 9 && b.size() == 3); 

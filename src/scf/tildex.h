@@ -8,13 +8,13 @@
 
 #include <src/scf/overlap.h>
 #include <src/scf/matrix1e.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class TildeX : public Matrix1e {
   protected:
 
   public:
-    TildeX(const boost::shared_ptr<Overlap>);
+    TildeX(const std::shared_ptr<Overlap>);
     ~TildeX();
 
 };

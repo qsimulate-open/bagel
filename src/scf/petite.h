@@ -8,8 +8,8 @@
 
 #include <vector>
 #include <string>
-#include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <memory>
+#include <tuple>
 #include <algorithm>
 #include <src/scf/atom.h>
 
@@ -30,7 +30,7 @@ class Petite {
 
 
   public:
-    Petite(const std::vector<boost::shared_ptr<Atom> >&, const std::string);
+    Petite(const std::vector<std::shared_ptr<Atom> >&, const std::string);
     ~Petite();
 
     std::vector<double> symop(const int i) const { return symop_[i]; };

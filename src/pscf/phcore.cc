@@ -8,10 +8,9 @@
 #include <src/rysint/naibatch.h>
 #include <iostream>
 
-typedef boost::shared_ptr<PGeometry> RefPGeometry;
+typedef std::shared_ptr<PGeometry> RefPGeometry;
 
 using namespace std;
-using namespace boost;
 
 PHcore::PHcore(const RefPGeometry g, const bool cabs, const bool kinetic_only)
 : PMatrix1e(g), cabs_(cabs), kinetic_only_(kinetic_only) {

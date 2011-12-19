@@ -24,18 +24,18 @@ class PMOFile : public PFile<T> {
     const int afence_;
     const int bfence_;
 
-    const boost::shared_ptr<PGeometry> geom_;
+    const std::shared_ptr<PGeometry> geom_;
     size_t blocksize_;
     std::map<size_t, size_t> offset_;
 
   public:
-    PMOFile(const boost::shared_ptr<PGeometry>,
+    PMOFile(const std::shared_ptr<PGeometry>,
         const long, const int, const int, const int,
         const int, const int,
         const int, const int,
         const int, const int,
         const bool late_init = false);
-    PMOFile(const boost::shared_ptr<PGeometry>,
+    PMOFile(const std::shared_ptr<PGeometry>,
         const long, const int, const int, const int,
         const int, const int,
         const int, const int,
@@ -69,15 +69,15 @@ class PMOFile : public PFile<T> {
     PMOFile<T> operator-(const PMOFile<T>&) const;
     PMOFile<T> operator*(const std::complex<double>&) const;
 
-    boost::shared_ptr<PMOFile<T> > copy() const;
-    boost::shared_ptr<PMOFile<T> > clone() const;
+    std::shared_ptr<PMOFile<T> > copy() const;
+    std::shared_ptr<PMOFile<T> > clone() const;
     void scale(double a);
 
     // Flip and add to this.
     void flip_symmetry();
-    boost::shared_ptr<PMOFile<T> > flip_sort() const;
+    std::shared_ptr<PMOFile<T> > flip_sort() const;
 
-    boost::shared_ptr<PMOFile<T> > contract(boost::shared_ptr<PMOFile<T> >, std::string);
+    std::shared_ptr<PMOFile<T> > contract(std::shared_ptr<PMOFile<T> >, std::string);
 
     void print() const;
     void rprint() const;
@@ -89,7 +89,7 @@ class PMOFile : public PFile<T> {
 
 
 template<class T>
-PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
+PMOFile<T>::PMOFile(const std::shared_ptr<PGeometry> gm,
                     const long fsize, const int k,
                     const int istrt, const int ifen,
                     const int jstrt, const int jfen,
@@ -116,7 +116,7 @@ PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
 
 
 template<class T>
-PMOFile<T>::PMOFile(const boost::shared_ptr<PGeometry> gm,
+PMOFile<T>::PMOFile(const std::shared_ptr<PGeometry> gm,
                     const long fsize, const int k,
                     const int istrt, const int ifen,
                     const int jstrt, const int jfen,
@@ -177,8 +177,8 @@ void PMOFile<T>::sort_inside_blocks() {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+std::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
+  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
                                                     astart_, afence_, bstart_, bfence_,
                                                     offset_, false));
@@ -194,8 +194,8 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::clone() const {
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+std::shared_ptr<PMOFile<T> > PMOFile<T>::clone() const {
+  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
                                                     astart_, afence_, bstart_, bfence_,
                                                     offset_, false));
@@ -207,7 +207,7 @@ template<class T>
 void PMOFile<T>::flip_symmetry() {
   const int k = this->K_;
 
-  boost::shared_ptr<PMOFile<T> > other = this->copy();
+  std::shared_ptr<PMOFile<T> > other = this->copy();
 
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[other->blocksize_];
@@ -252,10 +252,10 @@ void PMOFile<T>::flip_symmetry() {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
+std::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
   const int k = this->K_;
 
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     jstart_, jfence_, istart_, ifence_,
                                                     bstart_, bfence_, astart_, afence_,
                                                     false));
@@ -299,7 +299,7 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T> > other, std::string jobname) {
+std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > other, std::string jobname) {
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
@@ -330,7 +330,7 @@ boost::shared_ptr<PMOFile<T> > PMOFile<T>::contract(boost::shared_ptr<PMOFile<T>
 
   const size_t out_blocksize = ijsize * mnsize;
   const size_t out_filesize = kkk8 * out_blocksize;
-  boost::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
+  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
                                                     mstart, mfence, nstart, nfence, false));
 
   const int k2 = std::max(k+k, 1);

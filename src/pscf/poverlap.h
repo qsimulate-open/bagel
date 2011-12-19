@@ -8,14 +8,14 @@
 
 #include <src/util/pmatrix1e.h>
 #include <src/pscf/pgeometry.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class POverlap : public PMatrix1e {
   protected:
-    void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int, const int);
+    void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int, const int);
 
   public:
-    POverlap(const boost::shared_ptr<PGeometry>);
+    POverlap(const std::shared_ptr<PGeometry>);
     ~POverlap();
 
     const int calculate_thresh() const;

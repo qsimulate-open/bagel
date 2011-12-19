@@ -12,16 +12,15 @@
 #include <iomanip>
 #include <algorithm>
 
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
-typedef boost::shared_ptr<PGeometry> RefPGeometry;
-typedef boost::shared_ptr<PFock> RefPFock;
-typedef boost::shared_ptr<PTildeX> RefPTildeX;
-typedef boost::shared_ptr<PCoeff> RefPCoeff;
-typedef boost::shared_ptr<PMatrix1e> RefPMatrix1e;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<PGeometry> RefPGeometry;
+typedef std::shared_ptr<PFock> RefPFock;
+typedef std::shared_ptr<PTildeX> RefPTildeX;
+typedef std::shared_ptr<PCoeff> RefPCoeff;
+typedef std::shared_ptr<PMatrix1e> RefPMatrix1e;
 
 using namespace std;
-using namespace boost;
 
 PSCF::PSCF(const RefPGeometry g) : geom_(g), overlap_(new POverlap(g)), hcore_(new PHcore(g)) {
 

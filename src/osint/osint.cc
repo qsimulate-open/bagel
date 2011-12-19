@@ -11,7 +11,7 @@
 
 using namespace std;
 
-OSInt::OSInt(const std::vector<boost::shared_ptr<Shell> >& basis)
+OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
 
   assert(basis.size() == 2);

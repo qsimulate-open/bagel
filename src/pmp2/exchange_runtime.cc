@@ -13,7 +13,6 @@
 #include <src/util/pcompcabsfile.h>
 
 using namespace std;
-using namespace boost;
 
 typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;

@@ -15,31 +15,31 @@ class PairCompFile {
   protected:
     const double gamma_;
     const std::string jobname_;
-    std::pair<boost::shared_ptr<PCompFile<T> >,
-              boost::shared_ptr<PCompFile<T> > > files_;
+    std::pair<std::shared_ptr<PCompFile<T> >,
+              std::shared_ptr<PCompFile<T> > > files_;
 
     void init_schwarz();
     void calculate_num_int_each();
     void eval_new_block(double*, double*, int, int, int);
 
   public:
-    PairCompFile(boost::shared_ptr<PGeometry>, const double, const std::string); 
+    PairCompFile(std::shared_ptr<PGeometry>, const double, const std::string); 
     ~PairCompFile(); 
     void store_integrals();
     void reopen_with_inout();
 
-    boost::shared_ptr<PCompFile<T> > first() { return files_.first; };
-    boost::shared_ptr<PCompFile<T> > second() { return files_.second; };
+    std::shared_ptr<PCompFile<T> > first() { return files_.first; };
+    std::shared_ptr<PCompFile<T> > second() { return files_.second; };
 
 };
 
 
 template<class T>
-PairCompFile<T>::PairCompFile(boost::shared_ptr<PGeometry> gm, const double gam, const std::string jobname)
+PairCompFile<T>::PairCompFile(std::shared_ptr<PGeometry> gm, const double gam, const std::string jobname)
  : gamma_(gam), jobname_(jobname) {
   // late_init = "true"
-  boost::shared_ptr<PCompFile<T> > first(new PCompFile<T>(gm, gamma_, true));
-  boost::shared_ptr<PCompFile<T> > second(new PCompFile<T>(gm, gamma_, true));
+  std::shared_ptr<PCompFile<T> > first(new PCompFile<T>(gm, gamma_, true));
+  std::shared_ptr<PCompFile<T> > second(new PCompFile<T>(gm, gamma_, true));
   files_ = std::make_pair(first, second);
 
   // set schwarz for both pcompfiles.
@@ -59,8 +59,8 @@ PairCompFile<T>::~PairCompFile() {
 
 template<class T>
 void PairCompFile<T>::init_schwarz() {
-  typedef boost::shared_ptr<Shell> RefShell;
-  typedef boost::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = files_.first->basissize(); // the number of shells per unit cell
   const int K = files_.first->K(); 
@@ -112,7 +112,7 @@ void PairCompFile<T>::init_schwarz() {
 template<class T>
 void PairCompFile<T>::calculate_num_int_each() {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
   const int K = files_.first->K();
   const int S = files_.first->S();
@@ -125,8 +125,8 @@ void PairCompFile<T>::calculate_num_int_each() {
 
   const int size = files_.first->basissize(); // number of shells
 
-  boost::shared_ptr<PCompFile<T> > first = files_.first;
-  boost::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T> > first = files_.first;
+  std::shared_ptr<PCompFile<T> > second = files_.second;
 
   #pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
@@ -213,10 +213,10 @@ void PairCompFile<T>::calculate_num_int_each() {
 template<class T>
 void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2, int m3) {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
-  boost::shared_ptr<PCompFile<T> > first = files_.first;
-  boost::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T> > first = files_.first;
+  std::shared_ptr<PCompFile<T> > second = files_.second;
 
   const int K = first->K();
   const double A = first->A();
@@ -315,8 +315,8 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 
 template<class T>
 void PairCompFile<T>::store_integrals() {
-  boost::shared_ptr<PCompFile<T> > first = files_.first;
-  boost::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T> > first = files_.first;
+  std::shared_ptr<PCompFile<T> > second = files_.second;
   double* dcache1 = new double[first->max_num_int()];
   double* dcache2 = new double[second->max_num_int()];
   const int S = first->S();

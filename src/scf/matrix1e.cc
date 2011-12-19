@@ -13,9 +13,9 @@
 
 using namespace std;
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Atom> RefAtom;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<Shell> RefShell;
 
 Matrix1e::Matrix1e(const RefGeometry geom) : geom_(geom), nbasis_(geom->nbasis()) {
   data_ = new double[nbasis_ * nbasis_]; 
@@ -226,7 +226,7 @@ void Matrix1e::daxpy(const double a, const Matrix1e& o) {
 }
 
 
-void Matrix1e::daxpy(const double a, const boost::shared_ptr<Matrix1e> o) {
+void Matrix1e::daxpy(const double a, const std::shared_ptr<Matrix1e> o) {
   const int size = nbasis_ * nbasis_;
   const int unit = 1;
   const double* odata = o->data();
@@ -242,7 +242,7 @@ const double Matrix1e::ddot(const Matrix1e& o) const {
 }
 
 
-const double Matrix1e::ddot(const boost::shared_ptr<Matrix1e> o) const {
+const double Matrix1e::ddot(const std::shared_ptr<Matrix1e> o) const {
   const int size = nbasis_ * nbasis_;
   const int unit = 1;
   const double* odata = o->data();

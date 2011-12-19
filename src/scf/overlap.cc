@@ -10,8 +10,8 @@
 #include <iomanip>
 #include <cassert>
 
-typedef boost::shared_ptr<Geometry> RefGeometry;
-typedef boost::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<Shell> RefShell;
 
 using namespace std;
 

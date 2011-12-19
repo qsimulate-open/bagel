@@ -12,7 +12,7 @@
 #include <cassert>
 #include <vector>
 #include <fstream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <iostream>
 #include <algorithm>
 #include <src/macros.h>
@@ -26,16 +26,16 @@
 template<class T>
 class PCompFile {
   protected:
-    boost::shared_ptr<std::fstream> file_;
+    std::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
     std::string jobname_;
     std::vector<double> schwarz_;
 
-    const boost::shared_ptr<PGeometry> geom_;
+    const std::shared_ptr<PGeometry> geom_;
     std::vector<size_t> num_int_each_;
 
-    std::vector<boost::shared_ptr<Shell> > basis_;
+    std::vector<std::shared_ptr<Shell> > basis_;
     std::vector<int> offset_;
     size_t max_num_int_;
 
@@ -46,7 +46,7 @@ class PCompFile {
     const double gamma_;
 
   public:
-    PCompFile(boost::shared_ptr<PGeometry>,  const double gam,
+    PCompFile(std::shared_ptr<PGeometry>,  const double gam,
         const bool late_init = false, const std::string jobname = "");
     ~PCompFile(); 
 
@@ -66,8 +66,8 @@ class PCompFile {
     const double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
-    std::vector<boost::shared_ptr<Shell> > basis() const { return basis_; };
-    boost::shared_ptr<Shell> basis(size_t i) const { return basis_[i]; };
+    std::vector<std::shared_ptr<Shell> > basis() const { return basis_; };
+    std::shared_ptr<Shell> basis(size_t i) const { return basis_[i]; };
     const size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
     const int basissize() const { return basis_.size(); };
 
@@ -83,7 +83,7 @@ class PCompFile {
     void set_schwarz(const std::vector<double>& a) { schwarz_ = a; };
     void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie; 
                                                             max_num_int_ = *std::max_element(nie.begin(), nie.end()); };
-    void set_integrals(boost::shared_ptr<std::fstream> inp) { file_ = inp; };
+    void set_integrals(std::shared_ptr<std::fstream> inp) { file_ = inp; };
 
     const size_t max_num_int() const { assert(max_num_int_ > 0lu); return max_num_int_; };
 
@@ -93,11 +93,11 @@ class PCompFile {
     const double A() const { return A_; };
 
     // AO-to-MO integral transformation...
-    boost::shared_ptr<PMOFile<std::complex<double> > > 
-                mo_transform(boost::shared_ptr<PCoeff>,
-                             boost::shared_ptr<PCoeff>,
-                             boost::shared_ptr<PCoeff>,
-                             boost::shared_ptr<PCoeff>,
+    std::shared_ptr<PMOFile<std::complex<double> > > 
+                mo_transform(std::shared_ptr<PCoeff>,
+                             std::shared_ptr<PCoeff>,
+                             std::shared_ptr<PCoeff>,
+                             std::shared_ptr<PCoeff>,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
@@ -108,18 +108,18 @@ class PCompFile {
 
 
 template<class T>
-PCompFile<T>::PCompFile(boost::shared_ptr<PGeometry> gm, const double gam, const bool late_init, const std::string jobname)
+PCompFile<T>::PCompFile(std::shared_ptr<PGeometry> gm, const double gam, const bool late_init, const std::string jobname)
  : geom_(gm), gamma_(gam), jobname_(jobname) {
 
   Filename tmpf;
   filename_ = tmpf.filename_next(); 
 
-  boost::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::binary));
+  std::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::binary));
   file_ = tmp;
 
   { // prepare offset and basis
-    typedef boost::shared_ptr<Atom> RefAtom;
-    typedef boost::shared_ptr<Shell> RefShell;
+    typedef std::shared_ptr<Atom> RefAtom;
+    typedef std::shared_ptr<Shell> RefShell;
 
     const std::vector<RefAtom> atoms = geom_->atoms();
     int cnt = 0;
@@ -237,7 +237,7 @@ void PCompFile<T>::reopen_with_inout() {
 template<class T>
 void PCompFile<T>::calculate_num_int_each() {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
   unsigned long data_written = 0ul;
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
@@ -304,7 +304,7 @@ void PCompFile<T>::calculate_num_int_each() {
 template<class T>
 void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
   const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
   const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
@@ -393,8 +393,8 @@ void PCompFile<T>::store_integrals() {
 
 template<class T>
 void PCompFile<T>::init_schwarz() {
-  typedef boost::shared_ptr<Shell> RefShell;
-  typedef boost::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));
@@ -430,11 +430,11 @@ void PCompFile<T>::init_schwarz() {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<std::complex<double> > > 
-  PCompFile<T>::mo_transform(boost::shared_ptr<PCoeff> coeff_i,
-                             boost::shared_ptr<PCoeff> coeff_j,
-                             boost::shared_ptr<PCoeff> coeff_a,
-                             boost::shared_ptr<PCoeff> coeff_b,
+std::shared_ptr<PMOFile<std::complex<double> > > 
+  PCompFile<T>::mo_transform(std::shared_ptr<PCoeff> coeff_i,
+                             std::shared_ptr<PCoeff> coeff_j,
+                             std::shared_ptr<PCoeff> coeff_a,
+                             std::shared_ptr<PCoeff> coeff_b,
                              const int istart, const int ifence,
                              const int jstart, const int jfence,
                              const int astart, const int afence,
@@ -473,7 +473,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
-  boost::shared_ptr<PMOFile<std::complex<double> > >
+  std::shared_ptr<PMOFile<std::complex<double> > >
     mo_int(new PMOFile<std::complex<double> >(geom_, filesize, K_,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));

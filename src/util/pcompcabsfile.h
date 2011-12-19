@@ -17,7 +17,7 @@ class PCompCABSFile : public PCompFile<T> {
     void init_schwarz_ia();
     std::vector<double> schwarz_jb_;
     std::vector<double> schwarz_ia_;
-    std::vector<boost::shared_ptr<Shell> > cabs_basis_;
+    std::vector<std::shared_ptr<Shell> > cabs_basis_;
     std::vector<int> cabs_offset_;
 
     const bool i_is_cabs_;
@@ -30,10 +30,10 @@ class PCompCABSFile : public PCompFile<T> {
     std::vector<int> offset_a_;
     std::vector<int> offset_b_;
 
-    std::vector<boost::shared_ptr<Shell> > basis_i_;
-    std::vector<boost::shared_ptr<Shell> > basis_j_;
-    std::vector<boost::shared_ptr<Shell> > basis_a_;
-    std::vector<boost::shared_ptr<Shell> > basis_b_;
+    std::vector<std::shared_ptr<Shell> > basis_i_;
+    std::vector<std::shared_ptr<Shell> > basis_j_;
+    std::vector<std::shared_ptr<Shell> > basis_a_;
+    std::vector<std::shared_ptr<Shell> > basis_b_;
 
     int size_i_;
     int size_j_;
@@ -46,7 +46,7 @@ class PCompCABSFile : public PCompFile<T> {
     int nbasis_b_;
 
   public:
-    PCompCABSFile(boost::shared_ptr<PGeometry> geom, const double gamma,
+    PCompCABSFile(std::shared_ptr<PGeometry> geom, const double gamma,
         const bool i_is_cabs, const bool j_is_cabs, const bool a_is_cabs, const bool b_is_cabs,
         const bool late_init = false, const std::string jobname = "source");
 
@@ -55,10 +55,10 @@ class PCompCABSFile : public PCompFile<T> {
     int offset_a(const size_t a) const { return offset_a_[a]; };
     int offset_b(const size_t b) const { return offset_b_[b]; };
 
-    const boost::shared_ptr<Shell> basis_i(const size_t i) const { return basis_i_[i]; };
-    const boost::shared_ptr<Shell> basis_j(const size_t j) const { return basis_j_[j]; };
-    const boost::shared_ptr<Shell> basis_a(const size_t a) const { return basis_a_[a]; };
-    const boost::shared_ptr<Shell> basis_b(const size_t b) const { return basis_b_[b]; };
+    const std::shared_ptr<Shell> basis_i(const size_t i) const { return basis_i_[i]; };
+    const std::shared_ptr<Shell> basis_j(const size_t j) const { return basis_j_[j]; };
+    const std::shared_ptr<Shell> basis_a(const size_t a) const { return basis_a_[a]; };
+    const std::shared_ptr<Shell> basis_b(const size_t b) const { return basis_b_[b]; };
 
     int size_i() const { return size_i_; };
     int size_j() const { return size_j_; };
@@ -82,11 +82,11 @@ class PCompCABSFile : public PCompFile<T> {
     void store_integrals();
     void eval_new_block(double*, int, int, int);
 
-    boost::shared_ptr<PMOFile<std::complex<double> > >
-      mo_transform_cabs_aux(boost::shared_ptr<PCoeff>,
-                            boost::shared_ptr<PCoeff>,
-                            boost::shared_ptr<PCoeff>,
-                            boost::shared_ptr<PCoeff>,
+    std::shared_ptr<PMOFile<std::complex<double> > >
+      mo_transform_cabs_aux(std::shared_ptr<PCoeff>,
+                            std::shared_ptr<PCoeff>,
+                            std::shared_ptr<PCoeff>,
+                            std::shared_ptr<PCoeff>,
                             const int istart, const int ifence,
                             const int jstart, const int jfence,
                             const int astart, const int afence,
@@ -98,14 +98,14 @@ class PCompCABSFile : public PCompFile<T> {
 
 
 template<class T>
-PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double gam,
+PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
     const bool i_c, const bool j_c, const bool a_c, const bool b_c,
     const bool late_init, const std::string jobname)
  : PCompFile<T>(pg, gam, true, jobname), i_is_cabs_(i_c), j_is_cabs_(j_c), a_is_cabs_(a_c), b_is_cabs_(b_c) {
 
   { // prepare offset and basis
-    typedef boost::shared_ptr<Atom> RefAtom;
-    typedef boost::shared_ptr<Shell> RefShell;
+    typedef std::shared_ptr<Atom> RefAtom;
+    typedef std::shared_ptr<Shell> RefShell;
 
     const std::vector<RefAtom> atoms = pg->cabs_atoms();
     int cnt = 0;
@@ -128,10 +128,10 @@ PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double ga
     offset_b_.insert(offset_b_.end(), tmpb.begin(), tmpb.end());
   }
   {
-    const std::vector<boost::shared_ptr<Shell> > tmpi = i_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<boost::shared_ptr<Shell> > tmpj = j_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<boost::shared_ptr<Shell> > tmpa = a_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<boost::shared_ptr<Shell> > tmpb = b_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<Shell> > tmpi = i_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<Shell> > tmpj = j_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<Shell> > tmpa = a_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<Shell> > tmpb = b_is_cabs_ ? cabs_basis_ : this->basis_;
     basis_i_.insert(basis_i_.end(), tmpi.begin(), tmpi.end());
     basis_j_.insert(basis_j_.end(), tmpj.begin(), tmpj.end());
     basis_a_.insert(basis_a_.end(), tmpa.begin(), tmpa.end());
@@ -157,8 +157,8 @@ PCompCABSFile<T>::PCompCABSFile(boost::shared_ptr<PGeometry> pg, const double ga
 
 template<class T>
 void PCompCABSFile<T>::init_schwarz_jb() {
-  typedef boost::shared_ptr<Shell> RefShell;
-  typedef boost::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = this->basis_.size(); // the number of shells per unit cell
 
@@ -195,8 +195,8 @@ void PCompCABSFile<T>::init_schwarz_jb() {
 
 template<class T>
 void PCompCABSFile<T>::init_schwarz_ia() {
-  typedef boost::shared_ptr<Shell> RefShell;
-  typedef boost::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Atom> RefAtom;
 
   schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
 
@@ -232,7 +232,7 @@ void PCompCABSFile<T>::init_schwarz_ia() {
 template<class T>
 void PCompCABSFile<T>::calculate_num_int_each() {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
   const int s = this->S_;
   const int l = this->L_;
@@ -341,7 +341,7 @@ void PCompCABSFile<T>::store_integrals() {
 template<class T>
 void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
-  typedef boost::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<Shell> RefShell;
 
   const int s = this->S_;
   const int l = this->L_;
@@ -405,11 +405,11 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
 
 template<class T>
-boost::shared_ptr<PMOFile<std::complex<double> > >
-  PCompCABSFile<T>::mo_transform_cabs_aux(boost::shared_ptr<PCoeff> coeff_i,
-                                          boost::shared_ptr<PCoeff> coeff_j,
-                                          boost::shared_ptr<PCoeff> coeff_a,
-                                          boost::shared_ptr<PCoeff> coeff_b,
+std::shared_ptr<PMOFile<std::complex<double> > >
+  PCompCABSFile<T>::mo_transform_cabs_aux(std::shared_ptr<PCoeff> coeff_i,
+                                          std::shared_ptr<PCoeff> coeff_j,
+                                          std::shared_ptr<PCoeff> coeff_a,
+                                          std::shared_ptr<PCoeff> coeff_b,
                                           const int istart, const int ifence,
                                           const int jstart, const int jfence,
                                           const int astart, const int afence,
@@ -460,7 +460,7 @@ boost::shared_ptr<PMOFile<std::complex<double> > >
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
-  boost::shared_ptr<PMOFile<std::complex<double> > >
+  std::shared_ptr<PMOFile<std::complex<double> > >
     mo_int(new PMOFile<std::complex<double> >(this->geom_, filesize, k,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));

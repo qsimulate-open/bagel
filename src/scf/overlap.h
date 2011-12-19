@@ -8,14 +8,14 @@
 
 #include <src/scf/geometry.h>
 #include <src/scf/matrix1e.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class Overlap : public Matrix1e {
   protected:
-    void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int);
+    void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
   public:
-    Overlap(const boost::shared_ptr<Geometry>);
+    Overlap(const std::shared_ptr<Geometry>);
     ~Overlap();
 
 };

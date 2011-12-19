@@ -13,7 +13,6 @@
 #include <src/util/pcompcabsfile.h>
 
 using namespace std;
-using namespace boost;
 
 //#define LOCAL_DEBUG
 
@@ -61,7 +60,7 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 }
 
 
-const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ() {
+const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ() {
 
   RefHcore uhc(new PHcore(union_geom_, true));
   RefMatrix coulombc = coulomb_runtime(true);
@@ -82,7 +81,7 @@ const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ
 }
 
 
-const boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K() {
+const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K() {
 
   RefMatrix exchangec = exchange_runtime(true);
   RefMatrix ao_K(new PMatrix1e(exchangec->ft()));

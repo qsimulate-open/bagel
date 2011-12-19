@@ -13,7 +13,6 @@
 #include <src/util/pcompcabsfile.h>
 
 using namespace std;
-using namespace boost;
 
 // create RI basis
 
@@ -22,7 +21,7 @@ typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
 typedef shared_ptr<PCoeff> RefCoeff;
 
-boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_RI() {
+std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_RI() {
 
   // Form RI space which is a union of OBS and CABS.
   RefGeom newgeom(new PGeometry(*geom_));
@@ -44,7 +43,7 @@ boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_RI() {
 }
 
 
-boost::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_fock_weighted_RI() const {
+std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_fock_weighted_RI() const {
 
   RefMatrix barefock(new PMatrix1e(*ri_entire_ % (*ao_hJ_-*ao_K_) * *ri_entire_));
 

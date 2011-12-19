@@ -7,11 +7,11 @@
 
 #include <cassert>
 #include <vector>
+#include <memory>
 #include <src/rysint/int2d.h>
 #include <src/rysint/rysint.h>
 #include <src/rysint/macros.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <tuple>
 
 class ERIBatch : public RysInt {
 
@@ -30,7 +30,7 @@ class ERIBatch : public RysInt {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
 
-    std::vector<boost::tuple<int, double, double> > indexpair23_;
+    std::vector<std::tuple<int, double, double> > indexpair23_;
 
     /// buffer and intermediate storage
     double *buff_;
@@ -67,7 +67,7 @@ class ERIBatch : public RysInt {
   public:
     
     // dummy will never not used.
-    ERIBatch(const std::vector<boost::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0, const bool dum = true);
+    ERIBatch(const std::vector<std::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~ERIBatch();
 
     /// compute a batch of integrals

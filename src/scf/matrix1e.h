@@ -10,24 +10,24 @@
 #include <src/scf/geometry.h>
 #include <string>
 #include <algorithm>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class Matrix1e {
   protected:
-    boost::shared_ptr<Geometry> geom_;
+    std::shared_ptr<Geometry> geom_;
     int nbasis_;
     int ndim_;
     int mdim_;
 
     double* data_;
-    virtual void computebatch(const std::vector<boost::shared_ptr<Shell> >&, const int, const int, const int);
+    virtual void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
     virtual void init();
 
   public:
-    Matrix1e(const boost::shared_ptr<Geometry>); 
+    Matrix1e(const std::shared_ptr<Geometry>); 
     ~Matrix1e();
 
-    const boost::shared_ptr<Geometry> geom() const { return geom_; };
+    const std::shared_ptr<Geometry> geom() const { return geom_; };
 
     const int ndim() const { return ndim_; }; 
     const int mdim() const { return mdim_; }; 
@@ -45,9 +45,9 @@ class Matrix1e {
     Matrix1e operator-(const Matrix1e&) const;
 
     void daxpy(const double, const Matrix1e&);
-    void daxpy(const double, const boost::shared_ptr<Matrix1e>);
+    void daxpy(const double, const std::shared_ptr<Matrix1e>);
     const double ddot(const Matrix1e&) const;
-    const double ddot(const boost::shared_ptr<Matrix1e>) const;
+    const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
 

@@ -35,8 +35,8 @@ Shell::~Shell() {
 }
 
 
-boost::shared_ptr<Shell> Shell::move_atom(const vector<double>& displacement) {
-  boost::shared_ptr<Shell> out(new Shell(*this));
+std::shared_ptr<Shell> Shell::move_atom(const vector<double>& displacement) {
+  std::shared_ptr<Shell> out(new Shell(*this));
   out->position_[0] += displacement[0]; 
   out->position_[1] += displacement[1]; 
   out->position_[2] += displacement[2]; 
@@ -44,8 +44,8 @@ boost::shared_ptr<Shell> Shell::move_atom(const vector<double>& displacement) {
 }
 
 
-boost::shared_ptr<Shell> Shell::move_atom(const double* displacement) {
-  boost::shared_ptr<Shell> out(new Shell(*this));
+std::shared_ptr<Shell> Shell::move_atom(const double* displacement) {
+  std::shared_ptr<Shell> out(new Shell(*this));
   out->position_[0] += displacement[0]; 
   out->position_[1] += displacement[1]; 
   out->position_[2] += displacement[2]; 

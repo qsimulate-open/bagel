@@ -11,16 +11,16 @@
 #include <src/scf/tildex.h>
 #include <src/scf/fock.h>
 #include <src/scf/coeff.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class SCF {
   protected:
-    const boost::shared_ptr<Geometry> geom_;
-    const boost::shared_ptr<Overlap> overlap_;
-    const boost::shared_ptr<Hcore> hcore_;
-    boost::shared_ptr<TildeX> tildex_;
-    boost::shared_ptr<Matrix1e> aodensity_;
-    boost::shared_ptr<Coeff> coeff_;
+    const std::shared_ptr<Geometry> geom_;
+    const std::shared_ptr<Overlap> overlap_;
+    const std::shared_ptr<Hcore> hcore_;
+    std::shared_ptr<TildeX> tildex_;
+    std::shared_ptr<Matrix1e> aodensity_;
+    std::shared_ptr<Coeff> coeff_;
 
     std::vector<double> shwarz_;
     void init_shwarz();
@@ -29,14 +29,14 @@ class SCF {
     void print_eig();
 
   public:
-    SCF(const boost::shared_ptr<Geometry>);
+    SCF(const std::shared_ptr<Geometry>);
     ~SCF();
 
     void compute();
 
-    const boost::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
-    const boost::shared_ptr<Coeff> coeff() { return coeff_; };
-    const boost::shared_ptr<Hcore> hcore() { return hcore_; };
+    const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
+    const std::shared_ptr<Coeff> coeff() { return coeff_; };
+    const std::shared_ptr<Hcore> hcore() { return hcore_; };
 };
 
 #endif

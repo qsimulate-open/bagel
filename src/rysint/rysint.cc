@@ -7,7 +7,7 @@
 
 using namespace std;
 
-RysInt::RysInt(const vector<boost::shared_ptr<Shell> > info)
+RysInt::RysInt(const vector<std::shared_ptr<Shell> > info)
  : basisinfo_(info), spherical_(info.front()->spherical()), sort_(info.front()->spherical()) {
 
 }
