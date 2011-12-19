@@ -40,7 +40,7 @@ void FCI::const_string_lists_() {
   fill(stringa_.begin(), stringa_.end(), 0);
   fill(stringb_.begin(), stringb_.end(), 0);
 
-  vector<unsigned int>::iterator sa = stringa_.begin(); 
+  auto sa = stringa_.begin(); 
   do {
     for (int i=0; i!=nelea_; ++i) *sa += (1 << data[i]);
     ++sa;
@@ -53,10 +53,10 @@ void FCI::const_string_lists_() {
   } while (next_combination(data.begin(), data.begin()+neleb_, data.end()));
 
 #if 0
-  for (vector<unsigned int>::const_iterator i = stringa_.begin(); i != stringa_.end(); ++i) {
+  for (auto i = stringa_.begin(); i != stringa_.end(); ++i) {
     cout << lexical<0>(*i) << endl;
   }
-  for (vector<unsigned int>::const_iterator i = stringb_.begin(); i != stringb_.end(); ++i) {
+  for (auto i = stringb_.begin(); i != stringb_.end(); ++i) {
     cout << lexical<1>(*i) << endl;
   }
 #endif

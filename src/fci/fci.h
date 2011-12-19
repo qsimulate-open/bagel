@@ -99,9 +99,9 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
                       std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >& phi) {
 
   phi.resize(string.size()*norb_*norb_);
-  std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >::iterator piter = phi.begin();
+  auto piter = phi.begin();
 
-  for (std::vector<unsigned int>::const_iterator iter = string.begin(); iter != string.end(); ++iter) {
+  for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       const unsigned int ibit = (1 << i);
       if (ibit & *iter) {
