@@ -24,11 +24,16 @@ using namespace std;
 StackMem* stack;
 
 int main(int argc, char** argv) {
+  // openmp is broken now due to the use of stack.
+  // What we need is a proper thread model.
+  #ifdef _OPENMP
+  assert(false); // trap
+  #endif
 
   try {
     print_header();
 
-    StackMem a(10000000); // 8 MB
+    StackMem a(1000000); // 8 MB
     stack = &a; 
 
     const bool input_provided = argc == 2;
