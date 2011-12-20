@@ -49,7 +49,6 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
 
   const int nocc = nfence - nstart;
-  sizeij_ = nocc*nocc;
   const int size = basis_.size(); // number of shells
   const int nbasis = geom_->nbasis();
   const size_t aointsize = nbasis*nbasis*nbasis*nbasis; 
@@ -131,19 +130,36 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
     dgemm_("n","n",&mm,&nocc,&nbasis,&one,aobuff+nmm*i,&mm,cdata,&nbasis,&zero,first+mm*nocc*i,&mm);
   }
   delete[] aobuff;
-  mo2e_.resize(mm*mm);
-  copy(first,first+mm*mm,&mo2e_[0]);
-  delete[] first;
 
-  // h'kl = hkl - 0.5 sum_j (kj|jl)
-  for (int i=0; i!=nocc; ++i) {
-    for (int j=0; j<=i; ++j) {
-      for (int k=0; k!=nocc; ++k) {
-        mo1e_[i*nocc+j] -= 0.5*mo2e_[(k+j*nocc)*mm+(k+i*nocc)];
+  // mo2e is compressed
+  sizeij_ = nocc*(nocc+1)/2;
+  mo2e_.resize(sizeij_*sizeij_);
+  // TODO very bad
+  int ijkl = 0;
+  for (int i = 0; i != nocc; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      const int ijo = (j + i*nocc)*nocc*nocc;
+      for (int k = 0; k != nocc; ++k) {
+        for (int l = 0; l <= k; ++l, ++ijkl) {
+          mo2e_[ijkl] = first[l+k*nocc+ijo]; 
+        }
       }
-      mo1e_[j*nocc+i] = mo1e_[i*nocc+j];
     }
   }
+
+  // h'kl = hkl - 0.5 sum_j (kj|jl)
+  vector<double> buf(sizeij_);
+  int ij = 0;
+  for (int i=0; i!=nocc; ++i) {
+    for (int j=0; j<=i; ++j, ++ij) {
+      buf[ij] = mo1e_[j+i*nocc];
+      for (int k=0; k!=nocc; ++k) {
+        buf[ij] -= 0.5*first[(k+j*nocc)*mm+(k+i*nocc)];
+      }
+    }
+  }
+  copy(buf.begin(), buf.end(), mo1e_.begin());
+  delete[] first;
 
 }
 

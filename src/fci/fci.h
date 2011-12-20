@@ -110,8 +110,7 @@ template <int spin>
 void FCI::const_phis_(const std::vector<unsigned int>& string,
                       std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >& phi) {
 
-  phi.resize(string.size()*norb_*norb_);
-  auto piter = phi.begin();
+  phi.reserve(string.size()*norb_*norb_);
 
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
@@ -123,13 +122,16 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j); 
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            *piter = make_tuple(lexical<spin>(mbit), sign(mbit, i, j), j*norb_+i, source); 
+            const int minij = std::min(i,j); 
+            const int maxij = std::max(i,j);
+            phi.push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), minij+((maxij*(maxij+1))>>1), source));
 #if 0
-            std::cout << i << j << " " << (*iter & 1)  << ((*iter >> 1) & 1) << ((*iter >> 2) & 1) << ((*iter >> 3) & 1) 
-                 << ((*iter >> 4) & 1) << " " << (mbit & 1) << ((mbit >> 1) & 1) << ((mbit >> 2) & 1) <<
-                 ((mbit >> 3) & 1) << ((mbit >> 4) & 1) << " " << mbit << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
+            std::cout << i << j << " ";
+            for (int k=0;k!=norb_;++k) std::cout << (((*iter)>>k)&1);
+            std::cout << " ";
+            for (int k=0;k!=norb_;++k) std::cout << ((mbit>>k)&1);
+            std::cout << " " << mbit << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
 #endif
-            ++piter;
           }
         }
       }

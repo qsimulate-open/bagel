@@ -23,6 +23,8 @@ static const double zero = 0.0;
 static const string indent = "  ";
 static const string space3 = "   "; 
 
+static int address(int i, int j) { assert(i <= j); return i+((j*(j+1))>>1); };
+
 void FCI::compute() {
   const int num_state = 1; // TODO should be read from the input
 
@@ -46,7 +48,7 @@ void FCI::compute() {
   // some constants
   const int la = stringa_.size();
   const int lb = stringb_.size();
-  const int ij = norb_ * norb_; 
+  const int ij = norb_ * (norb_+1) /2;
 
   // we need two vectors for intermediate quantities
   shared_ptr<Dvec> d(new Dvec(lb, la, ij));
@@ -76,6 +78,8 @@ void FCI::compute() {
 
     // form a sigma vector given cc
     form_sigma(cc, sigma, d, e, Jop);
+cout << cc->data(0)->norm() << endl;
+cout << sigma->data(0)->norm() << endl;
 
 // TODO TODO TODO -> this part is not multi-state 
 // perhaps split set and get functions in davidson.h
@@ -100,7 +104,7 @@ void FCI::compute() {
         double* denom_array = denom_->first();
         const double en = energies[ist];
         for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / (en - denom_array[i]);
+          target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
   // TODO this will be changed to "add function in the future"
         davidson.orthog(cc->data(ist));
@@ -137,8 +141,10 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
       for (auto iter = phia_.begin();  iter != phia_.end(); ++iter) {
         const double hc = Jop->mo1e(get<2>(*iter)) * get<1>(*iter);
         daxpy_(&lb, &hc, cc->element_ptr(0, get<3>(*iter)), &unit, sigma->element_ptr(0, get<0>(*iter)), &unit); 
+if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
       }
     }
+#if 0
     // (task2) two electron contributions
     {
       // zero out intermediates.
@@ -177,7 +183,7 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
       {
         const int lenab = la*lb;
         dgemm_("n", "n", &lenab, &ij, &ij, &half, d->first(), &lenab, Jop->mo2e_ptr(), &ij,
-                                          &zero, e->first(), &lenab);
+                                           &zero, e->first(), &lenab);
       }
 
       // step (f)
@@ -208,6 +214,7 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
         }
       }
     }
+#endif
 
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     {
@@ -231,12 +238,12 @@ void FCI::const_denom(shared_ptr<MOFile> Jop) {
   kop.resize(norb_*norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*Jop->mo2e(j*norb_+j,i*norb_+i);
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*Jop->mo2e(j, j, i, i);
     }
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*Jop->mo2e(i*norb_+j,i*norb_+j);
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*Jop->mo2e(j, i, j, i);
     }
   }
   shared_ptr<Civec> tmp(new Civec(stringb_.size(), stringa_.size()));
@@ -250,7 +257,7 @@ void FCI::const_denom(shared_ptr<MOFile> Jop) {
       for (int i = 0; i != norb_; ++i, (iabit1 >>= 1), (ibbit1 >>= 1)) {
         const unsigned int nia = (iabit1&1);
         const unsigned int nib = (ibbit1&1);
-        *iter += Jop->mo1e(i*norb_+i) * (nia + nib);
+        *iter += Jop->mo1e(i,i) * (nia + nib);
         unsigned int iabit2 = *ia;
         unsigned int ibbit2 = *ib;
         for (int j = 0; j != norb_; ++j, (iabit2 >>= 1), (ibbit2 >>= 1)) {

@@ -48,7 +48,7 @@ void FCI::const_string_lists_() {
 
   const int lengtha = comb.c(norb_, nelea_);
   const int lengthb = comb.c(norb_, neleb_);
-  stringa_.resize(lengtha); 
+  stringa_.resize(lengtha);
   stringb_.resize(lengthb);
   fill(stringa_.begin(), stringa_.end(), 0);
   fill(stringb_.begin(), stringb_.end(), 0);
