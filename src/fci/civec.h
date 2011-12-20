@@ -45,6 +45,8 @@ class Civec {
 
     void zero() { std::fill(cc_, cc_+lena_*lenb_, 0.0); };
 
+    int size() const { return lena_*lenb_; };
+
     std::shared_ptr<Civec> transpose() {
       std::shared_ptr<Civec> ct(new Civec(lena_, lenb_));
       double* cct = ct->first(); 
@@ -105,7 +107,7 @@ class Dvec {
     ~Dvec() {
       delete[] data_;
     };
-    std::shared_ptr<Civec>& data(const size_t i) { return dvec_.at(i); };
+    std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
     void zero() { std::fill(data_, data_+lena_*lenb_*ij_, 0.0); };
     double* first() { return data_; };
 

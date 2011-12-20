@@ -10,8 +10,9 @@
 #include <src/fci/fci.h>
 #include <src/util/davidson.h>
 
-// TODO hardwired MAXIT.
-#define MAX_ITER_FCI 30
+// TODO hardwired
+#define MAX_ITER_FCI 100
+#define THREASH 1.0e-8 // variant
 
 using namespace std;
 
@@ -38,6 +39,9 @@ void FCI::compute() {
 
   // right now full basis is used. 
   Jop->create_Jiiii(ncore_, ncore_+norb_);
+
+  // create denominator here. Stored in shared<Civec> denom_
+  const_denom(Jop);
 
   // some constants
   const int la = stringa_.size();
@@ -66,25 +70,42 @@ void FCI::compute() {
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
+  bool converged = false;
   for (int iter = 0; iter != MAX_ITER_FCI; ++iter) { 
     int start = ::clock();
 
     // form a sigma vector given cc
     form_sigma(cc, sigma, d, e, Jop);
+
 // TODO TODO TODO -> this part is not multi-state 
 // perhaps split set and get functions in davidson.h
-    const vector<double> energies = davidson.compute(cc->data(0), sigma->data(0));
+    const vector<double> energies = davidson.compute(shared_ptr<Civec>(new Civec(*cc->data(0))),
+                                                     shared_ptr<Civec>(new Civec(*sigma->data(0))));
 
     // get residual and new vectors
-    pair<vector<shared_ptr<Civec> >, vector<shared_ptr<Civec> > > errnew = davidson.residual();
-    vector<shared_ptr<Civec> > errvec = errnew.first;
-    vector<shared_ptr<Civec> > newvec = errnew.second;
-// TODO just a hack
-cc->data(0) = newvec[0]; 
+    vector<shared_ptr<Civec> > errvec = davidson.residual();
 
     // compute errors
     vector<double> errors;
     for (int i = 0; i != num_state; ++i) errors.push_back(errvec[i]->norm());
+
+    if (*max_element(errors.begin(), errors.end()) < THREASH) {
+      converged = true;
+    } else { 
+      // denominator scaling 
+      for (int ist = 0; ist != num_state; ++ist) {
+        const int size = cc->data(ist)->size();
+        double* target_array = cc->data(ist)->first();
+        double* source_array = errvec[ist]->first();
+        double* denom_array = denom_->first();
+        const double en = energies[ist];
+        for (int i = 0; i != size; ++i) {
+          target_array[i] = source_array[i] / (en - denom_array[i]);
+        }
+  // TODO this will be changed to "add function in the future"
+        davidson.orthog(cc->data(ist));
+      }
+    }
 
     // printing out
     int end = ::clock();
@@ -92,6 +113,7 @@ cc->data(0) = newvec[0];
       cout << indent << setw(5) << iter << setw(5) << i << setw(20) << fixed << setprecision(12) << energies[i]+nuclear << space3 
                                         << setw(17) << errors[i] << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
     }
+    if (converged) break;
   }
   // main iteration ends here
 }
@@ -200,6 +222,50 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
     }
   }
 }
+
+
+void FCI::const_denom(shared_ptr<MOFile> Jop) {
+
+  vector<double> jop, kop;
+  jop.resize(norb_*norb_);
+  kop.resize(norb_*norb_);
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*Jop->mo2e(j*norb_+j,i*norb_+i);
+    }
+  }
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*Jop->mo2e(i*norb_+j,i*norb_+j);
+    }
+  }
+  shared_ptr<Civec> tmp(new Civec(stringb_.size(), stringa_.size()));
+  denom_ = tmp;
+
+  double* iter = denom_->first();
+  for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
+    for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++iter) {
+      unsigned int iabit1 = *ia;
+      unsigned int ibbit1 = *ib;
+      for (int i = 0; i != norb_; ++i, (iabit1 >>= 1), (ibbit1 >>= 1)) {
+        const unsigned int nia = (iabit1&1);
+        const unsigned int nib = (ibbit1&1);
+        *iter += Jop->mo1e(i*norb_+i) * (nia + nib);
+        unsigned int iabit2 = *ia;
+        unsigned int ibbit2 = *ib;
+        for (int j = 0; j != norb_; ++j, (iabit2 >>= 1), (ibbit2 >>= 1)) {
+          const unsigned int nja = (iabit2&1);
+          const unsigned int njb = (ibbit2&1);
+          const unsigned int addj = ((nia & njb) << 1) + (nia & nja) + (nib & njb);
+          *iter += jop[j+norb_*i] * addj;
+          const unsigned int addk = (nia & (1^nja)) + (nib & (1^njb));
+          *iter += kop[j+norb_*i] * addk;
+        }
+      }
+    }
+  }
+}
+
 
 void FCI::print_header() const {
   cout << "  ---------------------------" << endl;

@@ -30,6 +30,8 @@ class FCI {
     // string lists
     std::vector<unsigned int> stringa_;
     std::vector<unsigned int> stringb_;
+    // denominator
+    std::shared_ptr<Civec> denom_;
 
     // some init functions
     // lexical maps (Zkl)
@@ -40,6 +42,8 @@ class FCI {
     template <int>
     void const_phis_(const std::vector<unsigned int>&,
                      std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >&);
+    // denominator
+    void const_denom(std::shared_ptr<MOFile>);
 
     // numbers of electrons
     const int nelea_;
