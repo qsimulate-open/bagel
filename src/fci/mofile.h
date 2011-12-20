@@ -33,6 +33,8 @@ class MOFile {
     void create_Jiiii(const int, const int);
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
+    double* mo1e_ptr() { return &(mo1e_[0]); };
+    double* mo2e_ptr() { return &(mo2e_[0]); };
 
 };
 

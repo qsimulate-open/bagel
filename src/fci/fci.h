@@ -17,6 +17,8 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <src/fci/civec.h>
+#include <src/fci/mofile.h>
 
 class FCI {
   protected:
@@ -80,6 +82,11 @@ class FCI {
     unsigned int stringa(int i) const { return stringa_[i]; };
     unsigned int stringb(int i) const { return stringb_[i]; };
 
+    // run-time functions
+    void form_sigma(std::shared_ptr<Civec>, std::shared_ptr<Civec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>,
+                    std::shared_ptr<MOFile>);
+
+    // print functions
     void print_header() const;
 
   public:
@@ -112,7 +119,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
             *piter = make_tuple(lexical<spin>(mbit), sign(mbit, i, j), j*norb_+i, source); 
-#if 1
+#if 0
             std::cout << i << j << " " << (*iter & 1)  << ((*iter >> 1) & 1) << ((*iter >> 2) & 1) << ((*iter >> 3) & 1) 
                  << ((*iter >> 4) & 1) << " " << (mbit & 1) << ((mbit >> 1) & 1) << ((mbit >> 2) & 1) <<
                  ((mbit >> 3) & 1) << ((mbit >> 4) & 1) << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
