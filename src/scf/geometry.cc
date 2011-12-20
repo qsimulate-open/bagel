@@ -138,7 +138,7 @@ Geometry::Geometry(const string s, const int levl)
         string symtmp("c1");
         symmetry_ = symtmp;
       }
-      const regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s+([0-9\\.-]+),\\s+([0-9\\.-]+),\\s+([0-9\\.-]+)\\s*\\)");
+      const regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
       while (1) {
         string atomline; 
         getline(ifs, atomline); 

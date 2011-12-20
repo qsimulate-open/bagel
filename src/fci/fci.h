@@ -62,9 +62,10 @@ class FCI {
     };
 
     int sign(unsigned int bit, int i, int j) {
-      const int ii = sizeof(int)*8 - std::max(i,j);
-      const int jj = std::min(i,j) + 1;
-      bit = (((bit >> jj) << (jj+ii)) >> ii);
+      // masking irrelevant bits
+      const unsigned int ii = ~((1 << (std::min(i,j)+1)) - 1);
+      const unsigned int jj = ((1 << (std::max(i,j))) - 1); 
+      bit = (bit & ii) & jj;
       return 1 - ((numofbits(bit) & 1) << 1);
     };
 
@@ -83,7 +84,7 @@ class FCI {
     unsigned int stringb(int i) const { return stringb_[i]; };
 
     // run-time functions
-    void form_sigma(std::shared_ptr<Civec>, std::shared_ptr<Civec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>,
+    void form_sigma(std::shared_ptr<Dvec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>,
                     std::shared_ptr<MOFile>);
 
     // print functions
@@ -122,7 +123,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
 #if 0
             std::cout << i << j << " " << (*iter & 1)  << ((*iter >> 1) & 1) << ((*iter >> 2) & 1) << ((*iter >> 3) & 1) 
                  << ((*iter >> 4) & 1) << " " << (mbit & 1) << ((mbit >> 1) & 1) << ((mbit >> 2) & 1) <<
-                 ((mbit >> 3) & 1) << ((mbit >> 4) & 1) << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
+                 ((mbit >> 3) & 1) << ((mbit >> 4) & 1) << " " << mbit << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
 #endif
             ++piter;
           }

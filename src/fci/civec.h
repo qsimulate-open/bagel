@@ -6,6 +6,7 @@
 #ifndef NEWINT_FCI_CIVEC_H
 #define NEWINT_FCI_CIVEC_H
 
+#include <list>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -29,6 +30,11 @@ class Civec {
       cc_ = din_; 
       std::fill(cc_, cc_ + la*lb, 0.0);
     }
+    // copy constructor
+    Civec(const Civec& o) : lena_(o.lena()), lenb_(o.lenb()), alloc(true) {
+      cc_ = new double[lena_ * lenb_];
+      std::copy(o.cc_, o.cc_ + lena_*lenb_, cc_);
+    };
     ~Civec() {
       if (alloc) delete[] cc_;
     };
@@ -64,7 +70,20 @@ class Civec {
       const int unit = 1;
       return std::sqrt(ddot_(&lab, cc_, &unit, cc_, &unit));
     };
+
+    // assumes that c is already orthogonal with each other.
+    void orthog(std::list<std::shared_ptr<Civec> > c) {
+      for (auto iter = c.begin(); iter != c.end(); ++iter) {
+        const double scal = - this->ddot(**iter);
+        this->daxpy(scal, **iter);
+      }
+      const double scal = 1.0/this->norm();
+      const int lab = lena_ * lenb_;
+      const int unit = 1;
+      dscal_(&lab, &scal, cc_, &unit);
+    }
 };
+
 
 class Dvec {
   protected:
@@ -86,7 +105,7 @@ class Dvec {
     ~Dvec() {
       delete[] data_;
     };
-    std::shared_ptr<Civec> data(const size_t i) { return dvec_.at(i); };
+    std::shared_ptr<Civec>& data(const size_t i) { return dvec_.at(i); };
     void zero() { std::fill(data_, data_+lena_*lenb_*ij_, 0.0); };
     double* first() { return data_; };
 
@@ -94,5 +113,6 @@ class Dvec {
     int lenb() const { return lenb_; };
     int ij() const { return ij_; };
 };
+
 
 #endif

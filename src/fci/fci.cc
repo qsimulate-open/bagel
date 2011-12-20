@@ -4,6 +4,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include <src/fci/fci.h>
 #include <src/fci/comb.h>
 #include <boost/algorithm/combination.hpp>
@@ -18,10 +19,22 @@ FCI::FCI(const std::shared_ptr<Geometry> geom)
    ncore_(0), norb_(geom_->nbasis()) {
   // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
 
+  print_header();
+
+  cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl;
+  cout << endl;
+  cout << "  o lexical mappings" << endl;
   const_lexical_mapping_();
+  cout << "  o alpha-beta strings" << endl;
   const_string_lists_();
+  cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
+  cout << "  o single displacement lists (alpha)" << endl;
   const_phis_<0>(stringa_, phia_);
+  cout << "      length: " << setw(13) << phia_.size() << endl;
+  cout << "  o single displacement lists (beta)" << endl;
   const_phis_<1>(stringb_, phib_);
+  cout << "      length: " << setw(13) << phib_.size() << endl;
+  cout << endl;
 }
 
 FCI::~FCI() {

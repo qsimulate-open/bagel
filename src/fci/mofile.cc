@@ -54,6 +54,7 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   const int nbasis = geom_->nbasis();
   const size_t aointsize = nbasis*nbasis*nbasis*nbasis; 
   double* aobuff = new double[aointsize];
+  // TODO this can be thrown away.
   double* first = new double[nbasis*nbasis*nbasis*nocc];
 
   // some stuffs for blas
@@ -62,10 +63,11 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   const double zero = 0.0;
   double* cdata = coeff_->data() + nstart*nbasis;
 
-  cout << "  - AO integrals are computed and stored in core" << endl;
+  cout << "  - AO integrals are computed and stored in core" << endl << endl;
 
   // one electron part
-  Hcore hcore(geom_); 
+  Hcore hcore(geom_);
+  hcore.symmetrize();
   dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,hcore.data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
   mo1e_.resize(nocc*nocc);
   dgemm_("t","n",&nocc,&nocc,&nbasis,&one,cdata,&nbasis,aobuff,&nbasis,&zero,&mo1e_[0],&nocc);
@@ -133,14 +135,15 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   copy(first,first+mm*mm,&mo2e_[0]);
   delete[] first;
 
+  // h'kl = hkl - 0.5 sum_j (kj|jl)
   for (int i=0; i!=nocc; ++i) {
     for (int j=0; j<=i; ++j) {
       for (int k=0; k!=nocc; ++k) {
-        mo1e_[i*nocc+j] -= 0.5*mo2e_[(j+k*nocc)*mm+(k+i*nocc)];
+        mo1e_[i*nocc+j] -= 0.5*mo2e_[(k+j*nocc)*mm+(k+i*nocc)];
       }
       mo1e_[j*nocc+i] = mo1e_[i*nocc+j];
     }
-  } 
+  }
 
 }
 
