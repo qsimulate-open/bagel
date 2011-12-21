@@ -130,7 +130,7 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
   sigmavec->zero();
 
   const int nstate = ccvec->ij();
-#define TIMING
+//#define TIMING
 
   for (int istate = 0; istate != nstate; ++istate) {
     shared_ptr<Civec> cc = ccvec->data(istate);  
@@ -247,15 +247,49 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
       // step (g)
       // (task2c-2) sigma(Phib', Phia) += sign E(Psib, Phia, ij)
       {
-        for (int i = 0; i != la; ++i) {
-          double* const target_array = sigma->element_ptr(0, i);
+        for (int i = 0; i < la; i+=8) {
+        if (i+7 < la) {
+          double* const target_array0 = sigma->element_ptr(0, i);
+          double* const target_array1 = sigma->element_ptr(0, i+1);
+          double* const target_array2 = sigma->element_ptr(0, i+2);
+          double* const target_array3 = sigma->element_ptr(0, i+3);
+          double* const target_array4 = sigma->element_ptr(0, i+4);
+          double* const target_array5 = sigma->element_ptr(0, i+5);
+          double* const target_array6 = sigma->element_ptr(0, i+6);
+          double* const target_array7 = sigma->element_ptr(0, i+7);
           for (int ip = 0; ip != ij; ++ip) {
-            double* const source_array = e->data(ip)->element_ptr(0, i);
+            double* const source_array0 = e->data(ip)->element_ptr(0, i);
+            double* const source_array1 = e->data(ip)->element_ptr(0, i+1);
+            double* const source_array2 = e->data(ip)->element_ptr(0, i+2);
+            double* const source_array3 = e->data(ip)->element_ptr(0, i+3);
+            double* const source_array4 = e->data(ip)->element_ptr(0, i+4);
+            double* const source_array5 = e->data(ip)->element_ptr(0, i+5);
+            double* const source_array6 = e->data(ip)->element_ptr(0, i+6);
+            double* const source_array7 = e->data(ip)->element_ptr(0, i+7);
             for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
               const double sign = static_cast<double>(get<1>(*iter));
-              target_array[get<0>(*iter)] += sign * source_array[get<2>(*iter)]; 
+              target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
+              target_array1[get<0>(*iter)] += sign * source_array1[get<2>(*iter)]; 
+              target_array2[get<0>(*iter)] += sign * source_array2[get<2>(*iter)]; 
+              target_array3[get<0>(*iter)] += sign * source_array3[get<2>(*iter)]; 
+              target_array4[get<0>(*iter)] += sign * source_array4[get<2>(*iter)]; 
+              target_array5[get<0>(*iter)] += sign * source_array5[get<2>(*iter)]; 
+              target_array6[get<0>(*iter)] += sign * source_array6[get<2>(*iter)]; 
+              target_array7[get<0>(*iter)] += sign * source_array7[get<2>(*iter)]; 
             }
           }
+        } else {
+          for (int j = i; j != la; ++j) {
+            double* const target_array0 = sigma->element_ptr(0, j);
+            for (int ip = 0; ip != ij; ++ip) {
+              double* const source_array0 = e->data(ip)->element_ptr(0, j);
+              for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+                const double sign = static_cast<double>(get<1>(*iter));
+                target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
+              }
+            }
+          }
+        }
         }
       }
     }
@@ -265,16 +299,24 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
 
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     {
-      for (int i = 0; i < la; i+=4) {
-        if (i+3 < la) {
+      for (int i = 0; i < la; i+=8) {
+        if (i+7 < la) {
           double* const target_array0 = sigma->element_ptr(0, i);
           double* const target_array1 = sigma->element_ptr(0, i+1);
           double* const target_array2 = sigma->element_ptr(0, i+2);
           double* const target_array3 = sigma->element_ptr(0, i+3);
+          double* const target_array4 = sigma->element_ptr(0, i+4);
+          double* const target_array5 = sigma->element_ptr(0, i+5);
+          double* const target_array6 = sigma->element_ptr(0, i+6);
+          double* const target_array7 = sigma->element_ptr(0, i+7);
           double* const source_array0 = cc->element_ptr(0, i);
           double* const source_array1 = cc->element_ptr(0, i+1);
           double* const source_array2 = cc->element_ptr(0, i+2);
           double* const source_array3 = cc->element_ptr(0, i+3);
+          double* const source_array4 = cc->element_ptr(0, i+4);
+          double* const source_array5 = cc->element_ptr(0, i+5);
+          double* const source_array6 = cc->element_ptr(0, i+6);
+          double* const source_array7 = cc->element_ptr(0, i+7);
           for (int ip = 0; ip != ij; ++ip) {
             const double h = Jop->mo1e(ip);
             for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
@@ -283,6 +325,10 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
               target_array1[get<0>(*iter)] += hc * source_array1[get<2>(*iter)];
               target_array2[get<0>(*iter)] += hc * source_array2[get<2>(*iter)];
               target_array3[get<0>(*iter)] += hc * source_array3[get<2>(*iter)];
+              target_array4[get<0>(*iter)] += hc * source_array4[get<2>(*iter)];
+              target_array5[get<0>(*iter)] += hc * source_array5[get<2>(*iter)];
+              target_array6[get<0>(*iter)] += hc * source_array6[get<2>(*iter)];
+              target_array7[get<0>(*iter)] += hc * source_array7[get<2>(*iter)];
             }
           }
         } else {
