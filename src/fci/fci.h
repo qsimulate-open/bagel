@@ -54,6 +54,8 @@ class FCI {
     // configuration list
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
+//  std::vector<std::vector<int[4] > > phia_;
+//  std::vector<std::vector<int[4] > > phib_;
 
     int numofbits(unsigned int bits) { //
 #ifndef USE_SSE42_INTRINSICS
