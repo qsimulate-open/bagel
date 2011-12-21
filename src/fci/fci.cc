@@ -30,10 +30,10 @@ FCI::FCI(const std::shared_ptr<Geometry> geom)
   cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
   cout << "  o single displacement lists (alpha)" << endl;
   const_phis_<0>(stringa_, phia_);
-  cout << "      length: " << setw(13) << phia_.size() << endl;
+  cout << "      length: " << setw(13) << phia_.size()*phia_.front().size() << endl;
   cout << "  o single displacement lists (beta)" << endl;
   const_phis_<1>(stringb_, phib_);
-  cout << "      length: " << setw(13) << phib_.size() << endl;
+  cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
   cout << endl;
 }
 
@@ -79,14 +79,17 @@ void FCI::const_string_lists_() {
 void FCI::const_lexical_mapping_() {
   // combination numbers up to 31 orbitals (fci/comb.h)
   zkl_.resize(nelea_ * norb_ + neleb_ * norb_); 
-  fill(zkl_.begin(), zkl_.end(), 0llu);
+  fill(zkl_.begin(), zkl_.end(), 0u);
 
   // this part is 1 offset due to the convention of Knowles & Handy's paper.
   // Just a blind copy from the paper without understanding much, but the code below works. 
-  for (int k = 1; k < nelea_; ++k)
-    for (int l = k; l <= norb_-nelea_+k; ++l)
-      for (int m = norb_-l+1; m <= norb_-k; ++m)
+  for (int k = 1; k < nelea_; ++k) {
+    for (int l = k; l <= norb_-nelea_+k; ++l) {
+      for (int m = norb_-l+1; m <= norb_-k; ++m) {
         zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1); 
+      }
+    }
+  }
   for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_; 
 
   if (nelea_ == neleb_) {

@@ -41,7 +41,7 @@ class FCI {
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<unsigned int>&,
-                     std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >&);
+                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >&);
     // denominator
     void const_denom(std::shared_ptr<MOFile>);
 
@@ -52,8 +52,8 @@ class FCI {
     const int norb_;
 
     // configuration list
-    std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> > phia_;
-    std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> > phib_;
+    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
+    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
 
     int numofbits(unsigned int bits) { //
 #ifndef USE_SSE42_INTRINSICS
@@ -76,13 +76,13 @@ class FCI {
     // maps bit to lexical numbers.
     template <int spin> unsigned int lexical(int bit) {
       unsigned int out = 0, k = 0;
-      for (int i = 0; i != norb_; ++i, bit = (bit >> 1)) 
+      for (int i = 0; i != norb_; ++i, bit >>= 1) 
         if (bit & 1) { out += zkl(k,i, spin); ++k; }
       return out;
     };
   
     // some utility functions
-    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*nelea_+j+spin*nelea_*norb_]; };
+    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
 
     unsigned int stringa(int i) const { return stringa_[i]; };
     unsigned int stringb(int i) const { return stringb_[i]; };
@@ -108,9 +108,12 @@ class FCI {
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
 void FCI::const_phis_(const std::vector<unsigned int>& string,
-                      std::vector<std::tuple<unsigned int, int, unsigned int, unsigned int> >& phi) {
+      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& phi) {
 
-  phi.reserve(string.size()*norb_*norb_);
+  phi.resize(norb_*norb_);
+  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
+    iter->reserve(string.size());
+  }
 
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
@@ -124,7 +127,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
             const unsigned int mbit = jbit^nbit;
             const int minij = std::min(i,j); 
             const int maxij = std::max(i,j);
-            phi.push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), minij+((maxij*(maxij+1))>>1), source));
+            phi[minij+((maxij*(maxij+1))>>1)].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
 #if 0
             std::cout << i << j << " ";
             for (int k=0;k!=norb_;++k) std::cout << (((*iter)>>k)&1);
@@ -137,6 +140,13 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
       }
     }
   }
+
+#if 0
+  // sort each vectors
+  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
+    std::sort(iter->begin(), iter->end());
+  }
+#endif
 }
 
 #endif

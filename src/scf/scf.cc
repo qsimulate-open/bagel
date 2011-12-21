@@ -93,7 +93,8 @@ void SCF::compute() {
 
     int end = ::clock();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(12) << energy << space3 
-                                      << setw(17) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
+                                      << setw(17) << error << setw(15) << setprecision(2)
+                                      << (end - start) / static_cast<double>(CLOCKS_PER_SEC) << endl; 
 
     if (error < SCF_THRESH) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

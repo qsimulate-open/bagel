@@ -78,8 +78,6 @@ void FCI::compute() {
 
     // form a sigma vector given cc
     form_sigma(cc, sigma, d, e, Jop);
-cout << cc->data(0)->norm() << endl;
-cout << sigma->data(0)->norm() << endl;
 
 // TODO TODO TODO -> this part is not multi-state 
 // perhaps split set and get functions in davidson.h
@@ -115,7 +113,8 @@ cout << sigma->data(0)->norm() << endl;
     int end = ::clock();
     for (int i = 0; i != num_state; ++i) {
       cout << indent << setw(5) << iter << setw(5) << i << setw(20) << fixed << setprecision(12) << energies[i]+nuclear << space3 
-                                        << setw(17) << errors[i] << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
+                                        << setw(17) << errors[i] << setw(15) << setprecision(2)
+                                        << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
     }
     if (converged) break;
   }
@@ -131,20 +130,29 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
   sigmavec->zero();
 
   const int nstate = ccvec->ij();
+//#define TIMING
 
   for (int istate = 0; istate != nstate; ++istate) {
     shared_ptr<Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
+#ifdef TIMING
+    vector<pair<string, double> > timing;
+    int start = ::clock();
+#endif
     {
-      for (auto iter = phia_.begin();  iter != phia_.end(); ++iter) {
-        const double hc = Jop->mo1e(get<2>(*iter)) * get<1>(*iter);
-        daxpy_(&lb, &hc, cc->element_ptr(0, get<3>(*iter)), &unit, sigma->element_ptr(0, get<0>(*iter)), &unit); 
-if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
+      for (int ip = 0; ip != ij; ++ip) {
+        const double h = Jop->mo1e(ip);
+        for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
+          const double hc = h * get<1>(*iter);
+          daxpy_(&lb, &hc, cc->element_ptr(0, get<2>(*iter)), &unit, sigma->element_ptr(0, get<0>(*iter)), &unit); 
+        }
       }
     }
-#if 0
+#ifdef TIMING
+    { const string task("task1"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+#endif
     // (task2) two electron contributions
     {
       // zero out intermediates.
@@ -153,13 +161,19 @@ if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
       // step (c)
       // (task2a-1) D(Phib, Phia, ij) += sign C(Psib, Phi'a)
       {
-        for (auto iter = phia_.begin();  iter != phia_.end(); ++iter) {
-          const double sign = static_cast<double>(get<1>(*iter));
-          const int ip = get<2>(*iter);
-          double* const target_array = d->data(ip)->element_ptr(0, get<3>(*iter));
-          daxpy_(&lb, &sign, cc->element_ptr(0, get<0>(*iter)), &unit, target_array, &unit);
+        double* const source_base = cc->first();
+        for (int ip = 0; ip != ij; ++ip) {
+          double* const target_base = d->data(ip)->first();
+          for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
+            const double sign = static_cast<double>(get<1>(*iter));
+            double* const target_array = target_base + get<2>(*iter)*lb;
+            daxpy_(&lb, &sign, source_base + get<0>(*iter)*lb, &unit, target_array, &unit);
+          }
         }
       }
+#ifdef TIMING
+    { const string task("task2a-1"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+#endif
 
       // step (d)
       // (task2a-2) D(Phib, Phia, ij) += sign C(Psib', Phia)
@@ -168,15 +182,16 @@ if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
           double* const source_array = cc->element_ptr(0, i); 
           for (int ip = 0; ip != ij; ++ip) {
             double* const target_array = d->data(ip)->element_ptr(0, i); 
-            for (auto iter = phib_.begin(); iter != phib_.end(); ++iter) {
-              if (get<2>(*iter) == ip) { // TODO dislike "if" here, but this seems the only way.. see (g) as well 
-                const double sign = static_cast<double>(get<1>(*iter));
-                target_array[get<3>(*iter)] += sign * source_array[get<0>(*iter)]; 
-              }
+            for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+              const double sign = static_cast<double>(get<1>(*iter));
+              target_array[get<2>(*iter)] += sign * source_array[get<0>(*iter)]; 
             }
           } 
         }
       }
+#ifdef TIMING
+    { const string task("task2a-2"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+#endif
 
       // step (e)
       // (task2b) E(Phib, Phia, ij) = D(Psib, Phia, ij) (ij|kl)
@@ -185,17 +200,25 @@ if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
         dgemm_("n", "n", &lenab, &ij, &ij, &half, d->first(), &lenab, Jop->mo2e_ptr(), &ij,
                                            &zero, e->first(), &lenab);
       }
+#ifdef TIMING
+    { const string task("task2b"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+#endif
 
       // step (f)
       // (task2c-1) sigma(Phib, Phia') += sign E(Psib, Phia, ij)
       {
-        for (auto iter = phia_.begin(); iter != phia_.end(); ++iter) {
-          const double sign = static_cast<double>(get<1>(*iter)); 
-          const int ip = get<2>(*iter);
-          double* const target_array = sigma->element_ptr(0, get<0>(*iter));
-          daxpy_(&lb, &sign, e->data(ip)->element_ptr(0, get<3>(*iter)), &unit, target_array, &unit);
+        for (int ip = 0; ip != ij; ++ip) { 
+          double* const source_base = e->data(ip)->first();
+          for (auto iter = phia_[ip].begin(); iter != phia_[ip].end(); ++iter) {
+            const double sign = static_cast<double>(get<1>(*iter)); 
+            double* const target_array = sigma->element_ptr(0, get<0>(*iter));
+            daxpy_(&lb, &sign, source_base + lb*get<2>(*iter), &unit, target_array, &unit);
+          }
         }
       }
+#ifdef TIMING
+    { const string task("task2c-1"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+#endif
 
       // step (g)
       // (task2c-2) sigma(Phib', Phia) += sign E(Psib, Phia, ij)
@@ -204,16 +227,16 @@ if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
           double* const target_array = sigma->element_ptr(0, i);
           for (int ip = 0; ip != ij; ++ip) {
             double* const source_array = e->data(ip)->element_ptr(0, i);
-            for (auto iter = phib_.begin(); iter != phib_.end(); ++iter) {
-              if (get<2>(*iter) == ip) {
-                const double sign = static_cast<double>(get<1>(*iter));
-                target_array[get<0>(*iter)] += sign * source_array[get<3>(*iter)]; 
-              }
+            for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+              const double sign = static_cast<double>(get<1>(*iter));
+              target_array[get<0>(*iter)] += sign * source_array[get<2>(*iter)]; 
             }
           }
         }
       }
     }
+#ifdef TIMING
+    { const string task("task2c-2"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
 #endif
 
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
@@ -221,12 +244,22 @@ if (get<0>(*iter)==0) cout << ">>>>>>>>" << endl;
       for (int i = 0; i != la; ++i) {
         double* const target_array = sigma->element_ptr(0, i);
         double* const source_array = cc->element_ptr(0, i);
-        for (auto iter = phib_.begin();  iter != phib_.end(); ++iter) {
-          const double hc = Jop->mo1e(get<2>(*iter)) * get<1>(*iter);
-          target_array[get<0>(*iter)] += hc * source_array[get<3>(*iter)];
+        for (int ip = 0; ip != ij; ++ip) {
+          const double h = Jop->mo1e(ip);
+          for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
+            const double hc = h * get<1>(*iter);
+            target_array[get<0>(*iter)] += hc * source_array[get<2>(*iter)];
+          }
         }
       }
     }
+#ifdef TIMING
+    { const string task("task3"); timing.push_back(make_pair(task, (::clock()-start)/static_cast<double>(CLOCKS_PER_SEC))); start = ::clock(); }
+    cout << "     timing info" << endl;
+    for (auto iter = timing.begin(); iter != timing.end(); ++iter) {
+      cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
+    }
+#endif
   }
 }
 

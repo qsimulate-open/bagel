@@ -10,12 +10,12 @@
 #include <algorithm>
 
 class Comb {
-    std::vector<int> c_;
+    std::vector<unsigned int> c_;
     static const int max_ = 32;
   public:
     Comb() {
         c_.resize(max_*max_);
-        std::fill(c_.begin(),c_.end(),0LLU);
+        std::fill(c_.begin(),c_.end(),0U);
         c_[0*max_+0] = 1;
         c_[1*max_+0] = 1;
         c_[1*max_+1] = 1;
