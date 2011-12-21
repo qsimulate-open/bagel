@@ -1,0 +1,8 @@
+Molecule: C1
+  Atom(H,  0.0, 0.0, 0.0)
+  Atom(F,  0.0, 0.0,-1.0)
+
+Basis:
+  6-31g
+
+FCI:

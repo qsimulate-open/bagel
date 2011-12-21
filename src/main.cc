@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   try {
     print_header();
 
-    StackMem a(1000000); // 8 MB
+    StackMem a(100000000); // 8 MB
     stack = &a; 
 
     const bool input_provided = argc == 2;

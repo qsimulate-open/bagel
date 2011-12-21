@@ -6,8 +6,8 @@
 #ifndef __src_macros_h
 #define __src_macros_h
 
-#define SCHWARZ_THRESH 0.0e-10
+#define SCHWARZ_THRESH 1.0e-10
 
-#define ZDOT_RETURN
+//#define ZDOT_RETURN
 
 #endif
