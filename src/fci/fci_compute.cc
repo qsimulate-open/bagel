@@ -357,11 +357,15 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
 }
 
 
+//
+// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm. 
+//
 void FCI::const_denom(shared_ptr<MOFile> Jop) {
 
-  vector<double> jop, kop;
+  vector<double> jop, kop, fk;
   jop.resize(norb_*norb_);
   kop.resize(norb_*norb_);
+  fk.resize(norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
       jop[i*norb_+j] = jop[j*norb_+i] = 0.5*Jop->mo2e(j, j, i, i);
@@ -372,28 +376,40 @@ void FCI::const_denom(shared_ptr<MOFile> Jop) {
       kop[i*norb_+j] = kop[j*norb_+i] = 0.5*Jop->mo2e(j, i, j, i);
     }
   }
+  for (int i = 0; i != norb_; ++i) {
+    fk[i] = 0.0;
+    for (int j = 0; j != norb_; ++j) {
+      fk[i] += kop[i*norb_+j];
+    }
+  }
   shared_ptr<Civec> tmp(new Civec(stringb_.size(), stringa_.size()));
   denom_ = tmp;
+  const int nspin = numofbits(stringa_.front()) - numofbits(stringb_.front());
+  const int nspin2 = nspin*nspin;
 
   double* iter = denom_->first();
   for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
     for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++iter) {
+      const int nopen = numofbits(iabit1^ibbit1);
+      const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
+      *iter = 0.0;
       unsigned int iabit1 = *ia;
       unsigned int ibbit1 = *ib;
       for (int i = 0; i != norb_; ++i, (iabit1 >>= 1), (ibbit1 >>= 1)) {
-        const unsigned int nia = (iabit1&1);
-        const unsigned int nib = (ibbit1&1);
-        *iter += Jop->mo1e(i,i) * (nia + nib);
+        const int nia = (iabit1&1);
+        const int nib = (ibbit1&1);
+        const int niab = nia + nib;
+        const int Ni = (nia ^ nib);
         unsigned int iabit2 = *ia;
         unsigned int ibbit2 = *ib;
-        for (int j = 0; j != norb_; ++j, (iabit2 >>= 1), (ibbit2 >>= 1)) {
-          const unsigned int nja = (iabit2&1);
-          const unsigned int njb = (ibbit2&1);
-          const unsigned int addj = ((nia & njb) << 1) + (nia & nja) + (nib & njb);
-          *iter += jop[j+norb_*i] * addj;
-          const unsigned int addk = (nia & (1^nja)) + (nib & (1^njb));
-          *iter += kop[j+norb_*i] * addk;
+        for (int j = 0; j != i; ++j, (iabit2 >>= 1), (ibbit2 >>= 1)) {
+          const int nja = (iabit2&1);
+          const int njb = (ibbit2&1);
+          const int Nj = (nja ^ njb);
+          const int addj = niab * (nja + njb); 
+          *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
         }
+        *iter += (Jop->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
       }
     }
   }
