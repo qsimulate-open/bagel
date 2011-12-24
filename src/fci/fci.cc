@@ -106,3 +106,25 @@ void FCI::const_lexical_mapping_() {
   }
 }
 
+
+void FCI::print_civectors(vector<shared_ptr<Civec> > vec, const double thr) const {
+  int j = 0;
+  for (auto iter = vec.begin(); iter != vec.end(); ++iter, ++j) {
+    cout << endl;
+    cout << "     * ci vector, state " << setw(3) << j << endl; 
+    const double* i = (*iter)->first();
+    multimap<double, tuple<double, int, int> > tmp;
+    for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
+      for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {
+        if (abs(*i) > thr) {
+          tmp.insert(make_pair(-abs(*i), make_tuple(*i, *ia, *ib))); 
+        }
+      }
+    }
+    for (auto iter = tmp.begin(); iter != tmp.end(); ++iter) {
+      cout << "       " << print_bit(get<1>(iter->second), get<2>(iter->second))
+           << "  " << setprecision(10) << setw(15) << get<0>(iter->second) << endl; 
+    }
+  }
+}
+

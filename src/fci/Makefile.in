@@ -70,7 +70,7 @@ ARFLAGS = cru
 libfci_a_AR = $(AR) $(ARFLAGS)
 libfci_a_LIBADD =
 am_libfci_a_OBJECTS = fci.$(OBJEXT) mofile.$(OBJEXT) \
-	fci_compute.$(OBJEXT) fci_init.$(OBJEXT)
+	fci_compute.$(OBJEXT) fci_init.$(OBJEXT) fci_rdm.$(OBJEXT)
 libfci_a_OBJECTS = $(am_libfci_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -184,7 +184,7 @@ top_srcdir = @top_srcdir@
 
 #INCLUDES = -I$(SRCDIR)/newint/src
 lib_LIBRARIES = libfci.a
-libfci_a_SOURCES = fci.cc mofile.cc fci_compute.cc fci_init.cc
+libfci_a_SOURCES = fci.cc mofile.cc fci_compute.cc fci_init.cc fci_rdm.cc
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -266,6 +266,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fci.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fci_compute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fci_init.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fci_rdm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mofile.Po@am__quote@
 
 .cc.o:

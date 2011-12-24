@@ -96,6 +96,21 @@ class DavidsonDiag {
       return out;
     };
 
+    // returns ci vector
+    std::vector<std::shared_ptr<T> > civec() {
+      std::vector<std::shared_ptr<T> > out;
+      for (int i = 0; i != nstate_; ++i) {
+        std::shared_ptr<T> tmp(new T(*c_.front()));
+        tmp->zero(); // <- waste of time 
+        int k = 0;
+        for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
+          tmp->daxpy(eig_[i*max_+k], **iter);
+        }
+        out.push_back(tmp);
+      }
+      return out;
+    };
+
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T> cc) { return cc->orthog(c_); }
 

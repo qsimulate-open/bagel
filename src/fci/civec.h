@@ -126,6 +126,10 @@ class Dvec {
         dvec_.push_back(c);
       }
     };
+    Dvec(std::vector<std::shared_ptr<Civec> > o) : lenb_(o.front()->lenb()), lena_(o.front()->lena()), ij_(o.size()) {
+      data_ = new double[1];
+      dvec_ = o;
+    };
     ~Dvec() {
       delete[] data_;
     };

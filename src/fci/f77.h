@@ -10,6 +10,8 @@ extern "C" {
  void dgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k, 
              const double* alpha, const double* a, const int* lda, const double* b, const int* ldb, 
              const double* beta, double* c, const int* ldc);
+ void dgemv_(const char*, const int*, const int*, const double*, const double*, const int*, const double*, const int*,
+             const double*, double*, const int*);
 };
 
 #endif

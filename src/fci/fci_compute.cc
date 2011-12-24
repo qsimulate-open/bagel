@@ -53,11 +53,12 @@ void FCI::compute() {
   shared_ptr<Dvec> e(new Dvec(lb, la, ij));
 
   // Creating an initial CI vector
-  shared_ptr<Dvec> cc(new Dvec(lb, la, num_state_)); // B runs first
+  shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, num_state_)); // B runs first
+  cc_ = cc_tmp;
   shared_ptr<Dvec> sigma(new Dvec(lb, la, num_state_));
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, num_state_, cc); 
+  generate_guess(nelea_-neleb_, num_state_, cc_); 
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
@@ -75,10 +76,10 @@ void FCI::compute() {
     int start = ::clock();
 
     // form a sigma vector given cc
-    form_sigma(cc, sigma, d, e, Jop, conv);
+    form_sigma(cc_, sigma, d, e, Jop, conv);
 
     // constructing Dvec's for Davidson
-    shared_ptr<Dvec> ccn(new Dvec(cc));
+    shared_ptr<Dvec> ccn(new Dvec(cc_));
     shared_ptr<Dvec> sigman(new Dvec(sigma));
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
 
@@ -100,15 +101,15 @@ void FCI::compute() {
       // denominator scaling 
       for (int ist = 0; ist != num_state_; ++ist) {
         if (conv[ist]) continue;
-        const int size = cc->data(ist)->size();
-        double* target_array = cc->data(ist)->first();
+        const int size = cc_->data(ist)->size();
+        double* target_array = cc_->data(ist)->first();
         double* source_array = errvec[ist]->first();
         double* denom_array = denom_->first();
         const double en = energies[ist];
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        davidson.orthog(cc->data(ist));
+        davidson.orthog(cc_->data(ist));
       }
     }
 
@@ -124,6 +125,15 @@ void FCI::compute() {
     if (*min_element(conv.begin(), conv.end())) break;
   }
   // main iteration ends here
+
+  vector<shared_ptr<Civec> > s = davidson.civec();
+  print_civectors(s);
+  shared_ptr<Dvec> t(new Dvec(s));
+  cc_ = t;
+
+#if 1
+  compute_rdm12(0);
+#endif
 }
 
 

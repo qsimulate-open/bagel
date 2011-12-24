@@ -26,6 +26,9 @@ class FCI {
     const std::shared_ptr<Geometry> geom_;
     const int num_state_;
 
+    // data
+    std::shared_ptr<Dvec> cc_;
+
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
     // string lists
@@ -42,7 +45,7 @@ class FCI {
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<unsigned int>& string,
-                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target);
+                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target, bool compress=true);
     // generate spin-adapted guess configurations
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
     // denominator
@@ -105,6 +108,7 @@ class FCI {
 
     // print functions
     void print_header() const;
+    void print_civectors(const std::vector<std::shared_ptr<Civec> >, const double thr = 0.05) const;
 
   public:
     FCI(const std::shared_ptr<Geometry>);
@@ -122,15 +126,27 @@ class FCI {
       }
       return out;
     };
+    std::string print_bit(unsigned int bit1, unsigned int bit2) const {
+      std::string out; 
+      for (int i = 0; i != norb_; ++i, bit1 >>=1, bit2 >>=1) {
+        if (bit1&1 && bit2&1) { out += "2"; }
+        else if (bit1&1) { out += "a"; }
+        else if (bit2&1) { out += "b"; }
+        else { out += "."; }
+      }
+      return out;
+    };
+    void compute_rdm12(const int);
 };
 
 
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
 void FCI::const_phis_(const std::vector<unsigned int>& string,
-      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& phi) {
+      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& phi, bool compress) {
 
-  phi.resize(norb_*norb_);
+  phi.clear();
+  phi.resize(compress ? norb_*(norb_+1)/2 : norb_*norb_);
   for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
     iter->reserve(string.size());
   }
@@ -138,7 +154,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       const unsigned int ibit = (1 << i);
-      if (ibit & *iter) {
+      if (ibit & *iter && compress) {
         const unsigned int source = lexical<spin>(*iter); 
         const unsigned int nbit = (ibit^*iter); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
@@ -148,13 +164,16 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
             const int minij = std::min(i,j); 
             const int maxij = std::max(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
-#if 0
-            std::cout << i << j << " ";
-            for (int k=0;k!=norb_;++k) std::cout << (((*iter)>>k)&1);
-            std::cout << " ";
-            for (int k=0;k!=norb_;++k) std::cout << ((mbit>>k)&1);
-            std::cout << " " << mbit << " " << sign(mbit, i, j) << " " << lexical<spin>(mbit) << std::endl;
-#endif
+          }
+        }
+      } else if (ibit & *iter) {
+        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int nbit = (ibit^*iter); // annihilated.
+        for (unsigned int j = 0; j != norb_; ++j) { // creation
+          const unsigned int jbit = (1 << j); 
+          if (!(jbit & nbit)) {
+            const unsigned int mbit = jbit^nbit;
+            phi[j+i*norb_].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       }
