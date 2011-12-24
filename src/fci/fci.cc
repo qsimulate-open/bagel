@@ -9,6 +9,9 @@
 #include <src/fci/comb.h>
 #include <boost/algorithm/combination.hpp>
 
+// TODO hardwired
+#include <src/fci/macros.h>
+
 using namespace boost;
 using namespace std;
 
@@ -16,7 +19,7 @@ static const Comb comb;
 
 FCI::FCI(const std::shared_ptr<Geometry> geom)
  : ref_(new SCF(geom)), geom_(geom), nelea_(geom_->nocc()/2), neleb_(geom_->nocc()/2),
-   ncore_(0), norb_(geom_->nbasis()), num_state_(8) {
+   ncore_(0), norb_(geom_->nbasis()), num_state_(NUM_STATE) {
   // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
 
   print_header();

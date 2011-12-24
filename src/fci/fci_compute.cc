@@ -11,8 +11,7 @@
 #include <src/util/davidson.h>
 
 // TODO hardwired
-#define MAX_ITER_FCI 100
-#define THREASH 1.0e-12 // variance
+#include <src/fci/macros.h>
 
 using namespace std;
 
@@ -109,6 +108,7 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
+        davidson.orthog(cc->data(ist));
       }
     }
 
