@@ -104,12 +104,30 @@ class Dvec {
         dvec_.push_back(c);
       }
     };
+    Dvec(const Dvec& o) : lenb_(o.lenb_), lena_(o.lena_), ij_(o.ij_) {
+      data_ = new double[lena_*lenb_*ij_];
+      double* tmp = data_;
+      for (int i = 0; i != ij_; ++i, tmp+=lenb_*lena_) {
+        std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
+        dvec_.push_back(c);
+      }
+      std::copy(o.data_, o.data_+lena_*lenb_*ij_, data_);
+    };
+    Dvec(std::shared_ptr<Dvec> o) : lenb_(o->lenb_), lena_(o->lena_), ij_(o->ij_) {
+      data_ = new double[1];
+      for (int i = 0; i != ij_; ++i) {
+        std::shared_ptr<Civec> c(new Civec(*(o->data(i))));
+        dvec_.push_back(c);
+      }
+    };
     ~Dvec() {
       delete[] data_;
     };
     std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
     void zero() { std::fill(data_, data_+lena_*lenb_*ij_, 0.0); };
     double* first() { return data_; };
+
+    std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
 
     int lena() const { return lena_; };
     int lenb() const { return lenb_; };

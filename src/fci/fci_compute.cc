@@ -26,7 +26,7 @@ static const string space3 = "   ";
 static int address(int i, int j) { assert(i <= j); return i+((j*(j+1))>>1); };
 
 void FCI::compute() {
-  const int num_state = 1; // TODO should be read from the input
+  const int num_state = 2; // TODO should be read from the input
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
@@ -61,12 +61,7 @@ void FCI::compute() {
   // find determinants that have small diagonal energies
   vector<pair<int, int> > det_seeds = detseeds(num_state*10);
   generate_guess(det_seeds, nelea_-neleb_, num_state, cc); 
-
-  // TODO This is only if RHF is valid and therefore wrong in general cases.
-  //      The right ways is to compute diagonal dinominators and select determinants
-  //      that have small values, and then spin adapt.
-  // TODO multiple state runs should be considered. At this moment, it is only partially..
-//cc->data(0)->element(0,0) = 1.0;
+  // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
   const double nuclear = geom_->nuclear_repulsion();
@@ -83,10 +78,10 @@ void FCI::compute() {
     // form a sigma vector given cc
     form_sigma(cc, sigma, d, e, Jop);
 
-// TODO TODO TODO -> this part is not multi-state 
-// perhaps split set and get functions in davidson.h
-    const vector<double> energies = davidson.compute(shared_ptr<Civec>(new Civec(*cc->data(0))),
-                                                     shared_ptr<Civec>(new Civec(*sigma->data(0))));
+    // constructing Dvec's for Davidson
+    shared_ptr<Dvec> ccn(new Dvec(cc));
+    shared_ptr<Dvec> sigman(new Dvec(sigma));
+    const vector<double> energies = davidson.compute(ccn->dvec(), sigman->dvec());
 
     // get residual and new vectors
     vector<shared_ptr<Civec> > errvec = davidson.residual();
@@ -95,6 +90,7 @@ void FCI::compute() {
     vector<double> errors;
     for (int i = 0; i != num_state; ++i) errors.push_back(errvec[i]->norm());
 
+    // TODO check convergence one by one
     if (*max_element(errors.begin(), errors.end()) < THREASH) {
       converged = true;
     } else { 
@@ -108,7 +104,6 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-  // TODO this will be changed to "add function in the future"
         davidson.orthog(cc->data(ist));
       }
     }
