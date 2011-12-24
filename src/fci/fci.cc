@@ -128,3 +128,8 @@ void FCI::print_civectors(vector<shared_ptr<Civec> > vec, const double thr) cons
   }
 }
 
+
+void FCI::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
+  timing.push_back(make_pair(label, (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC)));
+  time = ::clock();
+}

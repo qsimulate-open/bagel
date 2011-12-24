@@ -39,6 +39,7 @@ class MOFile {
     ~MOFile();
 
     void create_Jiiii(const int, const int);
+    const int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
     // strictly i <= j, k <= l

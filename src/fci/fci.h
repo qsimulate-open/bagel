@@ -107,12 +107,18 @@ class FCI {
     // run-time functions
     void form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<Dvec> sigma, std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e,
                     const std::vector<int>& conv);
+    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
+    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
     void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
     void sigma_2a2(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
+    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e);
+    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
+    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
 
     // print functions
     void print_header() const;
     void print_civectors(const std::vector<std::shared_ptr<Civec> >, const double thr = 0.05) const;
+    void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
     FCI(const std::shared_ptr<Geometry>);
