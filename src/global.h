@@ -24,7 +24,7 @@ void print_header() {
 
 void print_footer() {
   std::cout << std::endl;
-  std::cout << "  Normal termination." << std::endl;
+  std::cout << "  " << std::endl;
   std::cout << "  --------------------------------------------------" << std::endl;
   std::cout << std::endl;
 }

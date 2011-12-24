@@ -24,6 +24,7 @@ class FCI {
   protected:
     std::shared_ptr<SCF> ref_;
     const std::shared_ptr<Geometry> geom_;
+    const int num_state_;
 
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
@@ -43,7 +44,7 @@ class FCI {
     void const_phis_(const std::vector<unsigned int>& string,
                      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target);
     // generate spin-adapted guess configurations
-    void generate_guess(const std::vector<std::pair<int, int> >&, const int nspin, const int nstate, std::shared_ptr<Dvec>);
+    void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
     // denominator
     void const_denom(std::shared_ptr<MOFile>);
     // obtain determinants for guess generation
@@ -99,8 +100,8 @@ class FCI {
     unsigned int stringb(int i) const { return stringb_[i]; };
 
     // run-time functions
-    void form_sigma(std::shared_ptr<Dvec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>, std::shared_ptr<Dvec>,
-                    std::shared_ptr<MOFile>);
+    void form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<Dvec> sigma, std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e,
+                    std::shared_ptr<MOFile> Jop, const std::vector<int>& conv);
 
     // print functions
     void print_header() const;

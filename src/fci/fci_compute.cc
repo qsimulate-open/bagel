@@ -12,7 +12,7 @@
 
 // TODO hardwired
 #define MAX_ITER_FCI 100
-#define THREASH 1.0e-8 // variant
+#define THREASH 1.0e-12 // variance
 
 using namespace std;
 
@@ -26,7 +26,6 @@ static const string space3 = "   ";
 static int address(int i, int j) { assert(i <= j); return i+((j*(j+1))>>1); };
 
 void FCI::compute() {
-  const int num_state = 2; // TODO should be read from the input
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
@@ -55,47 +54,53 @@ void FCI::compute() {
   shared_ptr<Dvec> e(new Dvec(lb, la, ij));
 
   // Creating an initial CI vector
-  shared_ptr<Dvec> cc(new Dvec(lb, la, num_state)); // B runs first
-  shared_ptr<Dvec> sigma(new Dvec(lb, la, num_state));
+  shared_ptr<Dvec> cc(new Dvec(lb, la, num_state_)); // B runs first
+  shared_ptr<Dvec> sigma(new Dvec(lb, la, num_state_));
 
   // find determinants that have small diagonal energies
-  vector<pair<int, int> > det_seeds = detseeds(num_state*10);
-  generate_guess(det_seeds, nelea_-neleb_, num_state, cc); 
+  generate_guess(nelea_-neleb_, num_state_, cc); 
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
   const double nuclear = geom_->nuclear_repulsion();
 
   // Davidson utility
-  DavidsonDiag<Civec> davidson(num_state, MAX_ITER_FCI);
+  DavidsonDiag<Civec> davidson(num_state_, MAX_ITER_FCI);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
-  bool converged = false;
+  // 0 means not converged
+  vector<int> conv(num_state_,0);
+
   for (int iter = 0; iter != MAX_ITER_FCI; ++iter) { 
     int start = ::clock();
 
     // form a sigma vector given cc
-    form_sigma(cc, sigma, d, e, Jop);
+    form_sigma(cc, sigma, d, e, Jop, conv);
 
     // constructing Dvec's for Davidson
     shared_ptr<Dvec> ccn(new Dvec(cc));
     shared_ptr<Dvec> sigman(new Dvec(sigma));
-    const vector<double> energies = davidson.compute(ccn->dvec(), sigman->dvec());
+    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
     vector<shared_ptr<Civec> > errvec = davidson.residual();
 
     // compute errors
     vector<double> errors;
-    for (int i = 0; i != num_state; ++i) errors.push_back(errvec[i]->norm());
+    for (int i = 0; i != num_state_; ++i) {
+      errors.push_back(errvec[i]->variance());
+      if (errors[i] < THREASH) {
+        conv[i] = 1;
+      } else {
+        conv[i] = 0;
+      }
+    }
 
-    // TODO check convergence one by one
-    if (*max_element(errors.begin(), errors.end()) < THREASH) {
-      converged = true;
-    } else { 
+    if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling 
-      for (int ist = 0; ist != num_state; ++ist) {
+      for (int ist = 0; ist != num_state_; ++ist) {
+        if (conv[ist]) continue;
         const int size = cc->data(ist)->size();
         double* target_array = cc->data(ist)->first();
         double* source_array = errvec[ist]->first();
@@ -104,25 +109,27 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        davidson.orthog(cc->data(ist));
       }
     }
 
     // printing out
     int end = ::clock();
-    for (int i = 0; i != num_state; ++i) {
-      cout << indent << setw(5) << iter << setw(5) << i << setw(20) << fixed << setprecision(12) << energies[i]+nuclear << space3 
-                                        << setw(17) << errors[i] << setw(15) << setprecision(2)
+    if (num_state_ != 1 && iter) cout << endl;
+    for (int i = 0; i != num_state_; ++i) {
+      cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                                        << setw(17) << fixed << setprecision(8) << energies[i]+nuclear << space3 
+                                        << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
     }
-    if (converged) break;
+    if (*min_element(conv.begin(), conv.end())) break;
   }
   // main iteration ends here
 }
 
 
 void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
-                     shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<MOFile> Jop) { // d and e are scratch area for D and E intermediates 
+                     shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<MOFile> Jop,
+                     const vector<int>& conv) { // d and e are scratch area for D and E intermediates 
   const int la = d->lena();  
   const int lb = d->lenb();  
   const int ij = d->ij();
@@ -132,6 +139,7 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
 //#define TIMING
 
   for (int istate = 0; istate != nstate; ++istate) {
+    if (conv[istate]) continue;
     shared_ptr<Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 

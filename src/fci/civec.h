@@ -72,9 +72,14 @@ class Civec {
       const int unit = 1;
       return std::sqrt(ddot_(&lab, cc_, &unit, cc_, &unit));
     };
+    double variance() {
+      const int lab = lena_ * lenb_;
+      const int unit = 1;
+      return ddot_(&lab, cc_, &unit, cc_, &unit)/lab;
+    }
 
     // assumes that c is already orthogonal with each other.
-    void orthog(std::list<std::shared_ptr<Civec> > c) {
+    double orthog(std::list<std::shared_ptr<Civec> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
         const double scal = - this->ddot(**iter);
         this->daxpy(scal, **iter);
@@ -83,6 +88,7 @@ class Civec {
       const int lab = lena_ * lenb_;
       const int unit = 1;
       dscal_(&lab, &scal, cc_, &unit);
+      return 1.0/scal; 
     }
 };
 
@@ -128,6 +134,14 @@ class Dvec {
     double* first() { return data_; };
 
     std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
+    std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv) {
+      std::vector<std::shared_ptr<Civec> > out;
+      int i = 0;
+      for (auto iter = dvec_.begin(); iter != dvec_.end(); ++iter, ++i) {
+        if (conv[i] == 0) out.push_back(*iter);
+      }
+      return out;
+    };
 
     int lena() const { return lena_; };
     int lenb() const { return lenb_; };

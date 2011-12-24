@@ -16,7 +16,7 @@ static const Comb comb;
 
 FCI::FCI(const std::shared_ptr<Geometry> geom)
  : ref_(new SCF(geom)), geom_(geom), nelea_(geom_->nocc()/2), neleb_(geom_->nocc()/2),
-   ncore_(0), norb_(geom_->nbasis()) {
+   ncore_(0), norb_(geom_->nbasis()), num_state_(8) {
   // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
 
   print_header();
