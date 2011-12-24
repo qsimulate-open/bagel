@@ -16,6 +16,7 @@
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
 #include <src/fci/fci.h>
+#include <src/casscf/superci.h>
 #include <src/global.h>
 #include <src/stackmem.h>
 
@@ -49,6 +50,7 @@ int main(int argc, char** argv) {
     const bool use_hy2 = (bool)count_string(input, "HY2");
 
     const bool fci_card = (bool)count_string(input, "FCI");
+    const bool casscf_card = (bool)count_string(input, "CASSCF");
 
     typedef std::shared_ptr<Geometry> RefGeom;
     typedef std::shared_ptr<PGeometry> RefPGeom;
@@ -92,9 +94,12 @@ int main(int argc, char** argv) {
     } else if (depth_basis == 1) {
       if (!periodic) {
         RefGeom geom(new Geometry(input, 0));
-        if (!fci_card) {
+        if (!fci_card && !casscf_card) {
           SCF scf(geom);
           scf.compute();
+        } else if (casscf_card) {
+          SuperCI casscf(geom);
+          casscf.compute();
         } else {
           FCI fci(geom);
           fci.compute();
