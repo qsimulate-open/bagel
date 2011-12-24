@@ -58,11 +58,15 @@ void FCI::compute() {
   shared_ptr<Dvec> cc(new Dvec(lb, la, num_state)); // B runs first
   shared_ptr<Dvec> sigma(new Dvec(lb, la, num_state));
 
+  // find determinants that have small diagonal energies
+  vector<pair<int, int> > det_seeds = detseeds(num_state*10);
+  generate_guess(det_seeds, nelea_-neleb_, num_state, cc); 
+
   // TODO This is only if RHF is valid and therefore wrong in general cases.
   //      The right ways is to compute diagonal dinominators and select determinants
   //      that have small values, and then spin adapt.
   // TODO multiple state runs should be considered. At this moment, it is only partially..
-  cc->data(0)->element(0,0) = 1.0;
+//cc->data(0)->element(0,0) = 1.0;
 
   // nuclear energy retrieved from geometry
   const double nuclear = geom_->nuclear_repulsion();
@@ -357,67 +361,3 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
 }
 
 
-//
-// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm. 
-//
-void FCI::const_denom(shared_ptr<MOFile> Jop) {
-
-  vector<double> jop, kop, fk;
-  jop.resize(norb_*norb_);
-  kop.resize(norb_*norb_);
-  fk.resize(norb_);
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*Jop->mo2e(j, j, i, i);
-    }
-  }
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*Jop->mo2e(j, i, j, i);
-    }
-  }
-  for (int i = 0; i != norb_; ++i) {
-    fk[i] = 0.0;
-    for (int j = 0; j != norb_; ++j) {
-      fk[i] += kop[i*norb_+j];
-    }
-  }
-  shared_ptr<Civec> tmp(new Civec(stringb_.size(), stringa_.size()));
-  denom_ = tmp;
-  const int nspin = numofbits(stringa_.front()) - numofbits(stringb_.front());
-  const int nspin2 = nspin*nspin;
-
-  double* iter = denom_->first();
-  for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
-    for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++iter) {
-      const int nopen = numofbits(iabit1^ibbit1);
-      const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
-      *iter = 0.0;
-      unsigned int iabit1 = *ia;
-      unsigned int ibbit1 = *ib;
-      for (int i = 0; i != norb_; ++i, (iabit1 >>= 1), (ibbit1 >>= 1)) {
-        const int nia = (iabit1&1);
-        const int nib = (ibbit1&1);
-        const int niab = nia + nib;
-        const int Ni = (nia ^ nib);
-        unsigned int iabit2 = *ia;
-        unsigned int ibbit2 = *ib;
-        for (int j = 0; j != i; ++j, (iabit2 >>= 1), (ibbit2 >>= 1)) {
-          const int nja = (iabit2&1);
-          const int njb = (ibbit2&1);
-          const int Nj = (nja ^ njb);
-          const int addj = niab * (nja + njb); 
-          *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
-        }
-        *iter += (Jop->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
-      }
-    }
-  }
-}
-
-
-void FCI::print_header() const {
-  cout << "  ---------------------------" << endl;
-  cout << "        FCI calculation      " << endl;
-  cout << "  ---------------------------" << endl << endl;
-}

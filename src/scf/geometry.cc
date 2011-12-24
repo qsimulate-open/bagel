@@ -216,6 +216,11 @@ Geometry::Geometry(const string s, const int levl)
   nirrep_ = plist_->nirrep();
   // Misc
   cabs_merged_ = false;
+
+  cout << endl;
+  cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
+  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl;
+  cout << endl;
 }
 
 Geometry::~Geometry() {

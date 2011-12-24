@@ -40,10 +40,14 @@ class FCI {
     void const_string_lists_();
     // single displacement vectors Phi's
     template <int>
-    void const_phis_(const std::vector<unsigned int>&,
-                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >&);
+    void const_phis_(const std::vector<unsigned int>& string,
+                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target);
+    // generate spin-adapted guess configurations
+    void generate_guess(const std::vector<std::pair<int, int> >&, const int nspin, const int nstate, std::shared_ptr<Dvec>);
     // denominator
     void const_denom(std::shared_ptr<MOFile>);
+    // obtain determinants for guess generation
+    std::vector<std::pair<int, int> > detseeds(const int ndet);
 
     // numbers of electrons
     const int nelea_;
@@ -54,8 +58,6 @@ class FCI {
     // configuration list
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
-//  std::vector<std::vector<int[4] > > phia_;
-//  std::vector<std::vector<int[4] > > phib_;
 
     int numofbits(unsigned int bits) { //
 #ifndef USE_SSE42_INTRINSICS
@@ -82,6 +84,13 @@ class FCI {
         if (bit & 1) { out += zkl(k,i, spin); ++k; }
       return out;
     };
+
+    // this is slow but robust implementation of bit to number converter.
+    std::vector<int> bit_to_numbers(unsigned int bit) {
+      std::vector<int> out;
+      for (int i = 0; bit != 0u; ++i, bit >>= 1) if (bit & 1) out.push_back(i); 
+      return out;
+    };
   
     // some utility functions
     unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
@@ -104,6 +113,14 @@ class FCI {
     // static constants
     static const int Alpha = 0;
     static const int Beta = 1;
+
+    std::string print_bit(unsigned int bit) const {
+      std::string out; 
+      for (int i = 0; i != norb_; ++i, bit >>=1) {
+        if (bit&1) { out += "1"; } else { out += "."; }
+      }
+      return out;
+    };
 };
 
 
@@ -149,7 +166,8 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
     std::sort(iter->begin(), iter->end());
   }
 #endif
-}
+};
+
 
 #endif
 
