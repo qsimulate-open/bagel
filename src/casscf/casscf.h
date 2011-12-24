@@ -12,10 +12,12 @@
 #include <cassert>
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
+#include <src/fci/fci.h>
 
 class CASSCF {
   protected:
     const std::shared_ptr<SCF> ref_;
+    std::shared_ptr<FCI> fci_;
     const std::shared_ptr<Geometry> geom_;
     virtual void update_orbitals_() { assert(false); };
     virtual void update_civectors_() { assert(false); };

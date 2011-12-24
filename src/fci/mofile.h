@@ -10,14 +10,14 @@
 #include <memory>
 #include <cassert>
 #include <src/util/filename.h>
-#include <src/scf/coeff.h>
+#include <src/scf/scf.h>
 #include <src/scf/geometry.h>
 
 class MOFile {
   protected:
     const std::shared_ptr<Geometry> geom_;
+    const std::shared_ptr<SCF> ref_;
     std::shared_ptr<std::fstream> file_;
-    const std::shared_ptr<Coeff> coeff_; 
     size_t sizeij_;
     long filesize_;
     std::string filename_;
@@ -35,10 +35,11 @@ class MOFile {
     };
 
   public:
-    MOFile(const std::shared_ptr<Geometry>, const std::shared_ptr<Coeff>);
+    MOFile(const std::shared_ptr<Geometry>, const std::shared_ptr<SCF>);
     ~MOFile();
 
-    void create_Jiiii(const int, const int);
+    // creates integral files and returns the core energy.
+    double create_Jiiii(const int, const int);
     const int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };

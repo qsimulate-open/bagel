@@ -17,6 +17,7 @@ class Coeff : public Matrix1e {
     ~Coeff();
 
     Matrix1e form_density_rhf() const;
+    Matrix1e form_core_density_rhf() const;
 };
 
 #endif

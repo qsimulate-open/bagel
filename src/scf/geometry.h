@@ -78,6 +78,10 @@ class Geometry {
     const std::string basisfile() const { return basisfile_; };
     const std::string cabsfile() const { return cabsfile_; };
 
+    // TODO for some reasons needed now in CASSCF
+    void set_nocc(const int i) { nocc_ = i; };
+    void set_basis(const int i) { nbasis_ = i; };
+
     // The position of the specific funciton in the basis set.
     const std::vector<std::vector<int> > offsets() const { return offsets_; };
     const std::vector<std::vector<int> > cabs_offsets() const { return cabs_offsets_; };

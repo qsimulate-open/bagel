@@ -41,3 +41,18 @@ Matrix1e Coeff::form_density_rhf() const {
 }
  
 
+Matrix1e Coeff::form_core_density_rhf() const {
+  const int nocc = geom_->nfrc() / 2;
+  assert(geom_->nfrc() % 2 == 0);
+  const double one = 1.0;
+  const double zero = 0.0;
+
+  Matrix1e out(geom_);
+  double* out_data = out.data();
+
+  dgemm_("N", "T", &nbasis_, &nbasis_, &nocc, &one, data_, &nbasis_, data_, &nbasis_, &zero, out_data, &nbasis_); 
+
+  return out;
+}
+ 
+

@@ -27,17 +27,18 @@ void SuperCI::update_civectors_() {
 }
 
 void SuperCI::compute() {
-  // first compute reference.
-  ref_->compute();
 
   // first perform CASCI
+#if 0
   streambuf* backup = cout.rdbuf();
   streambuf* null;
   cout.rdbuf(null);
+#endif
 
-  shared_ptr<FCI> fci(new FCI(geom_));
 
+#if 0
   cout.rdbuf(backup);
+#endif
 
 
 }

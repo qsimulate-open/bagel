@@ -20,11 +20,17 @@
 #include <src/fci/civec.h>
 #include <src/fci/mofile.h>
 
+
 class FCI {
+
   protected:
+    // reference
     std::shared_ptr<SCF> ref_;
+    // core energy
     const std::shared_ptr<Geometry> geom_;
     const int num_state_;
+
+    void create_Jiiii();
 
     // CI vector at convergence
     std::shared_ptr<Dvec> cc_;
@@ -40,6 +46,7 @@ class FCI {
     std::shared_ptr<Civec> denom_;
 
     // some init functions
+    void common_init();
     // lexical maps (Zkl)
     void const_lexical_mapping_();
     // alpha and beta string lists
@@ -60,6 +67,9 @@ class FCI {
     const int neleb_;
     const int ncore_;
     const int norb_;
+
+    // core
+    double core_energy_;
 
     // configuration list
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
@@ -122,8 +132,16 @@ class FCI {
 
   public:
     FCI(const std::shared_ptr<Geometry>);
+    FCI(const std::shared_ptr<Geometry>, std::shared_ptr<SCF>);
     ~FCI();
     void compute();
+
+    // returns members
+    int norb() const { return norb_; };
+    int ncore() const { return ncore_; };
+    double core_energy() const { return core_energy_; };
+    // sets members
+    void set_core_energy(const double a) { core_energy_ = a; };
 
     // static constants
     static const int Alpha = 0;

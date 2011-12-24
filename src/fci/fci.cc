@@ -18,10 +18,22 @@ using namespace std;
 static const Comb comb;
 
 FCI::FCI(const std::shared_ptr<Geometry> geom)
- : ref_(new SCF(geom)), geom_(geom), nelea_(geom_->nocc()/2), neleb_(geom_->nocc()/2),
-   ncore_(0), norb_(geom_->nbasis()), num_state_(NUM_STATE) {
+ : ref_(new SCF(geom)), geom_(geom), nelea_(geom_->nocc()/2 - geom->nfrc()/2), neleb_(geom_->nocc()/2 - geom->nfrc()/2),
+   ncore_(geom->nfrc()/2), norb_(geom_->nbasis() - geom->nfrc()/2), num_state_(NUM_STATE) {
   // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
+  ref_->compute();
+  common_init();
+}
 
+FCI::FCI(const std::shared_ptr<Geometry> geom, shared_ptr<SCF> r)
+ : ref_(r), geom_(geom), nelea_(geom_->nocc()/2 - geom->nfrc()/2), neleb_(geom_->nocc()/2 - geom->nfrc()/2),
+   ncore_(geom->nfrc()/2), norb_(geom_->nbasis() - geom->nfrc()/2), num_state_(NUM_STATE) {
+  // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
+  common_init();
+}
+
+
+void FCI::common_init() {
   print_header();
 
   cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl;
@@ -38,6 +50,7 @@ FCI::FCI(const std::shared_ptr<Geometry> geom)
   const_phis_<1>(stringb_, phib_);
   cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
   cout << endl;
+
 }
 
 FCI::~FCI() {

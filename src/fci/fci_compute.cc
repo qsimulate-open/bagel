@@ -32,17 +32,13 @@ void FCI::compute() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
 
-  // first obtain reference function
-  ref_->compute();
-  shared_ptr<Coeff> cmo = ref_->coeff(); 
-
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  shared_ptr<MOFile> Jop(new MOFile(geom_, cmo));
+  shared_ptr<MOFile> Jop(new MOFile(geom_, ref_));
   jop_ = Jop;
 
   // right now full basis is used. 
-  jop_->create_Jiiii(ncore_, ncore_+norb_);
+  core_energy_ = jop_->create_Jiiii(ncore_, ncore_+norb_);
 
   // create denominator here. Stored in shared<Civec> denom_
   const_denom();
@@ -66,7 +62,7 @@ void FCI::compute() {
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
-  const double nuclear = geom_->nuclear_repulsion();
+  const double nuc_core = geom_->nuclear_repulsion() + core_energy();
 
   // Davidson utility
   DavidsonDiag<Civec> davidson(num_state_, MAX_ITER_FCI);
@@ -122,7 +118,7 @@ void FCI::compute() {
     if (num_state_ != 1 && iter) cout << endl;
     for (int i = 0; i != num_state_; ++i) {
       cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                                        << setw(17) << fixed << setprecision(8) << energies[i]+nuclear << space3 
+                                        << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << space3 
                                         << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
     }
@@ -131,7 +127,7 @@ void FCI::compute() {
   // main iteration ends here
 
   vector<shared_ptr<Civec> > s = davidson.civec();
-  print_civectors(s, 0.1);
+  print_civectors(s, 0.05);
   shared_ptr<Dvec> t(new Dvec(s));
   cc_ = t;
 

@@ -16,7 +16,7 @@ using namespace std;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Coeff> cmo) : geom_(geom), coeff_(cmo) {
+MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<SCF> ref) : geom_(geom), ref_(ref) {
   {
     Filename tmpf;
     filename_ = tmpf.filename_next();
@@ -45,7 +45,7 @@ MOFile::~MOFile() {
 
 // I don't care the efficiency at all!!
 // >>>>>>>>>>>>  ALL INCORE!!! <<<<<<<<<<<
-void MOFile::create_Jiiii(const int nstart, const int nfence) {
+double MOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
 
   const int nocc = nfence - nstart;
@@ -60,14 +60,25 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   const int unit = 1;
   const double one = 1.0;
   const double zero = 0.0;
-  double* cdata = coeff_->data() + nstart*nbasis;
+  double* cdata = ref_->coeff()->data() + nstart*nbasis;
 
   cout << "  - AO integrals are computed and stored in core" << endl << endl;
 
   // one electron part
-  Hcore hcore(geom_);
-  hcore.symmetrize();
-  dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,hcore.data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
+  double core_energy = 0.0;
+  {
+    shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
+    if (nstart != 0) {
+      shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
+      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->shwarz()));
+      core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
+//    set_core_energy(core_energy);
+cout << setprecision(12) << core_energy << endl;
+      fock0 = fock1;
+    }
+    fock0->symmetrize();
+    dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
+  }
   mo1e_.resize(nocc*nocc);
   dgemm_("t","n",&nocc,&nocc,&nbasis,&one,cdata,&nbasis,aobuff,&nbasis,&zero,&mo1e_[0],&nocc);
 
@@ -166,6 +177,6 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
   }
   copy(buf.begin(), buf.end(), mo1e_.begin());
   delete[] first;
-
+  return core_energy; // TODO this is not a good way of implementation...
 }
 
