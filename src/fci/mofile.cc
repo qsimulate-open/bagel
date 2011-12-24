@@ -133,6 +133,7 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // storing unpacked integrals
   mo1e_unpacked_.resize(mm);
+  copy(mo1e_.begin(), mo1e_.end(), mo1e_unpacked_.begin());
   mo2e_unpacked_.resize(mm*mm);
   copy(first, first+mm*mm, &(mo2e_unpacked_[0]));
 
@@ -161,7 +162,6 @@ void MOFile::create_Jiiii(const int nstart, const int nfence) {
       for (int k=0; k!=nocc; ++k) {
         buf[ij] -= 0.5*first[(k+j*nocc)*mm+(k+i*nocc)];
       }
-      mo1e_unpacked_[i+j*nocc] = mo1e_unpacked_[j+i*nocc] = buf[ij]; 
     }
   }
   copy(buf.begin(), buf.end(), mo1e_.begin());
