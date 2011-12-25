@@ -20,6 +20,8 @@
 #include <src/global.h>
 #include <src/stackmem.h>
 
+#include <src/util/input.h>
+
 using namespace std;
 
 StackMem* stack;
@@ -34,24 +36,47 @@ int main(int argc, char** argv) {
   try {
     print_header();
 
-    StackMem a(100000000); // 8 MB
-    stack = &a; 
-
     const bool input_provided = argc == 2;
     if (!input_provided) {
       throw runtime_error("no input file provided");
     }
     const string input = argv[1];
 
-    const int depth_basis = count_string(input, "Basis");
+    shared_ptr<InputData> idata(new InputData(input));
+    
+    StackMem a(100000000); // 8 MB
+    stack = &a; 
 
+    const bool fci_card = idata->exist("fci"); 
+    const bool casscf_card = idata->exist("casscf");
+
+    shared_ptr<Geometry> geom(new Geometry(idata));
+    list<pair<string, multimap<string, string> > > keys = idata->data();
+
+    bool scf_done = false;
+    bool casscf_done = false;
+    shared_ptr<SCF> scf;
+    shared_ptr<FCI> fci;
+
+    for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
+      if (iter->first == "hf") {
+        shared_ptr<SCF> scf_(new SCF(geom)); scf = scf_;
+        scf->compute();
+      } else if (iter->first == "fci") {
+        if (scf) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, scf)); fci = fci_; }
+        else     { shared_ptr<FCI> fci_(new FCI(iter->second, geom)); fci = fci_; }
+        fci->compute();
+      }
+    }
+    print_footer();
+
+    // end of the main file
+
+#if 0
+    const bool use_hy2 = (bool)count_string(input, "HY2");
+    const int depth_basis = count_string(input, "Basis");
     const bool periodic = (bool)count_string(input, "Periodic");
     const bool domp2 = (bool)count_string(input, "MP2");
-    const bool use_hy2 = (bool)count_string(input, "HY2");
-
-    const bool fci_card = (bool)count_string(input, "FCI");
-    const bool casscf_card = (bool)count_string(input, "CASSCF");
-
     typedef std::shared_ptr<Geometry> RefGeom;
     typedef std::shared_ptr<PGeometry> RefPGeom;
     typedef std::shared_ptr<PSCF_DISK> RefPSCF_DISK;
@@ -118,8 +143,9 @@ int main(int argc, char** argv) {
       PMP2 pmp2(pscf->geom(), pscf->coeff(), pscf->eig(), pscf->ao_eri(), use_hy2);
       pmp2.compute();
     }
-
     print_footer();
+#endif
+
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

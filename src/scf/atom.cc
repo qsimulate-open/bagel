@@ -78,7 +78,9 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
     regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
     regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
     regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
-    regex atom_line("Atom:" + nm );
+    string nnm = nm;
+    nnm[0] = toupper(nnm[0]); 
+    regex atom_line("Atom:" + nnm );
  
     string buffer;
     while (!ifs.eof()) {

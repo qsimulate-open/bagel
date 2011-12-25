@@ -17,6 +17,7 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <src/util/input.h>
 #include <src/fci/civec.h>
 #include <src/fci/mofile.h>
 
@@ -28,7 +29,9 @@ class FCI {
     std::shared_ptr<SCF> ref_;
     // core energy
     const std::shared_ptr<Geometry> geom_;
-    const int num_state_;
+    int num_state_;
+    int max_iter_;
+    double thresh_;
 
     void create_Jiiii();
 
@@ -36,6 +39,8 @@ class FCI {
     std::shared_ptr<Dvec> cc_;
     // MO integrals 
     std::shared_ptr<MOFile> jop_;
+    // input
+    std::multimap<std::string, std::string> idata_; 
 
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
@@ -63,10 +68,10 @@ class FCI {
     std::vector<std::pair<int, int> > detseeds(const int ndet);
 
     // numbers of electrons
-    const int nelea_;
-    const int neleb_;
-    const int ncore_;
-    const int norb_;
+    int nelea_;
+    int neleb_;
+    int ncore_;
+    int norb_;
 
     // core
     double core_energy_;
@@ -131,8 +136,8 @@ class FCI {
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
-    FCI(const std::shared_ptr<Geometry>);
-    FCI(const std::shared_ptr<Geometry>, std::shared_ptr<SCF>);
+    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>);
+    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<SCF>);
     ~FCI();
     void compute();
 

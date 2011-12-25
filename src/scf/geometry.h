@@ -11,6 +11,7 @@
 #include <src/scf/atom.h>
 #include <src/scf/petite.h>
 #include <memory>
+#include <src/util/input.h>
 
 class Geometry {
   protected:
@@ -54,6 +55,7 @@ class Geometry {
 
   public:
     Geometry(const std::string, const int level);
+    Geometry(const std::shared_ptr<InputData> inpt);
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
@@ -81,6 +83,7 @@ class Geometry {
     // TODO for some reasons needed now in CASSCF
     void set_nocc(const int i) { nocc_ = i; };
     void set_basis(const int i) { nbasis_ = i; };
+    int num_count_ncore(); // also set nfrc_
 
     // The position of the specific funciton in the basis set.
     const std::vector<std::vector<int> > offsets() const { return offsets_; };

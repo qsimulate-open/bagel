@@ -72,8 +72,6 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
       shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->shwarz()));
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
-//    set_core_energy(core_energy);
-cout << setprecision(12) << core_energy << endl;
       fock0 = fock1;
     }
     fock0->symmetrize();

@@ -8,16 +8,16 @@
 using namespace std;
 
 AtomMap::AtomMap () {
-  atommap.insert(make_pair("H" ,  1));
-  atommap.insert(make_pair("He",  2));
-  atommap.insert(make_pair("Li",  3));
-  atommap.insert(make_pair("Be",  4));
-  atommap.insert(make_pair("B" ,  5));
-  atommap.insert(make_pair("C" ,  6));
-  atommap.insert(make_pair("N" ,  7));
-  atommap.insert(make_pair("O" ,  8));
-  atommap.insert(make_pair("F" ,  9));
-  atommap.insert(make_pair("Ne", 10));
+  atommap.insert(make_pair("h" ,  1));
+  atommap.insert(make_pair("he",  2));
+  atommap.insert(make_pair("li",  3));
+  atommap.insert(make_pair("be",  4));
+  atommap.insert(make_pair("b" ,  5));
+  atommap.insert(make_pair("c" ,  6));
+  atommap.insert(make_pair("n" ,  7));
+  atommap.insert(make_pair("o" ,  8));
+  atommap.insert(make_pair("f" ,  9));
+  atommap.insert(make_pair("ne", 10));
 
   angmap.insert(make_pair("s", 0));
   angmap.insert(make_pair("p", 1));

@@ -55,7 +55,8 @@ void FCI::compute_rdm12(const int ist) {
   const int nn = mm*mm;
   cout << endl << "     recomputing energy using RDMs : " << setprecision(12) << setw(18) << 
             geom_->nuclear_repulsion() + ddot_(&mm, jop_->mo1e_unpacked_ptr(), &unit, rdm1->first(), &unit)
-                                       + 0.5*ddot_(&nn, jop_->mo2e_unpacked_ptr(), &unit, rdm2->first(), &unit) << endl; 
+                                       + 0.5*ddot_(&nn, jop_->mo2e_unpacked_ptr(), &unit, rdm2->first(), &unit)
+                                       + core_energy_ << endl; 
 #endif
 }
 

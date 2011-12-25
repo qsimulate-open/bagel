@@ -8,33 +8,49 @@
 #include <src/fci/fci.h>
 #include <src/fci/comb.h>
 #include <boost/algorithm/combination.hpp>
+#include <boost/lexical_cast.hpp>
 
-// TODO hardwired
-#include <src/fci/macros.h>
-
-using namespace boost;
 using namespace std;
 
 static const Comb comb;
 
-FCI::FCI(const std::shared_ptr<Geometry> geom)
- : ref_(new SCF(geom)), geom_(geom), nelea_(geom_->nocc()/2 - geom->nfrc()/2), neleb_(geom_->nocc()/2 - geom->nfrc()/2),
-   ncore_(geom->nfrc()/2), norb_(geom_->nbasis() - geom->nfrc()/2), num_state_(NUM_STATE) {
-  // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
+FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom)
+ : idata_(idat), ref_(new SCF(geom)), geom_(geom) {
   ref_->compute();
   common_init();
 }
 
-FCI::FCI(const std::shared_ptr<Geometry> geom, shared_ptr<SCF> r)
- : ref_(r), geom_(geom), nelea_(geom_->nocc()/2 - geom->nfrc()/2), neleb_(geom_->nocc()/2 - geom->nfrc()/2),
-   ncore_(geom->nfrc()/2), norb_(geom_->nbasis() - geom->nfrc()/2), num_state_(NUM_STATE) {
-  // ^- TODO somehow we need the input interface to number of eletrons in alpha and beta!!!
+FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, shared_ptr<SCF> r)
+ : idata_(idat), ref_(r), geom_(geom) {
   common_init();
 }
 
 
 void FCI::common_init() {
   print_header();
+
+  {
+    ncore_ = 0;
+    auto iter = idata_.find("frozen");
+    if (iter != idata_.end() && iter->second == "true") ncore_ = geom_->num_count_ncore() / 2;
+  }{
+    num_state_ = 1;
+    auto iter = idata_.find("nstate");
+    if (iter != idata_.end()) num_state_ = boost::lexical_cast<int>(iter->second);
+  }{
+    max_iter_ = 100;
+    auto iter = idata_.find("maxiter");
+    if (iter != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
+  }{
+    thresh_ = 1.0e-12;
+    auto iter = idata_.find("thresh");
+    if (iter != idata_.end()) thresh_ = boost::lexical_cast<double>(iter->second);
+  }
+
+  // TODO
+  norb_ = geom_->nbasis() - ncore_;
+  nelea_ = geom_->nocc()/2 - ncore_;
+  neleb_ = geom_->nocc()/2 - ncore_;
 
   cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl;
   cout << endl;
@@ -73,13 +89,13 @@ void FCI::const_string_lists_() {
   do {
     for (int i=0; i!=nelea_; ++i) *sa += (1 << data[i]);
     ++sa;
-  } while (next_combination(data.begin(), data.begin()+nelea_, data.end()));
+  } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
 
   sa = stringb_.begin(); 
   do {
     for (int i=0; i!=neleb_; ++i) *sa += (1 << data[i]);
     ++sa;
-  } while (next_combination(data.begin(), data.begin()+neleb_, data.end()));
+  } while (boost::next_combination(data.begin(), data.begin()+neleb_, data.end()));
 
 #if 0
   for (auto i = stringa_.begin(); i != stringa_.end(); ++i) {

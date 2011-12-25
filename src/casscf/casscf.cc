@@ -22,10 +22,11 @@ CASSCF::CASSCF(const std::shared_ptr<Geometry> geom) :
   shared_ptr<Geometry> local_geom(new Geometry(*geom_));
   // TODO input should be parsed.
   // TODO currently they are hard wired.
-//local_geom->set_nocc(10);
+#if 0
   shared_ptr<FCI> fci_tmp(new FCI(local_geom, ref_));
   fci_ = fci_tmp;
 fci_->compute();
+#endif
 
 };
 

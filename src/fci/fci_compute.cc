@@ -10,9 +10,6 @@
 #include <src/fci/fci.h>
 #include <src/util/davidson.h>
 
-// TODO hardwired
-#include <src/fci/macros.h>
-
 // toggle for timing print out.
 static const bool tprint = false;
 
@@ -65,14 +62,14 @@ void FCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + core_energy();
 
   // Davidson utility
-  DavidsonDiag<Civec> davidson(num_state_, MAX_ITER_FCI);
+  DavidsonDiag<Civec> davidson(num_state_, max_iter_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
   // 0 means not converged
   vector<int> conv(num_state_,0);
 
-  for (int iter = 0; iter != MAX_ITER_FCI; ++iter) { 
+  for (int iter = 0; iter != max_iter_; ++iter) { 
     int start = ::clock();
 
     // form a sigma vector given cc
@@ -90,7 +87,7 @@ void FCI::compute() {
     vector<double> errors;
     for (int i = 0; i != num_state_; ++i) {
       errors.push_back(errvec[i]->variance());
-      if (errors[i] < THREASH) {
+      if (errors[i] < thresh_) {
         conv[i] = 1;
       } else {
         conv[i] = 0;

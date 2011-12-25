@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
@@ -19,6 +20,125 @@ using namespace boost;
 
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Atom> RefAtom;
+
+Geometry::Geometry(const std::shared_ptr<InputData> inpt)
+  : spherical_(true), input_(""), level_(0), lmax_(0) {
+
+  multimap<string, string> geominfo = inpt->get_input("molecule");
+
+  // cartesian or not.
+  {
+  auto iter = geominfo.find("cartesian");
+  if (iter != geominfo.end() && iter->second == "true") {
+    cout << "  Cartesian basis functions are used" << endl;
+    spherical_ = false;
+  }
+  }{
+  // basis file
+  auto iter = geominfo.find("basis");
+  if (iter == geominfo.end())
+    throw runtime_error("There is no basis specification");
+    basisfile_ = iter->second;
+  }{
+  // symmmetry
+  auto iter = geominfo.find("symmetry");
+  if (iter == geominfo.end()) {
+    cout << "  C1 symmetry is used." << endl;
+    symmetry_ = "c1";
+  } else {
+    symmetry_ = iter->second;
+  }
+  }
+
+
+  AtomMap tmp;
+  map<string, int> amap = tmp.atommap;
+
+  // read geometry
+  nbasis_ = 0;
+  ncabs_ = 0;
+  nocc_ = 0;
+  nfrc_ = 0;
+
+  pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
+  for (auto iter = bound.first; iter != bound.second; ++iter) { 
+    smatch what;
+    const regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+    auto start = iter->second.begin();
+    auto end = iter->second.end();
+    if (regex_search(start, end, what, atom_reg)) {
+      const string aname(what[1].first, what[1].second);
+      const string x_str(what[2].first, what[2].second);
+      const string y_str(what[3].first, what[3].second);
+      const string z_str(what[4].first, what[4].second);
+      vector<double> positions;
+      positions.push_back(lexical_cast<double>(x_str));
+      positions.push_back(lexical_cast<double>(y_str));
+      positions.push_back(lexical_cast<double>(z_str));
+
+      {
+        RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
+
+        map<string, int>::const_iterator aiter = amap.find(aname);
+        assert(aiter != amap.end());
+        nocc_ += aiter->second;
+
+        const vector<RefShell> tmp = catom->shells(); 
+        int cc = 0;
+        vector<int> coffsets;
+        for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
+          coffsets.push_back(nbasis_ + cc);
+          const int ang = (*iter)->angular_number();
+          const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
+          cc += angsize * (*iter)->num_contracted();
+        }
+
+        lmax_ = max(lmax_, catom->lmax());
+        nbasis_ += catom->nbasis();
+        offsets_.push_back(coffsets);
+        atoms_.push_back(catom); 
+      }
+      if (!cabsfile_.empty()){
+        RefAtom catom(new Atom(spherical_, aname, positions, cabsfile_));
+
+        map<string, int>::const_iterator aiter = amap.find(aname);
+        assert(aiter != amap.end());
+
+        const vector<RefShell> tmp = catom->shells(); 
+        int cc = 0;
+        vector<int> coffsets;
+        for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
+          coffsets.push_back(ncabs_ + cc);
+          const int ang = (*iter)->angular_number();
+          const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
+          cc += angsize * (*iter)->num_contracted();
+        }
+
+        cabs_lmax_ = max(lmax_, catom->lmax());
+        ncabs_ += catom->nbasis();
+        cabs_offsets_.push_back(coffsets);
+        cabs_atoms_.push_back(catom); 
+      }
+    } else {
+      throw runtime_error("One of the atom lines is corrupt");
+    } 
+  }
+
+  print_atoms();
+  nuclear_repulsion_ = compute_nuclear_repulsion();
+
+  // symmetry set-up
+  std::shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
+  plist_ = tmpp;
+  nirrep_ = plist_->nirrep();
+  // Misc
+  cabs_merged_ = false;
+
+  cout << endl;
+  cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
+  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl;
+}
+
 
 Geometry::Geometry(const string s, const int levl)
   : spherical_(true), input_(s), level_(levl), lmax_(0) {
@@ -223,6 +343,7 @@ Geometry::Geometry(const string s, const int levl)
   cout << endl;
 }
 
+
 Geometry::~Geometry() {
 
 }
@@ -256,4 +377,15 @@ void Geometry::print_atoms() const {
     (*iter)->print();
   cout << endl;
 
+}
+
+
+int Geometry::num_count_ncore() {
+  int out = 0;
+  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
+    if ((*iter)->atom_number() >= 2 && (*iter)->atom_number() <= 10) out += 2; 
+    if ((*iter)->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
+  }
+  nfrc_ = out;
+  return out;
 }
