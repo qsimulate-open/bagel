@@ -56,13 +56,19 @@ int main(int argc, char** argv) {
     bool scf_done = false;
     bool casscf_done = false;
     shared_ptr<SCF> scf;
+    shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      if (iter->first == "hf") {
+      const string method = iter->first;
+      if (method == "hf") {
         shared_ptr<SCF> scf_(new SCF(geom)); scf = scf_;
         scf->compute();
-      } else if (iter->first == "fci") {
+      } else if (method == "casscf") {
+        if (scf) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, scf)); casscf = casscf_; }
+        else     { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom)); casscf = casscf_; }
+        casscf->compute();
+      } else if (method == "fci") {
         if (scf) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, scf)); fci = fci_; }
         else     { shared_ptr<FCI> fci_(new FCI(iter->second, geom)); fci = fci_; }
         fci->compute();

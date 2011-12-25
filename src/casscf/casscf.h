@@ -16,15 +16,30 @@
 
 class CASSCF {
   protected:
+    // input
+    std::multimap<std::string, std::string> idata_; 
+
+    // some internal information
+    int nocc_; // sum of nact_ + nclosed_
+    int nclosed_;
+    int nact_;
+    int nvirt_;
+    int nbasis_;
+
     const std::shared_ptr<SCF> ref_;
     std::shared_ptr<FCI> fci_;
     const std::shared_ptr<Geometry> geom_;
     virtual void update_orbitals_() { assert(false); };
     virtual void update_civectors_() { assert(false); };
     void print_header() const;
+    void common_init();
+
+    void mute_stdcout();
+    void resume_stdcout();
 
   public:
-    CASSCF(const std::shared_ptr<Geometry> geom);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<SCF> ref);
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };

@@ -33,6 +33,8 @@ void FCI::common_init() {
     ncore_ = 0;
     auto iter = idata_.find("frozen");
     if (iter != idata_.end() && iter->second == "true") ncore_ = geom_->num_count_ncore() / 2;
+    auto iter2 = idata_.find("ncore");
+    if (iter2 != idata_.end()) ncore_ = boost::lexical_cast<int>(iter2->second);
   }{
     num_state_ = 1;
     auto iter = idata_.find("nstate");
@@ -45,10 +47,14 @@ void FCI::common_init() {
     thresh_ = 1.0e-12;
     auto iter = idata_.find("thresh");
     if (iter != idata_.end()) thresh_ = boost::lexical_cast<double>(iter->second);
+  }{
+    // mainly for CASSCF interface
+    norb_ = geom_->nbasis() - ncore_;
+    auto iter = idata_.find("norb");
+    if (iter != idata_.end()) norb_ = boost::lexical_cast<int>(iter->second);
   }
 
-  // TODO
-  norb_ = geom_->nbasis() - ncore_;
+  // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;
   neleb_ = geom_->nocc()/2 - ncore_;
 
