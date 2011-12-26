@@ -14,6 +14,7 @@
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
+#include <src/stackmem.h>
 
 using namespace std;
 using namespace boost;
@@ -21,33 +22,46 @@ using namespace boost;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Atom> RefAtom;
 
+extern StackMem* stack;
+
 Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   : spherical_(true), input_(""), level_(0), lmax_(0) {
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
-  // cartesian or not.
-  {
-  auto iter = geominfo.find("cartesian");
-  if (iter != geominfo.end() && iter->second == "true") {
-    cout << "  Cartesian basis functions are used" << endl;
-    spherical_ = false;
-  }
-  }{
-  // basis file
-  auto iter = geominfo.find("basis");
-  if (iter == geominfo.end())
-    throw runtime_error("There is no basis specification");
+  { // cartesian or not.
+    auto iter = geominfo.find("cartesian");
+    if (iter != geominfo.end() && iter->second == "true") {
+      cout << "  Cartesian basis functions are used" << endl;
+      spherical_ = false;
+    }
+  }{ // basis file
+    auto iter = geominfo.find("basis");
+    if (iter == geominfo.end())
+      throw runtime_error("There is no basis specification");
     basisfile_ = iter->second;
-  }{
-  // symmmetry
-  auto iter = geominfo.find("symmetry");
-  if (iter == geominfo.end()) {
-    cout << "  C1 symmetry is used." << endl;
-    symmetry_ = "c1";
-  } else {
-    symmetry_ = iter->second;
-  }
+  }{ // symmmetry
+    auto iter = geominfo.find("symmetry");
+    if (iter == geominfo.end()) {
+      cout << "  C1 symmetry is used." << endl;
+      symmetry_ = "c1";
+    } else {
+      symmetry_ = iter->second;
+    }
+  }{ // stack
+    double size = 1.0e6;
+    auto iter = geominfo.find("stack");
+    if (iter != geominfo.end()) {
+      string p = iter->second;
+      if (p.find("m") != string::npos) {
+        size = 1.0e6*boost::lexical_cast<int>(p.erase(p.size()-1));
+      } else if (p.find("g") != string::npos) {
+        size = 1.0e9*boost::lexical_cast<int>(p.erase(p.size()-1));
+      }
+    }
+    StackMem* a = new StackMem(static_cast<size_t>(size));
+    cout << "  Stack memory of " << setprecision(2) << fixed << size*8.0e-6 << " MB allocated" << endl << endl; 
+    stack = a; 
   }
 
 
@@ -345,7 +359,7 @@ Geometry::Geometry(const string s, const int levl)
 
 
 Geometry::~Geometry() {
-
+  delete stack;
 }
 
 

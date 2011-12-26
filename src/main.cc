@@ -43,9 +43,6 @@ int main(int argc, char** argv) {
     const string input = argv[1];
 
     shared_ptr<InputData> idata(new InputData(input));
-    
-    StackMem a(100000000); // 8 MB
-    stack = &a; 
 
     const bool fci_card = idata->exist("fci"); 
     const bool casscf_card = idata->exist("casscf");
