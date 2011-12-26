@@ -36,9 +36,9 @@ void FCI::common_init() {
     auto iter2 = idata_.find("ncore");
     if (iter2 != idata_.end()) ncore_ = boost::lexical_cast<int>(iter2->second);
   }{
-    num_state_ = 1;
+    nstate_ = 1;
     auto iter = idata_.find("nstate");
-    if (iter != idata_.end()) num_state_ = boost::lexical_cast<int>(iter->second);
+    if (iter != idata_.end()) nstate_ = boost::lexical_cast<int>(iter->second);
   }{
     max_iter_ = 100;
     auto iter = idata_.find("maxiter");
@@ -57,10 +57,12 @@ void FCI::common_init() {
   // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;
   neleb_ = geom_->nocc()/2 - ncore_;
+  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
 
   // resizing rdm vectors (with null pointers)
-  rdm1_.resize(num_state_);
-  rdm2_.resize(num_state_);
+  rdm1_.resize(nstate_);
+  rdm2_.resize(nstate_);
+  energy_.resize(nstate_);
 
   cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl;
   cout << endl;

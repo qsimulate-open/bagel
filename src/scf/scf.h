@@ -28,6 +28,7 @@ class SCF {
     int max_iter_;
     double thresh_overlap_;
     double thresh_scf_;
+    bool density_change_;
 
     std::vector<double> shwarz_;
     void init_shwarz();

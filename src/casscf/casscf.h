@@ -29,6 +29,7 @@ class CASSCF {
     int nbasis_;
     int nstate_;
     int max_iter_;
+    double thresh_;
 
     const std::shared_ptr<SCF> ref_;
     std::shared_ptr<FCI> fci_;

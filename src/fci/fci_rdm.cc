@@ -12,7 +12,17 @@ static const double one = 1.0;
 static const double zero = 0.0;
 
 void FCI::compute_rdm12() {
-  for (int i=0; i!=num_state_; ++i) compute_rdm12(i);
+  // Needs initialization here because we use daxpy.
+  // For nstate_ == 1, rdm1_av_ = rdm1_[0]. 
+  if (!rdm1_av_ && nstate_ > 1) {
+    shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_)); 
+    shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_)); 
+    rdm1_av_ = rdm1;
+    rdm2_av_ = rdm2;
+    rdm1_av_->zero();
+    rdm2_av_->zero();
+  }
+  for (int i=0; i!=nstate_; ++i) compute_rdm12(i);
 }
 
 void FCI::compute_rdm12(const int ist) {
@@ -34,10 +44,10 @@ void FCI::compute_rdm12(const int ist) {
   sigma_2a2(cc, d);
 
   // 1RDM
-  shared_ptr<RDM1> rdm1(new RDM1(norb_));
+  shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
   dgemv_("T", &len, &ij, &one, d->data(0)->first(), &len, cc->first(), &unit, &zero, rdm1->first(), &unit); 
   // 2RDM
-  shared_ptr<RDM2> rdm2(new RDM2(norb_));
+  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
   dgemm_("T", "N", &ij, &ij, &len, &one, d->data(0)->first(), &len, d->data(0)->first(), &len,
           &zero, rdm2->first(), &ij);
   // put int diagonal into 2RDM
@@ -52,6 +62,13 @@ void FCI::compute_rdm12(const int ist) {
   // setting to private members.
   rdm1_[ist] = rdm1;
   rdm2_[ist] = rdm2;
+  if (nstate_ != 1) {
+    rdm1_av_->daxpy(weight_[ist], rdm1);
+    rdm2_av_->daxpy(weight_[ist], rdm2);
+  } else {
+    rdm1_av_ = rdm1;
+    rdm2_av_ = rdm2;
+  }
 
 #if 1
   // recomputing energy

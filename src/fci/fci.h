@@ -33,7 +33,7 @@ class FCI {
     // geometry file
     const std::shared_ptr<Geometry> geom_;
     // number of states
-    int num_state_;
+    int nstate_;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -46,12 +46,18 @@ class FCI {
     int norb_;
     // core
     double core_energy_; // <- usually initialized in create_iiii
+    // total energy
+    std::vector<double> energy_;
 
     // CI vector at convergence
     std::shared_ptr<Dvec> cc_;
     // RDMs; should be resized in constructors
-    std::vector<std::shared_ptr<RDM1> > rdm1_;
-    std::vector<std::shared_ptr<RDM2> > rdm2_;
+    std::vector<std::shared_ptr<RDM<1> > > rdm1_;
+    std::vector<std::shared_ptr<RDM<2> > > rdm2_;
+    // state averaged RDM
+    std::vector<double> weight_;
+    std::shared_ptr<RDM<1> > rdm1_av_;
+    std::shared_ptr<RDM<2> > rdm2_av_;
     // MO integrals 
     std::shared_ptr<MOFile> jop_;
 
@@ -157,8 +163,11 @@ class FCI {
     // sets members
     void set_core_energy(const double a) { core_energy_ = a; };
     // rdms
-    void compute_rdm12(); // compute all states at once
-    void compute_rdm12(const int);
+    void compute_rdm12(); // compute all states at once + averaged rdm
+    void compute_rdm12(const int istate);
+
+    // returns total energy
+    std::vector<double> energy() const { return energy_; };
 
     // static constants
     static const int Alpha = 0;

@@ -45,6 +45,10 @@ SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
     auto iter1 = idata_.find("thresh_scf");
     if (iter  != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter->second);
     if (iter1 != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter1->second);
+  } {
+    density_change_ = false;
+    auto iter = idata_.find("diis");
+    if (iter  != idata_.end() && iter->second == "density") density_change_ = true; 
   }
   RefTildeX tildex_tmp(new TildeX(overlap_, thresh_overlap_));
   tildex_ = tildex_tmp;
@@ -103,8 +107,12 @@ void SCF::compute() {
     coeff_ = new_coeff;
     RefMatrix1e new_density(new Matrix1e(coeff_->form_density_rhf()));
 
-    RefMatrix1e error_vector(new Matrix1e(*fock * *aodensity_ * *overlap_ - *overlap_ * *aodensity_ * *fock));
- // RefMatrix1e error_vector(new Matrix1e(*new_density - *aodensity_));
+    RefMatrix1e error_vector;
+    if (!density_change_) {
+      RefMatrix1e tmp1(new Matrix1e(*fock * *aodensity_ * *overlap_ - *overlap_ * *aodensity_ * *fock)); error_vector = tmp1;
+    } else {
+      RefMatrix1e tmp1(new Matrix1e(*new_density - *aodensity_)); error_vector = tmp1;
+    }
     const double error = error_vector->rms();
 
     double energy = (*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();

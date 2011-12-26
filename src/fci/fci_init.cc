@@ -8,9 +8,9 @@
 #include <src/fci/fci.h>
 #include <src/rysint/eribatch.h>
 #include <boost/algorithm/combination.hpp>
+#include <iostream>
 
 using namespace std;
-using namespace boost;
 
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
@@ -28,7 +28,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
   // TODO currently this is only for singlet states, sorry...
   assert(nspin == 0);
 
-  int ndet = num_state_*10;
+  int ndet = nstate_*10;
   start_over:
   vector<pair<int, int> > bits = detseeds(ndet);
 
@@ -68,7 +68,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
         const double sign = pow(-1.0, numofbits((init_alpha^ialpha)/2));
         out->data(oindex)->element(lexical<1>(ibeta), lexical<0>(ialpha)) = sign;
         ++icnt;
-      } while (next_combination(open.begin(), open.begin()+nalpha, open.end()));
+      } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
 
       // scale to make the vector normalized
       const double factor = 1.0/sqrt(static_cast<double>(icnt));
@@ -86,7 +86,6 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       ndet *= 4;
       goto start_over;
     }
-//    throw runtime_error("increase the number of determinants in the FCI guess generation");
     cout << endl;
   }
 

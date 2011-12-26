@@ -35,7 +35,10 @@ void FCI::compute() {
   jop_ = Jop;
 
   // right now full basis is used. 
+  int start_int = ::clock();
   core_energy_ = jop_->create_Jiiii(ncore_, ncore_+norb_);
+  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
+          static_cast<double>(::clock() - start_int)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 
   // create denominator here. Stored in shared<Civec> denom_
   const_denom();
@@ -50,24 +53,24 @@ void FCI::compute() {
   shared_ptr<Dvec> e(new Dvec(lb, la, ij));
 
   // Creating an initial CI vector
-  shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, num_state_)); // B runs first
+  shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, nstate_)); // B runs first
   cc_ = cc_tmp;
-  shared_ptr<Dvec> sigma(new Dvec(lb, la, num_state_));
+  shared_ptr<Dvec> sigma(new Dvec(lb, la, nstate_));
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, num_state_, cc_); 
+  generate_guess(nelea_-neleb_, nstate_, cc_); 
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + core_energy();
 
   // Davidson utility
-  DavidsonDiag<Civec> davidson(num_state_, max_iter_);
+  DavidsonDiag<Civec> davidson(nstate_, max_iter_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
   // 0 means not converged
-  vector<int> conv(num_state_,0);
+  vector<int> conv(nstate_,0);
 
   for (int iter = 0; iter != max_iter_; ++iter) { 
     int start = ::clock();
@@ -85,14 +88,14 @@ void FCI::compute() {
 
     // compute errors
     vector<double> errors;
-    for (int i = 0; i != num_state_; ++i) {
+    for (int i = 0; i != nstate_; ++i) {
       errors.push_back(errvec[i]->variance());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
 
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling 
-      for (int ist = 0; ist != num_state_; ++ist) {
+      for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         const int size = cc_->data(ist)->size();
         double* target_array = cc_->data(ist)->first();
@@ -111,12 +114,13 @@ void FCI::compute() {
 
     // printing out
     int end = ::clock();
-    if (num_state_ != 1 && iter) cout << endl;
-    for (int i = 0; i != num_state_; ++i) {
+    if (nstate_ != 1 && iter) cout << endl;
+    for (int i = 0; i != nstate_; ++i) {
       cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                                         << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << space3 
                                         << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
+      energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;
   }

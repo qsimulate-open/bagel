@@ -42,6 +42,11 @@ void CASSCF::common_init() {
     auto iter = idata_.find("nstate");
     if (iter != idata_.end()) nstate_ = boost::lexical_cast<int>(iter->second);
   }
+  {// get nstate from the input
+    thresh_ = 1.0e-8;
+    auto iter = idata_.find("thresh");
+    if (iter != idata_.end()) thresh_ = boost::lexical_cast<double>(iter->second);
+  }
 
   // nocc from the input. If not present, full valence active space is generated.
   {
@@ -89,7 +94,6 @@ void CASSCF::common_init() {
     shared_ptr<FCI> fci_tmp(new FCI(fullci_data, geom_, ref_));
     fci_ = fci_tmp;
   }
-//fci_->compute();
   resume_stdcout();
 
 };
@@ -107,15 +111,17 @@ void CASSCF::print_header() const {
 }
 
 static streambuf* backup_stream_;
+static ofstream* ofs_;
 
 void CASSCF::mute_stdcout() {
-  backup_stream_ = cout.rdbuf();
-  streambuf* null;
-  cout.rdbuf(null);
+  ofstream* ofs(new ofstream("casscf.log"));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
 void CASSCF::resume_stdcout() {
   cout.rdbuf(backup_stream_);
+  ofs_->close();
 }
 

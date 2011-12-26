@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <src/util/input.h>
+#include <boost/regex.hpp>
 
 using namespace std;
 using namespace boost;
@@ -23,6 +24,18 @@ InputData::InputData(const string filename) : inputfile_(filename) {
   while(1) {
     string sline;
     if (!getline(ifs, sline)) break;
+    // get rid of comments
+    const regex comm("^(.*)//(.*)$");
+    const string ss = sline;
+    auto start = ss.begin();  
+    auto end = ss.end();  
+    smatch what;
+    while (regex_search(start, end, what, comm)) {
+      sline = what[1];
+      const string sk = sline;
+      start = sk.begin();
+      end   = sk.end();
+    }
     content += sline;
   }
 
