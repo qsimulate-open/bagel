@@ -5,7 +5,6 @@
 
 #include <src/pscf/pscf.h>
 #include <src/pscf/pcoeff.h>
-#include <src/scf/scf_macros.h>
 #include <src/pscf/pdiis.h>
 #include <src/rysint/eribatch.h>
 #include <iostream>
@@ -14,6 +13,7 @@
 
 // TODO
 #define MAX_ITER_SCF 200
+#define SCF_THRESH 1.0e-8
 
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;

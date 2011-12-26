@@ -4,7 +4,6 @@
 //
 
 #include <src/scf/scf.h>
-#include <src/scf/scf_macros.h>
 #include <src/rysint/eribatch.h>
 #include <src/scf/diis.h>
 #include <iostream>
@@ -27,9 +26,6 @@ typedef std::shared_ptr<TildeX> RefTildeX;
 SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
  : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
 
-  RefTildeX tildex_tmp(new TildeX(overlap_));
-  tildex_ = tildex_tmp;
-
   eig_ = new double[geom_->nbasis()];
   hcore_->symmetrize();
 
@@ -50,6 +46,8 @@ SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
     if (iter  != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter->second);
     if (iter1 != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter1->second);
   }
+  RefTildeX tildex_tmp(new TildeX(overlap_, thresh_overlap_));
+  tildex_ = tildex_tmp;
 
   init_shwarz();
 }

@@ -11,7 +11,6 @@
 #include <src/pmp2/pmp2.h>
 #include <src/pmp2/f77.h>
 #include <src/macros.h>
-#include <src/scf/scf_macros.h>
 #include <src/util/paircompfile.h>
 #include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>

@@ -10,13 +10,12 @@
 #include <cassert>
 #include <cmath>
 #include <vector>
-#include <src/scf/scf_macros.h>
 
 using namespace std;
 
 #define USE_CANONICAL
 
-TildeX::TildeX(const std::shared_ptr<Overlap> olp) : Matrix1e(olp->geom())  {
+TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix1e(olp->geom())  {
 
   // Use canonical orthogonalization (Szabo pp.144)
   nbasis_ = geom_->nbasis();
@@ -40,7 +39,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp) : Matrix1e(olp->geom())  {
   // counting how many orbital must be deleted owing to the linear dependency
   int cnt = 0;
   for (int i = 0; i != ndim_; ++i) {
-    if (fabs(eig[i]) < largest * THRESH_OVERLAP) ++cnt;
+    if (fabs(eig[i]) < largest * thresh) ++cnt;
     else break;
   }
   if (cnt != 0) 

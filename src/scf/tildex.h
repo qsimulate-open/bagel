@@ -14,7 +14,7 @@ class TildeX : public Matrix1e {
   protected:
 
   public:
-    TildeX(const std::shared_ptr<Overlap>);
+    TildeX(const std::shared_ptr<Overlap>, const double thresh);
     ~TildeX();
 
 };
