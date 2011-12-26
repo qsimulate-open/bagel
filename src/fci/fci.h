@@ -165,6 +165,8 @@ class FCI {
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
+    std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };
+    std::shared_ptr<RDM<2> > rdm2_av() { return rdm2_av_; };
 
     // returns total energy
     std::vector<double> energy() const { return energy_; };

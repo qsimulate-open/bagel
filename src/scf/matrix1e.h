@@ -32,6 +32,7 @@ class Matrix1e {
     const int ndim() const { return ndim_; }; 
     const int mdim() const { return mdim_; }; 
     double* data() const { return data_; };
+    double& element(int i, int j) { return data_[i+j*ndim_]; };
 
     void symmetrize();
     void diagonalize(double*);
@@ -39,6 +40,7 @@ class Matrix1e {
 
     Matrix1e operator*(const Matrix1e&) const;
     Matrix1e operator%(const Matrix1e&) const; // caution
+    Matrix1e operator^(const Matrix1e&) const; // caution
     Matrix1e operator+(const Matrix1e&) const;
     Matrix1e& operator+=(const Matrix1e&);
     Matrix1e& operator=(const Matrix1e&);

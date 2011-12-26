@@ -7,7 +7,6 @@
 //  - void daxpy(double, const T&) // added to self
 //  - copy constructor (values are not used, though).
 //  - void orthog(list<shared_ptr<T> >) 
-//  - void denom_scaling()
 //
 
 #ifndef __NEWINT_UTIL_DAVIDSON

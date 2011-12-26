@@ -203,6 +203,27 @@ Matrix1e Matrix1e::operator%(const Matrix1e& o) const {
 }
 
 
+Matrix1e Matrix1e::operator^(const Matrix1e& o) const {
+  Matrix1e out(geom_);
+  const int unit = 1;
+  const double one = 1.0;
+  const double zero = 0.0;
+  const int l = ndim_;
+  const int m = mdim_; 
+  assert(mdim_ == o.mdim());
+  const int n = o.ndim(); 
+  const double* odata = o.data();
+  double* outdata = out.data_;
+
+  dgemm_("N", "T", &l, &n, &m, &one, data_, &nbasis_, odata, &nbasis_, &zero, outdata, &nbasis_); 
+
+  out.ndim_ = l;
+  out.mdim_ = n;
+    
+  return out;
+}
+
+
 void Matrix1e::diagonalize(double* eig) {
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)

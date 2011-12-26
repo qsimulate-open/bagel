@@ -29,6 +29,7 @@ class CASSCF {
     int nbasis_;
     int nstate_;
     int max_iter_;
+    int max_micro_iter_;
     double thresh_;
 
     const std::shared_ptr<SCF> ref_;
@@ -41,6 +42,8 @@ class CASSCF {
 
     void mute_stdcout();
     void resume_stdcout();
+
+    std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool active_only = false) const;
 
   public:
     CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);

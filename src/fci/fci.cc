@@ -29,30 +29,14 @@ FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geo
 void FCI::common_init() {
   print_header();
 
-  {
-    ncore_ = 0;
-    auto iter = idata_.find("frozen");
-    if (iter != idata_.end() && iter->second == "true") ncore_ = geom_->num_count_ncore() / 2;
-    auto iter2 = idata_.find("ncore");
-    if (iter2 != idata_.end()) ncore_ = boost::lexical_cast<int>(iter2->second);
-  }{
-    nstate_ = 1;
-    auto iter = idata_.find("nstate");
-    if (iter != idata_.end()) nstate_ = boost::lexical_cast<int>(iter->second);
-  }{
-    max_iter_ = 100;
-    auto iter = idata_.find("maxiter");
-    if (iter != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
-  }{
-    thresh_ = 1.0e-12;
-    auto iter = idata_.find("thresh");
-    if (iter != idata_.end()) thresh_ = boost::lexical_cast<double>(iter->second);
-  }{
-    // mainly for CASSCF interface
-    norb_ = geom_->nbasis() - ncore_;
-    auto iter = idata_.find("norb");
-    if (iter != idata_.end()) norb_ = boost::lexical_cast<int>(iter->second);
-  }
+cout << "a" << endl;
+  const bool frozen = read_input<bool>(idata_, "frozen", false);
+cout << frozen << endl;
+  ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore()/2 : 0));
+  nstate_ = read_input<int>(idata_, "nstate", 1);
+  max_iter_ = read_input<int>(idata_, "maxiter", 100);
+  thresh_ = read_input<double>(idata_, "thresh", 1.0e-12);
+  norb_ = read_input<int>(idata_, "norb", geom_->nbasis()-ncore_);
 
   // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;

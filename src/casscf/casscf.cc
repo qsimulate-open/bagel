@@ -32,43 +32,33 @@ void CASSCF::common_init() {
   if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment."); 
   print_header();
 
-  {// get maxiter from the input
-    max_iter_ = 100;
-    auto iter = idata_.find("maxiter");
-    if (iter != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
-  }
-  {// get nstate from the input
-    nstate_ = 1;
-    auto iter = idata_.find("nstate");
-    if (iter != idata_.end()) nstate_ = boost::lexical_cast<int>(iter->second);
-  }
-  {// get nstate from the input
-    thresh_ = 1.0e-8;
-    auto iter = idata_.find("thresh");
-    if (iter != idata_.end()) thresh_ = boost::lexical_cast<double>(iter->second);
-  }
+  // get maxiter from the input
+  max_iter_ = read_input<int>(idata_, "maxiter", 100);
+  // get maxiter from the input
+  max_micro_iter_ = read_input<int>(idata_, "maxmicro", 100);
+  // get nstate from the input
+  nstate_ = read_input<int>(idata_, "nstate", 1);
+  // get thresh (for macro iteration) from the input
+  thresh_ = read_input<double>(idata_, "thresh", 1.0e-8);
 
   // nocc from the input. If not present, full valence active space is generated.
-  {
-    auto iter = idata_.find("nocc");
-    if (iter != idata_.end()) {
-      nocc_ = boost::lexical_cast<int>(iter->second);
-      if (nocc_ <= 0) throw runtime_error("It appears that nocc <= 0. Check nocc value.");
-    } else {
-      cout << "    * full valence occupied space generated for nocc." << endl;
-      nocc_ = geom_->num_count_full_valence_nocc(); 
-    }
+  nocc_ = read_input<int>(idata_, "nocc", 0);
+  if (nocc_ < 0) {
+    throw runtime_error("It appears that nocc < 0. Check nocc value.");
+  } else if (nocc_ == 0) {
+    cout << "    * full valence occupied space generated for nocc." << endl;
+    nocc_ = geom_->num_count_full_valence_nocc(); 
   }
+
   // nclosed from the input. If not present, full core space is generated.
-  {
-    auto iter = idata_.find("nclosed");
-    if (iter != idata_.end()) {
-      nclosed_ = boost::lexical_cast<int>(iter->second);
-    } else {
-      nclosed_ = geom_->num_count_ncore() / 2; 
-      cout << "    * full core space generated for nclosed." << endl;
-    }
+  nclosed_ = read_input<int>(idata_, "nclosed", 0);
+  if (nclosed_ < 0) {
+    throw runtime_error("It appears that nclosed < 0. Check nocc value.");
+  } else if (nclosed_ == 0) {
+    cout << "    * full core space generated for nclosed." << endl;
+    nclosed_ = geom_->num_count_ncore() / 2; 
   }
+
   nact_ = nocc_ - nclosed_;
   if (nact_ <= 0) throw runtime_error("It appears that nact <= 0. Check the nocc and nclosed values");
   nbasis_ = geom_->nbasis();
@@ -114,7 +104,7 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 void CASSCF::mute_stdcout() {
-  ofstream* ofs(new ofstream("casscf.log"));
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
@@ -122,6 +112,24 @@ void CASSCF::mute_stdcout() {
 
 void CASSCF::resume_stdcout() {
   cout.rdbuf(backup_stream_);
-  ofs_->close();
+  delete ofs_;
+}
+
+
+shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool active_only) const {
+  // first make 1RDM in MO
+  shared_ptr<Matrix1e> mo_rdm1(new Matrix1e(geom_));
+  if (!active_only) {
+    for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 2.0; 
+  }
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nact_; ++j) {
+      mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i); 
+    }
+  }
+  // transform into AO basis
+  const shared_ptr<Coeff> coeff = ref_->coeff();
+  shared_ptr<Matrix1e> ao_rdm1(new Matrix1e(*coeff * *mo_rdm1 ^ *coeff)); // TODO make sure when overlap is truncated
+  return ao_rdm1;
 }
 

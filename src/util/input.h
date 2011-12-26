@@ -12,6 +12,7 @@
 #include <list>
 #include <string>
 #include <stdexcept>
+#include <boost/lexical_cast.hpp>
 
 class InputData {
   protected:
@@ -38,6 +39,13 @@ class InputData {
 
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > > data() { return data_; };
 
+};
+
+template <typename T> T read_input(std::multimap<std::string, std::string> idat, const std::string key, const T defvalue) {
+  T out = defvalue;
+  auto iter = idat.find(key);
+  if (iter != idat.end()) out = boost::lexical_cast<T>(iter->second);
+  return out;
 };
 
 #endif

@@ -38,6 +38,27 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     }
     content += sline;
   }
+  // true false to 1 and 0 to be friendly to lexical_cast which does not accept true/false
+  {
+    const regex reg_true("^(.*)=(\\s*)(true)(\\s*);(.*)$");
+    const regex reg_false("^(.*)=(\\s*)(false)(\\s*);(.*)$");
+    const string ss = content;
+    auto start = ss.begin();
+    auto end = ss.end();
+    smatch what;
+    while (regex_search(start, end, what, reg_true)) {
+      const string sk = what[1] + "=1;" + what[5];  
+      start = sk.begin();
+      end = sk.end();
+      content = sk;
+    }
+    while (regex_search(start, end, what, reg_false)) {
+      const string sk = what[1] + "=0;" + what[5];  
+      start = sk.begin();
+      end = sk.end();
+      content = sk;
+    }
+  }
 
   // first split with { and }
   vector<string> blocks;
