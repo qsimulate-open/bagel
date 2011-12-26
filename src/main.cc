@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const string method = iter->first;
       if (method == "hf") {
-        shared_ptr<SCF> scf_(new SCF(geom)); scf = scf_;
+        shared_ptr<SCF> scf_(new SCF(iter->second, geom)); scf = scf_;
         scf->compute();
       } else if (method == "casscf") {
         if (scf) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, scf)); casscf = casscf_; }

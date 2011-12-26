@@ -12,6 +12,9 @@
 #include <iomanip>
 #include <algorithm>
 
+// TODO
+#define MAX_ITER_SCF 200
+
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<PGeometry> RefPGeometry;

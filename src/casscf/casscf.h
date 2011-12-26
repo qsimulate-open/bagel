@@ -10,6 +10,8 @@
 #define __NEWINT_CASSCF_CASSCF_H
 
 #include <cassert>
+#include <vector>
+#include <memory>
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
 #include <src/fci/fci.h>
@@ -25,6 +27,8 @@ class CASSCF {
     int nact_;
     int nvirt_;
     int nbasis_;
+    int nstate_;
+    int max_iter_;
 
     const std::shared_ptr<SCF> ref_;
     std::shared_ptr<FCI> fci_;

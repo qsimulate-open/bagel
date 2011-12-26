@@ -37,11 +37,16 @@ void SuperCI::update_civectors_() {
 
 void SuperCI::compute() {
 
-  // first perform CASCI
+  // first perform CASCI to obtain RDMs
+//mute_stdcout();
+  fci_->compute();
+  fci_->compute_rdm12();
+//resume_stdcout();
+  cout << "    * Initial CASCI RDMs are generated" << endl << endl;
 
+  for (int it = 0; it != max_iter_; ++it) {
+    int start = ::clock();
 
-#if 0
-#endif
-
+  }
 
 }

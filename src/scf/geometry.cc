@@ -150,7 +150,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl;
+  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl << endl;
 }
 
 
@@ -353,7 +353,7 @@ Geometry::Geometry(const string s, const int levl)
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl;
+  cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl << endl;
   cout << endl;
 }
 

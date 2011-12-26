@@ -14,10 +14,10 @@
 
 void print_header() {
   std::cout << std::endl; 
-  std::cout << "  --------------------------------------------------" << std::endl;
-  std::cout << "  This is the package       ** Poly-R12 **          " << std::endl;
-  std::cout << "  written by Toru Shiozaki (shiozaki.toru@gmail.com)" << std::endl;
-  std::cout << "  --------------------------------------------------" << std::endl;
+  std::cout << "  ===============================================================" << std::endl;
+  std::cout << "    Code name: White Rabit (since 2009)                          " << std::endl;
+  std::cout << "        \"Oh dear! Oh dear! I shall be too late!\"               " << std::endl;
+  std::cout << "  ===============================================================" << std::endl;
   std::cout << std::endl;
 }
 
@@ -25,7 +25,7 @@ void print_header() {
 void print_footer() {
   std::cout << std::endl;
   std::cout << "  " << std::endl;
-  std::cout << "  --------------------------------------------------" << std::endl;
+  std::cout << "  ===============================================================" << std::endl;
   std::cout << std::endl;
 }
 

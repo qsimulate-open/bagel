@@ -11,6 +11,10 @@ static const int unit = 1;
 static const double one = 1.0;
 static const double zero = 0.0;
 
+void FCI::compute_rdm12() {
+  for (int i=0; i!=num_state_; ++i) compute_rdm12(i);
+}
+
 void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);
   
@@ -45,10 +49,10 @@ void FCI::compute_rdm12(const int ist) {
     }
   }
 
-#if 0
-  rdm1->print();
-  rdm2->print();
-#endif
+  // setting to private members.
+  rdm1_[ist] = rdm1;
+  rdm2_[ist] = rdm2;
+
 #if 1
   // recomputing energy
   const int mm = norb_*norb_;

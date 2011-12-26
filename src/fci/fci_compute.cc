@@ -87,11 +87,7 @@ void FCI::compute() {
     vector<double> errors;
     for (int i = 0; i != num_state_; ++i) {
       errors.push_back(errvec[i]->variance());
-      if (errors[i] < thresh_) {
-        conv[i] = 1;
-      } else {
-        conv[i] = 0;
-      }
+      conv[i] = static_cast<int>(errors[i] < thresh_);
     }
 
     if (!*min_element(conv.begin(), conv.end())) {
@@ -107,6 +103,9 @@ void FCI::compute() {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
         davidson.orthog(cc_->data(ist));
+        list<shared_ptr<Civec> > tmp;
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst)); 
+        cc_->data(ist)->orthog(tmp);
       }
     }
 
@@ -128,9 +127,6 @@ void FCI::compute() {
   shared_ptr<Dvec> t(new Dvec(s));
   cc_ = t;
 
-#if 1
-  for (int i = 0; i != num_state_; ++i) compute_rdm12(i);
-#endif
 }
 
 

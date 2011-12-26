@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <ctime>
 #include <algorithm>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
@@ -23,12 +24,32 @@ typedef std::shared_ptr<Fock> RefFock;
 typedef std::shared_ptr<Coeff> RefCoeff;
 typedef std::shared_ptr<TildeX> RefTildeX;
 
-SCF::SCF(const RefGeometry geom) : geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
+SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
+ : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
+
   RefTildeX tildex_tmp(new TildeX(overlap_));
   tildex_ = tildex_tmp;
 
   eig_ = new double[geom_->nbasis()];
   hcore_->symmetrize();
+
+  {
+    max_iter_ = 100;
+    auto iter = idata_.find("maxiter");
+    auto iter1 = idata_.find("maxiter_scf"); // this is priotized.
+    if (iter  != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
+    if (iter1 != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter1->second);
+  } {
+    thresh_overlap_ = 1.0e-8;
+    auto iter = idata_.find("thresh_overlap");
+    if (iter  != idata_.end()) thresh_overlap_ = boost::lexical_cast<double>(iter->second);
+  } {
+    thresh_scf_ = 1.0e-8;
+    auto iter = idata_.find("thresh");
+    auto iter1 = idata_.find("thresh_scf");
+    if (iter  != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter->second);
+    if (iter1 != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter1->second);
+  }
 
   init_shwarz();
 }
@@ -72,7 +93,7 @@ void SCF::compute() {
   DIIS<Matrix1e> diis(5);
   RefMatrix1e densitychange = aodensity_; // assumes hcore guess...
 
-  for (int iter = 0; iter != MAX_ITER_SCF; ++iter) {
+  for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
     RefFock fock(new Fock(geom_, previous_fock, densitychange, shwarz_));
@@ -96,11 +117,13 @@ void SCF::compute() {
                                       << setw(17) << error << setw(15) << setprecision(2)
                                       << (end - start) / static_cast<double>(CLOCKS_PER_SEC) << endl; 
 
-    if (error < SCF_THRESH) {
+    if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       break;
+    } else if (iter == max_iter_-1) {
+      cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
+      break;
     }
-
 
     RefMatrix1e diis_density = diis.extrapolate(make_pair(new_density, error_vector));
 

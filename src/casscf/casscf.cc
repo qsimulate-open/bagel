@@ -12,7 +12,7 @@
 using namespace std;
 
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom) :
-  idata_(idat), geom_(geom), ref_(new SCF(geom)) {
+  idata_(idat), geom_(geom), ref_(new SCF(idat, geom)) {
 
   ref_->compute();
   common_init();
@@ -31,6 +31,17 @@ void CASSCF::common_init() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment."); 
   print_header();
+
+  {// get maxiter from the input
+    max_iter_ = 100;
+    auto iter = idata_.find("maxiter");
+    if (iter != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
+  }
+  {// get nstate from the input
+    nstate_ = 1;
+    auto iter = idata_.find("nstate");
+    if (iter != idata_.end()) nstate_ = boost::lexical_cast<int>(iter->second);
+  }
 
   // nocc from the input. If not present, full valence active space is generated.
   {
@@ -59,10 +70,11 @@ void CASSCF::common_init() {
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 
-  cout << "    * nclosed_ : " << setw(6) << nclosed_ << endl;
-  cout << "    * nact_    : " << setw(6) << nact_ << endl;
-  cout << "    * nvirt_   : " << setw(6) << nvirt_ << endl;
-  
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
+  cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
+  cout << "    * nact     : " << setw(6) << nact_ << endl;
+  cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
+
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();

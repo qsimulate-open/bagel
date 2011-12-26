@@ -20,27 +20,44 @@
 #include <src/util/input.h>
 #include <src/fci/civec.h>
 #include <src/fci/mofile.h>
+#include <src/fci/rdm.h>
 
 
 class FCI {
 
   protected:
+    // input
+    std::multimap<std::string, std::string> idata_; 
     // reference
     std::shared_ptr<SCF> ref_;
-    // core energy
+    // geometry file
     const std::shared_ptr<Geometry> geom_;
+    // number of states
     int num_state_;
+    // max #iteration
     int max_iter_;
+    // threshold for variants
     double thresh_;
 
-    void create_Jiiii();
+    // numbers of electrons
+    int nelea_;
+    int neleb_;
+    int ncore_;
+    int norb_;
+    // core
+    double core_energy_; // <- usually initialized in create_iiii
 
     // CI vector at convergence
     std::shared_ptr<Dvec> cc_;
+    // RDMs; should be resized in constructors
+    std::vector<std::shared_ptr<RDM1> > rdm1_;
+    std::vector<std::shared_ptr<RDM2> > rdm2_;
     // MO integrals 
     std::shared_ptr<MOFile> jop_;
-    // input
-    std::multimap<std::string, std::string> idata_; 
+
+    //
+    // Below here, internal private members
+    //
 
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
@@ -50,8 +67,13 @@ class FCI {
     // denominator
     std::shared_ptr<Civec> denom_;
 
+    // configuration list
+    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
+    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
+
     // some init functions
     void common_init();
+    void create_Jiiii();
     // lexical maps (Zkl)
     void const_lexical_mapping_();
     // alpha and beta string lists
@@ -66,19 +88,6 @@ class FCI {
     void const_denom();
     // obtain determinants for guess generation
     std::vector<std::pair<int, int> > detseeds(const int ndet);
-
-    // numbers of electrons
-    int nelea_;
-    int neleb_;
-    int ncore_;
-    int norb_;
-
-    // core
-    double core_energy_;
-
-    // configuration list
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
 
     int numofbits(unsigned int bits) { //
 #ifndef USE_SSE42_INTRINSICS
@@ -147,6 +156,9 @@ class FCI {
     double core_energy() const { return core_energy_; };
     // sets members
     void set_core_energy(const double a) { core_energy_ = a; };
+    // rdms
+    void compute_rdm12(); // compute all states at once
+    void compute_rdm12(const int);
 
     // static constants
     static const int Alpha = 0;
@@ -154,9 +166,7 @@ class FCI {
 
     std::string print_bit(unsigned int bit) const {
       std::string out; 
-      for (int i = 0; i != norb_; ++i, bit >>=1) {
-        if (bit&1) { out += "1"; } else { out += "."; }
-      }
+      for (int i = 0; i != norb_; ++i, bit >>=1) { if (bit&1) { out += "1"; } else { out += "."; } }
       return out;
     };
     std::string print_bit(unsigned int bit1, unsigned int bit2) const {
@@ -169,7 +179,6 @@ class FCI {
       }
       return out;
     };
-    void compute_rdm12(const int);
 };
 
 

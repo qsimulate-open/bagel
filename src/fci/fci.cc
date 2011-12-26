@@ -15,7 +15,7 @@ using namespace std;
 static const Comb comb;
 
 FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom)
- : idata_(idat), ref_(new SCF(geom)), geom_(geom) {
+ : idata_(idat), ref_(new SCF(idat, geom)), geom_(geom) {
   ref_->compute();
   common_init();
 }
@@ -57,6 +57,10 @@ void FCI::common_init() {
   // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;
   neleb_ = geom_->nocc()/2 - ncore_;
+
+  // resizing rdm vectors (with null pointers)
+  rdm1_.resize(num_state_);
+  rdm2_.resize(num_state_);
 
   cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl;
   cout << endl;
