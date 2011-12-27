@@ -53,7 +53,7 @@ SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
   RefTildeX tildex_tmp(new TildeX(overlap_, thresh_overlap_));
   tildex_ = tildex_tmp;
 
-  init_shwarz();
+  init_schwarz();
 }
 
 
@@ -98,7 +98,7 @@ void SCF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
-    RefFock fock(new Fock(geom_, previous_fock, densitychange, shwarz_));
+    RefFock fock(new Fock(geom_, previous_fock, densitychange, schwarz_));
     previous_fock = fock;
 
     Matrix1e intermediate = *tildex_ % *fock * *tildex_;
@@ -149,7 +149,7 @@ void SCF::print_eig() {
 }
 
 
-void SCF::init_shwarz() {
+void SCF::init_schwarz() {
   const vector<RefAtom> atoms = geom_->atoms(); 
   vector<RefShell> basis; 
   for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
@@ -158,7 +158,7 @@ void SCF::init_shwarz() {
   }
   const int size = basis.size();
 
-  shwarz_.resize(size * size);
+  schwarz_.resize(size * size);
   for (int i0 = 0; i0 != size; ++i0) {
     const RefShell b0 = basis[i0];
     for (int i1 = i0; i1 != size; ++i1) {
@@ -178,8 +178,8 @@ void SCF::init_shwarz() {
         const double absed = fabs(*eridata);
         if (absed > cmax) cmax = absed; 
       }
-      shwarz_[i0 * size + i1] = cmax;
-      shwarz_[i1 * size + i0] = cmax;
+      schwarz_[i0 * size + i1] = cmax;
+      schwarz_[i1 * size + i0] = cmax;
     }
   }
 }

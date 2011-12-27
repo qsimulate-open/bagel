@@ -29,26 +29,22 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
-  { // cartesian or not.
-    auto iter = geominfo.find("cartesian");
-    if (iter != geominfo.end() && iter->second == "true") {
-      cout << "  Cartesian basis functions are used" << endl;
-      spherical_ = false;
-    }
-  }{ // basis file
-    auto iter = geominfo.find("basis");
-    if (iter == geominfo.end())
-      throw runtime_error("There is no basis specification");
-    basisfile_ = iter->second;
-  }{ // symmmetry
-    auto iter = geominfo.find("symmetry");
-    if (iter == geominfo.end()) {
-      cout << "  C1 symmetry is used." << endl;
-      symmetry_ = "c1";
-    } else {
-      symmetry_ = iter->second;
-    }
-  }{ // stack
+  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
+
+  // cartesian or not.
+  const bool cart = read_input<bool>(geominfo, "cartesian", false); 
+  if (cart) {
+    cout << "  Cartesian basis functions are used" << endl;
+    spherical_ = false;
+  }
+
+  // basis
+  basisfile_ = read_input<string>(geominfo, "basis", "");
+  if (basisfile_ == "") throw runtime_error("There is no basis specification");
+
+  // symmetry
+  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+  { // stack
     double size = 1.0e6;
     auto iter = geominfo.find("stack");
     if (iter != geominfo.end()) {

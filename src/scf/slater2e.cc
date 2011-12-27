@@ -106,14 +106,14 @@ void Fock::slater_two_electron_part() {
           const int b3offset = offset[i3]; 
           const int b3size = b3->nbasis();
 
-// shwarz prescreening >>>>
+// schwarz prescreening >>>>
           const double mulfactor = max(max(max(density_change_01, density_change_02), 
                                            max(density_change_12, density_change_23)), 
                                            max(density_change_03, density_change_13));
-          const double integral_bound = mulfactor * shwarz_[i01] * shwarz_[i23];
-          const bool skip_shwarz = integral_bound < SCHWARZ_THRESH;
+          const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
+          const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
 #if 0
-          if (skip_shwarz) continue;
+          if (skip_schwarz) continue;
 #endif
 
           vector<RefShell> input;

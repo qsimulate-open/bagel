@@ -213,7 +213,7 @@ void FCI::create_Jiiii() {
     shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
     if (ncore() != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->shwarz()));
+      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->schwarz()));
       const double core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       set_core_energy(core_energy);
       fock0 = fock1;

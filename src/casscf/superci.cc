@@ -55,9 +55,7 @@ void SuperCI::compute() {
     shared_ptr<Fock> fc(new Fock(geom_, hc)); hcore_ = fc;
   }
   shared_ptr<Coeff> coeff = ref_->coeff();
-#if 0
   shared_ptr<RotFile> qxr(new RotFile(nclosed_, nact_, nvirt_)); 
-#endif
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
@@ -70,14 +68,12 @@ void SuperCI::compute() {
     // get energy
     std::vector<double> energy = fci_->energy();
     // slot in density matrix
-#if 0
     shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
     shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
 
     // get quantity Q_xr = (xs|tu)P_rs,tu (x=general)
     qxr->zero();
     compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qxr);
-#endif
 
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
     {
@@ -92,25 +88,23 @@ void SuperCI::compute() {
 
       // computes f and f_act
       // TODO call to fock builder should be only once.
-#if 0
       shared_ptr<Matrix1e> f, finact;
       {
-        shared_ptr<Fock> f_ao(new Fock(geom_, hcore_, denall, ref_->shwarz()));
+        shared_ptr<Fock> f_ao(new Fock(geom_, hcore_, denall, ref_->schwarz()));
         shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
       } {
-        shared_ptr<Fock> finact_ao(new Fock(geom_, hcore_, deninact, ref_->shwarz()));
+        shared_ptr<Fock> finact_ao(new Fock(geom_, hcore_, deninact, ref_->schwarz()));
         shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *finact_ao * *coeff)); finact = ft;
       }
-#endif
 
       // <a/i|H|0> = 2f_ai
-#if 0
       grad_vc(f, sigma_);
       // <a/r|H|0> = f^inact_as d_sr + 2(as|tu)P_rs,tu 
       grad_va(finact, fci_->rdm1_av(), qxr, sigma_);
       // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu
       grad_ca(f, finact, fci_->rdm1_av(), qxr, sigma_);
 
+#if 1
 sigma_->print();
 #endif
 
@@ -150,6 +144,7 @@ sigma_->print();
 
 // <a/i|H|0> = 2f_ai
 void SuperCI::grad_vc(const shared_ptr<Matrix1e> fock, shared_ptr<RotFile> sigma) {
+  if (!nvirt_ || !nclosed_) return;
   double* target = sigma->ptr_vc();
   fill(target, target+nclosed_*nvirt_, 0.0);
   const double two = 2.0;
@@ -162,6 +157,7 @@ void SuperCI::grad_vc(const shared_ptr<Matrix1e> fock, shared_ptr<RotFile> sigma
 // <a/r|H|0> = (f-f^act)_as d_sr + 2(as|tu)P_rs,tu 
 void SuperCI::grad_va(const shared_ptr<Matrix1e> finact, shared_ptr<RDM<1> > den,
                       shared_ptr<RotFile> qxr, shared_ptr<RotFile> sigma) {
+  if (!nvirt_ || !nact_) return;
   const double one = 1.0;
   copy(qxr->ptr_va(), qxr->ptr_va()+nvirt_*nact_, sigma->ptr_va());
   dgemm_("N", "N", &nvirt_, &nact_, &nact_, &one, finact->data()+nclosed_*nbasis_+nclosed_+nact_, &nbasis_, den->first(), &nact_,
@@ -172,6 +168,7 @@ void SuperCI::grad_va(const shared_ptr<Matrix1e> finact, shared_ptr<RDM<1> > den
 // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu
 void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, const shared_ptr<Matrix1e> finact, shared_ptr<RDM<1> > den,
                       shared_ptr<RotFile> qxr, shared_ptr<RotFile> sigma) {
+  if (!nclosed_ || !nact_) return;
   const double two = 2.0;
   const double mone = -1.0;
   const double one = 1.0;
@@ -181,7 +178,7 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, const shared_ptr<Matrix1e> f
   fill(target, target+n, 0.0);
   for (int i = 0; i != nact_; ++i, target += nclosed_)
     daxpy_(&nclosed_, &two, f->element_ptr(0,nclosed_+i), &unit, target, &unit);
-  dgemm_("N", "N", &nclosed_, &nact_, &nact_, &mone, f->data()+nclosed_*nbasis_, &nbasis_, den->first(), &nact_,
+  dgemm_("N", "N", &nclosed_, &nact_, &nact_, &mone, finact->data()+nclosed_*nbasis_, &nbasis_, den->first(), &nact_,
                    &one, sigma->ptr_ca(), &nclosed_); 
   daxpy_(&n, &mone, qxr->ptr_ca(), &unit, sigma->ptr_ca(), &unit); 
 }
@@ -196,7 +193,9 @@ void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<
   double* buf = new double[nbas*nact_];
   dgemm_("T", "N", &nbas, &nact_, &common, &one, int1ext, &common, rdm2->first(), &common, &zero, buf, &nbas); 
   // slot in to apropriate places
+  if (nclosed_)
   dgemm_("T", "N", &nclosed_, &nact_, &nbas, &one, ref_->coeff()->data(), &nbas, buf, &nbas, &zero, qxr->ptr_ca(), &nclosed_); 
+  if (nvirt_) 
   dgemm_("T", "N", &nvirt_,   &nact_, &nbas, &one, ref_->coeff()->data()+nbas*(nclosed_+nact_),
                                                                           &nbas, buf, &nbas, &zero, qxr->ptr_va(), &nvirt_); 
   delete[] buf;

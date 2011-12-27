@@ -50,6 +50,9 @@ class Geometry {
     std::shared_ptr<Petite> plist_;
     int nirrep_;
 
+    // integral screening
+    double schwarz_thresh_;
+
     // for R12 calculations
     double gamma_;
 
@@ -79,6 +82,7 @@ class Geometry {
     const int level() const { return level_; };
     const std::string basisfile() const { return basisfile_; };
     const std::string cabsfile() const { return cabsfile_; };
+    const double schwarz_thresh() const { return schwarz_thresh_; };
 
     // TODO for some reasons needed now in CASSCF
     void set_nocc(const int i) { nocc_ = i; };

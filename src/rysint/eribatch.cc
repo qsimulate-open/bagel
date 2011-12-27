@@ -21,6 +21,10 @@
 using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
+extern "C" {
+const double ddot_(const int*, const double*, const int*, const double*, const int*); 
+}
+static const int unit = 1;
 
 // This object lives in main.cc
 extern StackMem* stack;
@@ -316,7 +320,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
         weights_[i] = erfsqt * SQRTPI2 / sqrtt;
       }
     }
-#if 0
+#if 1
   } else if (rank_ == 1) {
     eriroot1_(T_, roots_, weights_, &ps); 
   } else if (rank_ == 2) {

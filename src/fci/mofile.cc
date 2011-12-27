@@ -68,17 +68,19 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   double core_energy = 0.0;
   {
     shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
+#if 1
     if (nstart != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-cout << "1e ends1" << endl;
-fock0->print();
-den->print();
-      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->shwarz()));
+cout << "1e ends1" << nstart << nfence << endl;
+fock0->print("a",10);
+den->print("18",10);
+      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->schwarz()));
 cout << "1e ends2" << endl;
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       fock0 = fock1;
     }
 cout << "1e ends" << endl;
+#endif
     fock0->symmetrize();
     dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
   }

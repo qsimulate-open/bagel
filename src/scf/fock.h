@@ -21,7 +21,8 @@ class Fock : public Matrix1e {
     void fock_two_electron_part();
 // for debug
     void slater_two_electron_part();
-    std::vector<double> shwarz_;
+    std::vector<double> schwarz_;
+    double schwarz_thresh_;
 
   public:
     Fock(const std::shared_ptr<Geometry>, const std::shared_ptr<Fock>, const std::shared_ptr<Matrix1e>, const std::vector<double>&);

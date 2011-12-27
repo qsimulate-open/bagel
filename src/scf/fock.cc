@@ -19,8 +19,10 @@ typedef std::shared_ptr<Fock> RefFock;
 
 using namespace std;
 
-Fock::Fock(const RefGeometry geom, const RefFock previous, const RefAODensity den, const vector<double>& shwarz)
- : Matrix1e(geom), previous_(previous), density_(den), shwarz_(shwarz) {
+Fock::Fock(const RefGeometry geom, const RefFock previous, const RefAODensity den, const vector<double>& schwarz)
+ : Matrix1e(geom), previous_(previous), density_(den), schwarz_(schwarz) {
+
+  schwarz_thresh_ = geom->schwarz_thresh();
 
   init(); // zero here
 

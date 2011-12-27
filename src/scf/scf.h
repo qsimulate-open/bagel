@@ -30,8 +30,8 @@ class SCF {
     double thresh_scf_;
     bool density_change_;
 
-    std::vector<double> shwarz_;
-    void init_shwarz();
+    std::vector<double> schwarz_;
+    void init_schwarz();
 
     double* eig_;
     void print_eig();
@@ -45,7 +45,7 @@ class SCF {
     const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
     const std::shared_ptr<Hcore> hcore() { return hcore_; };
-    const std::vector<double>& shwarz() const { return shwarz_; };
+    const std::vector<double>& schwarz() const { return schwarz_; };
 };
 
 #endif
