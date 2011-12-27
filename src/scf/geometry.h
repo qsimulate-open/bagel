@@ -83,6 +83,7 @@ class Geometry {
     // TODO for some reasons needed now in CASSCF
     void set_nocc(const int i) { nocc_ = i; };
     void set_basis(const int i) { nbasis_ = i; };
+    void set_ncore(const int i) { nfrc_ = i; };
     int num_count_ncore(); // also set nfrc_
     int num_count_full_valence_nocc();
 

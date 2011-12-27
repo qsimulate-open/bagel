@@ -9,6 +9,7 @@
 #include <list>
 #include <memory>
 #include <algorithm>
+#include <iostream>
 #include <src/casscf/f77.h>
 
 class RotFile {
@@ -66,6 +67,29 @@ class RotFile {
     // reference config.
     double& ele_ref() { assert(superci_); return data_[size_-1]; };
 
+    void print() {
+      std::cout << " printing closed-active block" << std::endl;
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nclosed_; ++j) {
+          std::cout << std::setw(8) << std::setprecision(2) << ele_ca(j,i); 
+        }
+        std::cout << std::endl;
+      }
+      std::cout << " printing virtual-active block" << std::endl;
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nvirt_; ++j) {
+          std::cout << std::setw(8) << std::setprecision(2) << ele_va(j,i); 
+        }
+        std::cout << std::endl;
+      }
+      std::cout << " printing virtual-closed block" << std::endl;
+      for (int i = 0; i != nclosed_; ++i) {
+        for (int j = 0; j != nvirt_; ++j) {
+          std::cout << std::setw(8) << std::setprecision(2) << ele_vc(j,i); 
+        }
+        std::cout << std::endl;
+      }
+    }; 
 };
 
 #endif

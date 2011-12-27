@@ -168,6 +168,9 @@ class FCI {
     std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };
     std::shared_ptr<RDM<2> > rdm2_av() { return rdm2_av_; };
 
+    // returns integral files
+    std::shared_ptr<MOFile> jop() { return jop_; };
+
     // returns total energy
     std::vector<double> energy() const { return energy_; };
 

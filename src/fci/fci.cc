@@ -29,14 +29,14 @@ FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geo
 void FCI::common_init() {
   print_header();
 
-cout << "a" << endl;
   const bool frozen = read_input<bool>(idata_, "frozen", false);
-cout << frozen << endl;
   ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore()/2 : 0));
   nstate_ = read_input<int>(idata_, "nstate", 1);
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-12);
-  norb_ = read_input<int>(idata_, "norb", geom_->nbasis()-ncore_);
+  norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
+
+  geom_->set_ncore(ncore_*2);
 
   // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;

@@ -28,6 +28,7 @@ class MOFile {
     std::vector<double> mo2e_;
     std::vector<double> mo1e_unpacked_;
     std::vector<double> mo2e_unpacked_;
+    std::vector<double> mo2e_1ext_;
 
     int address_(int i, int j) const {
       assert(i <= j);
@@ -50,6 +51,8 @@ class MOFile {
     double* mo2e_ptr() { return &(mo2e_[0]); };
     double* mo1e_unpacked_ptr() { return &(mo1e_unpacked_[0]); };
     double* mo2e_unpacked_ptr() { return &(mo2e_unpacked_[0]); };
+
+    double* mo2e_1ext_ptr() { return &(mo2e_1ext_[0]); };
 
 };
 

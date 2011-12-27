@@ -132,12 +132,18 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   const int mm = nocc*nocc;
   mytranspose_(aobuff,&nn,&mm,first);
 
-  const int nmm = nbasis * mm; 
-  dgemm_("n","n",&nmm,&nocc,&nbasis,&one,first,&nmm,cdata,&nbasis,&zero,aobuff,&nmm);
-
-  for (int i = 0; i != nocc; ++i) {
-    dgemm_("n","n",&mm,&nocc,&nbasis,&one,aobuff+nmm*i,&mm,cdata,&nbasis,&zero,first+mm*nocc*i,&mm);
+  for (int i = 0; i != nbasis; ++i) {
+    dgemm_("n","n",&mm,&nocc,&nbasis,&one,first+mm*nbasis*i,&mm,cdata,&nbasis,&zero,aobuff+mm*nocc*i,&mm);
   }
+
+  // aobuff here contains (rs|tx) with r running fastest. x: AO
+  // Stupid sort. Anyway this is not the way. DF will be used. TODO
+  mo2e_1ext_.resize(mm*nbasis*nocc);
+  copy(aobuff, aobuff+mm*nbasis*nocc, mo2e_1ext_ptr());
+
+  const int nmm = nocc * mm;
+  dgemm_("n","n",&nmm,&nocc,&nbasis,&one,aobuff,&nmm,cdata,&nbasis,&zero,first,&nmm);
+
   delete[] aobuff;
 
   // storing unpacked integrals

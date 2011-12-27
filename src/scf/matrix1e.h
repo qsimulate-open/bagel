@@ -33,6 +33,7 @@ class Matrix1e {
     const int mdim() const { return mdim_; }; 
     double* data() const { return data_; };
     double& element(int i, int j) { return data_[i+j*ndim_]; };
+    double* element_ptr(int i, int j) { return data_+i+j*ndim_; };
 
     void symmetrize();
     void diagonalize(double*);

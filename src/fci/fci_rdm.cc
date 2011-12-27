@@ -29,6 +29,8 @@ void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);
   
   // we need expanded lists
+  vector<vector<tuple<unsigned int, int, unsigned int> > > phia_bk = phia_;
+  vector<vector<tuple<unsigned int, int, unsigned int> > > phib_bk = phib_;
   const_phis_<0>(stringa_, phia_, false);
   const_phis_<1>(stringb_, phib_, false);
 
@@ -79,5 +81,8 @@ void FCI::compute_rdm12(const int ist) {
                                        + 0.5*ddot_(&nn, jop_->mo2e_unpacked_ptr(), &unit, rdm2->first(), &unit)
                                        + core_energy_ << endl; 
 #endif
+
+  phia_ = phia_bk;
+  phib_ = phib_bk;
 }
 

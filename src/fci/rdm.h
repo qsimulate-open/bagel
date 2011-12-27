@@ -57,7 +57,7 @@ class RDM {
           for (int j = 0; j != norb_; ++j) {
             for (int k = 0; k != norb_; ++k) {
               for (int l = 0; l != norb_; ++l) {
-                if (std::abs(element(l,k,j,i)) > 1.0e-2) std::cout << std::setw(3) << l << std::setw(3)
+                if (std::abs(element(l,k,j,i)) > 1.0e-0) std::cout << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
                       << std::setw(12) << std::setprecision(7) << element(l,k,j,i) << std::endl;
         } } } }
