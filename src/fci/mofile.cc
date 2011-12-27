@@ -70,15 +70,22 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
     shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
     if (nstart != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
+cout << "1e ends1" << endl;
+fock0->print();
+den->print();
       shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->shwarz()));
+cout << "1e ends2" << endl;
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       fock0 = fock1;
     }
+cout << "1e ends" << endl;
     fock0->symmetrize();
     dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
   }
   mo1e_.resize(nocc*nocc);
   dgemm_("t","n",&nocc,&nocc,&nbasis,&one,cdata,&nbasis,aobuff,&nbasis,&zero,&mo1e_[0],&nocc);
+
+cout << "1e ends" << endl;
 
   for (int i0 = 0; i0 != size; ++i0) {
     const int b0offset = offset_[i0]; 
@@ -145,6 +152,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   dgemm_("n","n",&nmm,&nocc,&nbasis,&one,aobuff,&nmm,cdata,&nbasis,&zero,first,&nmm);
 
   delete[] aobuff;
+cout << "releasing ao buf" << endl;
 
   // storing unpacked integrals
   mo1e_unpacked_.resize(mm);

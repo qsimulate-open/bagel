@@ -124,15 +124,15 @@ void CASSCF::resume_stdcout() {
 }
 
 
-shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool active_only) const {
+shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
   shared_ptr<Matrix1e> mo_rdm1(new Matrix1e(geom_));
-  if (!active_only) {
-    for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 1.0; 
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nact_; ++j) {
-      mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i)*0.5; // note the difference in notation between SCF and FCI... 
+  for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 1.0; 
+  if (!inactive_only) {
+    for (int i = 0; i != nact_; ++i) {
+      for (int j = 0; j != nact_; ++j) {
+        mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i)*0.5; // note the difference in notation between SCF and FCI... 
+      }
     }
   }
   // transform into AO basis
