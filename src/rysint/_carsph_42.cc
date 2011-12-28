@@ -3,8 +3,8 @@
 // Date   : May 2009
 //
 
-#include "carsphlist.h"
-#include "f77.h"
+#include <src/rysint/carsphlist.h>
+#include <src/util/f77.h>
 
 
 void CarSphList::carsph_42(const int nloop, const double* source, double* target) {

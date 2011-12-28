@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <src/pscf/ptildex.h>
-#include <src/pscf/f77.h>
+#include <src/util/f77.h>
 #include <src/pscf/pscf_macros.h>
 
 using namespace std;

@@ -17,8 +17,6 @@
 class SuperCI : public CASSCF {
 
   protected:
-    void update_orbitals_();
-    void update_civectors_();
     void common_init();
 
     void grad_vc(const std::shared_ptr<Matrix1e> fock, std::shared_ptr<RotFile> sigma);
@@ -28,6 +26,8 @@ class SuperCI : public CASSCF {
                  std::shared_ptr<RotFile> qxr, std::shared_ptr<RotFile> sigma);
 
     void compute_qxr(double* int1ext, std::shared_ptr<RDM<2> > rdm2, std::shared_ptr<RotFile> qxr);
+
+    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>);
 
   public:
     SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);

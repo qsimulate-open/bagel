@@ -145,6 +145,9 @@ class FCI {
     void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
     void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
 
+    // functions related to natural orbitals
+    void update_rdms(const std::vector<double>& coeff); 
+
     // print functions
     void print_header() const;
     void print_civectors(const std::vector<std::shared_ptr<Civec> >, const double thr = 0.05) const;
@@ -167,6 +170,8 @@ class FCI {
     void compute_rdm12(const int istate);
     std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };
     std::shared_ptr<RDM<2> > rdm2_av() { return rdm2_av_; };
+    // move to natural orbitals
+    std::pair<std::vector<double>, std::vector<double> > natorb_convert();
 
     // returns integral files
     std::shared_ptr<MOFile> jop() { return jop_; };

@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 #include <src/fci/mofile.h>
 #include <src/rysint/eribatch.h>
 #include <src/scf/scf.h>
@@ -48,9 +48,11 @@ MOFile::~MOFile() {
 double MOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
 
-  const int nocc = nfence - nstart;
+  nocc_ = nfence - nstart;
+  nbasis_ = geom_->nbasis();
+  const int nbasis = nbasis_;
+  const int nocc = nocc_;
   const int size = basis_.size(); // number of shells
-  const int nbasis = geom_->nbasis();
   const size_t aointsize = nbasis*nbasis*nbasis*nbasis; 
   double* aobuff = new double[aointsize];
   // TODO this can be thrown away.
@@ -68,26 +70,17 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   double core_energy = 0.0;
   {
     shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
-#if 1
     if (nstart != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-cout << "1e ends1" << nstart << nfence << endl;
-fock0->print("a",10);
-den->print("18",10);
       shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->schwarz()));
-cout << "1e ends2" << endl;
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       fock0 = fock1;
     }
-cout << "1e ends" << endl;
-#endif
     fock0->symmetrize();
     dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
   }
   mo1e_.resize(nocc*nocc);
   dgemm_("t","n",&nocc,&nocc,&nbasis,&one,cdata,&nbasis,aobuff,&nbasis,&zero,&mo1e_[0],&nocc);
-
-cout << "1e ends" << endl;
 
   for (int i0 = 0; i0 != size; ++i0) {
     const int b0offset = offset_[i0]; 
@@ -154,13 +147,14 @@ cout << "1e ends" << endl;
   dgemm_("n","n",&nmm,&nocc,&nbasis,&one,aobuff,&nmm,cdata,&nbasis,&zero,first,&nmm);
 
   delete[] aobuff;
-cout << "releasing ao buf" << endl;
 
   // storing unpacked integrals
+#ifdef DEBUG_RECOMPUTE_ENERGY
   mo1e_unpacked_.resize(mm);
   copy(mo1e_.begin(), mo1e_.end(), mo1e_unpacked_.begin());
   mo2e_unpacked_.resize(mm*mm);
   copy(first, first+mm*mm, &(mo2e_unpacked_[0]));
+#endif
 
   // mo2e is compressed
   sizeij_ = nocc*(nocc+1)/2;
@@ -194,3 +188,23 @@ cout << "releasing ao buf" << endl;
   return core_energy; // TODO this is not a good way of implementation...
 }
 
+
+void MOFile::update_1ext_ints(const vector<double>& coeff) {
+  const double* start = &(coeff[0]);
+  double* data_ = &(mo2e_1ext_[0]);
+  double* buf = new double[mo2e_1ext_.size()];
+  const int n2 = nocc_*nocc_;
+  const int nb = nocc_*nbasis_;
+  assert(n2*nb == mo2e_1ext_.size());
+
+  mytranspose_(data_, &n2, &nb, buf);
+  // now buf=(nx|nn).
+  dgemm_("N", "N", nb*nocc_, nocc_, nocc_, 1.0, buf, nb*nocc_, start, nocc_, 0.0, data_, nb*nocc_); 
+  for (int i = 0; i != nocc_; ++i)
+    dgemm_("N", "N", nb, nocc_, nocc_, 1.0, data_+i*nb*nocc_, nb, start, nocc_, 0.0, buf+i*nb*nocc_, nb); 
+  dgemm_("T", "N", nocc_, nb*nocc_, nocc_, 1.0, start, nocc_, buf, nocc_, 0.0, data_, nocc_); 
+  // slot in place
+  mytranspose_(data_, &nb, &n2, buf);
+  copy(buf, buf+nb*n2, data_);
+  delete[] buf; 
+}

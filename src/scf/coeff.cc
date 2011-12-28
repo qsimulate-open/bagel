@@ -7,7 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 
 
 Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {

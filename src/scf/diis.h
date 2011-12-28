@@ -7,7 +7,7 @@
 #define __src_scf_diis_h
 
 #include <list>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 #include <cassert>
 #include <memory>
 

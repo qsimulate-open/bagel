@@ -3,7 +3,7 @@
 // Date  : April 2009
 //
 
-#include <src/rysint/f77.h>
+#include <src/util/f77.h>
 #include <src/rysint/naibatch.h>
 #include <iostream>
 #include <iomanip>

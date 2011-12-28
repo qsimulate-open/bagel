@@ -72,7 +72,7 @@ void FCI::compute_rdm12(const int ist) {
     rdm2_av_ = rdm2;
   }
 
-#if 1
+#ifdef DEBUG_RECOMPUTE_ENERGY
   // recomputing energy
   const int mm = norb_*norb_;
   const int nn = mm*mm;
@@ -84,5 +84,28 @@ void FCI::compute_rdm12(const int ist) {
 
   phia_ = phia_bk;
   phib_ = phib_bk;
+}
+
+
+// note that this does not transform internal integrals (since it is not needed in CASSCF). 
+pair<vector<double>, vector<double> > FCI::natorb_convert() {
+  assert(rdm1_av_);
+  pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals(); 
+  update_rdms(natorb.first);
+  jop_->update_1ext_ints(natorb.first);
+  return natorb;
+}
+
+
+void FCI::update_rdms(const vector<double>& coeff) {
+  for (auto iter = rdm1_.begin(); iter != rdm1_.end(); ++iter)
+    (*iter)->transform(coeff);
+  for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)
+    (*iter)->transform(coeff);
+
+  // Only when #state > 1, this is needed.
+  // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
+  if (rdm1_.size() > 1) rdm1_av_->transform(coeff);
+  if (rdm2_.size() > 1) rdm2_av_->transform(coeff);
 }
 

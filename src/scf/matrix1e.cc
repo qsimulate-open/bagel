@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 #include <cassert>
 #include <cmath>
 
@@ -21,6 +21,13 @@ Matrix1e::Matrix1e(const RefGeometry geom) : geom_(geom), nbasis_(geom->nbasis()
   data_ = new double[nbasis_ * nbasis_]; 
   mdim_ = ndim_ = nbasis_;
   fill(data_, data_ + nbasis_ * nbasis_, 0.0);
+}
+
+
+Matrix1e::Matrix1e(const Matrix1e& o) : geom_(o.geom_), nbasis_(o.nbasis_) {
+  data_ = new double[nbasis_ * nbasis_]; 
+  mdim_ = ndim_ = nbasis_;
+  copy(o.data_, o.data_ + nbasis_ * nbasis_, data_);
 }
 
 

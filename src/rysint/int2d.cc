@@ -4,7 +4,7 @@
 //
 
 #include <src/rysint/int2d.h>
-#include <src/rysint/f77.h>
+#include <src/util/f77.h>
 #include <cstring>
 
 using namespace std;

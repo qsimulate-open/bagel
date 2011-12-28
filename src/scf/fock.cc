@@ -4,7 +4,7 @@
 //
 
 #include <src/scf/fock.h>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 #include <src/scf/symmat.h>
 #include <cassert>
 #include <iostream>

@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <src/fci/f77.h>
+#include <src/util/f77.h>
 
 class Civec {
   protected:

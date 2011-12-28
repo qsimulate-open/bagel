@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <src/rysint/inline.h>
 #include <src/rysint/naibatch.h>
+#include <src/util/f77.h>
 #include <src/rysint/f77.h>
 #include <src/rysint/macros.h>
 #include <src/stackmem.h>

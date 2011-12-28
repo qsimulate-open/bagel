@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <memory>
 #include <complex>
-#include <src/pscf/f77.h>
+#include <src/util/f77.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have zaxpy and zdotc functions.

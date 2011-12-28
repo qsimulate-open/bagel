@@ -32,11 +32,12 @@ class CASSCF {
     int max_micro_iter_;
     double thresh_;
 
+    std::vector<double> occup_;
+    std::shared_ptr<Coeff> coeff_natorb_;
+
     const std::shared_ptr<SCF> ref_;
     std::shared_ptr<FCI> fci_;
     const std::shared_ptr<Geometry> geom_;
-    virtual void update_orbitals_() { assert(false); };
-    virtual void update_civectors_() { assert(false); };
     void print_header() const;
     void common_init();
 

@@ -4,7 +4,7 @@
 //
 
 #include <src/pscf/pfock.h>
-#include <src/pscf/f77.h>
+#include <src/util/f77.h>
 #include <cstring>
 
 typedef std::shared_ptr<PFock> RefPFock;

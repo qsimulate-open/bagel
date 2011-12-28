@@ -25,6 +25,7 @@ class Matrix1e {
 
   public:
     Matrix1e(const std::shared_ptr<Geometry>); 
+    Matrix1e(const Matrix1e&); 
     ~Matrix1e();
 
     const std::shared_ptr<Geometry> geom() const { return geom_; };

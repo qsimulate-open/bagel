@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <tuple>
 #include <src/pmp2/pmp2.h>
-#include <src/pmp2/f77.h>
 #include <src/macros.h>
 #include <src/util/paircompfile.h>
 #include <src/util/pcompcabsfile.h>
@@ -20,6 +19,8 @@ typedef std::shared_ptr<PGeometry> RefGeom;
 typedef std::shared_ptr<PCoeff> RefPCoeff;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<PMatrix1e> RefMatrix;
+
+extern "C" { void start_up_slater_(); };
 
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 

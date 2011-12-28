@@ -3,7 +3,7 @@
 // Date  : April 2009
 //
 
-#include <src/slater/f77.h>
+#include <src/util/f77.h>
 #include <src/slater/slaterbatch.h>
 #include <cstring>
 #include <iostream>

@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/rysint/eribatch.h>
+#include <src/util/f77.h>
 #include <src/rysint/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
@@ -21,10 +22,6 @@
 using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
-extern "C" {
-const double ddot_(const int*, const double*, const int*, const double*, const int*); 
-}
-static const int unit = 1;
 
 // This object lives in main.cc
 extern StackMem* stack;

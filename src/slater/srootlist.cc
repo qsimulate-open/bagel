@@ -3,8 +3,20 @@
 // Date   : June 2009
 //
 
-#include <src/slater/f77.h>
 #include <src/slater/srootlist.h>
+
+extern "C" {
+ // slater integrals
+ void root1_(const double*, const double*, double*, double*, const int*);
+ void root2_(const double*, const double*, double*, double*, const int*);
+ void root3_(const double*, const double*, double*, double*, const int*);
+ void root4_(const double*, const double*, double*, double*, const int*);
+ void root5_(const double*, const double*, double*, double*, const int*);
+ void root6_(const double*, const double*, double*, double*, const int*);
+ void root7_(const double*, const double*, double*, double*, const int*);
+ void root8_(const double*, const double*, double*, double*, const int*);
+ void root9_(const double*, const double*, double*, double*, const int*);
+}
 
 SRootList::SRootList() {
 

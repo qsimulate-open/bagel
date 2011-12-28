@@ -3,7 +3,7 @@
 // Machine Generated Code
 //
 
-#include "svrrlist.h"
+#include <src/slater/svrrlist.h>
 
 // returns double array of length 448
 void SVRRList::_svrr_7060(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {

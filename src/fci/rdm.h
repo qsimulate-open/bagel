@@ -9,14 +9,16 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <src/fci/f77.h>
+#include <vector>
+#include <cassert>
+#include <src/util/f77.h>
 
 template <int rank>
 class RDM {
   protected:
     double* data_;
     const int norb_;
-    size_t dim_;
+    int dim_;
 
   public:
     RDM(const int n) : norb_(n) {
@@ -44,6 +46,52 @@ class RDM {
     };
 
     void daxpy(const double a, const std::shared_ptr<RDM>& o) { this->daxpy(a, *o); };
+
+    std::vector<double> diag() const {
+      std::vector<double> out(dim_);
+      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
+      return out;
+    };
+
+    std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
+      assert(rank == 1);
+      std::vector<double> buf(dim_*dim_);
+      std::vector<double> vec(dim_);
+      for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0; 
+      daxpy_(dim_*dim_, -1.0, data_, 1, &(buf[0]), 1);
+      int lwork = 5*dim_;
+      std::vector<double> work(lwork);
+      int info;
+      dsyev_("V", "U", &dim_, &(buf[0]), &dim_, &(vec[0]), &(work[0]), &lwork, &info);
+      assert(!info);
+      for (auto i = vec.begin(); i != vec.end(); ++i) *i = 2.0-*i;
+      return std::make_pair(buf, vec);
+    };
+
+    void transform(const std::vector<double>& coeff) {
+      const double* start = &(coeff[0]);
+      double* buf = new double[dim_*dim_];
+      if (rank == 1) {
+        dgemm_("N", "N", dim_, dim_, dim_, 1.0, data_, dim_, start, dim_, 0.0, buf,   dim_); 
+        dgemm_("T", "N", dim_, dim_, dim_, 1.0, start, dim_, buf,   dim_, 0.0, data_, dim_); 
+      } else if (rank == 2) {
+        // first half transformation
+        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, data_, dim_*norb_, start, norb_, 0.0, buf, dim_*norb_); 
+        for (int i = 0; i != norb_; ++i)
+          dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf+i*dim_*norb_, dim_, start, norb_, 0.0, data_+i*dim_*norb_, dim_); 
+        // then tranpose
+        mytranspose_(data_, &dim_, &dim_, buf);
+        // and do it again
+        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf, dim_*norb_, start, norb_, 0.0, data_, dim_*norb_); 
+        for (int i = 0; i != norb_; ++i)
+          dgemm_("N", "N", dim_, norb_, norb_, 1.0, data_+i*dim_*norb_, dim_, start, norb_, 0.0, buf+i*dim_*norb_, dim_); 
+        // to make sure for non-symmetric density matrices (and anyway this should be cheap).
+        mytranspose_(buf, &dim_, &dim_, data_);
+      } else {
+        assert(false);
+      }
+      delete[] buf;
+    };
 
     void print() {
       if (rank == 1) {

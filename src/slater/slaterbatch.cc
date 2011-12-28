@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <src/slater/slaterbatch.h>
 #include <src/slater/srootlist.h>
-#include <src/slater/f77.h>
+#include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
 #include <src/slater/sinline.h>

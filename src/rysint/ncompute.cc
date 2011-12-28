@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cstring>
 #include <src/rysint/naibatch.h>
-#include <src/rysint/f77.h>
+#include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
 #include <src/stackmem.h>

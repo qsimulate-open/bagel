@@ -4,7 +4,7 @@
 //
 
 #include <src/scf/tildex.h>
-#include <src/scf/f77.h>
+#include <src/util/f77.h>
 #include <iostream>
 #include <iomanip>
 #include <cassert>

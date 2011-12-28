@@ -44,6 +44,7 @@ class SCF {
 
     const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
+    void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
     const std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 };

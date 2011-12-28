@@ -4,7 +4,7 @@
 //
 
 #include <src/pscf/pcoeff.h>
-#include <src/pscf/f77.h>
+#include <src/util/f77.h>
 
 typedef std::complex<double> Complex;
 

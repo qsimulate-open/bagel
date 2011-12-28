@@ -10,7 +10,10 @@
 #include <memory>
 #include <algorithm>
 #include <iostream>
-#include <src/casscf/f77.h>
+#include <src/util/f77.h>
+
+// just for convenience
+static const int rotfile_unit_ = 1;
 
 class RotFile {
   protected:
@@ -21,8 +24,6 @@ class RotFile {
     int size_;
     const bool superci_;
 
-    // just for convenience
-    static const int unit_ = 1;
   public:
     RotFile(const int iclos, const int iact, const int ivirt, const bool superci = true)
      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci) {
@@ -32,7 +33,12 @@ class RotFile {
     RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), size_(o.size_), superci_(o.superci_) {
       data_ = new double[size_];
       std::copy(o.data_, o.data_+size_, data_);
-    }
+    };
+    RotFile(const std::shared_ptr<RotFile> o)
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), size_(o->size_), superci_(o->superci_) {
+      data_ = new double[size_];
+      std::copy(o->data_, o->data_+size_, data_);
+    };
 
     ~RotFile() { delete[] data_; };
 
@@ -41,17 +47,17 @@ class RotFile {
     // zero out
     void zero() { std::fill(data_, data_+size_, 0.0); };
     // returns dot product
-    double ddot(RotFile& o) { return ddot_(&size_, data_, &unit_, o.data_, &unit_); };
+    double ddot(RotFile& o) { return ddot_(&size_, data_, &rotfile_unit_, o.data_, &rotfile_unit_); };
     // returns norm of the vector
     double norm() { return std::sqrt(ddot(*this)); };
     // daxpy added to self
-    void daxpy(double a, RotFile& o) { daxpy_(&size_, &a, o.data_, &unit_, data_, &unit_); }; 
+    void daxpy(double a, RotFile& o) { daxpy_(&size_, &a, o.data_, &rotfile_unit_, data_, &rotfile_unit_); }; 
     // orthogonalize to the liset of RotFile's
     double orthog(std::list<std::shared_ptr<RotFile> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter)
         this->daxpy(- this->ddot(**iter), **iter);
       const double scal = 1.0/this->norm();
-      dscal_(&size_, &scal, data_, &unit_);
+      dscal_(&size_, &scal, data_, &rotfile_unit_);
       return 1.0/scal; 
     }
 
@@ -66,6 +72,7 @@ class RotFile {
     double& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; };
     // reference config.
     double& ele_ref() { assert(superci_); return data_[size_-1]; };
+
 
     void print() {
       std::cout << " printing closed-active block" << std::endl;

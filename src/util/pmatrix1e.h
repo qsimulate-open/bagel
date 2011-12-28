@@ -16,7 +16,7 @@
 #include <cmath>
 #include <algorithm>
 #include <src/pscf/pgeometry.h>
-#include <src/pscf/f77.h>
+#include <src/util/f77.h>
 #include <src/util/pdata.h>
 #include <memory>
 

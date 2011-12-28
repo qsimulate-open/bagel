@@ -3,7 +3,7 @@
 // Date  : April 2009
 //
 
-#include <src/osint/f77.h>
+#include <src/util/f77.h>
 #include <src/osint/osint.h>
 #include <iostream>
 #include <iomanip>

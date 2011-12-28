@@ -5,8 +5,8 @@
 
 // editied by hand a little
 
-#include "carsphlist.h"
-#include "f77.h"
+#include <src/rysint/carsphlist.h>
+#include <src/util/f77.h>
 
 
 void CarSphList::carsph_21(const int nloop, const double* source, double* target) {
