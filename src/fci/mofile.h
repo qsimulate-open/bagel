@@ -13,6 +13,8 @@
 #include <src/scf/scf.h>
 #include <src/scf/geometry.h>
 
+#define DEBUG_RECOMPUTE_ENERGY
+
 class MOFile {
   protected:
     int nocc_;
@@ -57,6 +59,7 @@ class MOFile {
 #ifdef DEBUG_RECOMPUTE_ENERGY
     double* mo1e_unpacked_ptr() { return &(mo1e_unpacked_[0]); };
     double* mo2e_unpacked_ptr() { return &(mo2e_unpacked_[0]); };
+    double mo2e_unpacked(const int i, const int j, const int k, const int l) const { return mo2e_unpacked_[i+nocc_*(j+nocc_*(k+nocc_*l))]; }; 
 #endif
 
     double* mo2e_1ext_ptr() { return &(mo2e_1ext_[0]); };

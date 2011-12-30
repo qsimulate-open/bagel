@@ -168,6 +168,8 @@ class FCI {
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
+    std::shared_ptr<RDM<1> > rdm1(const int i) { return rdm1_.at(i); };
+    std::shared_ptr<RDM<2> > rdm2(const int i) { return rdm2_.at(i); };
     std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };
     std::shared_ptr<RDM<2> > rdm2_av() { return rdm2_av_; };
     // move to natural orbitals
@@ -234,7 +236,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j); 
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            phi[j+i*norb_].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
+            phi[i+j*norb_].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       }

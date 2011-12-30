@@ -20,7 +20,7 @@ class SuperCI : public CASSCF {
     void common_init();
 
     void grad_vc(const std::shared_ptr<Matrix1e> fock, std::shared_ptr<RotFile> sigma);
-    void grad_va(const std::shared_ptr<QFile> h, const std::shared_ptr<QFile> qxr, std::shared_ptr<RotFile> sigma);
+    void grad_va(const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
     void grad_ca(const std::shared_ptr<Matrix1e> fock, const std::shared_ptr<Matrix1e> fock_inact, std::shared_ptr<RDM<1> > rdm1,
                  std::shared_ptr<QFile> qxr, std::shared_ptr<RotFile> sigma);
 

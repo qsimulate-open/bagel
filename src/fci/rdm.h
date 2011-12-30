@@ -37,8 +37,10 @@ class RDM {
     double* data() { return data_; };
     double& element(int i, int j) { return *(data_+i+j*dim_); };
     const double& element(int i, int j) const { return *(data_+i+j*dim_); };
+    const double* element_ptr(int i, int j) const { return data_+i+j*dim_; };
     // careful, this should not be called for those except for 2RDM. 
     double& element(int i, int j, int k, int l) { assert(rank == 2); return *(data_+i+norb_*(j+norb_*(k+norb_*l))); };
+    double* element_ptr(int i, int j, int k, int l) { assert(rank == 2); return data_+i+norb_*(j+norb_*(k+norb_*l)); };
     const double& element(int i, int j, int k, int l) const { assert(rank == 2); return *(data_+i+norb_*(j+norb_*(k+norb_*l))); };
 
     void zero() { std::fill(data_, data_+dim_*dim_, 0.0); };
@@ -60,6 +62,7 @@ class RDM {
       assert(rank == 1);
       std::vector<double> buf(dim_*dim_);
       std::vector<double> vec(dim_);
+#define ALIGN
 #ifdef ALIGN
       for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0; 
       daxpy_(dim_*dim_, -1.0, data_, 1, &(buf[0]), 1);
