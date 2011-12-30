@@ -51,6 +51,13 @@ class DavidsonDiag {
     };
     ~DavidsonDiag(){};
 
+    double compute(std::shared_ptr<T> cc, std::shared_ptr<T> cs) {
+      assert(nstate_ == 1);
+      std::vector<std::shared_ptr<T> > c(1,cc);
+      std::vector<std::shared_ptr<T> > s(1,cs);
+      return compute(c,s).front();
+    };
+
     std::vector<double> compute(std::vector<std::shared_ptr<T> > cc, std::vector<std::shared_ptr<T> > cs) {
       if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
       // add entry

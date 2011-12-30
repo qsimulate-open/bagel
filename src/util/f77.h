@@ -21,7 +21,7 @@ extern "C" {
  void daxpy_(const int*, const double*, const double*, const int*, double*, const int*);
  void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*); 
  void dscal_(const int*, const double*, double*, const int*);
- const double ddot_(const int*, const double*, const int*, const double*, const int*); 
+ double ddot_(const int*, const double*, const int*, const double*, const int*); 
  void dgemv_(const char*, const int*, const int*, const double*, const double*, const int*, const double*, const int*,
              const double*, double*, const int*);
  void dgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k, 
@@ -61,6 +61,11 @@ extern "C" {
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k, 
                    const double alpha, const double* a, const int lda, const double* b, const int ldb, 
                    const double beta, double* c, const int ldc) { dgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }; 
+static void dgemv_(const char* a, const int b, const int c, const double d, const double* e, const int f, const double* g, const int h,
+                   const double i, double* j, const int k) { dgemv_(a,&b,&c,&d,e,&f,g,&h,&i,j,&k); };
 static void daxpy_(const int a, const double b, const double* c, const int d, double* e, const int f) {daxpy_(&a,&b,c,&d,e,&f); };
+static void dcopy_(const int a, const double* b, const int c, double* d, const int e) {dcopy_(&a, b, &c, d, &e); };
+static void dscal_(const int a, const double b, double* c, const int d) {dscal_(&a, &b, c, &d); };
+static double ddot_(const int a, const double* b, const int c, const double* d, const int e) { return ddot_(&a,b,&c,d,&e); };
 
 #endif

@@ -29,17 +29,19 @@ CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom, c
 
 void CASSCF::common_init() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment."); 
+  if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment.");
   print_header();
 
   // get maxiter from the input
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   // get maxiter from the input
-  max_micro_iter_ = read_input<int>(idata_, "maxmicro", 100);
+  max_micro_iter_ = read_input<int>(idata_, "maxiter_micro", 100);
   // get nstate from the input
   nstate_ = read_input<int>(idata_, "nstate", 1);
   // get thresh (for macro iteration) from the input
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-8);
+  // get thresh (for micro iteration) from the input
+  thresh_micro_ = read_input<double>(idata_, "thresh_micro", thresh_);
 
   // nocc from the input. If not present, full valence active space is generated.
   nocc_ = read_input<int>(idata_, "nocc", 0);
@@ -47,7 +49,7 @@ void CASSCF::common_init() {
     throw runtime_error("It appears that nocc < 0. Check nocc value.");
   } else if (nocc_ == 0) {
     cout << "    * full valence occupied space generated for nocc." << endl;
-    nocc_ = geom_->num_count_full_valence_nocc(); 
+    nocc_ = geom_->num_count_full_valence_nocc();
   }
 
   // nclosed from the input. If not present, full core space is generated.
@@ -56,7 +58,7 @@ void CASSCF::common_init() {
     throw runtime_error("It appears that nclosed < 0. Check nocc value.");
   } else if (nclosed_ == -1) {
     cout << "    * full core space generated for nclosed." << endl;
-    nclosed_ = geom_->num_count_ncore() / 2; 
+    nclosed_ = geom_->num_count_ncore() / 2;
   }
 
   nact_ = nocc_ - nclosed_;
@@ -127,11 +129,11 @@ void CASSCF::resume_stdcout() {
 shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
   shared_ptr<Matrix1e> mo_rdm1(new Matrix1e(geom_));
-  for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 1.0; 
+  for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 1.0;
   if (!inactive_only) {
     for (int i = 0; i != nact_; ++i) {
       for (int j = 0; j != nact_; ++j) {
-        mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i)*0.5; // note the difference in notation between SCF and FCI... 
+        mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i)*0.5; // note the difference in notation between SCF and FCI...
       }
     }
   }

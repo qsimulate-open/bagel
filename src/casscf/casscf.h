@@ -31,6 +31,7 @@ class CASSCF {
     int max_iter_;
     int max_micro_iter_;
     double thresh_;
+    double thresh_micro_;
 
     std::vector<double> occup_;
     std::shared_ptr<Coeff> coeff_natorb_;
