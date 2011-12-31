@@ -48,6 +48,11 @@ class Matrix1e {
     Matrix1e& operator=(const Matrix1e&);
     Matrix1e operator-(const Matrix1e&) const;
 
+    std::shared_ptr<Matrix1e> clone() const {
+      std::shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+      return out;
+    };
+
     void daxpy(const double, const Matrix1e&);
     void daxpy(const double, const std::shared_ptr<Matrix1e>);
     const double ddot(const Matrix1e&) const;

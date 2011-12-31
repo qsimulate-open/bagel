@@ -5,7 +5,7 @@
 
 #include <src/scf/scf.h>
 #include <src/rysint/eribatch.h>
-#include <src/scf/diis.h>
+#include <src/util/diis.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>
