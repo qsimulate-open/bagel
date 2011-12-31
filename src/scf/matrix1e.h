@@ -25,6 +25,7 @@ class Matrix1e {
 
   public:
     Matrix1e(const std::shared_ptr<Geometry>); 
+    Matrix1e(const std::shared_ptr<Geometry>, const int n, const int m);
     Matrix1e(const Matrix1e&); 
     ~Matrix1e();
 
@@ -41,6 +42,9 @@ class Matrix1e {
     void inverse();
 
     Matrix1e operator*(const Matrix1e&) const;
+    Matrix1e& operator*=(const Matrix1e&);
+    Matrix1e operator*(const double& a) const;
+    Matrix1e& operator*=(const double& a);
     Matrix1e operator%(const Matrix1e&) const; // caution
     Matrix1e operator^(const Matrix1e&) const; // caution
     Matrix1e operator+(const Matrix1e&) const;
@@ -49,9 +53,13 @@ class Matrix1e {
     Matrix1e operator-(const Matrix1e&) const;
 
     std::shared_ptr<Matrix1e> clone() const {
-      std::shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+      std::shared_ptr<Matrix1e> out(new Matrix1e(geom_, ndim_, mdim_));
       return out;
     };
+    // returns exp(*this)
+    std::shared_ptr<Matrix1e> exp(const int deg = 6) const;
+    // returns log(*this)
+    std::shared_ptr<Matrix1e> log(const int deg = 6) const;
 
     void daxpy(const double, const Matrix1e&);
     void daxpy(const double, const std::shared_ptr<Matrix1e>);

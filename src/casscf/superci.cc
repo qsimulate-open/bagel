@@ -12,6 +12,7 @@
 #include <src/scf/fock.h>
 #include <src/scf/scf.h>
 #include <src/util/f77.h>
+#include <src/util/diis.h>
 
 using namespace std;
 
@@ -26,7 +27,10 @@ SuperCI::SuperCI(const multimap<string, string> idat, const shared_ptr<Geometry>
 }
 
 void SuperCI::common_init() {
-  cout << "    * using the Super CI algorithm as noted in Roos (1980) IJQC" << endl << endl;
+  cout << "    * Using the Super CI algorithm as noted in Roos (1980) IJQC" << endl;
+  // get maxiter from the input
+  diis_start_ = read_input<int>(idata_, "diis_start", 5);
+  cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << endl << endl;
 }
 
 SuperCI::~SuperCI() {
@@ -48,6 +52,12 @@ void SuperCI::compute() {
     shared_ptr<Fock> fc(new Fock(geom_, hc)); hcore_ = fc;
   }
 
+  // DIIS: error vectors will be 1RDM change, will be turned on at iter = diis_start_ (>1), 
+  //       update log(U) where Cnow = Corig U
+  DIIS<RotFile> diis(5);
+  shared_ptr<Matrix1e> denprev;
+  shared_ptr<Coeff> origc = ref_->coeff();
+
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
@@ -64,16 +74,11 @@ void SuperCI::compute() {
 
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
-#define NATURAL
-#ifdef NATURAL
     pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
     // new coefficients
     ref_->set_coeff(update_coeff(ref_->coeff(), natorb.first));
     // occupation number of the natural orbitals
     occup_ = natorb.second;
-#else
-    occup_ = fci_->rdm1_av()->diag();
-#endif
 #if 0
     if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
       throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
@@ -179,11 +184,6 @@ void SuperCI::compute() {
           cc_->ele_ref()=0.0;
           sigma_->ele_ref() = init_sigma->ddot(*cc_);
         }
-        else { 
-          double p = 0.0;
-          double *t = sigma_->data(), *d = denom_->data();
-          for (int i = 0; i != nact_*nvirt_; ++i, ++t, ++d) p += *t**t/(*d); 
-        }
 
         // enters davidson iteration
         shared_ptr<RotFile> ccp(new RotFile(*cc_));
@@ -205,8 +205,12 @@ void SuperCI::compute() {
         const double a = davidson.orthog(residual);
         cc_ = residual;
       }
+      // rotation parameters
       cc_ = davidson.civec().front();
-      update_orbitals(cc_);
+      // unitary matrix
+      shared_ptr<Matrix1e> rot = cc_->unpack(ref_->coeff()->geom())->exp();
+      *ref_->coeff() *= *rot;
+//    update_orbitals(rot);
     }
 
     // compute errors
@@ -229,7 +233,7 @@ void SuperCI::compute() {
 }
 
 
-shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<double> mat) {
+shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<double> mat) const {
   shared_ptr<Matrix1e> cnew(new Matrix1e(*dynamic_cast<Matrix1e*>(cold.get())));
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
@@ -301,6 +305,7 @@ void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
 }
 
 
+// compute denominators
 shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) const {
   shared_ptr<RotFile> denom(new RotFile(nclosed_, nact_, nvirt_));
   denom->ele_ref() = 1.0e100; // not needed in any case
@@ -310,30 +315,6 @@ shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shar
     for (int j = 0; j != nvirt_; ++j, ++target)
       *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
   return denom;
-}
-
-
-// update orbitals using Cnew = C exp(X)
-void SuperCI::update_orbitals(shared_ptr<RotFile> rot) {
-  // first form X matrix
-  QFile X(nbasis_, nbasis_);
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt_;   ++j) X.element(j+nocc_, i+nclosed_) = rot->ele_va(j, i);
-    for (int j = 0; j != nclosed_; ++j) X.element(i+nclosed_, j) = rot->ele_ca(j, i);
-  }
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nvirt_;   ++j) X.element(j+nocc_, i) = rot->ele_vc(j, i);
-  for (int i = 0; i != nbasis_; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      X.element(j, i) = -X.element(i, j);
-    }
-  }
-
-  QFile Z(X+X*X*0.5+X*X*X*(1.0/6.0)+X*X*X*X*(1.0/24.0)+X*X*X*X*X*(1.0/24.0/5.0)+X*X*X*X*X*X*(1.0/24.0/5.0/6.0));
-  for (int i = 0; i != nbasis_; ++i) Z.element(i, i) += 1.0;
-
-  dgemm_("N", "N", nbasis_, nbasis_, nbasis_, 1.0, ref_->coeff()->data(), nbasis_, Z.data(), nbasis_, 0.0, X.data(), nbasis_);
-  dcopy_(nbasis_*nbasis_, X.data(), 1, ref_->coeff()->data(), 1);
 }
 
 

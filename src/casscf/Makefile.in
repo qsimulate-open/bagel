@@ -69,7 +69,8 @@ AR = ar
 ARFLAGS = cru
 libcasscf_a_AR = $(AR) $(ARFLAGS)
 libcasscf_a_LIBADD =
-am_libcasscf_a_OBJECTS = casscf.$(OBJEXT) superci.$(OBJEXT)
+am_libcasscf_a_OBJECTS = casscf.$(OBJEXT) superci.$(OBJEXT) \
+	rotfile.$(OBJEXT)
 libcasscf_a_OBJECTS = $(am_libcasscf_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -181,7 +182,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libcasscf.a
-libcasscf_a_SOURCES = casscf.cc superci.cc 
+libcasscf_a_SOURCES = casscf.cc superci.cc rotfile.cc 
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -261,6 +262,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/casscf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/superci.Po@am__quote@
 
 .cc.o:

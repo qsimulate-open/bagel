@@ -24,10 +24,17 @@ Matrix1e::Matrix1e(const RefGeometry geom) : geom_(geom), nbasis_(geom->nbasis()
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : geom_(o.geom_), nbasis_(o.nbasis_) {
+Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m) : geom_(geom), nbasis_(geom->nbasis()) {
+  ndim_ = n;
+  mdim_ = m;
+  data_ = new double[nbasis_*nbasis_]; 
+  fill(data_, data_ + nbasis_*nbasis_, 0.0);
+}
+
+
+Matrix1e::Matrix1e(const Matrix1e& o) : geom_(o.geom_), nbasis_(o.nbasis_), ndim_(o.ndim_), mdim_(o.mdim_) {
   data_ = new double[nbasis_ * nbasis_]; 
-  mdim_ = ndim_ = nbasis_;
-  copy(o.data_, o.data_ + nbasis_ * nbasis_, data_);
+  copy(o.data_, o.data_ + nbasis_*nbasis_, data_);
 }
 
 
@@ -127,25 +134,14 @@ Matrix1e Matrix1e::operator+(const Matrix1e& o) const {
 
 
 Matrix1e& Matrix1e::operator+=(const Matrix1e& o) {
-  const int unit = 1;
-  const double one = 1.0; 
-  const int size = nbasis_ * nbasis_;
-  const double* odata = o.data();
-
-  daxpy_(&size, &one, odata, &unit, data_, &unit); 
-
+  daxpy_(nbasis_*nbasis_, 1.0, o.data(), 1, data_, 1); 
   return *this; 
 }
 
 
 Matrix1e& Matrix1e::operator=(const Matrix1e& o) {
-  const int unit = 1;
-  const double one = 1.0; 
-  const int size = nbasis_ * nbasis_;
-  const double* odata = o.data();
-
-  dcopy_(&size, odata, &unit, data_, &unit); 
-
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
+  dcopy_(nbasis_*nbasis_, o.data(), 1, data_, 1); 
   return *this; 
 }
 
@@ -170,9 +166,6 @@ Matrix1e Matrix1e::operator-(const Matrix1e& o) const {
 
 Matrix1e Matrix1e::operator*(const Matrix1e& o) const {
   Matrix1e out(geom_);
-  const int unit = 1;
-  const double one = 1.0;
-  const double zero = 0.0;
   const int l = ndim_;
   const int m = mdim_; 
   assert(mdim_ == o.ndim());
@@ -180,12 +173,35 @@ Matrix1e Matrix1e::operator*(const Matrix1e& o) const {
   const double* odata = o.data();
   double* outdata = out.data_;
 
-  dgemm_("N", "N", &l, &n, &m, &one, data_, &nbasis_, odata, &nbasis_, &zero, outdata, &nbasis_); 
+  dgemm_("N", "N", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
 
   out.ndim_ = l;
   out.mdim_ = n; 
-    
   return out;
+}
+
+
+Matrix1e& Matrix1e::operator*=(const Matrix1e& o) {
+  Matrix1e out(geom_);
+  const int l = ndim_;
+  const int m = mdim_; 
+  assert(mdim_ == o.ndim());
+  const int n = o.mdim(); 
+  const double* odata = o.data();
+  dgemm_("N", "N", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, out.data(), nbasis_); 
+  *this = out;
+}
+
+
+Matrix1e Matrix1e::operator*(const double& a) const {
+  Matrix1e out(*this);
+  dscal_(nbasis_*nbasis_, a, out.data(), 1);
+  return out;
+}
+
+Matrix1e& Matrix1e::operator*=(const double& a) {
+  dscal_(nbasis_*nbasis_, a, data_, 1);
+  return *this;
 }
 
 
@@ -263,18 +279,12 @@ void Matrix1e::daxpy(const double a, const std::shared_ptr<Matrix1e> o) {
 
 
 const double Matrix1e::ddot(const Matrix1e& o) const {
-  const int size = nbasis_ * nbasis_;
-  const int unit = 1;
-  const double* odata = o.data();
-  return ddot_(&size, data_, &unit, odata, &unit); 
+  return ddot_(nbasis_*nbasis_, data_, 1, o.data(), 1); 
 }
 
 
 const double Matrix1e::ddot(const std::shared_ptr<Matrix1e> o) const {
-  const int size = nbasis_ * nbasis_;
-  const int unit = 1;
-  const double* odata = o->data();
-  return ddot_(&size, data_, &unit, odata, &unit); 
+  return ddot_(nbasis_*nbasis_, data_, 1, o->data(), 1); 
 }
 
 
@@ -286,6 +296,40 @@ const double Matrix1e::rms() const {
 const double Matrix1e::trace() const {
   double out = 0.0;
   for (int i = 0; i != ndim_; ++i) out += data_[i * nbasis_ + i]; 
+  return out;
+}
+
+
+shared_ptr<Matrix1e> Matrix1e::exp(const int deg) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_, ndim_, mdim_));
+  Matrix1e buf(*this);
+  assert(ndim_ == mdim_);
+
+  for (int i = deg; i != 1; --i) {
+    const double inv = 1.0/static_cast<double>(i);
+    buf *= inv;
+    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0; 
+    *out = (*this)*buf;
+    if (i != 1) buf = *out;
+  }
+  for (int j = 0; j != ndim_; ++j) out->element(j,j) += 1.0; 
+  return out;
+}
+
+
+shared_ptr<Matrix1e> Matrix1e::log(const int deg) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_, ndim_, mdim_));
+  Matrix1e buf(*this);
+  for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
+  assert(ndim_ == mdim_);
+
+  for (int i = deg; i != 1; --i) {
+    const double inv = -static_cast<double>(i-1)/static_cast<double>(i);
+    buf *= inv;
+    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0; 
+    *out = (*this)*buf - buf;
+    if (i != 1) buf = *out;
+  }
   return out;
 }
 

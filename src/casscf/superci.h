@@ -17,6 +17,9 @@
 class SuperCI : public CASSCF {
 
   protected:
+    // DIIS will be used after some macro iteration 
+    int diis_start_;
+
     void common_init();
 
     void grad_vc(const std::shared_ptr<Matrix1e> fock, std::shared_ptr<RotFile> sigma);
@@ -26,7 +29,7 @@ class SuperCI : public CASSCF {
 
     void compute_qxr(double* int1ext, std::shared_ptr<RDM<2> > rdm2, std::shared_ptr<QFile> qxr);
 
-    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>);
+    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>) const;
 
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
                       const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f);

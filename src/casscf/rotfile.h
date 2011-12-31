@@ -10,6 +10,9 @@
 #include <memory>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
+#include <cassert>
+#include <src/scf/matrix1e.h>
 #include <src/util/f77.h>
 
 class RotFile {
@@ -76,34 +79,17 @@ class RotFile {
     double& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; };
     // reference config.
     double& ele_ref() { assert(superci_); return data_[size_-1]; };
+    // const references
+    const double& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; };
+    const double& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; };
+    const double& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; };
+    const double& ele_ref() const { assert(superci_); return data_[size_-1]; };
 
+    // unpack to Matrix1e
+    std::shared_ptr<Matrix1e> unpack(std::shared_ptr<Geometry> geom) const;
 
-    void print() {
-      if (nact_ && nclosed_) {
-      std::cout << " printing closed-active block" << std::endl;
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nclosed_; ++j) {
-          std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i); 
-        }
-        std::cout << std::endl;
-      }}
-      if (nact_ && nvirt_) {
-      std::cout << " printing virtual-active block" << std::endl;
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nvirt_; ++j) {
-          std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i); 
-        }
-        std::cout << std::endl;
-      }}
-      if (nclosed_ && nvirt_) {
-      std::cout << " printing virtual-closed block" << std::endl;
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_; ++j) {
-          std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i); 
-        }
-        std::cout << std::endl;
-      }}
-    }; 
+    // print matrix
+    void print() const;
 };
 
 
