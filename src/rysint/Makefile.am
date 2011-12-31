@@ -8,7 +8,7 @@ _vrr_0050.cc _vrr_0060.cc _vrr_0070.cc _vrr_0080.cc _vrr_0090.cc _vrr_00a0.cc _v
 _hrr_20_11.cc  _hrr_40_31.cc  _hrr_60_33.cc  _hrr_70_43.cc  _hrr_80_44.cc  _hrr_90_54.cc  _hrr_a0_64.cc _hrr_30_21.cc  _hrr_50_32.cc  _hrr_60_42.cc  _hrr_70_52.cc  _hrr_80_53.cc  _hrr_90_63.cc  _hrr_b0_65.cc _hrr_40_22.cc  _hrr_50_41.cc  _hrr_60_51.cc  _hrr_70_61.cc  _hrr_80_62.cc  _hrr_a0_55.cc  _hrr_c0_66.cc \
 naibatch.cc ncompute.cc ncontraction.cc  carsphlist.cc sort_sph.cc \
 _carsph_00.cc _carsph_10.cc _carsph_20.cc _carsph_30.cc _carsph_40.cc _carsph_50.cc _carsph_60.cc _carsph_11.cc _carsph_21.cc _carsph_31.cc _carsph_41.cc _carsph_51.cc _carsph_61.cc _carsph_22.cc _carsph_32.cc _carsph_42.cc _carsph_52.cc _carsph_62.cc _carsph_33.cc _carsph_43.cc _carsph_53.cc _carsph_63.cc _carsph_44.cc _carsph_54.cc _carsph_64.cc _carsph_55.cc _carsph_65.cc _carsph_66.cc \
-eriroot0.f eriroot1.f eriroot2.f eriroot3.f eriroot4.f eriroot5.f eriroot6.f eriroot7.f eriroot8.f eriroot9.f \
+_eriroot_1.f _eriroot_2.f _eriroot_3.f _eriroot_4.f _eriroot_5.f _eriroot_6.f _eriroot_7.f _eriroot_8.f _eriroot_9.f _eriroot_10.f _eriroot_11.f _eriroot_12.f \
 erirootlist.cc
 AM_CXXFLAGS=-I$(top_srcdir)
 

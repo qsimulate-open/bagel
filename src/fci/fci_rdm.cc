@@ -119,7 +119,6 @@ void FCI::compute_rdm12(const int ist) {
                                        + 0.5*ddot_(nn, jop_->mo2e_unpacked_ptr(), 1, rdm2->data(), 1)
                                        + core_energy_ << endl; 
 #endif
-  rdm2_av_->print();
 
   phia_ = phia_bk;
   phib_ = phib_bk;

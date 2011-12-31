@@ -177,7 +177,12 @@ void SuperCI::compute() {
 #endif
           // projection to reference
           cc_->ele_ref()=0.0;
-//        sigma_->ele_ref() = init_sigma->ddot(*cc_);
+          sigma_->ele_ref() = init_sigma->ddot(*cc_);
+        }
+        else { 
+          double p = 0.0;
+          double *t = sigma_->data(), *d = denom_->data();
+          for (int i = 0; i != nact_*nvirt_; ++i, ++t, ++d) p += *t**t/(*d); 
         }
 
         // enters davidson iteration
@@ -188,8 +193,10 @@ void SuperCI::compute() {
         // residual vector and error
         shared_ptr<RotFile> residual = davidson.residual().front();
         const double error = residual->ddot(*residual) / residual->size();
+#if 0
         cout << setw(3) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
              << setw(10) << scientific << setprecision(2) << error << fixed << endl;
+#endif
 
         if (error < thresh_micro_) break;
 
@@ -248,7 +255,7 @@ void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   double* target = sigma->ptr_va();
   fill(target, target+nvirt_*nact_, 0.0);
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->data()+i*nbasis_+nocc_, 1, target, 1);
+    daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->element_ptr(nocc_, i), 1, target, 1);
   }
 }
 
@@ -318,37 +325,15 @@ void SuperCI::update_orbitals(shared_ptr<RotFile> rot) {
     for (int j = 0; j != nvirt_;   ++j) X.element(j+nocc_, i) = rot->ele_vc(j, i);
   for (int i = 0; i != nbasis_; ++i) {
     for (int j = 0; j <= i; ++j) {
-#if 1
       X.element(j, i) = -X.element(i, j);
-#else
-      X.element(j, i) =  X.element(i, j);
-      X.element(i, j) = -X.element(i, j);
-#endif
     }
   }
 
   QFile Z(X+X*X*0.5+X*X*X*(1.0/6.0)+X*X*X*X*(1.0/24.0)+X*X*X*X*X*(1.0/24.0/5.0)+X*X*X*X*X*X*(1.0/24.0/5.0/6.0));
   for (int i = 0; i != nbasis_; ++i) Z.element(i, i) += 1.0;
 
-#if 0
-  QFile tmp(X^X);
-  {
-    double* vec = new double[nbasis_];
-    const int lwork = nbasis_*5;
-    double* work = new double[nbasis_*5];
-    int info;
-    dsyev_("V", "U", &nbasis_, tmp.data(), &nbasis_, vec, work, &lwork, &info);
-    if (info) throw runtime_error("dsyev failed in update_oribtals");
-    for (int i = 0; i != nbasis_; ++i) dscal_(nbasis_, 1.0/sqrt(sqrt(vec[i])), tmp.data()+i*nbasis_, 1);
-    delete[] work;
-    delete[] vec;
-  }
-  QFile Z = X*tmp%tmp;
-#endif
-//ref_->coeff()->print();
   dgemm_("N", "N", nbasis_, nbasis_, nbasis_, 1.0, ref_->coeff()->data(), nbasis_, Z.data(), nbasis_, 0.0, X.data(), nbasis_);
   dcopy_(nbasis_*nbasis_, X.data(), 1, ref_->coeff()->data(), 1);
-//ref_->coeff()->print();
 }
 
 

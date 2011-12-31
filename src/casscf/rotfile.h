@@ -79,27 +79,30 @@ class RotFile {
 
 
     void print() {
+      if (nact_ && nclosed_) {
       std::cout << " printing closed-active block" << std::endl;
       for (int i = 0; i != nact_; ++i) {
         for (int j = 0; j != nclosed_; ++j) {
           std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i); 
         }
         std::cout << std::endl;
-      }
+      }}
+      if (nact_ && nvirt_) {
       std::cout << " printing virtual-active block" << std::endl;
       for (int i = 0; i != nact_; ++i) {
         for (int j = 0; j != nvirt_; ++j) {
           std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i); 
         }
         std::cout << std::endl;
-      }
+      }}
+      if (nclosed_ && nvirt_) {
       std::cout << " printing virtual-closed block" << std::endl;
       for (int i = 0; i != nclosed_; ++i) {
         for (int j = 0; j != nvirt_; ++j) {
           std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i); 
         }
         std::cout << std::endl;
-      }
+      }}
     }; 
 };
 

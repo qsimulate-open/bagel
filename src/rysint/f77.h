@@ -3,7 +3,6 @@
 
 extern "C" {
  void rysroot_(const double*, double*, double*, const int*, const int*);
- void eriroot0_(const double*, double*, double*, const int*);
  void eriroot1_(const double*, double*, double*, const int*);
  void eriroot2_(const double*, double*, double*, const int*);
  void eriroot3_(const double*, double*, double*, const int*);
@@ -13,6 +12,9 @@ extern "C" {
  void eriroot7_(const double*, double*, double*, const int*);
  void eriroot8_(const double*, double*, double*, const int*);
  void eriroot9_(const double*, double*, double*, const int*);
+ void eriroot10_(const double*, double*, double*, const int*);
+ void eriroot11_(const double*, double*, double*, const int*);
+ void eriroot12_(const double*, double*, double*, const int*);
 };
 
 #endif
