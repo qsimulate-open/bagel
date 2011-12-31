@@ -57,7 +57,7 @@ void SuperCI::compute() {
     fci_->compute_rdm12();
     resume_stdcout();
     // get energy
-    std::vector<double> energy = fci_->energy();
+    vector<double> energy = fci_->energy();
     // slot in density matrix
     shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
     shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
@@ -94,14 +94,8 @@ void SuperCI::compute() {
       // computes f and f_act
       // TODO call to fock builder should be done only once.
       shared_ptr<Matrix1e> f, finact;
-      shared_ptr<QFile>    fact, factp, gaa, h;
+      shared_ptr<QFile>    fact, factp, gaa;
       shared_ptr<Coeff> coeff = ref_->coeff();
-      {
-        // hcore operator in QFile
-        shared_ptr<QFile> ht(new QFile(nbasis_, nbasis_)); h = ht;
-        shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *hcore_ * *coeff));
-        copy(ft->data(), ft->data()+nbasis_*nbasis_, ht->data());
-      }
       {
         // Fock operator
         shared_ptr<Fock> f_ao(new Fock(geom_, hcore_, denall, ref_->schwarz()));
@@ -128,14 +122,11 @@ void SuperCI::compute() {
       {
         // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
         shared_ptr<QFile> ft(new QFile(nact_, nact_)); gaa = ft;
-//fci_->rdm2_av()->print();
         dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
         double p = 0.0;
         for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
-            cout << p << endl;
         for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
       }
-//gaa->print();
 
       // first, <proj|H|0> is computed
       sigma_->zero();
@@ -143,12 +134,12 @@ void SuperCI::compute() {
       cc_->ele_ref() = 1.0;
 
       // <a/i|H|0> = 2f_ai
-      grad_vc(f, sigma_);
+//    grad_vc(f, sigma_);
       // <a/r|H|0> = h_as d_sr + 2(as|tu)P_rs,tu = fact_rs
       grad_va(fact, sigma_);
       // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
       // TODO
-      grad_ca(f, finact, fci_->rdm1_av(), qxr, sigma_);
+//    grad_ca(f, finact, fci_->rdm1_av(), qxr, sigma_);
       sigma_->ele_ref() = 0.0;
 
       // setting error of macro iteration
@@ -185,12 +176,13 @@ void SuperCI::compute() {
           sigma_ti_ti_;
 #endif
           // projection to reference
-          sigma_->ele_ref() = init_sigma->ddot(*cc_);
+          cc_->ele_ref()=0.0;
+//        sigma_->ele_ref() = init_sigma->ddot(*cc_);
         }
 
         // enters davidson iteration
-        shared_ptr<RotFile> ccp(new RotFile(cc_));
-        shared_ptr<RotFile> sigmap(new RotFile(sigma_));
+        shared_ptr<RotFile> ccp(new RotFile(*cc_));
+        shared_ptr<RotFile> sigmap(new RotFile(*sigma_));
         const double mic_energy = davidson.compute(ccp, sigmap);
 
         // residual vector and error
@@ -203,7 +195,7 @@ void SuperCI::compute() {
 
         // update cc_
         for (double *i = residual->begin(), *j = denom_->begin(); i != residual->end(); ++i, ++j) { *i /= *j; }
-        davidson.orthog(residual);
+        const double a = davidson.orthog(residual);
         cc_ = residual;
       }
       cc_ = davidson.civec().front();
@@ -220,11 +212,7 @@ void SuperCI::compute() {
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
     }
 
-#if 0
     if (*min_element(conv.begin(), conv.end())) break;
-#else
-    break;
-#endif
     if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in the CASSCF macro interation." << endl << endl;
       break;
@@ -258,6 +246,7 @@ void SuperCI::grad_vc(const shared_ptr<Matrix1e> fock, shared_ptr<RotFile> sigma
 void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
+  fill(target, target+nvirt_*nact_, 0.0);
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
     daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->data()+i*nbasis_+nocc_, 1, target, 1);
   }
@@ -281,27 +270,27 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, const shared_ptr<Matrix1e> f
 
 
 void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<QFile> qxr) {
-  // int1ext = (st|ux) = (ts|ux), rdm2 = D_ru,st = D_ur,ts = D_ts,ur
+  // int1ext = (xu|st) = (ts|ux), rdm2 = D_ru,st = D_ur,ts = D_ts,ur
   const int nbas = geom_->nbasis(); // caution :: this is AO and therefore not nbasis_
   const int common = nact_*nact_*nact_;
   double* buf = new double[nbas*nact_];
   dgemm_("T", "N", nbas, nact_, common, 1.0, int1ext, common, rdm2->first(), common, 0.0, buf, nbas);
   // slot in to an apropriate place
   dgemm_("T", "N", nbasis_, nact_, nbas, 1.0, ref_->coeff()->data(), nbas, buf, nbas, 0.0, qxr->data(), nbasis_);
+
   delete[] buf;
 }
 
 
-// sigma_at_at = delta_ab Gtu/sqrt(nt nu) - delta_tu Fab
+// sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab
 void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) {
   if (!nact_ || !nvirt_) return;
   shared_ptr<QFile> gtup(new QFile(*gaa));
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       gtup->element(j,i) /= std::sqrt(occup_[i]*occup_[j]);
-//gtup->print();
   dgemm_("N", "N", nvirt_, nact_, nact_, 1.0, cc->ptr_va(), nvirt_, gtup->data(), nact_, 0.0, sigma->ptr_va(), nvirt_);
-  dgemm_("N", "N", nvirt_, nact_, nvirt_, -1.0, f->data()+nocc_, nbasis_, cc->ptr_va(), nvirt_, 1.0, sigma->ptr_va(), nvirt_);
+  dgemm_("N", "N", nvirt_, nact_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_va(), nvirt_, 1.0, sigma->ptr_va(), nvirt_);
 }
 
 
@@ -312,8 +301,7 @@ shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shar
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nvirt_; ++j, ++target)
-      *target = gaa->element(i,i) / occup_[i] - f->element(j+nocc_, j+nocc_);
-
+      *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
   return denom;
 }
 

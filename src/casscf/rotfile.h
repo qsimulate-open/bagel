@@ -12,9 +12,6 @@
 #include <iostream>
 #include <src/util/f77.h>
 
-// just for convenience
-static const int rotfile_unit_ = 1;
-
 class RotFile {
   protected:
     double* data_;
@@ -47,19 +44,19 @@ class RotFile {
     // zero out
     void zero() { std::fill(data_, data_+size_, 0.0); };
     // returns dot product
-    double ddot(RotFile& o) { return ddot_(&size_, data_, &rotfile_unit_, o.data_, &rotfile_unit_); };
+    double ddot(RotFile& o) { return ddot_(size_, data_, 1, o.data_, 1); };
     // returns norm of the vector
     double norm() { return std::sqrt(ddot(*this)); };
     // daxpy added to self
-    void daxpy(double a, RotFile& o) { daxpy_(&size_, &a, o.data_, &rotfile_unit_, data_, &rotfile_unit_); }; 
+    void daxpy(double a, RotFile& o) { daxpy_(size_, a, o.data_, 1, data_, 1); }; 
     // orthogonalize to the liset of RotFile's
     double orthog(std::list<std::shared_ptr<RotFile> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter)
         this->daxpy(- this->ddot(**iter), **iter);
       const double scal = 1.0/this->norm();
-      dscal_(&size_, &scal, data_, &rotfile_unit_);
-      return 1.0/scal; 
-    }
+      dscal_(size_, scal, data_, 1);
+      return 1.0/scal;
+    };
 
     // return data_
     double* data() { return data_; };
@@ -127,6 +124,8 @@ class QFile {
     double* data() { return data_; };
     double& element(const int i, const int j) { return data_[i+j*nb_]; };
     double* element_ptr(const int i, const int j) { return data_+i+j*nb_; };
+
+    void zero() { std::fill(data_, data_+na_*nb_, 0.0); };
 
     QFile operator*(const QFile& o) {
       const int n = nb_;

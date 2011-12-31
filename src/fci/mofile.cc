@@ -139,7 +139,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   }
 
   // aobuff here contains (rs|tx) with r running fastest. x: AO
-  // Stupid sort. Anyway this is not the way. DF will be used. TODO
+  // Anyway this is not the way. DF will be used. TODO
   mo2e_1ext_.resize(mm*nbasis*nocc);
   copy(aobuff, aobuff+mm*nbasis*nocc, mo2e_1ext_ptr());
 
