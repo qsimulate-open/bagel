@@ -32,15 +32,13 @@ class HPW_DIIS  {
     RefT extrapolate(const RefT rot) {
       // prev = log(base)
       RefT expo = (*base_**rot).log();
+      RefT prev_ = base_->log();
       RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
-err->print();
-      prev_ = expo;
 
       RefT extrap = diis_.extrapolate(std::make_pair(expo, err)); 
       // returns unitary matrix with respect to the original matrix
- //   RefT out(new T(*orig_* *expo->exp()));
       RefT out(new T(*orig_* *extrap->exp()));
-      *base_ *= *extrap->exp();
+      *base_ = *extrap->exp();
       return out;
     };
 
