@@ -17,12 +17,14 @@ typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
 MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<SCF> ref) : geom_(geom), ref_(ref) {
+#if 0
   {
     Filename tmpf;
     filename_ = tmpf.filename_next();
   }
   std::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::trunc | std::ios::binary));
   file_ = tmp;
+#endif
 
   { // prepare offset and basis
     typedef std::shared_ptr<Atom> RefAtom;
@@ -40,7 +42,9 @@ MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<SCF> ref) : geo
 }
 
 MOFile::~MOFile() {
+#if 0
   unlink(filename_.c_str());
+#endif
 }
 
 // I don't care the efficiency at all!!

@@ -228,9 +228,6 @@ Matrix1e Matrix1e::operator%(const Matrix1e& o) const {
 
 Matrix1e Matrix1e::operator^(const Matrix1e& o) const {
   Matrix1e out(geom_);
-  const int unit = 1;
-  const double one = 1.0;
-  const double zero = 0.0;
   const int l = ndim_;
   const int m = mdim_; 
   assert(mdim_ == o.mdim());
@@ -238,7 +235,7 @@ Matrix1e Matrix1e::operator^(const Matrix1e& o) const {
   const double* odata = o.data();
   double* outdata = out.data_;
 
-  dgemm_("N", "T", &l, &n, &m, &one, data_, &nbasis_, odata, &nbasis_, &zero, outdata, &nbasis_); 
+  dgemm_("N", "T", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
 
   out.ndim_ = l;
   out.mdim_ = n;
@@ -334,12 +331,38 @@ shared_ptr<Matrix1e> Matrix1e::log(const int deg) const {
 }
 
 
+void Matrix1e::purify_unitary() {
+  assert(ndim_ == mdim_);
+  Matrix1e buf(*this ^ *this);
+  const int lwork = 5*ndim_;
+  double* work = new double[lwork];
+  double* vec = new double[ndim_];
+  int info;
+  dsyev_("V", "L", &ndim_, buf.data(), &ndim_, vec, work, &lwork, &info); 
+  if (info) throw runtime_error("dsyev failed in Matrix1e::purify_unitary");
+  if (vec[0] < 0.95)        cout << "   --- smallest eigenvalue in purify_unitary() " << vec[0] << endl;
+  if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
+  for (int i = 0; i != ndim_; ++i) {
+    for (int j = 0; j != ndim_; ++j) {
+      buf.element(j,i) /= sqrt(sqrt(vec[i]));
+    }
+  }
+  *this *= buf ^ buf;
+
+  // just checking...
+  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
+
+  delete[] work;
+  delete[] vec;
+}
+
+
 void Matrix1e::print(const string name, const int size) const { 
  
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != size; ++i) {
     for (int j = 0; j != size; ++j) {
-      cout << fixed << setw(8) << setprecision(5) << data_[j * nbasis_ + i]  << " "; 
+      cout << fixed << setw(12) << setprecision(8) << data_[j * nbasis_ + i]  << " "; 
     }
     cout << endl;
   }

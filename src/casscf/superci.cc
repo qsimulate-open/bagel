@@ -221,6 +221,7 @@ void SuperCI::compute() {
     cc_ = davidson.civec().front();
     // unitary matrix
     shared_ptr<Matrix1e> rot = cc_->unpack(ref_->coeff()->geom())->exp();
+    rot->purify_unitary();
 
     if (iter < diis_start_) {
       *ref_->coeff() *= *rot;
@@ -267,16 +268,16 @@ shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<dou
 }
 
 
-// <a/i|H|0> = 2f_ai
+// <a/i|H|0> = 2f_ai /sqrt(2)
 void SuperCI::grad_vc(const shared_ptr<Matrix1e> f, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nclosed_) return;
   double* target = sigma->ptr_vc();
   for (int i = 0; i != nclosed_; ++i, target += nvirt_)
-    daxpy_(nvirt_, 2.0, f->element_ptr(nocc_,i), 1, target, 1);
+    daxpy_(nvirt_, std::sqrt(2.0), f->element_ptr(nocc_,i), 1, target, 1);
 }
 
 
-// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/nr)
+// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/sqrt(nr))
 void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
@@ -286,7 +287,7 @@ void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
 }
 
 
-// <r/i|H|0> = (2f_ri - f^act_ri)/(2-nr)
+// <r/i|H|0> = (2f_ri - f^act_ri)/sqrt(2-nr)
 void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nclosed_ || !nact_) return;
   double* target = sigma->ptr_ca();
@@ -388,7 +389,7 @@ shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shar
   target = denom->ptr_vc();
   for (int i = 0; i != nclosed_; ++i)
     for (int j = 0; j != nvirt_; ++j, ++target)
-      *target = (f->element(j+nocc_, j+nocc_) - f->element(i, i));
+      *target = f->element(j+nocc_, j+nocc_) - f->element(i, i);
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {

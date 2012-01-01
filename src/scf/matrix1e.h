@@ -65,6 +65,7 @@ class Matrix1e {
     void daxpy(const double, const Matrix1e&);
     void daxpy(const double, const std::shared_ptr<Matrix1e>);
     const double ddot(const Matrix1e&) const;
+    const double norm() const { return std::sqrt(ddot(*this)); };
     const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
@@ -72,6 +73,7 @@ class Matrix1e {
     void zero() { std::fill(data_, data_+nbasis_*nbasis_, 0.0); };
     void unit() { std::fill(data_, data_+nbasis_*nbasis_, 0.0);
                   for (int i = 0; i != ndim_; ++i) data_[i+i*nbasis_] = 1.0; assert(ndim_ == mdim_);};
+    void purify_unitary();
 
     void print(const std::string in = "", const int size = 10) const;
 };
