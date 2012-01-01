@@ -35,6 +35,7 @@ void FCI::common_init() {
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-12);
+  thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
   norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
 
   geom_->set_ncore(ncore_*2);

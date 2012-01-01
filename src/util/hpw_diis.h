@@ -22,7 +22,6 @@ class HPW_DIIS  {
   protected:
     DIIS<T> diis_;
     RefT base_;
-    RefT prev_;
     const RefT orig_;
 
   public:
@@ -35,10 +34,12 @@ class HPW_DIIS  {
       RefT prev_ = base_->log();
       RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
 
-      RefT extrap = diis_.extrapolate(std::make_pair(expo, err)); 
+      RefT extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
+      // this is important
+      extrap->purify_unitary();
       // returns unitary matrix with respect to the original matrix
-      RefT out(new T(*orig_* *extrap->exp()));
-      *base_ = *extrap->exp();
+      RefT out(new T(*orig_* *extrap));
+      *base_ = *extrap;
       return out;
     };
 

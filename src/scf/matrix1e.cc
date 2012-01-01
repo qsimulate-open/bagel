@@ -338,19 +338,20 @@ void Matrix1e::purify_unitary() {
   double* work = new double[lwork];
   double* vec = new double[ndim_];
   int info;
-  dsyev_("V", "L", &ndim_, buf.data(), &ndim_, vec, work, &lwork, &info); 
+  dsyev_("V", "U", &ndim_, buf.data(), &ndim_, vec, work, &lwork, &info); 
   if (info) throw runtime_error("dsyev failed in Matrix1e::purify_unitary");
   if (vec[0] < 0.95)        cout << "   --- smallest eigenvalue in purify_unitary() " << vec[0] << endl;
   if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != ndim_; ++j) {
-      buf.element(j,i) /= sqrt(sqrt(vec[i]));
+      buf.element(j,i) /= std::sqrt(std::sqrt(vec[i]));
     }
   }
-  *this *= buf ^ buf;
+  *this = ((buf ^ buf) * *this);
 
   // just checking...
-  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
+  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-12);
+  assert(std::abs((*this%*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-12);
 
   delete[] work;
   delete[] vec;
