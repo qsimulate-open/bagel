@@ -73,6 +73,7 @@ class Matrix1e {
     void zero() { std::fill(data_, data_+nbasis_*nbasis_, 0.0); };
     void unit() { std::fill(data_, data_+nbasis_*nbasis_, 0.0);
                   for (int i = 0; i != ndim_; ++i) data_[i+i*nbasis_] = 1.0; assert(ndim_ == mdim_);};
+    // purify a (near unitary) matrix to be unitary
     void purify_unitary();
 
     void print(const std::string in = "", const int size = 10) const;

@@ -20,6 +20,7 @@ extern "C" {
  void dcopy_(const int*, const double*, const int*, double*, const int*);
  void daxpy_(const int*, const double*, const double*, const int*, double*, const int*);
  void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*); 
+ void dgesv_(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* b, const int* ldb, int* info);
  void dscal_(const int*, const double*, double*, const int*);
  double ddot_(const int*, const double*, const int*, const double*, const int*); 
  void dgemv_(const char*, const int*, const int*, const double*, const double*, const int*, const double*, const int*,

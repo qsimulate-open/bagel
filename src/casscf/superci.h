@@ -46,6 +46,7 @@ class SuperCI : public CASSCF {
                                          const std::shared_ptr<Matrix1e> f) const;
 
     void update_orbitals(std::shared_ptr<RotFile> rot);
+    std::shared_ptr<Matrix1e> tailor_rotation(const std::shared_ptr<Matrix1e> seed);
 
   public:
     SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom) 

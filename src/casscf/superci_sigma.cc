@@ -8,6 +8,47 @@
 using namespace std;
 
 
+//////////////////////////////////////////////////////
+// gradient vectors ... they are definitely correct.
+//////////////////////////////////////////////////////
+
+
+// <a/i|H|0> = 2f_ai /sqrt(2)
+void SuperCI::grad_vc(const shared_ptr<Matrix1e> f, shared_ptr<RotFile> sigma) {
+  if (!nvirt_ || !nclosed_) return;
+  double* target = sigma->ptr_vc();
+  for (int i = 0; i != nclosed_; ++i, target += nvirt_)
+    daxpy_(nvirt_, std::sqrt(2.0), f->element_ptr(nocc_,i), 1, target, 1);
+}
+
+
+// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/sqrt(nr))
+void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
+  if (!nvirt_ || !nact_) return;
+  double* target = sigma->ptr_va();
+  for (int i = 0; i != nact_; ++i, target += nvirt_) {
+    daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->element_ptr(nocc_, i), 1, target, 1);
+  }
+}
+
+
+// <r/i|H|0> = (2f_ri - f^act_ri)/sqrt(2-nr)
+void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
+  if (!nclosed_ || !nact_) return;
+  double* target = sigma->ptr_ca();
+  for (int i = 0; i != nact_; ++i, target += nclosed_) {
+    daxpy_(nclosed_, 2.0/std::sqrt(2.0-occup_[i]), f->element_ptr(0,nclosed_+i), 1, target, 1);
+    daxpy_(nclosed_, -1.0/std::sqrt(2.0-occup_[i]), fact->element_ptr(0,i), 1, target, 1);
+  }
+}
+
+
+
+//////////////////////////////////////////////////////
+// other elements ... hopefully correct.
+//////////////////////////////////////////////////////
+
+
 // sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab
 void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) {
   if (!nact_ || !nvirt_) return;

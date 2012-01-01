@@ -357,6 +357,30 @@ void Matrix1e::purify_unitary() {
 }
 
 
+// in-place matrix inverse (practically we use buffer area)
+void Matrix1e::inverse() {
+  assert(ndim_ == mdim_);
+  shared_ptr<Matrix1e> buf = this->clone();
+  buf->unit();
+
+  const int lwork = 3*ndim_;
+  int info;
+  int* ipiv = new int[ndim_];
+#if 0
+  double* work = new double[lwork];
+  dsysv_("U", &ndim_, &ndim_, data_, &ndim_, ipiv, buf->data(), &ndim_, work, &lwork, &info); 
+  delete[] work;
+#else
+  dgesv_(&ndim_, &ndim_, data_, &ndim_, ipiv, buf->data(), &ndim_, &info);
+#endif
+  if (info) throw runtime_error("dsysv failed in Matrix1e::inverse()");
+
+  copy(buf->data_, buf->data_+nbasis_*nbasis_, data_);
+
+  delete[] ipiv;
+}
+
+
 void Matrix1e::print(const string name, const int size) const { 
  
   cout << "++++ " + name + " ++++" << endl;

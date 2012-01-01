@@ -29,20 +29,18 @@ class HPW_DIIS  {
     HPW_DIIS(const int n, RefT o) : diis_(n), base_(o->clone()), orig_(o) { base_->unit(); };
     ~HPW_DIIS() {};
 
-    RefT extrapolate(const RefT input) {
-      // unitary matrix as an input
-      RefT rot = input;
+    RefT extrapolate(const RefT rot) {
       // prev = log(base)
       RefT expo = (*base_**rot).log();
-//    RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
-//    prev_ = expo;
+      RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
+err->print();
+      prev_ = expo;
 
-//    RefT extrap = diis_.extrapolate(std::make_pair(expo, err)); 
+      RefT extrap = diis_.extrapolate(std::make_pair(expo, err)); 
       // returns unitary matrix with respect to the original matrix
-//    RefT out(new T(*orig_* *base_ * *rot));
-      RefT out(new T(*orig_* *expo->exp()));
-//    RefT out(new T(*orig_* *extrap->exp()));
-      *base_ *= *rot;
+ //   RefT out(new T(*orig_* *expo->exp()));
+      RefT out(new T(*orig_* *extrap->exp()));
+      *base_ *= *extrap->exp();
       return out;
     };
 

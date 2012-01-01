@@ -208,6 +208,8 @@ void SuperCI::compute() {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb.first[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
+      tmp = tailor_rotation(tmp);
+      
       shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp);
       shared_ptr<Coeff> newcc(new Coeff(*mcc));
       ref_->set_coeff(newcc);
@@ -236,6 +238,27 @@ void SuperCI::compute() {
 }
 
 
+// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock 
+shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
+
+  shared_ptr<Matrix1e> out = seed->clone();
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nclosed_; ++j)
+      out->element(j,i) = seed->element(j,i);
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nact_; ++j)
+      out->element(j+nclosed_,i+nclosed_) = seed->element(j+nclosed_,i+nclosed_);
+  for (int i = 0; i != nvirt_; ++i)
+    for (int j = 0; j != nvirt_; ++j)
+      out->element(j+nocc_,i+nocc_) = seed->element(j+nocc_,i+nocc_);
+  out->inverse(); 
+  out->purify_unitary();
+  *out = *seed * *out;
+
+  return out;
+}
+
+
 shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<double> mat) const {
   shared_ptr<Matrix1e> cnew(new Matrix1e(*dynamic_cast<Matrix1e*>(cold.get())));
   int nbas = geom_->nbasis();
@@ -246,34 +269,6 @@ shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<dou
 }
 
 
-// <a/i|H|0> = 2f_ai /sqrt(2)
-void SuperCI::grad_vc(const shared_ptr<Matrix1e> f, shared_ptr<RotFile> sigma) {
-  if (!nvirt_ || !nclosed_) return;
-  double* target = sigma->ptr_vc();
-  for (int i = 0; i != nclosed_; ++i, target += nvirt_)
-    daxpy_(nvirt_, std::sqrt(2.0), f->element_ptr(nocc_,i), 1, target, 1);
-}
-
-
-// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/sqrt(nr))
-void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
-  if (!nvirt_ || !nact_) return;
-  double* target = sigma->ptr_va();
-  for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->element_ptr(nocc_, i), 1, target, 1);
-  }
-}
-
-
-// <r/i|H|0> = (2f_ri - f^act_ri)/sqrt(2-nr)
-void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
-  if (!nclosed_ || !nact_) return;
-  double* target = sigma->ptr_ca();
-  for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    daxpy_(nclosed_, 2.0/std::sqrt(2.0-occup_[i]), f->element_ptr(0,nclosed_+i), 1, target, 1);
-    daxpy_(nclosed_, -1.0/std::sqrt(2.0-occup_[i]), fact->element_ptr(0,i), 1, target, 1);
-  }
-}
 
 
 void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<QFile> qxr) {
