@@ -16,27 +16,6 @@
 
 using namespace std;
 
-SuperCI::SuperCI(const multimap<string, string> idat, const shared_ptr<Geometry> geom)
- : CASSCF(idat, geom) {
-  common_init();
-}
-
-SuperCI::SuperCI(const multimap<string, string> idat, const shared_ptr<Geometry> geom, const shared_ptr<SCF> scf)
- : CASSCF(idat, geom, scf) {
-  common_init();
-}
-
-void SuperCI::common_init() {
-  cout << "    * Using the Super CI algorithm as noted in Roos (1980) IJQC" << endl;
-  // get maxiter from the input
-  diis_start_ = read_input<int>(idata_, "diis_start", 5);
-  cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << endl << endl;
-}
-
-SuperCI::~SuperCI() {
-
-}
-
 
 void SuperCI::compute() {
   const string indent = "  ";
@@ -89,10 +68,8 @@ void SuperCI::compute() {
     ref_->set_coeff(new_coeff);
     // occupation number of the natural orbitals
     occup_ = natorb.second;
-#if 0
     if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
       throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
-#endif
 
     // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
     // note: this should be after natorb transformation.
@@ -221,6 +198,7 @@ void SuperCI::compute() {
     cc_ = davidson.civec().front();
     // unitary matrix
     shared_ptr<Matrix1e> rot = cc_->unpack(ref_->coeff()->geom())->exp();
+    // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
     if (iter < diis_start_) {
@@ -302,78 +280,11 @@ void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<
   // int1ext = (xu|st) = (ts|ux), rdm2 = D_ru,st = D_ur,ts = D_ts,ur
   const int nbas = geom_->nbasis(); // caution :: this is AO and therefore not nbasis_
   const int common = nact_*nact_*nact_;
-  double* buf = new double[nbas*nact_];
-  dgemm_("T", "N", nbas, nact_, common, 1.0, int1ext, common, rdm2->first(), common, 0.0, buf, nbas);
-  // slot in to an apropriate place
-  dgemm_("T", "N", nbasis_, nact_, nbas, 1.0, ref_->coeff()->data(), nbas, buf, nbas, 0.0, qxr->data(), nbasis_);
-
-  delete[] buf;
+  QFile buf(nbas,nact_);
+  dgemm_("T", "N", nbas, nact_, common, 1.0, int1ext, common, rdm2->first(), common, 0.0, buf.data(), nbas);
+  dgemm_("T", "N", nbasis_, nact_, nbas, 1.0, ref_->coeff()->data(), nbas, buf.data(), nbas, 0.0, qxr->data(), nbasis_);
 }
 
-
-// sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab
-void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) {
-  if (!nact_ || !nvirt_) return;
-  shared_ptr<QFile> gtup(new QFile(*gaa));
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nact_; ++j)
-      gtup->element(j,i) /= std::sqrt(occup_[i]*occup_[j]);
-  dgemm_("N", "N", nvirt_, nact_, nact_, 1.0, cc->ptr_va(), nvirt_, gtup->data(), nact_, 1.0, sigma->ptr_va(), nvirt_);
-  dgemm_("N", "N", nvirt_, nact_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_va(), nvirt_, 1.0, sigma->ptr_va(), nvirt_);
-}
-
-
-// sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
-void SuperCI::sigma_ai_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<Matrix1e> f) {
-  if (!nact_ || !nvirt_) return;
-  dgemm_("N", "N", nvirt_, nclosed_, nclosed_, -1.0, cc->ptr_vc(), nvirt_, f->data(), nbasis_, 1.0, sigma->ptr_vc(), nvirt_);
-  dgemm_("N", "N", nvirt_, nclosed_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_vc(), nvirt_, 1.0, sigma->ptr_vc(), nvirt_);
-}
-
-
-// sigma_at_ai = -delta_ab Fact_ti / sqrt(2nt)
-void SuperCI::sigma_at_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> fact) {
-  if (!nact_ || !nvirt_ || !nclosed_) return;
-  QFile tmp(nclosed_, nact_);
-  tmp.zero();
-  for (int i = 0; i != nact_; ++i) {
-    const double fac = -1.0 / std::sqrt(2.0*occup_[i]);
-    daxpy_(nclosed_, fac, fact->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1); 
-  }
-  dgemm_("N", "N", nvirt_, nact_, nclosed_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_va(), nvirt_); 
-  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, cc->ptr_va(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_); 
-}
-
-
-// sigma_ai_ti = sqrt((2-nt)/2) Fact_at
-void SuperCI::sigma_ai_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> fact) {
-  if (!nact_ || !nvirt_ || !nclosed_) return;
-  QFile tmp(nvirt_, nact_);
-  tmp.zero();
-  for (int i = 0; i != nact_; ++i) {
-    const double fac = std::sqrt(1.0-0.5*occup_[i]);
-    daxpy_(nvirt_, fac, fact->element_ptr(nocc_,i), 1, tmp.element_ptr(0,i), 1); 
-  }
-  dgemm_("T", "N", nclosed_, nact_, nvirt_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nvirt_, 1.0, sigma->ptr_ca(), nclosed_); 
-  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, tmp.data(), nvirt_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_);
-
-}
-
-
-// sigma_ti_ti = delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij
-void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f,
-                           const shared_ptr<QFile> factp) {
-  if (!nact_ || !nclosed_) return;
-  QFile tmp(nact_, nact_);
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nact_; ++j) {
-      tmp.element(j,i) = ((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i))
-                           / std::sqrt((2.0 - occup_[i]) * (2.0 - occup_[j]));
-    }
-  }
-  dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_); 
-  dgemm_("N", "N", nclosed_, nact_, nclosed_, -1.0, f->data(), nbasis_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_ca(), nclosed_); 
-}
 
 
 // compute denominators

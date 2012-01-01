@@ -20,7 +20,11 @@ class SuperCI : public CASSCF {
     // DIIS will be used after some macro iteration 
     int diis_start_;
 
-    void common_init();
+    void common_init() {
+      std::cout << "    * Using the Super CI algorithm as noted in Roos (1980) IJQC" << std::endl;
+      diis_start_ = read_input<int>(idata_, "diis_start", 5);
+      std::cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << std::endl << std::endl;
+    };
 
     void grad_vc(const std::shared_ptr<Matrix1e> fock, std::shared_ptr<RotFile> sigma);
     void grad_va(const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
@@ -44,9 +48,11 @@ class SuperCI : public CASSCF {
     void update_orbitals(std::shared_ptr<RotFile> rot);
 
   public:
-    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
-    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<SCF> ref);
-    ~SuperCI();
+    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom) 
+      : CASSCF(idat, geom) { common_init(); };
+    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<SCF> ref)
+      : CASSCF(idat, geom, ref) { common_init(); };
+    ~SuperCI() {};
 
     void compute();
 
