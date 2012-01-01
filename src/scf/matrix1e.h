@@ -6,6 +6,7 @@
 #ifndef __src_scf_matrix1e_h
 #define __src_scf_matrix1e_h
 
+#include <cassert>
 #include <src/scf/shell.h>
 #include <src/scf/geometry.h>
 #include <string>
@@ -67,6 +68,10 @@ class Matrix1e {
     const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
+
+    void zero() { std::fill(data_, data_+nbasis_*nbasis_, 0.0); };
+    void unit() { std::fill(data_, data_+nbasis_*nbasis_, 0.0);
+                  for (int i = 0; i != ndim_; ++i) data_[i+i*nbasis_] = 1.0; assert(ndim_ == mdim_);};
 
     void print(const std::string in = "", const int size = 10) const;
 };
