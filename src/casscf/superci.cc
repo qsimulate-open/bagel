@@ -149,19 +149,18 @@ void SuperCI::compute() {
     cc_->ele_ref() = 1.0;
 
     // <a/i|H|0> = 2f_ai
-//    grad_vc(f, sigma_);
+    grad_vc(f, sigma_);
     // <a/r|H|0> = h_as d_sr + 2(as|tu)P_rs,tu = fact_rs
     grad_va(fact, sigma_);
     // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
-    // TODO
-//    grad_ca(f, finact, fci_->rdm1_av(), qxr, sigma_);
+    grad_ca(f, fact, sigma_);
     sigma_->ele_ref() = 0.0;
 
     // setting error of macro iteration
     gradient = sigma_->ddot(*sigma_) / sigma_->size();
 
     // denominator
-    shared_ptr<RotFile> denom_ = const_denom(gaa, f);
+    shared_ptr<RotFile> denom_ = const_denom(gaa, factp, f);
 
     shared_ptr<RotFile> init_sigma(new RotFile(*sigma_));
 
@@ -172,25 +171,22 @@ void SuperCI::compute() {
 
       if (miter != 0) {
         sigma_->zero();
-#if 0
+
         // equation 21d
-        sigma_ai_ai_;
+        sigma_ai_ai_(cc_, sigma_, f);
 
         // equation 21e
-        sigma_ai_at_;
-        sigma_at_ai_;
+        sigma_at_ai_(cc_, sigma_, fact);
 
-#endif
         // equation 21f // note a typo!
         sigma_at_at_(cc_, sigma_, gaa, f);
-#if 0
+
         // equation 21b
-        sigma_ai_ti_;
-        sigma_ti_ai_;
+        sigma_ai_ti_(cc_, sigma_, fact);
 
         // equation 21a
-        sigma_ti_ti_;
-#endif
+        sigma_ti_ti_(cc_, sigma_, gaa, f, factp);
+
         // projection to reference
         cc_->ele_ref()=0.0;
         sigma_->ele_ref() = init_sigma->ddot(*cc_);
@@ -272,39 +268,32 @@ shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<dou
 
 
 // <a/i|H|0> = 2f_ai
-void SuperCI::grad_vc(const shared_ptr<Matrix1e> fock, shared_ptr<RotFile> sigma) {
+void SuperCI::grad_vc(const shared_ptr<Matrix1e> f, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nclosed_) return;
   double* target = sigma->ptr_vc();
-  fill(target, target+nclosed_*nvirt_, 0.0);
   for (int i = 0; i != nclosed_; ++i, target += nvirt_)
-    daxpy_(nvirt_, 2.0, fock->element_ptr(nclosed_+nact_,i), 1, target, 1);
+    daxpy_(nvirt_, 2.0, f->element_ptr(nocc_,i), 1, target, 1);
 }
 
 
-// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar
+// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/nr)
 void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
-  fill(target, target+nvirt_*nact_, 0.0);
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
     daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->element_ptr(nocc_, i), 1, target, 1);
   }
 }
 
 
-// <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu
-void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, const shared_ptr<Matrix1e> finact, shared_ptr<RDM<1> > den,
-                      shared_ptr<QFile> qxr, shared_ptr<RotFile> sigma) {
+// <r/i|H|0> = (2f_ri - f^act_ri)/(2-nr)
+void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nclosed_ || !nact_) return;
-  const int n = nclosed_*nact_;
   double* target = sigma->ptr_ca();
-  fill(target, target+n, 0.0);
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    daxpy_(nclosed_, 2.0, f->element_ptr(0,nclosed_+i), 1, target, 1);
-    daxpy_(nclosed_, -1.0, qxr->data()+i*nbasis_, 1, target, 1);
+    daxpy_(nclosed_, 2.0/std::sqrt(2.0-occup_[i]), f->element_ptr(0,nclosed_+i), 1, target, 1);
+    daxpy_(nclosed_, -1.0/std::sqrt(2.0-occup_[i]), fact->element_ptr(0,i), 1, target, 1);
   }
-  dgemm_("N", "N", nclosed_, nact_, nact_, -1.0, finact->data()+nclosed_*nbasis_, nbasis_, den->first(), nact_,
-                   1.0, sigma->ptr_ca(), nclosed_);
 }
 
 
@@ -328,20 +317,85 @@ void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       gtup->element(j,i) /= std::sqrt(occup_[i]*occup_[j]);
-  dgemm_("N", "N", nvirt_, nact_, nact_, 1.0, cc->ptr_va(), nvirt_, gtup->data(), nact_, 0.0, sigma->ptr_va(), nvirt_);
+  dgemm_("N", "N", nvirt_, nact_, nact_, 1.0, cc->ptr_va(), nvirt_, gtup->data(), nact_, 1.0, sigma->ptr_va(), nvirt_);
   dgemm_("N", "N", nvirt_, nact_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_va(), nvirt_, 1.0, sigma->ptr_va(), nvirt_);
 }
 
 
+// sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
+void SuperCI::sigma_ai_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<Matrix1e> f) {
+  if (!nact_ || !nvirt_) return;
+  dgemm_("N", "N", nvirt_, nclosed_, nclosed_, -1.0, cc->ptr_vc(), nvirt_, f->data(), nbasis_, 1.0, sigma->ptr_vc(), nvirt_);
+  dgemm_("N", "N", nvirt_, nclosed_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_vc(), nvirt_, 1.0, sigma->ptr_vc(), nvirt_);
+}
+
+
+// sigma_at_ai = -delta_ab Fact_ti / sqrt(2nt)
+void SuperCI::sigma_at_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> fact) {
+  if (!nact_ || !nvirt_ || !nclosed_) return;
+  QFile tmp(nclosed_, nact_);
+  tmp.zero();
+  for (int i = 0; i != nact_; ++i) {
+    const double fac = -1.0 / std::sqrt(2.0*occup_[i]);
+    daxpy_(nclosed_, fac, fact->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1); 
+  }
+  dgemm_("N", "N", nvirt_, nact_, nclosed_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_va(), nvirt_); 
+  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, cc->ptr_va(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_); 
+}
+
+
+// sigma_ai_ti = sqrt((2-nt)/2) Fact_at
+void SuperCI::sigma_ai_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> fact) {
+  if (!nact_ || !nvirt_ || !nclosed_) return;
+  QFile tmp(nvirt_, nact_);
+  tmp.zero();
+  for (int i = 0; i != nact_; ++i) {
+    const double fac = std::sqrt(1.0-0.5*occup_[i]);
+    daxpy_(nvirt_, fac, fact->element_ptr(nocc_,i), 1, tmp.element_ptr(0,i), 1); 
+  }
+  dgemm_("T", "N", nclosed_, nact_, nvirt_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nvirt_, 1.0, sigma->ptr_ca(), nclosed_); 
+  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, tmp.data(), nvirt_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_);
+
+}
+
+
+// sigma_ti_ti = delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij
+void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f,
+                           const shared_ptr<QFile> factp) {
+  if (!nact_ || !nclosed_) return;
+  QFile tmp(nact_, nact_);
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nact_; ++j) {
+      tmp.element(j,i) = ((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i))
+                           / std::sqrt((2.0 - occup_[i]) * (2.0 - occup_[j]));
+    }
+  }
+  dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_); 
+  dgemm_("N", "N", nclosed_, nact_, nclosed_, -1.0, f->data(), nbasis_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_ca(), nclosed_); 
+}
+
+
 // compute denominators
-shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) const {
+shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shared_ptr<QFile> factp, const shared_ptr<Matrix1e> f) const {
   shared_ptr<RotFile> denom(new RotFile(nclosed_, nact_, nvirt_));
-  denom->ele_ref() = 1.0e100; // not needed in any case
+  fill(denom->data(), denom->data()+denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nvirt_; ++j, ++target)
       *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
+
+  target = denom->ptr_vc();
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nvirt_; ++j, ++target)
+      *target = (f->element(j+nocc_, j+nocc_) - f->element(i, i));
+
+  target = denom->ptr_ca();
+  for (int i = 0; i != nact_; ++i) {
+    const double fac = ((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
+    for (int j = 0; j != nclosed_; ++j, ++target)
+      *target = fac - f->element(j, j);
+  }
   return denom;
 }
 
