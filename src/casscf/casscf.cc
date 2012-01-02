@@ -11,16 +11,6 @@
 
 using namespace std;
 
-CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom) :
-  idata_(idat), geom_(geom) {
-
-  SCF scf(idat, geom);
-  scf.compute();
-  ref_ = scf.conv_to_ref();
-
-  common_init();
-
-};
 
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom, const shared_ptr<Reference> scf)
   : idata_(idat), geom_(geom), ref_(scf) {

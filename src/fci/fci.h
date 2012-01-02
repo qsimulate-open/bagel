@@ -154,7 +154,6 @@ class FCI {
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
-    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>);
     FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
     ~FCI();
     void compute();

@@ -15,14 +15,6 @@ using namespace std;
 
 static const Comb comb;
 
-FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom)
- : idata_(idat), geom_(geom) {
-  SCF scf(idat, geom); 
-  scf.compute();
-  ref_ = scf.conv_to_ref();
-  common_init();
-}
-
 FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, shared_ptr<Reference> r)
  : idata_(idat), ref_(r), geom_(geom) {
   common_init();

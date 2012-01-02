@@ -50,7 +50,6 @@ class CASSCF {
     std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
 
   public:
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
     CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref);
     virtual ~CASSCF();
 

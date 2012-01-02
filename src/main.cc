@@ -8,11 +8,13 @@
 #include <cassert>
 #include <stdexcept>
 #include <memory>
+#if 0
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/poverlap.h>
 #include <src/pscf/pscf.h>
 #include <src/pscf/pscf_disk.h>
 #include <src/pmp2/pmp2.h>
+#endif
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
@@ -53,7 +55,7 @@ int main(int argc, char** argv) {
 
     bool scf_done = false;
     bool casscf_done = false;
-    shared_ptr<SCF> scf;
+    shared_ptr<SCF<0> > scf;
     shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
     shared_ptr<Reference> ref;
@@ -61,18 +63,24 @@ int main(int argc, char** argv) {
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const string method = iter->first;
       if (method == "hf") {
-        shared_ptr<SCF> scf_(new SCF(iter->second, geom)); scf = scf_;
+
+        shared_ptr<SCF<0> > scf_(new SCF<0>(iter->second, geom)); scf = scf_;
         scf->compute();
         ref = scf->conv_to_ref();
+
       } else if (method == "casscf") {
-        if (ref) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_; }
-        else     { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom)); casscf = casscf_; }
+        if (!ref) throw runtime_error("CASSCF needs a reference");
+
+        shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
         casscf->compute();
         ref = casscf->conv_to_ref();
+
       } else if (method == "fci") {
-        if (ref) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, ref)); fci = fci_; }
-        else     { shared_ptr<FCI> fci_(new FCI(iter->second, geom)); fci = fci_; }
+        if (!ref) throw runtime_error("FCI needs a reference");
+
+        shared_ptr<FCI> fci_(new FCI(iter->second, geom, ref)); fci = fci_;
         fci->compute();
+
       }
     }
     print_footer();

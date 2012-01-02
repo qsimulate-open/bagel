@@ -23,10 +23,10 @@ void SuperCI::compute() {
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ")===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
-  shared_ptr<Fock> hcore_;
+  shared_ptr<Fock<0> > hcore_;
   {
     shared_ptr<Hcore> hc(new Hcore(geom_));
-    shared_ptr<Fock> fc(new Fock(geom_, hc)); hcore_ = fc;
+    shared_ptr<Fock<0> > fc(new Fock<0>(geom_, hc)); hcore_ = fc;
   }
 
   // DIIS: will be turned on at iter = diis_start_ (>1), 
@@ -91,12 +91,12 @@ void SuperCI::compute() {
     shared_ptr<Coeff> coeff = ref_->coeff();
     {
       // Fock operator
-      shared_ptr<Fock> f_ao(new Fock(geom_, hcore_, denall, ref_->schwarz()));
+      shared_ptr<Fock<0> > f_ao(new Fock<0>(geom_, hcore_, denall, ref_->schwarz()));
       shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
     }
     {
       // inactive Fock operator
-      shared_ptr<Fock> finact_ao(new Fock(geom_, hcore_, deninact, ref_->schwarz()));
+      shared_ptr<Fock<0> > finact_ao(new Fock<0>(geom_, hcore_, deninact, ref_->schwarz()));
       shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *finact_ao * *coeff)); finact = ft;
     }
     cout << "     * Fock + inactive Fock                       " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();

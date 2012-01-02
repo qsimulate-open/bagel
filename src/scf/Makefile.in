@@ -69,10 +69,10 @@ AR = ar
 ARFLAGS = cru
 libscf_a_AR = $(AR) $(ARFLAGS)
 libscf_a_LIBADD =
-am_libscf_a_OBJECTS = scf.$(OBJEXT) atom.$(OBJEXT) atommap.$(OBJEXT) \
-	shell.$(OBJEXT) geometry.$(OBJEXT) matrix1e.$(OBJEXT) \
-	hcore.$(OBJEXT) overlap.$(OBJEXT) tildex.$(OBJEXT) \
-	fock.$(OBJEXT) fock2e.$(OBJEXT) coeff.$(OBJEXT) \
+am_libscf_a_OBJECTS = scf_base.$(OBJEXT) atom.$(OBJEXT) \
+	atommap.$(OBJEXT) shell.$(OBJEXT) geometry.$(OBJEXT) \
+	matrix1e.$(OBJEXT) hcore.$(OBJEXT) overlap.$(OBJEXT) \
+	tildex.$(OBJEXT) fock_base.$(OBJEXT) coeff.$(OBJEXT) \
 	petite.$(OBJEXT) symrot.$(OBJEXT) symmat.$(OBJEXT) \
 	slater2e.$(OBJEXT)
 libscf_a_OBJECTS = $(am_libscf_a_OBJECTS)
@@ -186,7 +186,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libscf.a
-libscf_a_SOURCES = scf.cc atom.cc atommap.cc shell.cc geometry.cc matrix1e.cc hcore.cc overlap.cc tildex.cc fock.cc fock2e.cc coeff.cc petite.cc symrot.cc symmat.cc slater2e.cc 
+libscf_a_SOURCES = scf_base.cc atom.cc atommap.cc shell.cc geometry.cc matrix1e.cc hcore.cc overlap.cc tildex.cc fock_base.cc coeff.cc petite.cc symrot.cc symmat.cc slater2e.cc 
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -268,14 +268,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atommap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coeff.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fock.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fock2e.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fock_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geometry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hcore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix1e.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/overlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petite.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scf_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slater2e.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/symmat.Po@am__quote@

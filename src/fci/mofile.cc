@@ -73,10 +73,15 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   // one electron part
   double core_energy = 0.0;
   {
-    shared_ptr<Fock> fock0(new Fock(geom_, ref_->hcore()));
+    /////////////
+    // CAUTION //
+    ////////////////////////////////////////////////////
+    // this calls NO DENSITY FITTED fock builder. 
+    ////////////////////////////////////////////////////
+    shared_ptr<Fock<0> > fock0(new Fock<0>(geom_, ref_->hcore()));
     if (nstart != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-      shared_ptr<Fock> fock1(new Fock(geom_, fock0, den, ref_->schwarz()));
+      shared_ptr<Fock<0> > fock1(new Fock<0>(geom_, fock0, den, ref_->schwarz()));
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       fock0 = fock1;
     }

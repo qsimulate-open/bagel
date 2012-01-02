@@ -20,6 +20,7 @@ typedef std::shared_ptr<Petite> RefPetite;
 
 using namespace std;
 
+#if 0
 void Fock::slater_two_electron_part() {
   // for debug
   density_->symmetrize();
@@ -225,3 +226,4 @@ if (i0 == 1 && i1 == 2 && i2 == 5 && i3 == 6) {
   }
 }
 
+#endif
