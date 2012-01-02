@@ -216,7 +216,7 @@ void SuperCI::compute() {
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (diis ? "*" : " ") 
-                                        << setw(25) << fixed << setprecision(10) << energy[i] << "   "
+                                        << setw(17) << fixed << setprecision(8) << energy[i] << "   "
                                         << setw(10) << scientific << setprecision(2) << (i==0 ? gradient : 0.0) << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
     }

@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 #include <src/fci/fci.h>
 #include <src/fci/comb.h>
 #include <boost/algorithm/combination.hpp>
@@ -43,6 +44,8 @@ void FCI::common_init() {
   // TODO those are still wrong!!
   nelea_ = geom_->nocc()/2 - ncore_;
   neleb_ = geom_->nocc()/2 - ncore_;
+
+  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
   for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
 
   // resizing rdm vectors (with null pointers)

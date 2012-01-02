@@ -69,13 +69,13 @@ void SuperCI::sigma_ai_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
 }
 
 
-// sigma_at_ai = -delta_ab Fact_ti / sqrt(2nt)
+// sigma_at_ai = -delta_ab Fact_ti sqrt(nt/2)
 void SuperCI::sigma_at_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> fact) {
   if (!nact_ || !nvirt_ || !nclosed_) return;
   QFile tmp(nclosed_, nact_);
   tmp.zero();
   for (int i = 0; i != nact_; ++i) {
-    const double fac = -1.0 / std::sqrt(2.0*occup_[i]);
+    const double fac = -std::sqrt(0.5*occup_[i]);
     daxpy_(nclosed_, fac, fact->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1); 
   }
   dgemm_("N", "N", nvirt_, nact_, nclosed_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_va(), nvirt_); 
