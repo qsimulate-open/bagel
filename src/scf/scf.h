@@ -16,7 +16,11 @@ class SCF : public SCF_base {
 
   public:
     SCF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<Geometry> geom)
-      : SCF_base(idata_, geom) { };
+      : SCF_base(idata_, geom) {
+      if (DF == 1) {
+        // TODO init schwarz for auxiliary basis
+      }
+    };
 
     ~SCF() {};
 

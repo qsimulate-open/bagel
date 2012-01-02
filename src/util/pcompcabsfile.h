@@ -18,7 +18,7 @@ class PCompCABSFile : public PCompFile<T> {
     std::vector<double> schwarz_jb_;
     std::vector<double> schwarz_ia_;
     std::vector<std::shared_ptr<Shell> > cabs_basis_;
-    std::vector<int> cabs_offset_;
+    std::vector<int> aux_offset_;
 
     const bool i_is_cabs_;
     const bool j_is_cabs_;
@@ -73,8 +73,8 @@ class PCompCABSFile : public PCompFile<T> {
     const double schwarz_ia(const size_t i) const { return schwarz_ia_[i]; };
     const double schwarz_jb(const size_t i) const { return schwarz_jb_[i]; };
 
-    std::vector<int> cabs_offset() const { return cabs_offset_; };
-    int cabs_offset(size_t i) const { return cabs_offset_[i]; };
+    std::vector<int> aux_offset() const { return aux_offset_; };
+    int aux_offset(size_t i) const { return aux_offset_[i]; };
     const size_t cabs_nbasis(size_t i) const { return cabs_basis_[i]->nbasis(); };
 
     // virtual functions
@@ -107,21 +107,21 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
     typedef std::shared_ptr<Atom> RefAtom;
     typedef std::shared_ptr<Shell> RefShell;
 
-    const std::vector<RefAtom> atoms = pg->cabs_atoms();
+    const std::vector<RefAtom> atoms = pg->aux_atoms();
     int cnt = 0;
     for (std::vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
       const std::vector<RefShell> tmp = (*aiter)->shells();
       cabs_basis_.insert(cabs_basis_.end(), tmp.begin(), tmp.end());  
-      const std::vector<int> tmpoff = pg->cabs_offset(cnt); 
-      cabs_offset_.insert(cabs_offset_.end(), tmpoff.begin(), tmpoff.end());
+      const std::vector<int> tmpoff = pg->aux_offset(cnt); 
+      aux_offset_.insert(aux_offset_.end(), tmpoff.begin(), tmpoff.end());
     }
   }
 
   {
-    const std::vector<int> tmpi = i_is_cabs_ ? cabs_offset_ : this->offset_;
-    const std::vector<int> tmpj = j_is_cabs_ ? cabs_offset_ : this->offset_;
-    const std::vector<int> tmpa = a_is_cabs_ ? cabs_offset_ : this->offset_;
-    const std::vector<int> tmpb = b_is_cabs_ ? cabs_offset_ : this->offset_;
+    const std::vector<int> tmpi = i_is_cabs_ ? aux_offset_ : this->offset_;
+    const std::vector<int> tmpj = j_is_cabs_ ? aux_offset_ : this->offset_;
+    const std::vector<int> tmpa = a_is_cabs_ ? aux_offset_ : this->offset_;
+    const std::vector<int> tmpb = b_is_cabs_ ? aux_offset_ : this->offset_;
     offset_i_.insert(offset_i_.end(), tmpi.begin(), tmpi.end());
     offset_j_.insert(offset_j_.end(), tmpj.begin(), tmpj.end());
     offset_a_.insert(offset_a_.end(), tmpa.begin(), tmpa.end());
@@ -140,10 +140,10 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
     size_j_ = basis_j_.size();
     size_a_ = basis_a_.size();
     size_b_ = basis_b_.size();
-    nbasis_i_ = i_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
-    nbasis_j_ = j_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
-    nbasis_a_ = a_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
-    nbasis_b_ = b_is_cabs_ ? this->geom_->ncabs() : this->geom_->nbasis();
+    nbasis_i_ = i_is_cabs_ ? this->geom_->naux() : this->geom_->nbasis();
+    nbasis_j_ = j_is_cabs_ ? this->geom_->naux() : this->geom_->nbasis();
+    nbasis_a_ = a_is_cabs_ ? this->geom_->naux() : this->geom_->nbasis();
+    nbasis_b_ = b_is_cabs_ ? this->geom_->naux() : this->geom_->nbasis();
   }
 
   if (!late_init) {

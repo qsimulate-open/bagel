@@ -29,6 +29,8 @@ class Shell {
   public:
     Shell(const bool, std::vector<double>, int, std::vector<double>,
         std::vector<std::vector<double> >, std::vector<std::pair<int, int> >);
+    // default constructor for adding null basis
+    Shell(const bool sph);
 
     ~Shell();
 

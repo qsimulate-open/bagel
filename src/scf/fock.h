@@ -6,8 +6,10 @@
 #ifndef __NEWINT_SRC_SCF_FOCK_H
 #define __NEWINT_SRC_SCF_FOCK_H
 
+#include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
 #include <src/scf/fock_base.h>
 
@@ -30,7 +32,7 @@ class Fock : public Fock_base {
 template<int DF>
 void Fock<DF>::fock_two_electron_part() {
   
-  // for debug
+  // for debug <- what did I mean by this?? TODO
   density_->symmetrize();
 
   const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
@@ -191,9 +193,59 @@ void Fock<DF>::fock_two_electron_part() {
         }
       }
     }
-  } else {
-    throw std::runtime_error("not yet implemented: DF fock");
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  } else if (DF == 1) {
+
+    // some info for auxiliary (i.e., DF) basis set
+    const std::vector<std::shared_ptr<Atom> > aux_atoms = geom_->aux_atoms(); 
+    std::vector<std::shared_ptr<Shell> > aux_basis; 
+    std::vector<int> aux_offset;
+    int cnt = 0;
+    for (auto aiter = aux_atoms.begin(); aiter != aux_atoms.end(); ++aiter, ++cnt) {
+      const std::vector<std::shared_ptr<Shell> > tmp = (*aiter)->shells();
+      aux_basis.insert(aux_basis.end(), tmp.begin(), tmp.end());  
+      const std::vector<int> tmpoff = geom_->aux_offset(cnt); 
+      aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
+    }
+    const int aux_size = aux_basis.size();
+
+    const std::shared_ptr<Shell> b3(new Shell(basis.front()->spherical()));
+
+    for (int i0 = 0; i0 != size; ++i0) {
+      const std::shared_ptr<Shell>  b0 = basis[i0];
+      const int b0offset = offset[i0]; 
+      const int b0size = b0->nbasis();
+      for (int i1 = i0; i1 != size; ++i1) {
+//      const unsigned int i01 = i0 *size + i1;
+        const std::shared_ptr<Shell>  b1 = basis[i1];
+        const int b1offset = offset[i1]; 
+        const int b1size = b1->nbasis();
+// TODO haven't though about density screening...
+//      const double density_change_01 = max_density_change[i01] * 4.0; 
+        for (int i2 = 0; i2 != aux_size; ++i2) {
+          const std::shared_ptr<Shell>  b2 = aux_basis[i2];
+          const int b2offset = aux_offset[i2]; 
+          const int b2size = b2->nbasis();
+
+          std::vector<std::shared_ptr<Shell> > input;
+          input.push_back(b3);
+          input.push_back(b2);
+          input.push_back(b1);
+          input.push_back(b0);
+
+          // TODO primitive screening is off
+          ERIBatch eribatch(input, 1.0);
+          eribatch.compute();
+          const double* eridata = eribatch.data();
+          std::cout << ddot_(b0size * b1size * b2size, eridata, 1, eridata, 1) << std::endl;
+
+          assert((int)eribatch.data_size() == b0size * b1size * b2size);
+        }
+      }
+    }
   }
+  std::cout << "somehow came out" << std::endl;
+  throw;
 };
 
 

@@ -42,6 +42,8 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   basisfile_ = read_input<string>(geominfo, "basis", "");
   if (basisfile_ == "") throw runtime_error("There is no basis specification");
 
+  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+
   // symmetry
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
   { // stack
@@ -67,7 +69,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   // read geometry
   nbasis_ = 0;
-  ncabs_ = 0;
+  naux_ = 0;
   nocc_ = 0;
   nfrc_ = 0;
 
@@ -110,8 +112,8 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
         offsets_.push_back(coffsets);
         atoms_.push_back(catom); 
       }
-      if (!cabsfile_.empty()){
-        RefAtom catom(new Atom(spherical_, aname, positions, cabsfile_));
+      if (!auxfile_.empty()){
+        RefAtom catom(new Atom(spherical_, aname, positions, auxfile_));
 
         map<string, int>::const_iterator aiter = amap.find(aname);
         assert(aiter != amap.end());
@@ -120,16 +122,16 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
         int cc = 0;
         vector<int> coffsets;
         for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-          coffsets.push_back(ncabs_ + cc);
+          coffsets.push_back(naux_ + cc);
           const int ang = (*iter)->angular_number();
           const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
           cc += angsize * (*iter)->num_contracted();
         }
 
-        cabs_lmax_ = max(lmax_, catom->lmax());
-        ncabs_ += catom->nbasis();
-        cabs_offsets_.push_back(coffsets);
-        cabs_atoms_.push_back(catom); 
+        aux_lmax_ = max(lmax_, catom->lmax());
+        naux_ += catom->nbasis();
+        aux_offsets_.push_back(coffsets);
+        aux_atoms_.push_back(catom); 
       }
     } else {
       throw runtime_error("One of the atom lines is corrupt");
@@ -144,7 +146,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   plist_ = tmpp;
   nirrep_ = plist_->nirrep();
   // Misc
-  cabs_merged_ = false;
+  aux_merged_ = false;
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
@@ -230,8 +232,8 @@ Geometry::Geometry(const string s, const int levl)
 
       start = what[0].second;
       if(regex_search(start, end, what, reg)) {
-        const string cabsstr(what[1].first, what[1].second);
-        cabsfile_ = cabsstr;
+        const string auxstr(what[1].first, what[1].second);
+        auxfile_ = auxstr;
       }
       
       break;
@@ -247,7 +249,7 @@ Geometry::Geometry(const string s, const int levl)
 
   // read geometry
   nbasis_ = 0;
-  ncabs_ = 0;
+  naux_ = 0;
   nocc_ = 0;
   nfrc_ = 0;
 
@@ -309,8 +311,8 @@ Geometry::Geometry(const string s, const int levl)
             offsets_.push_back(coffsets);
             atoms_.push_back(catom); 
           }
-          if (!cabsfile_.empty()){
-            RefAtom catom(new Atom(spherical_, aname, positions, cabsfile_));
+          if (!auxfile_.empty()){
+            RefAtom catom(new Atom(spherical_, aname, positions, auxfile_));
 
             map<string, int>::const_iterator aiter = amap.find(aname);
             assert(aiter != amap.end());
@@ -319,16 +321,16 @@ Geometry::Geometry(const string s, const int levl)
             int cc = 0;
             vector<int> coffsets;
             for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-              coffsets.push_back(ncabs_ + cc);
+              coffsets.push_back(naux_ + cc);
               const int ang = (*iter)->angular_number();
               const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
               cc += angsize * (*iter)->num_contracted();
             }
 
-            cabs_lmax_ = max(lmax_, catom->lmax());
-            ncabs_ += catom->nbasis();
-            cabs_offsets_.push_back(coffsets);
-            cabs_atoms_.push_back(catom); 
+            aux_lmax_ = max(lmax_, catom->lmax());
+            naux_ += catom->nbasis();
+            aux_offsets_.push_back(coffsets);
+            aux_atoms_.push_back(catom); 
           }
         } else {
           break; 
@@ -347,7 +349,7 @@ Geometry::Geometry(const string s, const int levl)
   plist_ = tmpp;
   nirrep_ = plist_->nirrep();
   // Misc
-  cabs_merged_ = false;
+  aux_merged_ = false;
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;

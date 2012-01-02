@@ -26,7 +26,7 @@ std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_RI() {
   // Form RI space which is a union of OBS and CABS.
   RefGeom newgeom(new PGeometry(*geom_));
   union_geom_ = newgeom;
-  union_geom_->merge_obs_cabs();
+  union_geom_->merge_obs_aux();
 
   shared_ptr<POverlap> union_overlap(new POverlap(union_geom_));
   shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
@@ -34,10 +34,10 @@ std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_RI() {
   ri_entire_ = ri_coeff;
 
   RefMatrix ri_o(new PMatrix1e(ri_entire_, make_pair(0, geom_->nbasis())));
-  RefMatrix ri_c(new PMatrix1e(ri_entire_, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
+  RefMatrix ri_c(new PMatrix1e(ri_entire_, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->naux())));
 
-  pair<RefMatrix, RefMatrix> ri_o_pair = ri_o->split(geom_->nbasis(), geom_->ncabs());
-  pair<RefMatrix, RefMatrix> ri_c_pair = ri_c->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefMatrix, RefMatrix> ri_o_pair = ri_o->split(geom_->nbasis(), geom_->naux());
+  pair<RefMatrix, RefMatrix> ri_c_pair = ri_c->split(geom_->nbasis(), geom_->naux());
 
   return make_tuple(ri_o_pair.first, ri_o_pair.second, ri_c_pair.first, ri_c_pair.second);
 }
@@ -50,10 +50,10 @@ std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_fock_weigh
   RefMatrix fock(new PMatrix1e(*ri_entire_ * *barefock));
 
   RefMatrix fock_o(new PMatrix1e(fock, make_pair(0, geom_->nbasis())));
-  RefMatrix fock_c(new PMatrix1e(fock, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
+  RefMatrix fock_c(new PMatrix1e(fock, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->naux())));
 
-  pair<RefMatrix, RefMatrix> fock_o_pair = fock_o->split(geom_->nbasis(), geom_->ncabs());
-  pair<RefMatrix, RefMatrix> fock_c_pair = fock_c->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefMatrix, RefMatrix> fock_o_pair = fock_o->split(geom_->nbasis(), geom_->naux());
+  pair<RefMatrix, RefMatrix> fock_c_pair = fock_c->split(geom_->nbasis(), geom_->naux());
 
   return make_tuple(fock_o_pair.first, fock_o_pair.second, fock_c_pair.first, fock_c_pair.second);
 }

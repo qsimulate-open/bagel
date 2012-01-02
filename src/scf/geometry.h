@@ -23,8 +23,8 @@ class Geometry {
 
     // Atoms, which contains basis-set info also.
     std::vector<std::shared_ptr<Atom> > atoms_;
-    std::vector<std::shared_ptr<Atom> > cabs_atoms_;
-    bool cabs_merged_;
+    std::vector<std::shared_ptr<Atom> > aux_atoms_;
+    bool aux_merged_;
 
     // Nuclear repulsion energy.
     double nuclear_repulsion_;
@@ -35,15 +35,15 @@ class Geometry {
     int nbasis_;
     int nocc_;
     int nfrc_;
-    int ncabs_;
+    int naux_;
     int lmax_;
-    int cabs_lmax_;
+    int aux_lmax_;
     std::vector<std::vector<int> > offsets_;
-    std::vector<std::vector<int> > cabs_offsets_;
+    std::vector<std::vector<int> > aux_offsets_;
 
     int level_;
     std::string basisfile_;
-    std::string cabsfile_;
+    std::string auxfile_;
 
     // Symmetry can be used for molecular calculation.
     std::string symmetry_;
@@ -63,7 +63,7 @@ class Geometry {
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
     std::vector<std::shared_ptr<Atom> > atoms() const { return atoms_; };
-    std::vector<std::shared_ptr<Atom> > cabs_atoms() const { return cabs_atoms_; };
+    std::vector<std::shared_ptr<Atom> > aux_atoms() const { return aux_atoms_; };
     std::shared_ptr<Atom> atoms(const unsigned int i) const { return atoms_[i]; };
 
     // Returns a constant
@@ -71,9 +71,9 @@ class Geometry {
     const int nbasis() const { return nbasis_; };
     const int nocc() const { return nocc_; };
     const int nfrc() const { return nfrc_; };
-    const int ncabs() const { return ncabs_; };
+    const int naux() const { return naux_; };
     const int lmax() const { return lmax_; };
-    const int cabs_lmax() const { return cabs_lmax_; };
+    const int aux_lmax() const { return aux_lmax_; };
     const bool spherical() const { return spherical_; };
     const int nirrep() const { return nirrep_; };
     const double gamma() const {return gamma_; };
@@ -81,7 +81,7 @@ class Geometry {
     virtual const double nuclear_repulsion() const { return nuclear_repulsion_; };
     const int level() const { return level_; };
     const std::string basisfile() const { return basisfile_; };
-    const std::string cabsfile() const { return cabsfile_; };
+    const std::string auxfile() const { return auxfile_; };
     const double schwarz_thresh() const { return schwarz_thresh_; };
 
     // TODO for some reasons needed now in CASSCF
@@ -93,9 +93,9 @@ class Geometry {
 
     // The position of the specific funciton in the basis set.
     const std::vector<std::vector<int> > offsets() const { return offsets_; };
-    const std::vector<std::vector<int> > cabs_offsets() const { return cabs_offsets_; };
+    const std::vector<std::vector<int> > aux_offsets() const { return aux_offsets_; };
     const std::vector<int> offset(const unsigned int i) const { return offsets_.at(i); };
-    const std::vector<int> cabs_offset(const unsigned int i) const { return cabs_offsets_.at(i); };
+    const std::vector<int> aux_offset(const unsigned int i) const { return aux_offsets_.at(i); };
 
     // Printing out some info
     void print_atoms() const;
@@ -107,16 +107,16 @@ class Geometry {
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
     // After this, compute_nuclear_repulsion() should not be called.
     // Not undo-able.
-    void merge_obs_cabs() {
-      cabs_merged_ = true;
-      atoms_.insert(atoms_.end(), cabs_atoms_.begin(), cabs_atoms_.end());
-      for (std::vector<std::vector<int> >::iterator iter = cabs_offsets_.begin(); iter != cabs_offsets_.end(); ++iter) {
+    void merge_obs_aux() {
+      aux_merged_ = true;
+      atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
+      for (std::vector<std::vector<int> >::iterator iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
         for (std::vector<int>::iterator citer = iter->begin(); citer != iter->end(); ++citer) {
           *citer += nbasis_;
         }
       }
-      offsets_.insert(offsets_.end(), cabs_offsets_.begin(), cabs_offsets_.end());
-      nbasis_ += ncabs_;
+      offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
+      nbasis_ += naux_;
     };
 };
 

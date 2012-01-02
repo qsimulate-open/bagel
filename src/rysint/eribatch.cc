@@ -26,10 +26,13 @@ typedef std::shared_ptr<Shell> RefShell;
 // This object lives in main.cc
 extern StackMem* stack;
 
+// a hack for screening of three-center integrals
+static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
+
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
 :  RysInt(_info) {
 
-  const double integral_thresh = PRIM_SCREEN_THRESH / max_density; 
+  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
 //const double integral_thresh = 0.0; 
 
   // swap 01 indices when needed: Larger angular momentum function comes first
@@ -174,8 +177,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const double minexp1 = *min_element(exp1, exp1+nexp1);
   const double minexp2 = *min_element(exp2, exp2+nexp2);
   const double minexp3 = *min_element(exp3, exp3+nexp3);
-  const double min_ab = minexp0 * minexp1;
-  const double min_cd = minexp2 * minexp3;
+  const double min_ab = rnd(minexp0) * rnd(minexp1);
+  const double min_cd = rnd(minexp2) * rnd(minexp3);
 
   // minimum distance between two lines (AB and CD)
   const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1]; 
@@ -202,9 +205,10 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
     for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) { 
       for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) { 
         const double cxq = *expi2 + *expi3;
-        const double cd = *expi2 * *expi3;
+        const double cdp = *expi2 * *expi3;
+        const double cd = rnd(*expi2) * rnd(*expi3);
         const double cxq_inv = 1.0 / cxq;
-        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
+        Ecd_save[index23] = ::exp(-r23_sq * (cdp * cxq_inv) );
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
@@ -246,9 +250,10 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) { 
     for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) { 
       const double cxp = *expi0 + *expi1;
-      const double ab = *expi0 * *expi1; 
+      const double abp = *expi0 * *expi1;
+      const double ab = rnd(*expi0) * rnd(*expi1);
       const double cxp_inv = 1.0 / cxp;
-      const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
+      const double Eab = ::exp(-r01_sq * (abp * cxp_inv) );
       const double coeff_half = 2 * Eab * PITWOHALF;
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;

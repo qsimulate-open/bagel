@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
     bool scf_done = false;
     bool casscf_done = false;
-    shared_ptr<SCF<0> > scf;
+    shared_ptr<SCF<1> > scf;
     shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
     shared_ptr<Reference> ref;
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
       const string method = iter->first;
       if (method == "hf") {
 
-        shared_ptr<SCF<0> > scf_(new SCF<0>(iter->second, geom)); scf = scf_;
+        shared_ptr<SCF<1> > scf_(new SCF<1>(iter->second, geom)); scf = scf_;
         scf->compute();
         ref = scf->conv_to_ref();
 

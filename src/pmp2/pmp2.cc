@@ -56,9 +56,9 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const s
   nbasis_ = geom_->nbasis();
   nvir_ = nbasis_ - nocc_;
   noovv_ = nocc_act_ * nocc_act_ * nbasis_ * nbasis_;
-  ncabs_ = geom_->ncabs();
+  ncabs_ = geom_->naux();
 
-  if (geom_->ncabs() == 0) {
+  if (geom_->naux() == 0) {
     throw runtime_error("CABS should be specified.");
   }
 
@@ -324,7 +324,7 @@ FF->rprint();
       RefMatrix hj_iA(new PMatrix1e(hJ_obs_cabs_, make_pair(0, nocc_)));
       RefPCoeff chj_iA_comb(new PCoeff(*coeff_cabs_ * *hj_iA));
 
-      pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->ncabs());
+      pair<RefMatrix, RefMatrix> chj_iA = chj_iA_comb->split(geom_->nbasis(), geom_->naux());
       RefMatrix chj_iA_obs = chj_iA.first;
       RefCoeff chj_iA_cabs(new PCoeff(*chj_iA.second));
 
@@ -377,7 +377,7 @@ FF->rprint();
     {
       RefCoeff cfobs(new PCoeff(*coeff_ * *K_obs_obs_));
       RefCoeff cfri(new PCoeff(*coeff_cabs_ * *K_obs_cabs_));
-      pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->ncabs());
+      pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->naux());
       RefCoeff cfcabs_obs = p.first;
       RefCoeff cfcabs_aux = p.second;
       RefCoeff cfcabs_obs_fold(new PCoeff(*cfobs + *cfcabs_obs));
@@ -388,7 +388,7 @@ FF->rprint();
       // RI * CABS quantity.
       RefCoeff xfri(new PCoeff(*coeff_cabs_ * *K_cabs_cabs_));
       // Split into OBS*CABS & CABS*CABS quantities.
-      pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->ncabs());
+      pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->naux());
       RefCoeff xfcabs_obs = q.first;
       RefCoeff xfcabs_aux = q.second;
       RefCoeff xfcabs_obs_fold(new PCoeff(*xfobs + *xfcabs_obs));
@@ -536,7 +536,7 @@ FF->rprint();
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
 
     RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));
-    pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->ncabs());
+    pair<RefCoeff, RefCoeff> p = cfri->split(geom_->nbasis(), geom_->naux());
     RefCoeff cfcabs_obs = p.first;
     RefCoeff cfcabs_aux = p.second;
     RefCoeff cfcabs_obs_fold(new PCoeff(*cfobs + *cfcabs_obs));
@@ -547,7 +547,7 @@ FF->rprint();
     RefCoeff xfri(new PCoeff(*coeff_cabs_ * *fock_cabs_cabs_));
 
     // Split into OBS*CABS & CABS*CABS quantities.
-    pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->ncabs());
+    pair<RefCoeff, RefCoeff> q = xfri->split(geom_->nbasis(), geom_->naux());
     RefCoeff xfcabs_obs = q.first;
     RefCoeff xfcabs_aux = q.second;
     RefCoeff xfcabs_obs_fold(new PCoeff(*xfobs + *xfcabs_obs));
@@ -593,21 +593,21 @@ FF->rprint();
         const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> ri4 = generate_RI();
         // nbasis * nbasis size
         RefCoeff ri_obs_obs(new PCoeff(*get<0>(ri4)));
-        // nbasis * ncabs size
+        // nbasis * naux size
         RefCoeff ri_obs_cabs(new PCoeff(*get<1>(ri4)));
-        // ncabs * nbasis size
+        // naux * nbasis size
         RefCoeff ri_cabs_obs(new PCoeff(*get<2>(ri4)));
-        // ncabs * ncabs size
+        // naux * naux size
         RefCoeff ri_cabs_cabs(new PCoeff(*get<3>(ri4)));
 
         const tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> fri4 = generate_fock_weighted_RI();
         // nbasis * nbasis size
         RefCoeff fri_obs_obs(new PCoeff(*get<0>(fri4)));
-        // nbasis * ncabs size
+        // nbasis * naux size
         RefCoeff fri_obs_cabs(new PCoeff(*get<1>(fri4)));
-        // ncabs * nbasis size
+        // naux * nbasis size
         RefCoeff fri_cabs_obs(new PCoeff(*get<2>(fri4)));
-        // ncabs * ncabs size
+        // naux * naux size
         RefCoeff fri_cabs_cabs(new PCoeff(*get<3>(fri4)));
         {
           // first target is OBS space

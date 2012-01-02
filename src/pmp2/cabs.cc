@@ -26,7 +26,7 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
   // Form RI space which is a union of OBS and CABS.
   RefGeom newgeom(new PGeometry(*geom_));
   union_geom_ = newgeom;
-  union_geom_->merge_obs_cabs();
+  union_geom_->merge_obs_aux();
 
   shared_ptr<POverlap> union_overlap(new POverlap(union_geom_));
   shared_ptr<PTildeX> ri_coeff(new PTildeX(union_overlap));
@@ -54,7 +54,7 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
   //(*coeff_entire_ % *uft * *coeff_entire_).rprint(15);
 
-  pair<RefCoeff, RefCoeff> cabs_coeff_spl = coeff_cabs_->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefCoeff, RefCoeff> cabs_coeff_spl = coeff_cabs_->split(geom_->nbasis(), geom_->naux());
 
   return cabs_coeff_spl;
 }
@@ -72,10 +72,10 @@ const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_hJ()
   RefMatrix hJ(new PMatrix1e(*coeff_entire_ % *ao_hJ_ * *coeff_entire_));
 
   RefMatrix h_hJ_o(new PMatrix1e(hJ, make_pair(0, geom_->nbasis())));
-  RefMatrix h_hJ_c(new PMatrix1e(hJ, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
+  RefMatrix h_hJ_c(new PMatrix1e(hJ, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->naux())));
 
-  pair<RefMatrix, RefMatrix> h_hJ_o_pair = h_hJ_o->split(geom_->nbasis(), geom_->ncabs());
-  pair<RefMatrix, RefMatrix> h_hJ_c_pair = h_hJ_c->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefMatrix, RefMatrix> h_hJ_o_pair = h_hJ_o->split(geom_->nbasis(), geom_->naux());
+  pair<RefMatrix, RefMatrix> h_hJ_c_pair = h_hJ_c->split(geom_->nbasis(), geom_->naux());
 
   return make_tuple(h_hJ_o_pair.first, h_hJ_o_pair.second, h_hJ_c_pair.first, h_hJ_c_pair.second);
 }
@@ -89,10 +89,10 @@ const std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_K() 
   RefMatrix exchange(new PMatrix1e(*coeff_entire_ % *ao_K_ * *coeff_entire_));
 
   RefMatrix h_exchange_o(new PMatrix1e(exchange, make_pair(0, geom_->nbasis())));
-  RefMatrix h_exchange_c(new PMatrix1e(exchange, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->ncabs())));
+  RefMatrix h_exchange_c(new PMatrix1e(exchange, make_pair(geom_->nbasis(), geom_->nbasis()+geom_->naux())));
 
-  pair<RefMatrix, RefMatrix> h_exchange_o_pair = h_exchange_o->split(geom_->nbasis(), geom_->ncabs());
-  pair<RefMatrix, RefMatrix> h_exchange_c_pair = h_exchange_c->split(geom_->nbasis(), geom_->ncabs());
+  pair<RefMatrix, RefMatrix> h_exchange_o_pair = h_exchange_o->split(geom_->nbasis(), geom_->naux());
+  pair<RefMatrix, RefMatrix> h_exchange_c_pair = h_exchange_c->split(geom_->nbasis(), geom_->naux());
 
   return make_tuple(h_exchange_o_pair.first, h_exchange_o_pair.second, h_exchange_c_pair.first, h_exchange_c_pair.second);
 }

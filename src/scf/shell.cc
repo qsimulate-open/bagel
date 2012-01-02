@@ -21,12 +21,19 @@ Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> 
     contraction_upper_.push_back(piter->second);  
   }
 
-
   if (spherical_)
     nbasis_ = (angular_number_*2+1) * num_contracted();
   else
     nbasis_ = (angular_number_+1) * (angular_number_+2) / 2 * num_contracted();
 
+}
+
+
+Shell::Shell(const bool sph) : spherical_(sph), position_(3,0.0), angular_number_(0), exponents_(1,0.0), contraction_ranges_(1,make_pair(0,1)) {
+  vector<double> tmp(1,1.0); 
+  contractions_.push_back(tmp);
+  contraction_lower_.push_back(0);
+  contraction_upper_.push_back(1);
 }
 
 
