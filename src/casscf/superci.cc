@@ -21,8 +21,6 @@ void SuperCI::compute() {
   const string indent = "  ";
 
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ")===" << endl << endl;
-  // 0 means not converged
-  vector<int> conv(nstate_,0);
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
   shared_ptr<Fock> hcore_;
@@ -219,13 +217,13 @@ void SuperCI::compute() {
     int end = ::clock();
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
-      cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                                        << setw(17) << fixed << setprecision(8) << energy[i] << "   "
+      cout << indent << setw(5) << iter << setw(3) << i 
+                                        << setw(25) << fixed << setprecision(10) << energy[i] << "   "
                                         << setw(10) << scientific << setprecision(2) << (i==0 ? gradient : 0.0) << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
     }
 
-    if (*min_element(conv.begin(), conv.end())) break;
+    if (gradient < thresh_) break;
     if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in the CASSCF macro interation." << endl << endl;
       break;
@@ -281,27 +279,31 @@ void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<
 }
 
 
-
 // compute denominators
 shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shared_ptr<QFile> factp, const shared_ptr<Matrix1e> f) const {
   shared_ptr<RotFile> denom(new RotFile(nclosed_, nact_, nvirt_));
   fill(denom->data(), denom->data()+denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nvirt_; ++j, ++target)
-      *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nvirt_; ++j, ++target) {
+      *target = -gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
+    }
+  }
 
   target = denom->ptr_vc();
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nvirt_; ++j, ++target)
+  for (int i = 0; i != nclosed_; ++i) {
+    for (int j = 0; j != nvirt_; ++j, ++target) {
       *target = f->element(j+nocc_, j+nocc_) - f->element(i, i);
+    }
+  }
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
     const double fac = ((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
-    for (int j = 0; j != nclosed_; ++j, ++target)
+    for (int j = 0; j != nclosed_; ++j, ++target) {
       *target = fac - f->element(j, j);
+    }
   }
   return denom;
 }

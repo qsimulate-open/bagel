@@ -105,8 +105,8 @@ void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   QFile tmp(nact_, nact_);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
-      tmp.element(j,i) = ((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i))
-                           / std::sqrt((2.0 - occup_[i]) * (2.0 - occup_[j]));
+      tmp.element(j,i) = -((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i))
+                         / std::sqrt((2.0 - occup_[i]) * (2.0 - occup_[j]));
     }
   }
   dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_); 
