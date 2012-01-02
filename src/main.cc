@@ -53,9 +53,10 @@ int main(int argc, char** argv) {
     shared_ptr<Geometry> geom(new Geometry(idata));
     list<pair<string, multimap<string, string> > > keys = idata->data();
 
+    const int DF = 1;
     bool scf_done = false;
     bool casscf_done = false;
-    shared_ptr<SCF<1> > scf;
+    shared_ptr<SCF<DF> > scf;
     shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
     shared_ptr<Reference> ref;
@@ -64,7 +65,7 @@ int main(int argc, char** argv) {
       const string method = iter->first;
       if (method == "hf") {
 
-        shared_ptr<SCF<1> > scf_(new SCF<1>(iter->second, geom)); scf = scf_;
+        shared_ptr<SCF<DF> > scf_(new SCF<DF>(iter->second, geom)); scf = scf_;
         scf->compute();
         ref = scf->conv_to_ref();
 

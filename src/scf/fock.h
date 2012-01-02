@@ -2,12 +2,15 @@
 // Author : Toru Shiozaki
 // Date   : Jan 2012
 //
+using namespace std;
 
 #ifndef __NEWINT_SRC_SCF_FOCK_H
 #define __NEWINT_SRC_SCF_FOCK_H
 
 #include <iostream>
+#include <iomanip>
 #include <memory>
+#include <algorithm>
 #include <stdexcept>
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
@@ -31,6 +34,7 @@ class Fock : public Fock_base {
 
 template<int DF>
 void Fock<DF>::fock_two_electron_part() {
+std::fill(data_, data_+nbasis_*nbasis_, 0.0);
   
   // for debug <- what did I mean by this?? TODO
   density_->symmetrize();
@@ -178,8 +182,10 @@ void Fock<DF>::fock_two_electron_part() {
                     double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.5 : 1.0);
                     const double intval4 = 4.0 * intval;
 
+#if 0
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;
                     data_[j2n + j3] += density_data[j0n + j1] * intval4;
+#endif
                     data_[j0n + j3] -= density_data[j1n + j2] * intval;
                     data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
                     data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
@@ -207,16 +213,70 @@ void Fock<DF>::fock_two_electron_part() {
       const std::vector<int> tmpoff = geom_->aux_offset(cnt); 
       aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
     }
-    const int aux_size = aux_basis.size();
 
     const std::shared_ptr<Shell> b3(new Shell(basis.front()->spherical()));
+
+    // making J^-1/2
+    // this can be moved to geometry constructor (?)
+    const int aux_size = aux_basis.size();
+    const int naux = geom_->naux();
+    double* buf = new double[naux*naux]; 
+    std::fill(buf, buf+naux*naux, 0.0); // <- not needed so far
+
+    for (int i0 = 0; i0 != aux_size; ++i0) {
+      const std::shared_ptr<Shell>  b0 = aux_basis[i0];
+      const int b0offset = aux_offset[i0]; 
+      const int b0size = b0->nbasis();
+      for (int i1 = i0; i1 != aux_size; ++i1) {
+        const std::shared_ptr<Shell>  b1 = aux_basis[i1];
+        const int b1offset = aux_offset[i1]; 
+        const int b1size = b1->nbasis();
+
+        std::vector<std::shared_ptr<Shell> > input;
+        input.push_back(b1);
+        input.push_back(b3);
+        input.push_back(b0);
+        input.push_back(b3);
+
+        ERIBatch eribatch(input, 1.0);
+        eribatch.compute();
+        const double* eridata = eribatch.data();
+
+        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
+          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1, ++eridata) {  
+            buf[j1+j0*naux] = buf[j0+j1*naux] = *eridata; 
+          }
+        }
+      }
+    }
+    const int lwork = 5*naux;
+    double* vec = new double[naux];
+
+    double* work = new double[std::max(lwork,naux*naux)];
+    int info;
+    dsyev_("V", "U", &naux, buf, &naux, vec, work, &lwork, &info); 
+    if (info) throw std::runtime_error("dsyev failed in DF fock builder");
+// TODO thresh_overlap_ should be passed here.
+    for (int i = 0; i != naux; ++i)
+      vec[i] = vec[i] > 1.0e-8 ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+    for (int i = 0; i != naux; ++i) {
+      for (int j = 0; j != naux; ++j) {
+        buf[j+i*naux] *= vec[i];
+      }
+    }
+    // work now contains -1/2
+    dgemm_("N", "T", naux, naux, naux, 1.0, buf, naux, buf, naux, 0.0, work, naux); 
+    delete[] vec;
+    delete[] buf;
+
+    buf = new double[nbasis_*nbasis_*naux];
+    std::fill(buf, buf+nbasis_*nbasis_*naux, 0.0);
 
     for (int i0 = 0; i0 != size; ++i0) {
       const std::shared_ptr<Shell>  b0 = basis[i0];
       const int b0offset = offset[i0]; 
       const int b0size = b0->nbasis();
       for (int i1 = i0; i1 != size; ++i1) {
-//      const unsigned int i01 = i0 *size + i1;
         const std::shared_ptr<Shell>  b1 = basis[i1];
         const int b1offset = offset[i1]; 
         const int b1size = b1->nbasis();
@@ -237,14 +297,72 @@ void Fock<DF>::fock_two_electron_part() {
           ERIBatch eribatch(input, 1.0);
           eribatch.compute();
           const double* eridata = eribatch.data();
-          std::cout << ddot_(b0size * b1size * b2size, eridata, 1, eridata, 1) << std::endl;
 
-          assert((int)eribatch.data_size() == b0size * b1size * b2size);
+          // all slot in
+          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
+            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++eridata) {  
+                buf[j2+naux*(j1+nbasis_*j0)] = buf[j2+naux*(j0+nbasis_*j1)] = *eridata;
+              }
+            }
+          }
         }
       }
     }
+
+    // for the time being, natural orbitals are made here...
+    double* coeff = new double[nbasis_ * nbasis_];
+    double* occup = new double[nbasis_];
+    int nocc = 0;
+    {
+      const int lwork = nbasis_*5;
+      double* work4 = new double[lwork];
+      std::copy(density_->data(), density_->data()+nbasis_*nbasis_, coeff);
+      dscal_(nbasis_*nbasis_, -1.0, coeff, 1);
+      int info;
+      dsyev_("V", "U", &nbasis_, coeff, &nbasis_, vec, work4, &lwork, &info); 
+      if (info) throw std::runtime_error("dsyev failed in DF Fock builder 2");
+      for (int i = 0; i != nbasis_; ++i) {
+        if (vec[i] < -1.0e-12) {
+          ++nocc;
+          dscal_(nbasis_, std::sqrt(-vec[i]), coeff+i*nbasis_, 1);
+        }
+      }
+      delete[] work4;
+    }
+    delete[] occup;
+#if 0
+double* d = new double[nbasis_*nbasis_];
+dgemm_("N", "T", nbasis_, nbasis_, nocc, 1.0, coeff, nbasis_, coeff, nbasis_, 0.0, d, nbasis_);
+daxpy_(nbasis_*nbasis_, -1.0, density_->data(), 1, d, 1); 
+std::cout << ddot_(nbasis_*nbasis_, d, 1, d, 1) << std::endl;
+delete[] d;
+#endif
+
+    // now coeff contains coefficients
+    // first half transformation
+    double* half = new double[naux*nbasis_*nocc];
+    dgemm_("N", "N", naux*nbasis_, nocc, nbasis_, 1.0, buf, naux*nbasis_, coeff, nbasis_, 0.0, half, naux*nbasis_); 
+
+    // multiply J^-1/2
+    double* half2 = new double[naux*nbasis_*nocc];
+    dgemm_("N", "N", naux, nbasis_*nocc, naux, 1.0, work, naux, half, naux, 0.0, half2, naux); 
+
+    // computing exchange
+    for (int i = 0; i != nocc; ++i) {
+      dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2+i*nbasis_*naux, naux, half2+i*nbasis_*naux, naux, 1.0, data_, nbasis_); 
+    }
+
+
+    // deallocate at the bottom
+    delete[] half2;
+    delete[] half;
+    delete[] coeff;
+    delete[] work;
+    delete[] buf;
   }
-  std::cout << "somehow came out" << std::endl;
+  this->symmetrize();
+  this->print();
   throw;
 };
 
