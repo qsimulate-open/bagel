@@ -16,6 +16,7 @@
 
 using namespace std;
 
+static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void SuperCI::compute() {
   const string indent = "  ";
@@ -38,6 +39,7 @@ void SuperCI::compute() {
   // macro iteration from here
   // ============================
   double gradient = 1.0e100;
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
@@ -48,16 +50,12 @@ void SuperCI::compute() {
     }
 
     // first perform CASCI to obtain RDMs
-    mute_stdcout();
     fci_->compute();
     fci_->compute_rdm12();
-    resume_stdcout();
     // get energy
     vector<double> energy = fci_->energy();
 
-    // slot in density matrix
-    shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-    shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
+    int start0 = ::clock();
 
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
@@ -75,11 +73,17 @@ void SuperCI::compute() {
     shared_ptr<QFile> qxr(new QFile(nbasis_, nact_));
     compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qxr);
 
+    cout << "     * Natural orbital transformation + Q vector  " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
+
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
     
     // Davidson utility. We diagonalize a super CI matrix every macro iteration
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
     shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_));
+
+    // Density matrix
+    shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
+    shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
 
     // computes f and f_act
     // TODO call to fock builder should be done only once.
@@ -96,6 +100,7 @@ void SuperCI::compute() {
       shared_ptr<Fock> finact_ao(new Fock(geom_, hcore_, deninact, ref_->schwarz()));
       shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *finact_ao * *coeff)); finact = ft;
     }
+    cout << "     * Fock + inactive Fock                       " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
     {
       // active-x Fock operator Dts finact_sx + Qtx
       shared_ptr<QFile> ft(new QFile(*qxr)); fact = ft; // nbasis_ runs first
@@ -143,6 +148,7 @@ void SuperCI::compute() {
     // then microiteration for diagonalization
     // ---------------------------------------
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
+      const int mstart = ::clock();
 
       if (miter != 0) {
         sigma_->zero();
@@ -171,12 +177,13 @@ void SuperCI::compute() {
       // residual vector and error
       shared_ptr<RotFile> residual = davidson.residual().front();
       const double error = residual->ddot(*residual) / residual->size();
-#if 0
-      cout << setw(3) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-           << setw(10) << scientific << setprecision(2) << error << fixed << endl;
-#endif
 
-      if (error < thresh_micro_) break;
+      const int mend = ::clock();
+      if (miter == 0) cout << endl << "     == micro iteration == " << endl;
+      cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
+           << setw(10) << scientific << setprecision(2) << error << fixed << " " << (mend - mstart)/cps << endl;
+
+      if (error < thresh_micro_) { cout << endl; break; }
       if (miter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
 
@@ -192,6 +199,7 @@ void SuperCI::compute() {
 
     // rotation parameters
     cc_ = davidson.civec().front();
+    dscal_(cc_->size()-1, 1.0/cc_->ele_ref(), cc_->data(), 1);
     // unitary matrix
     shared_ptr<Matrix1e> rot = cc_->unpack(ref_->coeff()->geom())->exp();
     // forcing rot to be unitary (usually not needed, though)
@@ -215,21 +223,26 @@ void SuperCI::compute() {
     int end = ::clock();
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
+      resume_stdcout();
       cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (diis ? "*" : " ") 
                                         << setw(17) << fixed << setprecision(8) << energy[i] << "   "
                                         << setw(10) << scientific << setprecision(2) << (i==0 ? gradient : 0.0) << fixed << setw(10) << setprecision(2)
-                                        << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
+                                        << (end - start)/cps << endl;
+      mute_stdcout();
     }
 
     if (gradient < thresh_) break;
     if (iter == max_iter_-1) {
+      resume_stdcout();
       cout << indent << endl << indent << "  * Max iteration reached in the CASSCF macro interation." << endl << endl;
+      mute_stdcout();
       break;
     }
   }
   // ============================
   // macro iteration to here
   // ============================
+  resume_stdcout();
 
 }
 

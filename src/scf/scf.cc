@@ -29,27 +29,20 @@ SCF::SCF(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
   eig_ = new double[geom_->nbasis()];
   hcore_->symmetrize();
 
-  {
-    max_iter_ = 100;
-    auto iter = idata_.find("maxiter");
-    auto iter1 = idata_.find("maxiter_scf"); // this is priotized.
-    if (iter  != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter->second);
-    if (iter1 != idata_.end()) max_iter_ = boost::lexical_cast<int>(iter1->second);
-  } {
-    thresh_overlap_ = 1.0e-8;
-    auto iter = idata_.find("thresh_overlap");
-    if (iter  != idata_.end()) thresh_overlap_ = boost::lexical_cast<double>(iter->second);
-  } {
-    thresh_scf_ = 1.0e-8;
-    auto iter = idata_.find("thresh");
-    auto iter1 = idata_.find("thresh_scf");
-    if (iter  != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter->second);
-    if (iter1 != idata_.end()) thresh_scf_ = boost::lexical_cast<double>(iter1->second);
-  } {
+  max_iter_ = read_input<int>(idata_, "maxiter", 100);
+  max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
+  thresh_overlap_ = read_input<double>(idata_, "thresh_overlap", 1.0e-8);
+  thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
+  thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
+  string dd = read_input<string>(idata_, "diis", "gradient");
+  if (dd == "gradient") {
     density_change_ = false;
-    auto iter = idata_.find("diis");
-    if (iter  != idata_.end() && iter->second == "density") density_change_ = true; 
+  } else if (dd == "density") {
+    density_change_ = true;
+  } else {
+    throw runtime_error("unrecongnized option for DIIS error vectors");
   }
+
   RefTildeX tildex_tmp(new TildeX(overlap_, thresh_overlap_));
   tildex_ = tildex_tmp;
 

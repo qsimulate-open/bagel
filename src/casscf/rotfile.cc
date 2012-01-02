@@ -63,4 +63,7 @@ void RotFile::print() const {
       cout << endl;
     }
   }
+  if (superci_) {
+    cout << "reference weight " << ele_ref() << endl;
+  }
 }

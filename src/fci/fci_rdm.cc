@@ -117,7 +117,7 @@ void FCI::compute_rdm12(const int ist) {
   cout << endl << "     recomputing energy using RDMs : " << setprecision(12) << setw(18) << 
             geom_->nuclear_repulsion() + ddot_(mm, jop_->mo1e_unpacked_ptr(), 1, rdm1->data(), 1)
                                        + 0.5*ddot_(nn, jop_->mo2e_unpacked_ptr(), 1, rdm2->data(), 1)
-                                       + core_energy_ << endl; 
+                                       + core_energy_ << endl << endl;
 #endif
 
   phia_ = phia_bk;

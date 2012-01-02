@@ -60,6 +60,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
     stack = a; 
   }
 
+  const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
   AtomMap tmp;
   map<string, int> amap = tmp.atommap;
@@ -82,9 +83,10 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
       const string y_str(what[3].first, what[3].second);
       const string z_str(what[4].first, what[4].second);
       vector<double> positions;
-      positions.push_back(lexical_cast<double>(x_str));
-      positions.push_back(lexical_cast<double>(y_str));
-      positions.push_back(lexical_cast<double>(z_str));
+      const double prefac = angstrom ? 1.0/0.529177249 : 1.0 ;
+      positions.push_back(lexical_cast<double>(x_str)*prefac);
+      positions.push_back(lexical_cast<double>(y_str)*prefac);
+      positions.push_back(lexical_cast<double>(z_str)*prefac);
 
       {
         RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));

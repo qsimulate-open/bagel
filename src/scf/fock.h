@@ -18,7 +18,7 @@ class Fock : public Matrix1e {
     const std::shared_ptr<Matrix1e> density_;
     void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
-    void fock_two_electron_part();
+    virtual void fock_two_electron_part();
 // for debug
     void slater_two_electron_part();
     std::vector<double> schwarz_;
