@@ -37,10 +37,11 @@ void SuperCI::compute() {
   // ============================
   // macro iteration from here
   // ============================
+  double gradient = 1.0e100;
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
-    if (iter == diis_start_) {
+    if (iter >= diis_start_ && gradient < 1.0e-4 && !diis) {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*ref_->coeff()));
       shared_ptr<HPW_DIIS<Matrix1e> > d(new HPW_DIIS<Matrix1e>(5, tmp));
       diis = d;
@@ -75,7 +76,6 @@ void SuperCI::compute() {
     compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qxr);
 
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
-    double gradient;
     
     // Davidson utility. We diagonalize a super CI matrix every macro iteration
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
@@ -149,16 +149,12 @@ void SuperCI::compute() {
 
         // equation 21d
         sigma_ai_ai_(cc_, sigma_, f);
-
         // equation 21e
         sigma_at_ai_(cc_, sigma_, fact);
-
         // equation 21f // note a typo!
         sigma_at_at_(cc_, sigma_, gaa, f);
-
         // equation 21b
         sigma_ai_ti_(cc_, sigma_, fact);
-
         // equation 21a
         sigma_ti_ti_(cc_, sigma_, gaa, f, factp);
 
@@ -181,6 +177,8 @@ void SuperCI::compute() {
 #endif
 
       if (error < thresh_micro_) break;
+      if (miter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
+
 
       // update cc_
       for (double *i = residual->begin(), *j = denom_->begin(); i != residual->end(); ++i, ++j) { *i /= *j; }
@@ -199,7 +197,7 @@ void SuperCI::compute() {
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
-    if (iter < diis_start_) {
+    if (!diis) {
       *ref_->coeff() *= *rot;
     } else {
       // including natorb.first to rot so that they can be processed at once
@@ -217,7 +215,7 @@ void SuperCI::compute() {
     int end = ::clock();
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
-      cout << indent << setw(5) << iter << setw(3) << i 
+      cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (diis ? "*" : " ") 
                                         << setw(25) << fixed << setprecision(10) << energy[i] << "   "
                                         << setw(10) << scientific << setprecision(2) << (i==0 ? gradient : 0.0) << fixed << setw(10) << setprecision(2)
                                         << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
@@ -287,7 +285,7 @@ shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shar
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_; ++j, ++target) {
-      *target = -gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
+      *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
     }
   }
 
@@ -300,7 +298,7 @@ shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shar
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
-    const double fac = ((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
+    const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
     for (int j = 0; j != nclosed_; ++j, ++target) {
       *target = fac - f->element(j, j);
     }
