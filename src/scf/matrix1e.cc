@@ -350,8 +350,8 @@ void Matrix1e::purify_unitary() {
   *this = ((buf ^ buf) * *this);
 
   // just checking...
-  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-12);
-  assert(std::abs((*this%*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-12);
+  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
+  assert(std::abs((*this%*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
 
   delete[] work;
   delete[] vec;

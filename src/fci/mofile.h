@@ -17,6 +17,7 @@
 #define DEBUG_RECOMPUTE_ENERGY
 
 class MOFile {
+
   protected:
     int nocc_;
     int nbasis_;

@@ -63,11 +63,12 @@ int main(int argc, char** argv) {
       if (method == "hf") {
         shared_ptr<SCF> scf_(new SCF(iter->second, geom)); scf = scf_;
         scf->compute();
-        shared_ptr<Reference> ref_(new Reference(*scf)); ref = ref_;
+        ref = scf->conv_to_ref();
       } else if (method == "casscf") {
         if (ref) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_; }
         else     { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom)); casscf = casscf_; }
         casscf->compute();
+        ref = casscf->conv_to_ref();
       } else if (method == "fci") {
         if (ref) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, ref)); fci = fci_; }
         else     { shared_ptr<FCI> fci_(new FCI(iter->second, geom)); fci = fci_; }

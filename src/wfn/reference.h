@@ -7,11 +7,13 @@
 #define _NEWINT_WFN_REFERENCE_H
 
 #include <memory>
-#include <src/scf/scf.h>
+#include <vector>
 #include <src/scf/coeff.h>
+#include <src/scf/hcore.h>
 #include <src/scf/geometry.h>
 
 class Reference {
+
   protected:
     std::shared_ptr<Geometry> geom_; 
     std::shared_ptr<Coeff> coeff_;
@@ -20,10 +22,12 @@ class Reference {
 
 
   public:
-    Reference(SCF& a);
+    Reference(std::shared_ptr<Geometry> g, std::shared_ptr<Coeff> c,
+              std::shared_ptr<Hcore> h, const std::vector<double>& s);
 
     ~Reference() {};
 
+    std::shared_ptr<Geometry> geom() { return geom_; };
     std::vector<double> schwarz() { return schwarz_; };
     std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };

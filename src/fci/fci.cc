@@ -19,7 +19,7 @@ FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geo
  : idata_(idat), geom_(geom) {
   SCF scf(idat, geom); 
   scf.compute();
-  shared_ptr<Reference> r(new Reference(scf));
+  ref_ = scf.conv_to_ref();
   common_init();
 }
 

@@ -23,7 +23,6 @@
 #include <src/fci/rdm.h>
 #include <src/wfn/reference.h>
 
-
 class FCI {
 
   protected:

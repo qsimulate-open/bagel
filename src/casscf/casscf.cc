@@ -16,8 +16,7 @@ CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom) :
 
   SCF scf(idat, geom);
   scf.compute();
-  shared_ptr<Reference> r(new Reference(scf));
-  ref_ = r;
+  ref_ = scf.conv_to_ref();
 
   common_init();
 

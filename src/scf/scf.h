@@ -14,6 +14,7 @@
 #include <src/scf/tildex.h>
 #include <src/scf/fock.h>
 #include <src/scf/coeff.h>
+#include <src/wfn/reference.h>
 
 class SCF {
   protected:
@@ -48,6 +49,11 @@ class SCF {
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
     const std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
+
+    std::shared_ptr<Reference> conv_to_ref() {
+      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz()));
+      return out;
+    };
 };
 
 #endif

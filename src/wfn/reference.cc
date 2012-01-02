@@ -7,8 +7,8 @@
 
 using namespace std;
 
-Reference::Reference(SCF& a) : geom_(a.geom()), coeff_(a.coeff()), hcore_(a.hcore()), schwarz_(a.schwarz()) {
+Reference::Reference(shared_ptr<Geometry> g, shared_ptr<Coeff> c,  shared_ptr<Hcore> h, const vector<double>& s)
+ : geom_(g), coeff_(c), hcore_(h), schwarz_(s) {
 
 }
-
 

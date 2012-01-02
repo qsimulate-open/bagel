@@ -15,8 +15,10 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
+#include <src/fci/rdm.h>
 
 class CASSCF {
+
   protected:
     // input
     std::multimap<std::string, std::string> idata_; 
@@ -53,6 +55,12 @@ class CASSCF {
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };
+
+    std::shared_ptr<Reference> ref() { return ref_; };
+    std::shared_ptr<Reference> conv_to_ref() const {
+      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), ref_->hcore(), ref_->schwarz())); 
+      return out;
+    };
 
 };
 
