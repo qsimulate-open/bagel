@@ -15,6 +15,7 @@
 #include <src/pmp2/pmp2.h>
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
+#include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
 #include <src/global.h>
@@ -55,18 +56,20 @@ int main(int argc, char** argv) {
     shared_ptr<SCF> scf;
     shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
+    shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const string method = iter->first;
       if (method == "hf") {
         shared_ptr<SCF> scf_(new SCF(iter->second, geom)); scf = scf_;
         scf->compute();
+        shared_ptr<Reference> ref_(new Reference(*scf)); ref = ref_;
       } else if (method == "casscf") {
-        if (scf) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, scf)); casscf = casscf_; }
+        if (ref) { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_; }
         else     { shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom)); casscf = casscf_; }
         casscf->compute();
       } else if (method == "fci") {
-        if (scf) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, scf)); fci = fci_; }
+        if (ref) { shared_ptr<FCI> fci_(new FCI(iter->second, geom, ref)); fci = fci_; }
         else     { shared_ptr<FCI> fci_(new FCI(iter->second, geom)); fci = fci_; }
         fci->compute();
       }

@@ -51,7 +51,7 @@ class SuperCI : public CASSCF {
   public:
     SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom) 
       : CASSCF(idat, geom) { common_init(); };
-    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<SCF> ref)
+    SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref)
       : CASSCF(idat, geom, ref) { common_init(); };
     ~SuperCI() {};
 

@@ -16,7 +16,7 @@ using namespace std;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<SCF> ref) : geom_(geom), ref_(ref) {
+MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref) {
 #if 0
   {
     Filename tmpf;

@@ -10,7 +10,6 @@
 #include <src/util/davidson.h>
 #include <src/scf/hcore.h>
 #include <src/scf/fock.h>
-#include <src/scf/scf.h>
 #include <src/util/f77.h>
 #include <src/util/hpw_diis.h>
 

@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <cassert>
+#include <src/wfn/reference.h>
 #include <src/util/filename.h>
 #include <src/scf/scf.h>
 #include <src/scf/geometry.h>
@@ -21,7 +22,7 @@ class MOFile {
     int nbasis_;
 
     const std::shared_ptr<Geometry> geom_;
-    const std::shared_ptr<SCF> ref_;
+    const std::shared_ptr<Reference> ref_;
     std::shared_ptr<std::fstream> file_;
     size_t sizeij_;
     long filesize_;
@@ -43,7 +44,7 @@ class MOFile {
     };
 
   public:
-    MOFile(const std::shared_ptr<Geometry>, const std::shared_ptr<SCF>);
+    MOFile(const std::shared_ptr<Geometry>, const std::shared_ptr<Reference>);
     ~MOFile();
 
     // creates integral files and returns the core energy.

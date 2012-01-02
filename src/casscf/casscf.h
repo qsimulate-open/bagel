@@ -13,7 +13,7 @@
 #include <vector>
 #include <memory>
 #include <src/scf/geometry.h>
-#include <src/scf/scf.h>
+#include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 
 class CASSCF {
@@ -36,7 +36,7 @@ class CASSCF {
     std::vector<double> occup_;
     std::shared_ptr<Coeff> coeff_natorb_;
 
-    const std::shared_ptr<SCF> ref_;
+    std::shared_ptr<Reference> ref_;
     std::shared_ptr<FCI> fci_;
     const std::shared_ptr<Geometry> geom_;
     void print_header() const;
@@ -49,7 +49,7 @@ class CASSCF {
 
   public:
     CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<SCF> ref);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref);
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };

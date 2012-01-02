@@ -42,6 +42,7 @@ class SCF {
 
     void compute();
 
+    const std::shared_ptr<Geometry> geom() { return geom_; };
     const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };

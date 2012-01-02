@@ -21,6 +21,7 @@
 #include <src/fci/civec.h>
 #include <src/fci/mofile.h>
 #include <src/fci/rdm.h>
+#include <src/wfn/reference.h>
 
 
 class FCI {
@@ -29,7 +30,7 @@ class FCI {
     // input
     std::multimap<std::string, std::string> idata_; 
     // reference
-    std::shared_ptr<SCF> ref_;
+    std::shared_ptr<Reference> ref_;
     // geometry file
     const std::shared_ptr<Geometry> geom_;
     // number of states
@@ -155,7 +156,7 @@ class FCI {
 
   public:
     FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>);
-    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<SCF>);
+    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
     ~FCI();
     void compute();
 
