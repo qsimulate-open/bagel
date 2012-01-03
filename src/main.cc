@@ -53,19 +53,26 @@ int main(int argc, char** argv) {
     shared_ptr<Geometry> geom(new Geometry(idata));
     list<pair<string, multimap<string, string> > > keys = idata->data();
 
-    const int DF = 1;
     bool scf_done = false;
     bool casscf_done = false;
-    shared_ptr<SCF<DF> > scf;
+    shared_ptr<SCF_base> scf;
     shared_ptr<CASSCF> casscf;
     shared_ptr<FCI> fci;
     shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const string method = iter->first;
+
       if (method == "hf") {
 
-        shared_ptr<SCF<DF> > scf_(new SCF<DF>(iter->second, geom)); scf = scf_;
+        shared_ptr<SCF<0> > scf_(new SCF<0>(iter->second, geom)); scf = scf_;
+        scf->compute();
+        ref = scf->conv_to_ref();
+
+      } else if (method == "df-hf") {
+
+        cout << "     * Density fitting is used" << endl;
+        shared_ptr<SCF<1> > scf_(new SCF<1>(iter->second, geom)); scf = scf_;
         scf->compute();
         ref = scf->conv_to_ref();
 

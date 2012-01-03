@@ -34,7 +34,6 @@ class Fock : public Fock_base {
 
 template<int DF>
 void Fock<DF>::fock_two_electron_part() {
-std::fill(data_, data_+nbasis_*nbasis_, 0.0);
   
   // for debug <- what did I mean by this?? TODO
   density_->symmetrize();
@@ -182,10 +181,8 @@ std::fill(data_, data_+nbasis_*nbasis_, 0.0);
                     double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.5 : 1.0);
                     const double intval4 = 4.0 * intval;
 
-#if 0
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;
                     data_[j2n + j3] += density_data[j0n + j1] * intval4;
-#endif
                     data_[j0n + j3] -= density_data[j1n + j2] * intval;
                     data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
                     data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
@@ -199,6 +196,9 @@ std::fill(data_, data_+nbasis_*nbasis_, 0.0);
         }
       }
     }
+    for (int i = 0; i != ndim_; ++i) data_[i*nbasis_ + i] *= 2.0;
+    symmetrize();
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {
 
@@ -352,7 +352,16 @@ delete[] d;
     for (int i = 0; i != nocc; ++i) {
       dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2+i*nbasis_*naux, naux, half2+i*nbasis_*naux, naux, 1.0, data_, nbasis_); 
     }
+    delete[] half;
 
+    // Coulomb comes with virtually no cost
+    half = new double[naux];
+    // half2: naux * nbasis_ * nocc
+    // coeff: nbasis_* nocc 
+    double* last = new double[naux];
+    dgemv_("N", naux, nbasis_*nocc, 1.0, half2, naux, coeff, 1, 0.0, half, 1);
+    dgemv_("N", naux, naux, 1.0, work, naux, half, 1, 0.0, last, 1); 
+    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf, naux, last, 1, 1.0, data_, 1); 
 
     // deallocate at the bottom
     delete[] half2;
@@ -361,9 +370,6 @@ delete[] d;
     delete[] work;
     delete[] buf;
   }
-  this->symmetrize();
-  this->print();
-  throw;
 };
 
 

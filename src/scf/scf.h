@@ -31,9 +31,11 @@ class SCF : public SCF_base {
       if (!highest_level) indent += "  ";
     
       std::shared_ptr<Fock<DF> > previous_fock;
+      std::shared_ptr<Fock<DF> > hcore_fock;
       {
         std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, hcore_));
         previous_fock = fock;
+        if (DF) hcore_fock = fock;
        
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig_);
@@ -58,7 +60,12 @@ class SCF : public SCF_base {
       for (int iter = 0; iter != max_iter_; ++iter) {
         int start = ::clock();
     
-        std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
+        std::shared_ptr<Fock<DF> > fock;
+        if (!DF) {
+          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_)); fock = tmp;
+        } else {
+          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_)); fock = tmp;
+        }
         previous_fock = fock;
     
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
