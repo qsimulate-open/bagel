@@ -63,7 +63,8 @@ DensityFit::DensityFit(const int nbas, const int naux,
         input.push_back(b1);
         input.push_back(b0);
 
-        ERIBatch eribatch(input, 1.0);
+        // TODO if I turn on primitive screening, it is broken.
+        ERIBatch eribatch(input, 0.0);
         eribatch.compute();
         const double* eridata = eribatch.data();
 
@@ -98,7 +99,8 @@ DensityFit::DensityFit(const int nbas, const int naux,
       input.push_back(b0);
       input.push_back(b3);
 
-      ERIBatch eribatch(input, 1.0);
+      // TODO if I turn on primitive screening, it is broken.
+      ERIBatch eribatch(input, 0.0);
       eribatch.compute();
       const double* eridata = eribatch.data();
 

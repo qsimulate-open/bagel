@@ -18,6 +18,7 @@
 
 template<int DF>
 class Fock : public Fock_base {
+  protected:
 
   public:
     Fock(const std::shared_ptr<Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
@@ -202,18 +203,17 @@ void Fock<DF>::fock_two_electron_part() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {
 
-
     std::shared_ptr<DensityFit> df = geom_->df();
     const double* const buf1 = df->data_3index();
     const double* const buf2 = df->data_2index();
 
     // some constants
+    const int nocc_ = geom_->nocc()/2;
     const int naux = df->naux();
     assert(nbasis_ == df->nbasis());
 
     // for the time being, natural orbitals are made here...
     double* coeff = new double[nbasis_ * nbasis_];
-    double* occup = new double[nbasis_];
     int nocc = 0;
     {
       const int lwork = nbasis_*5;
@@ -225,22 +225,23 @@ void Fock<DF>::fock_two_electron_part() {
       dsyev_("V", "U", &nbasis_, coeff, &nbasis_, vec, work4, &lwork, &info); 
       if (info) throw std::runtime_error("dsyev failed in DF Fock builder 2");
       for (int i = 0; i != nbasis_; ++i) {
-        if (vec[i] < -1.0e-12) {
+        if (vec[i] < -1.0e-8) {
           ++nocc;
           dscal_(nbasis_, std::sqrt(-vec[i]), coeff+i*nbasis_, 1);
-        }
+        } else { break; }
       }
       delete[] work4;
     }
-    delete[] occup;
+
+    const size_t half_size_ = naux * nbasis_ * nocc;
+    double* half = new double[half_size_*2];
+    double* half2 = half + half_size_;
 
     // now coeff contains coefficients
     // first half transformation
-    double* half = new double[naux*nbasis_*nocc];
     dgemm_("N", "N", naux*nbasis_, nocc, nbasis_, 1.0, buf1, naux*nbasis_, coeff, nbasis_, 0.0, half, naux*nbasis_); 
 
     // multiply J^-1/2
-    double* half2 = new double[naux*nbasis_*nocc];
     dgemm_("N", "N", naux, nbasis_*nocc, naux, 1.0, buf2, naux, half, naux, 0.0, half2, naux); 
 
     // computing exchange
@@ -248,22 +249,16 @@ void Fock<DF>::fock_two_electron_part() {
       dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2+i*nbasis_*naux, naux, half2+i*nbasis_*naux, naux, 1.0, data_, nbasis_); 
     }
 
-    delete[] half;
-    half = new double[naux];
-
     // Coulomb comes with virtually no cost
     // half2: naux * nbasis_ * nocc
     // coeff: nbasis_* nocc 
-    double* last = new double[naux];
     dgemv_("N", naux, nbasis_*nocc, 1.0, half2, naux, coeff, 1, 0.0, half, 1);
-    dgemv_("N", naux, naux, 1.0, buf2, naux, half, 1, 0.0, last, 1); 
-    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, last, 1, 1.0, data_, 1); 
+    dgemv_("N", naux, naux, 1.0, buf2, naux, half, 1, 0.0, half2, 1); 
+    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, half2, 1, 1.0, data_, 1); 
 
     // deallocate at the bottom
-    delete[] half2;
-    delete[] half;
     delete[] coeff;
-    delete[] last;
+    delete[] half;
   }
 };
 

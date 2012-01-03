@@ -14,8 +14,8 @@ class DensityFit {
   protected:
     double* data_;
     double* data2_;
-    int nbasis_;
-    int naux_;
+    size_t nbasis_;
+    size_t naux_;
 
   public:
     DensityFit(const int nbas, const int naux,
@@ -26,8 +26,8 @@ class DensityFit {
     const double* const data_3index() const { return data_; };
     const double* const data_2index() const { return data2_; };
 
-    int nbasis() const { return nbasis_; };
-    int naux() const { return naux_; };
+    size_t nbasis() const { return nbasis_; };
+    size_t naux() const { return naux_; };
 
 }; 
 

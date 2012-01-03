@@ -17,3 +17,5 @@ o FCI can be faster if one uses Olsen's algorithm
 o Quasi Newton updte for CASSCF
 
 o For some reasons, cartesian basis is broken
+
+o int size

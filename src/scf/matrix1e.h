@@ -25,6 +25,7 @@ class Matrix1e {
     virtual void init();
 
   public:
+    Matrix1e() : nbasis_(0), ndim_(0), mdim_(0) {};
     Matrix1e(const std::shared_ptr<Geometry>); 
     Matrix1e(const std::shared_ptr<Geometry>, const int n, const int m);
     Matrix1e(const Matrix1e&); 
@@ -69,6 +70,9 @@ class Matrix1e {
     const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
+
+    void add_diag(const double a, const int i, const int j)
+      { for (int ii = i; ii != j; ++ii) data_[ii+ii*nbasis_] += a; };
 
     void zero() { std::fill(data_, data_+nbasis_*nbasis_, 0.0); };
     void unit() { std::fill(data_, data_+nbasis_*nbasis_, 0.0);

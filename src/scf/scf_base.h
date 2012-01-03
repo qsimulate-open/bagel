@@ -27,6 +27,7 @@ class SCF_base {
     std::shared_ptr<Coeff> coeff_;
 
     int max_iter_;
+    int diis_start_;
     double thresh_overlap_;
     double thresh_scf_;
     bool density_change_;

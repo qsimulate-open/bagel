@@ -322,6 +322,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
         weights_[i] = erfsqt * SQRTPI2 / sqrtt;
       }
     }
+#if 1
   } else if (rank_ == 1) {
     eriroot1_(T_, roots_, weights_, &ps); 
   } else if (rank_ == 2) {
@@ -347,7 +348,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   } else if (rank_ == 12) {
     eriroot12_(T_, roots_, weights_, &ps); 
   } else {
-#if 0
+#else
     rysroot_(T_, roots_, weights_, &rank_, &ps); // <- buggy!
 #endif
   }

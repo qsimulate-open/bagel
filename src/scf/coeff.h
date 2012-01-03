@@ -13,6 +13,7 @@ class Coeff : public Matrix1e {
   protected:
 
   public:
+    Coeff() : Matrix1e() {};
     Coeff(const Matrix1e&);
     ~Coeff();
 

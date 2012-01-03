@@ -198,7 +198,7 @@ void PSCF::print_eig(const double* eig) const {
   for (int i = 0; i >= -geom_->K(); i -= 10) {
     const int ii = i + geom_->K();
     const int outsize = min(10, geom_->K()+1+i);
-    const int bsize = min(geom_->nbasis(), 15);
+    const int bsize = min(geom_->nbasis(), (size_t)15);
     if (i != 0) cout << endl;
     cout << "      K ";
     for (int j = 0; j != outsize; ++j) {

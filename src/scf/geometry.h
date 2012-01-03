@@ -72,10 +72,10 @@ class Geometry {
 
     // Returns a constant
     const int natom() const { return atoms_.size(); };
-    const int nbasis() const { return nbasis_; };
-    const int nocc() const { return nocc_; };
-    const int nfrc() const { return nfrc_; };
-    const int naux() const { return naux_; };
+    const size_t nbasis() const { return nbasis_; };
+    const size_t nocc() const { return nocc_; };
+    const size_t nfrc() const { return nfrc_; };
+    const size_t naux() const { return naux_; };
     const int lmax() const { return lmax_; };
     const int aux_lmax() const { return aux_lmax_; };
     const bool spherical() const { return spherical_; };

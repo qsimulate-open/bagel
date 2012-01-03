@@ -30,6 +30,7 @@ SCF_base::SCF_base(std::multimap<std::string, std::string>& idat, const RefGeome
 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
+  diis_start_ = read_input<int>(idata_, "diis_start", 1);
   thresh_overlap_ = read_input<double>(idata_, "thresh_overlap", 1.0e-8);
   thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
   thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);

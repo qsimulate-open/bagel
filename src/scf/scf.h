@@ -39,8 +39,9 @@ class SCF : public SCF_base {
        
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig_);
-        Coeff new_coeff(*tildex_ * intermediate);
-        std::shared_ptr<Matrix1e> guess_density(new Matrix1e(new_coeff.form_density_rhf()));
+        std::shared_ptr<Coeff> new_coeff(new Coeff(*tildex_ * intermediate));
+        coeff_ = new_coeff;
+        std::shared_ptr<Matrix1e> guess_density(new Matrix1e(new_coeff->form_density_rhf()));
     
         aodensity_ = guess_density;
       }
@@ -50,6 +51,8 @@ class SCF : public SCF_base {
         std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl;
         std::cout << std::endl; 
       }
+      std::cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
+                << std::endl << std::endl;
       std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ")===" << std::endl << indent << std::endl;
     
       // starting SCF iteration
@@ -68,9 +71,10 @@ class SCF : public SCF_base {
         }
         previous_fock = fock;
     
-        Matrix1e intermediate = *tildex_ % *fock * *tildex_;
+        Matrix1e intermediate = *coeff_ % *fock * *coeff_;
+//      intermediate.add_diag(1.0, geom_->nocc()/2, geom_->nbasis());
         intermediate.diagonalize(eig_);
-        std::shared_ptr<Coeff> new_coeff(new Coeff((*tildex_) * intermediate));
+        std::shared_ptr<Coeff> new_coeff(new Coeff((*coeff_) * intermediate));
         coeff_ = new_coeff;
         std::shared_ptr<Matrix1e> new_density(new Matrix1e(coeff_->form_density_rhf()));
     
@@ -95,7 +99,12 @@ class SCF : public SCF_base {
           break;
         }
     
-        std::shared_ptr<Matrix1e> diis_density = diis.extrapolate(make_pair(new_density, error_vector));
+        std::shared_ptr<Matrix1e> diis_density;
+        if (iter >= diis_start_) {
+          diis_density = diis.extrapolate(make_pair(new_density, error_vector));
+        } else {
+          diis_density = new_density;
+        }
     
         std::shared_ptr<Matrix1e> dtmp(new Matrix1e(*diis_density - *aodensity_));
         densitychange = dtmp; 
