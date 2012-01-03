@@ -32,6 +32,7 @@ AC_CONFIG_FILES([Makefile
                  src/osint/Makefile
                  src/slater/Makefile
                  src/scf/Makefile
+                 src/df/Makefile
                  src/pmp2/Makefile
                  src/util/Makefile
                  src/fci/Makefile

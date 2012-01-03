@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-hf") {
 
-        cout << "     * Density fitting is used" << endl;
+        if (!geom->df()) throw runtime_error("It seems that DF basis was not specified in Geometry");
         shared_ptr<SCF<1> > scf_(new SCF<1>(iter->second, geom)); scf = scf_;
         scf->compute();
         ref = scf->conv_to_ref();

@@ -11,6 +11,7 @@
 #include <src/scf/atom.h>
 #include <src/scf/petite.h>
 #include <memory>
+#include <src/df/df.h>
 #include <src/util/input.h>
 
 class Geometry {
@@ -52,6 +53,9 @@ class Geometry {
 
     // integral screening
     double schwarz_thresh_;
+
+    // for DF calculations
+    std::shared_ptr<DensityFit> df_;
 
     // for R12 calculations
     double gamma_;
@@ -102,6 +106,9 @@ class Geometry {
 
     // Returns the Petite list.
     std::shared_ptr<Petite> plist() { return plist_; }; 
+
+    // Rerurns DF data
+    std::shared_ptr<DensityFit> df() { return df_; };
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

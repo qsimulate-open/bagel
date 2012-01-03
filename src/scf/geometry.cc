@@ -17,7 +17,6 @@
 #include <src/stackmem.h>
 
 using namespace std;
-using namespace boost;
 
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Atom> RefAtom;
@@ -30,6 +29,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
+  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
   // cartesian or not.
   const bool cart = read_input<bool>(geominfo, "cartesian", false); 
@@ -75,20 +75,20 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
   for (auto iter = bound.first; iter != bound.second; ++iter) { 
-    smatch what;
-    const regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+    boost::smatch what;
+    const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
     auto start = iter->second.begin();
     auto end = iter->second.end();
-    if (regex_search(start, end, what, atom_reg)) {
+    if (boost::regex_search(start, end, what, atom_reg)) {
       const string aname(what[1].first, what[1].second);
       const string x_str(what[2].first, what[2].second);
       const string y_str(what[3].first, what[3].second);
       const string z_str(what[4].first, what[4].second);
       vector<double> positions;
       const double prefac = angstrom ? 1.0/0.529177249 : 1.0 ;
-      positions.push_back(lexical_cast<double>(x_str)*prefac);
-      positions.push_back(lexical_cast<double>(y_str)*prefac);
-      positions.push_back(lexical_cast<double>(z_str)*prefac);
+      positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
+      positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
+      positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
 
       {
         RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
@@ -151,6 +151,16 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
   cout << "  Number of electrons      : " << setw(8) << nocc()*2 << endl << endl;
+
+  if (!auxfile_.empty()) {
+    cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
+    cout << "    o Being stored without compression. Storage requirement is "
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
+    const int t = ::clock();
+    shared_ptr<DensityFit> tmp(new DensityFit(nbasis_, naux_, atoms_, offsets_, aux_atoms_, aux_offsets_, thresh_overlap));
+    df_ = tmp;
+    cout << "        epalsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
+  }
 }
 
 
@@ -162,7 +172,7 @@ Geometry::Geometry(const string s, const int levl)
   ifs.open(input_.c_str());
   assert(ifs.is_open());
 
-  regex frozen_str("frozen"); 
+  boost::regex frozen_str("frozen"); 
   bool frozen = false;
   while(!ifs.eof()) {
     string sline;
@@ -170,8 +180,8 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
-    if (regex_search(start, end, what, frozen_str)) {
+    boost::smatch what;
+    if (boost::regex_search(start, end, what, frozen_str)) {
       frozen = true; 
       break;
     }
@@ -179,8 +189,8 @@ Geometry::Geometry(const string s, const int levl)
   ifs.clear(); 
   ifs.seekg(0);
 
-  regex gamma_str("gamma");
-  regex gamma_num("[0-9\\.eE\\+-]+");
+  boost::regex gamma_str("gamma");
+  boost::regex gamma_num("[0-9\\.eE\\+-]+");
   double gamma = 1.5;
   while(!ifs.eof()) {
     string sline;
@@ -188,12 +198,12 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
-    if (regex_search(start, end, what, gamma_str)) {
+    boost::smatch what;
+    if (boost::regex_search(start, end, what, gamma_str)) {
       start = what[0].second;
-      if (regex_search(start, end, what, gamma_num)) {
+      if (boost::regex_search(start, end, what, gamma_num)) {
         const string gamma_str(what[0].first, what[0].second);
-        gamma = lexical_cast<double>(gamma_str);
+        gamma = boost::lexical_cast<double>(gamma_str);
         break;
       }
     }
@@ -207,7 +217,7 @@ Geometry::Geometry(const string s, const int levl)
   string basis_name("Basis");
   for (int i = 0; i != level_; ++i) basis_name = "G" + basis_name;
   basis_name = "\\b" + basis_name;
-  const regex basis_reg(basis_name);
+  const boost::regex basis_reg(basis_name);
 
   while(!ifs.eof()) {
     string sline;
@@ -215,23 +225,23 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
-    if (regex_search(start, end, what, basis_reg)) {
+    boost::smatch what;
+    if (boost::regex_search(start, end, what, basis_reg)) {
       start = what[0].second;
-      regex car_reg("cartesian");
-      if (regex_search(start, end, what, car_reg)) spherical_ = false; 
+      boost::regex car_reg("cartesian");
+      if (boost::regex_search(start, end, what, car_reg)) spherical_ = false; 
       if (!spherical_) cout << "  Cartesian basis functions are used" << endl;
       getline(ifs, sline);
       if (sline.empty()) continue;
       start = sline.begin();
       end = sline.end();
-      const regex reg("(\\S+)");
-      const bool found = regex_search(start, end, what, reg);
+      const boost::regex reg("(\\S+)");
+      const bool found = boost::regex_search(start, end, what, reg);
       const string tmpstr(what[1].first, what[1].second);
       basisfile_ = tmpstr; 
 
       start = what[0].second;
-      if(regex_search(start, end, what, reg)) {
+      if(boost::regex_search(start, end, what, reg)) {
         const string auxstr(what[1].first, what[1].second);
         auxfile_ = auxstr;
       }
@@ -253,18 +263,18 @@ Geometry::Geometry(const string s, const int levl)
   nocc_ = 0;
   nfrc_ = 0;
 
-  const regex mole_reg("Molecule");
+  const boost::regex mole_reg("Molecule");
   while(!ifs.eof()){
     string sline;
     getline(ifs, sline); 
     if (sline.empty()) continue; 
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
-    if (regex_search(start, end, what, mole_reg)) {
+    boost::smatch what;
+    if (boost::regex_search(start, end, what, mole_reg)) {
       start = what[0].second;
-      regex sym_reg("[cdCD][1-2]?[vdshVDSHiI]?");
-      if (regex_search(start, end, what, sym_reg)) {
+      boost::regex sym_reg("[cdCD][1-2]?[vdshVDSHiI]?");
+      if (boost::regex_search(start, end, what, sym_reg)) {
         string symtmp(what[0].first, what[0].second);
         transform(symtmp.begin(), symtmp.end(), symtmp.begin(),(int (*)(int))std::tolower);
         symmetry_ = symtmp; 
@@ -272,21 +282,21 @@ Geometry::Geometry(const string s, const int levl)
         string symtmp("c1");
         symmetry_ = symtmp;
       }
-      const regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+      const boost::regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
       while (1) {
         string atomline; 
         getline(ifs, atomline); 
         start = atomline.begin();
         end = atomline.end();
-        if (regex_search(start, end, what, atom_reg)) {
+        if (boost::regex_search(start, end, what, atom_reg)) {
           const string aname(what[1].first, what[1].second);
           const string x_str(what[2].first, what[2].second);
           const string y_str(what[3].first, what[3].second);
           const string z_str(what[4].first, what[4].second);
           vector<double> positions;
-          positions.push_back(lexical_cast<double>(x_str));
-          positions.push_back(lexical_cast<double>(y_str));
-          positions.push_back(lexical_cast<double>(z_str));
+          positions.push_back(boost::lexical_cast<double>(x_str));
+          positions.push_back(boost::lexical_cast<double>(y_str));
+          positions.push_back(boost::lexical_cast<double>(z_str));
 
           {
             RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
