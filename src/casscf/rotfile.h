@@ -108,6 +108,10 @@ class QFile {
       data_ = new double[na_*nb_];
       std::copy(o.data_, o.data_+na_*nb_, data_);
     };
+    QFile(const std::shared_ptr<QFile> o) : na_(o->na_), nb_(o->nb_) {
+      data_ = new double[na_*nb_];
+      std::copy(o->data_, o->data_+na_*nb_, data_);
+    };
     ~QFile() { delete[] data_; };
 
     double* data() { return data_; };

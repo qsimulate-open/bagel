@@ -12,6 +12,7 @@
 #include <src/scf/scf.h>
 #include <src/casscf/casscf.h>
 #include <src/casscf/rotfile.h>
+#include <src/casscf/qvec.h>
 #include <src/fci/rdm.h>
 
 class SuperCI : public CASSCF {

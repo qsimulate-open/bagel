@@ -15,6 +15,8 @@
 
 using namespace std;
 
+#define DF 1
+
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void SuperCI::compute() {
@@ -23,10 +25,10 @@ void SuperCI::compute() {
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ")===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
-  shared_ptr<Fock<0> > hcore_;
+  shared_ptr<Fock<DF> > hcore_;
   {
     shared_ptr<Hcore> hc(new Hcore(geom_));
-    shared_ptr<Fock<0> > fc(new Fock<0>(geom_, hc)); hcore_ = fc;
+    shared_ptr<Fock<DF> > fc(new Fock<DF>(geom_, hc)); hcore_ = fc;
   }
 
   // DIIS: will be turned on at iter = diis_start_ (>1), 
@@ -69,8 +71,15 @@ void SuperCI::compute() {
 
     // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
     // note: this should be after natorb transformation.
-    shared_ptr<QFile> qxr(new QFile(nbasis_, nact_));
-    compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qxr);
+#if 1
+    shared_ptr<QFile> qtmp(new QFile(geom_->nbasis(), nact_));
+    compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qtmp);
+    shared_ptr<Qvec> qxr(new Qvec(*qtmp));
+qxr->print();
+#else
+    shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_->rdm2_av()));
+qxr->print();
+#endif
 
     cout << "     * Natural orbital transformation + Q vector  " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
 
@@ -80,24 +89,22 @@ void SuperCI::compute() {
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
     shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_));
 
-    // Density matrix
-    shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-    shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-
     // computes f and f_act
     // TODO call to fock builder should be done only once.
     shared_ptr<Matrix1e> f, finact;
     shared_ptr<QFile>    fact, factp, gaa;
     shared_ptr<Coeff> coeff = ref_->coeff();
+
     {
       // Fock operator
-      shared_ptr<Fock<0> > f_ao(new Fock<0>(geom_, hcore_, denall, ref_->schwarz()));
+      shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
+      shared_ptr<Fock<DF> > f_ao(new Fock<DF>(geom_, hcore_, denall, ref_->schwarz()));
       shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
-    }
-    {
       // inactive Fock operator
-      shared_ptr<Fock<0> > finact_ao(new Fock<0>(geom_, hcore_, deninact, ref_->schwarz()));
-      shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *finact_ao * *coeff)); finact = ft;
+      shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
+      shared_ptr<Fock<DF> > finact_ao(new Fock<DF>(geom_, hcore_, deninact, ref_->schwarz()));
+      shared_ptr<Matrix1e> fs(new Matrix1e(*coeff % *finact_ao * *coeff));
+      finact = fs;
     }
     cout << "     * Fock + inactive Fock                       " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
     {

@@ -68,37 +68,6 @@ void FCI::compute_rdm12(const int ist) {
     }
   }
 
-#ifdef DEBUG_RECOMPUTE_ENERGY
-  {
-    double tmp1 = 0.0; double tmp2 = 0.0; double tmp3 = 0.0; double tmp4 = 0.0;
-    for (int i = 0; i != norb_; ++i) {
-      for (int j = 0; j != norb_; ++j) {
-        tmp4 += pow(rdm1->element(j,i)-rdm1->element(i,j),2);
-        for (int k = 0; k != norb_; ++k) {
-          for (int l = 0; l != norb_; ++l) {
-            tmp1 += pow(rdm2->element(l,k,j,i)-rdm2->element(j,i,l,k),2);
-            tmp2 += pow(rdm2->element(l,k,j,i)-rdm2->element(k,l,i,j),2);
-            tmp3 += pow(rdm2->element(l,k,j,i)-rdm2->element(i,j,k,l),2);
-    } } } }
-    if (tmp1+tmp2+tmp3+tmp4 > 1.0e-12) throw runtime_error("for some reasons RDMs are not symmetric");
-  }
-#endif
-#if 1
-  {
-    double tmp1 = 0.0; double tmp2 = 0.0; double tmp3 = 0.0;
-    for (int i = 0; i != norb_; ++i) {
-      for (int j = 0; j != norb_; ++j) {
-        for (int k = 0; k != norb_; ++k) {
-          for (int l = 0; l != norb_; ++l) {
-            tmp1 += pow(jop_->mo2e_unpacked(l,k,j,i)-jop_->mo2e_unpacked(j,i,l,k),2); 
-            tmp2 += pow(jop_->mo2e_unpacked(l,k,j,i)-jop_->mo2e_unpacked(k,l,i,j),2); 
-            tmp3 += pow(jop_->mo2e_unpacked(l,k,j,i)-jop_->mo2e_unpacked(i,j,k,l),2); 
-    } } } }
-    if (tmp1+tmp2+tmp3 > 1.0e-12) throw runtime_error("for some reasons integrals are not symmetric");
-  }
-#endif
-
-
   // setting to private members.
   rdm1_[ist] = rdm1;
   rdm2_[ist] = rdm2;
@@ -109,16 +78,6 @@ void FCI::compute_rdm12(const int ist) {
     rdm1_av_ = rdm1;
     rdm2_av_ = rdm2;
   }
-
-#ifdef DEBUG_RECOMPUTE_ENERGY
-  // recomputing energy
-  const int mm = norb_*norb_;
-  const int nn = mm*mm;
-  cout << endl << "     recomputing energy using RDMs : " << setprecision(12) << setw(18) << 
-            geom_->nuclear_repulsion() + ddot_(mm, jop_->mo1e_unpacked_ptr(), 1, rdm1->data(), 1)
-                                       + 0.5*ddot_(nn, jop_->mo2e_unpacked_ptr(), 1, rdm2->data(), 1)
-                                       + core_energy_ << endl << endl;
-#endif
 
   phia_ = phia_bk;
   phib_ = phib_bk;

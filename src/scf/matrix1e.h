@@ -51,6 +51,7 @@ class Matrix1e {
     Matrix1e operator^(const Matrix1e&) const; // caution
     Matrix1e operator+(const Matrix1e&) const;
     Matrix1e& operator+=(const Matrix1e&);
+    Matrix1e& operator-=(const Matrix1e&);
     Matrix1e& operator=(const Matrix1e&);
     Matrix1e operator-(const Matrix1e&) const;
 

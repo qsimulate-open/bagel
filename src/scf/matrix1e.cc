@@ -139,6 +139,12 @@ Matrix1e& Matrix1e::operator+=(const Matrix1e& o) {
 }
 
 
+Matrix1e& Matrix1e::operator-=(const Matrix1e& o) {
+  daxpy_(nbasis_*nbasis_, -1.0, o.data(), 1, data_, 1); 
+  return *this; 
+}
+
+
 Matrix1e& Matrix1e::operator=(const Matrix1e& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   dcopy_(nbasis_*nbasis_, o.data(), 1, data_, 1); 
@@ -150,15 +156,11 @@ Matrix1e Matrix1e::operator-(const Matrix1e& o) const {
   Matrix1e out(geom_);
   out.ndim_ = ndim_;
   out.mdim_ = mdim_;
-  const int unit = 1;
-  const double one = 1.0; 
-  const double mone = -1.0; 
   const int size = nbasis_ * nbasis_;
   const double* odata = o.data();
   double* outdata = out.data_;
-
-  daxpy_(&size, &one, data_, &unit, outdata, &unit); 
-  daxpy_(&size, &mone, odata, &unit, outdata, &unit); 
+  daxpy_(size, 1.0, data_, 1, outdata, 1); 
+  daxpy_(size, -1.0, odata, 1, outdata, 1); 
 
   return out; 
 }
@@ -390,8 +392,8 @@ void Matrix1e::inverse() {
 void Matrix1e::print(const string name, const int size) const { 
  
   cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != size; ++i) {
-    for (int j = 0; j != size; ++j) {
+  for (int i = 0; i != min(size,nbasis_); ++i) {
+    for (int j = 0; j != min(size,nbasis_); ++j) {
       cout << fixed << setw(12) << setprecision(8) << data_[j * nbasis_ + i]  << " "; 
     }
     cout << endl;
