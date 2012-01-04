@@ -17,20 +17,22 @@ typedef std::shared_ptr<Geometry> RefGeometry;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-Matrix1e::Matrix1e(const RefGeometry geom) : data_(new double[nbasis_*nbasis_]), geom_(geom), nbasis_(geom->nbasis()) {
+Matrix1e::Matrix1e(const RefGeometry geom) : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {
   mdim_ = ndim_ = nbasis_;
   zero();
 }
 
 
-Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m) : data_(new double[nbasis_*nbasis_]), geom_(geom), nbasis_(geom->nbasis()) {
+Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m)
+ : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {
   ndim_ = n;
   mdim_ = m;
   zero();
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : data_(new double[nbasis_*nbasis_]), geom_(o.geom_), nbasis_(o.nbasis_), ndim_(o.ndim_), mdim_(o.mdim_) {
+Matrix1e::Matrix1e(const Matrix1e& o)
+ : data_(new double[o.geom_->nbasis()*o.geom_->nbasis()]), geom_(o.geom_), nbasis_(o.nbasis_), ndim_(o.ndim_), mdim_(o.mdim_) {
   copy(o.data(), o.data() + nbasis_*nbasis_, data());
 }
 

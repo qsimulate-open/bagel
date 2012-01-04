@@ -38,7 +38,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<DensityFit> df, shared_ptr<Coeff
   dgemm_("N", "N", nx_, nact_*nact_, nact_*nact_, 1.0, full1, nx_, rdm->data(), nact_*nact_, 0.0, full2, nx_);
 
   // assemble to data 
-  dgemm_("T", "N", nbasis_, nact_, nx_*nact_, 1.0, half, nx_*nact_, full2, nx_*nact_, 0.0, data_, nbasis_); 
+  dgemm_("T", "N", nbasis_, nact_, nx_*nact_, 1.0, half, nx_*nact_, full2, nx_*nact_, 0.0, data(), nbasis_); 
 
   delete[] half;
   delete[] full1;

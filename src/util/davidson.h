@@ -53,8 +53,8 @@ class DavidsonDiag {
 
     double compute(std::shared_ptr<T> cc, std::shared_ptr<T> cs) {
       assert(nstate_ == 1);
-      std::vector<std::shared_ptr<T> > c(1,cc);
-      std::vector<std::shared_ptr<T> > s(1,cs);
+      std::vector<std::shared_ptr<T> > c; c.push_back(cc);
+      std::vector<std::shared_ptr<T> > s; s.push_back(cs);
       return compute(c,s).front();
     };
 
