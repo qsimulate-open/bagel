@@ -15,8 +15,7 @@
 void print_header() {
   std::cout << std::endl; 
   std::cout << "  ===============================================================" << std::endl;
-  std::cout << "    Code name: White Rabit (since 2009)                          " << std::endl;
-  std::cout << "        \"Oh dear! Oh dear! I shall be too late!\"               " << std::endl;
+  std::cout << "    In-house code for everything (since 2009)                    " << std::endl;
   std::cout << "  ===============================================================" << std::endl;
   std::cout << std::endl;
 }

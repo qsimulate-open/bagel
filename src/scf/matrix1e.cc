@@ -358,6 +358,11 @@ void Matrix1e::purify_unitary() {
 }
 
 
+void Matrix1e::purify_idempotent(const Matrix1e& s) {
+  *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0; 
+}
+
+
 // in-place matrix inverse (practically we use buffer area)
 void Matrix1e::inverse() {
   assert(ndim_ == mdim_);

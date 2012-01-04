@@ -101,7 +101,18 @@ class SCF : public SCF_base {
     
         std::shared_ptr<Matrix1e> diis_density;
         if (iter >= diis_start_) {
+#if 1
+std::shared_ptr<Matrix1e> nn(new Matrix1e(*fock));
+          std::shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(nn, error_vector));
+          Matrix1e intermediate = *tildex_ % *tmp_fock * *tildex_;
+          intermediate.diagonalize(eig_);
+          std::shared_ptr<Coeff> tmp_coeff(new Coeff((*tildex_) * intermediate));
+          std::shared_ptr<Matrix1e> tmp(new Matrix1e(tmp_coeff->form_density_rhf())); 
+          diis_density = tmp;
+#else
           diis_density = diis.extrapolate(make_pair(new_density, error_vector));
+          diis_density->purify_idempotent(*overlap_);
+#endif
         } else {
           diis_density = new_density;
         }

@@ -68,5 +68,7 @@ static void daxpy_(const int a, const double b, const double* c, const int d, do
 static void dcopy_(const int a, const double* b, const int c, double* d, const int e) {dcopy_(&a, b, &c, d, &e); };
 static void dscal_(const int a, const double b, double* c, const int d) {dscal_(&a, &b, c, &d); };
 static double ddot_(const int a, const double* b, const int c, const double* d, const int e) { return ddot_(&a,b,&c,d,&e); };
+static double dsyev_(const char* a, const char* b, const int c, double* d, const int e, double* f, double* g, const int h, int& i)
+                    {dsyev_(a,b,&c,d,&e,f,g,&h,&i);};
 
 #endif

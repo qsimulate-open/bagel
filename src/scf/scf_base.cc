@@ -15,14 +15,8 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Geometry> RefGeometry;
-typedef std::shared_ptr<Shell> RefShell;
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<Matrix1e> RefMatrix1e;
-typedef std::shared_ptr<Coeff> RefCoeff;
-typedef std::shared_ptr<TildeX> RefTildeX;
 
-SCF_base::SCF_base(std::multimap<std::string, std::string>& idat, const RefGeometry geom)
+SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<Geometry> geom)
  : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
 
   eig_ = new double[geom_->nbasis()];
@@ -43,8 +37,7 @@ SCF_base::SCF_base(std::multimap<std::string, std::string>& idat, const RefGeome
     throw runtime_error("unrecongnized option for DIIS error vectors");
   }
 
-  RefTildeX tildex_tmp(new TildeX(overlap_, thresh_overlap_));
-  tildex_ = tildex_tmp;
+  { shared_ptr<TildeX>    tmp(new TildeX(overlap_, thresh_overlap_));    tildex_ = tmp; }
 
   init_schwarz();
 }
@@ -58,21 +51,21 @@ SCF_base::~SCF_base() {
 
 
 void SCF_base::init_schwarz() {
-  const vector<RefAtom> atoms = geom_->atoms(); 
-  vector<RefShell> basis; 
-  for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
-    const vector<RefShell> tmp = (*aiter)->shells();
+  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
+  vector<shared_ptr<Shell> > basis; 
+  for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
+    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());  
   }
   const int size = basis.size();
 
   schwarz_.resize(size * size);
   for (int i0 = 0; i0 != size; ++i0) {
-    const RefShell b0 = basis[i0];
+    const shared_ptr<Shell> b0 = basis[i0];
     for (int i1 = i0; i1 != size; ++i1) {
-      const RefShell b1 = basis[i1];
+      const shared_ptr<Shell> b1 = basis[i1];
 
-      vector<RefShell> input;
+      vector<shared_ptr<Shell> > input;
       input.push_back(b1);
       input.push_back(b0);
       input.push_back(b1);

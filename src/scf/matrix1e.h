@@ -79,6 +79,7 @@ class Matrix1e {
                   for (int i = 0; i != ndim_; ++i) data_[i+i*nbasis_] = 1.0; assert(ndim_ == mdim_);};
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
+    void purify_idempotent(const Matrix1e& s);
 
     void print(const std::string in = "", const int size = 10) const;
 };
