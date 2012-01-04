@@ -8,6 +8,7 @@
 #define __src_util_f77_h
 
 #include <complex>
+#include <memory>
 
 extern "C" {
 
@@ -62,13 +63,30 @@ extern "C" {
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k, 
                    const double alpha, const double* a, const int lda, const double* b, const int ldb, 
                    const double beta, double* c, const int ldc) { dgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }; 
+static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k, 
+                   const double alpha, const std::unique_ptr<double []>& a, const int lda, const std::unique_ptr<double []>& b, const int ldb, 
+                   const double beta, std::unique_ptr<double []>& c, const int ldc)
+                   { dgemm_(transa,transb,&m,&n,&k,&alpha,a.get(),&lda,b.get(),&ldb,&beta,c.get(),&ldc); }; 
 static void dgemv_(const char* a, const int b, const int c, const double d, const double* e, const int f, const double* g, const int h,
                    const double i, double* j, const int k) { dgemv_(a,&b,&c,&d,e,&f,g,&h,&i,j,&k); };
+static void dgemv_(const char* a, const int b, const int c, const double d, const std::unique_ptr<double []>& e, const int f,
+                   const std::unique_ptr<double []>& g, const int h, const double i, std::unique_ptr<double []>& j, const int k)
+                   { dgemv_(a,&b,&c,&d,e.get(),&f,g.get(),&h,&i,j.get(),&k); };
 static void daxpy_(const int a, const double b, const double* c, const int d, double* e, const int f) {daxpy_(&a,&b,c,&d,e,&f); };
+static void daxpy_(const int a, const double b, const std::unique_ptr<double []>& c, const int d, std::unique_ptr<double []>& e, const int f)
+                   {daxpy_(&a,&b,c.get(),&d,e.get(),&f); };
 static void dcopy_(const int a, const double* b, const int c, double* d, const int e) {dcopy_(&a, b, &c, d, &e); };
+static void dcopy_(const int a, const std::unique_ptr<double []>& b, const int c, std::unique_ptr<double []>& d, const int e)
+                  {dcopy_(&a, b.get(), &c, d.get(), &e); };
 static void dscal_(const int a, const double b, double* c, const int d) {dscal_(&a, &b, c, &d); };
+static void dscal_(const int a, const double b, std::unique_ptr<double []>& c, const int d) {dscal_(&a, &b, c.get(), &d); };
 static double ddot_(const int a, const double* b, const int c, const double* d, const int e) { return ddot_(&a,b,&c,d,&e); };
+static double ddot_(const int a, const std::unique_ptr<double []>& b, const int c, const std::unique_ptr<double []>& d, const int e)
+                   { return ddot_(&a,b.get(),&c,d.get(),&e); };
 static double dsyev_(const char* a, const char* b, const int c, double* d, const int e, double* f, double* g, const int h, int& i)
                     {dsyev_(a,b,&c,d,&e,f,g,&h,&i);};
+static double dsyev_(const char* a, const char* b, const int c, std::unique_ptr<double []>& d, const int e,
+                     std::unique_ptr<double []>& f, std::unique_ptr<double []>& g, const int h, int& i)
+                    {dsyev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,&i);};
 
 #endif

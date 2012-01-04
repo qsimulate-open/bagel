@@ -17,24 +17,21 @@ typedef std::shared_ptr<Geometry> RefGeometry;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-Matrix1e::Matrix1e(const RefGeometry geom) : geom_(geom), nbasis_(geom->nbasis()) {
-  data_ = new double[nbasis_ * nbasis_]; 
+Matrix1e::Matrix1e(const RefGeometry geom) : data_(new double[nbasis_*nbasis_]), geom_(geom), nbasis_(geom->nbasis()) {
   mdim_ = ndim_ = nbasis_;
-  fill(data_, data_ + nbasis_ * nbasis_, 0.0);
+  zero();
 }
 
 
-Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m) : geom_(geom), nbasis_(geom->nbasis()) {
+Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m) : data_(new double[nbasis_*nbasis_]), geom_(geom), nbasis_(geom->nbasis()) {
   ndim_ = n;
   mdim_ = m;
-  data_ = new double[nbasis_*nbasis_]; 
-  fill(data_, data_ + nbasis_*nbasis_, 0.0);
+  zero();
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : geom_(o.geom_), nbasis_(o.nbasis_), ndim_(o.ndim_), mdim_(o.mdim_) {
-  data_ = new double[nbasis_ * nbasis_]; 
-  copy(o.data_, o.data_ + nbasis_*nbasis_, data_);
+Matrix1e::Matrix1e(const Matrix1e& o) : data_(new double[nbasis_*nbasis_]), geom_(o.geom_), nbasis_(o.nbasis_), ndim_(o.ndim_), mdim_(o.mdim_) {
+  copy(o.data(), o.data() + nbasis_*nbasis_, data());
 }
 
 
@@ -97,8 +94,6 @@ void Matrix1e::init() {
 
 
 Matrix1e::~Matrix1e() {
-  delete[] data_;
-
 }
 
 
@@ -124,9 +119,9 @@ Matrix1e Matrix1e::operator+(const Matrix1e& o) const {
   const double one = 1.0; 
   const int size = nbasis_ * nbasis_;
   const double* odata = o.data();
-  double* outdata = out.data_;
+  double* outdata = out.data();
 
-  daxpy_(&size, &one, data_, &unit, outdata, &unit); 
+  daxpy_(&size, &one, data(), &unit, outdata, &unit); 
   daxpy_(&size, &one, odata, &unit, outdata, &unit); 
 
   return out; 
@@ -134,20 +129,20 @@ Matrix1e Matrix1e::operator+(const Matrix1e& o) const {
 
 
 Matrix1e& Matrix1e::operator+=(const Matrix1e& o) {
-  daxpy_(nbasis_*nbasis_, 1.0, o.data(), 1, data_, 1); 
+  daxpy_(nbasis_*nbasis_, 1.0, o.data(), 1, data(), 1); 
   return *this; 
 }
 
 
 Matrix1e& Matrix1e::operator-=(const Matrix1e& o) {
-  daxpy_(nbasis_*nbasis_, -1.0, o.data(), 1, data_, 1); 
+  daxpy_(nbasis_*nbasis_, -1.0, o.data(), 1, data(), 1); 
   return *this; 
 }
 
 
 Matrix1e& Matrix1e::operator=(const Matrix1e& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  dcopy_(nbasis_*nbasis_, o.data(), 1, data_, 1); 
+  dcopy_(nbasis_*nbasis_, o.data(), 1, data(), 1); 
   return *this; 
 }
 
@@ -158,8 +153,8 @@ Matrix1e Matrix1e::operator-(const Matrix1e& o) const {
   out.mdim_ = mdim_;
   const int size = nbasis_ * nbasis_;
   const double* odata = o.data();
-  double* outdata = out.data_;
-  daxpy_(size, 1.0, data_, 1, outdata, 1); 
+  double* outdata = out.data();
+  daxpy_(size, 1.0, data(), 1, outdata, 1); 
   daxpy_(size, -1.0, odata, 1, outdata, 1); 
 
   return out; 
@@ -173,9 +168,9 @@ Matrix1e Matrix1e::operator*(const Matrix1e& o) const {
   assert(mdim_ == o.ndim());
   const int n = o.mdim(); 
   const double* odata = o.data();
-  double* outdata = out.data_;
+  double* outdata = out.data();
 
-  dgemm_("N", "N", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
+  dgemm_("N", "N", l, n, m, 1.0, data(), nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
 
   out.ndim_ = l;
   out.mdim_ = n; 
@@ -190,7 +185,7 @@ Matrix1e& Matrix1e::operator*=(const Matrix1e& o) {
   assert(mdim_ == o.ndim());
   const int n = o.mdim(); 
   const double* odata = o.data();
-  dgemm_("N", "N", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, out.data(), nbasis_); 
+  dgemm_("N", "N", l, n, m, 1.0, data(), nbasis_, odata, nbasis_, 0.0, out.data(), nbasis_); 
   *this = out;
 }
 
@@ -209,17 +204,14 @@ Matrix1e& Matrix1e::operator*=(const double& a) {
 
 Matrix1e Matrix1e::operator%(const Matrix1e& o) const {
   Matrix1e out(geom_);
-  const int unit = 1;
-  const double one = 1.0;
-  const double zero = 0.0;
   const int l = mdim_;
   const int m = ndim_; 
   assert(ndim_ == o.ndim());
   const int n = o.mdim(); 
   const double* odata = o.data();
-  double* outdata = out.data_;
+  double* outdata = out.data();
 
-  dgemm_("T", "N", &l, &n, &m, &one, data_, &nbasis_, odata, &nbasis_, &zero, outdata, &nbasis_); 
+  dgemm_("T", "N", l, n, m, 1.0, data(), nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
 
   out.ndim_ = l;
   out.mdim_ = n;
@@ -235,9 +227,9 @@ Matrix1e Matrix1e::operator^(const Matrix1e& o) const {
   assert(mdim_ == o.mdim());
   const int n = o.ndim(); 
   const double* odata = o.data();
-  double* outdata = out.data_;
+  double* outdata = out.data();
 
-  dgemm_("N", "T", l, n, m, 1.0, data_, nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
+  dgemm_("N", "T", l, n, m, 1.0, data(), nbasis_, odata, nbasis_, 0.0, outdata, nbasis_); 
 
   out.ndim_ = l;
   out.mdim_ = n;
@@ -252,38 +244,31 @@ void Matrix1e::diagonalize(double* eig) {
   
   int info_diagonalize = 0;
   const int lwork = nbasis_ * 6;
-  double* work = new double[lwork];
-  dsyev_("V", "L", &ndim_, data_, &nbasis_, eig, work, &lwork, &info_diagonalize); 
+  unique_ptr<double[]> work(new double[lwork]);
+  dsyev_("V", "L", &ndim_, data(), &nbasis_, eig, work.get(), &lwork, &info_diagonalize); 
 
   assert(info_diagonalize == 0);
 
-  delete[] work;
 }
 
 
 void Matrix1e::daxpy(const double a, const Matrix1e& o) {
-  const int size = nbasis_ * nbasis_;
-  const int unit = 1;
-  const double* odata = o.data();
-  daxpy_(&size, &a, odata, &unit, data_, &unit); 
+  daxpy_(nbasis_*nbasis_, a, o.data(), 1, data(), 1); 
 }
 
 
 void Matrix1e::daxpy(const double a, const std::shared_ptr<Matrix1e> o) {
-  const int size = nbasis_ * nbasis_;
-  const int unit = 1;
-  const double* odata = o->data();
-  daxpy_(&size, &a, odata, &unit, data_, &unit); 
+  daxpy_(nbasis_*nbasis_, a, o->data(), 1, data(), 1); 
 }
 
 
 const double Matrix1e::ddot(const Matrix1e& o) const {
-  return ddot_(nbasis_*nbasis_, data_, 1, o.data(), 1); 
+  return ddot_(nbasis_*nbasis_, data(), 1, o.data(), 1); 
 }
 
 
 const double Matrix1e::ddot(const std::shared_ptr<Matrix1e> o) const {
-  return ddot_(nbasis_*nbasis_, data_, 1, o->data(), 1); 
+  return ddot_(nbasis_*nbasis_, data(), 1, o->data(), 1); 
 }
 
 
@@ -337,10 +322,10 @@ void Matrix1e::purify_unitary() {
   assert(ndim_ == mdim_);
   Matrix1e buf(*this ^ *this);
   const int lwork = 5*ndim_;
-  double* work = new double[lwork];
-  double* vec = new double[ndim_];
+  unique_ptr<double[]> work(new double[lwork]);
+  unique_ptr<double[]> vec(new double[ndim_]);
   int info;
-  dsyev_("V", "U", &ndim_, buf.data(), &ndim_, vec, work, &lwork, &info); 
+  dsyev_("V", "U", ndim_, buf.data(), ndim_, vec.get(), work.get(), lwork, info); 
   if (info) throw runtime_error("dsyev failed in Matrix1e::purify_unitary");
   if (vec[0] < 0.95)        cout << "   --- smallest eigenvalue in purify_unitary() " << vec[0] << endl;
   if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
@@ -355,8 +340,6 @@ void Matrix1e::purify_unitary() {
   assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
   assert(std::abs((*this%*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
 
-  delete[] work;
-  delete[] vec;
 }
 
 
@@ -373,19 +356,18 @@ void Matrix1e::inverse() {
 
   const int lwork = 3*ndim_;
   int info;
-  int* ipiv = new int[ndim_];
+  unique_ptr<int[]> ipiv(new int[ndim_]);
 #if 0
   double* work = new double[lwork];
-  dsysv_("U", &ndim_, &ndim_, data_, &ndim_, ipiv, buf->data(), &ndim_, work, &lwork, &info); 
+  dsysv_("U", &ndim_, &ndim_, data(), &ndim_, ipiv.get(), buf->data(), &ndim_, work, &lwork, &info); 
   delete[] work;
 #else
-  dgesv_(&ndim_, &ndim_, data_, &ndim_, ipiv, buf->data(), &ndim_, &info);
+  dgesv_(&ndim_, &ndim_, data(), &ndim_, ipiv.get(), buf->data(), &ndim_, &info);
 #endif
   if (info) throw runtime_error("dsysv failed in Matrix1e::inverse()");
 
-  copy(buf->data_, buf->data_+nbasis_*nbasis_, data_);
+  copy(buf->data(), buf->data()+nbasis_*nbasis_, data());
 
-  delete[] ipiv;
 }
 
 

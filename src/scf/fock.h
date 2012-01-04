@@ -213,52 +213,48 @@ void Fock<DF>::fock_two_electron_part() {
     assert(nbasis_ == df->nbasis());
 
     // for the time being, natural orbitals are made here...
-    double* coeff = new double[nbasis_ * nbasis_];
+    std::unique_ptr<double[]> coeff(new double[nbasis_ * nbasis_]);
     int nocc = 0;
     {
       const int lwork = nbasis_*5;
-      double* work4 = new double[lwork];
-      double* vec = new double[nbasis_];
-      std::copy(density_->data(), density_->data()+nbasis_*nbasis_, coeff);
+      std::unique_ptr<double[]> work4(new double[lwork]);
+      std::unique_ptr<double[]> vec(new double[nbasis_]);
+      std::copy(density_->data(), density_->data()+nbasis_*nbasis_, coeff.get());
       dscal_(nbasis_*nbasis_, -1.0, coeff, 1);
       int info;
-      dsyev_("V", "U", &nbasis_, coeff, &nbasis_, vec, work4, &lwork, &info); 
+      dsyev_("V", "U", nbasis_, coeff, nbasis_, vec, work4, lwork, info); 
       if (info) throw std::runtime_error("dsyev failed in DF Fock builder 2");
       for (int i = 0; i != nbasis_; ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
-          dscal_(nbasis_, std::sqrt(-vec[i]), coeff+i*nbasis_, 1);
+          dscal_(nbasis_, std::sqrt(-vec[i]), coeff.get()+i*nbasis_, 1);
         } else { break; }
       }
-      delete[] work4;
     }
 
     const size_t half_size_ = naux * nbasis_ * nocc;
-    double* half = new double[half_size_*2];
-    double* half2 = half + half_size_;
+    std::unique_ptr<double[]> half(new double[half_size_]);
+    std::unique_ptr<double[]> half2(new double[half_size_]);
 
     // now coeff contains coefficients
     // first half transformation
-    dgemm_("N", "N", naux*nbasis_, nocc, nbasis_, 1.0, buf1, naux*nbasis_, coeff, nbasis_, 0.0, half, naux*nbasis_); 
+    dgemm_("N", "N", naux*nbasis_, nocc, nbasis_, 1.0, buf1, naux*nbasis_, coeff.get(), nbasis_, 0.0, half.get(), naux*nbasis_); 
 
     // multiply J^-1/2
-    dgemm_("N", "N", naux, nbasis_*nocc, naux, 1.0, buf2, naux, half, naux, 0.0, half2, naux); 
+    dgemm_("N", "N", naux, nbasis_*nocc, naux, 1.0, buf2, naux, half.get(), naux, 0.0, half2.get(), naux); 
 
     // computing exchange
     for (int i = 0; i != nocc; ++i) {
-      dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2+i*nbasis_*naux, naux, half2+i*nbasis_*naux, naux, 1.0, data_, nbasis_); 
+      dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2.get()+i*nbasis_*naux, naux, half2.get()+i*nbasis_*naux, naux, 1.0, data(), nbasis_); 
     }
 
     // Coulomb comes with virtually no cost
     // half2: naux * nbasis_ * nocc
     // coeff: nbasis_* nocc 
     dgemv_("N", naux, nbasis_*nocc, 1.0, half2, naux, coeff, 1, 0.0, half, 1);
-    dgemv_("N", naux, naux, 1.0, buf2, naux, half, 1, 0.0, half2, 1); 
-    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, half2, 1, 1.0, data_, 1); 
+    dgemv_("N", naux, naux, 1.0, buf2, naux, half.get(), 1, 0.0, half2.get(), 1); 
+    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, half2.get(), 1, 1.0, data(), 1); 
 
-    // deallocate at the bottom
-    delete[] coeff;
-    delete[] half;
   }
 };
 

@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define DF 1
+#define DF 0
 
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
@@ -120,14 +120,15 @@ qxr->print();
         for (int j = 0; j != nact_; ++j)
           factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
     }
-    {
-      // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-      shared_ptr<QFile> ft(new QFile(nact_, nact_)); gaa = ft;
-      dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
-      double p = 0.0;
-      for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
-      for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
-    }
+
+    // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
+    shared_ptr<QFile> ft4(new QFile(nact_, nact_)); gaa = ft4;
+fci_->rdm2_av()->print();
+    dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
+fci_->rdm2_av()->print();
+    double p = 0.0;
+    for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
+    for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
 
     // first, <proj|H|0> is computed
     sigma_->zero();

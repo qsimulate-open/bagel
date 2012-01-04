@@ -42,11 +42,11 @@ void Fock_base::fock_one_electron_part() {
       intermediate += tmp;
     }
     double* idata = intermediate.data();
-    daxpy_(size, 1.0, idata, 1, data_, 1);
-    dscal_(size, 1.0/nirrep, data_, 1);
+    daxpy_(size, 1.0, idata, 1, data(), 1);
+    dscal_(size, 1.0/nirrep, data(), 1);
   }
   const double* previous_data = previous_->data();
-  daxpy_(size, 1.0, previous_data, 1, data_, 1); 
+  daxpy_(size, 1.0, previous_data, 1, data(), 1); 
 
   symmetrize();
 }
@@ -56,11 +56,7 @@ Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
  : Matrix1e(geom) {
 
   init(); // zero here
-  const int unit = 1;
-  const int size = nbasis_ * nbasis_; 
-  const double one = 1.0;
-  const double* hcore_data = hcore->data();
-  daxpy_(&size, &one, hcore_data, &unit, data_, &unit); 
+  daxpy_(nbasis_*nbasis_, 1.0, hcore->data(), 1, data(), 1); 
 
   symmetrize();
 }

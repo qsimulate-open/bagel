@@ -20,7 +20,7 @@ class Matrix1e {
     int ndim_;
     int mdim_;
 
-    double* data_;
+    std::unique_ptr<double[]> data_;
     virtual void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
     virtual void init();
 
@@ -35,9 +35,9 @@ class Matrix1e {
 
     const int ndim() const { return ndim_; }; 
     const int mdim() const { return mdim_; }; 
-    double* data() const { return data_; };
-    double& element(int i, int j) { return data_[i+j*ndim_]; };
-    double* element_ptr(int i, int j) { return data_+i+j*ndim_; };
+    double* data() const { return data_.get(); };
+    double& element(int i, int j) { return *element_ptr(i, j); };
+    double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
 
     void symmetrize();
     void diagonalize(double*);
@@ -73,11 +73,11 @@ class Matrix1e {
     const double trace() const;
 
     void add_diag(const double a, const int i, const int j)
-      { for (int ii = i; ii != j; ++ii) data_[ii+ii*nbasis_] += a; };
+      { for (int ii = i; ii != j; ++ii) element(ii,ii) += a; };
 
-    void zero() { std::fill(data_, data_+nbasis_*nbasis_, 0.0); };
-    void unit() { std::fill(data_, data_+nbasis_*nbasis_, 0.0);
-                  for (int i = 0; i != ndim_; ++i) data_[i+i*nbasis_] = 1.0; assert(ndim_ == mdim_);};
+    void zero() { std::fill(data(), data()+nbasis_*nbasis_, 0.0); };
+    void unit() { std::fill(data(), data()+nbasis_*nbasis_, 0.0);
+                  for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);};
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
     void purify_idempotent(const Matrix1e& s);

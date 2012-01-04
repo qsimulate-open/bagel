@@ -17,7 +17,7 @@ class TildeX : public Matrix1e {
     TildeX(const std::shared_ptr<Overlap>, const double thresh);
     ~TildeX();
 
-    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+nbasis_*nbasis_, this->data_); };
+    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+nbasis_*nbasis_, this->data()); };
 
 };
 

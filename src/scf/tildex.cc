@@ -28,10 +28,10 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
   const double* S = olp->data();
 
   const int unit = 1;
-  dcopy_(&size, S, &unit, data_, &unit);
+  dcopy_(size, S, 1, data(), 1);
 
   int info;
-  dsyev_("V", "L", &ndim_, data_, &ndim_, eig, work, &lwork, &info); 
+  dsyev_("V", "L", &ndim_, data(), &ndim_, eig, work, &lwork, &info); 
   assert(info == 0);
   delete[] work;
   const double largest = fabs(eig[ndim_ - 1]);
