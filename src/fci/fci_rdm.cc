@@ -50,14 +50,13 @@ void FCI::compute_rdm12(const int ist) {
   dgemm_("T", "N", ij, ij, len, 1.0, d->data(0)->first(), len, d->data(0)->first(), len, 0.0, rdm2->first(), ij);
 
   // sorting... a bit stupid but cheap anyway
-  double* buf = new double[norb_*norb_];
+  unique_ptr<double[]> buf(new double[norb_*norb_]);
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
-      dcopy_(norb_*norb_, rdm2->element_ptr(0,0,k,i), 1, buf, 1);
-      mytranspose1_(buf, &norb_, &norb_, rdm2->element_ptr(0,0,k,i)); // sorting with stride 1 as norb_ is small
+      dcopy_(norb_*norb_, rdm2->element_ptr(0,0,k,i), 1, buf.get(), 1);
+      mytranspose1_(buf.get(), &norb_, &norb_, rdm2->element_ptr(0,0,k,i)); // sorting with stride 1 as norb_ is small
     }
   }
-  delete[] buf;
 
   // put int diagonal into 2RDM
   for (int i = 0; i != norb_; ++i) {

@@ -43,25 +43,29 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
-  nbasis_ = geom_->nbasis();
+  nbasis_ = geom_->nbasis(); // size_t quantity :-)
   const int nbasis = nbasis_;
   const int nocc = nocc_;
   const int size = basis_.size(); // number of shells
-  const size_t aointsize = nbasis*nbasis*nbasis*nbasis; 
-  double *aobuff, *first;
+  const size_t aointsize = nbasis_*nbasis*nbasis*nbasis; 
+
+  unique_ptr<double[]> aobuffp, firstp;
   if (!do_df_) {
-    aobuff = new double[aointsize];
-    first = new double[nbasis*nbasis*nbasis*nocc];
+    unique_ptr<double[]> aobuff_(new double[aointsize]);
+    unique_ptr<double[]> first_(new double[nbasis_*nbasis*nbasis*nocc]);
+    aobuffp = move(aobuff_);
+    firstp = move(first_);
     cout << "  - AO integrals are computed and stored in core" << endl << endl;
   } else {
-    first = new double[nocc*nocc*nocc*nocc];
-    aobuff = new double[nbasis*nocc];
+    unique_ptr<double[]> first_(new double[nocc*nocc*nocc*nocc]);
+    unique_ptr<double[]> aobuff_(new double[nbasis*nocc]);
+    aobuffp = move(aobuff_);
+    firstp = move(first_);
   }
+  double* aobuff = aobuffp.get();
+  double* first = firstp.get();
 
   // some stuffs for blas
-  const int unit = 1;
-  const double one = 1.0;
-  const double zero = 0.0;
   double* cdata = ref_->coeff()->data() + nstart*nbasis;
   const int mm = nocc*nocc;
 
@@ -78,7 +82,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
         fock0 = fock1;
       }
       fock0->symmetrize();
-      dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
+      dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
     } else {
       shared_ptr<Fock<0> > fock0(new Fock<0>(geom_, ref_->hcore()));
       if (nstart != 0) {
@@ -88,11 +92,13 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
         fock0 = fock1;
       }
       fock0->symmetrize();
-      dgemm_("n","n",&nbasis,&nocc,&nbasis,&one,fock0->data(),&nbasis,cdata,&nbasis,&zero,aobuff,&nbasis);
+      dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
     }
   }
-  mo1e_.resize(nocc*nocc);
-  dgemm_("t","n",&nocc,&nocc,&nbasis,&one,cdata,&nbasis,aobuff,&nbasis,&zero,&mo1e_[0],&nocc);
+
+  unique_ptr<double[]> mo1e__(new double[nocc*nocc]);
+  mo1e_ = move(mo1e__);
+  dgemm_("t","n",nocc,nocc,nbasis,1.0,cdata,nbasis,aobuff,nbasis,0.0,mo1e_ptr(),nocc);
 
   /////////////// non Df builder ///////////////
   if (!do_df_) {
@@ -133,53 +139,55 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
     const int n = aointsize;
     const int nn = nbasis*nbasis;
     const int nnn = nbasis*nbasis*nbasis;
-    dgemm_("n","n",&nnn,&nocc,&nbasis, &one, aobuff,&nnn,cdata,&nbasis, &zero,first,&nnn);
+    dgemm_("n","n",nnn,nocc,nbasis, 1.0, aobuff,nnn,cdata,nbasis,0.0,first,nnn);
 
-    for (int i = 0; i != nocc; ++i)
-      dgemm_("n","n",&nn,&nocc,&nbasis, &one, first+nnn*i,&nn,cdata,&nbasis, &zero,aobuff+nn*nocc*i,&nn);
+    for (size_t i = 0; i != nocc; ++i)
+      dgemm_("n","n",nn,nocc,nbasis, 1.0, first+i*nnn,nn,cdata,nbasis, 0.0,aobuff+i*nn*nocc,nn);
 
     mytranspose_(aobuff,&nn,&mm,first);
 
-    for (int i = 0; i != nbasis; ++i)
-      dgemm_("n","n",&mm,&nocc,&nbasis,&one,first+mm*nbasis*i,&mm,cdata,&nbasis,&zero,aobuff+mm*nocc*i,&mm);
+    for (size_t i = 0; i != nbasis; ++i)
+      dgemm_("n","n",mm,nocc,nbasis,1.0,first+i*mm*nbasis,mm,cdata,nbasis,0.0,aobuff+i*mm*nocc,mm);
 
     // aobuff here contains (rs|tx) with r running fastest. x: AO
-    // Anyway this is not the way. DF will be used. TODO
-    mo2e_1ext_.resize(mm*nbasis*nocc);
-    copy(aobuff, aobuff+mm*nbasis*nocc, mo2e_1ext_ptr());
+    mo2e_1ext_size_ = static_cast<size_t>(mm)*nbasis*nocc;
+    unique_ptr<double[]> mo2e_1ext__(new double[(mo2e_1ext_size_)]);
+    mo2e_1ext_ = move(mo2e_1ext__);
+    copy(aobuff, aobuff+mo2e_1ext_size_, mo2e_1ext_ptr());
 
     const int nmm = nocc * mm;
-    dgemm_("n","n",&nmm,&nocc,&nbasis,&one,aobuff,&nmm,cdata,&nbasis,&zero,first,&nmm);
-
-    delete[] aobuff;
+    dgemm_("n","n",nmm,nocc,nbasis,1.0,aobuff,nmm,cdata,nbasis,0.0,first,nmm);
 
   //////////////////// df builder ////////////////////////
   } else {
-    delete[] aobuff;
 
     shared_ptr<DensityFit> dff = geom_->df();
     const int naux = dff->naux();
     // we want to store half-transformed quantity for latter convenience
-    mo2e_1ext_.resize(nocc*naux*nbasis);
+    mo2e_1ext_size_ = static_cast<size_t>(nocc)*naux*nbasis;
+    unique_ptr<double[]> mo2e_1ext__(new double[mo2e_1ext_size_]);
+    mo2e_ = move(mo2e_1ext__);
 
     // first half transformation
     for (size_t i = 0; i != nbasis_; ++i)
       dgemm_("N", "N", naux, nocc, nbasis, 1.0, dff->data_3index()+i*nbasis*naux, naux, cdata, nbasis, 0.0, &(mo2e_1ext_[i*naux*nocc]), naux);
 
-    double* buf = new double[naux*nocc*nocc];
-    double* buf2 = new double[naux*nocc*nocc];
-    dgemm_("n", "n", naux*nocc, nocc, nbasis, 1.0, &(mo2e_1ext_[0]), naux*nocc, cdata, nbasis, 0.0, buf2, naux*nocc);
-    dgemm_("n", "n", naux, nocc*nocc, naux, 1.0, dff->data_2index(), naux, buf2, naux, 0.0, buf, naux);
-    dgemm_("t", "n", nocc*nocc, nocc*nocc, naux, 1.0, buf, naux, buf, naux, 0.0, first, nocc*nocc);
-    delete[] buf;
-    delete[] buf2;
+    unique_ptr<double[]> buf(new double[naux*nocc*nocc]);
+    unique_ptr<double[]> buf2(new double[naux*nocc*nocc]);
+    // second index transformation
+    dgemm_("n", "n", naux*nocc, nocc, nbasis, 1.0, mo2e_1ext_.get(), naux*nocc, cdata, nbasis, 0.0, buf2.get(), naux*nocc);
+    // (D|ii) = J^-1/2_DE (E|ii)
+    dgemm_("n", "n", naux, nocc*nocc, naux, 1.0, dff->data_2index(), naux, buf2.get(), naux, 0.0, buf.get(), naux);
+    // assembles (ii|ii) = (ii|D)(D|ii)
+    dgemm_("t", "n", nocc*nocc, nocc*nocc, naux, 1.0, buf, naux, buf, naux, 0.0, firstp, nocc*nocc);
   }
 
 
   // mo2e is compressed
   sizeij_ = nocc*(nocc+1)/2;
-  mo2e_.resize(sizeij_*sizeij_);
-  // TODO very bad
+  unique_ptr<double[]> mo2e__(new double[sizeij_*sizeij_]);
+  mo2e_ = move(mo2e__);
+
   int ijkl = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j <= i; ++j) {
@@ -193,7 +201,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)
-  vector<double> buf3(sizeij_);
+  unique_ptr<double[]> buf3(new double[sizeij_]);
   int ij = 0;
   for (int i=0; i!=nocc; ++i) {
     for (int j=0; j<=i; ++j, ++ij) {
@@ -203,36 +211,35 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
       }
     }
   }
-  copy(buf3.begin(), buf3.end(), mo1e_.begin());
-  delete[] first;
-  return core_energy; // TODO this is not a good way of implementation...
+  copy(buf3.get(), buf3.get()+sizeij_, mo1e_.get());
+  return core_energy;
 }
 
 
 void MOFile::update_1ext_ints(const vector<double>& coeff) {
   // in the case of no DF
-  double* buf = new double[mo2e_1ext_.size()];
+  unique_ptr<double[]> buf(new double[mo2e_1ext_size_]);
+
   if (!do_df_) {
     const double* start = &(coeff[0]);
-    double* data_ = &(mo2e_1ext_[0]);
+    double* data_ = mo2e_1ext_.get();
     const int n2 = nocc_*nocc_;
     const int nb = nocc_*nbasis_;
-    assert(n2*nb == mo2e_1ext_.size());
+    assert(n2*nb == mo2e_1ext_size_);
 
-    mytranspose_(data_, &n2, &nb, buf);
+    mytranspose_(data_, &n2, &nb, buf.get());
     // now buf=(nx|nn).
-    dgemm_("N", "N", nb*nocc_, nocc_, nocc_, 1.0, buf, nb*nocc_, start, nocc_, 0.0, data_, nb*nocc_); 
+    dgemm_("N", "N", nb*nocc_, nocc_, nocc_, 1.0, buf.get(), nb*nocc_, start, nocc_, 0.0, data_, nb*nocc_); 
     for (int i = 0; i != nocc_; ++i)
-      dgemm_("N", "N", nb, nocc_, nocc_, 1.0, data_+i*nb*nocc_, nb, start, nocc_, 0.0, buf+i*nb*nocc_, nb); 
-    dgemm_("T", "N", nocc_, nb*nocc_, nocc_, 1.0, start, nocc_, buf, nocc_, 0.0, data_, nocc_); 
+      dgemm_("N", "N", nb, nocc_, nocc_, 1.0, data_+i*nb*nocc_, nb, start, nocc_, 0.0, buf.get()+i*nb*nocc_, nb); 
+    dgemm_("T", "N", nocc_, nb*nocc_, nocc_, 1.0, start, nocc_, buf.get(), nocc_, 0.0, data_, nocc_); 
     // slot in place
-    mytranspose_(data_, &nb, &n2, buf);
+    mytranspose_(data_, &nb, &n2, buf.get());
   } else {
     // half transformed DF is rotated.
     const int naux = geom_->df()->naux();
     for (int i = 0; i != nbasis_; ++i) 
-      dgemm_("N", "N", naux, nocc_, nocc_, 1.0, &(mo2e_1ext_[i*naux*nocc_]), naux, &(coeff[0]), nocc_, 0.0, buf+i*naux*nocc_, naux); 
+      dgemm_("N", "N", naux, nocc_, nocc_, 1.0, &(mo2e_1ext_[i*naux*nocc_]), naux, &(coeff[0]), nocc_, 0.0, buf.get()+i*naux*nocc_, naux); 
   }
-  copy(buf, buf+mo2e_1ext_.size(), &(mo2e_1ext_[0]));
-  delete[] buf; 
+  mo2e_1ext_ = move(buf);
 }

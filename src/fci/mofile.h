@@ -32,9 +32,11 @@ class MOFile {
     std::vector<std::shared_ptr<Shell> > basis_;
     std::vector<int> offset_;
 
-    std::vector<double> mo1e_;
-    std::vector<double> mo2e_;
-    std::vector<double> mo2e_1ext_;
+    std::unique_ptr<double[]> mo1e_;
+    std::unique_ptr<double[]> mo2e_;
+    std::unique_ptr<double[]> mo2e_1ext_;
+
+    size_t mo2e_1ext_size_;
 
     int address_(int i, int j) const {
       assert(i <= j);
@@ -53,10 +55,10 @@ class MOFile {
     // strictly i <= j, k <= l
     double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }; 
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }; 
-    double* mo1e_ptr() { return &(mo1e_[0]); };
-    double* mo2e_ptr() { return &(mo2e_[0]); };
+    double* mo1e_ptr() { return mo1e_.get(); };
+    double* mo2e_ptr() { return mo2e_.get(); };
 
-    double* mo2e_1ext_ptr() { return &(mo2e_1ext_[0]); };
+    double* mo2e_1ext_ptr() { return mo2e_1ext_.get(); };
     void update_1ext_ints(const std::vector<double>& coeff);
 
 };
