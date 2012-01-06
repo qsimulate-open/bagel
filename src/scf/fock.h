@@ -82,6 +82,7 @@ void Fock<DF>::fock_two_electron_part() {
   // starting 2-e Fock matrix evaluation!
   ////////////////////////////////////////////
   if (DF == 0) {
+    //////////////// ONLY FOR REFERENCES. //////////////////
     std::shared_ptr<Petite> plist = geom_->plist();; 
     const bool c1 = plist->nirrep() == 1;
 
@@ -232,28 +233,21 @@ void Fock<DF>::fock_two_electron_part() {
       }
     }
 
-    const size_t half_size_ = naux * nbasis_ * nocc;
-    std::unique_ptr<double[]> half(new double[half_size_]);
-    std::unique_ptr<double[]> half2(new double[half_size_]);
 
-    // now coeff contains coefficients
-    // first half transformation
-    dgemm_("N", "N", naux*nbasis_, nocc, nbasis_, 1.0, buf1, naux*nbasis_, coeff.get(), nbasis_, 0.0, half.get(), naux*nbasis_); 
-
-    // multiply J^-1/2
-    dgemm_("N", "N", naux, nbasis_*nocc, naux, 1.0, buf2, naux, half.get(), naux, 0.0, half2.get(), naux); 
-
-    // computing exchange
-    for (int i = 0; i != nocc; ++i) {
-      dgemm_("T", "N", nbasis_, nbasis_, naux, -1.0, half2.get()+i*nbasis_*naux, naux, half2.get()+i*nbasis_*naux, naux, 1.0, data(), nbasis_); 
-    }
+    // first half transformation and multiplying J^-1/2 from the front.
+    std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff.get(), nocc)->apply_J();
+    half->form_2index(data_, -1.0);
 
     // Coulomb comes with virtually no cost
     // half2: naux * nbasis_ * nocc
     // coeff: nbasis_* nocc 
-    dgemv_("N", naux, nbasis_*nocc, 1.0, half2, naux, coeff, 1, 0.0, half, 1);
-    dgemv_("N", naux, naux, 1.0, buf2, naux, half.get(), 1, 0.0, half2.get(), 1); 
-    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, half2.get(), 1, 1.0, data(), 1); 
+    std::unique_ptr<double[]> coeff2(new double[std::max(nbasis_*nocc, naux)]);
+    std::unique_ptr<double[]> coeff3(new double[naux]);
+    mytranspose_(coeff.get(), &nbasis_, &nocc, coeff2.get());
+
+    dgemv_("N", naux, nbasis_*nocc, 1.0, half->data(), naux, coeff2.get(), 1, 0.0, coeff3.get(), 1);
+    dgemv_("N", naux, naux, 1.0, buf2, naux, coeff3.get(), 1, 0.0, coeff2.get(), 1); 
+    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, coeff2.get(), 1, 1.0, data(), 1); 
 
   }
 };

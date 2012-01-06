@@ -56,8 +56,15 @@ class DF_Half {
 
     ~DF_Half() {};
 
+    double* const data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
+
+    std::shared_ptr<DF_Half> clone() const {
+      std::unique_ptr<double[]> dat(new double[nocc_*df_->naux()*df_->nbasis()]);
+      std::shared_ptr<DF_Half> out(new DF_Half(df_, nocc_, dat)); 
+      return out;
+    };
 
     std::shared_ptr<DF_Half> apply_J() {
       const int naux = df_->naux();
@@ -69,6 +76,9 @@ class DF_Half {
     } 
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc);
+
+    void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
+    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<DF_Full> o, const double a = 1.0, const double b = 0.0) const;
 };
 
 
@@ -86,11 +96,21 @@ class DF_Full {
 
     ~DF_Full() {};
 
+    const int nocc1() const { return nocc1_; };
+    const int nocc2() const { return nocc2_; };
+
     std::shared_ptr<DF_Full> apply_J() {
       const int naux = df_->naux();
-      const int nbasis = df_->nbasis();
       std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux]);
       dgemm_("N", "N", naux, nocc1_*nocc2_, naux, 1.0, df_->data_2index(), naux, data_.get(), naux, 0.0, out.get(), naux); 
+      std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
+      return tmp; 
+    };
+
+    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) {
+      const int naux = df_->naux();
+      std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux]);
+      dgemm_("N", "N", naux, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux, rdm, nocc1_*nocc2_, 0.0, out.get(), naux); 
       std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
       return tmp; 
     };

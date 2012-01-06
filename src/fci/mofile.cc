@@ -21,18 +21,8 @@ MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref)
     core_fock_(new double[geom->nbasis()*geom->nbasis()]) {
 
   do_df_ = geom->df().get();
+  if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 
-  typedef std::shared_ptr<Atom> RefAtom;
-  typedef std::shared_ptr<Shell> RefShell;
-
-  const std::vector<RefAtom> atoms = geom_->atoms();
-  int cnt = 0;
-  for (std::vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-    const std::vector<RefShell> tmp = (*aiter)->shells();
-    basis_.insert(basis_.end(), tmp.begin(), tmp.end());  
-    const std::vector<int> tmpoff = geom_->offset(cnt); 
-    offset_.insert(offset_.end(), tmpoff.begin(), tmpoff.end());
-  }
 }
 
 MOFile::~MOFile() {
@@ -52,18 +42,12 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   unique_ptr<double[]> firstp;
   unique_ptr<double[]> aobuffp;
-  if (!do_df_) {
-    unique_ptr<double[]> aobuff_(new double[aointsize]);
-    unique_ptr<double[]> first_(new double[nbasis_*nbasis*nbasis*nocc]);
-    firstp = move(first_);
-    aobuffp = move(aobuff_);
-    cout << "  - AO integrals are computed and stored in core" << endl << endl;
-  } else {
-    unique_ptr<double[]> aobuff_(new double[nbasis*nbasis]);
-    unique_ptr<double[]> first_(new double[nocc*nocc*nocc*nocc]);
-    firstp = move(first_);
-    aobuffp = move(aobuff_);
-  }
+
+  unique_ptr<double[]> aobuff_(new double[nbasis*nbasis]);
+  unique_ptr<double[]> first_(new double[nocc*nocc*nocc*nocc]);
+  firstp = move(first_);
+  aobuffp = move(aobuff_);
+
   double* first = firstp.get();
   double* aobuff = aobuffp.get();
 
@@ -75,111 +59,40 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   double core_energy = 0.0;
   {
     const bool df_ = do_df_;
-    if (df_) {
-      shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
-      if (nstart != 0) {
-        shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-        shared_ptr<Fock<1> > fock1(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
-        core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
-        fock0 = fock1;
-        dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
-      }
-      fock0->symmetrize();
-      dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
-    } else {
-      shared_ptr<Fock<0> > fock0(new Fock<0>(geom_, ref_->hcore()));
-      if (nstart != 0) {
-        shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
-        shared_ptr<Fock<0> > fock1(new Fock<0>(geom_, fock0, den, ref_->schwarz()));
-        core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
-        fock0 = fock1;
-        dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
-      }
-      fock0->symmetrize();
-      dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
+    shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
+    if (nstart != 0) {
+      shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
+      shared_ptr<Fock<1> > fock1(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
+      core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
+      fock0 = fock1;
+      dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
     }
+    fock0->symmetrize();
+    dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
   }
-
   unique_ptr<double[]> mo1e__(new double[nocc*nocc]);
   mo1e_ = move(mo1e__);
   dgemm_("t","n",nocc,nocc,nbasis,1.0,cdata,nbasis,aobuff,nbasis,0.0,mo1e_ptr(),nocc);
 
-  /////////////// non Df builder ///////////////
-  if (!do_df_) {
-    for (int i0 = 0; i0 != size; ++i0) {
-      const int b0offset = offset_[i0]; 
-      const int b0size = basis_[i0]->nbasis();
-      for (int i1 = 0; i1 != size; ++i1) {
-        const int b1offset = offset_[i1];
-        const int b1size = basis_[i1]->nbasis();
-        for (int i2 = 0; i2 != size; ++i2) {
-          const int b2offset = offset_[i2];
-          const int b2size = basis_[i2]->nbasis();
-          for (int i3 = 0; i3 != size; ++i3) {
-            const int b3offset = offset_[i3]; 
-            const int b3size = basis_[i3]->nbasis();
-            vector<RefShell> input;
-            input.push_back(basis_[i3]);
-            input.push_back(basis_[i2]);
-            input.push_back(basis_[i1]);
-            input.push_back(basis_[i0]);
 
-            ERIBatch eribatch(input, 1.0);
-            eribatch.compute();
-            
-            const double* eridata = eribatch.data();
-            // what a bad code!
-            int ioff = 0;
-            for (int i = b0offset; i != b0offset+b0size; ++i)
-              for (int j = b1offset; j != b1offset+b1size; ++j)
-                for (int k = b2offset; k != b2offset+b2size; ++k)
-                  for (int l = b3offset; l != b3offset+b3size; ++l, ++ioff)
-                    aobuff[l+nbasis*(k+nbasis*(j+nbasis*i))] = eridata[ioff];
-          }
-        }
-      }
-    }
+  //
+  // two electron part.
+  //
 
-    const int n = aointsize;
-    const int nn = nbasis*nbasis;
-    const int nnn = nbasis*nbasis*nbasis;
-    dgemm_("n","n",nnn,nocc,nbasis, 1.0, aobuff,nnn,cdata,nbasis,0.0,first,nnn);
+  shared_ptr<DensityFit> dff = geom_->df();
 
-    for (size_t i = 0; i != nocc; ++i)
-      dgemm_("n","n",nn,nocc,nbasis, 1.0, first+i*nnn,nn,cdata,nbasis, 0.0,aobuff+i*nn*nocc,nn);
+  // first half transformation
+  shared_ptr<DF_Half> half = dff->compute_half_transform(cdata, nocc);
 
-    mytranspose_(aobuff,&nn,&mm,first);
+  // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
+  shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
 
-    for (size_t i = 0; i != nbasis; ++i)
-      dgemm_("n","n",mm,nocc,nbasis,1.0,first+i*mm*nbasis,mm,cdata,nbasis,0.0,aobuff+i*mm*nocc,mm);
+  // assembles (ii|ii) = (ii|D)(D|ii)
+  buf->form_4index(firstp);
 
-    // aobuff here contains (rs|tx) with r running fastest. x: AO
-    mo2e_1ext_size_ = static_cast<size_t>(mm)*nbasis*nocc;
-    unique_ptr<double[]> mo2e_1ext__(new double[(mo2e_1ext_size_)]);
-    mo2e_1ext_ = move(mo2e_1ext__);
-    copy(aobuff, aobuff+mo2e_1ext_size_, mo2e_1ext_ptr());
-
-    const int nmm = nocc * mm;
-    dgemm_("n","n",nmm,nocc,nbasis,1.0,aobuff,nmm,cdata,nbasis,0.0,first,nmm);
-
-  //////////////////// df builder ////////////////////////
-  } else {
-
-    shared_ptr<DensityFit> dff = geom_->df();
-
-    // first half transformation
-    shared_ptr<DF_Half> half = dff->compute_half_transform(cdata, nocc);
-
-    // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
-    shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
-
-    // assembles (ii|ii) = (ii|D)(D|ii)
-    buf->form_4index(firstp);
-
-    // we want to store half-transformed quantity for latter convenience
-    mo2e_1ext_size_ = nocc*dff->naux()*nbasis;
-    mo2e_1ext_ = half->move_data();
-  }
+  // we want to store half-transformed quantity for latter convenience
+  mo2e_1ext_size_ = nocc*dff->naux()*nbasis;
+  mo2e_1ext_ = half;
 
 
   // mo2e is compressed
@@ -217,28 +130,12 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
 void MOFile::update_1ext_ints(const vector<double>& coeff) {
   // in the case of no DF
-  unique_ptr<double[]> buf(new double[mo2e_1ext_size_]);
+  shared_ptr<DF_Half> buf = mo2e_1ext_->clone();
 
-  if (!do_df_) {
-    const double* start = &(coeff[0]);
-    double* data_ = mo2e_1ext_.get();
-    const int n2 = nocc_*nocc_;
-    const int nb = nocc_*nbasis_;
-    assert(n2*nb == mo2e_1ext_size_);
+  // half transformed DF is rotated.
+  const int naux = geom_->df()->naux();
+  for (int i = 0; i != nbasis_; ++i) 
+    dgemm_("N", "N", naux, nocc_, nocc_, 1.0, mo2e_1ext_->data()+i*naux*nocc_, naux, &(coeff[0]), nocc_, 0.0, buf->data()+i*naux*nocc_, naux); 
+  mo2e_1ext_ = buf;
 
-    mytranspose_(data_, &n2, &nb, buf.get());
-    // now buf=(nx|nn).
-    dgemm_("N", "N", nb*nocc_, nocc_, nocc_, 1.0, buf.get(), nb*nocc_, start, nocc_, 0.0, data_, nb*nocc_); 
-    for (int i = 0; i != nocc_; ++i)
-      dgemm_("N", "N", nb, nocc_, nocc_, 1.0, data_+i*nb*nocc_, nb, start, nocc_, 0.0, buf.get()+i*nb*nocc_, nb); 
-    dgemm_("T", "N", nocc_, nb*nocc_, nocc_, 1.0, start, nocc_, buf.get(), nocc_, 0.0, data_, nocc_); 
-    // slot in place
-    mytranspose_(data_, &nb, &n2, buf.get());
-  } else {
-    // half transformed DF is rotated.
-    const int naux = geom_->df()->naux();
-    for (int i = 0; i != nbasis_; ++i) 
-      dgemm_("N", "N", naux, nocc_, nocc_, 1.0, &(mo2e_1ext_[i*naux*nocc_]), naux, &(coeff[0]), nocc_, 0.0, buf.get()+i*naux*nocc_, naux); 
-  }
-  mo2e_1ext_ = move(buf);
 }

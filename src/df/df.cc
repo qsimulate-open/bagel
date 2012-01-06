@@ -147,6 +147,21 @@ shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const si
 }
 
 
+void DF_Half::form_2index(unique_ptr<double[]>& target, const double a, const double b) const {
+  const int nbasis = df_->nbasis();
+  const int common = nocc_ * df_->naux();
+  dgemm_("T", "N", nbasis, nbasis, common, a, data_.get(), common, data_.get(), common, b, target.get(), nbasis); 
+}
+
+
+void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<DF_Full> o, const double a, const double b) const {
+  assert(nocc_ == o->nocc1());
+  const int nbasis = df_->nbasis();
+  const int common = nocc_ * df_->naux();
+  dgemm_("T", "N", nbasis, o->nocc2(), common, a, data_.get(), common, o->data(), common, b, target.get(), nbasis); 
+}
+
+
 shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) {
   const int naux = df_->naux();
   const int nbasis = df_->nbasis();

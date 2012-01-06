@@ -35,7 +35,7 @@ class MOFile {
     std::unique_ptr<double[]> core_fock_;
     std::unique_ptr<double[]> mo1e_;
     std::unique_ptr<double[]> mo2e_;
-    std::unique_ptr<double[]> mo2e_1ext_;
+    std::shared_ptr<DF_Half> mo2e_1ext_;
 
     size_t mo2e_1ext_size_;
 
@@ -62,7 +62,8 @@ class MOFile {
     double* mo1e_ptr() { return mo1e_.get(); };
     double* mo2e_ptr() { return mo2e_.get(); };
 
-    double* mo2e_1ext_ptr() { return mo2e_1ext_.get(); };
+    std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
+    const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
     void update_1ext_ints(const std::vector<double>& coeff);
 
 };
