@@ -32,6 +32,7 @@ class MOFile {
     std::vector<std::shared_ptr<Shell> > basis_;
     std::vector<int> offset_;
 
+    std::unique_ptr<double[]> core_fock_;
     std::unique_ptr<double[]> mo1e_;
     std::unique_ptr<double[]> mo2e_;
     std::unique_ptr<double[]> mo2e_1ext_;
@@ -55,6 +56,7 @@ class MOFile {
     // strictly i <= j, k <= l
     double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }; 
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }; 
+    double* core_fock_ptr() { return core_fock_.get(); };
     double* mo1e_ptr() { return mo1e_.get(); };
     double* mo2e_ptr() { return mo2e_.get(); };
 

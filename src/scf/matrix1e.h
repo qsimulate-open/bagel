@@ -33,6 +33,8 @@ class Matrix1e {
 
     const std::shared_ptr<Geometry> geom() const { return geom_; };
 
+    const int nbasis() const { return nbasis_; };
+    const int size() const { return nbasis_*nbasis_; };
     const int ndim() const { return ndim_; }; 
     const int mdim() const { return mdim_; }; 
     double* data() const { return data_.get(); };

@@ -31,12 +31,10 @@ class RotFile {
         data_ = std::move(tmp);
     };
     RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), size_(o.size_), superci_(o.superci_), data_(new double[o.size_]) {
-      std::cout << "size " << size_ <<  std::endl;
       std::copy(o.data(), o.data()+size_, data());
     };
     RotFile(const std::shared_ptr<RotFile> o)
       : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), size_(o->size_), superci_(o->superci_), data_(new double[o->size_]) {
-      std::cout << "a size " << size_ <<  std::endl;
       std::copy(o->data(), o->data()+size_, data());
     };
 

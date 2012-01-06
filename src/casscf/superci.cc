@@ -88,17 +88,25 @@ void SuperCI::compute() {
     shared_ptr<Coeff> coeff = ref_->coeff();
 
     {
-      // Fock operator
-      shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Fock<DF> > f_ao(new Fock<DF>(geom_, hcore_, denall, ref_->schwarz()));
-      shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
-      // inactive Fock operator
+      // Fock operators
       if (nclosed_) {
         shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-        shared_ptr<Fock<DF> > finact_ao(new Fock<DF>(geom_, hcore_, deninact, ref_->schwarz()));
-        shared_ptr<Matrix1e> fs(new Matrix1e(*coeff % *finact_ao * *coeff));
-        finact = fs;
+        shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
+        dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
+        shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_inactao * *coeff));
+        finact = ft;
+
+        shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
+        shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
+        shared_ptr<Fock<DF> > fact_ao(new Fock<DF>(geom_, hcore_, denact, ref_->schwarz()));
+        shared_ptr<Matrix1e> fact(new Matrix1e(*coeff % (*fact_ao-*hcore_) * *coeff));
+        shared_ptr<Matrix1e> fs(new Matrix1e(*finact+*fact));
+        f = fs;
       } else {
+        shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
+        shared_ptr<Fock<DF> > f_ao(new Fock<DF>(geom_, hcore_, denall, ref_->schwarz()));
+        shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
+
         finact = hcore_;
       }
     }

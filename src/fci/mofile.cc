@@ -1,5 +1,6 @@
 //
-// author : Toru Shiozaki
+// Author : Toru Shiozaki
+// Date   : Dec 2011
 //
 
 #include <iostream>
@@ -16,7 +17,8 @@ using namespace std;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref) {
+MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref),
+    core_fock_(new double[geom->nbasis()*geom->nbasis()]) {
 
   do_df_ = geom->df().get();
 
@@ -79,6 +81,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
         shared_ptr<Fock<1> > fock1(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
         core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
         fock0 = fock1;
+        dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
       }
       fock0->symmetrize();
       dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
@@ -89,6 +92,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
         shared_ptr<Fock<0> > fock1(new Fock<0>(geom_, fock0, den, ref_->schwarz()));
         core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
         fock0 = fock1;
+        dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
       }
       fock0->symmetrize();
       dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
