@@ -214,7 +214,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
       }
     }
   }
-  copy(buf3.get(), buf3.get()+sizeij_, mo1e_.get());
+  mo1e_ = move(buf3);
   return core_energy;
 }
 

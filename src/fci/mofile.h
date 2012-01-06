@@ -48,6 +48,8 @@ class MOFile {
     MOFile(const std::shared_ptr<Geometry>, const std::shared_ptr<Reference>);
     ~MOFile();
 
+    const std::shared_ptr<Geometry> geom() const { return geom_; };
+
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int);
     const int sizeij() const { return sizeij_; };

@@ -174,6 +174,8 @@ class FCI {
     // move to natural orbitals
     std::pair<std::vector<double>, std::vector<double> > natorb_convert();
 
+    const std::shared_ptr<Geometry> geom() const { return geom_; };
+
     // returns integral files
     std::shared_ptr<MOFile> jop() { return jop_; };
 

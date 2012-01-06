@@ -22,7 +22,7 @@ static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 void SuperCI::compute() {
   const string indent = "  ";
 
-  cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ")===" << endl << endl;
+  cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
   shared_ptr<Fock<DF> > hcore_;

@@ -20,6 +20,7 @@
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
+#include <src/casscf/werner.h>
 #include <src/global.h>
 #include <src/stackmem.h>
 
@@ -79,7 +80,11 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
         if (!ref) throw runtime_error("CASSCF needs a reference");
 
+#if 0
         shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
+#else
+        shared_ptr<CASSCF> casscf_(new WernerKnowles(iter->second, geom, ref)); casscf = casscf_;
+#endif
         casscf->compute();
         ref = casscf->conv_to_ref();
 
