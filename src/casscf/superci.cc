@@ -71,13 +71,7 @@ void SuperCI::compute() {
 
     // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
     // note: this should be after natorb transformation.
-#if 1
-    shared_ptr<QFile> qtmp(new QFile(geom_->nbasis(), nact_));
-    compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qtmp);
-    shared_ptr<Qvec> qxr(new Qvec(*qtmp));
-#else
-    shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_->rdm2_av()));
-#endif
+    shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_));
 
     cout << "     * Natural orbital transformation + Q vector  " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
 

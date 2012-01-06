@@ -9,7 +9,7 @@
 #include <memory>
 #include <src/df/df.h>
 #include <src/scf/coeff.h>
-#include <src/fci/rdm.h>
+#include <src/fci/fci.h> // 2RDM and half-transformed integrals
 #include <src/casscf/rotfile.h>
 
 class Qvec : public QFile {
@@ -17,7 +17,7 @@ class Qvec : public QFile {
 
   public:
     Qvec(const int n, const int m, std::shared_ptr<DensityFit> df, std::shared_ptr<Coeff> c, const size_t nclosed,
-         std::shared_ptr<RDM<2> > rdm);
+         std::shared_ptr<FCI> fci);
     Qvec(const QFile& a) : QFile(a) {};
     ~Qvec() {};
 

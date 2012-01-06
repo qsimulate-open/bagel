@@ -19,7 +19,6 @@ typedef std::shared_ptr<Shell> RefShell;
 MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref) {
 
   do_df_ = geom->df().get();
-do_df_ = false;
 
   typedef std::shared_ptr<Atom> RefAtom;
   typedef std::shared_ptr<Shell> RefShell;
@@ -166,7 +165,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
     // we want to store half-transformed quantity for latter convenience
     mo2e_1ext_size_ = static_cast<size_t>(nocc)*naux*nbasis;
     unique_ptr<double[]> mo2e_1ext__(new double[mo2e_1ext_size_]);
-    mo2e_ = move(mo2e_1ext__);
+    mo2e_1ext_ = move(mo2e_1ext__);
 
     // first half transformation
     for (size_t i = 0; i != nbasis_; ++i)
