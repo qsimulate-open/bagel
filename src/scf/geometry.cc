@@ -151,6 +151,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
   cout << "  Number of electrons      : " << setw(8) << nocc() << endl << endl;
+  if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
 
   if (!auxfile_.empty()) {
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
@@ -364,6 +365,7 @@ Geometry::Geometry(const string s, const int levl)
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
   cout << "  Number of electrons      : " << setw(8) << nocc() << endl << endl;
+  if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
   cout << endl;
 }
 
