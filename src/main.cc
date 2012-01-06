@@ -80,13 +80,11 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
         if (!ref) throw runtime_error("CASSCF needs a reference");
 
-#if 0
         shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
-#else
-        shared_ptr<CASSCF> casscf_(new WernerKnowles(iter->second, geom, ref)); casscf = casscf_;
-#endif
         casscf->compute();
         ref = casscf->conv_to_ref();
+        shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
+        werner->compute();
 
       } else if (method == "fci") {
         if (!ref) throw runtime_error("FCI needs a reference");

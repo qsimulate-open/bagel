@@ -50,21 +50,22 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   const int size = basis_.size(); // number of shells
   const size_t aointsize = nbasis_*nbasis*nbasis*nbasis; 
 
-  unique_ptr<double[]> aobuffp, firstp;
+  unique_ptr<double[]> firstp;
+  unique_ptr<double[]> aobuffp;
   if (!do_df_) {
     unique_ptr<double[]> aobuff_(new double[aointsize]);
     unique_ptr<double[]> first_(new double[nbasis_*nbasis*nbasis*nocc]);
-    aobuffp = move(aobuff_);
     firstp = move(first_);
+    aobuffp = move(aobuff_);
     cout << "  - AO integrals are computed and stored in core" << endl << endl;
   } else {
+    unique_ptr<double[]> aobuff_(new double[nbasis*nbasis]);
     unique_ptr<double[]> first_(new double[nocc*nocc*nocc*nocc]);
-    unique_ptr<double[]> aobuff_(new double[nbasis*nocc]);
-    aobuffp = move(aobuff_);
     firstp = move(first_);
+    aobuffp = move(aobuff_);
   }
-  double* aobuff = aobuffp.get();
   double* first = firstp.get();
+  double* aobuff = aobuffp.get();
 
   // some stuffs for blas
   double* cdata = ref_->coeff()->data() + nstart*nbasis;
@@ -165,24 +166,19 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   } else {
 
     shared_ptr<DensityFit> dff = geom_->df();
-    const int naux = dff->naux();
-    // we want to store half-transformed quantity for latter convenience
-    mo2e_1ext_size_ = static_cast<size_t>(nocc)*naux*nbasis;
-    unique_ptr<double[]> mo2e_1ext__(new double[mo2e_1ext_size_]);
-    mo2e_1ext_ = move(mo2e_1ext__);
 
     // first half transformation
-    for (size_t i = 0; i != nbasis_; ++i)
-      dgemm_("N", "N", naux, nocc, nbasis, 1.0, dff->data_3index()+i*nbasis*naux, naux, cdata, nbasis, 0.0, &(mo2e_1ext_[i*naux*nocc]), naux);
+    shared_ptr<DF_Half> half = dff->compute_half_transform(cdata, nocc);
 
-    unique_ptr<double[]> buf(new double[naux*nocc*nocc]);
-    unique_ptr<double[]> buf2(new double[naux*nocc*nocc]);
-    // second index transformation
-    dgemm_("n", "n", naux*nocc, nocc, nbasis, 1.0, mo2e_1ext_.get(), naux*nocc, cdata, nbasis, 0.0, buf2.get(), naux*nocc);
-    // (D|ii) = J^-1/2_DE (E|ii)
-    dgemm_("n", "n", naux, nocc*nocc, naux, 1.0, dff->data_2index(), naux, buf2.get(), naux, 0.0, buf.get(), naux);
+    // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
+    shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
+
     // assembles (ii|ii) = (ii|D)(D|ii)
-    dgemm_("t", "n", nocc*nocc, nocc*nocc, naux, 1.0, buf, naux, buf, naux, 0.0, firstp, nocc*nocc);
+    buf->form_4index(firstp);
+
+    // we want to store half-transformed quantity for latter convenience
+    mo2e_1ext_size_ = nocc*dff->naux()*nbasis;
+    mo2e_1ext_ = half->move_data();
   }
 
 

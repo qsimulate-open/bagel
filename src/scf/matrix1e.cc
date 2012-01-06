@@ -117,14 +117,12 @@ Matrix1e Matrix1e::operator+(const Matrix1e& o) const {
   Matrix1e out(geom_);
   out.ndim_ = ndim_;
   out.mdim_ = mdim_;
-  const int unit = 1;
-  const double one = 1.0; 
   const int size = nbasis_ * nbasis_;
   const double* odata = o.data();
   double* outdata = out.data();
 
-  daxpy_(&size, &one, data(), &unit, outdata, &unit); 
-  daxpy_(&size, &one, odata, &unit, outdata, &unit); 
+  daxpy_(size, 1.0, data(), 1, outdata, 1); 
+  daxpy_(size, 1.0, odata, 1, outdata, 1); 
 
   return out; 
 }

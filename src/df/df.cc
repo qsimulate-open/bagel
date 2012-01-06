@@ -135,3 +135,31 @@ DensityFit::DensityFit(const int nbas, const int naux,
 
 }
 
+
+
+shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) {
+  unique_ptr<double[]> tmp(new double[naux_*nbasis_*nocc]);
+  for (size_t i = 0; i != nbasis_; ++i) {
+    dgemm_("N", "N", naux_, nocc, nbasis_, 1.0, data_.get()+i*naux_*nbasis_, naux_, c, nbasis_, 0.0, tmp.get()+i*naux_*nocc, naux_);
+  }
+  shared_ptr<DF_Half> out(new DF_Half(shared_from_this(), nocc, tmp));
+  return out;
+}
+
+
+shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) {
+  const int naux = df_->naux();
+  const int nbasis = df_->nbasis();
+  unique_ptr<double[]> tmp(new double[naux*nocc_*nocc]);
+  dgemm_("N", "N", naux*nocc_, nocc, nbasis, 1.0, data_.get(), naux*nocc_, c, nbasis, 0.0, tmp.get(), naux*nocc_); 
+  shared_ptr<DF_Full> out(new DF_Full(df_, nocc_, nocc, tmp)); 
+  return out;
+}
+
+
+void DF_Full::form_4index(unique_ptr<double[]>& target) const {
+  const int dim = nocc1_ * nocc2_;
+  const int naux = df_->naux();
+  dgemm_("T", "N", dim, dim, naux, 1.0, data_.get(), naux, data_.get(), naux, 0.0, target.get(), dim); 
+}
+

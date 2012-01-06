@@ -7,12 +7,18 @@
 #define __NEWINT_CASSCF_WERNER_H
 
 #include <src/casscf/casscf.h>
+#include <src/casscf/rotfile.h>
+#include <src/casscf/jvec.h>
 
 class WernerKnowles : public CASSCF {
   protected:
     void common_init() {
       std::cout << "    * Using the two-step Werner-Knowles algorithm (see JCP 1985)" << std::endl;
     };
+
+    std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<Matrix1e>, std::shared_ptr<FCI>,
+                                           std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>,
+                                           std::shared_ptr<Coeff>);
 
   public:
     WernerKnowles(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref)

@@ -24,19 +24,15 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<Coeff> coeff, const size_t nclosed, c
 
   // half_ = J^{-1/2}(D|ix)
   {
-    unique_ptr<double[]> half(new double[nocc*nbasis*naux]);
-    unique_ptr<double[]> half2(new double[nocc*nbasis*naux]);
-    for (size_t i = 0; i != nbasis; ++i)
-      dgemm_("N","N", naux, nocc, nbasis, 1.0, j3+i*naux*nbasis, naux, cc, nbasis, 0.0, half.get()+i*naux*nocc, naux); 
-    dgemm_("N","N", naux, nbasis*nocc, naux, 1.0, j2, naux, half.get(), naux, 0.0, half2.get(), naux); 
-    half_ = move(half2);
+    shared_ptr<DF_Half> half = df->compute_half_transform(cc, nocc);
+    half_ = half->apply_J();
   }
 
   // jvec_ = J^{-1/2} (D|ij) Gamma_ij,kl
   {
     unique_ptr<double[]> in(new double[nocc*nocc*naux]);
     unique_ptr<double[]> in2(new double[nocc*nocc*naux]);
-    dgemm_("N","N", naux*nocc, nocc, nbasis, 1.0, half_.get(), naux*nocc, cc, nbasis, 0.0, in.get(), naux*nocc); 
+    dgemm_("N","N", naux*nocc, nocc, nbasis, 1.0, half(), naux*nocc, cc, nbasis, 0.0, in.get(), naux*nocc); 
 
     // for the time being, I form the entire 2RDM 
     unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]); 
