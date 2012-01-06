@@ -9,30 +9,19 @@ using namespace std;
 
 Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
 
-  shared_ptr<MOFile> jop = fci->jop();
   shared_ptr<DensityFit> df = fci->geom()->df();
-  const double* const j2 = df->data_2index();
-  const double* const j3 = df->data_3index();
-  const double* const j1 = jop->mo2e_1ext_ptr();
   const double* const cc = coeff->data();
-  const size_t nbasis = df->nbasis();
-  const size_t naux = df->naux();
   const size_t nocc = nclosed+nact;
 
   shared_ptr<RDM<1> > rdm1_av = fci->rdm1_av();
   shared_ptr<RDM<2> > rdm = fci->rdm2_av();
 
   // half_ = J^{-1/2}(D|ix)
-  {
-    shared_ptr<DF_Half> half = df->compute_half_transform(cc, nocc);
-    half_ = half->apply_J();
-  }
+  half_ = df->compute_half_transform(cc, nocc)->apply_J();
 
   // jvec_ = J^{-1/2} (D|ij) Gamma_ij,kl
   {
-    unique_ptr<double[]> in(new double[nocc*nocc*naux]);
-    unique_ptr<double[]> in2(new double[nocc*nocc*naux]);
-    dgemm_("N","N", naux*nocc, nocc, nbasis, 1.0, half(), naux*nocc, cc, nbasis, 0.0, in.get(), naux*nocc); 
+    shared_ptr<DF_Full> in = half_->compute_second_transform(cc,nocc);
 
     // for the time being, I form the entire 2RDM 
     unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]); 
@@ -65,10 +54,8 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<Coeff> coeff, const size_t nclosed, c
         }
       }
     }
+    jvec_ = in->apply_2rdm(rdm2all.get());
     rdm2_all_ = move(rdm2all);
-    dgemm_("N","N", naux, nocc*nocc, nocc*nocc, 1.0, in.get(), naux, rdm2_all_.get(), nocc*nocc, 0.0, in2.get(), naux); 
-    jvec_ = move(in2);
-
   }
 
 };

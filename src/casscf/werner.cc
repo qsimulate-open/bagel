@@ -59,7 +59,6 @@ void WernerKnowles::compute() {
       // initializing a Davidson manager
       DavidsonDiag<RotFile> davidson(1,max_micro_iter_); 
 
-bvec->print();
 break;
 
       // solving Eq. 30 of Werner and Knowles
@@ -101,34 +100,25 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Matrix1e> hcore, sha
     for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1); 
     shared_ptr<Matrix1e> buf(new Matrix1e(geom_));
     dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore->data(), nbasis_, u->data(), nbasis_, 0.0, buf->data(), nbasis_);  
-    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbasis_, all1.data(), nbasis_, 1.0, out->data(), nbasis_);
+    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbasis_, all1.data(), nbasis_, 0.0, out->data(), nbasis_);
   }
 
+  unique_ptr<double[]> tmp(new double[nbas*nbas]);
   // second term
   {
-    unique_ptr<double[]> half(new double[nbas*nocc_*naux]);
     Matrix1e Umat(*cc * *u);
-    for (size_t i = 0; i != nbas; ++i) {
-      dgemm_("N", "N", naux, nocc_, nbas, 1.0, df->data_3index()+i*naux*nbas, naux, Umat.data(), nbas, 0.0, half.get()+i*naux*nocc_, naux); 
-    }
-    unique_ptr<double[]> tmp(new double[nocc_*nocc_*naux]);
-    unique_ptr<double[]> tmp2(new double[nocc_*nbas]);
-    dgemm_("N", "N", naux, nocc_*nocc_, naux, 1.0, df->data_2index(), naux, jvec->jvec(), naux, 0.0, tmp.get(), naux); 
-    dgemm_("T", "N", nbas, nocc_, naux*nocc_, 1.0, half.get(), naux*nocc_, tmp.get(), naux*nocc_, 0.0, tmp2.get(), nbas);
-    dgemm_("T", "N", nbasis_, nocc_, nbas, 2.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);
+    shared_ptr<DF_Half> half = df->compute_half_transform(Umat.data(), nocc_);
+    half->form_2index(tmp, jvec->jvec()->apply_J(), 2.0, 0.0);
   }
 
   // thrid term
   if (t->norm() > 1.0e-15) {
-    unique_ptr<double[]> tmp(new double[max(nocc_*nocc_*naux, nocc_*nbas)]);
-    unique_ptr<double[]> tmp2(new double[nocc_*nocc_*naux]);
     Matrix1e Tmat(*cc * *t);
-    dgemm_("N", "N", naux*nocc_, nocc_, nbas, 1.0, jvec->half(), naux*nocc_, Tmat.data(), nbas, 0.0, tmp.get(), naux*nocc_); 
-    dgemm_("N", "N", naux, nocc_*nocc_, nocc_*nocc_, 1.0, tmp.get(), naux, fci->rdm2_av()->data(), nocc_*nocc_, 0.0, tmp2.get(), naux);
-    dgemm_("T", "N", nbas, nocc_, naux*nocc_, 1.0, jvec->half(), naux*nocc_, tmp.get(), naux*nocc_, 0.0, tmp.get(), nbas); 
-    dgemm_("T", "N", nbasis_, nocc_, nbas, 4.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);
+    shared_ptr<DF_Full> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
+    jvec->half()->form_2index(tmp, full, 4.0, 1.0);
   }
 
+  dgemm_("T", "N", nbasis_, nocc_, nbas, 1.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);
   return out;
 }
 

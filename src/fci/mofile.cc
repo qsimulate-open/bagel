@@ -37,19 +37,6 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   nbasis_ = geom_->nbasis(); // size_t quantity :-)
   const int nbasis = nbasis_;
   const int nocc = nocc_;
-  const int size = basis_.size(); // number of shells
-  const size_t aointsize = nbasis_*nbasis*nbasis*nbasis; 
-
-  unique_ptr<double[]> firstp;
-  unique_ptr<double[]> aobuffp;
-
-  unique_ptr<double[]> aobuff_(new double[nbasis*nbasis]);
-  unique_ptr<double[]> first_(new double[nocc*nocc*nocc*nocc]);
-  firstp = move(first_);
-  aobuffp = move(aobuff_);
-
-  double* first = firstp.get();
-  double* aobuff = aobuffp.get();
 
   // some stuffs for blas
   double* cdata = ref_->coeff()->data() + nstart*nbasis;
@@ -58,7 +45,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   // one electron part
   double core_energy = 0.0;
   {
-    const bool df_ = do_df_;
+    unique_ptr<double[]> aobuff(new double[nbasis*nbasis]);
     shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
     if (nstart != 0) {
       shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
@@ -68,11 +55,12 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
       dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
     }
     fock0->symmetrize();
-    dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff,nbasis);
+    dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff.get(),nbasis);
+
+    unique_ptr<double[]> mo1e__(new double[nocc*nocc]);
+    mo1e_ = move(mo1e__);
+    dgemm_("t","n",nocc,nocc,nbasis,1.0,cdata,nbasis,aobuff.get(),nbasis,0.0,mo1e_ptr(),nocc);
   }
-  unique_ptr<double[]> mo1e__(new double[nocc*nocc]);
-  mo1e_ = move(mo1e__);
-  dgemm_("t","n",nocc,nocc,nbasis,1.0,cdata,nbasis,aobuff,nbasis,0.0,mo1e_ptr(),nocc);
 
 
   //
@@ -88,7 +76,8 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
 
   // assembles (ii|ii) = (ii|D)(D|ii)
-  buf->form_4index(firstp);
+  unique_ptr<double[]> buf2e(new double[nocc*nocc*nocc*nocc]);
+  buf->form_4index(buf2e);
 
   // we want to store half-transformed quantity for latter convenience
   mo2e_1ext_size_ = nocc*dff->naux()*nbasis;
@@ -106,7 +95,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
       const int ijo = (j + i*nocc)*nocc*nocc;
       for (int k = 0; k != nocc; ++k) {
         for (int l = 0; l <= k; ++l, ++ijkl) {
-          mo2e_[ijkl] = first[l+k*nocc+ijo]; 
+          mo2e_[ijkl] = buf2e[l+k*nocc+ijo]; 
         }
       }
     }
@@ -119,7 +108,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
     for (int j=0; j<=i; ++j, ++ij) {
       buf3[ij] = mo1e_[j+i*nocc];
       for (int k=0; k!=nocc; ++k) {
-        buf3[ij] -= 0.5*first[(k+j*nocc)*mm+(k+i*nocc)];
+        buf3[ij] -= 0.5*buf2e[(k+j*nocc)*mm+(k+i*nocc)];
       }
     }
   }
