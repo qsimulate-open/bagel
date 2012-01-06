@@ -244,12 +244,12 @@ void Matrix1e::diagonalize(double* eig) {
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
   
-  int info_diagonalize = 0;
-  const int lwork = nbasis_ * 6;
+  int info;
+  const int lwork = nbasis_*6;
   unique_ptr<double[]> work(new double[lwork]);
-  dsyev_("V", "L", &ndim_, data(), &nbasis_, eig, work.get(), &lwork, &info_diagonalize); 
+  dsyev_("V", "L", ndim_, data(), nbasis_, eig, work.get(), lwork, info); 
 
-  assert(info_diagonalize == 0);
+  if(info) throw runtime_error("diagonalize failed");
 
 }
 
@@ -359,13 +359,7 @@ void Matrix1e::inverse() {
   const int lwork = 3*ndim_;
   int info;
   unique_ptr<int[]> ipiv(new int[ndim_]);
-#if 0
-  double* work = new double[lwork];
-  dsysv_("U", &ndim_, &ndim_, data(), &ndim_, ipiv.get(), buf->data(), &ndim_, work, &lwork, &info); 
-  delete[] work;
-#else
   dgesv_(&ndim_, &ndim_, data(), &ndim_, ipiv.get(), buf->data(), &ndim_, &info);
-#endif
   if (info) throw runtime_error("dsysv failed in Matrix1e::inverse()");
 
   copy(buf->data(), buf->data()+nbasis_*nbasis_, data());

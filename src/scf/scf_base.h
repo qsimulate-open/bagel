@@ -35,11 +35,11 @@ class SCF_base {
     std::vector<double> schwarz_;
     void init_schwarz();
 
-    double* eig_;
+    std::unique_ptr<double[]> eig_;
 
   public:
     SCF_base(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<Geometry>);
-    ~SCF_base();
+    ~SCF_base() {};
 
     virtual void compute() = 0;
 
@@ -54,6 +54,8 @@ class SCF_base {
       std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz()));
       return out;
     };
+
+    double* eig() { return eig_.get(); };
 };
 
 #endif

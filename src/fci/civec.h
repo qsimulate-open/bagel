@@ -16,41 +16,54 @@ class Civec {
   protected:
     // !!CAUTION!!
     // cc is formated so that B runs first.
-    double* cc_;
+    // Also, cc_ can be null if this is constructed by Dvec.
+    std::unique_ptr<double[]> cc_;
+
+    double* cc_ptr_;
+
+    double& cc(int i) { return *(cc_ptr_+i); };
+    const double& cc(int i) const { return *(cc_ptr_+i); };
+    double* cc() { return cc_ptr_; };
+    const double* const cc() const { return cc_ptr_; };
+
     int lena_;
     int lenb_;
-    const bool alloc;
 
   public:
-    Civec(const size_t lb, const size_t la) : lena_(la), lenb_(lb), alloc(true) {
-      cc_ = new double[la*lb];
-      std::fill(cc_, cc_ + la*lb, 0.0);
+    Civec(const size_t lb, const size_t la) : lena_(la), lenb_(lb) {
+      std::unique_ptr<double[]> cc__(new double[la*lb]);
+      cc_ = std::move(cc__);
+      cc_ptr_ = cc_.get();
+      std::fill(cc(), cc() + la*lb, 0.0);
     }
-    Civec(const size_t lb, const size_t la, double* din_) : lena_(la), lenb_(lb), alloc(false) {
-      cc_ = din_; 
-      std::fill(cc_, cc_ + la*lb, 0.0);
+
+    // constructor that is called by Dvec.
+    Civec(const size_t lb, const size_t la, double* din_) : lena_(la), lenb_(lb) {
+      cc_ptr_ = din_;
+      std::fill(cc(), cc() + la*lb, 0.0);
     }
+
     // copy constructor
-    Civec(const Civec& o) : lena_(o.lena()), lenb_(o.lenb()), alloc(true) {
-      cc_ = new double[lena_ * lenb_];
-      std::copy(o.cc_, o.cc_ + lena_*lenb_, cc_);
+    Civec(const Civec& o) : lena_(o.lena()), lenb_(o.lenb()) {
+      std::unique_ptr<double[]> cc__(new double[lena_*lenb_]);
+      cc_ = std::move(cc__);
+      cc_ptr_ = cc_.get();
+      std::copy(o.cc(), o.cc() + lena_*lenb_, cc());
     };
-    ~Civec() {
-      if (alloc) delete[] cc_;
-    };
+    ~Civec() { };
 
-    double& element(size_t i, size_t j) { return cc_[i+j*lenb_]; }; // I RUNS FIRST 
-    double* element_ptr(size_t i, size_t j) { return cc_+i+j*lenb_; }; // I RUNS FIRST 
-    double* first() { return cc_; };
+    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
+    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    double* first() { return cc(); };
 
-    void zero() { std::fill(cc_, cc_+lena_*lenb_, 0.0); };
+    void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
     int size() const { return lena_*lenb_; };
 
     std::shared_ptr<Civec> transpose() {
       std::shared_ptr<Civec> ct(new Civec(lena_, lenb_));
       double* cct = ct->first(); 
-      mytranspose_(cc_, &lenb_, &lena_, cct); 
+      mytranspose_(cc(), &lenb_, &lena_, cct); 
       return ct;
     };
     int lena() const { return lena_; };
@@ -58,24 +71,17 @@ class Civec {
 
     // some functions for convenience
     double ddot(Civec& other) {
-      const int lab = lena_ * lenb_;
-      const int unit = 1;
-      return ddot_(&lab, cc_, &unit, other.first(), &unit);
+      return ddot_(lena_*lenb_, cc(), 1, other.first(), 1);
     };
     void daxpy(double a, Civec& other) {
-      const int lab = lena_ * lenb_;
-      const int unit = 1;
-      daxpy_(&lab, &a, other.first(), &unit, cc_, &unit);
+      daxpy_(lena_*lenb_, a, other.first(), 1, cc(), 1);
     };
     double norm() {
-      const int lab = lena_ * lenb_;
-      const int unit = 1;
-      return std::sqrt(ddot_(&lab, cc_, &unit, cc_, &unit));
+      return std::sqrt(ddot_(lena_*lenb_, cc(), 1, cc(), 1));
     };
     double variance() {
       const int lab = lena_ * lenb_;
-      const int unit = 1;
-      return ddot_(&lab, cc_, &unit, cc_, &unit)/lab;
+      return ddot_(lab, cc(), 1, cc(), 1)/lab;
     }
 
     // assumes that c is already orthogonal with each other.
@@ -85,9 +91,7 @@ class Civec {
         this->daxpy(scal, **iter);
       }
       const double scal = 1.0/this->norm();
-      const int lab = lena_ * lenb_;
-      const int unit = 1;
-      dscal_(&lab, &scal, cc_, &unit);
+      dscal_(lena_*lenb_, scal, cc(), 1);
       return 1.0/scal; 
     }
 };
@@ -96,46 +100,51 @@ class Civec {
 class Dvec {
   protected:
     std::vector<std::shared_ptr<Civec> > dvec_;
-    double* data_;
-    int lenb_;
-    int lena_;
-    int ij_;
+    std::unique_ptr<double[]> data_;
+    double* data() { return data_.get(); };
+    const double* const data() const { return data_.get(); };
+    size_t lenb_;
+    size_t lena_;
+    size_t ij_;
+
   public:
     Dvec(const size_t lb, const size_t la, const size_t ij) : lena_(la), lenb_(lb), ij_(ij) {
       // actually data should be in a consecutive area to call dgemm.
-      data_ = new double[lb*la*ij];
-      double* tmp = data_;
+      std::unique_ptr<double[]> data__(new double[lb*la*ij]);
+      data_ = std::move(data__);
+      double* tmp = data();
       for (int i = 0; i != ij; ++i, tmp+=lb*la) {
         std::shared_ptr<Civec> c(new Civec(lb, la, tmp)); 
         dvec_.push_back(c);
       }
     };
     Dvec(const Dvec& o) : lenb_(o.lenb_), lena_(o.lena_), ij_(o.ij_) {
-      data_ = new double[lena_*lenb_*ij_];
-      double* tmp = data_;
+      std::unique_ptr<double[]> data__(new double[lena_*lenb_*ij_]);
+      data_ = std::move(data__);
+      double* tmp = data_.get();
       for (int i = 0; i != ij_; ++i, tmp+=lenb_*lena_) {
         std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
         dvec_.push_back(c);
       }
-      std::copy(o.data_, o.data_+lena_*lenb_*ij_, data_);
+      std::copy(o.data(), o.data()+lena_*lenb_*ij_, data());
     };
+
+    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
     Dvec(std::shared_ptr<Dvec> o) : lenb_(o->lenb_), lena_(o->lena_), ij_(o->ij_) {
-      data_ = new double[1];
       for (int i = 0; i != ij_; ++i) {
         std::shared_ptr<Civec> c(new Civec(*(o->data(i))));
         dvec_.push_back(c);
       }
     };
+
     Dvec(std::vector<std::shared_ptr<Civec> > o) : lenb_(o.front()->lenb()), lena_(o.front()->lena()), ij_(o.size()) {
-      data_ = new double[1];
       dvec_ = o;
     };
-    ~Dvec() {
-      delete[] data_;
-    };
+
+    ~Dvec() { };
     std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
-    void zero() { std::fill(data_, data_+lena_*lenb_*ij_, 0.0); };
-    double* first() { return data_; };
+    void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); };
+    double* first() { return data(); };
 
     std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
     std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv) {
@@ -147,9 +156,9 @@ class Dvec {
       return out;
     };
 
-    int lena() const { return lena_; };
-    int lenb() const { return lenb_; };
-    int ij() const { return ij_; };
+    size_t lena() const { return lena_; };
+    size_t lenb() const { return lenb_; };
+    size_t ij() const { return ij_; };
 };
 
 

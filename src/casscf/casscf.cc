@@ -107,15 +107,19 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 void CASSCF::mute_stdcout() {
+#if 1
   ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
+#endif
 }
 
 
 void CASSCF::resume_stdcout() {
+#if 1
   cout.rdbuf(backup_stream_);
   delete ofs_;
+#endif
 }
 
 

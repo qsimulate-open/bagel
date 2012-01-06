@@ -22,18 +22,17 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
   ndim_ = nbasis_;
   const int size = nbasis_ * nbasis_;
 
-  double* eig = new double[nbasis_];
-  const int lwork = 5 * nbasis_;
-  double* work = new double[lwork];
-  const double* S = olp->data();
+  unique_ptr<double[]> eig(new double[nbasis_]);
 
-  const int unit = 1;
-  dcopy_(size, S, 1, data(), 1);
+  dcopy_(size, olp->data(), 1, data(), 1);
 
-  int info;
-  dsyev_("V", "L", &ndim_, data(), &ndim_, eig, work, &lwork, &info); 
-  assert(info == 0);
-  delete[] work;
+  {
+    int info;
+    const int lwork = 5 * nbasis_;
+    unique_ptr<double[]> work(new double[lwork]);
+    dsyev_("V", "L", ndim_, data(), ndim_, eig.get(), work.get(), lwork, info); 
+    if(info) throw runtime_error("dsyev in tildex failed.");
+  }
   const double largest = fabs(eig[ndim_ - 1]);
 
   // counting how many orbital must be deleted owing to the linear dependency
@@ -56,23 +55,20 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
       data_[j + offset] *= scale; 
     }
   }
-  delete[] eig;
 #ifdef USE_CANONICAL
   mdim_ = ndim_ - cnt;
   if (cnt != 0) { 
     for (int i = 0; i != mdim_; ++i) {
-      dcopy_(&ndim_, &data_[(i + cnt) * ndim_], &unit, &data_[i * ndim_], &unit); 
+      dcopy_(ndim_, data()+(i+cnt)*ndim_, 1, data()+i*ndim_, 1); 
     }
   }
 #else
-  mdim_ = ndim_;
-  double* tmp = new double[size];
-  const int m = ndim_ - cnt;
-  const double one = 1.0;
-  const double zero = 0.0;
-  dgemm_("N", "T", &ndim_, &ndim_, &m, &one, &data_[cnt * ndim_], &ndim_, &data_[cnt * ndim_], &ndim_, &zero, tmp, &ndim_); 
-  dcopy_(&size, tmp, &unit, data_, &unit);
-  delete[] tmp;
+  {
+    mdim_ = ndim_;
+    unique_ptr<double[]> tmp(new double[size]);
+    dgemm_("N", "T", ndim_, ndim_, ndim_-cnt, 1.0, data()+cnt*ndim_, ndim_, data()+cnt*ndim_, ndim_, 0.0, tmp.get(), ndim_); 
+    dcopy_(size, tmp, 1, data_, 1);
+  }
 #endif
   
 

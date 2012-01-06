@@ -19,7 +19,8 @@ using namespace std;
 SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<Geometry> geom)
  : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
 
-  eig_ = new double[geom_->nbasis()];
+  unique_ptr<double[]> eig(new double[geom_->nbasis()]);
+  eig_ = move(eig);
   hcore_->symmetrize();
 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
@@ -41,13 +42,6 @@ SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<Geometry> ge
 
   init_schwarz();
 }
-
-
-SCF_base::~SCF_base() {
-  delete[] eig_;
-}
-
-
 
 
 void SCF_base::init_schwarz() {

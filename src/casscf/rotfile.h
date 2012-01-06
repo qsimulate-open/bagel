@@ -26,8 +26,7 @@ class RotFile {
 
   public:
     RotFile(const int iclos, const int iact, const int ivirt, const bool superci = true)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci),
-       size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)) {
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)) {
         std::unique_ptr<double[]> tmp(new double[size_]);
         data_ = std::move(tmp);
     };

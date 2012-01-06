@@ -88,5 +88,11 @@ static double dsyev_(const char* a, const char* b, const int c, double* d, const
 static double dsyev_(const char* a, const char* b, const int c, std::unique_ptr<double []>& d, const int e,
                      std::unique_ptr<double []>& f, std::unique_ptr<double []>& g, const int h, int& i)
                     {dsyev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,&i);};
+static void dsysv_(const char* uplo, const int n, const int nrhs, double* a, const int lda, int* ipiv, 
+                   double* b, const int ldb, double* work, const int lwork, int& info)
+                    {dsysv_(uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, &info);};
+static void dsysv_(const char* uplo, const int n, const int nrhs, std::unique_ptr<double[]>& a, const int lda, std::unique_ptr<int[]>& ipiv, 
+                   std::unique_ptr<double[]>& b, const int ldb, std::unique_ptr<double[]>& work, const int lwork, int& info)
+                    {dsysv_(uplo, &n, &nrhs, a.get(), &lda, ipiv.get(), b.get(), &ldb, work.get(), &lwork, &info);};
 
 #endif

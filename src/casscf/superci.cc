@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define DF 0
+#define DF 1
 
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
@@ -75,10 +75,8 @@ void SuperCI::compute() {
     shared_ptr<QFile> qtmp(new QFile(geom_->nbasis(), nact_));
     compute_qxr(fci_->jop()->mo2e_1ext_ptr(), fci_->rdm2_av(), qtmp);
     shared_ptr<Qvec> qxr(new Qvec(*qtmp));
-qxr->print();
 #else
     shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_->rdm2_av()));
-qxr->print();
 #endif
 
     cout << "     * Natural orbital transformation + Q vector  " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
@@ -101,17 +99,23 @@ qxr->print();
       shared_ptr<Fock<DF> > f_ao(new Fock<DF>(geom_, hcore_, denall, ref_->schwarz()));
       shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
       // inactive Fock operator
-      shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-      shared_ptr<Fock<DF> > finact_ao(new Fock<DF>(geom_, hcore_, deninact, ref_->schwarz()));
-      shared_ptr<Matrix1e> fs(new Matrix1e(*coeff % *finact_ao * *coeff));
-      finact = fs;
+      if (nclosed_) {
+        shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
+        shared_ptr<Fock<DF> > finact_ao(new Fock<DF>(geom_, hcore_, deninact, ref_->schwarz()));
+        shared_ptr<Matrix1e> fs(new Matrix1e(*coeff % *finact_ao * *coeff));
+        finact = fs;
+      } else {
+        finact = hcore_;
+      }
     }
     cout << "     * Fock + inactive Fock                       " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
     {
       // active-x Fock operator Dts finact_sx + Qtx
       shared_ptr<QFile> ft(new QFile(*qxr)); fact = ft; // nbasis_ runs first
-      for (int i = 0; i != nact_; ++i)
-        daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
+      if (nclosed_) {
+        for (int i = 0; i != nact_; ++i)
+          daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
+      }
     }
     {
       // active Fock' operator (Fts+Fst) / (ns+nt)
@@ -123,9 +127,7 @@ qxr->print();
 
     // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
     shared_ptr<QFile> ft4(new QFile(nact_, nact_)); gaa = ft4;
-fci_->rdm2_av()->print();
     dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
-fci_->rdm2_av()->print();
     double p = 0.0;
     for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
     for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;

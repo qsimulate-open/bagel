@@ -16,8 +16,9 @@ DensityFit::DensityFit(const int nbas, const int naux,
    : nbasis_(nbas), naux_(naux) {
 
   // this will be distributed in the future.
-  data_ = new double[nbasis_*nbasis_*naux];
-  fill(data_, data_+nbasis_*nbasis_*naux, 0.0);
+  std::unique_ptr<double[]> data__(new double[nbasis_*nbasis_*naux]);
+  data_ = move(data__);
+  fill(data_.get(), data_.get()+nbasis_*nbasis_*naux, 0.0);
 
   vector<shared_ptr<Shell> > basis; 
   vector<int> offset;
@@ -81,8 +82,9 @@ DensityFit::DensityFit(const int nbas, const int naux,
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  data2_ = new double[naux*naux];
-  fill(data2_, data2_+naux*naux, 0.0);
+  unique_ptr<double[]> data2__(new double[naux*naux]);
+  data2_ = move(data2__);
+  fill(data2(), data2()+naux*naux, 0.0);
 
   for (int i0 = 0; i0 != aux_size; ++i0) {
     const std::shared_ptr<Shell>  b0 = aux_basis[i0];
@@ -113,11 +115,11 @@ DensityFit::DensityFit(const int nbas, const int naux,
   }
 
   const int lwork = 5*naux;
-  double* vec = new double[naux];
-  double* work = new double[std::max(lwork,naux*naux)];
+  std::unique_ptr<double[]> vec(new double[naux]);
+  std::unique_ptr<double[]> work(new double[std::max(lwork,naux*naux)]);
 
   int info;
-  dsyev_("V", "U", &naux, data2_, &naux, vec, work, &lwork, &info); 
+  dsyev_("V", "U", naux, data2_, naux, vec, work, lwork, info); 
   if (info) throw std::runtime_error("dsyev failed in DF fock builder");
 
   for (int i = 0; i != naux; ++i)
@@ -129,15 +131,7 @@ DensityFit::DensityFit(const int nbas, const int naux,
   }
   // work now contains -1/2
   dgemm_("N", "T", naux, naux, naux, 1.0, data2_, naux, data2_, naux, 0.0, work, naux); 
-  copy(work, work+naux*naux, data2_);
+  copy(work.get(), work.get()+naux*naux, data2());
 
-  delete[] vec;
-  delete[] work;
-}
-
-
-DensityFit::~DensityFit() {
-  delete[] data_;
-  delete[] data2_;
 }
 

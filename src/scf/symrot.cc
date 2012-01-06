@@ -9,6 +9,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/macros.h>
 
@@ -29,8 +30,8 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
 
   for (int i = 1; i <= lmax; ++i) {
     const int dim = (i + 1) * (i + 2) / 2;
-    double* pitmp = new double[dim * dim];
-    fill(pitmp, pitmp + dim * dim, 0.0);
+    unique_ptr<double[]> pitmp(new double[dim*dim]);
+    fill(pitmp.get(), pitmp.get() + dim * dim, 0.0);
 
     int cnt = 0;
     for (int z = 0; z <= i; ++z) {
@@ -50,9 +51,9 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
     if (spherical && i > 1) {
       struct CarSphList carsph;
       const int dimsph = 2 * i + 1;
-      double* pisph = new double[dimsph * dimsph];
+      unique_ptr<double[]> pisph(new double[dimsph * dimsph]);
       const int carsphindex = i * ANG_HRR_END + i;
-      carsph.carsphfunc_call(carsphindex, 1, pitmp, pisph); 
+      carsph.carsphfunc_call(carsphindex, 1, pitmp.get(), pisph.get()); 
       for (int j = 0; j != dimsph; ++j) {
         double norm = 0.0;
         for (int k = 0; k != dimsph; ++k)
@@ -61,8 +62,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
         for (int k = 0; k != dimsph; ++k)
           pisph[k + j * dimsph] *= norm;
       }
-      pi.insert(pi.end(), pisph, pisph + dimsph * dimsph);
-      delete[] pisph;
+      pi.insert(pi.end(), pisph.get(), pisph.get() + dimsph*dimsph);
     } else {
       for (int j = 0; j != dim; ++j) {
         double norm = 0.0;
@@ -72,9 +72,8 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
         for (int k = 0; k != dim; ++k)
           pitmp[k + j * dim] *= norm;
       }
-      pi.insert(pi.end(), pitmp, pitmp + dim * dim);
+      pi.insert(pi.end(), pitmp.get(), pitmp.get() + dim*dim);
     }
-    delete[] pitmp;
     primrot_.push_back(pi);
   }
 

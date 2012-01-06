@@ -27,36 +27,29 @@ class DIIS {
 
     Container_type_ data_;
 
-    double* matrix_;
-    double* matrix_save_;
-    double* coeff_;
-    double* work_;
-    int* ipiv_;
+    std::unique_ptr<double[]> matrix_;
+    std::unique_ptr<double[]> matrix_save_;
+    std::unique_ptr<double[]> coeff_;
+    std::unique_ptr<double[]> work_;
+    std::unique_ptr<int[]> ipiv_;
     const int lwork_;
   
   public:
-    DIIS(const int ndiis) : ndiis_(ndiis), nld_(ndiis + 1), lwork_(nld_ * nld_) {
-      matrix_ = new double[nld_ * nld_]; 
-      matrix_save_ = new double[nld_ * nld_]; 
-      coeff_ = new double[nld_]; 
-      work_ = new double[lwork_];
-      ipiv_ = new int[nld_];
-    };  
+    DIIS(const int ndiis) : ndiis_(ndiis), nld_(ndiis+1), lwork_((ndiis+1)*(ndiis+1)),
+      matrix_(new double[(ndiis+1)*(ndiis+1)]),
+      matrix_save_(new double[(ndiis+1)*(ndiis+1)]),
+      coeff_(new double[ndiis+1]),
+      work_(new double[(ndiis+1)*(ndiis+1)]),
+      ipiv_(new int[(ndiis+1)*(ndiis+1)]) { };  
 
-    ~DIIS() {
-      delete[] matrix_;
-      delete[] matrix_save_;
-      delete[] coeff_;
-      delete[] work_;
-      delete[] ipiv_;
-    };
+    ~DIIS() { };
 
     RefT extrapolate(const std::pair<RefT, RefT> input) {
       RefT v = input.first;
       RefT e = input.second;
       data_.push_back(input);
-      const int unit = 1;
       const int size = nld_ * nld_;
+
       if (data_.size() > ndiis_) {
         data_.pop_front();
         for (int i = 1; i != ndiis_; ++i) { 
@@ -64,7 +57,7 @@ class DIIS {
             matrix_[(j - 1) + (i - 1) * nld_] = matrix_save_[j + i * nld_]; 
         }
       } else if (data_.size() != 1) {
-        dcopy_(&size, matrix_save_, &unit, matrix_, &unit); 
+        dcopy_(size, matrix_save_, 1, matrix_, 1); 
       } 
       const int cnum = data_.size();
       iterator data_iter = data_.begin();
@@ -78,12 +71,12 @@ class DIIS {
       for (int i = 0; i != cnum; ++i) coeff_[i] = 0.0;
       coeff_[cnum] = -1.0;
 
-      dcopy_(&size, matrix_, &unit, matrix_save_, &unit); 
+      dcopy_(size, matrix_, 1, matrix_save_, 1); 
 
       const int cdim = cnum + 1;
-      int info_in_diis;
-      dsysv_("U", &cdim, &unit, matrix_, &nld_, ipiv_, coeff_, &nld_, work_, &lwork_, &info_in_diis);
-      assert(info_in_diis == 0);
+      int info;
+      dsysv_("U", cdim, 1, matrix_, nld_, ipiv_, coeff_, nld_, work_, lwork_, info);
+      if (info) throw std::runtime_error("DSYSV failed in diis.h");
 
       RefT out = input.first->clone();
 

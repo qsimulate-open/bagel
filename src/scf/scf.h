@@ -38,7 +38,7 @@ class SCF : public SCF_base {
         if (DF) hcore_fock = fock;
        
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
-        intermediate.diagonalize(eig_);
+        intermediate.diagonalize(eig());
         std::shared_ptr<Coeff> new_coeff(new Coeff(*tildex_ * intermediate));
         coeff_ = new_coeff;
         std::shared_ptr<Matrix1e> guess_density(new Matrix1e(new_coeff->form_density_rhf()));
@@ -73,7 +73,7 @@ class SCF : public SCF_base {
     
         Matrix1e intermediate = *coeff_ % *fock * *coeff_;
 //      intermediate.add_diag(1.0, geom_->nocc()/2, geom_->nbasis());
-        intermediate.diagonalize(eig_);
+        intermediate.diagonalize(eig());
         std::shared_ptr<Coeff> new_coeff(new Coeff((*coeff_) * intermediate));
         coeff_ = new_coeff;
         std::shared_ptr<Matrix1e> new_density(new Matrix1e(coeff_->form_density_rhf()));
@@ -104,7 +104,7 @@ class SCF : public SCF_base {
 #if 1
           std::shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
           Matrix1e intermediate = *tildex_ % *tmp_fock * *tildex_;
-          intermediate.diagonalize(eig_);
+          intermediate.diagonalize(eig());
           std::shared_ptr<Coeff> tmp_coeff(new Coeff((*tildex_) * intermediate));
           std::shared_ptr<Matrix1e> tmp(new Matrix1e(tmp_coeff->form_density_rhf())); 
           diis_density = tmp;

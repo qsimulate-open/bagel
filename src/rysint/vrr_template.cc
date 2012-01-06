@@ -1448,9 +1448,9 @@ void ERIBatch::perform_VRR3() {
     }
 
   } else {
-    double* workx = new double[worksize];
-    double* worky = new double[worksize];
-    double* workz = new double[worksize];
+    double* workx = stack->get(worksize);
+    double* worky = stack->get(worksize);
+    double* workz = stack->get(worksize);
     double iyiz[3];
 
     for (int j = 0; j != screening_size_; ++j) {
@@ -1507,9 +1507,7 @@ void ERIBatch::perform_VRR3() {
 
     }
 
-    delete[] workz;
-    delete[] worky;
-    delete[] workx;
+    stack->release(worksize*3);
   }
 }
 
