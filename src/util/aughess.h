@@ -22,7 +22,7 @@ class AugHess {
     std::list<std::shared_ptr<T> > sigma_;
 
     const int max_;    
-    std::shared_ptr<T> grad_;
+    const std::shared_ptr<T> grad_;
 
     // contains 
     std::vector<double> mat_;
@@ -90,6 +90,14 @@ class AugHess {
       return out;
     };
 
+    std::shared_ptr<T> civec() const {
+      std::shared_ptr<T> out = c_.front()->clone();
+      int cnt = 0;
+      for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
+        out->daxpy(vec_[cnt], *i); 
+      } 
+      return out;
+    };
 
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T> cc) { return cc->orthog(c_); }

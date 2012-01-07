@@ -21,12 +21,14 @@ class WernerKnowles : public CASSCF {
                                            std::shared_ptr<Coeff>);
 
     double thresh_mmicro_;
+    int max_mmicro_iter_;
 
   public:
     WernerKnowles(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref)
       : CASSCF(idat, geom, ref) {common_init(); 
       // get thresh (for micro iteration) from the input
       thresh_mmicro_ = read_input<double>(idat, "thresh_mmicro", thresh_micro_);
+      max_mmicro_iter_ = read_input<int>(idat, "maxiter_mmicro", 5);
     };
     ~WernerKnowles() {};
 

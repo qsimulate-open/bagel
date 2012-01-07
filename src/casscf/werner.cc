@@ -28,8 +28,10 @@ void WernerKnowles::compute() {
 
   // All the equation numbers refer to those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
   // macro iteration
-  for (int iter = 0; iter != 1; ++iter) {
-//for (int iter = 0; iter != max_iter_; ++iter) {
+  mute_stdcout();
+  for (int iter = 0; iter != max_iter_; ++iter) {
+
+    int start = ::clock();
 
     // performs FCI, which also computes one-index transformed integrals 
     fci_->compute();
@@ -72,7 +74,8 @@ void WernerKnowles::compute() {
     // unit matrix is also prepared for convenience
     shared_ptr<Matrix1e> one(new Matrix1e(*U));
 
-    for (int miter = 0; miter != max_micro_iter_; ++miter) {
+    int miter;
+    for (miter = 0; miter != max_micro_iter_; ++miter) {
       shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
 
       shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*ref_->coeff() % *hcore_ * *ref_->coeff()));
@@ -82,10 +85,14 @@ void WernerKnowles::compute() {
 
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
+      grad->purify_redrotation(nclosed_,nact_,nvirt_);
+      const double error_micro = grad->ddot(*grad)/grad->size();
+      cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
 
+      if (error_micro < thresh_micro_) break; 
 
       // initializing a Davidson manager
-      AugHess<Matrix1e> aughess(max_micro_iter_+1, grad); 
+      AugHess<Matrix1e> aughess(max_mmicro_iter_+2, grad); 
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
       shared_ptr<Matrix1e> C(new Matrix1e((*U % *bvec + *bvec % *U)*0.5));
@@ -94,14 +101,9 @@ void WernerKnowles::compute() {
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
       for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
 
-#if 1
-      grad->purify_redrotation(nclosed_,nact_,nvirt_);
-      dR->purify_redrotation(nclosed_,nact_,nvirt_);
-#endif
-
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
-      for (int mmiter = 0; mmiter != max_micro_iter_; ++mmiter) {
+      for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter) {
 
         const int mstart = ::clock();
         // compute U dR
@@ -109,7 +111,6 @@ void WernerKnowles::compute() {
 
         // update B
         shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_mo_, fci_, jvec, UdR, UdR, ref_->coeff());
-// TODO check
         *new_bvec *= 0.5;
 
         // compute  C dR + dR C
@@ -118,35 +119,53 @@ void WernerKnowles::compute() {
         // compute U^dagger B - B^dagger U
         // compute Eq.29
         shared_ptr<Matrix1e> sigma(new Matrix1e(*U%*new_bvec-*new_bvec%*U-*dRA));
-  
-#if 1
         sigma->purify_redrotation(nclosed_,nact_,nvirt_);
-#endif
 
         shared_ptr<Matrix1e> residual = aughess.compute_residual(dR, sigma);
 
-        const double error = residual->ddot(*residual) / residual->size();
+        const double error_mmicro = residual->ddot(*residual) / residual->size();
         const double mic_energy = 0.0; // TODO
 
         const int mend = ::clock();
+#if 0
         if (mmiter == 0) cout << endl << "     == micro iteration == " << endl;
         cout << setw(10) << mmiter << "   " << setw(20) << setprecision(12) << mic_energy << " "
              << setw(10) << scientific << setprecision(2) << error << fixed << " " << (mend - mstart)/cps << endl;
+#endif
 
-        if (error < thresh_mmicro_) { cout << endl; break; }
-        if (mmiter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
+        if (error_mmicro < thresh_mmicro_) { cout << endl; break; }
+        if (mmiter+1 == max_micro_iter_) { cout << endl; break; } 
 
         // update dR;
         for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
         aughess.orthog(residual);
         dR = residual;
+        dR->purify_redrotation(nclosed_,nact_,nvirt_);
 
       }
-break;
+      dR = aughess.civec();
+      shared_ptr<Matrix1e> dU = dR->exp();
+      dU->purify_unitary();
+      *U *= *dU;
 
+    }
+    shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
+    ref_->set_coeff(newcc);
+
+    int end = ::clock();
+const double error = 0.0; // TODO
+    if (nstate_ != 1 && iter) cout << endl;
+    for (int i = 0; i != nstate_; ++i) {
+      resume_stdcout();
+      cout << indent << setw(5) << iter << setw(3) << i << setw(4) << miter
+                                        << setw(15) << fixed << setprecision(8) << energy[i] << "   "
+                                        << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
+                                        << (end - start)/cps << endl;
+      mute_stdcout();
     }
 
   }
+  resume_stdcout();
 
 }
 

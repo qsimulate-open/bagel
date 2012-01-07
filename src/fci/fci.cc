@@ -29,7 +29,7 @@ void FCI::common_init() {
   nstate_ = read_input<int>(idata_, "nstate", 1);
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
-  thresh_ = read_input<double>(idata_, "thresh", 1.0e-12);
+  thresh_ = read_input<double>(idata_, "thresh", 1.0e-20);
   thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
   norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
 

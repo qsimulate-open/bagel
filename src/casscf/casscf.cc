@@ -33,7 +33,7 @@ void CASSCF::common_init() {
   // get nstate from the input
   nstate_ = read_input<int>(idata_, "nstate", 1);
   // get thresh (for macro iteration) from the input
-  thresh_ = read_input<double>(idata_, "thresh", 1.0e-8);
+  thresh_ = read_input<double>(idata_, "thresh", 1.0e-10);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = read_input<double>(idata_, "thresh_micro", thresh_);
 
@@ -223,12 +223,12 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   } else {
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = gaa->element(i,i) + occup_[i] * f->element(j+nocc_, j+nocc_);
+        *target = gaa->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_);
 
     target = denom->ptr_vc();
     for (int i = 0; i != nclosed_; ++i)
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = 2.0 * f->element(j+nocc_, j+nocc_) - 2.0 * f->element(i, i);
+        *target = 2.0*f->element(j+nocc_, j+nocc_) - 2.0*f->element(i, i);
 
     target = denom->ptr_ca();
     for (int i = 0; i != nact_; ++i) {
