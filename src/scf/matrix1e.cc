@@ -195,9 +195,18 @@ Matrix1e Matrix1e::operator*(const double& a) const {
   dscal_(nbasis_*nbasis_, a, out.data(), 1);
   return out;
 }
+Matrix1e Matrix1e::operator/(const double& a) const {
+  Matrix1e out(*this);
+  dscal_(nbasis_*nbasis_, 1.0/a, out.data(), 1);
+  return out;
+}
 
 Matrix1e& Matrix1e::operator*=(const double& a) {
   dscal_(nbasis_*nbasis_, a, data_, 1);
+  return *this;
+}
+Matrix1e& Matrix1e::operator/=(const double& a) {
+  dscal_(nbasis_*nbasis_, 1.0/a, data_, 1);
   return *this;
 }
 
@@ -342,6 +351,19 @@ void Matrix1e::purify_unitary() {
 
 }
 
+void Matrix1e::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
+
+  for (int g = 0; g != nclosed; ++g)
+    for (int h = 0; h != nclosed; ++h)
+      element(h,g)=0.0;
+  for (int g = 0; g != nact; ++g)
+    for (int h = 0; h != nact; ++h)
+      element(h+nclosed,g+nclosed)=0.0;
+  for (int g = 0; g != nvirt; ++g)
+    for (int h = 0; h != nvirt; ++h)
+      element(h+nclosed+nact,g+nclosed+nact)=0.0;
+
+}
 
 void Matrix1e::purify_idempotent(const Matrix1e& s) {
   *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0; 
@@ -364,6 +386,16 @@ void Matrix1e::inverse() {
 
 }
 
+
+double Matrix1e::orthog(const std::list<std::shared_ptr<Matrix1e> > o) {
+  for (auto iter = o.begin(); iter != o.end(); ++iter) {
+    const double m = this->ddot(*iter);
+    this->daxpy(-m, *iter);
+  }
+  const double n = norm();
+  *this /= n;
+  return n;
+}
 
 void Matrix1e::print(const string name, const int size) const { 
  

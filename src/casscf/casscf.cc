@@ -232,7 +232,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
     target = denom->ptr_ca();
     for (int i = 0; i != nact_; ++i) {
-      const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i));// / (2.0 - occup_[i]);
+      const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i));
       for (int j = 0; j != nclosed_; ++j, ++target)
         *target = fac - f->element(j, j)*(2.0 - occup_[i]);
     }

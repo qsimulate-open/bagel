@@ -49,7 +49,9 @@ class Matrix1e {
     Matrix1e operator*(const Matrix1e&) const;
     Matrix1e& operator*=(const Matrix1e&);
     Matrix1e operator*(const double& a) const;
+    Matrix1e operator/(const double& a) const;
     Matrix1e& operator*=(const double& a);
+    Matrix1e& operator/=(const double& a);
     Matrix1e operator%(const Matrix1e&) const; // caution
     Matrix1e operator^(const Matrix1e&) const; // caution
     Matrix1e operator+(const Matrix1e&) const;
@@ -85,14 +87,11 @@ class Matrix1e {
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
     void purify_idempotent(const Matrix1e& s);
+    void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     void print(const std::string in = "", const int size = 10) const;
 
-    double orthog(const std::list<std::shared_ptr<Matrix1e> > o) {
-      for (auto iter = o.begin(); iter != o.end(); ++iter) daxpy(-ddot(*iter), *iter);
-      const double n = norm(); *this *= 1.0/n;
-      return n;
-    };
+    double orthog(const std::list<std::shared_ptr<Matrix1e> > o);
 };
 
 #endif

@@ -8,11 +8,12 @@
 using namespace std;
 
 
-shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<Geometry> geom) const {
+shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_; 
   shared_ptr<Matrix1e> out(new Matrix1e(geom, nbasis_, nbasis_));
+  fill(out->data(), out->data()+out->size(), a);
 
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {

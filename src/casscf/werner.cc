@@ -12,7 +12,6 @@
 
 using namespace std;
 
-#define DF 1
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void WernerKnowles::compute() {
@@ -21,16 +20,13 @@ void WernerKnowles::compute() {
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
-  shared_ptr<Matrix1e> hcore_mo_;
   {
     shared_ptr<Hcore> hc(new Hcore(geom_));
-    shared_ptr<Fock<DF> > fc(new Fock<DF>(geom_, hc));
+    shared_ptr<Fock<1> > fc(new Fock<1>(geom_, hc));
     hcore_ = fc;
-    shared_ptr<Matrix1e> hcore(new Matrix1e(*ref_->coeff() % *fc * *ref_->coeff()));
-    hcore_mo_ = hcore;
   }
 
-  // All the equation numbers refer to as those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
+  // All the equation numbers refer to those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
   // macro iteration
   for (int iter = 0; iter != 1; ++iter) {
 //for (int iter = 0; iter != max_iter_; ++iter) {
@@ -41,7 +37,7 @@ void WernerKnowles::compute() {
     // get energy
     vector<double> energy = fci_->energy();
 
-#if 0
+#if 1
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
     const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
@@ -70,7 +66,7 @@ void WernerKnowles::compute() {
       shared_ptr<QFile>    fact, factp, gaa;
       shared_ptr<RotFile> denom_;
       one_body_operators(f, fact, factp, gaa, denom_, false);
-      denom = denom_->unpack(geom_);
+      denom = denom_->unpack(geom_, 1.0e100);
     }
 
     // unit matrix is also prepared for convenience
@@ -79,10 +75,14 @@ void WernerKnowles::compute() {
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
 
+      shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*ref_->coeff() % *hcore_ * *ref_->coeff()));
+
       // compute initial B (Eq. 19)
       shared_ptr<Matrix1e> bvec = compute_bvec(hcore_mo_, fci_, jvec, U, T, ref_->coeff());
+
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
+
 
       // initializing a Davidson manager
       AugHess<Matrix1e> aughess(max_micro_iter_+1, grad); 
@@ -92,6 +92,12 @@ void WernerKnowles::compute() {
 
       // initial dR value.
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
+      for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
+
+#if 1
+      grad->purify_redrotation(nclosed_,nact_,nvirt_);
+      dR->purify_redrotation(nclosed_,nact_,nvirt_);
+#endif
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
@@ -103,6 +109,7 @@ void WernerKnowles::compute() {
 
         // update B
         shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_mo_, fci_, jvec, UdR, UdR, ref_->coeff());
+// TODO check
         *new_bvec *= 0.5;
 
         // compute  C dR + dR C
@@ -111,8 +118,13 @@ void WernerKnowles::compute() {
         // compute U^dagger B - B^dagger U
         // compute Eq.29
         shared_ptr<Matrix1e> sigma(new Matrix1e(*U%*new_bvec-*new_bvec%*U-*dRA));
+  
+#if 1
+        sigma->purify_redrotation(nclosed_,nact_,nvirt_);
+#endif
 
         shared_ptr<Matrix1e> residual = aughess.compute_residual(dR, sigma);
+
         const double error = residual->ddot(*residual) / residual->size();
         const double mic_energy = 0.0; // TODO
 
@@ -174,6 +186,7 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Matrix1e> hcore, sha
   }
 
   dgemm_("T", "N", nbasis_, nocc_, nbas, 1.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);
+
   return out;
 }
 
