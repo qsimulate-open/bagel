@@ -75,6 +75,7 @@ void WernerKnowles::compute() {
     shared_ptr<Matrix1e> one(new Matrix1e(*U));
 
     int miter;
+    double error;
     for (miter = 0; miter != max_micro_iter_; ++miter) {
       shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
 
@@ -87,6 +88,7 @@ void WernerKnowles::compute() {
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
       const double error_micro = grad->ddot(*grad)/grad->size();
+      if (miter == 0) error = error_micro;
       cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
 
       if (error_micro < thresh_micro_) break; 
@@ -153,7 +155,6 @@ void WernerKnowles::compute() {
     ref_->set_coeff(newcc);
 
     int end = ::clock();
-const double error = 0.0; // TODO
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       resume_stdcout();
@@ -163,6 +164,7 @@ const double error = 0.0; // TODO
                                         << (end - start)/cps << endl;
       mute_stdcout();
     }
+    if (error < thresh_) break;
 
   }
   resume_stdcout();

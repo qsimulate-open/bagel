@@ -80,13 +80,18 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
         if (!ref) throw runtime_error("CASSCF needs a reference");
 
-#if 0
-        shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
-        casscf->compute();
-        ref = casscf->conv_to_ref();
-#endif
-        shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
-        werner->compute();
+        string algorithm = read_input<string>(iter->second, "algorithm", ""); 
+        if (algorithm == "superci" || algorithm == "") {
+          shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
+          casscf->compute();
+          ref = casscf->conv_to_ref();
+        } else if (algorithm == "werner" || algorithm == "knowles") {
+          shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
+          werner->compute();
+          ref = werner->conv_to_ref();
+        } else {
+          throw runtime_error("unknown CASSCF algorithm specified.");
+        }
 
       } else if (method == "fci") {
         if (!ref) throw runtime_error("FCI needs a reference");
