@@ -38,6 +38,7 @@ class Matrix1e {
     const int ndim() const { return ndim_; }; 
     const int mdim() const { return mdim_; }; 
     double* data() const { return data_.get(); };
+    double& data(const size_t i) { return *(data_.get()+i); };
     double& element(int i, int j) { return *element_ptr(i, j); };
     double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
 

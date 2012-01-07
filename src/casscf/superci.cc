@@ -25,7 +25,6 @@ void SuperCI::compute() {
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
-  shared_ptr<Fock<DF> > hcore_;
   {
     shared_ptr<Hcore> hc(new Hcore(geom_));
     shared_ptr<Fock<DF> > fc(new Fock<DF>(geom_, hc)); hcore_ = fc;
@@ -69,70 +68,19 @@ void SuperCI::compute() {
     if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
       throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
 
-    // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
-    // note: this should be after natorb transformation.
-    shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_));
-
-    cout << "     * Natural orbital transformation + Q vector  " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
-
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
     
     // Davidson utility. We diagonalize a super CI matrix every macro iteration
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
     shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_));
 
-    // computes f and f_act
-    // TODO call to fock builder should be done only once.
-    shared_ptr<Matrix1e> f, finact;
+
+    // compute one-boedy operators
+    shared_ptr<Matrix1e> f;
     shared_ptr<QFile>    fact, factp, gaa;
-    shared_ptr<Coeff> coeff = ref_->coeff();
+    shared_ptr<RotFile> denom_;
+    one_body_operators(f, fact, factp, gaa, denom_);
 
-    {
-      // Fock operators
-      if (nclosed_) {
-        shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-        shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
-        dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
-        shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_inactao * *coeff));
-        finact = ft;
-
-        shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-        shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
-        shared_ptr<Fock<DF> > fact_ao(new Fock<DF>(geom_, hcore_, denact, ref_->schwarz()));
-        shared_ptr<Matrix1e> fact(new Matrix1e(*coeff % (*fact_ao-*hcore_) * *coeff));
-        shared_ptr<Matrix1e> fs(new Matrix1e(*finact+*fact));
-        f = fs;
-      } else {
-        shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-        shared_ptr<Fock<DF> > f_ao(new Fock<DF>(geom_, hcore_, denall, ref_->schwarz()));
-        shared_ptr<Matrix1e> ft(new Matrix1e(*coeff % *f_ao * *coeff)); f = ft;
-
-        finact = hcore_;
-      }
-    }
-    cout << "     * Fock + inactive Fock                       " << setprecision(2) << (::clock() - start0)/cps << " sec" << endl; start0 = ::clock();
-    {
-      // active-x Fock operator Dts finact_sx + Qtx
-      shared_ptr<QFile> ft(new QFile(*qxr)); fact = ft; // nbasis_ runs first
-      if (nclosed_) {
-        for (int i = 0; i != nact_; ++i)
-          daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
-      }
-    }
-    {
-      // active Fock' operator (Fts+Fst) / (ns+nt)
-      shared_ptr<QFile> ft(new QFile(nact_, nact_)); factp = ft;
-      for (int i = 0; i != nact_; ++i)
-        for (int j = 0; j != nact_; ++j)
-          factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
-    }
-
-    // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-    shared_ptr<QFile> ft4(new QFile(nact_, nact_)); gaa = ft4;
-    dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
-    double p = 0.0;
-    for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
-    for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
 
     // first, <proj|H|0> is computed
     sigma_->zero();
@@ -150,8 +98,6 @@ void SuperCI::compute() {
     // setting error of macro iteration
     gradient = sigma_->ddot(*sigma_) / sigma_->size();
 
-    // denominator
-    shared_ptr<RotFile> denom_ = const_denom(gaa, factp, f);
 
     shared_ptr<RotFile> init_sigma(new RotFile(*sigma_));
 
@@ -276,16 +222,6 @@ shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
   *out = *seed * *out;
 
   return out;
-}
-
-
-shared_ptr<Coeff> SuperCI::update_coeff(const shared_ptr<Coeff> cold, vector<double> mat) const {
-  shared_ptr<Matrix1e> cnew(new Matrix1e(*dynamic_cast<Matrix1e*>(cold.get())));
-  int nbas = geom_->nbasis();
-  dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
-                   0.0, cnew->data()+nbas*nclosed_, nbas);
-  shared_ptr<Coeff> cnew1(new Coeff(*cnew));
-  return cnew1;
 }
 
 

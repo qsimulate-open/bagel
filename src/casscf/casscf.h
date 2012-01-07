@@ -16,6 +16,7 @@
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/fci/rdm.h>
+#include <src/casscf/rotfile.h>
 
 class CASSCF {
 
@@ -48,6 +49,12 @@ class CASSCF {
     void resume_stdcout();
 
     std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
+
+    std::shared_ptr<Fock<1> > hcore_;
+    void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
+                            std::shared_ptr<RotFile>&, const bool superci=true);
+
+    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>) const;
 
   public:
     CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref);

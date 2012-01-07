@@ -11,8 +11,6 @@
 #include <map>
 #include <src/scf/scf.h>
 #include <src/casscf/casscf.h>
-#include <src/casscf/rotfile.h>
-#include <src/casscf/qvec.h>
 #include <src/fci/rdm.h>
 
 class SuperCI : public CASSCF {
@@ -32,8 +30,6 @@ class SuperCI : public CASSCF {
     void grad_ca(const std::shared_ptr<Matrix1e> fock, const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
 
     void compute_qxr(double* int1ext, std::shared_ptr<RDM<2> > rdm2, std::shared_ptr<QFile> qxr);
-
-    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>) const;
 
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
                       const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f);

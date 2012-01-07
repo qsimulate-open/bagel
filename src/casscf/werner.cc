@@ -21,12 +21,13 @@ void WernerKnowles::compute() {
   cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
   // initializing Hcore matrix (redundant copy, but I can live with it).
-  shared_ptr<Matrix1e> hcore_;
+  shared_ptr<Matrix1e> hcore_mo_;
   {
     shared_ptr<Hcore> hc(new Hcore(geom_));
     shared_ptr<Fock<DF> > fc(new Fock<DF>(geom_, hc));
+    hcore_ = fc;
     shared_ptr<Matrix1e> hcore(new Matrix1e(*ref_->coeff() % *fc * *ref_->coeff()));
-    hcore_ = hcore;
+    hcore_mo_ = hcore;
   }
 
   // All the equation numbers refer to as those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
@@ -40,11 +41,37 @@ void WernerKnowles::compute() {
     // get energy
     vector<double> energy = fci_->energy();
 
+#if 0
+    // here make a natural orbitals and update the coefficients
+    // this effectively updates 1,2RDM and integrals
+    const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
+    // new coefficients
+    shared_ptr<Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
+    ref_->set_coeff(new_coeff);
+    // occupation number of the natural orbitals
+    occup_ = natorb.second;
+    if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
+      throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
+#else
+    occup_ = fci_->rdm1_av()->diag();
+#endif
+
+
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
     // initially U is unit
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
     U->unit();
+
+    // denominator
+    shared_ptr<Matrix1e> denom;
+    {
+      shared_ptr<Matrix1e> f;
+      shared_ptr<QFile>    fact, factp, gaa;
+      shared_ptr<RotFile> denom_;
+      one_body_operators(f, fact, factp, gaa, denom_, false);
+      denom = denom_->unpack(geom_);
+    }
 
     // unit matrix is also prepared for convenience
     shared_ptr<Matrix1e> one(new Matrix1e(*U));
@@ -53,7 +80,7 @@ void WernerKnowles::compute() {
       shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
 
       // compute initial B (Eq. 19)
-      shared_ptr<Matrix1e> bvec = compute_bvec(hcore_, fci_, jvec, U, T, ref_->coeff());
+      shared_ptr<Matrix1e> bvec = compute_bvec(hcore_mo_, fci_, jvec, U, T, ref_->coeff());
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
 
@@ -65,7 +92,6 @@ void WernerKnowles::compute() {
 
       // initial dR value.
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
-//    shared_ptr<Matrix1e> dR(new Matrix1e(geom_));
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
@@ -76,7 +102,7 @@ void WernerKnowles::compute() {
         shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
 
         // update B
-        shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_, fci_, jvec, UdR, UdR, ref_->coeff());
+        shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_mo_, fci_, jvec, UdR, UdR, ref_->coeff());
         *new_bvec *= 0.5;
 
         // compute  C dR + dR C
@@ -99,6 +125,7 @@ void WernerKnowles::compute() {
         if (mmiter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
         // update dR;
+        for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
         aughess.orthog(residual);
         dR = residual;
 
