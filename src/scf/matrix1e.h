@@ -73,6 +73,7 @@ class Matrix1e {
     const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
+    void dscal(const double a) { dscal_(size(), a, data(), 1); };
 
     void add_diag(const double a, const int i, const int j)
       { for (int ii = i; ii != j; ++ii) element(ii,ii) += a; };
@@ -85,6 +86,12 @@ class Matrix1e {
     void purify_idempotent(const Matrix1e& s);
 
     void print(const std::string in = "", const int size = 10) const;
+
+    double orthog(const std::list<std::shared_ptr<Matrix1e> > o) {
+      for (auto iter = o.begin(); iter != o.end(); ++iter) daxpy(-ddot(*iter), *iter);
+      const double n = norm(); *this *= 1.0/n;
+      return n;
+    };
 };
 
 #endif

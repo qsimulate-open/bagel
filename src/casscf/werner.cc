@@ -8,11 +8,12 @@
 #include <src/casscf/jvec.h>
 #include <src/scf/matrix1e.h>
 #include <src/casscf/rotfile.h>
-#include <src/util/davidson.h>
+#include <src/util/aughess.h>
 
 using namespace std;
 
 #define DF 1
+static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void WernerKnowles::compute() {
   const string indent = "  ";
@@ -40,7 +41,6 @@ void WernerKnowles::compute() {
     vector<double> energy = fci_->energy();
 
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
-    shared_ptr<RotFile> R(new RotFile(nclosed_, nact_, nvirt_));
 
     // initially U is unit
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
@@ -51,38 +51,66 @@ void WernerKnowles::compute() {
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
+
       // compute initial B (Eq. 19)
       shared_ptr<Matrix1e> bvec = compute_bvec(hcore_, fci_, jvec, U, T, ref_->coeff());
-
-      // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
+      // compute gradient
+      shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
 
       // initializing a Davidson manager
-      DavidsonDiag<RotFile> davidson(1,max_micro_iter_); 
+      AugHess<Matrix1e> aughess(max_micro_iter_+1, grad); 
 
-break;
+      // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
+      shared_ptr<Matrix1e> C(new Matrix1e((*U % *bvec + *bvec % *U)*0.5));
+
+      // initial dR value.
+      shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
+//    shared_ptr<Matrix1e> dR(new Matrix1e(geom_));
 
       // solving Eq. 30 of Werner and Knowles
-      for (int mmiter = 0; mmiter != max_micro_iter_; +mmiter) {
-        if (mmiter != 0) {
-          // update B
+      // fixed U, solve for dR.
+      for (int mmiter = 0; mmiter != max_micro_iter_; ++mmiter) {
 
-          // compute  C dR + dR C
+        const int mstart = ::clock();
+        // compute U dR
+        shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
 
-        }
+        // update B
+        shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_, fci_, jvec, UdR, UdR, ref_->coeff());
+        *new_bvec *= 0.5;
+
+        // compute  C dR + dR C
+        shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
 
         // compute U^dagger B - B^dagger U
+        // compute Eq.29
+        shared_ptr<Matrix1e> sigma(new Matrix1e(*U%*new_bvec-*new_bvec%*U-*dRA));
 
-        // computes Epsilon
+        shared_ptr<Matrix1e> residual = aughess.compute_residual(dR, sigma);
+        const double error = residual->ddot(*residual) / residual->size();
+        const double mic_energy = 0.0; // TODO
 
-        // computes Eq.30
+        const int mend = ::clock();
+        if (mmiter == 0) cout << endl << "     == micro iteration == " << endl;
+        cout << setw(10) << mmiter << "   " << setw(20) << setprecision(12) << mic_energy << " "
+             << setw(10) << scientific << setprecision(2) << error << fixed << " " << (mend - mstart)/cps << endl;
+
+        if (error < thresh_mmicro_) { cout << endl; break; }
+        if (mmiter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
+
+        // update dR;
+        aughess.orthog(residual);
+        dR = residual;
 
       }
+break;
 
     }
 
   }
 
 }
+
 
 
 // compute B according to Eq. (19).
