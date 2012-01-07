@@ -113,7 +113,6 @@ void WernerKnowles::compute() {
 
         // update B
         shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_mo_, fci_, jvec, UdR, UdR, ref_->coeff());
-        *new_bvec *= 0.5;
 
         // compute  C dR + dR C
         shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
