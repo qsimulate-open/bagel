@@ -3,8 +3,8 @@
 // Date   : Jan 2012
 //
 
-#ifndef __NEWINT_SRC_UTIL_AUGHESS_H
-#define __NEWINT_SRC_UTIL_AUGHESS_H
+#ifndef __NEWINT_SRC_UTIL_Linear_H
+#define __NEWINT_SRC_UTIL_Linear_H
 
 #include <memory>
 #include <list>
@@ -12,7 +12,7 @@
 #include <src/util/f77.h>
 
 template<typename T>
-class AugHess {
+class Linear {
   typedef std::shared_ptr<T> RefT;
   typedef std::list<std::pair<RefT, RefT> > Container_type_;
   typedef typename Container_type_::iterator iterator;
@@ -30,11 +30,7 @@ class AugHess {
     // scratch area for diagonalization
     std::vector<double> scr_;
     std::vector<double> vec_; 
-    // an eigenvector 
-    std::vector<double> eig_;
-    // work area in a lapack routine
-    std::vector<double> work_;
-    int lwork_;
+    std::vector<int> ipiv_;
     int info;
 
     int size_;
@@ -44,19 +40,17 @@ class AugHess {
 
 
   public:
-    AugHess(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad) {
+    Linear(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad) {
       mat_.resize(max_*max_);
       scr_.resize(max_*max_);
       vec_.resize(max_);
       prod_.resize(max_);
-      work_.resize(max_*5);
-      eig_.resize(max_);
-      lwork_ = max_*5;
+      ipiv_.resize(max_*2);
     };
-    ~AugHess() {};
+    ~Linear() {};
 
     std::shared_ptr<T> compute_residual(std::shared_ptr<T> c, std::shared_ptr<T> s) {
-      if (size_+2 == max_) throw std::runtime_error("max size reached in AugHess");
+      if (size_+2 == max_) throw std::runtime_error("max size reached in Linear");
       // register new vectors
       c_.push_back(c);
       sigma_.push_back(s);
@@ -66,31 +60,21 @@ class AugHess {
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
       } 
-      prod_[size_-1] = c->ddot(*grad_); 
+      prod_[size_-1] = -c->ddot(*grad_); 
 
       // set to scr_
       std::copy(mat_.begin(), mat_.end(), scr_.begin());
-      for (int i = 0; i != size_; ++i) {
-        scr(size_, i) = scr(i, size_) = prod_[i];
-      }
-      scr(size_, size_) = 0.0;
-      dsyev_("V", "U", size_+1, &scr_[0], max_, &eig_[0], &work_[0], lwork_, info); 
-      if (info) throw std::runtime_error("dsyev failed in AugHess");
+      std::copy(prod_.begin(), prod_.end(), vec_.begin());
+      dgesv_(size_, 1, &scr_[0], max_, &ipiv_[0], &vec_[0], size_, info); 
+      if (info) throw std::runtime_error("dsyev failed in Linear");
 
-      // scale eigenfunction
-      for (int i = 0; i != size_; ++i) vec_[i] = scr_[i] / scr_[size_];
-      
       std::shared_ptr<T> out(new T(*grad_)); 
       int cnt = 0;
-      for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
+      for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
         out->daxpy(vec_[cnt], *j);
-        out->daxpy(-vec_[cnt]*eig_[0], *i);
-      }
       assert(cnt == size_);
       return out;
     };
-
-    double eig() const { return eig_.at(0); };
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();

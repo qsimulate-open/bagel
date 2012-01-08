@@ -89,6 +89,8 @@ int main(int argc, char** argv) {
           shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
           werner->compute();
           ref = werner->conv_to_ref();
+          shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
+          casscf->compute();
         } else {
           throw runtime_error("unknown CASSCF algorithm specified.");
         }

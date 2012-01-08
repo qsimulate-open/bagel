@@ -329,6 +329,7 @@ shared_ptr<Matrix1e> Matrix1e::log(const int deg) const {
 
 void Matrix1e::purify_unitary() {
   assert(ndim_ == mdim_);
+#if 0
   Matrix1e buf(*this ^ *this);
   const int lwork = 5*ndim_;
   unique_ptr<double[]> work(new double[lwork]);
@@ -344,10 +345,17 @@ void Matrix1e::purify_unitary() {
     }
   }
   *this = ((buf ^ buf) * *this);
-
-  // just checking...
-  assert(std::abs((*this^*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
-  assert(std::abs((*this%*this).norm()-sqrt(static_cast<double>(ndim_))) < 1.0e-10);
+#else
+  // Schmidt orthogonalization
+  for (int i = 0; i != ndim_; ++i) {
+    for (int j = i+1; j != ndim_; ++j) {
+      const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
+      daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+    }
+    const double b = 1.0/sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    dscal_(ndim_, b, &data_[i*ndim_], 1);
+  }
+#endif
 
 }
 
@@ -362,6 +370,13 @@ void Matrix1e::purify_redrotation(const int nclosed, const int nact, const int n
   for (int g = 0; g != nvirt; ++g)
     for (int h = 0; h != nvirt; ++h)
       element(h+nclosed+nact,g+nclosed+nact)=0.0;
+  for (int i = 0; i != nbasis_; ++i) {
+    for (int j = 0; j != i; ++j) {
+      const double ele = (element(j,i) - element(i,j)) * 0.5;
+      element(j,i) = ele; 
+      element(i,j) = -ele; 
+    }
+  }
 
 }
 

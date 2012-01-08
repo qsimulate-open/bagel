@@ -9,6 +9,7 @@
 #include <src/scf/matrix1e.h>
 #include <src/casscf/rotfile.h>
 #include <src/util/aughess.h>
+#include <src/util/linear.h>
 
 using namespace std;
 
@@ -94,7 +95,11 @@ void WernerKnowles::compute() {
       if (error_micro < thresh_micro_) break; 
 
       // initializing a Davidson manager
-      AugHess<Matrix1e> aughess(max_mmicro_iter_+2, grad); 
+#if 0
+      AugHess<Matrix1e> solver(max_mmicro_iter_+2, grad); 
+#else
+      Linear<Matrix1e> solver(max_mmicro_iter_+2, grad); 
+#endif
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
       shared_ptr<Matrix1e> C(new Matrix1e((*U % *bvec + *bvec % *U)*0.5));
@@ -122,29 +127,29 @@ void WernerKnowles::compute() {
         shared_ptr<Matrix1e> sigma(new Matrix1e(*U%*new_bvec-*new_bvec%*U-*dRA));
         sigma->purify_redrotation(nclosed_,nact_,nvirt_);
 
-        shared_ptr<Matrix1e> residual = aughess.compute_residual(dR, sigma);
+        shared_ptr<Matrix1e> residual = solver.compute_residual(dR, sigma);
 
         const double error_mmicro = residual->ddot(*residual) / residual->size();
         const double mic_energy = 0.0; // TODO
 
         const int mend = ::clock();
-#if 0
+#if 1
         if (mmiter == 0) cout << endl << "     == micro iteration == " << endl;
-        cout << setw(10) << mmiter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-             << setw(10) << scientific << setprecision(2) << error << fixed << " " << (mend - mstart)/cps << endl;
+        cout << setw(10) << mmiter << "   " << setw(20) << setprecision(12)
+             << setw(20) << setprecision(14) << error_mmicro << " " << setprecision(2) << (mend - mstart)/cps << endl;
 #endif
 
         if (error_mmicro < thresh_mmicro_) { cout << endl; break; }
-        if (mmiter+1 == max_micro_iter_) { cout << endl; break; } 
+        if (mmiter+1 == max_mmicro_iter_) { cout << endl; break; } 
 
         // update dR;
         for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
-        aughess.orthog(residual);
+        solver.orthog(residual);
         dR = residual;
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
 
       }
-      dR = aughess.civec();
+      dR = solver.civec();
       shared_ptr<Matrix1e> dU = dR->exp();
       dU->purify_unitary();
       *U *= *dU;

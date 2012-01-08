@@ -94,5 +94,9 @@ static void dsysv_(const char* uplo, const int n, const int nrhs, double* a, con
 static void dsysv_(const char* uplo, const int n, const int nrhs, std::unique_ptr<double[]>& a, const int lda, std::unique_ptr<int[]>& ipiv, 
                    std::unique_ptr<double[]>& b, const int ldb, std::unique_ptr<double[]>& work, const int lwork, int& info)
                     {dsysv_(uplo, &n, &nrhs, a.get(), &lda, ipiv.get(), b.get(), &ldb, work.get(), &lwork, &info);};
+static void dgesv_(const int n, const int nrhs, double* a, const int lda, int* ipiv, double* b, const int ldb, int& info)
+             {dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info); };
+static void dgesv_(const int n, const int nrhs, std::unique_ptr<double[]>& a, const int lda, std::unique_ptr<int[]>& ipiv,
+             std::unique_ptr<double[]>& b, const int ldb, int& info) {dgesv_(&n, &nrhs, a.get(), &lda, ipiv.get(), b.get(), &ldb, &info); };
 
 #endif
