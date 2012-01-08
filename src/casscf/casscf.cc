@@ -223,7 +223,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   } else {
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = gaa->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_);
+        *target = -fact->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_);
 
     target = denom->ptr_vc();
     for (int i = 0; i != nclosed_; ++i)
@@ -232,9 +232,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
     target = denom->ptr_ca();
     for (int i = 0; i != nact_; ++i) {
-      const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i));
       for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = fac - f->element(j, j)*(2.0 - occup_[i]);
+        *target = (f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i,i)) - f->element(j, j)*(2.0 - occup_[i]);
     }
   }
   d = denom;
