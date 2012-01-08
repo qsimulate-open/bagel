@@ -250,3 +250,16 @@ shared_ptr<Coeff> CASSCF::update_coeff(const shared_ptr<Coeff> cold, vector<doub
 }
 
 
+
+vector<double> CASSCF::form_natural_orbs() { 
+    // here make a natural orbitals and update the coefficients
+    // this effectively updates 1,2RDM and integrals
+    const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
+    // new coefficients
+    shared_ptr<Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
+    ref_->set_coeff(new_coeff);
+    // occupation number of the natural orbitals
+    occup_ = natorb.second;
+    return natorb.first;
+}
+

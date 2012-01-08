@@ -40,21 +40,8 @@ void WernerKnowles::compute() {
     // get energy
     vector<double> energy = fci_->energy();
 
-#if 1
-    // here make a natural orbitals and update the coefficients
-    // this effectively updates 1,2RDM and integrals
-    const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
-    // new coefficients
-    shared_ptr<Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
-    ref_->set_coeff(new_coeff);
-    // occupation number of the natural orbitals
-    occup_ = natorb.second;
-    if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
-      throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
-#else
-    occup_ = fci_->rdm1_av()->diag();
-#endif
-
+    // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
+    form_natural_orbs();
 
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
@@ -96,9 +83,9 @@ void WernerKnowles::compute() {
 
       // initializing a Davidson manager
 #if 0
-      AugHess<Matrix1e> solver(max_mmicro_iter_+2, grad); 
+      AugHess<Matrix1e> solver(max_mmicro_iter_+1, grad); 
 #else
-      Linear<Matrix1e> solver(max_mmicro_iter_+2, grad); 
+      Linear<Matrix1e> solver(max_mmicro_iter_, grad); 
 #endif
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)

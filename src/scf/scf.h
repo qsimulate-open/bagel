@@ -57,7 +57,7 @@ class SCF : public SCF_base {
       }
       std::cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
                 << std::endl << std::endl;
-      std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ")===" << std::endl << indent << std::endl;
+      std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << std::endl << indent << std::endl;
     
       // starting SCF iteration
     

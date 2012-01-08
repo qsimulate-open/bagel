@@ -58,13 +58,7 @@ void SuperCI::compute() {
     int start0 = ::clock();
 
     // here make a natural orbitals and update the coefficients
-    // this effectively updates 1,2RDM and integrals
-    const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
-    // new coefficients
-    shared_ptr<Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
-    ref_->set_coeff(new_coeff);
-    // occupation number of the natural orbitals
-    occup_ = natorb.second;
+    vector<double> natorb = form_natural_orbs();
     if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
       throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
 
@@ -167,7 +161,7 @@ void SuperCI::compute() {
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb.first[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
+      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
       tmp = tailor_rotation(tmp);
       

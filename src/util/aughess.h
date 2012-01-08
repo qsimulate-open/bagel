@@ -25,15 +25,15 @@ class AugHess {
     const std::shared_ptr<T> grad_;
 
     // contains 
-    std::vector<double> mat_;
-    std::vector<double> prod_;
+    std::unique_ptr<double[]> mat_;
+    std::unique_ptr<double[]> prod_;
     // scratch area for diagonalization
-    std::vector<double> scr_;
-    std::vector<double> vec_; 
+    std::unique_ptr<double[]> scr_;
+    std::unique_ptr<double[]> vec_; 
     // an eigenvector 
-    std::vector<double> eig_;
+    std::unique_ptr<double[]> eig_;
     // work area in a lapack routine
-    std::vector<double> work_;
+    std::unique_ptr<double[]> work_;
     int lwork_;
     int info;
 
@@ -44,19 +44,19 @@ class AugHess {
 
 
   public:
-    AugHess(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad) {
-      mat_.resize(max_*max_);
-      scr_.resize(max_*max_);
-      vec_.resize(max_);
-      prod_.resize(max_);
-      work_.resize(max_*5);
-      eig_.resize(max_);
-      lwork_ = max_*5;
+    AugHess(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad), 
+      mat_(new double[ndim*ndim]),
+      scr_(new double[ndim*ndim]),
+      vec_(new double[ndim]),
+      prod_(new double[ndim]),
+      work_(new double[ndim*5]),
+      eig_(new double[ndim]),
+      lwork_(ndim*5) {
     };
     ~AugHess() {};
 
     std::shared_ptr<T> compute_residual(std::shared_ptr<T> c, std::shared_ptr<T> s) {
-      if (size_+2 == max_) throw std::runtime_error("max size reached in AugHess");
+      if (size_+1 == max_) throw std::runtime_error("max size reached in AugHess");
       // register new vectors
       c_.push_back(c);
       sigma_.push_back(s);
@@ -69,12 +69,12 @@ class AugHess {
       prod_[size_-1] = c->ddot(*grad_); 
 
       // set to scr_
-      std::copy(mat_.begin(), mat_.end(), scr_.begin());
+      std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
       for (int i = 0; i != size_; ++i) {
         scr(size_, i) = scr(i, size_) = prod_[i];
       }
       scr(size_, size_) = 0.0;
-      dsyev_("V", "U", size_+1, &scr_[0], max_, &eig_[0], &work_[0], lwork_, info); 
+      dsyev_("V", "U", size_+1, scr_, max_, eig_, work_, lwork_, info); 
       if (info) throw std::runtime_error("dsyev failed in AugHess");
 
       // scale eigenfunction
@@ -90,7 +90,7 @@ class AugHess {
       return out;
     };
 
-    double eig() const { return eig_.at(0); };
+    double eig() const { return eig_[0]; };
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();

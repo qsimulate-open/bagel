@@ -55,6 +55,7 @@ class CASSCF {
                             std::shared_ptr<RotFile>&, const bool superci=true);
 
     std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>) const;
+    std::vector<double> form_natural_orbs();
 
   public:
     CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref);

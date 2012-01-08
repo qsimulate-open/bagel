@@ -25,12 +25,12 @@ class Linear {
     const std::shared_ptr<T> grad_;
 
     // contains 
-    std::vector<double> mat_;
-    std::vector<double> prod_;
+    std::unique_ptr<double[]> mat_;
+    std::unique_ptr<double[]> prod_;
     // scratch area for diagonalization
-    std::vector<double> scr_;
-    std::vector<double> vec_; 
-    std::vector<int> ipiv_;
+    std::unique_ptr<double[]> scr_;
+    std::unique_ptr<double[]> vec_; 
+    std::unique_ptr<int[]> ipiv_;
     int info;
 
     int size_;
@@ -40,17 +40,17 @@ class Linear {
 
 
   public:
-    Linear(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad) {
-      mat_.resize(max_*max_);
-      scr_.resize(max_*max_);
-      vec_.resize(max_);
-      prod_.resize(max_);
-      ipiv_.resize(max_*2);
+    Linear(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad),
+      mat_(new double[max_*max_]),
+      scr_(new double[max_*max_]),
+      vec_(new double[max_]),
+      prod_(new double[max_]),
+      ipiv_(new int[max_*2]) {
     };
     ~Linear() {};
 
     std::shared_ptr<T> compute_residual(std::shared_ptr<T> c, std::shared_ptr<T> s) {
-      if (size_+2 == max_) throw std::runtime_error("max size reached in Linear");
+      if (size_ == max_) throw std::runtime_error("max size reached in Linear");
       // register new vectors
       c_.push_back(c);
       sigma_.push_back(s);
@@ -63,9 +63,9 @@ class Linear {
       prod_[size_-1] = -c->ddot(*grad_); 
 
       // set to scr_
-      std::copy(mat_.begin(), mat_.end(), scr_.begin());
-      std::copy(prod_.begin(), prod_.end(), vec_.begin());
-      dgesv_(size_, 1, &scr_[0], max_, &ipiv_[0], &vec_[0], size_, info); 
+      std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
+      std::copy(prod_.get(), prod_.get()+max_, vec_.get());
+      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info); 
       if (info) throw std::runtime_error("dsyev failed in Linear");
 
       std::shared_ptr<T> out(new T(*grad_)); 
