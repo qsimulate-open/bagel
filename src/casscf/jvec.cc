@@ -54,8 +54,17 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<Coeff> coeff, const size_t nclosed, c
         }
       }
     }
-    jvec_ = in->apply_2rdm(rdm2all.get());
+    jvec_ = in->apply_2rdm(rdm2all.get())->apply_J();
     rdm2_all_ = move(rdm2all);
+#if 0
+double* d = rdm2_all_.get();
+for (int i = 0; i != nocc; ++i) {
+for (int j = 0; j != nocc; ++j) {
+for (int k = 0; k != nocc; ++k) {
+for (int l = 0; l != nocc; ++l, ++d) {
+if (abs(*d) > 1.0e-10) cout << i << " " << j << " " << k << " " << l << " " << setprecision(10) << *d << endl;
+}}}}
+#endif
   }
 
 };

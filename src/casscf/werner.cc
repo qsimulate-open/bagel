@@ -41,7 +41,11 @@ void WernerKnowles::compute() {
     vector<double> energy = fci_->energy();
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
+#if 0
     form_natural_orbs();
+#else
+    occup_ = fci_->rdm1_av()->diag();
+#endif
 
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
@@ -59,18 +63,12 @@ void WernerKnowles::compute() {
       denom = denom_->unpack(geom_, 1.0e100);
     }
 
-    // unit matrix is also prepared for convenience
-    shared_ptr<Matrix1e> one(new Matrix1e(*U));
-
     int miter;
     double error;
     for (miter = 0; miter != max_micro_iter_; ++miter) {
-      shared_ptr<Matrix1e> T(new Matrix1e(*U - *one));
-
-      shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*ref_->coeff() % *hcore_ * *ref_->coeff()));
 
       // compute initial B (Eq. 19)
-      shared_ptr<Matrix1e> bvec = compute_bvec(hcore_mo_, fci_, jvec, U, T, ref_->coeff());
+      shared_ptr<Matrix1e> bvec = compute_bvec(fci_, jvec, U, ref_->coeff());
 
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
@@ -82,7 +80,7 @@ void WernerKnowles::compute() {
       if (error_micro < thresh_micro_) break; 
 
       // initializing a Davidson manager
-#if 0
+#if 1
       AugHess<Matrix1e> solver(max_mmicro_iter_+1, grad); 
 #else
       Linear<Matrix1e> solver(max_mmicro_iter_, grad); 
@@ -104,7 +102,7 @@ void WernerKnowles::compute() {
         shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
 
         // update B
-        shared_ptr<Matrix1e> new_bvec = compute_bvec(hcore_mo_, fci_, jvec, UdR, UdR, ref_->coeff());
+        shared_ptr<Matrix1e> new_bvec = compute_bvec(fci_, jvec, UdR, UdR, ref_->coeff());
 
         // compute  C dR + dR C
         shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
@@ -142,6 +140,11 @@ void WernerKnowles::compute() {
       *U *= *dU;
 
     }
+
+((*U-*(U->transpose()))*0.5).print("uu", 18);
+shared_ptr<Matrix1e> bvec2 = compute_bvec(fci_, jvec, U, ref_->coeff());
+(*U%*bvec2-*bvec2%*U).print("residual",18);
+
     shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
     ref_->set_coeff(newcc);
 
@@ -166,19 +169,29 @@ void WernerKnowles::compute() {
 
 // compute B according to Eq. (19).
 // B = 2[h_rs U_sj D_ji + (rs|D)Usj <D|ji> + 2(rk|D)(D|ls)T_sj D_jl,ik]
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Matrix1e> hcore, shared_ptr<FCI> fci, shared_ptr<Jvec> jvec,
+shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<FCI> fci, shared_ptr<Jvec> jvec,
+                                                 shared_ptr<Matrix1e> u, shared_ptr<Coeff> cc) {
+  shared_ptr<Matrix1e> t(new Matrix1e(*u));
+  for (int i = 0; i != u->ndim(); ++i) t->element(i,i) -= 1.0;
+  return compute_bvec(fci, jvec, u, t, cc);
+}
+
+
+shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<FCI> fci, shared_ptr<Jvec> jvec,
                                                  shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, shared_ptr<Coeff> cc) {
   shared_ptr<DensityFit> df = geom_->df();
   const int naux = df->naux();
   const int nbas = df->nbasis();
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));
   {
+    shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*cc % *hcore_ * *cc));
+
     // first term
     Matrix1e all1(geom_);
     for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
     for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1); 
     shared_ptr<Matrix1e> buf(new Matrix1e(geom_));
-    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore->data(), nbasis_, u->data(), nbasis_, 0.0, buf->data(), nbasis_);  
+    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbasis_, 0.0, buf->data(), nbasis_);  
     dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbasis_, all1.data(), nbasis_, 0.0, out->data(), nbasis_);
   }
 
@@ -187,7 +200,7 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Matrix1e> hcore, sha
   {
     Matrix1e Umat(*cc * *u);
     shared_ptr<DF_Half> half = df->compute_half_transform(Umat.data(), nocc_);
-    half->form_2index(tmp, jvec->jvec()->apply_J(), 2.0, 0.0);
+    half->form_2index(tmp, jvec->jvec(), 2.0, 0.0);
   }
 
   // thrid term

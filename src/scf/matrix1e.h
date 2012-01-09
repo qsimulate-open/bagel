@@ -68,6 +68,8 @@ class Matrix1e {
     std::shared_ptr<Matrix1e> exp(const int deg = 6) const;
     // returns log(*this)
     std::shared_ptr<Matrix1e> log(const int deg = 6) const;
+    // returns transpose(*this)
+    std::shared_ptr<Matrix1e> transpose() const;
 
     void daxpy(const double, const Matrix1e&);
     void daxpy(const double, const std::shared_ptr<Matrix1e>);
@@ -76,6 +78,7 @@ class Matrix1e {
     const double ddot(const std::shared_ptr<Matrix1e>) const;
     const double rms() const;
     const double trace() const;
+    
     void dscal(const double a) { dscal_(size(), a, data(), 1); };
 
     void add_diag(const double a, const int i, const int j)

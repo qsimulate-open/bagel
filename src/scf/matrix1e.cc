@@ -327,6 +327,13 @@ shared_ptr<Matrix1e> Matrix1e::log(const int deg) const {
 }
 
 
+shared_ptr<Matrix1e> Matrix1e::transpose() const {
+  shared_ptr<Matrix1e> out(new Matrix1e(*this));
+  mytranspose_(data(), &nbasis_, &nbasis_, out->data());
+  return out;
+}
+
+
 void Matrix1e::purify_unitary() {
   assert(ndim_ == mdim_);
 #if 0
@@ -348,7 +355,7 @@ void Matrix1e::purify_unitary() {
 #else
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
-    for (int j = i+1; j != ndim_; ++j) {
+    for (int j = 0; j != i; ++j) {
       const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
       daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }

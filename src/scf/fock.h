@@ -232,7 +232,7 @@ void Fock<DF>::fock_two_electron_part() {
         } else { break; }
       }
     }
-
+    if (nocc == 0) return;
 
     // first half transformation and multiplying J^-1/2 from the front.
     std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff.get(), nocc)->apply_J();
