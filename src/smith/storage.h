@@ -34,7 +34,7 @@ class Storage_base {
         length_ += i->second; 
       }
     };
-    ~Storage_base();
+    ~Storage_base() {};
 
     // functions that return protected members
     size_t length() const { return length_; };

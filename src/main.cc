@@ -30,7 +30,11 @@ using namespace std;
 
 StackMem* stack;
 
+// debug
+extern void a();
+
 int main(int argc, char** argv) {
+a();
   // openmp is broken now due to the use of stack.
   // What we need is a proper thread model.
   #ifdef _OPENMP
