@@ -368,6 +368,7 @@ void Matrix1e::purify_unitary() {
 
 void Matrix1e::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
 
+#if 1
   for (int g = 0; g != nclosed; ++g)
     for (int h = 0; h != nclosed; ++h)
       element(h,g)=0.0;
@@ -384,6 +385,7 @@ void Matrix1e::purify_redrotation(const int nclosed, const int nact, const int n
       element(i,j) = -ele; 
     }
   }
+#endif
 
 }
 
@@ -424,7 +426,7 @@ void Matrix1e::print(const string name, const int size) const {
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != min(size,nbasis_); ++i) {
     for (int j = 0; j != min(size,nbasis_); ++j) {
-      cout << fixed << setw(15) << setprecision(10) << data_[j * nbasis_ + i]  << " "; 
+      cout << fixed << setw(9) << setprecision(6) << data_[j * nbasis_ + i]  << " "; 
     }
     cout << endl;
   }

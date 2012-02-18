@@ -110,13 +110,14 @@ class DF_Full {
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) {
       const int naux = df_->naux();
       std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux]);
-      dgemm_("N", "N", naux, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux, rdm, nocc1_*nocc2_, 0.0, out.get(), naux); 
+      dgemm_("N", "T", naux, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux, rdm, nocc1_*nocc2_, 0.0, out.get(), naux); 
       std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
       return tmp; 
     };
 
     void form_4index(std::unique_ptr<double[]>& target) const;
 
+    double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     const std::shared_ptr<DensityFit> df() const { return df_; };
 

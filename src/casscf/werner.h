@@ -29,7 +29,7 @@ class WernerKnowles : public CASSCF {
       : CASSCF(idat, geom, ref) {common_init(); 
       // get thresh (for micro iteration) from the input
       thresh_mmicro_ = read_input<double>(idat, "thresh_mmicro", thresh_micro_);
-      max_mmicro_iter_ = read_input<int>(idat, "maxiter_mmicro", 5);
+      max_mmicro_iter_ = read_input<int>(idat, "maxiter_mmicro", 3);
     };
     ~WernerKnowles() {};
 

@@ -51,7 +51,7 @@ am__DEPENDENCIES_1 =
 PolyR12_DEPENDENCIES = scf/libscf.a rysint/librysint.a \
 	osint/libosint.a slater/libslater.a pscf/libpscf.a \
 	pmp2/libpmp2.a util/libutil.a fci/libfci.a casscf/libcasscf.a \
-	wfn/libwfn.a df/libdf.a $(am__DEPENDENCIES_1)
+	wfn/libwfn.a df/libdf.a smith/libsmith.a $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -199,9 +199,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = wfn rysint osint scf slater pscf pmp2 util fci casscf df
+SUBDIRS = wfn rysint osint scf slater pscf pmp2 util fci casscf df smith
 PolyR12_SOURCES = main.cc
-PolyR12_LDADD = scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a fci/libfci.a casscf/libcasscf.a wfn/libwfn.a df/libdf.a -L./slater -lslater -llapack $(FLIBS)
+PolyR12_LDADD = scf/libscf.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a fci/libfci.a casscf/libcasscf.a wfn/libwfn.a df/libdf.a smith/libsmith.a -L./slater -lslater -llapack $(FLIBS)
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-recursive
 

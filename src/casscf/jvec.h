@@ -20,8 +20,8 @@ class Jvec {
     Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<Coeff> c, const size_t, const size_t, const size_t);
     ~Jvec() {};
 
-    std::shared_ptr<DF_Half> half() { return half_; };
-    std::shared_ptr<DF_Full> jvec() { return jvec_; };
+    const std::shared_ptr<DF_Half> half() const { return half_; };
+    const std::shared_ptr<DF_Full> jvec() const { return jvec_; };
     const double* const half_ptr() const { return half_->data(); };
     const double* const jvec_ptr() const { return jvec_->data(); };
     const double* const rdm2_all() const { return rdm2_all_.get(); };
