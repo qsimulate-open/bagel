@@ -67,7 +67,7 @@ class Tensor {
       return std::move(data_->get_block(generate_hash_key(p)));
     };
 
-    void put_block(const std::vector<size_t>& p, const std::unique_ptr<double[]>& o) {
+    void put_block(const std::vector<size_t>& p, std::unique_ptr<double[]>& o) {
       data_->put_block(generate_hash_key(p), o);
     };
 
@@ -79,6 +79,8 @@ class Tensor {
       assert(p.size() == rank_); 
       return data_->blocksize(generate_hash_key(p));
     };
+
+    void zero() { data_->zero(); };
 };
 
 }

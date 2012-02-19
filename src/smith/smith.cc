@@ -7,7 +7,7 @@
 #include <src/smith/tensor.h>
 #include <iostream>
 #include <src/util/f77.h>
-#include <src/smith/corrbase.h>
+#include <src/smith/moint.h>
 #include <src/wfn/reference.h>
 
 using namespace SMITH;
@@ -31,18 +31,5 @@ void a(shared_ptr<Reference> r){
   o.push_back(closed);
   o.push_back(virt);
 
-  Tensor<Storage_Incore> t(o);
-
-  vector<size_t> p(4,0);
-  unique_ptr<double[]> tmp = t.get_block(p);
-
-  const size_t size = t.get_size(p);
-
-  fill(&tmp[0], &tmp[size], 1.0);
-  t.put_block(p,tmp);
-
-  cout << ddot_(size, tmp, 1, tmp, 1) << endl;
-
-
-  CorrBase<Storage_Incore> a(r, o);
+  MOInt<Storage_Incore> a(r, o);
 }

@@ -7,8 +7,8 @@
 //   - aaii (assumes DF - TODO half transformed DF vector might be available..)
 //
 
-#ifndef __SRC_SMITH_CORRBASE_H
-#define __SRC_SMITH_CORRBASE_H
+#ifndef __SRC_SMITH_MOINT_H
+#define __SRC_SMITH_MOINT_H
 
 #include <memory>
 #include <src/wfn/reference.h>
@@ -19,16 +19,14 @@ namespace SMITH {
 // the template parameter T specifies the storage type 
 
 template <typename T>
-class CorrBase {
+class MOInt {
   protected:
     std::shared_ptr<Reference> ref_;
-
     std::vector<IndexRange> blocks_;
-
-    std::shared_ptr<Tensor<T> > vaaii_;
+    std::shared_ptr<Tensor<T> > data_;
 
     // some handwritten drivers
-    void form_aaii() {
+    std::map<size_t, std::shared_ptr<DF_Full> > generate_list() {
       std::shared_ptr<DensityFit> df = ref_->geom()->df();
       std::shared_ptr<Coeff> coeff = ref_->coeff(); 
 
@@ -55,9 +53,13 @@ class CorrBase {
           dflist.insert(make_pair(generate_hash_key(h), df_full));
         }
       }
+      return dflist;
+    };
 
+    void form_4index(const std::map<size_t, std::shared_ptr<DF_Full> >& dflist) {
       // form four-index integrals
       // TODO this part should be heavily parallelized
+      // TODO i01 < i23 symmetry should be used.
       size_t j0 = 0;
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++j0) {
         size_t j1 = 0;
@@ -94,11 +96,15 @@ class CorrBase {
     }; // vaaii_;
 
   public:
-    CorrBase(std::shared_ptr<Reference> r, std::vector<IndexRange> i) : ref_(r), blocks_(i) {
-      form_aaii();
+    MOInt(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+      std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
+      data_ = tmp;
+      form_4index(generate_list());
     };
 
-    ~CorrBase() {};
+    ~MOInt() {};
+
+    std::shared_ptr<Tensor<T> > data() { return data_; };
 
 };
 
