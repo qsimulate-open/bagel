@@ -16,7 +16,7 @@ using namespace SMITH;
 using namespace std;
 
 void mp2_noniter(shared_ptr<Reference> r){
-  const int max = 10;
+  const int max = 7;
   IndexRange closed(r->nclosed(), max);
   IndexRange virt(r->nvirt(), max, closed.nblock());
 

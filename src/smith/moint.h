@@ -74,6 +74,7 @@ class K2ext {
           auto iter01 = dflist.find(generate_hash_key(i01));
           assert(iter01 != dflist.end()); 
           std::shared_ptr<DF_Full> df01 = iter01->second; 
+          size_t hashkey01 = generate_hash_key(i01);
 
           size_t j2 = blocks_[2].keyoffset();
           for (auto i2 = blocks_[2].range().begin(); i2 != blocks_[2].range().end(); ++i2, ++j2) {
@@ -83,6 +84,9 @@ class K2ext {
               std::vector<size_t> i23;
               i23.push_back(j2);
               i23.push_back(j3);
+              size_t hashkey23 = generate_hash_key(i23);
+              if (hashkey23 > hashkey01) continue;
+
               auto iter23 = dflist.find(generate_hash_key(i23));
               assert(iter23 != dflist.end());
               std::shared_ptr<DF_Full> df23 = iter23->second; 
@@ -99,6 +103,20 @@ class K2ext {
               hash.push_back(j1);
               hash.push_back(j2);
               hash.push_back(j3);
+
+              if (hashkey23 != hashkey01) {
+                std::unique_ptr<double[]> target2(new double[size]);
+                const int s01 = i0->size() * i1->size();
+                const int s23 = i2->size() * i3->size();
+                mytranspose_(target.get(), &s01, &s23, target2.get()); 
+                std::vector<size_t> hash2;
+                hash2.push_back(j2);
+                hash2.push_back(j3);
+                hash2.push_back(j0);
+                hash2.push_back(j1);
+                data_->put_block(hash2, target2);
+              }
+
               data_->put_block(hash, target);
             }
           }
