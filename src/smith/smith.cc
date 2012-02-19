@@ -55,8 +55,8 @@ void mp2_noniter(shared_ptr<Reference> r){
           const unique_ptr<double[]> e = tensor->get_block(g);
           unique_ptr<double[]> buf(new double[size]);
 
-          sort_indices4(e, buf, i1->size(), i2->size(), i3->size(), i0->size(), 2, 1, 0, 3, -1.0); 
-          daxpy_(size, 2.0, d, 1, buf, 1); 
+          sort_indices4(e, buf, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, -1.0); 
+          daxpy_(size, 2.0, d, 1, buf, 1);
 
           size_t iall = 0;
           for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
@@ -78,6 +78,11 @@ void mp2_noniter(shared_ptr<Reference> r){
 
 
 void mp2_iter(shared_ptr<Reference> r){ 
-
+  const int max = 10;
+  IndexRange all(r->nclosed()+r->nact()+r->nvirt(), max);
+  vector<IndexRange> of;
+  of.push_back(all);
+  of.push_back(all);
+  MOFock<Storage_Incore> a(r, of);
 
 }

@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <src/wfn/reference.h>
 #include <src/smith/tensor.h>
+#include <src/scf/fock.h>
 
 namespace SMITH {
 
@@ -130,6 +131,36 @@ class MOFock {
     std::shared_ptr<Tensor<T> > data_;
   public:
     MOFock(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+      // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
+      assert(b.size() == 2 && b[0] == b[1]);
+
+      std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
+      data_ = tmp;
+
+      // TODO parallel not considered yet at all...
+      std::shared_ptr<Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
+      std::shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_density_rhf()));
+      std::shared_ptr<Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
+      Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
+      size_t j0 = blocks_[0].keyoffset();
+      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++j0) {
+        size_t j1 = blocks_[1].keyoffset();
+        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
+          const size_t size = i0->size() * i1->size();
+          std::unique_ptr<double[]> target(new double[size]);
+          double* buf = target.get();
+          for (int k0 = i0->offset(); k0 != i0->offset()+i0->size(); ++k0) {
+            for (int k1 = i1->offset(); k1 != i1->offset()+i1->size(); ++k1, ++buf) {
+              *buf = f.element(k1, k0);
+            }
+          }
+
+          std::vector<size_t> hash;
+          hash.push_back(j1);
+          hash.push_back(j0);
+          data_->put_block(hash, target);
+        }
+      }
     };
     ~MOFock() {};
 };
