@@ -14,10 +14,22 @@
 
 namespace SMITH {
 
+// one index block
+class Index {
+  protected:
+    size_t offset_;
+    size_t size_;
+  public:
+    Index(const size_t& o, const size_t& s) : offset_(o), size_(s) {};
+    ~Index() {};
+    size_t offset() const { return offset_; };
+    size_t size() const { return size_; };
+};
+
 class IndexRange {
   protected:
     // pair of offset and size (in this order)
-    std::list<std::pair<size_t, size_t> > range_;
+    std::vector<Index> range_;
 
     // total size of this index range
     int size_;
@@ -26,15 +38,17 @@ class IndexRange {
     IndexRange(const int size, const int maxblock = 10) {
       // first determine number of blocks. 
       const size_t nbl = (size-1) / maxblock + 1;
+      const size_t nblock = size / nbl + 1;
       // we want to distribute orbitals as evenly as possible 
-      const size_t rem = nbl *maxblock - size; 
-      std::vector<size_t> blocksizes(nbl, maxblock); 
+      const size_t rem = nbl * nblock - size; 
+      std::vector<size_t> blocksizes(nbl, nblock); 
       auto iter = blocksizes.rbegin();
       for (int k = 0; k != rem; ++iter, ++k) --*iter;
       // push back to range_
       int off = 0;
       for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i) {
-        range_.push_back(std::make_pair(off, *i));
+        Index t(off, *i);
+        range_.push_back(t);
         off += *i;
       }
       // set size_
@@ -42,14 +56,16 @@ class IndexRange {
     }; 
     ~IndexRange() {};
 
-    const std::list<std::pair<size_t, size_t> >& range() const { return range_; };
+    const std::vector<Index>& range() const { return range_; };
+    Index range(const int i) const { return range_[i]; };
+
     int nblock() const { return range_.size(); };
     int size() const { return size_; };
 
     std::string str() const {
       std::stringstream ss;
       for (auto i = range_.begin(); i != range_.end(); ++i)
-        ss << std::setw(10) << i->first << std::setw(10) << i->second << std::endl; 
+        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl; 
       return ss.str();
     };
     void print() const { std::cout << str() << std::endl; };

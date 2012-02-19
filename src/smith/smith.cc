@@ -11,7 +11,7 @@ using namespace SMITH;
 using namespace std;
 
 void a() {
-  const int max = 3;
+  const int max = 7;
   IndexRange closed(10, max);
   IndexRange acc(7, max);
   IndexRange virt(20, max);
