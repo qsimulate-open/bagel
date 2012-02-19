@@ -11,6 +11,7 @@
 #define __SRC_SMITH_MOINT_H
 
 #include <memory>
+#include <stdexcept>
 #include <src/wfn/reference.h>
 #include <src/smith/tensor.h>
 
@@ -41,12 +42,12 @@ class MOInt {
       // closed loop
       size_t cnt = 0;
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DF_Half> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size());
+        std::shared_ptr<DF_Half> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size())->apply_J();
         // virtual loop
         size_t cnt2 = 0;
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
           const size_t i1off = ref_->nclosed() + ref_->nact() + i1->offset();
-          std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1off, i1->size()); 
+          std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1off, i1->size());
 
           std::vector<size_t> h(1,cnt);
           h.push_back(cnt2);
@@ -89,6 +90,14 @@ class MOInt {
               // contract
               std::unique_ptr<double[]> target(new double[size]);
               df01->form_4index(target, df23); 
+
+              // move in place
+              std::vector<size_t> hash;
+              hash.push_back(j0);
+              hash.push_back(j1);
+              hash.push_back(j2);
+              hash.push_back(j3);
+              data_->put_block(hash, target);
             }
           }
         }
@@ -97,6 +106,9 @@ class MOInt {
 
   public:
     MOInt(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+      // so far MOInt can be called for 2-external K integral and all-internals.
+      if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3]) 
+        throw std::logic_error("MOInt called with wrong blocks");
       std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
       data_ = tmp;
       form_4index(generate_list());

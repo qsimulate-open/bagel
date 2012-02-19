@@ -26,6 +26,10 @@ class Index {
     size_t offset() const { return offset_; };
     size_t size() const { return size_; };
     size_t key() const { return key_; };
+
+    bool operator==(const Index& o) {
+      return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
+    };
 };
 
 class IndexRange {
@@ -40,7 +44,7 @@ class IndexRange {
     IndexRange(const int size, const int maxblock = 10) {
       // first determine number of blocks. 
       const size_t nbl = (size-1) / maxblock + 1;
-      const size_t nblock = size / nbl + 1;
+      const size_t nblock = (size-1) / nbl + 1;
       // we want to distribute orbitals as evenly as possible 
       const size_t rem = nbl * nblock - size; 
       std::vector<size_t> blocksizes(nbl, nblock); 
@@ -64,6 +68,18 @@ class IndexRange {
 
     int nblock() const { return range_.size(); };
     int size() const { return size_; };
+
+    bool operator==(const IndexRange& o) {
+      bool out = size_ == o.size_;
+      if (range_.size() == o.range_.size()) {
+        auto i = range_.begin();
+        for (auto j = o.range_.begin(); i != range_.end(); ++i, ++j) out &= (*i) == (*j);
+      } else {
+        out = false;
+      }
+      return out;
+    };
+    bool operator!=(const IndexRange& o) { return !(*this == o); };
 
     std::string str() const {
       std::stringstream ss;

@@ -3,6 +3,7 @@
 // Date   : Feb 2012
 //
 
+#include <src/smith/prim_op.h>
 #include <src/smith/storage.h>
 #include <src/smith/tensor.h>
 #include <iostream>
@@ -15,10 +16,10 @@ using namespace SMITH;
 using namespace std;
 
 void a(shared_ptr<Reference> r){
-  const int max = 7;
-  IndexRange closed(10, max);
-  IndexRange acc(7, max);
-  IndexRange virt(20, max);
+  const int max = 10;
+  IndexRange closed(r->nclosed(), max);
+//IndexRange acc(r->nact(), max);
+  IndexRange virt(r->nvirt(), max);
 
 #if 0
   closed.print();
@@ -42,22 +43,43 @@ void a(shared_ptr<Reference> r){
   Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
 
   vector<double> eig;
+  const int nocc = r->nclosed() + r->nact();
   const int nb = r->nclosed() + r->nact() + r->nvirt();
   for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); }
 
+  double en = 0.0;
   for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
     for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
       for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
         for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-          vector<size_t> h;
-          h.push_back(i0->key());
-          h.push_back(i1->key());
-          h.push_back(i2->key());
-          h.push_back(i3->key());
-          unique_ptr<double[]> d = tensor->get_block(h);
+          vector<size_t> h,g;
+          h.push_back(i0->key()); h.push_back(i1->key()); h.push_back(i2->key()); h.push_back(i3->key());
+          g.push_back(i0->key()); g.push_back(i3->key()); g.push_back(i2->key()); g.push_back(i1->key());
+          const size_t size = tensor->get_size(h);
+          assert(size == tensor->get_size(g));
+
+          const unique_ptr<double[]> d = tensor->get_block(h);
+          const unique_ptr<double[]> e = tensor->get_block(g);
+          unique_ptr<double[]> buf(new double[size]);
+
+          sort_indices4(e, buf, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, -1.0); 
+          daxpy_(size, 2.0, d, 1, buf, 1); 
+
+          size_t iall = 0;
+          for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0) {
+            for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
+              for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
+                for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3, ++iall) {
+                  en += buf[iall] * d[iall] / (eig[j0] + eig[j2] - eig[j3+nocc] - eig[j1+nocc]);
+                }
+              }
+            }
+          }
+
         }
       }
     }
   }
+  cout << setprecision(10) << setw(20) << en << endl;
 
 }
