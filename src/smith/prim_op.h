@@ -10,6 +10,28 @@
 
 namespace SMITH {
 
+static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                          const int a, const int b, // according to unsorted
+                          const int i, const int j, const double factor = 1.0) {
+  if (i==0) {
+    const int j0max = a*b;
+    for (int j0=0; j0<a*b; ++j0) sorted[j0]=unsorted[j0]*factor;
+  } else { 
+    int id[2];
+    int jd[2] = {a, b};
+    long iall=0;
+    for(int j0=0;j0<(int)a;++j0){
+      id[0]=j0;
+      for(int j1=0;j1<(int)b;++j1,++iall){
+        id[1]=j1;
+        long ib=id[j]+jd[j]*id[i];
+        sorted[ib]=unsorted[iall]*factor;
+      }
+    }
+  }
+} 
+
+
 static void sort_indices4(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                           const int a,const int b,const int c,const int d, // according to unsorted
                           const int i,const int j,const int k,const int l,

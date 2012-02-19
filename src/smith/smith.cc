@@ -15,17 +15,10 @@
 using namespace SMITH;
 using namespace std;
 
-void a(shared_ptr<Reference> r){
+void mp2_noniter(shared_ptr<Reference> r){
   const int max = 10;
   IndexRange closed(r->nclosed(), max);
-//IndexRange acc(r->nact(), max);
-  IndexRange virt(r->nvirt(), max);
-
-#if 0
-  closed.print();
-//acc.print();
-  virt.print();
-#endif
+  IndexRange virt(r->nvirt(), max, closed.nblock());
 
   vector<IndexRange> o;
   o.push_back(closed);
@@ -33,7 +26,7 @@ void a(shared_ptr<Reference> r){
   o.push_back(closed);
   o.push_back(virt);
 
-  MOInt<Storage_Incore> a(r, o);
+  K2ext<Storage_Incore> a(r, o);
   shared_ptr<Tensor<Storage_Incore> > tensor = a.data();
 
   // debug implementation of MP2 here.
@@ -81,5 +74,10 @@ void a(shared_ptr<Reference> r){
     }
   }
   cout << setprecision(10) << setw(20) << en << endl;
+}
+
+
+void mp2_iter(shared_ptr<Reference> r){ 
+
 
 }

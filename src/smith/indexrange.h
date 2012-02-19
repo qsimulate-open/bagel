@@ -39,9 +39,10 @@ class IndexRange {
 
     // total size of this index range
     int size_;
+    int keyoffset_;
 
   public:
-    IndexRange(const int size, const int maxblock = 10) {
+    IndexRange(const int size, const int maxblock = 10, const int boffset = 0) : keyoffset_(boffset) {
       // first determine number of blocks. 
       const size_t nbl = (size-1) / maxblock + 1;
       const size_t nblock = (size-1) / nbl + 1;
@@ -52,7 +53,8 @@ class IndexRange {
       for (int k = 0; k != rem; ++iter, ++k) --*iter;
       // push back to range_
       size_t off = 0;
-      size_t cnt = 0;
+      // key is offsetted by the input value
+      size_t cnt = boffset;
       for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {
         Index t(off, *i, cnt);
         range_.push_back(t);
@@ -68,6 +70,7 @@ class IndexRange {
 
     int nblock() const { return range_.size(); };
     int size() const { return size_; };
+    int keyoffset() const { return keyoffset_; };
 
     bool operator==(const IndexRange& o) {
       bool out = size_ == o.size_;

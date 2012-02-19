@@ -31,7 +31,8 @@ using namespace std;
 StackMem* stack;
 
 // debug
-extern void a(shared_ptr<Reference>);
+extern void mp2_noniter(shared_ptr<Reference>);
+extern void mp2_iter(shared_ptr<Reference>);
 
 int main(int argc, char** argv) {
   // openmp is broken now due to the use of stack.
@@ -106,7 +107,8 @@ int main(int argc, char** argv) {
     }
     print_footer();
 
-a(ref);
+mp2_noniter(ref);
+mp2_iter(ref);
 
     // end of the main file
 
