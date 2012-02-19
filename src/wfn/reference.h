@@ -20,10 +20,14 @@ class Reference {
     std::shared_ptr<Hcore> hcore_;
     std::vector<double> schwarz_;
 
+    const int nclosed_;
+    const int nact_;
+    const int nvirt_;
 
   public:
     Reference(std::shared_ptr<Geometry> g, std::shared_ptr<Coeff> c,
-              std::shared_ptr<Hcore> h, const std::vector<double>& s);
+              std::shared_ptr<Hcore> h, const std::vector<double>& s,
+              const int& nclo, const int& nact, const int& nvirt);
 
     ~Reference() {};
 
@@ -32,6 +36,10 @@ class Reference {
     std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> c) { coeff_ = c; };
+
+    int nclosed() const { return nclosed_; };
+    int nact() const { return nact_; };
+    int nvirt() const { return nvirt_; };
 
 };
 

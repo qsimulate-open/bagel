@@ -16,12 +16,18 @@ class DF_Full;
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
   protected:
+    // AO three-index integrals
     std::unique_ptr<double[]> data_;
+    // AO two-index integrals
     std::unique_ptr<double[]> data2_;
+    // #orbital basis
     size_t nbasis_;
+    // #auxiliary basis
     size_t naux_;
 
+    // returns three-index integrals
     double* data() { return data_.get(); };
+    // returns two-index integrals
     double* data2() { return data2_.get(); };
     const double* const data() const { return data_.get(); };
     const double* const data2() const { return data2_.get(); };
@@ -38,6 +44,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     size_t nbasis() const { return nbasis_; };
     size_t naux() const { return naux_; };
 
+    // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc);
 
 }; 
@@ -116,6 +123,7 @@ class DF_Full {
     };
 
     void form_4index(std::unique_ptr<double[]>& target) const;
+    void form_4index(std::unique_ptr<double[]>& target, std::shared_ptr<DF_Full> o) const;
 
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };

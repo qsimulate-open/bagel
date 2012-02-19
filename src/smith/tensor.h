@@ -37,7 +37,7 @@ class Tensor {
     const int rank_;
 
   public:
-    Tensor(std::list<IndexRange> in) : rank_(in.size()) {
+    Tensor(std::vector<IndexRange> in) : rank_(in.size()) {
       // make blocl list
       LoopGenerator lg(in);
       std::vector<std::vector<Index> > index = lg.block_loop();

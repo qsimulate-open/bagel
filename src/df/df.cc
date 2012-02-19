@@ -178,3 +178,11 @@ void DF_Full::form_4index(unique_ptr<double[]>& target) const {
   dgemm_("T", "N", dim, dim, naux, 1.0, data_.get(), naux, data_.get(), naux, 0.0, target.get(), dim); 
 }
 
+
+void DF_Full::form_4index(unique_ptr<double[]>& target, shared_ptr<DF_Full> o) const {
+  const int dim = nocc1_ * nocc2_;
+  const int odim = o->nocc1_ * o->nocc2_;
+  const int naux = df_->naux();
+  dgemm_("T", "N", dim, odim, naux, 1.0, data_.get(), naux, o->data_.get(), naux, 0.0, target.get(), dim); 
+}
+

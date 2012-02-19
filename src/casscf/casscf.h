@@ -1,9 +1,10 @@
 //
 // Author : Toru Shiozaki
 // Date   : Dec 2011
+//
 // This is a base class for various CASSCF solvers.
 // The assumpation is made that the CI and orbital optimizations are done independently.
-// This should be a good one in a large systems.
+// This should be a good strategy in large systems.
 //
 
 #ifndef __NEWINT_CASSCF_CASSCF_H
@@ -65,7 +66,7 @@ class CASSCF {
 
     std::shared_ptr<Reference> ref() { return ref_; };
     std::shared_ptr<Reference> conv_to_ref() const {
-      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), ref_->hcore(), ref_->schwarz())); 
+      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_));
       return out;
     };
 

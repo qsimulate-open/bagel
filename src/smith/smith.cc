@@ -7,11 +7,13 @@
 #include <src/smith/tensor.h>
 #include <iostream>
 #include <src/util/f77.h>
+#include <src/smith/corrbase.h>
+#include <src/wfn/reference.h>
 
 using namespace SMITH;
 using namespace std;
 
-void a() {
+void a(shared_ptr<Reference> r){
   const int max = 7;
   IndexRange closed(10, max);
   IndexRange acc(7, max);
@@ -23,10 +25,10 @@ void a() {
   virt.print();
 #endif
 
-  list<IndexRange> o;
-  o.push_back(closed);
+  vector<IndexRange> o;
   o.push_back(closed);
   o.push_back(virt);
+  o.push_back(closed);
   o.push_back(virt);
 
   Tensor<Storage_Incore> t(o);
@@ -40,4 +42,7 @@ void a() {
   t.put_block(p,tmp);
 
   cout << ddot_(size, tmp, 1, tmp, 1) << endl;
+
+
+  CorrBase<Storage_Incore> a(r, o);
 }
