@@ -23,7 +23,7 @@ void a(shared_ptr<Reference> r){
 
 #if 0
   closed.print();
-  acc.print();
+//acc.print();
   virt.print();
 #endif
 
@@ -48,10 +48,10 @@ void a(shared_ptr<Reference> r){
   for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); }
 
   double en = 0.0;
-  for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-    for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-      for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-        for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+  for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+    for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+      for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+        for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
           vector<size_t> h,g;
           h.push_back(i0->key()); h.push_back(i1->key()); h.push_back(i2->key()); h.push_back(i3->key());
           g.push_back(i0->key()); g.push_back(i3->key()); g.push_back(i2->key()); g.push_back(i1->key());
@@ -62,14 +62,14 @@ void a(shared_ptr<Reference> r){
           const unique_ptr<double[]> e = tensor->get_block(g);
           unique_ptr<double[]> buf(new double[size]);
 
-          sort_indices4(e, buf, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, -1.0); 
+          sort_indices4(e, buf, i1->size(), i2->size(), i3->size(), i0->size(), 2, 1, 0, 3, -1.0); 
           daxpy_(size, 2.0, d, 1, buf, 1); 
 
           size_t iall = 0;
-          for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0) {
-            for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
-              for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
-                for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3, ++iall) {
+          for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
+            for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
+              for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
+                 for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
                   en += buf[iall] * d[iall] / (eig[j0] + eig[j2] - eig[j3+nocc] - eig[j1+nocc]);
                 }
               }
