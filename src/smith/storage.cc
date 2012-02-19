@@ -6,9 +6,22 @@
 #include <src/util/f77.h>
 #include <src/smith/storage.h> 
 #include <stdexcept>
+#include <iostream>
 
 using namespace SMITH;
 using namespace std;
+
+
+Storage_Incore::Storage_Incore(const map<size_t, size_t>& size) : Storage_base(size) {
+  cout << "creating a field of " << length() << endl;
+  unique_ptr<double[]> tmp(new double[length()]);
+#if 0
+  // for debug - initializing tensors with some values
+  fill(&tmp[0], &tmp[length()], 1.0);
+#endif
+  data_ = move(tmp);
+}
+
 
 unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   // first find a key

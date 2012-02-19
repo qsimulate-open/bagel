@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <tuple>
+#include <cassert>
 #include <stdexcept>
 
 namespace SMITH {
@@ -26,6 +27,7 @@ class Storage_base {
     
 
   public:
+    // size contains hashkey and length (in this order)
     Storage_base(const std::map<size_t, size_t>& size) {
       length_ = 0lu;
       for (auto i = size.begin(); i != size.end(); ++i) {
@@ -38,6 +40,11 @@ class Storage_base {
 
     // functions that return protected members
     size_t length() const { return length_; };
+    size_t blocksize(const size_t hash) const {
+      auto a = hashtable_.find(hash);
+      assert(a != hashtable_.end());
+      return a->second.second;
+    };
 
     // get, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
     virtual std::unique_ptr<double[]> get_block(const size_t& key) const = 0;
@@ -50,10 +57,7 @@ class Storage_Incore : public Storage_base {
     std::unique_ptr<double[]> data_;
 
   public:
-    Storage_Incore(const std::map<size_t, size_t>& size) : Storage_base(size) {
-      std::unique_ptr<double[]> tmp(new double[length()]);
-      data_ = std::move(tmp);
-    };
+    Storage_Incore(const std::map<size_t, size_t>& size);
     ~Storage_Incore() {};
 
     std::unique_ptr<double[]> get_block(const size_t& key) const;

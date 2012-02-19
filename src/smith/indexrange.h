@@ -19,11 +19,13 @@ class Index {
   protected:
     size_t offset_;
     size_t size_;
+    size_t key_;
   public:
-    Index(const size_t& o, const size_t& s) : offset_(o), size_(s) {};
+    Index(const size_t& o, const size_t& s, const size_t& i) : offset_(o), size_(s), key_(i) {};
     ~Index() {};
     size_t offset() const { return offset_; };
     size_t size() const { return size_; };
+    size_t key() const { return key_; };
 };
 
 class IndexRange {
@@ -45,9 +47,10 @@ class IndexRange {
       auto iter = blocksizes.rbegin();
       for (int k = 0; k != rem; ++iter, ++k) --*iter;
       // push back to range_
-      int off = 0;
-      for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i) {
-        Index t(off, *i);
+      size_t off = 0;
+      size_t cnt = 0;
+      for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {
+        Index t(off, *i, cnt);
         range_.push_back(t);
         off += *i;
       }

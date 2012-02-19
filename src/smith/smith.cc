@@ -6,6 +6,7 @@
 #include <src/smith/storage.h>
 #include <src/smith/tensor.h>
 #include <iostream>
+#include <src/util/f77.h>
 
 using namespace SMITH;
 using namespace std;
@@ -29,4 +30,14 @@ void a() {
   o.push_back(virt);
 
   Tensor<Storage_Incore> t(o);
+
+  vector<size_t> p(4,0);
+  unique_ptr<double[]> tmp = t.get_block(p);
+
+  const size_t size = t.get_size(p);
+
+  fill(&tmp[0], &tmp[size], 1.0);
+  t.put_block(p,tmp);
+
+  cout << ddot_(size, tmp, 1, tmp, 1) << endl;
 }
