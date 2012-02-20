@@ -100,6 +100,11 @@ class IndexRange {
     int size() const { return size_; };
     int keyoffset() const { return keyoffset_; };
 
+    void merge(const IndexRange& o) {
+       range_.insert(range_.end(), o.range_.begin(), o.range_.end()); 
+       size_ += o.size_;
+    };
+
     bool operator==(const IndexRange& o) {
       bool out = size_ == o.size_;
       if (range_.size() == o.range_.size()) {

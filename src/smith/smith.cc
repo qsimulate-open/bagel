@@ -182,17 +182,12 @@ shared_ptr<Tensor<Storage_Incore> > mp2_add_dagger(shared_ptr<Tensor<Storage_Inc
 
 void mp2_iter(shared_ptr<Reference> r){ 
 
-  const int max = 5;
-  IndexRange all(r->nclosed()+r->nact()+r->nvirt(), max);
-  vector<IndexRange> of;
-  of.push_back(all);
-  of.push_back(all);
-  MOFock<Storage_Incore> a(r, of);
-  shared_ptr<Tensor<Storage_Incore> > f1 = a.tensor();
-
-  // t2 and v2 tensors.
+  const int max = 20;
   IndexRange closed(r->nclosed(), max);
   IndexRange virt(r->nvirt(), max, closed.nblock(), closed.size());
+  IndexRange all(closed); all.merge(virt);
+
+  // t2 and v2 tensors.
   vector<IndexRange> o;
   o.push_back(closed);
   o.push_back(virt);
@@ -200,6 +195,14 @@ void mp2_iter(shared_ptr<Reference> r){
   o.push_back(virt);
   K2ext<Storage_Incore> v2k(r, o);
   const shared_ptr<Tensor<Storage_Incore> > v2 = v2k.tensor();
+
+  // Fock
+  vector<IndexRange> of;
+  of.push_back(all);
+  of.push_back(all);
+  MOFock<Storage_Incore> a(r, of);
+  shared_ptr<Tensor<Storage_Incore> > f1 = a.tensor();
+
 
   // debug implementation of MP2 here.
   shared_ptr<Fock<1> > fock0(new Fock<1>(r->geom(), r->hcore()));
