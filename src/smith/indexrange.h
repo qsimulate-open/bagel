@@ -89,6 +89,11 @@ class IndexRange {
     const std::vector<Index>& range() const { return range_; };
     Index range(const int i) const { return range_[i]; };
 
+    std::vector<Index>::iterator begin() { return range_.begin(); };
+    std::vector<Index>::iterator end() { return range_.end(); };
+    std::vector<Index>::const_iterator begin() const { return range_.begin(); };
+    std::vector<Index>::const_iterator end() const { return range_.end(); };
+
     int nblock() const { return range_.size(); };
     int size() const { return size_; };
     int keyoffset() const { return keyoffset_; };

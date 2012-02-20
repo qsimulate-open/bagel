@@ -158,6 +158,7 @@ class K2ext {
     ~K2ext() {};
 
     std::shared_ptr<Tensor<T> > data() { return data_; };
+    std::shared_ptr<Tensor<T> > tensor() { return data_; };
 
 };
 
@@ -202,6 +203,9 @@ class MOFock {
       }
     };
     ~MOFock() {};
+
+    std::shared_ptr<Tensor<T> > data() { return data_; };
+    std::shared_ptr<Tensor<T> > tensor() { return data_; };
 };
 
 }

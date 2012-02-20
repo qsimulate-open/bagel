@@ -28,15 +28,22 @@
 #define __SRC_SMITH_PRIM_OP_H
 
 #include <memory>
+#include <src/util/f77.h>
 
 namespace SMITH {
 
 static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                           const int b, const int a, // according to unsorted
-                          const int i, const int j, const double factor = 1.0) {
+                          const int i, const int j, const double afac = 0.0, const double factor = 1.0) {
   if (i==0) {
-    const int j0max = a*b;
-    for (int j0=0; j0<a*b; ++j0) sorted[j0]=unsorted[j0]*factor;
+    if (afac == 1.0) {
+      daxpy_(a*b, factor, unsorted, 1, sorted, 1);
+    } else if (afac == 0.0) {
+      dcopy_(a*b, unsorted, 1, sorted, 1);
+    } else {
+      dscal_(a*b, afac, sorted, 1);
+      daxpy_(a*b, factor, unsorted, 1, sorted, 1);
+    }
   } else { 
     int id[2];
     int jd[2] = {b, a};
@@ -46,7 +53,7 @@ static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique
       for(int j1=0;j1<(int)b;++j1,++iall){
         id[0]=j1;
         long ib=id[i]+jd[i]*id[j];
-        sorted[ib]=unsorted[iall]*factor;
+        sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
       }
     }
   }
@@ -57,7 +64,7 @@ static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique
 static void sort_indices4(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                           const int d,const int c,const int b,const int a, // according to unsorted
                           const int i,const int j,const int k,const int l,
-                          const double factor = 1.0) {
+                          const double afac = 0.0, const double factor = 1.0) {
   int id[4];
   int jd[4] = {d, c, b, a};
 
@@ -71,7 +78,7 @@ static void sort_indices4(const std::unique_ptr<double[]>& unsorted, std::unique
         for (int j3=0;j3<d;++j3,++iall){
           id[0]=j3;
           long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*id[l]));
-          sorted[ib]=unsorted[iall]*factor;
+          sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
         }
       }
     } 

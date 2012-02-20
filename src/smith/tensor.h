@@ -54,11 +54,12 @@ inline static size_t generate_hash_key(const std::vector<size_t>& o) {
 template <typename T>
 class Tensor {
   protected:
+    std::vector<IndexRange> range_;
     std::shared_ptr<T> data_; 
     const int rank_;
 
   public:
-    Tensor(std::vector<IndexRange> in) : rank_(in.size()) {
+    Tensor(std::vector<IndexRange> in) : range_(in), rank_(in.size()) {
       // make blocl list
       LoopGenerator lg(in);
       std::vector<std::vector<Index> > index = lg.block_loop();
@@ -82,6 +83,18 @@ class Tensor {
     };
 
     ~Tensor() {};
+
+    Tensor<T>& operator=(const Tensor<T>& o) {
+      *data_ = *(o.data_);
+      return *this;
+    };
+
+    std::shared_ptr<Tensor<T> > clone() const {
+      std::shared_ptr<Tensor<T> > out(new Tensor<T>(range_));
+      return out;
+    };
+
+    std::vector<IndexRange> indexrange() const { return range_; };
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_); 
