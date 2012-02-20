@@ -100,7 +100,6 @@ void mp2_noniter(shared_ptr<Reference> r){
 
 
 void mp2_denom(shared_ptr<Tensor<Storage_Incore> > r, vector<double> eig) {
-
   vector<IndexRange> o = r->indexrange();
   assert(o.size() == 4);
   for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
@@ -115,7 +114,12 @@ void mp2_denom(shared_ptr<Tensor<Storage_Incore> > r, vector<double> eig) {
             for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
               for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
                 for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+#if 1 
                   data[iall] /= (eig[j0] + eig[j2] - eig[j3] - eig[j1]);
+#else
+                  data[iall] /= ( - eig[j3] - eig[j1]);
+                  data[iall] /= (eig[j0] + eig[j2]);
+#endif
                 }
               }
             }
@@ -125,13 +129,60 @@ void mp2_denom(shared_ptr<Tensor<Storage_Incore> > r, vector<double> eig) {
       }
     }
   }
+}
 
+
+// overwrites on r (anyway this will be generated in the future)
+shared_ptr<Tensor<Storage_Incore> > mp2_source(shared_ptr<Tensor<Storage_Incore> > r) {
+  shared_ptr<Tensor<Storage_Incore> > out = r->clone();
+  vector<IndexRange> o = r->indexrange();
+  assert(o.size() == 4);
+  for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+    for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+      for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+        for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+          vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+          vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
+          const size_t size = r->get_size(h);
+          unique_ptr<double[]> data0 = r->get_block(h);
+          const unique_ptr<double[]> data1 = r->get_block(g);
+          sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
+          out->put_block(h,data0);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+
+// overwrites on r (anyway this will be generated in the future)
+shared_ptr<Tensor<Storage_Incore> > mp2_add_dagger(shared_ptr<Tensor<Storage_Incore> > r) {
+  shared_ptr<Tensor<Storage_Incore> > out = r->clone();
+  vector<IndexRange> o = r->indexrange();
+  assert(o.size() == 4);
+  for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+    for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+      for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+        for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+          vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+          vector<size_t> g(4); g[0] = i2->key(); g[1] = i3->key(); g[2] = i0->key(); g[3] = i1->key();
+          const size_t size = r->get_size(h);
+          unique_ptr<double[]> data0 = r->get_block(h);
+          const unique_ptr<double[]> data1 = r->get_block(g);
+          sort_indices4(data1, data0, i2->size(), i3->size(), i0->size(), i1->size(), 2, 3, 0, 1, 1.0, 1.0); 
+          out->put_block(h,data0);
+        }
+      }
+    }
+  }
+  return out;
 }
 
 
 void mp2_iter(shared_ptr<Reference> r){ 
 
-  const int max = 10;
+  const int max = 5;
   IndexRange all(r->nclosed()+r->nact()+r->nvirt(), max);
   vector<IndexRange> of;
   of.push_back(all);
@@ -150,10 +201,6 @@ void mp2_iter(shared_ptr<Reference> r){
   K2ext<Storage_Incore> v2k(r, o);
   const shared_ptr<Tensor<Storage_Incore> > v2 = v2k.tensor();
 
-  shared_ptr<Tensor<Storage_Incore> > t2(new Tensor<Storage_Incore>(o));
-  shared_ptr<Tensor<Storage_Incore> > r2 = t2->clone();
-  *r2 = *v2;
-
   // debug implementation of MP2 here.
   shared_ptr<Fock<1> > fock0(new Fock<1>(r->geom(), r->hcore()));
   shared_ptr<Matrix1e> den(new Matrix1e(r->coeff()->form_density_rhf()));
@@ -163,20 +210,29 @@ void mp2_iter(shared_ptr<Reference> r){
   const int nb = r->nclosed() + r->nact() + r->nvirt();
   for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); } // <-- of course it should be got from f1 directly :-)
 
-  mp2_denom(r2,eig);
-  const double ca = r2->ddot(v2);
-  cout << ca << endl;
+  shared_ptr<Tensor<Storage_Incore> > r2 = v2->clone();
+  shared_ptr<Tensor<Storage_Incore> > t2 = v2->copy();
+  // this should be correct
+  mp2_denom(t2,eig);
 
-  // r2 += -1.0 (2t2-t2) * f1(occu)
-  // r2 +=  1.0 (2t2-t2) * f1(virt)
+  const double ca = v2->ddot(mp2_source(t2));
+  cout << ca << endl;
+  const double cb = v2->ddot(mp2_add_dagger(mp2_source(t2)));
+  cout << cb/2 << endl;
+
+  // r2 += -1.0 (2t2-t2^+) * f1(occu)
+  // r2 +=  1.0 (2t2-t2^+) * f1(virt)
   // r2.symmetrize
 
+  // test f*t2 == r2(source)
+
+  r2->zero();
   for (auto i3 = virt.begin(); i3 != virt.end(); ++i3) {
     for (auto i2 = closed.begin(); i2 != closed.end(); ++i2) {
       for (auto i1 = virt.begin(); i1 != virt.end(); ++i1) {
         for (auto i0 = closed.begin(); i0 != closed.end(); ++i0) {
           vector<size_t> ohash(4); ohash[0] = i0->key(); ohash[1] = i1->key(); ohash[2] = i2->key(); ohash[3] = i3->key();
-          unique_ptr<double[]> odata = r2->get_block(ohash);
+          unique_ptr<double[]> odata = r2->move_block(ohash);
 
           for (auto c0 = closed.begin(); c0 != closed.end(); ++c0) {
             vector<size_t> ihash0(2); ihash0[0] = c0->key(); ihash0[1] = i0->key();
@@ -187,20 +243,22 @@ void mp2_iter(shared_ptr<Reference> r){
             const unique_ptr<double[]> idata1 = t2->get_block(ihash1);
             const unique_ptr<double[]> idata2 = t2->get_block(ihash2);
             unique_ptr<double[]> idata3(new double[t2->get_size(ihash1)]); 
-            sort_indices4(idata2, idata3, ihash2[0], ihash2[1], ihash2[2], ihash2[3], 0, 3, 2, 1, 0.0, -1.0); 
+
+            assert(t2->get_size(ihash1) == t2->get_size(ihash2));
+
+            sort_indices4(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 0.0, -1.0); 
             daxpy_(t2->get_size(ihash1), 2.0, idata1, 1, idata3, 1);
 
             const int common = c0->size();
             const int isize0 = i0->size();
             const int isize1 = i1->size() * i2->size() * i3->size();
-            dgemm_("T", "N", isize0, isize1, common, -1.0, idata0, common, idata1, common, 1.0, odata, common); 
+            dgemm_("T", "N", isize0, isize1, common, -1.0, idata0, common, idata3, common, 1.0, odata, isize0); 
           }
-          r2->add_block(ohash, odata);
+          r2->put_block(ohash, odata);
         }
       } 
     }
   }
-
 
 
   for (auto i3 = virt.begin(); i3 != virt.end(); ++i3) {
@@ -208,7 +266,8 @@ void mp2_iter(shared_ptr<Reference> r){
       for (auto i1 = virt.begin(); i1 != virt.end(); ++i1) {
         for (auto i0 = closed.begin(); i0 != closed.end(); ++i0) {
           vector<size_t> ohash(4); ohash[0] = i0->key(); ohash[1] = i1->key(); ohash[2] = i2->key(); ohash[3] = i3->key();
-          unique_ptr<double[]> odata = r2->get_block(ohash);
+          unique_ptr<double[]> odata = r2->move_block(ohash);
+          unique_ptr<double[]> idata4(new double[r2->get_size(ohash)]);
 
           for (auto c0 = virt.begin(); c0 != virt.end(); ++c0) {
             vector<size_t> ihash0(2); ihash0[0] = c0->key(); ihash0[1] = i1->key();
@@ -218,22 +277,28 @@ void mp2_iter(shared_ptr<Reference> r){
             vector<size_t> ihash2(4); ihash2[0] = i0->key(); ihash2[1] = i3->key(); ihash2[2] = i2->key(); ihash2[3] = c0->key();
             const unique_ptr<double[]> idata1 = t2->get_block(ihash1);
             const unique_ptr<double[]> idata2 = t2->get_block(ihash2);
+
             unique_ptr<double[]> idata3(new double[t2->get_size(ihash1)]);
-            sort_indices4(idata1, idata3, ihash1[0], ihash1[1], ihash1[2], ihash1[3], 1, 0, 2, 3, 0.0,  2.0);
-            sort_indices4(idata2, idata3, ihash2[0], ihash2[1], ihash2[2], ihash2[3], 3, 0, 2, 1, 1.0, -1.0);
+            sort_indices4(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 0.0,  2.0);
+            sort_indices4(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size(), 3, 0, 2, 1, 1.0, -1.0);
 
             const int common = c0->size();
-            const int isize0 = i0->size();
-            const int isize1 = i1->size() * i2->size() * i3->size();
-            unique_ptr<double[]> idata4(new double[r2->get_size(ohash)]);
-            dgemm_("T", "N", isize0, isize1, common, 1.0, idata0, common, idata1, common, 1.0, idata4, common); 
-            sort_indices4(idata4, odata, ihash1[1], ihash1[0], ihash1[2], ihash1[3], 1, 0, 2, 3, 1.0, 1.0);
+            const int isize0 = i1->size();
+            const int isize1 = i0->size() * i2->size() * i3->size();
+            dgemm_("T", "N", isize0, isize1, common, 1.0, idata0, common, idata3, common, 0.0, idata4, isize0); 
+
+            sort_indices4(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 1.0, 1.0);
           }
-          r2->add_block(ohash, odata);
+          r2->put_block(ohash, odata);
         }
       }
     }
   }
+
+
+  shared_ptr<Tensor<Storage_Incore> > d2 = mp2_add_dagger(r2);
+  t2 = mp2_source(v2);
+  cout << d2->ddot(d2) <<  " " << t2->ddot(t2) << endl;
 
 }
 
