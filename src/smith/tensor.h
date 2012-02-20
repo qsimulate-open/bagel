@@ -93,12 +93,25 @@ class Tensor {
       std::shared_ptr<Tensor<T> > out(new Tensor<T>(range_));
       return out;
     };
+    std::shared_ptr<Tensor<T> > copy() const {
+      std::shared_ptr<Tensor<T> > out = clone();
+      *out = *this;
+      return out;
+    };
+
+    double ddot(const Tensor<T>& o) { return data_->ddot(*o.data_); };
+    double ddot(const std::shared_ptr<Tensor<T> >& o) { return data_->ddot(*o->data_); };
 
     std::vector<IndexRange> indexrange() const { return range_; };
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_); 
       return std::move(data_->get_block(generate_hash_key(p)));
+    };
+
+    std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
+      assert(p.size() == rank_); 
+      return std::move(data_->move_block(generate_hash_key(p)));
     };
 
     void put_block(const std::vector<size_t>& p, std::unique_ptr<double[]>& o) {

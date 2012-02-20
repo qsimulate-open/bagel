@@ -61,9 +61,11 @@ class IndexRange {
     // total size of this index range
     int size_;
     int keyoffset_;
+    int orboffset_;
 
   public:
-    IndexRange(const int size, const int maxblock = 10, const int boffset = 0) : keyoffset_(boffset) {
+    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0)
+      : keyoffset_(boffset), orboffset_(orboff) {
       // first determine number of blocks. 
       const size_t nbl = (size-1) / maxblock + 1;
       const size_t nblock = (size-1) / nbl + 1;
@@ -73,7 +75,7 @@ class IndexRange {
       auto iter = blocksizes.rbegin();
       for (int k = 0; k != rem; ++iter, ++k) --*iter;
       // push back to range_
-      size_t off = 0;
+      size_t off = orboffset_;
       // key is offsetted by the input value
       size_t cnt = boffset;
       for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {

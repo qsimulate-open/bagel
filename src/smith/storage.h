@@ -93,21 +93,8 @@ class Storage_Incore : public Storage_base {
     void add_block(const size_t& key, const std::unique_ptr<double[]>& dat);
 
     void zero();
-    Storage_Incore& operator=(const Storage_Incore& o){
-      if (data_.size() == o.data_.size()) {
-        auto i = data_.begin();
-        auto k = hashtable_.begin();
-        auto l = o.hashtable_.begin();
-        for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
-          if (k->second != l->second || k->first != l->first)
-            throw std::logic_error("Trying to copy something different in Storage_Incore");
-          dcopy_(k->second.second, *j, 1, *i, 1);
-        }
-      } else {
-        throw std::logic_error("Trying to copy something different in Storage_Incore");
-      }
-      return *this;
-    };
+    Storage_Incore& operator=(const Storage_Incore& o);
+    double ddot(const Storage_Incore& o) const;
 };
 
 }

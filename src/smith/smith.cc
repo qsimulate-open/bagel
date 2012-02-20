@@ -39,7 +39,7 @@ using namespace std;
 void mp2_noniter(shared_ptr<Reference> r){
   const int max = 7;
   IndexRange closed(r->nclosed(), max);
-  IndexRange virt(r->nvirt(), max, closed.nblock());
+  IndexRange virt(r->nvirt(), max, closed.nblock(), closed.size());
 
   vector<IndexRange> o;
   o.push_back(closed);
@@ -49,8 +49,7 @@ void mp2_noniter(shared_ptr<Reference> r){
 
   K2ext<Storage_Incore> a(r, o);
   shared_ptr<Tensor<Storage_Incore> > tensor2 = a.data();
-  shared_ptr<Tensor<Storage_Incore> > tensor = tensor2->clone();
-  *tensor = *tensor2;
+  shared_ptr<Tensor<Storage_Incore> > tensor = tensor2->copy();
 
   // debug implementation of MP2 here.
   shared_ptr<Fock<1> > fock0(new Fock<1>(r->geom(), r->hcore()));
@@ -59,8 +58,8 @@ void mp2_noniter(shared_ptr<Reference> r){
   Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
 
   vector<double> eig;
-  const int nocc = r->nclosed() + r->nact();
   const int nb = r->nclosed() + r->nact() + r->nvirt();
+  const int nocc = r->nclosed() + r->nact();
   for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); }
 
   double en = 0.0;
@@ -85,8 +84,8 @@ void mp2_noniter(shared_ptr<Reference> r){
           for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
             for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
               for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
-                 for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
-                  en += buf[iall] * d[iall] / (eig[j0] + eig[j2] - eig[j3+nocc] - eig[j1+nocc]);
+                for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+                  en += buf[iall] * d[iall] / (eig[j0] + eig[j2] - eig[j3] - eig[j1]);
                 }
               }
             }
@@ -103,6 +102,29 @@ void mp2_noniter(shared_ptr<Reference> r){
 void mp2_denom(shared_ptr<Tensor<Storage_Incore> > r, vector<double> eig) {
 
   vector<IndexRange> o = r->indexrange();
+  assert(o.size() == 4);
+  for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+    for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+      for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+        for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+          vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+          const size_t size = r->get_size(h);
+          unique_ptr<double[]> data = r->move_block(h);
+          size_t iall = 0;
+          for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
+            for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
+              for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
+                for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+                  data[iall] /= (eig[j0] + eig[j2] - eig[j3] - eig[j1]);
+                }
+              }
+            }
+          }
+          r->put_block(h,data);
+        }
+      }
+    }
+  }
 
 }
 
@@ -119,20 +141,31 @@ void mp2_iter(shared_ptr<Reference> r){
 
   // t2 and v2 tensors.
   IndexRange closed(r->nclosed(), max);
-  IndexRange virt(r->nvirt(), max, closed.nblock());
+  IndexRange virt(r->nvirt(), max, closed.nblock(), closed.size());
   vector<IndexRange> o;
   o.push_back(closed);
   o.push_back(virt);
   o.push_back(closed);
   o.push_back(virt);
   K2ext<Storage_Incore> v2k(r, o);
-  shared_ptr<Tensor<Storage_Incore> > v2 = v2k.tensor();
-  shared_ptr<Tensor<Storage_Incore> > t2(new Tensor<Storage_Incore>(o));
-  shared_ptr<Tensor<Storage_Incore> > r2(new Tensor<Storage_Incore>(o));
-  t2->zero();
-  *r2 = *t2;
+  const shared_ptr<Tensor<Storage_Incore> > v2 = v2k.tensor();
 
-//mp2_denom(r2);
+  shared_ptr<Tensor<Storage_Incore> > t2(new Tensor<Storage_Incore>(o));
+  shared_ptr<Tensor<Storage_Incore> > r2 = t2->clone();
+  *r2 = *v2;
+
+  // debug implementation of MP2 here.
+  shared_ptr<Fock<1> > fock0(new Fock<1>(r->geom(), r->hcore()));
+  shared_ptr<Matrix1e> den(new Matrix1e(r->coeff()->form_density_rhf()));
+  shared_ptr<Fock<1> > fock1(new Fock<1>(r->geom(), fock0, den, r->schwarz()));
+  Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
+  vector<double> eig;
+  const int nb = r->nclosed() + r->nact() + r->nvirt();
+  for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); } // <-- of course it should be got from f1 directly :-)
+
+  mp2_denom(r2,eig);
+  const double ca = r2->ddot(v2);
+  cout << ca << endl;
 
   // r2 += -1.0 (2t2-t2) * f1(occu)
   // r2 +=  1.0 (2t2-t2) * f1(virt)

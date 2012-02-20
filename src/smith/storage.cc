@@ -99,3 +99,39 @@ void Storage_Incore::zero() {
     fill(data_[bn].get(), data_[bn].get()+ln, 0.0);
   }
 }
+
+Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
+  if (data_.size() == o.data_.size()) {
+    auto i = data_.begin();
+    auto k = hashtable_.begin();
+    auto l = o.hashtable_.begin();
+    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
+      if (k->second != l->second || k->first != l->first)
+        throw logic_error("Trying to copy something different in Storage_Incore");
+      dcopy_(k->second.second, *j, 1, *i, 1);
+    }
+  } else {
+    throw logic_error("Trying to copy something different in Storage_Incore");
+  }
+  return *this;
+}
+
+
+double Storage_Incore::ddot(const Storage_Incore& o) const {
+  double out = 0.0;
+  if (data_.size() == o.data_.size()) {
+    auto i = data_.begin();
+    auto k = hashtable_.begin();
+    auto l = o.hashtable_.begin();
+    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
+      if (k->second != l->second || k->first != l->first)
+        throw logic_error("Trying to copy something different in Storage_Incore");
+      out += ddot_(k->second.second, *j, 1, *i, 1);
+    }
+  } else {
+    throw logic_error("Trying to copy something different in Storage_Incore");
+  }
+  return out;
+}
+
+

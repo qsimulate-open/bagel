@@ -69,8 +69,7 @@ class K2ext {
         // virtual loop
         size_t cnt2 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
-          const size_t i1off = ref_->nclosed() + ref_->nact() + i1->offset();
-          std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1off, i1->size());
+          std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1->offset(), i1->size());
 
           std::vector<size_t> h(1,cnt);
           h.push_back(cnt2);
