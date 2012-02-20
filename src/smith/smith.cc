@@ -114,12 +114,7 @@ void mp2_denom(shared_ptr<Tensor<Storage_Incore> > r, vector<double> eig) {
             for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
               for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
                 for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
-#if 1 
                   data[iall] /= (eig[j0] + eig[j2] - eig[j3] - eig[j1]);
-#else
-                  data[iall] /= ( - eig[j3] - eig[j1]);
-                  data[iall] /= (eig[j0] + eig[j2]);
-#endif
                 }
               }
             }
