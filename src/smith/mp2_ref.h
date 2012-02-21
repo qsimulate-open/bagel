@@ -28,7 +28,6 @@
 #define __SRC_SMITH_MP2_REF_H 
 
 #include <src/smith/spinfreebase.h>
-#include <src/smith/prim_op.h>
 #include <src/scf/fock.h>
 #include <src/util/f77.h>
 #include <iostream>
@@ -72,7 +71,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
       for (int iter = 0; iter != 10; ++iter) {
         // setting source term
         mp2_residual(r2,t2);
-        std::cout << std::setprecision(10) << std::setw(30) << v2()->ddot(mp2_source(t2))/2 <<  "  +++" << std::endl;
+        std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2, eig));
       }
     };
@@ -163,9 +162,9 @@ class MP2_Ref : public SpinFreeMethod<T> {
           }
         }
       }
-      r2 = mp2_add_dagger(r2);
+      r2 = r2->add_dagger();
 
-    }
+    };
 
     std::shared_ptr<Tensor<T> > mp2_denom(std::shared_ptr<Tensor<T> > r, std::vector<double> eig) {
       std::shared_ptr<Tensor<T> > out = r->clone();
@@ -196,51 +195,33 @@ class MP2_Ref : public SpinFreeMethod<T> {
         }
       }
       return out;
-    }
+    };
 
-    // overwrites on r (anyway this will be generated in the future)
-    std::shared_ptr<Tensor<T> > mp2_source(std::shared_ptr<Tensor<T> > r) {
+
+    // r is an amplitude tensor
+    double mp2_energy(const std::shared_ptr<Tensor<T> > r) {
       std::shared_ptr<Tensor<T> > out = r->clone();
       std::vector<IndexRange> o = r->indexrange();
       assert(o.size() == 4);
+      double en = 0.0;
       for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
         for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
           for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
             for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
               std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
               std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
+              const std::unique_ptr<double[]> data = v2()->get_block(h);
               std::unique_ptr<double[]> data0 = r->get_block(h);
               const std::unique_ptr<double[]> data1 = r->get_block(g);
               sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
-              out->put_block(h,data0);
+              en += ddot_(r->get_size(h), data, 1, data0, 1);
             }
           }
         }
       }
-      return out;
-    }
+      return en;
+    };
 
-    // overwrites on r (anyway this will be generated in the future)
-    std::shared_ptr<Tensor<T> > mp2_add_dagger(std::shared_ptr<Tensor<T> > r) {
-      std::shared_ptr<Tensor<T> > out = r->clone();
-      std::vector<IndexRange> o = r->indexrange();
-      assert(o.size() == 4);
-      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i2->key(); g[1] = i3->key(); g[2] = i0->key(); g[3] = i1->key();
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices4(data1, data0, i2->size(), i3->size(), i0->size(), i1->size(), 2, 3, 0, 1, 1.0, 1.0); 
-              out->put_block(h,data0);
-            }
-          }
-        }
-      }
-      return out;
-    }
 };
 
 }

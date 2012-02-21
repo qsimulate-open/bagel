@@ -27,6 +27,7 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
+#include <src/smith/prim_op.h>
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/wfn/reference.h>
@@ -79,6 +80,8 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor<T> >& v2() { return v2_; };
     std::shared_ptr<Tensor<T> >& f1() { return f1_; };
+
+
 };
 
 }

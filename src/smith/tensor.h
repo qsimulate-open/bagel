@@ -133,6 +133,27 @@ class Tensor {
     };
 
     void zero() { data_->zero(); };
+
+    std::shared_ptr<Tensor<T> > add_dagger() {
+      std::shared_ptr<Tensor<T> > out = clone();
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 4);
+      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+              std::vector<size_t> g(4); g[0] = i2->key(); g[1] = i3->key(); g[2] = i0->key(); g[3] = i1->key();
+              std::unique_ptr<double[]> data0 = get_block(h);
+              const std::unique_ptr<double[]> data1 = get_block(g);
+              sort_indices4(data1, data0, i2->size(), i3->size(), i0->size(), i1->size(), 2, 3, 0, 1, 1.0, 1.0); 
+              out->put_block(h,data0);
+            }
+          }
+        }
+      }
+      return out;
+    };
 };
 
 }
