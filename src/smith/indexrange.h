@@ -86,6 +86,7 @@ class IndexRange {
       // set size_
       size_ = off;
     }; 
+    IndexRange() {};
     ~IndexRange() {};
 
     const std::vector<Index>& range() const { return range_; };

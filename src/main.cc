@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     }
     print_footer();
 
-mp2_noniter(ref);
+//mp2_noniter(ref);
 mp2_iter(ref);
 
     // end of the main file
