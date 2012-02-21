@@ -76,6 +76,7 @@ class Storage_base {
     virtual void add_block(const size_t& key, const std::unique_ptr<double[]>& dat) = 0;
 
     virtual void zero() = 0;
+    virtual void scale(const double a) = 0;
 
 };
 
@@ -93,7 +94,11 @@ class Storage_Incore : public Storage_base {
     void add_block(const size_t& key, const std::unique_ptr<double[]>& dat);
 
     void zero();
+    void scale(const double a);
+
     Storage_Incore& operator=(const Storage_Incore& o);
+    void daxpy(const double a, const Storage_Incore& o);
+    void daxpy(const double a, const std::shared_ptr<Storage_Incore> o) { daxpy(a, *o); };
     double ddot(const Storage_Incore& o) const;
 };
 

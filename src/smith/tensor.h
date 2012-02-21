@@ -99,6 +99,11 @@ class Tensor {
       return out;
     };
 
+    void daxpy(const double a, const Tensor<T>& o) { data_->daxpy(a, o.data_); };
+    void daxpy(const double a, const std::shared_ptr<Tensor<T> > o) { data_->daxpy(a, o->data_); };
+
+    void scale(const double a) { data_->scale(a); };
+
     double ddot(const Tensor<T>& o) { return data_->ddot(*o.data_); };
     double ddot(const std::shared_ptr<Tensor<T> >& o) { return data_->ddot(*o->data_); };
 

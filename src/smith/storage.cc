@@ -35,7 +35,7 @@ using namespace std;
 
 
 Storage_Incore::Storage_Incore(const map<size_t, size_t>& size) : Storage_base(size) {
-  cout << "creating a field of " << length() << endl;
+//cout << "creating a field of " << length() << endl;
   for (auto i = size.begin(); i != size.end(); ++i) {
     unique_ptr<double[]> tmp(new double[i->second]); 
     data_.push_back(move(tmp));
@@ -100,6 +100,14 @@ void Storage_Incore::zero() {
   }
 }
 
+void Storage_Incore::scale(const double a) {
+  for (auto i = hashtable_.begin(); i != hashtable_.end(); ++i) {
+    const size_t bn = i->second.first;
+    const size_t ln = i->second.second;
+    dscal_(ln, a, data_[bn], 1);
+  }
+}
+
 Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
   if (data_.size() == o.data_.size()) {
     auto i = data_.begin();
@@ -114,6 +122,22 @@ Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
     throw logic_error("Trying to copy something different in Storage_Incore");
   }
   return *this;
+}
+
+
+void Storage_Incore::daxpy(const double a, const Storage_Incore& o) {
+  if (data_.size() == o.data_.size()) {
+    auto i = data_.begin();
+    auto k = hashtable_.begin();
+    auto l = o.hashtable_.begin();
+    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
+      if (k->second != l->second || k->first != l->first)
+        throw logic_error("Trying to copy something different in Storage_Incore");
+      daxpy_(k->second.second, a, *j, 1, *i, 1);
+    }
+  } else {
+    throw logic_error("Trying to copy something different in Storage_Incore");
+  }
 }
 
 
