@@ -35,9 +35,28 @@
 
 namespace SMITH {
 
+// base class for Task objects
+// assumes that the operation table is static (not adjustable at runtime). 
+class Task {
+  protected:
+    std::list<std::shared_ptr<Task> > depend_;
+
+  public:
+    Task(const std::list<std::shared_ptr<Task> >& de) : depend_(de) {}; 
+    ~Task() { };
+    virtual void compute() = 0;
+
+    bool ready() const {
+      bool out = true;
+      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
+      return out;
+    };
+};
+
 template <typename T>
 class MP2_Ref : public SpinFreeMethod<T> {
   protected:
+//  std::list<Task> tasks_;
 
   public:
     MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r) {
