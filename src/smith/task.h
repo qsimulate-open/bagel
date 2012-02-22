@@ -34,17 +34,30 @@ namespace SMITH {
 template <typename T>
 class Task {
   protected:
-//  std::list<std::shared_ptr<Task> > depend_;
+    std::list<std::shared_ptr<Task<T> > > depend_;
+    std::list<Task<T>*> target_;
+    bool done_;
+    virtual void compute_() = 0;
 
   public:
-    Task() {}; 
+    Task() : done_(false) {};
+    Task(std::list<std::shared_ptr<Task<T> > >& d) : depend_(d), done_(false) {};
     ~Task() { };
-    virtual void compute() = 0;
+    void compute() {
+      compute_();
+      done_ = true;
+    };
+
+    void add_dep(std::shared_ptr<Task<T> > a) {
+      depend_.push_back(a);
+      a->set_target(this);
+    };
+    void set_target(Task<T>* b) { target_.push_back(b); };
 
     bool ready() const {
       bool out = true;
-//    for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
-      return out;
+      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
+      return out && !done_;
     };
 };
 

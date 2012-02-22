@@ -59,7 +59,14 @@ class MP2_Ref : public SpinFreeMethod<T> {
       std::shared_ptr<Task1<T> > t1(new Task1<T>(tensor0, index0));
       std::shared_ptr<Task2<T> > t2(new Task2<T>(tensor1, index0));
       std::shared_ptr<Task3<T> > t3(new Task3<T>(tensor2, index0));
+      t0->add_dep(t3);
+      t1->add_dep(t3);
+      t2->add_dep(t3);
       std::shared_ptr<Task4<T> > t4(new Task4<T>(tensor2, index0));
+      t4->add_dep(t1);
+      t4->add_dep(t2);
+      t4->add_dep(t3);
+
       tasks_.push_back(t3);
       tasks_.push_back(t0);
       tasks_.push_back(t1);
@@ -91,18 +98,14 @@ class MP2_Ref : public SpinFreeMethod<T> {
 
       //////// start iteration ///////
       for (int iter = 0; iter != 10; ++iter) {
-        // setting source term
-        mp2_residual();
+
+        for (auto iter = tasks_.begin(); iter != tasks_.end(); ++iter) (*iter)->compute();
+
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2, eig));
       }
     };
 
-    void mp2_residual() {
-
-      for (auto iter = tasks_.begin(); iter != tasks_.end(); ++iter) (*iter)->compute();
-
-    };
 
     std::shared_ptr<Tensor<T> > mp2_denom(std::shared_ptr<Tensor<T> > r, std::vector<double> eig) {
       std::shared_ptr<Tensor<T> > out = r->clone();

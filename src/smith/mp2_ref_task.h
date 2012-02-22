@@ -45,18 +45,7 @@ class Task0 : public Task<T> {
     IndexRange closed_;
     IndexRange virt_;
 
-  public:
-    Task0(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task0 error");
-      r2_ =  t[0];
-      f1_ =  t[1];
-      t2_ =  t[2];
-      closed_ = i[0];
-      virt_   = i[1];
-    };
-    ~Task0() {};
-
-    void compute() {
+    void compute_() {
       for (auto i3 = virt_.begin(); i3 != virt_.end(); ++i3) {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
@@ -90,6 +79,18 @@ class Task0 : public Task<T> {
         }
       }
     };
+
+  public:
+    Task0(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task0 error");
+      r2_ =  t[0];
+      f1_ =  t[1];
+      t2_ =  t[2];
+      closed_ = i[0];
+      virt_   = i[1];
+    };
+    ~Task0() {};
+
 };
 
 
@@ -102,18 +103,7 @@ class Task1 : public Task<T> {
     IndexRange closed_;
     IndexRange virt_;
 
-  public:
-    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task1 error");
-      r2_ =  t[0];
-      f1_ =  t[1];
-      t2_ =  t[2];
-      closed_ = i[0];
-      virt_   = i[1];
-    };
-    ~Task1() {};
-
-    void compute() {
+    void compute_() {
       for (auto i3 = virt_.begin(); i3 != virt_.end(); ++i3) {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
@@ -148,6 +138,18 @@ class Task1 : public Task<T> {
         }
       }
     };
+
+  public:
+    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task1 error");
+      r2_ =  t[0];
+      f1_ =  t[1];
+      t2_ =  t[2];
+      closed_ = i[0];
+      virt_   = i[1];
+    };
+    ~Task1() {};
+
 };
 
 
@@ -159,17 +161,7 @@ class Task2 : public Task<T> {
     IndexRange closed_;
     IndexRange virt_;
 
-  public:
-    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      if (t.size() != 2 || i.size() != 2) throw std::logic_error("Task2 error");
-      r2_ =  t[0];
-      v2_ =  t[1];
-      closed_ = i[0];
-      virt_   = i[1];
-    };
-    ~Task2() {};
-
-    void compute() {
+    void compute_() {
       for (auto i3 = virt_.begin(); i3 != virt_.end(); ++i3) {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
@@ -187,6 +179,17 @@ class Task2 : public Task<T> {
         }
       }
     };
+
+  public:
+    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      if (t.size() != 2 || i.size() != 2) throw std::logic_error("Task2 error");
+      r2_ =  t[0];
+      v2_ =  t[1];
+      closed_ = i[0];
+      virt_   = i[1];
+    };
+    ~Task2() {};
+
 };
 
 
@@ -197,6 +200,10 @@ class Task3 : public Task<T> {
     IndexRange closed_;
     IndexRange virt_;
 
+    void compute_() {
+      r2_->zero();
+    };
+
   public:
     Task3(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 1 || i.size() != 2) throw std::logic_error("Task3 error");
@@ -206,9 +213,6 @@ class Task3 : public Task<T> {
     };
     ~Task3() {};
 
-    void compute() {
-      r2_->zero();
-    };
 };
 
 
@@ -219,6 +223,10 @@ class Task4 : public Task<T> {
     IndexRange closed_;
     IndexRange virt_;
 
+    void compute_() {
+      *r2_ = *(r2_->add_dagger());
+    };
+
   public:
     Task4(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 1 || i.size() != 2) throw std::logic_error("Task4 error");
@@ -228,9 +236,6 @@ class Task4 : public Task<T> {
     };
     ~Task4() {};
 
-    void compute() {
-      *r2_ = *(r2_->add_dagger());
-    };
 };
 
 }
