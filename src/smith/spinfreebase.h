@@ -81,6 +81,7 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T> >& v2() { return v2_; };
     std::shared_ptr<Tensor<T> >& f1() { return f1_; };
 
+    virtual void solve() = 0;
 
 };
 

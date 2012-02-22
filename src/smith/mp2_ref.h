@@ -84,9 +84,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
     std::shared_ptr<Tensor<T> >& v2() { return this->v2_; };
     std::shared_ptr<Tensor<T> >& f1() { return this->f1_; };
 
-    void mp2_iter() {
-
-      // debug implementation of MP2 here.
+    void solve() {
       std::shared_ptr<Fock<1> > fock0(new Fock<1>(ref()->geom(), ref()->hcore()));
       std::shared_ptr<Matrix1e> den(new Matrix1e(ref()->coeff()->form_density_rhf()));
       std::shared_ptr<Fock<1> > fock1(new Fock<1>(ref()->geom(), fock0, den, ref()->schwarz()));
@@ -99,13 +97,12 @@ class MP2_Ref : public SpinFreeMethod<T> {
 
       //////// start iteration ///////
       for (int iter = 0; iter != 10; ++iter) {
-
         queue_->initialize();
         while (!queue_->done()) queue_->next()->compute(); 
-
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2, eig));
       }
+      //////// end iteration ///////
     };
 
 

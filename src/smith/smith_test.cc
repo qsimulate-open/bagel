@@ -30,9 +30,9 @@ using namespace SMITH;
 using namespace std;
 
 // called from the main function
-void mp2_iter(shared_ptr<Reference> r) {
+void smith_test(shared_ptr<Reference> r) {
   MP2_Ref<Storage_Incore> mp2(r);
-  mp2.mp2_iter();
+  mp2.solve();
 }
 
 
