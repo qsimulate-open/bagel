@@ -54,9 +54,13 @@ class Task {
     };
     void set_target(Task<T>* b) { target_.push_back(b); };
 
+    void initialize() { done_ = false; };
+
+    bool done() const { return done_; };
+
     bool ready() const {
       bool out = true;
-      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
+      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->done();
       return out && !done_;
     };
 };

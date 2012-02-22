@@ -32,7 +32,7 @@
 #include <src/util/f77.h>
 #include <iostream>
 #include <iomanip>
-#include <src/smith/task.h>
+#include <src/smith/queue.h>
 #include <src/smith/mp2_ref_task.h>
 
 namespace SMITH {
@@ -40,12 +40,12 @@ namespace SMITH {
 template <typename T>
 class MP2_Ref : public SpinFreeMethod<T> {
   protected:
-    std::list<std::shared_ptr<Task<T> > > tasks_;
+    std::shared_ptr<Queue<T> > queue_;
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r2;
 
   public:
-    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r) {
+    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), queue_(new Queue<T>()) {
 
       t2 = this->v2_->clone();
       r2 = t2->clone();
@@ -63,15 +63,16 @@ class MP2_Ref : public SpinFreeMethod<T> {
       t1->add_dep(t3);
       t2->add_dep(t3);
       std::shared_ptr<Task4<T> > t4(new Task4<T>(tensor2, index0));
+      t4->add_dep(t0);
       t4->add_dep(t1);
       t4->add_dep(t2);
       t4->add_dep(t3);
 
-      tasks_.push_back(t3);
-      tasks_.push_back(t0);
-      tasks_.push_back(t1);
-      tasks_.push_back(t2);
-      tasks_.push_back(t4);
+      queue_->add_task(t3);
+      queue_->add_task(t4);
+      queue_->add_task(t2);
+      queue_->add_task(t1);
+      queue_->add_task(t0);
     };
     ~MP2_Ref() {};
 
@@ -99,7 +100,8 @@ class MP2_Ref : public SpinFreeMethod<T> {
       //////// start iteration ///////
       for (int iter = 0; iter != 10; ++iter) {
 
-        for (auto iter = tasks_.begin(); iter != tasks_.end(); ++iter) (*iter)->compute();
+        queue_->initialize();
+        while (!queue_->done()) queue_->next()->compute(); 
 
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2, eig));
