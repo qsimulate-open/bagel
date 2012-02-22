@@ -134,6 +134,22 @@ class Tensor {
 
     void zero() { data_->zero(); };
 
+    std::unique_ptr<double[]> diag() {
+      if (rank_ != 2 || range_[0] != range_[1])
+        throw std::logic_error("Tensor::diag can be called only with a square tensor of rank 2");
+      const size_t size = range_[0].size();
+      std::unique_ptr<double[]> buf(new double[size]);
+      for (auto i = range_[0].begin(); i != range_[0].end(); ++i) {
+        std::vector<size_t> h = vec(i->key(), i->key());
+        std::unique_ptr<double[]> data0 = move_block(h); 
+        for (int j = 0; j != i->size(); ++j) {
+          buf[j+i->offset()] = data0[j+j*i->size()]; 
+        }
+        put_block(h, data0);
+      }
+      return std::move(buf);
+    };
+
     std::shared_ptr<Tensor<T> > add_dagger() {
       std::shared_ptr<Tensor<T> > out = clone();
       std::vector<IndexRange> o = indexrange();

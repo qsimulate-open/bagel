@@ -44,8 +44,12 @@ class MP2_Ref : public SpinFreeMethod<T> {
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r2;
 
+    std::unique_ptr<double[]> eig_;
+
   public:
     MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), queue_(new Queue<T>()) {
+
+      eig_ = this->f1_->diag();
 
       t2 = this->v2_->clone();
       r2 = t2->clone();
@@ -85,28 +89,17 @@ class MP2_Ref : public SpinFreeMethod<T> {
     std::shared_ptr<Tensor<T> >& f1() { return this->f1_; };
 
     void solve() {
-      std::shared_ptr<Fock<1> > fock0(new Fock<1>(ref()->geom(), ref()->hcore()));
-      std::shared_ptr<Matrix1e> den(new Matrix1e(ref()->coeff()->form_density_rhf()));
-      std::shared_ptr<Fock<1> > fock1(new Fock<1>(ref()->geom(), fock0, den, ref()->schwarz()));
-      Matrix1e f = *ref()->coeff() % *fock1 * *ref()->coeff();
-      std::vector<double> eig;
-      const int nb = ref()->nclosed() + ref()->nact() + ref()->nvirt();
-      for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); } // <-- of course it should be got from f1 directly :-)
-
       t2->zero();
-
-      //////// start iteration ///////
       for (int iter = 0; iter != 10; ++iter) {
         queue_->initialize();
         while (!queue_->done()) queue_->next()->compute(); 
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
-        t2->daxpy(1.0, mp2_denom(r2, eig));
+        t2->daxpy(1.0, mp2_denom(r2));
       }
-      //////// end iteration ///////
     };
 
 
-    std::shared_ptr<Tensor<T> > mp2_denom(std::shared_ptr<Tensor<T> > r, std::vector<double> eig) {
+    std::shared_ptr<Tensor<T> > mp2_denom(std::shared_ptr<Tensor<T> > r) {
       std::shared_ptr<Tensor<T> > out = r->clone();
       std::vector<IndexRange> o = r->indexrange();
       assert(o.size() == 4);
@@ -124,7 +117,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
                 for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
                   for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
                     for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
-                      data0[iall] /= (eig[j0] + eig[j2] - eig[j3] - eig[j1] + 0.01);
+                      data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] + 0.01);
                     }
                   }
                 }
