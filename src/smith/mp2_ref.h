@@ -37,19 +37,32 @@ namespace SMITH {
 
 // base class for Task objects
 // assumes that the operation table is static (not adjustable at runtime). 
+template <typename T>
 class Task {
   protected:
-    std::list<std::shared_ptr<Task> > depend_;
+//  std::list<std::shared_ptr<Task> > depend_;
 
   public:
-    Task(const std::list<std::shared_ptr<Task> >& de) : depend_(de) {}; 
+    Task() {}; 
     ~Task() { };
-    virtual void compute() = 0;
+    virtual void compute(std::vector<std::shared_ptr<Tensor<T> > >& o, const std::vector<IndexRange>& i) = 0;
 
     bool ready() const {
       bool out = true;
-      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
+//    for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
       return out;
+    };
+};
+
+template <typename T>
+class Task0 : public Task<T> {
+  public:
+    Task0() : Task<T>() {};
+    ~Task0() {};
+    void compute(std::vector<std::shared_ptr<Tensor<T> > >& t, const std::vector<IndexRange>& i) {
+      std::shared_ptr<Tensor<T> > r2_ =  t[0];
+      std::shared_ptr<Tensor<T> > f2_ =  t[1];
+      std::shared_ptr<Tensor<T> > t2_ =  t[2];
     };
 };
 
@@ -103,8 +116,8 @@ class MP2_Ref : public SpinFreeMethod<T> {
         for (auto i2 = closed().begin(); i2 != closed().end(); ++i2) {
           for (auto i1 = virt().begin(); i1 != virt().end(); ++i1) {
             for (auto i0 = closed().begin(); i0 != closed().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
+              std::vector<size_t> h = vec(i0->key(), i1->key(), i2->key(), i3->key());
+              std::vector<size_t> g = vec(i0->key(), i3->key(), i2->key(), i1->key());
               std::unique_ptr<double[]> data0 = v2()->get_block(h);
               const std::unique_ptr<double[]> data1 = v2()->get_block(g);
               sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
@@ -118,15 +131,15 @@ class MP2_Ref : public SpinFreeMethod<T> {
         for (auto i2 = closed().begin(); i2 != closed().end(); ++i2) {
           for (auto i1 = virt().begin(); i1 != virt().end(); ++i1) {
             for (auto i0 = closed().begin(); i0 != closed().end(); ++i0) {
-              std::vector<size_t> ohash(4); ohash[0] = i0->key(); ohash[1] = i1->key(); ohash[2] = i2->key(); ohash[3] = i3->key();
+              std::vector<size_t> ohash = vec(i0->key(), i1->key(), i2->key(), i3->key());
               std::unique_ptr<double[]> odata = r2->move_block(ohash);
 
               for (auto c0 = closed().begin(); c0 != closed().end(); ++c0) {
-                std::vector<size_t> ihash0(2); ihash0[0] = c0->key(); ihash0[1] = i0->key();
+                std::vector<size_t> ihash0 = vec(c0->key(), i0->key());
                 const std::unique_ptr<double[]> idata0 = f1()->get_block(ihash0);
 
-                std::vector<size_t> ihash1(4); ihash1[0] = c0->key(); ihash1[1] = i1->key(); ihash1[2] = i2->key(); ihash1[3] = i3->key();
-                std::vector<size_t> ihash2(4); ihash2[0] = c0->key(); ihash2[1] = i3->key(); ihash2[2] = i2->key(); ihash2[3] = i1->key();
+                std::vector<size_t> ihash1 = vec(c0->key(), i1->key(), i2->key(), i3->key());
+                std::vector<size_t> ihash2 = vec(c0->key(), i3->key(), i2->key(), i1->key());
                 const std::unique_ptr<double[]> idata1 = t2->get_block(ihash1);
                 const std::unique_ptr<double[]> idata2 = t2->get_block(ihash2);
                 std::unique_ptr<double[]> idata3(new double[t2->get_size(ihash1)]); 
@@ -157,11 +170,11 @@ class MP2_Ref : public SpinFreeMethod<T> {
               std::unique_ptr<double[]> idata4(new double[r2->get_size(ohash)]);
 
               for (auto c0 = virt().begin(); c0 != virt().end(); ++c0) {
-                std::vector<size_t> ihash0(2); ihash0[0] = c0->key(); ihash0[1] = i1->key();
+                std::vector<size_t> ihash0 = vec(c0->key(), i0->key());
                 const std::unique_ptr<double[]> idata0 = f1()->get_block(ihash0);
 
-                std::vector<size_t> ihash1(4); ihash1[0] = i0->key(); ihash1[1] = c0->key(); ihash1[2] = i2->key(); ihash1[3] = i3->key();
-                std::vector<size_t> ihash2(4); ihash2[0] = i0->key(); ihash2[1] = i3->key(); ihash2[2] = i2->key(); ihash2[3] = c0->key();
+                std::vector<size_t> ihash1 = vec(i0->key(), c0->key(), i2->key(), i3->key());
+                std::vector<size_t> ihash2 = vec(i0->key(), i3->key(), i2->key(), c0->key());
                 const std::unique_ptr<double[]> idata1 = t2->get_block(ihash1);
                 const std::unique_ptr<double[]> idata2 = t2->get_block(ihash2);
 
