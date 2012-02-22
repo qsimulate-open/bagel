@@ -32,47 +32,39 @@
 #include <src/util/f77.h>
 #include <iostream>
 #include <iomanip>
+#include <src/smith/task.h>
+#include <src/smith/mp2_ref_task.h>
 
 namespace SMITH {
-
-// base class for Task objects
-// assumes that the operation table is static (not adjustable at runtime). 
-template <typename T>
-class Task {
-  protected:
-//  std::list<std::shared_ptr<Task> > depend_;
-
-  public:
-    Task() {}; 
-    ~Task() { };
-    virtual void compute(std::vector<std::shared_ptr<Tensor<T> > >& o, const std::vector<IndexRange>& i) = 0;
-
-    bool ready() const {
-      bool out = true;
-//    for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->ready();
-      return out;
-    };
-};
-
-template <typename T>
-class Task0 : public Task<T> {
-  public:
-    Task0() : Task<T>() {};
-    ~Task0() {};
-    void compute(std::vector<std::shared_ptr<Tensor<T> > >& t, const std::vector<IndexRange>& i) {
-      std::shared_ptr<Tensor<T> > r2_ =  t[0];
-      std::shared_ptr<Tensor<T> > f2_ =  t[1];
-      std::shared_ptr<Tensor<T> > t2_ =  t[2];
-    };
-};
 
 template <typename T>
 class MP2_Ref : public SpinFreeMethod<T> {
   protected:
-//  std::list<Task> tasks_;
+    std::list<std::shared_ptr<Task<T> > > tasks_;
+    std::shared_ptr<Tensor<T> > t2;
+    std::shared_ptr<Tensor<T> > r2;
 
   public:
     MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r) {
+
+      t2 = this->v2_->clone();
+      r2 = t2->clone();
+
+      std::vector<std::shared_ptr<Tensor<T> > > tensor0 = vec(r2, this->f1_, t2);
+      std::vector<std::shared_ptr<Tensor<T> > > tensor1 = vec(r2, this->v2_);
+      std::vector<std::shared_ptr<Tensor<T> > > tensor2 = vec(r2);
+      std::vector<IndexRange> index0 =  vec(this->closed_, this->virt_);
+
+      std::shared_ptr<Task0<T> > t0(new Task0<T>(tensor0, index0));
+      std::shared_ptr<Task1<T> > t1(new Task1<T>(tensor0, index0));
+      std::shared_ptr<Task2<T> > t2(new Task2<T>(tensor1, index0));
+      std::shared_ptr<Task3<T> > t3(new Task3<T>(tensor2, index0));
+      std::shared_ptr<Task4<T> > t4(new Task4<T>(tensor2, index0));
+      tasks_.push_back(t3);
+      tasks_.push_back(t0);
+      tasks_.push_back(t1);
+      tasks_.push_back(t2);
+      tasks_.push_back(t4);
     };
     ~MP2_Ref() {};
 
@@ -95,106 +87,20 @@ class MP2_Ref : public SpinFreeMethod<T> {
       const int nb = ref()->nclosed() + ref()->nact() + ref()->nvirt();
       for (int i = 0; i != nb; ++i) { eig.push_back(f.element(i,i)); } // <-- of course it should be got from f1 directly :-)
 
-      std::shared_ptr<Tensor<T> > t2 = v2()->clone();
       t2->zero();
-      std::shared_ptr<Tensor<T> > r2 = t2->clone();
 
       //////// start iteration ///////
       for (int iter = 0; iter != 10; ++iter) {
         // setting source term
-        mp2_residual(r2,t2);
+        mp2_residual();
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2, eig));
       }
     };
 
-    void mp2_residual(std::shared_ptr<Tensor<T> >& r2, const std::shared_ptr<Tensor<T> > t2) {
+    void mp2_residual() {
 
-      r2->zero();
-
-      for (auto i3 = virt().begin(); i3 != virt().end(); ++i3) {
-        for (auto i2 = closed().begin(); i2 != closed().end(); ++i2) {
-          for (auto i1 = virt().begin(); i1 != virt().end(); ++i1) {
-            for (auto i0 = closed().begin(); i0 != closed().end(); ++i0) {
-              std::vector<size_t> h = vec(i0->key(), i1->key(), i2->key(), i3->key());
-              std::vector<size_t> g = vec(i0->key(), i3->key(), i2->key(), i1->key());
-              std::unique_ptr<double[]> data0 = v2()->get_block(h);
-              const std::unique_ptr<double[]> data1 = v2()->get_block(g);
-              sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
-              r2->put_block(h,data0);
-            }
-          }
-        }
-      }
-
-      for (auto i3 = virt().begin(); i3 != virt().end(); ++i3) {
-        for (auto i2 = closed().begin(); i2 != closed().end(); ++i2) {
-          for (auto i1 = virt().begin(); i1 != virt().end(); ++i1) {
-            for (auto i0 = closed().begin(); i0 != closed().end(); ++i0) {
-              std::vector<size_t> ohash = vec(i0->key(), i1->key(), i2->key(), i3->key());
-              std::unique_ptr<double[]> odata = r2->move_block(ohash);
-
-              for (auto c0 = closed().begin(); c0 != closed().end(); ++c0) {
-                std::vector<size_t> ihash0 = vec(c0->key(), i0->key());
-                const std::unique_ptr<double[]> idata0 = f1()->get_block(ihash0);
-
-                std::vector<size_t> ihash1 = vec(c0->key(), i1->key(), i2->key(), i3->key());
-                std::vector<size_t> ihash2 = vec(c0->key(), i3->key(), i2->key(), i1->key());
-                const std::unique_ptr<double[]> idata1 = t2->get_block(ihash1);
-                const std::unique_ptr<double[]> idata2 = t2->get_block(ihash2);
-                std::unique_ptr<double[]> idata3(new double[t2->get_size(ihash1)]); 
-
-                assert(t2->get_size(ihash1) == t2->get_size(ihash2));
-
-                sort_indices4(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 0.0, -1.0); 
-                daxpy_(t2->get_size(ihash1), 2.0, idata1, 1, idata3, 1);
-
-                const int common = c0->size();
-                const int isize0 = i0->size();
-                const int isize1 = i1->size() * i2->size() * i3->size();
-                dgemm_("T", "N", isize0, isize1, common, -1.0, idata0, common, idata3, common, 1.0, odata, isize0); 
-              }
-              r2->put_block(ohash, odata);
-            }
-          } 
-        }
-      }
-
-
-      for (auto i3 = virt().begin(); i3 != virt().end(); ++i3) {
-        for (auto i2 = closed().begin(); i2 != closed().end(); ++i2) {
-          for (auto i1 = virt().begin(); i1 != virt().end(); ++i1) {
-            for (auto i0 = closed().begin(); i0 != closed().end(); ++i0) {
-              std::vector<size_t> ohash(4); ohash[0] = i0->key(); ohash[1] = i1->key(); ohash[2] = i2->key(); ohash[3] = i3->key();
-              std::unique_ptr<double[]> odata = r2->move_block(ohash);
-              std::unique_ptr<double[]> idata4(new double[r2->get_size(ohash)]);
-
-              for (auto c0 = virt().begin(); c0 != virt().end(); ++c0) {
-                std::vector<size_t> ihash0 = vec(c0->key(), i0->key());
-                const std::unique_ptr<double[]> idata0 = f1()->get_block(ihash0);
-
-                std::vector<size_t> ihash1 = vec(i0->key(), c0->key(), i2->key(), i3->key());
-                std::vector<size_t> ihash2 = vec(i0->key(), i3->key(), i2->key(), c0->key());
-                const std::unique_ptr<double[]> idata1 = t2->get_block(ihash1);
-                const std::unique_ptr<double[]> idata2 = t2->get_block(ihash2);
-
-                std::unique_ptr<double[]> idata3(new double[t2->get_size(ihash1)]);
-                sort_indices4(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 0.0,  2.0);
-                sort_indices4(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size(), 3, 0, 2, 1, 1.0, -1.0);
-
-                const int common = c0->size();
-                const int isize0 = i1->size();
-                const int isize1 = i0->size() * i2->size() * i3->size();
-                dgemm_("T", "N", isize0, isize1, common, 1.0, idata0, common, idata3, common, 0.0, idata4, isize0); 
-
-                sort_indices4(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 1.0, 1.0);
-              }
-              r2->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-      r2 = r2->add_dagger();
+      for (auto iter = tasks_.begin(); iter != tasks_.end(); ++iter) (*iter)->compute();
 
     };
 
