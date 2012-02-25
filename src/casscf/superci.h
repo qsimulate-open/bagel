@@ -3,7 +3,7 @@
 // Filename: superci.h
 // Copyright (C) 2011 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the Newint package (to be renamed).

@@ -3,7 +3,7 @@
 // Filename: _carsph_55.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the Newint package (to be renamed).
