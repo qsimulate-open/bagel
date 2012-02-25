@@ -34,11 +34,12 @@
 #include <iomanip>
 #include <src/smith/queue.h>
 #include <src/smith/mp2_ref_task.h>
+#include <src/smith/smith.h>
 
 namespace SMITH {
 
 template <typename T>
-class MP2_Ref : public SpinFreeMethod<T> {
+class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
   protected:
     std::shared_ptr<Queue<T> > queue_;
     std::shared_ptr<Tensor<T> > t2;
@@ -47,7 +48,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
     std::unique_ptr<double[]> eig_;
 
   public:
-    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), queue_(new Queue<T>()) {
+    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info(), queue_(new Queue<T>()) {
 
       eig_ = this->f1_->diag();
 
@@ -82,7 +83,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
 
     void solve() {
       t2->zero();
-      for (int iter = 0; iter != 10; ++iter) {
+      for (int iter = 0; iter != this->maxiter_; ++iter) {
         queue_->initialize();
         while (!queue_->done()) queue_->next()->compute(); 
         std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
