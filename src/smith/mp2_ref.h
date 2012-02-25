@@ -80,14 +80,6 @@ class MP2_Ref : public SpinFreeMethod<T> {
     };
     ~MP2_Ref() {};
 
-    // get functions for private members of the base class
-    IndexRange& virt() { return this->virt_; };
-    IndexRange& all() { return this->all_; };
-    IndexRange& closed() { return this->closed_; };
-    std::shared_ptr<Reference>& ref() { return this->ref_; };;
-    std::shared_ptr<Tensor<T> >& v2() { return this->v2_; };
-    std::shared_ptr<Tensor<T> >& f1() { return this->f1_; };
-
     void solve() {
       t2->zero();
       for (int iter = 0; iter != 10; ++iter) {
@@ -143,7 +135,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
             for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
               std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
               std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
-              const std::unique_ptr<double[]> data = v2()->get_block(h);
+              const std::unique_ptr<double[]> data = this->v2_->get_block(h);
               std::unique_ptr<double[]> data0 = r->get_block(h);
               const std::unique_ptr<double[]> data1 = r->get_block(g);
               sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
