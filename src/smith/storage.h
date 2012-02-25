@@ -46,11 +46,12 @@ class Storage_base {
     size_t length_;
     // this relates hash keys, block number, and block lengths (in this order).
     std::map<size_t, std::pair<size_t, size_t> > hashtable_;
+    bool initialized_;
     
 
   public:
     // size contains hashkey and length (in this order)
-    Storage_base(const std::map<size_t, size_t>& size) {
+    Storage_base(const std::map<size_t, size_t>& size, bool init) : initialized_(init) {
       length_ = 0lu;
       size_t cnt = 0;
       for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
@@ -78,6 +79,8 @@ class Storage_base {
     virtual void zero() = 0;
     virtual void scale(const double a) = 0;
 
+    virtual void initialize() = 0;
+
 };
 
 class Storage_Incore : public Storage_base {
@@ -85,7 +88,7 @@ class Storage_Incore : public Storage_base {
     std::vector<std::unique_ptr<double[]> > data_;
 
   public:
-    Storage_Incore(const std::map<size_t, size_t>& size);
+    Storage_Incore(const std::map<size_t, size_t>& size, bool init);
     ~Storage_Incore() {};
 
     std::unique_ptr<double[]> get_block(const size_t& key) const;
@@ -100,6 +103,8 @@ class Storage_Incore : public Storage_base {
     void daxpy(const double a, const Storage_Incore& o);
     void daxpy(const double a, const std::shared_ptr<Storage_Incore> o) { daxpy(a, *o); };
     double ddot(const Storage_Incore& o) const;
+
+    void initialize();
 };
 
 }

@@ -57,9 +57,10 @@ class Tensor {
     std::vector<IndexRange> range_;
     std::shared_ptr<T> data_; 
     const int rank_;
+    bool initialized_;
 
   public:
-    Tensor(std::vector<IndexRange> in) : range_(in), rank_(in.size()) {
+    Tensor(std::vector<IndexRange> in, bool init = true) : range_(in), rank_(in.size()), initialized_(init) {
       // make blocl list
       LoopGenerator lg(in);
       std::vector<std::vector<Index> > index = lg.block_loop();
@@ -78,9 +79,11 @@ class Tensor {
         off += size;
       }
 
-      std::shared_ptr<T> tmp(new T(hashmap));
+      std::shared_ptr<T> tmp(new T(hashmap, init));
       data_ = tmp;
     };
+
+    void initialize() { data_->initialize(); };
 
     ~Tensor() {};
 
@@ -111,11 +114,13 @@ class Tensor {
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_); 
+      if (!data_) throw std::logic_error("Tensor not initialized");
       return std::move(data_->get_block(generate_hash_key(p)));
     };
 
     std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
       assert(p.size() == rank_); 
+      if (!data_) throw std::logic_error("Tensor not initialized");
       return std::move(data_->move_block(generate_hash_key(p)));
     };
 
@@ -124,6 +129,7 @@ class Tensor {
     };
 
     void add_block(const std::vector<size_t>& p, const std::unique_ptr<double[]>& o) {
+      if (!data_) throw std::logic_error("Tensor not initialized");
       data_->add_block(generate_hash_key(p), o);
     };
 
@@ -132,7 +138,9 @@ class Tensor {
       return data_->blocksize(generate_hash_key(p));
     };
 
-    void zero() { data_->zero(); };
+    void zero() {
+      data_->zero();
+    };
 
     std::unique_ptr<double[]> diag() {
       if (rank_ != 2 || range_[0] != range_[1])
