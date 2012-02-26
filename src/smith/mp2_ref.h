@@ -42,13 +42,14 @@ template <typename T>
 class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
   protected:
     std::shared_ptr<Queue<T> > queue_;
+    std::shared_ptr<Queue<T> > energy_;
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r2;
 
     std::unique_ptr<double[]> eig_;
 
   public:
-    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info(), queue_(new Queue<T>()) {
+    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info(), queue_(new Queue<T>()), energy_(new Queue<T>()) {
 
       eig_ = this->f1_->diag();
 
@@ -62,22 +63,26 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
       std::shared_ptr<Task0<T> > t0(new Task0<T>(tensor0, index0));
       std::shared_ptr<Task1<T> > t1(new Task1<T>(tensor0, index0));
-      std::shared_ptr<Task2<T> > t2(new Task2<T>(tensor1, index0));
+      std::shared_ptr<Task2<T> > tt2(new Task2<T>(tensor1, index0));
       std::shared_ptr<Task3<T> > t3(new Task3<T>(tensor2, index0));
       t0->add_dep(t3);
       t1->add_dep(t3);
-      t2->add_dep(t3);
+      tt2->add_dep(t3);
       std::shared_ptr<Task4<T> > t4(new Task4<T>(tensor2, index0));
       t4->add_dep(t0);
       t4->add_dep(t1);
-      t4->add_dep(t2);
+      t4->add_dep(tt2);
       t4->add_dep(t3);
 
       queue_->add_task(t3);
       queue_->add_task(t4);
-      queue_->add_task(t2);
+      queue_->add_task(tt2);
       queue_->add_task(t1);
       queue_->add_task(t0);
+
+      std::vector<std::shared_ptr<Tensor<T> > > tensor5 = vec(t2, this->v2_);
+      std::shared_ptr<Task5<T> > t5(new Task5<T>(tensor5, index0));
+      energy_->add_task(t5);
     };
     ~MP2_Ref() {};
 
@@ -85,10 +90,21 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       t2->zero();
       for (int iter = 0; iter != this->maxiter_; ++iter) {
         queue_->initialize();
+        energy_->initialize();
         while (!queue_->done()) queue_->next()->compute(); 
-        std::cout << std::setprecision(10) << std::setw(30) << mp2_energy(t2)/2 <<  "  +++" << std::endl;
         t2->daxpy(1.0, mp2_denom(r2));
+        std::cout << std::setprecision(10) << std::setw(30) << energy()/2 <<  "  +++" << std::endl;
       }
+    };
+
+    double energy() {
+      double en = 0.0;
+      while (!energy_->done()) {
+        std::shared_ptr<Task<T> > c = energy_->next();
+        c->compute(); 
+        en += c->energy();
+      }
+      return en;
     };
 
 
@@ -104,7 +120,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
               std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
               std::unique_ptr<double[]> data0 = r->get_block(h);
               const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0/3.0, 1.0/3.0); 
+              sort_indices<0,3,2,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 2.0/3.0, 1.0/3.0); 
               size_t iall = 0;
               for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
                 for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
@@ -125,29 +141,6 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
 
     // r is an amplitude tensor
-    double mp2_energy(const std::shared_ptr<Tensor<T> > r) {
-      std::shared_ptr<Tensor<T> > out = r->clone();
-      std::vector<IndexRange> o = r->indexrange();
-      assert(o.size() == 4);
-      double en = 0.0;
-      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
-              const std::unique_ptr<double[]> data = this->v2_->get_block(h);
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
-              en += ddot_(r->get_size(h), data, 1, data0, 1);
-            }
-          }
-        }
-      }
-      return en;
-    };
-
 };
 
 }

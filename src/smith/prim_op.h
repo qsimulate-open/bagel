@@ -33,9 +33,10 @@
 
 namespace SMITH {
 
-static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                          const int b, const int a, // according to unsorted
-                          const int i, const int j, const double afac = 0.0, const double factor = 1.0) {
+template <int i, int j>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int b, const int a, // according to unsorted
+                         const double afac = 0.0, const double factor = 1.0) {
   if (i==0) {
     if (afac == 1.0) {
       daxpy_(a*b, factor, unsorted, 1, sorted, 1);
@@ -62,10 +63,10 @@ static void sort_indices2(const std::unique_ptr<double[]>& unsorted, std::unique
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
-static void sort_indices4(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                          const int d,const int c,const int b,const int a, // according to unsorted
-                          const int i,const int j,const int k,const int l,
-                          const double afac = 0.0, const double factor = 1.0) {
+template<int i, int j, int k, int l>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int d,const int c,const int b,const int a, // according to unsorted
+                         const double afac = 0.0, const double factor = 1.0) {
   int id[4];
   int jd[4] = {d, c, b, a};
 

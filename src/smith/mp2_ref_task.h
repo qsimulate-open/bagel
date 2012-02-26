@@ -65,7 +65,7 @@ class Task0 : public Task<T> {
 
                 assert(t2_->get_size(ihash1) == t2_->get_size(ihash2));
 
-                sort_indices4(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 0.0, -1.0); 
+                sort_indices<0,3,2,1>(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size(), 0.0, -1.0); 
                 daxpy_(t2_->get_size(ihash1), 2.0, idata1, 1, idata3, 1);
 
                 const int common = c0->size();
@@ -122,15 +122,15 @@ class Task1 : public Task<T> {
                 const std::unique_ptr<double[]> idata2 = t2_->get_block(ihash2);
 
                 std::unique_ptr<double[]> idata3(new double[t2_->get_size(ihash1)]);
-                sort_indices4(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 0.0,  2.0);
-                sort_indices4(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size(), 3, 0, 2, 1, 1.0, -1.0);
+                sort_indices<1,0,2,3>(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size(), 0.0,  2.0);
+                sort_indices<3,0,2,1>(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size(), 1.0, -1.0);
 
                 const int common = c0->size();
                 const int isize0 = i1->size();
                 const int isize1 = i0->size() * i2->size() * i3->size();
                 dgemm_("T", "N", isize0, isize1, common, 1.0, idata0, common, idata3, common, 0.0, idata4, isize0); 
 
-                sort_indices4(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size(), 1, 0, 2, 3, 1.0, 1.0);
+                sort_indices<1,0,2,3>(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size(), 1.0, 1.0);
               }
               r2_->put_block(ohash, odata);
             }
@@ -171,7 +171,7 @@ class Task2 : public Task<T> {
               std::unique_ptr<double[]> odata = r2_->get_block(h);
               std::unique_ptr<double[]> data0 = v2_->get_block(h);
               const std::unique_ptr<double[]> data1 = v2_->get_block(g);
-              sort_indices4(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 0, 3, 2, 1, 2.0, -1.0); 
+              sort_indices<0,3,2,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 2.0, -1.0); 
               daxpy_(v2_->get_size(h), 1.0, data0, 1, odata, 1);
               r2_->put_block(h,odata);
             }
@@ -235,6 +235,48 @@ class Task4 : public Task<T> {
       virt_   = i[1];
     };
     ~Task4() {};
+
+};
+
+
+template <typename T>
+class Task5 : public EnergyTask<T> {
+  protected:
+    std::shared_ptr<Tensor<T> > t2_;
+    std::shared_ptr<Tensor<T> > v2_;
+    IndexRange closed_;
+    IndexRange virt_;
+
+    void compute_() {
+      std::vector<IndexRange> o = t2_->indexrange();
+      assert(o.size() == 4);
+      this->energy_ = 0.0;
+      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+              std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
+              const std::unique_ptr<double[]> data = v2_->get_block(h);
+              std::unique_ptr<double[]> data0 = t2_->get_block(h);
+              const std::unique_ptr<double[]> data1 = t2_->get_block(g);
+              sort_indices<0,3,2,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 2.0, -1.0); 
+              this->energy_ += ddot_(t2_->get_size(h), data, 1, data0, 1);
+            }
+          }
+        }
+      }
+    };
+
+  public:
+    Task5(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+      if (t.size() != 2 || i.size() != 2) throw std::logic_error("Task5 error");
+      t2_ =  t[0];
+      v2_ =  t[1];
+      closed_ = i[0];
+      virt_   = i[1];
+    };
+    ~Task5() {};
 
 };
 

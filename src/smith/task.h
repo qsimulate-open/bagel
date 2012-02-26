@@ -63,6 +63,19 @@ class Task {
       for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->done();
       return out && !done_;
     };
+
+    virtual double energy() const { return 0.0; };
+};
+
+template <typename T>
+class EnergyTask : public Task<T> {
+  protected:
+    double energy_;
+  public:
+    EnergyTask() : Task<T>() {};
+    ~EnergyTask() {};
+    double energy() const { return energy_; };
+
 };
 
 }
