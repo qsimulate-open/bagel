@@ -35,6 +35,7 @@ extern "C" {
 
  // transposition
  void mytranspose_(const double*, const int*, const int*, double*);
+ void mytranspose_with_factor_(const double*, const int*, const int*, double*, const double*);
  void mytranspose1_(const double*, const int*, const int*, double*);
  void mytranspose4_(const double*, const int*, const int*, double*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);

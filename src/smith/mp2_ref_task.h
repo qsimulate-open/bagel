@@ -65,7 +65,7 @@ class Task0 : public Task<T> {
 
                 assert(t2_->get_size(ihash1) == t2_->get_size(ihash2));
 
-                sort_indices<0,3,2,1>(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size(), 0.0, -1.0); 
+                sort_indices<0,3,2,1,0,1,-1,1>(idata2, idata3, c0->size(), i3->size(), i2->size(), i1->size()); 
                 daxpy_(t2_->get_size(ihash1), 2.0, idata1, 1, idata3, 1);
 
                 const int common = c0->size();
@@ -122,15 +122,15 @@ class Task1 : public Task<T> {
                 const std::unique_ptr<double[]> idata2 = t2_->get_block(ihash2);
 
                 std::unique_ptr<double[]> idata3(new double[t2_->get_size(ihash1)]);
-                sort_indices<1,0,2,3>(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size(), 0.0,  2.0);
-                sort_indices<3,0,2,1>(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size(), 1.0, -1.0);
+                sort_indices<1,0,2,3,0,1,2,1>(idata1, idata3, i0->size(), c0->size(), i2->size(), i3->size());
+                sort_indices<3,0,2,1,1,1,-1,1>(idata2, idata3, i0->size(), i3->size(), i2->size(), c0->size());
 
                 const int common = c0->size();
                 const int isize0 = i1->size();
                 const int isize1 = i0->size() * i2->size() * i3->size();
                 dgemm_("T", "N", isize0, isize1, common, 1.0, idata0, common, idata3, common, 0.0, idata4, isize0); 
 
-                sort_indices<1,0,2,3>(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size(), 1.0, 1.0);
+                sort_indices<1,0,2,3,1,1,1,1>(idata4, odata, i1->size(), i0->size(), i2->size(), i3->size());
               }
               r2_->put_block(ohash, odata);
             }
@@ -171,7 +171,7 @@ class Task2 : public Task<T> {
               std::unique_ptr<double[]> odata = r2_->get_block(h);
               std::unique_ptr<double[]> data0 = v2_->get_block(h);
               const std::unique_ptr<double[]> data1 = v2_->get_block(g);
-              sort_indices<0,3,2,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 2.0, -1.0); 
+              sort_indices<0,3,2,1,2,1,-1,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
               daxpy_(v2_->get_size(h), 1.0, data0, 1, odata, 1);
               r2_->put_block(h,odata);
             }
@@ -260,7 +260,7 @@ class Task5 : public EnergyTask<T> {
               const std::unique_ptr<double[]> data = v2_->get_block(h);
               std::unique_ptr<double[]> data0 = t2_->get_block(h);
               const std::unique_ptr<double[]> data1 = t2_->get_block(g);
-              sort_indices<0,3,2,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size(), 2.0, -1.0); 
+              sort_indices<0,3,2,1,2,1,-1,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
               this->energy_ += ddot_(t2_->get_size(h), data, 1, data0, 1);
             }
           }

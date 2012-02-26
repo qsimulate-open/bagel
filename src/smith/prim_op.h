@@ -33,10 +33,11 @@
 
 namespace SMITH {
 
-template <int i, int j>
+template <int i, int j, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                         const int b, const int a, // according to unsorted
-                         const double afac = 0.0, const double factor = 1.0) {
+                         const int b, const int a) { // according to unsorted
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
   if (i==0) {
     if (afac == 1.0) {
       daxpy_(a*b, factor, unsorted, 1, sorted, 1);
@@ -63,10 +64,11 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
-template<int i, int j, int k, int l>
+template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                         const int d,const int c,const int b,const int a, // according to unsorted
-                         const double afac = 0.0, const double factor = 1.0) {
+                         const int d,const int c,const int b,const int a) { // according to unsorted
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
   int id[4];
   int jd[4] = {d, c, b, a};
 
