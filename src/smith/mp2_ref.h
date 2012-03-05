@@ -46,12 +46,10 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r2;
 
-    std::unique_ptr<double[]> eig_;
-
   public:
     MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info(), queue_(new Queue<T>()), energy_(new Queue<T>()) {
 
-      eig_ = this->f1_->diag();
+      this->eig_ = this->f1_->diag();
 
       t2 = this->v2_->clone();
       r2 = t2->clone();
@@ -95,7 +93,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
         while (!queue_->done()) queue_->next()->compute(); 
 
-        t2->daxpy(1.0, mp2_denom(r2));
+        update_amplitude(t2, r2);
         const double err = r2->rms();
         const double en = energy();
 
@@ -116,40 +114,6 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       return en;
     };
 
-
-    std::shared_ptr<Tensor<T> > mp2_denom(std::shared_ptr<Tensor<T> > r) {
-      std::shared_ptr<Tensor<T> > out = r->clone();
-      std::vector<IndexRange> o = r->indexrange();
-      assert(o.size() == 4);
-      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
-              size_t iall = 0;
-              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
-                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
-                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
-                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
-                      data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] + 0.01);
-                    }
-                  }
-                }
-              }
-              out->put_block(h,data0);
-            }
-          }
-        }
-      }
-      return out;
-    };
-
-
-    // r is an amplitude tensor
 };
 
 }

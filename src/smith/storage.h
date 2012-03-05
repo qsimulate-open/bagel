@@ -66,8 +66,7 @@ class Storage_base {
     size_t length() const { return length_; };
     size_t blocksize(const size_t hash) const {
       auto a = hashtable_.find(hash);
-      assert(a != hashtable_.end());
-      return a->second.second;
+      return a != hashtable_.end() ? a->second.second : 0;
     };
 
     // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
