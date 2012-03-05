@@ -110,6 +110,12 @@ class Tensor {
     double ddot(const Tensor<T>& o) { return data_->ddot(*o.data_); };
     double ddot(const std::shared_ptr<Tensor<T> >& o) { return data_->ddot(*o->data_); };
 
+    size_t size() const { return data_->length(); };
+    size_t length() const { return data_->length(); };
+
+    double norm() { return std::sqrt(ddot(*this)); };
+    double rms() { return std::sqrt(ddot(*this)/size()); };
+
     std::vector<IndexRange> indexrange() const { return range_; };
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {

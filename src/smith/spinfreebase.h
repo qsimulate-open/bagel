@@ -45,6 +45,8 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
 
+    size_t time_;
+
   public:
     SpinFreeMethod(std::shared_ptr<Reference> r) : ref_(r) {
       const int max = 10;
@@ -82,6 +84,28 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T> >& f1() { return f1_; };
 
     virtual void solve() = 0;
+
+    void print_iteration() {
+      std::cout << "      ---- iteration ----" << std::endl << std::endl;
+      time_ = ::clock();
+    };
+
+    void print_iteration(const int i, const double en, const double err) {
+      const size_t end = ::clock();
+      const double tim = static_cast<double>(end - time_) / CLOCKS_PER_SEC;
+      std::cout << "     " << std::setw(4) << i << std::setw(15) << std::fixed << std::setprecision(10) << en
+                                                << std::setw(15) << std::fixed << std::setprecision(10) << err
+                                                << std::setw(10) << std::fixed << std::setprecision(3) << tim << std::endl;
+      time_ = end;
+    };
+
+    void print_iteration(const bool noconv) {
+      std::cout << std::endl;
+      std::cout << "      -------------------" << std::endl;
+      if (noconv)
+        std::cout << "      *** Convergence not reached ***" << std::endl;
+      std::cout << std::endl;
+    };
 
 };
 

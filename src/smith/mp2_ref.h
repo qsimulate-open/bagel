@@ -88,20 +88,29 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
     void solve() {
       t2->zero();
-      for (int iter = 0; iter != this->maxiter_; ++iter) {
+      this->print_iteration();
+      int iter;
+      for (iter = 0; iter != maxiter_; ++iter) {
         queue_->initialize();
-        energy_->initialize();
+
         while (!queue_->done()) queue_->next()->compute(); 
+
         t2->daxpy(1.0, mp2_denom(r2));
-        std::cout << std::setprecision(10) << std::setw(30) << energy()/2 <<  "  +++" << std::endl;
+        const double err = r2->rms();
+        const double en = energy();
+
+        this->print_iteration(iter, en, err);
+        if (err < thresh_residual()) break;
       }
+      this->print_iteration(iter == maxiter_);
     };
 
     double energy() {
       double en = 0.0;
+      energy_->initialize();
       while (!energy_->done()) {
         std::shared_ptr<Task<T> > c = energy_->next();
-        c->compute(); 
+        c->compute();
         en += c->energy();
       }
       return en;

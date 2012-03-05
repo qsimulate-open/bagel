@@ -261,7 +261,7 @@ class Task5 : public EnergyTask<T> {
               std::unique_ptr<double[]> data0 = t2_->get_block(h);
               const std::unique_ptr<double[]> data1 = t2_->get_block(g);
               sort_indices<0,3,2,1,2,1,-1,1>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
-              this->energy_ += ddot_(t2_->get_size(h), data, 1, data0, 1);
+              this->energy_ += 0.5*ddot_(t2_->get_size(h), data, 1, data0, 1);
             }
           }
         }

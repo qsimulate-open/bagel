@@ -9,7 +9,8 @@ using namespace std;
 using namespace SMITH;
 
 SMITH_info::SMITH_info() {
-  maxiter_ = 10;
+  maxiter_ = 5;
+  thresh_residual_ = 1.0e-8;
 }
 
 
