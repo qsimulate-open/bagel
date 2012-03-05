@@ -4,6 +4,8 @@
 //
 
 // compiles some input data for the smith routines.
+#ifndef __SMIT_SMITH_H
+#define __SMIT_SMITH_H
 
 namespace SMITH {
 
@@ -21,3 +23,5 @@ class SMITH_info {
 };
 
 }
+
+#endif

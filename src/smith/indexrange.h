@@ -66,25 +66,29 @@ class IndexRange {
   public:
     IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0)
       : keyoffset_(boffset), orboffset_(orboff) {
-      // first determine number of blocks. 
-      const size_t nbl = (size-1) / maxblock + 1;
-      const size_t nblock = (size-1) / nbl + 1;
-      // we want to distribute orbitals as evenly as possible 
-      const size_t rem = nbl * nblock - size; 
-      std::vector<size_t> blocksizes(nbl, nblock); 
-      auto iter = blocksizes.rbegin();
-      for (int k = 0; k != rem; ++iter, ++k) --*iter;
-      // push back to range_
-      size_t off = orboffset_;
-      // key is offsetted by the input value
-      size_t cnt = boffset;
-      for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {
-        Index t(off, *i, cnt);
-        range_.push_back(t);
-        off += *i;
+      if (size > 0) {
+        // first determine number of blocks. 
+        const size_t nbl = (size-1) / maxblock + 1;
+        const size_t nblock = (size-1) / nbl + 1;
+        // we want to distribute orbitals as evenly as possible 
+        const size_t rem = nbl * nblock - size; 
+        std::vector<size_t> blocksizes(nbl, nblock); 
+        auto iter = blocksizes.rbegin();
+        for (int k = 0; k != rem; ++iter, ++k) --*iter;
+        // push back to range_
+        size_t off = orboffset_;
+        // key is offsetted by the input value
+        size_t cnt = boffset;
+        for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {
+          Index t(off, *i, cnt);
+          range_.push_back(t);
+          off += *i;
+        }
+        // set size_
+        size_ = off;
+      } else {
+        size_ = 0;
       }
-      // set size_
-      size_ = off;
     }; 
     IndexRange() {};
     ~IndexRange() {};

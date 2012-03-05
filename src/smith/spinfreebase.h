@@ -38,6 +38,7 @@ template <typename T>
 class SpinFreeMethod {
   protected:
     IndexRange virt_;
+    IndexRange act_;
     IndexRange closed_;
     IndexRange all_;
     std::shared_ptr<Reference> ref_;
@@ -72,7 +73,7 @@ class SpinFreeMethod {
     };
 
 
-    void update_amplitude(std::shared_ptr<Tensor<T> > t, std::shared_ptr<Tensor<T> > r) {
+    void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r) {
 
       // ranks of t and r are assumed to be the same
 
@@ -91,15 +92,11 @@ class SpinFreeMethod {
               // this is an inverse of the overlap.
               sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
               size_t iall = 0;
-              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3) {
-                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2) {
-                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1) {
-                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
+                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)
+                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1)
+                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall)
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-                    }
-                  }
-                }
-              }
               t->add_block(h,data0);
             }
           }
@@ -111,9 +108,11 @@ class SpinFreeMethod {
     SpinFreeMethod(std::shared_ptr<Reference> r) : ref_(r) {
       const int max = 10;
       IndexRange c(r->nclosed(), max);
-      IndexRange v(r->nvirt(), max, c.nblock(), c.size());
-      IndexRange a(c); a.merge(v);
+      IndexRange act(r->nact(), max, c.nblock(), c.size());
+      IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
+      IndexRange a(c); a.merge(act); a.merge(v);
       closed_ = c;
+      act_ = act;
       virt_ = v;
       all_ = a;
 

@@ -26,6 +26,8 @@
 #include <src/smith/mp2_ref.h>
 #include <src/smith/storage.h>
 
+#include <src/smith/MP2.h>
+
 using namespace SMITH;
 using namespace std;
 
@@ -33,6 +35,9 @@ using namespace std;
 void smith_test(shared_ptr<Reference> r) {
   MP2_Ref<Storage_Incore> mp2(r);
   mp2.solve();
+
+  MP2::MP2<Storage_Incore> _mp2(r);
+  _mp2.solve();
 }
 
 
