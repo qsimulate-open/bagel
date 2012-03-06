@@ -62,25 +62,32 @@ class Tensor {
   public:
     Tensor(std::vector<IndexRange> in, bool init = true) : range_(in), rank_(in.size()), initialized_(init) {
       // make blocl list
-      LoopGenerator lg(in);
-      std::vector<std::vector<Index> > index = lg.block_loop();
+      if (!in.empty()) {
+        LoopGenerator lg(in);
+        std::vector<std::vector<Index> > index = lg.block_loop();
 
-      // first compute hashtags and length 
-      std::map<size_t, size_t> hashmap;
-      size_t off = 0;
-      for (auto i = index.begin(); i != index.end(); ++i) {
-        size_t size = 1lu;
-        std::vector<size_t> h;
-        for (auto j = i->begin(); j != i->end(); ++j) {
-          size *= j->size();
-          h.push_back(j->key());
+        // first compute hashtags and length 
+        std::map<size_t, size_t> hashmap;
+        size_t off = 0;
+        for (auto i = index.begin(); i != index.end(); ++i) {
+          size_t size = 1lu;
+          std::vector<size_t> h;
+          for (auto j = i->begin(); j != i->end(); ++j) {
+            size *= j->size();
+            h.push_back(j->key());
+          }
+          hashmap.insert(std::make_pair(generate_hash_key(h), size)); 
+          off += size;
         }
-        hashmap.insert(std::make_pair(generate_hash_key(h), size)); 
-        off += size;
-      }
 
-      std::shared_ptr<T> tmp(new T(hashmap, init));
-      data_ = tmp;
+        std::shared_ptr<T> tmp(new T(hashmap, init));
+        data_ = tmp;
+      } else {
+        std::map<size_t, size_t> hashmap;
+        hashmap.insert(std::make_pair(0lu, 1lu));
+        std::shared_ptr<T> tmp(new T(hashmap, init));
+        data_ = tmp;
+      }
     };
 
     void initialize() { data_->initialize(); };

@@ -35,7 +35,6 @@ using namespace std;
 
 
 Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base(size, init) {
-//cout << "creating a field of " << length() << endl;
   if (init) {
     for (auto i = size.begin(); i != size.end(); ++i) {
       unique_ptr<double[]> tmp(new double[i->second]); 

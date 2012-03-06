@@ -59,6 +59,153 @@ class Task0 : public Task<T> {
     ~Task0() {}; 
 };
 
+template <typename T>
+class Task1 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > r;
+    std::shared_ptr<Tensor<T> > I0;
+
+    void compute_() {
+    };
+
+  public:
+    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      r = t[0];
+      I0 = t[1];
+    };
+    ~Task1() {};
+};
+
+template <typename T>
+class Task2 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I0;
+    std::shared_ptr<Tensor<T> > t2;
+    std::shared_ptr<Tensor<T> > I1;
+
+    void compute_() {
+    };
+
+  public:
+    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I0 = t[0];
+      t2 = t[1];
+      I1 = t[2];
+    };
+    ~Task2() {};
+};
+
+template <typename T>
+class Task3 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I0;
+    std::shared_ptr<Tensor<T> > t2;
+    std::shared_ptr<Tensor<T> > I3;
+
+    void compute_() {
+    };
+
+  public:
+    Task3(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I0 = t[0];
+      t2 = t[1];
+      I3 = t[2];
+    };
+    ~Task3() {};
+};
+
+template <typename T>
+class Task4 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > r;
+    std::shared_ptr<Tensor<T> > I4;
+
+    void compute_() {
+    };
+
+  public:
+    Task4(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      r = t[0];
+      I4 = t[1];
+    };
+    ~Task4() {};
+};
+
+template <typename T>
+class Task5 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I4;
+    std::shared_ptr<Tensor<T> > f1;
+    std::shared_ptr<Tensor<T> > I5;
+
+    void compute_() {
+    };
+
+  public:
+    Task5(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I4 = t[0];
+      f1 = t[1];
+      I5 = t[2];
+    };
+    ~Task5() {};
+};
+
+template <typename T>
+class Task6 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I4;
+    std::shared_ptr<Tensor<T> > f1;
+    std::shared_ptr<Tensor<T> > I9;
+
+    void compute_() {
+    };
+
+  public:
+    Task6(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I4 = t[0];
+      f1 = t[1];
+      I9 = t[2];
+    };
+    ~Task6() {};
+};
+
+
 }
 }
 #endif
