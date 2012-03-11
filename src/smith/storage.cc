@@ -38,13 +38,19 @@ Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Sto
   if (init) {
     for (auto i = size.begin(); i != size.end(); ++i) {
       unique_ptr<double[]> tmp(new double[i->second]); 
+      fill(tmp.get(), tmp.get()+i->second, 0.0);
+      data_.push_back(move(tmp));
+    }
+  } else {
+    // if not init, we make a dummy tensor with size 1
+    for (auto i = size.begin(); i != size.end(); ++i) {
+      unique_ptr<double[]> tmp(new double[1]); 
       data_.push_back(move(tmp));
     }
   }
 }
 
 void Storage_Incore::initialize() {
-  assert(!initialized_);
   for (auto i = this->hashtable_.begin(); i != this->hashtable_.end(); ++i) {
     unique_ptr<double[]> tmp(new double[i->second.second]); 
     data_.push_back(move(tmp));
@@ -74,8 +80,16 @@ unique_ptr<double[]> Storage_Incore::move_block(const size_t& key) {
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
-    throw logic_error("a key was not found in Storage::get_block(const size_t&)");
+    throw logic_error("a key was not found in Storage::move_block(const size_t&)");
   const size_t blocknum  = hash->second.first;
+
+  if (!initialized(blocknum)) {
+    unique_ptr<double[]> tmp(new double[hash->second.second]);
+    fill(tmp.get(), tmp.get()+hash->second.second, 0.0);
+    data_[blocknum] = move(tmp);
+    initialized_[blocknum] = true;
+  }
+
   return move(data_.at(blocknum));
 }
 

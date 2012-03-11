@@ -50,7 +50,6 @@ class Task0 : public Task<T> {
 
   public:
     Task0(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      if (t.size() != 1) throw std::logic_error("Task0 error");
       r2_ =  t[0];
       closed_ = i[0];
       act_    = i[1];
@@ -93,6 +92,25 @@ class Task2 : public Task<T> {
     std::shared_ptr<Tensor<T> > I1;
 
     void compute_() {
+      for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+        for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::unique_ptr<double[]> odata = I0->move_block(ohash);
+
+              std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
+
+              std::vector<size_t> i1hash = vec();
+              std::unique_ptr<double[]> i1data = I1->get_block(i1hash);
+
+
+              I0->put_block(ohash, odata);
+            }
+          }
+        }
+      }
     };
 
   public:
@@ -118,6 +136,25 @@ class Task3 : public Task<T> {
     std::shared_ptr<Tensor<T> > I3;
 
     void compute_() {
+      for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+        for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::unique_ptr<double[]> odata = I0->move_block(ohash);
+
+              std::vector<size_t> i0hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+              std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
+
+              std::vector<size_t> i1hash = vec();
+              std::unique_ptr<double[]> i1data = I3->get_block(i1hash);
+
+
+              I0->put_block(ohash, odata);
+            }
+          }
+        }
+      }
     };
 
   public:
@@ -166,6 +203,27 @@ class Task5 : public Task<T> {
     std::shared_ptr<Tensor<T> > I5;
 
     void compute_() {
+      for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+        for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> ohash = vec(c1->key(), a4->key(), a2->key(), c3->key());
+              std::unique_ptr<double[]> odata = I4->move_block(ohash);
+
+              for (auto c5 = closed_.begin(); c5 != closed_.end(); ++c5) {
+                std::vector<size_t> i0hash = vec(c3->key(), c5->key());
+                std::unique_ptr<double[]> i0data = f1->get_block(i0hash);
+
+                std::vector<size_t> i1hash = vec(c1->key(), a4->key(), c5->key(), a2->key());
+                std::unique_ptr<double[]> i1data = I5->get_block(i1hash);
+
+              }
+
+              I4->put_block(ohash, odata);
+            }
+          }
+        }
+      }
     };
 
   public:
@@ -191,6 +249,27 @@ class Task6 : public Task<T> {
     std::shared_ptr<Tensor<T> > I9;
 
     void compute_() {
+      for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+        for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> ohash = vec(c1->key(), a4->key(), a2->key(), c3->key());
+              std::unique_ptr<double[]> odata = I4->move_block(ohash);
+
+              for (auto a5 = virt_.begin(); a5 != virt_.end(); ++a5) {
+                std::vector<size_t> i0hash = vec(a5->key(), a4->key());
+                std::unique_ptr<double[]> i0data = f1->get_block(i0hash);
+
+                std::vector<size_t> i1hash = vec(c1->key(), a5->key(), c3->key(), a2->key());
+                std::unique_ptr<double[]> i1data = I9->get_block(i1hash);
+
+              }
+
+              I4->put_block(ohash, odata);
+            }
+          }
+        }
+      }
     };
 
   public:

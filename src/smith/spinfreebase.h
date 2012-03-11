@@ -77,6 +77,7 @@ class SpinFreeMethod {
 
       // ranks of t and r are assumed to be the same
 
+      // TODO should be parallelized
       for (auto i3 = virt_.begin(); i3 != virt_.range().end(); ++i3) {
         for (auto i2 = closed_.begin(); i2 != closed_.range().end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.range().end(); ++i1) {

@@ -90,6 +90,10 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 };
 
 
+static std::vector<size_t> vec() {
+  std::vector<size_t> out(1,0lu);
+  return out;
+};
 template <typename T>
 static std::vector<T> vec(T i0) {
   std::vector<T> out(1,i0);
