@@ -33,6 +33,14 @@
 
 namespace SMITH {
 
+
+template <int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted) {
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
+  sorted[0] = sorted[0]*afac + unsorted[0]*factor;
+}
+
 template <int i, int j, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int b, const int a) { // according to unsorted
