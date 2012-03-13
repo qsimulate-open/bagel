@@ -58,6 +58,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       std::shared_ptr<Task0<T> > task0(new Task0<T>(tensor0, index));
       queue_->add_task(task0);
 
+#if 0
       std::vector<IndexRange> I0_index = vec(this->closed_, this->virt_, this->closed_, this->virt_);
       std::shared_ptr<Tensor<T> > I0(new Tensor<T>(I0_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor1 = vec(r, I0);
@@ -78,6 +79,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       std::shared_ptr<Task3<T> > task3(new Task3<T>(tensor3, index));
       task1->add_dep(task3);
       queue_->add_task(task3);
+#endif
 
       std::vector<IndexRange> I4_index = vec(this->closed_, this->virt_, this->virt_, this->closed_);
       std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
@@ -87,14 +89,14 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       queue_->add_task(task4);
 
       std::vector<IndexRange> I5_index = vec(this->closed_, this->virt_, this->closed_, this->virt_);
-      std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, false));
+      std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, true));
       std::vector<std::shared_ptr<Tensor<T> > > tensor5 = vec(I4, this->f1_, I5);
       std::shared_ptr<Task5<T> > task5(new Task5<T>(tensor5, index));
       task4->add_dep(task5);
       queue_->add_task(task5);
 
       std::vector<IndexRange> I9_index = vec(this->closed_, this->virt_, this->closed_, this->virt_);
-      std::shared_ptr<Tensor<T> > I9(new Tensor<T>(I9_index, false));
+      std::shared_ptr<Tensor<T> > I9(new Tensor<T>(I9_index, true));
       std::vector<std::shared_ptr<Tensor<T> > > tensor6 = vec(I4, this->f1_, I9);
       std::shared_ptr<Task6<T> > task6(new Task6<T>(tensor6, index));
       task4->add_dep(task6);

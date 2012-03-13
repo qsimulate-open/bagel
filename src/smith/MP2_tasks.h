@@ -116,6 +116,7 @@ class Task2 : public Task<T> {
                      1.0, i0data_sorted, 1, i1data_sorted, 1,
                      1.0, odata_sorted, c1->size()*a4->size()*c3->size()*a2->size());
 
+              sort_indices<0,1,2,3,1,1,1,1>(odata_sorted, odata, c1->size(), a4->size(), c3->size(), a2->size());
               I0->put_block(ohash, odata);
             }
           }
@@ -169,6 +170,7 @@ class Task3 : public Task<T> {
                      1.0, i0data_sorted, 1, i1data_sorted, 1,
                      1.0, odata_sorted, c1->size()*a2->size()*c3->size()*a4->size());
 
+              sort_indices<0,3,2,1,1,1,1,1>(odata_sorted, odata, c1->size(), a2->size(), c3->size(), a4->size());
               I0->put_block(ohash, odata);
             }
           }
@@ -247,6 +249,7 @@ class Task5 : public Task<T> {
                        1.0, odata_sorted, c3->size());
               }
 
+              sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
               I4->put_block(ohash, odata);
             }
           }
@@ -302,6 +305,7 @@ class Task6 : public Task<T> {
                        1.0, odata_sorted, a4->size());
               }
 
+              sort_indices<1,0,3,2,1,1,1,1>(odata_sorted, odata, a4->size(), c1->size(), c3->size(), a2->size());
               I4->put_block(ohash, odata);
             }
           }
