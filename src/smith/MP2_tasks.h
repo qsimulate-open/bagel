@@ -553,6 +553,110 @@ class Task11 : public Task<T> {
     ~Task11() {};
 };
 
+template <typename T>
+class Task12 : public EnergyTask<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I14;
+    std::shared_ptr<Tensor<T> > t2;
+    std::shared_ptr<Tensor<T> > I15;
+
+    void compute_() {
+      this->energy_ = 0.0;
+
+      for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+        for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+          for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> i0hash = vec(c3->key(), a4->key(), c1->key(), a2->key());
+              std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
+              std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
+              sort_indices<1,0,3,2,0,1,1,1>(i0data, i0data_sorted, c3->size(), a4->size(), c1->size(), a2->size());
+
+              std::vector<size_t> i1hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::unique_ptr<double[]> i1data = I15->get_block(i1hash);
+              std::unique_ptr<double[]> i1data_sorted(new double[I15->get_size(i1hash)]);
+              sort_indices<1,2,3,0,0,1,1,1>(i1data, i1data_sorted, c1->size(), a4->size(), c3->size(), a2->size());
+
+              this->energy_ += ddot_(c1->size()*a4->size()*c3->size()*a2->size(), i0data_sorted, 1, i1data_sorted, 1);
+            }
+          }
+        }
+      }
+
+    };
+
+  public:
+    Task12(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I14 = t[0];
+      t2 = t[1];
+      I15 = t[2];
+    };
+    ~Task12() {};
+};
+
+template <typename T>
+class Task13 : public EnergyTask<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange act_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I15;
+    std::shared_ptr<Tensor<T> > v2;
+    std::shared_ptr<Tensor<T> > r;
+
+    void compute_() {
+      this->energy_ = 0.0;
+      for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
+        for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
+          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
+            for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
+              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::unique_ptr<double[]> odata = I15->move_block(ohash);
+              {
+                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::unique_ptr<double[]> i0data = v2->get_block(i0hash);
+                sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1->size(), a4->size(), c3->size(), a2->size());
+              }
+              {
+                std::vector<size_t> i1hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+                std::unique_ptr<double[]> i1data = v2->get_block(i1hash);
+                sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1->size(), a2->size(), c3->size(), a4->size());
+              }
+              {
+                std::vector<size_t> i2hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::unique_ptr<double[]> i2data = r->get_block(i2hash);
+                sort_indices<0,1,2,3,1,1,-4,1>(i2data, odata, c1->size(), a4->size(), c3->size(), a2->size());
+              }
+              {
+                std::vector<size_t> i3hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+                std::unique_ptr<double[]> i3data = r->get_block(i3hash);
+                sort_indices<0,3,2,1,1,1,8,1>(i3data, odata, c1->size(), a2->size(), c3->size(), a4->size());
+              }
+              I15->put_block(ohash, odata);
+            }
+          }
+        }
+      }
+    };
+
+  public:
+    Task13(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+      closed_ = i[0];
+      act_    = i[1];
+      virt_   = i[2];
+      I15 = t[0];
+      v2 = t[1];
+      r = t[2];
+    };
+    ~Task13() {};
+};
+
 
 }
 }

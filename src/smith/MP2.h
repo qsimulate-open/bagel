@@ -46,7 +46,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
     std::shared_ptr<Tensor<T> > r;
     std::shared_ptr<Tensor<T> > Gamma;
 
-    std::shared_ptr<Queue<T> > make_queue_() {
+    std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > make_queue_() {
       std::shared_ptr<Queue<T> > queue_(new Queue<T>());
       std::vector<IndexRange> index = vec(this->closed_, this->act_, this->virt_);
 
@@ -132,7 +132,21 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task11->add_dep(task0);
       queue_->add_task(task11);
 
-      return queue_;
+      std::shared_ptr<Queue<T> > energy_(new Queue<T>());
+      std::vector<IndexRange> I14_index;
+      std::shared_ptr<Tensor<T> > I14(new Tensor<T>(I14_index, false));
+      std::vector<IndexRange> I15_index = vec(this->closed_, this->virt_, this->closed_, this->virt_);
+      std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor12 = vec(I14, t2, I15);
+      std::shared_ptr<Task12<T> > task12(new Task12<T>(tensor12, index));
+      queue_->add_task(task12);
+
+      std::vector<std::shared_ptr<Tensor<T> > > tensor13 = vec(I15, this->v2_, r);
+      std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
+      task12->add_dep(task13);
+      queue_->add_task(task13);
+
+      return make_pair(queue_, energy_);
     };
 
   public:
@@ -151,13 +165,15 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       this->print_iteration();
       int iter = 0;
       for ( ; iter != maxiter_; ++iter) {
-        std::shared_ptr<Queue<T> > queue = make_queue_();
+        std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > q = make_queue_();
+        std::shared_ptr<Queue<T> > queue = q.first;
+        std::shared_ptr<Queue<T> > energ = q.second;
         while (!queue->done())
           queue->next_compute();
         r->scale(0.25); // 0.5 comes from 1/2 of the operator, 0.5 comes from add_dagger.
         *r = *(r->add_dagger());
         update_amplitude(t2, r);
-        const double en = energy();
+        const double en = energy(energ);
         const double err = r->rms();
         this->print_iteration(iter, en, err);
         if (err < thresh_residual()) break;
@@ -165,8 +181,12 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       this->print_iteration(iter == maxiter_);
     };
 
-    double energy() {
+    double energy(std::shared_ptr<Queue<T> > energ) {
       double en = 0.0;
+      while (!energ->done()) {
+        std::shared_ptr<Task<T> > c = energ->next_compute();
+        en += c->energy();
+      }   
       return en; 
     };  
 };
