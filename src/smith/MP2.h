@@ -139,12 +139,12 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor12 = vec(I14, t2, I15);
       std::shared_ptr<Task12<T> > task12(new Task12<T>(tensor12, index));
-      queue_->add_task(task12);
+      energy_->add_task(task12);
 
       std::vector<std::shared_ptr<Tensor<T> > > tensor13 = vec(I15, this->v2_, r);
       std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
       task12->add_dep(task13);
-      queue_->add_task(task13);
+      energy_->add_task(task13);
 
       return make_pair(queue_, energy_);
     };
@@ -185,7 +185,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       double en = 0.0;
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
-        en += c->energy();
+        en += c->energy() * 0.125;
       }   
       return en; 
     };  
