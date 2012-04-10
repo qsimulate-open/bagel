@@ -55,6 +55,8 @@ class Queue {
       assert(i != tasklist_.end());
       std::shared_ptr<Task<T> > out = *i;
       tasklist_.erase(i); 
+// TODO too early to delete it, though.
+for (auto j = tasklist_.begin(); j != tasklist_.end(); ++j) (*j)->delete_dep(out);
       return out;
     };
 

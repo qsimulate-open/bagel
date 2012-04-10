@@ -33,11 +33,15 @@ using namespace std;
 
 // called from the main function
 void smith_test(shared_ptr<Reference> r) {
-  MP2_Ref<Storage_Incore> mp2(r);
-  mp2.solve();
+  {
+    MP2_Ref<Storage_Incore> mp2(r);
+    mp2.solve();
+  }
 
-  MP2::MP2<Storage_Incore> _mp2(r);
-  _mp2.solve();
+  {
+    MP2::MP2<Storage_Incore> _mp2(r);
+    _mp2.solve();
+  }
 }
 
 

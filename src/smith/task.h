@@ -27,6 +27,9 @@
 #ifndef __SRC_SMITH_TASK_H
 #define __SRC_SMITH_TASK_H
 
+#include <list>
+#include <memory>
+
 namespace SMITH {
 
 // base class for Task objects
@@ -52,6 +55,14 @@ class Task {
       depend_.push_back(a);
       a->set_target(this);
     };
+
+    void delete_dep(std::shared_ptr<Task<T> > a) {
+      auto iter = std::find(depend_.begin(), depend_.end(), a);
+      if (iter != depend_.end()) depend_.erase(iter);
+      // depend_ should not have duplicated records.
+      assert(std::find(depend_.begin(), depend_.end(), a) == depend_.end());
+    };
+
     void set_target(Task<T>* b) { target_.push_back(b); };
 
     void initialize() { done_ = false; };
