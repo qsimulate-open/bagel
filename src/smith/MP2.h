@@ -153,7 +153,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       for ( ; iter != maxiter_; ++iter) {
         std::shared_ptr<Queue<T> > queue = make_queue_();
         while (!queue->done())
-          queue->next()->compute();
+          queue->next_compute();
         r->scale(0.25); // 0.5 comes from 1/2 of the operator, 0.5 comes from add_dagger.
         *r = *(r->add_dagger());
         update_amplitude(t2, r);

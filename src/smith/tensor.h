@@ -94,7 +94,9 @@ class Tensor {
 
     void initialize() { data_->initialize(); };
 
-    ~Tensor() {};
+    ~Tensor() {
+//    std::cout << "destructor called" << std::endl;
+    };
 
     Tensor<T>& operator=(const Tensor<T>& o) {
       *data_ = *(o.data_);

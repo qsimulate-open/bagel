@@ -47,16 +47,20 @@ class Queue {
     Queue(std::list<std::shared_ptr<Task<T> > > d) : tasklist_(d) { };
     ~Queue() {};
 
-    std::shared_ptr<Task<T> > next() {
+    // TODO parallel version to be implemented (need to WAIT!)
+    std::shared_ptr<Task<T> > next_compute() {
       auto i = tasklist_.begin();
-      for ( ; i != tasklist_.end(); ++i) {
+      for ( ; i != tasklist_.end(); ++i)
         if ((*i)->ready()) break;
-      }
+
       assert(i != tasklist_.end());
       std::shared_ptr<Task<T> > out = *i;
+      // execute
+      out->compute();
+      // delete dependency (to remove intermediate storages)
+      for (auto j = tasklist_.begin(); j != tasklist_.end(); ++j) (*j)->delete_dep(out);
+      // delete this task from the queue
       tasklist_.erase(i); 
-// TODO too early to delete it, though.
-for (auto j = tasklist_.begin(); j != tasklist_.end(); ++j) (*j)->delete_dep(out);
       return out;
     };
 

@@ -96,7 +96,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
         std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > >  q = make_queue_();
         std::shared_ptr<Queue<T> > queue = q.first;
         std::shared_ptr<Queue<T> > eng = q.second;
-        while (!queue->done()) queue->next()->compute(); 
+        while (!queue->done()) queue->next_compute(); 
 
         update_amplitude(t2, r2);
         const double err = r2->rms();
@@ -112,8 +112,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       double en = 0.0;
       eng->initialize();
       while (!eng->done()) {
-        std::shared_ptr<Task<T> > c = eng->next();
-        c->compute();
+        std::shared_ptr<Task<T> > c = eng->next_compute();
         en += c->energy();
       }
       return en;
