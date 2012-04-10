@@ -41,11 +41,10 @@ template <typename T>
 class Queue {
   protected:
     std::list<std::shared_ptr<Task<T> > > tasklist_;
-    int cnt_;
 
   public:
-    Queue() : cnt_(0) {};
-    Queue(std::list<std::shared_ptr<Task<T> > > d) : tasklist_(d), cnt_(0) { };
+    Queue() {};
+    Queue(std::list<std::shared_ptr<Task<T> > > d) : tasklist_(d) { };
     ~Queue() {};
 
     std::shared_ptr<Task<T> > next() {
@@ -54,18 +53,18 @@ class Queue {
         if ((*i)->ready()) break;
       }
       assert(i != tasklist_.end());
-      ++cnt_;
-      return *i;
+      std::shared_ptr<Task<T> > out = *i;
+      tasklist_.erase(i); 
+      return out;
     };
 
     void add_task(std::shared_ptr<Task<T> > a) { tasklist_.push_back(a); };
 
-    bool done() const { return tasklist_.size() == cnt_; };
+    bool done() const { return tasklist_.empty(); };
 
     void initialize() {
       for (auto i = tasklist_.begin(); i != tasklist_.end(); ++i)
         (*i)->initialize();
-      cnt_ = 0;
     };
 };
 

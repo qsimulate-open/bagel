@@ -41,18 +41,12 @@ namespace SMITH {
 template <typename T>
 class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
   protected:
-    std::shared_ptr<Queue<T> > queue_;
-    std::shared_ptr<Queue<T> > energy_;
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r2;
 
-  public:
-    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info(), queue_(new Queue<T>()), energy_(new Queue<T>()) {
-
-      this->eig_ = this->f1_->diag();
-
-      t2 = this->v2_->clone();
-      r2 = t2->clone();
+    std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > make_queue_() {
+      std::shared_ptr<Queue<T> > queue_(new Queue<T>());
+      std::shared_ptr<Queue<T> > energy_(new Queue<T>());
 
       std::vector<std::shared_ptr<Tensor<T> > > tensor0 = vec(r2, this->f1_, t2);
       std::vector<std::shared_ptr<Tensor<T> > > tensor1 = vec(r2, this->v2_);
@@ -81,7 +75,16 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       std::vector<std::shared_ptr<Tensor<T> > > tensor5 = vec(t2, this->v2_);
       std::shared_ptr<Task5<T> > t5(new Task5<T>(tensor5, index0));
       energy_->add_task(t5);
+      return make_pair(queue_, energy_); 
     };
+
+  public:
+    MP2_Ref(std::shared_ptr<Reference> r) : SpinFreeMethod<T>(r), SMITH_info() {
+      this->eig_ = this->f1_->diag();
+      t2 = this->v2_->clone();
+      r2 = t2->clone();
+    };
+
     ~MP2_Ref() {};
 
     void solve() {
@@ -89,13 +92,15 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       this->print_iteration();
       int iter;
       for (iter = 0; iter != maxiter_; ++iter) {
-        queue_->initialize();
 
-        while (!queue_->done()) queue_->next()->compute(); 
+        std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > >  q = make_queue_();
+        std::shared_ptr<Queue<T> > queue = q.first;
+        std::shared_ptr<Queue<T> > eng = q.second;
+        while (!queue->done()) queue->next()->compute(); 
 
         update_amplitude(t2, r2);
         const double err = r2->rms();
-        const double en = energy();
+        const double en = energy(eng);
 
         this->print_iteration(iter, en, err);
         if (err < thresh_residual()) break;
@@ -103,11 +108,11 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       this->print_iteration(iter == maxiter_);
     };
 
-    double energy() {
+    double energy(std::shared_ptr<Queue<T> > eng) {
       double en = 0.0;
-      energy_->initialize();
-      while (!energy_->done()) {
-        std::shared_ptr<Task<T> > c = energy_->next();
+      eng->initialize();
+      while (!eng->done()) {
+        std::shared_ptr<Task<T> > c = eng->next();
         c->compute();
         en += c->energy();
       }
