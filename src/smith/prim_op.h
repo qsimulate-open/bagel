@@ -47,13 +47,16 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   if (i==0) {
-    if (afac == 1.0) {
+    if (an == ad) {
       daxpy_(a*b, factor, unsorted, 1, sorted, 1);
-    } else if (afac == 0.0) {
+    } else if (an == 0) {
       dcopy_(a*b, unsorted, 1, sorted, 1);
     } else {
-      dscal_(a*b, afac, sorted, 1);
-      daxpy_(a*b, factor, unsorted, 1, sorted, 1);
+      for (int j0 = 0; j0 != a*b; ++j0) {
+        sorted[j0] = sorted[j0] * afac +  unsorted[j0] *factor;
+      }
+//    dscal_(a*b, afac, sorted, 1);
+//    daxpy_(a*b, factor, unsorted, 1, sorted, 1);
     }
   } else { 
     int id[2];

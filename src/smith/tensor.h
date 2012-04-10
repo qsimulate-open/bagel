@@ -31,6 +31,7 @@
 #include <map>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
@@ -190,6 +191,38 @@ class Tensor {
         }
       }
       return out;
+    };
+
+    void print4(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 4);
+      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
+        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
+          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
+            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
+              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+              // if this block is not included in the current wave function, skip it
+              if (!this->get_size(h)) continue;
+              std::unique_ptr<double[]> data = this->get_block(h);
+              size_t iall = 0;
+              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
+                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)
+                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1)
+                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+                      if (fabs(data[iall]) > thresh) {
+                         std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
+                                        " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
+                                      " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl; 
+                      }
+                    }
+            }
+          }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
     };
 };
 

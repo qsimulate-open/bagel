@@ -142,6 +142,7 @@ class Task2 : public Task<T> {
     ~Task2() {};
 };
 
+#if 0
 template <typename T>
 class Task3 : public Task<T> {
   protected:
@@ -311,6 +312,7 @@ class Task6 : public Task<T> {
     };
     ~Task6() {};
 };
+#endif
 
 template <typename T>
 class Task7 : public Task<T> {
@@ -387,7 +389,8 @@ class Task8 : public Task<T> {
                        1.0, odata_sorted, c3->size());
               }
 
-              sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
+              sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
+//*****       sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
               I4->put_block(ohash, odata);
             }
           }
