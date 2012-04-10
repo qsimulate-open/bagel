@@ -390,7 +390,6 @@ class Task8 : public Task<T> {
               }
 
               sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
-//*****       sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, c3->size(), c1->size(), a4->size(), a2->size());
               I4->put_block(ohash, odata);
             }
           }
