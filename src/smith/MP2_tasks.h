@@ -335,6 +335,11 @@ class Task7 : public Task<T> {
                 std::unique_ptr<double[]> i0data = I4->get_block(i0hash);
                 sort_indices<3,1,0,2,1,1,1,1>(i0data, odata, c1->size(), a4->size(), a2->size(), c3->size());
               }
+              {
+                std::vector<size_t> i0hash = vec(c3->key(), a2->key(), a4->key(), c1->key());
+                std::unique_ptr<double[]> i0data = I4->get_block(i0hash);
+                sort_indices<0,2,3,1,1,1,1,1>(i0data, odata, c3->size(), a2->size(), a4->size(), c1->size());
+              }
               r->put_block(ohash, odata);
             }
           }

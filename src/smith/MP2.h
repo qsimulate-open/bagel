@@ -170,11 +170,12 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
         std::shared_ptr<Queue<T> > energ = q.second;
         while (!queue->done())
           queue->next_compute();
-        r->scale(0.25); // 0.5 comes from 1/2 of the operator, 0.5 comes from add_dagger.
-        *r = *(r->add_dagger());
+        r->scale(0.25); // FIXME
+//      *r = *(r->add_dagger());
         update_amplitude(t2, r);
-        const double en = energy(energ);
         const double err = r->rms();
+r->zero();
+        const double en = energy(energ);
         this->print_iteration(iter, en, err);
         if (err < thresh_residual()) break;
       }
@@ -185,7 +186,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       double en = 0.0;
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
-        en += c->energy() * 0.125;
+        en += c->energy() * 0.25; // FIXME
       }   
       return en; 
     };  
