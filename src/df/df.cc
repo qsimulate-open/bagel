@@ -183,6 +183,19 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<DF_Full> o, c
 }
 
 
+void DF_Half::form_4index(unique_ptr<double[]>& target) const {
+  const int ndim = df_->nbasis() * nocc_;
+  const int naux = df_->naux();
+  dgemm_("T", "N", ndim, ndim, naux, 1.0, data_.get(), naux, data_.get(), naux, 0.0, target.get(), ndim); 
+}
+
+unique_ptr<double[]> DF_Half::form_4index() const {
+  const size_t ndim = df_->nbasis() * nocc_;
+  unique_ptr<double[]> out(new double[ndim*ndim]);
+  form_4index(out);
+  return move(out);
+}
+
 shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) {
   const int naux = df_->naux();
   const int nbasis = df_->nbasis();
@@ -200,10 +213,28 @@ void DF_Full::form_4index(unique_ptr<double[]>& target) const {
 }
 
 
-void DF_Full::form_4index(unique_ptr<double[]>& target, shared_ptr<DF_Full> o) const {
+void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<DF_Full> o) const {
   const int dim = nocc1_ * nocc2_;
   const int odim = o->nocc1_ * o->nocc2_;
   const int naux = df_->naux();
   dgemm_("T", "N", dim, odim, naux, 1.0, data_.get(), naux, o->data_.get(), naux, 0.0, target.get(), dim); 
+}
+
+
+// Joperator. Note that (r,s) runs first; i.e., in the operator form
+void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<DensityFit> o) const {
+  const int dim = nocc1_ * nocc2_;
+  const int odim = o->nbasis() * o->nbasis();
+  const int naux = df_->naux();
+  shared_ptr<DF_Full> tmp = this->apply_J();
+  dgemm_("T", "N", odim, dim, naux, 1.0, o->data_3index(), naux, tmp->data(), naux, 0.0, target.get(), odim); 
+}
+
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<DensityFit> o) const {
+  const size_t dim = nocc1_ * o->nbasis();
+  assert(nocc1_ == nocc2_);
+  unique_ptr<double[]> out(new double[dim*dim]);
+  form_4index(out, o);
+  return move(out);
 }
 

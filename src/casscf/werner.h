@@ -33,14 +33,14 @@
 
 class WernerKnowles : public CASSCF {
   protected:
-    void common_init() {
+    virtual void common_init() {
       std::cout << "    * Using the two-step Werner-Knowles algorithm (see JCP 1985)" << std::endl << std::endl;
     };
 
-    std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<FCI>, std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, 
-                                           std::shared_ptr<Coeff>);
-    std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<FCI>, std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, 
-                                           std::shared_ptr<Matrix1e>,std::shared_ptr<Coeff>);
+    std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, std::shared_ptr<Coeff>);
+    std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, 
+                                           std::shared_ptr<Matrix1e>, const std::shared_ptr<Coeff>);
+    std::shared_ptr<Matrix1e> compute_denom_1e(const std::shared_ptr<Matrix1e> U, const std::shared_ptr<Coeff> cc);
 
     double thresh_mmicro_;
     int max_mmicro_iter_;
@@ -54,7 +54,7 @@ class WernerKnowles : public CASSCF {
     };
     ~WernerKnowles() {};
 
-    void compute();
+    virtual void compute();
 
 
 }; 

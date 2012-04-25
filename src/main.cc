@@ -42,6 +42,7 @@
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
+#include <src/casscf/werner4.h>
 #include <src/global.h>
 #include <src/stackmem.h>
 
@@ -113,6 +114,10 @@ int main(int argc, char** argv) {
           shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
           werner->compute();
           ref = werner->conv_to_ref();
+        } else if (algorithm == "werner4") {
+          shared_ptr<CASSCF> werner(new Werner4(iter->second, geom, ref));
+          werner->compute();
+          ref = werner->conv_to_ref();
         } else {
           throw runtime_error("unknown CASSCF algorithm specified.");
         }
@@ -128,7 +133,7 @@ int main(int argc, char** argv) {
     print_footer();
 
     /////////////////////////////////////
-    smith_test(ref);
+    //smith_test(ref);
     /////////////////////////////////////
 
     // end of the main file

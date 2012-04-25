@@ -348,6 +348,16 @@ shared_ptr<Matrix1e> Matrix1e::log(const int deg) const {
 }
 
 
+unique_ptr<double[]> Matrix1e::diag() const {
+  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix1e::diag()");
+  unique_ptr<double[]> out(new double[ndim_]);
+  for (int i = 0; i != ndim_; ++i) {
+    out[i] = element(i,i); 
+  }
+  return move(out);
+}
+
+
 shared_ptr<Matrix1e> Matrix1e::transpose() const {
   shared_ptr<Matrix1e> out(new Matrix1e(*this));
   mytranspose_(data(), &nbasis_, &nbasis_, out->data());

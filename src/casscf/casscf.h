@@ -51,6 +51,7 @@ class CASSCF {
     int nclosed_;
     int nact_;
     int nvirt_;
+    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing. 
     int nbasis_;
     int nstate_;
     int max_iter_;

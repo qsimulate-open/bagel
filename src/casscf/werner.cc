@@ -99,7 +99,7 @@ void WernerKnowles::compute() {
     for (miter = 0; miter != max_micro_iter_; ++miter) {
 
       // compute initial B (Eq. 19)
-      shared_ptr<Matrix1e> bvec = compute_bvec(fci_, jvec, U, ref_->coeff());
+      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
       if (miter == 0) bvec0 = bvec;
 
       { // for debug
@@ -142,7 +142,7 @@ grad->print("grad", 18);
         shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
 
         // update B
-        shared_ptr<Matrix1e> new_bvec = compute_bvec(fci_, jvec, UdR, UdR, ref_->coeff());
+        shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, ref_->coeff());
 
         // compute  C dR + dR C
         shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
@@ -211,19 +211,22 @@ shared_ptr<Matrix1e> bvec2 = compute_bvec(fci_, jvec, U, ref_->coeff());
 
 // compute B according to Eq. (19).
 // B = 2[h_rs U_sj D_ji + (rs|D)Usj <D|ji> + 2(rk|D)(D|ls)T_sj D_jl,ik]
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<FCI> fci, shared_ptr<Jvec> jvec,
-                                                 shared_ptr<Matrix1e> u, shared_ptr<Coeff> cc) {
+shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Jvec> jvec, shared_ptr<Matrix1e> u, const shared_ptr<Coeff> cc) {
   shared_ptr<Matrix1e> t(new Matrix1e(*u));
   for (int i = 0; i != u->ndim(); ++i) t->element(i,i) -= 1.0;
-  return compute_bvec(fci, jvec, u, t, cc);
+  return compute_bvec(jvec, u, t, cc);
 }
 
 
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<FCI> fci, shared_ptr<Jvec> jvec,
-                                                 shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, shared_ptr<Coeff> cc) {
+shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Jvec> jvec,
+                                                 shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<Coeff> cc) {
   shared_ptr<DensityFit> df = geom_->df();
   const int naux = df->naux();
   const int nbas = df->nbasis();
+
+// TODO make sure if this works
+if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
+
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));
   {
     shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*cc % *hcore_ * *cc));
@@ -231,10 +234,10 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<FCI> fci, shared_ptr
     // first term
     Matrix1e all1(geom_);
     for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
-    for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1);
+    for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci_->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1);
     shared_ptr<Matrix1e> buf(new Matrix1e(geom_));
-    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbasis_, 0.0, buf->data(), nbasis_);
-    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbasis_, all1.data(), nbasis_, 0.0, out->data(), nbasis_);
+    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbas, 0.0, buf->data(), nbas);
+    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);
   }
 
   unique_ptr<double[]> tmp(new double[nbas*nbas]);

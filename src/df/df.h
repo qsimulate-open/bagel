@@ -94,7 +94,7 @@ class DF_Half {
       return out;
     };
 
-    std::shared_ptr<DF_Half> apply_J() {
+    std::shared_ptr<DF_Half> apply_J() const {
       const int naux = df_->naux();
       const int nbasis = df_->nbasis();
       std::unique_ptr<double[]> out(new double[nocc_*naux*nbasis]);
@@ -107,6 +107,10 @@ class DF_Half {
 
     void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<DF_Full> o, const double a = 1.0, const double b = 0.0) const;
+
+    // form K operator
+    std::unique_ptr<double[]> form_4index() const;
+    void form_4index(std::unique_ptr<double[]>& target) const;
 };
 
 
@@ -127,7 +131,7 @@ class DF_Full {
     const int nocc1() const { return nocc1_; };
     const int nocc2() const { return nocc2_; };
 
-    std::shared_ptr<DF_Full> apply_J() {
+    std::shared_ptr<DF_Full> apply_J() const {
       const int naux = df_->naux();
       std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux]);
       dgemm_("N", "N", naux, nocc1_*nocc2_, naux, 1.0, df_->data_2index(), naux, data_.get(), naux, 0.0, out.get(), naux); 
@@ -144,7 +148,10 @@ class DF_Full {
     };
 
     void form_4index(std::unique_ptr<double[]>& target) const;
-    void form_4index(std::unique_ptr<double[]>& target, std::shared_ptr<DF_Full> o) const;
+    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<DF_Full> o) const;
+
+    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<DensityFit> o) const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<DensityFit> o) const;
 
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };

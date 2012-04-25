@@ -62,6 +62,8 @@ class Matrix1e {
     double& data(const size_t i) { return *(data_.get()+i); };
     double& element(int i, int j) { return *element_ptr(i, j); };
     double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
+    const double& element(int i, int j) const { return *element_ptr(i, j); };
+    const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; };
 
     void symmetrize();
     void diagonalize(double*);
@@ -104,6 +106,8 @@ class Matrix1e {
 
     void add_diag(const double a, const int i, const int j)
       { for (int ii = i; ii != j; ++ii) element(ii,ii) += a; };
+    // returns diagonal elements
+    std::unique_ptr<double[]> diag() const;
 
     void zero() { std::fill(data(), data()+nbasis_*nbasis_, 0.0); };
     void unit() { std::fill(data(), data()+nbasis_*nbasis_, 0.0);
