@@ -59,13 +59,15 @@ class RDM {
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
     double* first() { return data(); };
-    double& element(int i, int j) { return data_[i+j*dim_]; };
-    const double& element(int i, int j) const { return data_[i+j*dim_]; };
-    const double* element_ptr(int i, int j) const { return &element(i,j); };
+    double& element(int i, int j) { assert(i<dim_ && j<dim_); return data_[i+j*dim_]; };
+    const double& element(int i, int j) const { assert(i<dim_ && j<dim_); return data_[i+j*dim_]; };
+    const double* element_ptr(int i, int j) const { assert(i<dim_ && j<dim_); return &element(i,j); };
     // careful, this should not be called for those except for 2RDM.
-    double& element(int i, int j, int k, int l) { assert(rank == 2); return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
-    double* element_ptr(int i, int j, int k, int l) { assert(rank == 2); return &element(i,j,k,l); };
-    const double& element(int i, int j, int k, int l) const { assert(rank == 2); return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
+    double& element(int i, int j, int k, int l) { assert(rank == 2 && i<norb_ && j<norb_ && k<norb_ && l<norb_);
+        return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
+    double* element_ptr(int i, int j, int k, int l) { return &element(i,j,k,l); };
+    const double& element(int i, int j, int k, int l) const { assert(rank == 2 && i<norb_ && j<norb_ && k<norb_ && l<norb_);
+        return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
 
     void zero() { std::fill(data(), data()+dim_*dim_, 0.0); };
     void daxpy(const double a, const RDM& o) {

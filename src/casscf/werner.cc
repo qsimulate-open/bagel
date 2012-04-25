@@ -31,6 +31,7 @@
 #include <src/casscf/rotfile.h>
 #include <src/util/aughess.h>
 #include <src/util/linear.h>
+#include <src/casscf/jkop.h>
 
 using namespace std;
 
@@ -62,7 +63,7 @@ void WernerKnowles::compute() {
     vector<double> energy = fci_->energy();
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
-#if 0
+#if 1
     form_natural_orbs();
 #else
     occup_ = fci_->rdm1_av()->diag();
@@ -84,11 +85,13 @@ void WernerKnowles::compute() {
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
     {
       U->unit();
+#if 0
       shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
       shared_ptr<Matrix1e> residual(new Matrix1e(*bvec - *bvec->transpose()));
       for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
       U = residual->exp();
       U->purify_unitary();
+#endif
     }
 
 
@@ -111,7 +114,6 @@ void WernerKnowles::compute() {
 
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
-grad->print("grad", 18);
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
       const double error_micro = grad->ddot(*grad)/grad->size();
       if (miter == 0) error = error_micro;
@@ -120,7 +122,7 @@ grad->print("grad", 18);
       if (error_micro < thresh_micro_) break;
 
       // initializing a Davidson manager
-#if 1
+#if 0
       AugHess<Matrix1e> solver(max_mmicro_iter_+1, grad);
 #else
       Linear<Matrix1e> solver(max_mmicro_iter_, grad);
@@ -133,6 +135,14 @@ grad->print("grad", 18);
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
       for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
 
+
+      // TODO  debug debug debug debug
+#define DEBUG4INDEX
+#ifdef DEBUG4INDEX
+      JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
+#endif
+      // debug debug debug debug debug
+
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
       for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter) {
@@ -142,7 +152,13 @@ grad->print("grad", 18);
         shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
 
         // update B
+#ifndef DEBUG4INDEX
         shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, ref_->coeff());
+#else
+        shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
+        shared_ptr<Matrix1e> tmp = jk.contract(gg);
+        shared_ptr<Matrix1e> new_bvec(new Matrix1e(*ref_->coeff() % *tmp));
+#endif
 
         // compute  C dR + dR C
         shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
@@ -259,4 +275,5 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
 
   return out;
 }
+
 

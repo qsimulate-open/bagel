@@ -40,6 +40,8 @@ class WernerKnowles : public CASSCF {
     std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, std::shared_ptr<Coeff>);
     std::shared_ptr<Matrix1e> compute_bvec(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, 
                                            std::shared_ptr<Matrix1e>, const std::shared_ptr<Coeff>);
+    std::shared_ptr<Matrix1e> compute_bvec2(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>, 
+                                           std::shared_ptr<Matrix1e>, const std::shared_ptr<Coeff>);
     std::shared_ptr<Matrix1e> compute_denom_1e(const std::shared_ptr<Matrix1e> U, const std::shared_ptr<Coeff> cc);
 
     double thresh_mmicro_;
