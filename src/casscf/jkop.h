@@ -100,6 +100,7 @@ class JKop {
     ~JKop() {};
 
     std::shared_ptr<Matrix1e> contract(const std::shared_ptr<Matrix1e> in) {
+#if 0
       std::shared_ptr<Matrix1e> out(fci_->geom());
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
@@ -111,6 +112,7 @@ class JKop {
         }
       }
       return out;
+#endif
     };
 
 };

@@ -84,7 +84,7 @@ void WernerKnowles::compute() {
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
     {
       U->unit();
-      shared_ptr<Matrix1e> bvec = compute_bvec(fci_, jvec, U, ref_->coeff());
+      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
       shared_ptr<Matrix1e> residual(new Matrix1e(*bvec - *bvec->transpose()));
       for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
       U = residual->exp();
@@ -183,7 +183,7 @@ grad->print("grad", 18);
 
 #if 1
 ((*U-*(U->transpose()))*0.5).print("uu", 18);
-shared_ptr<Matrix1e> bvec2 = compute_bvec(fci_, jvec, U, ref_->coeff());
+shared_ptr<Matrix1e> bvec2 = compute_bvec(jvec, U, ref_->coeff());
 (*U%*bvec2-*bvec2%*U).print("residual",18);
 #endif
 
