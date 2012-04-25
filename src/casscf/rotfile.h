@@ -107,6 +107,7 @@ class RotFile {
 
     // unpack to Matrix1e
     std::shared_ptr<Matrix1e> unpack(std::shared_ptr<Geometry> geom, const double a = 0.0) const;
+    std::shared_ptr<Matrix1e> unpack_sym(std::shared_ptr<Geometry> geom, const double a = 0.0) const;
 
     // print matrix
     void print() const;

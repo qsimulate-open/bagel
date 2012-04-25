@@ -57,6 +57,34 @@ shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<Geometry> geom, const double a) 
   return out;
 }
 
+
+shared_ptr<Matrix1e> RotFile::unpack_sym(shared_ptr<Geometry> geom, const double a) const {
+
+  const int nocc_ = nclosed_ + nact_;
+  const int nbasis_ = nclosed_ + nact_ + nvirt_; 
+  shared_ptr<Matrix1e> out(new Matrix1e(geom, nbasis_, nbasis_));
+  fill(out->data(), out->data()+out->size(), a);
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nvirt_;   ++j) {
+      out->element(j+nocc_, i+nclosed_) = ele_va(j, i);
+    }
+    for (int j = 0; j != nclosed_; ++j) {
+      out->element(i+nclosed_, j) = ele_ca(j, i);
+    }
+  }
+  for (int i = 0; i != nclosed_; ++i) {
+    for (int j = 0; j != nvirt_;   ++j) {
+      out->element(j+nocc_, i) = ele_vc(j, i);
+    }
+  }
+  for (int i = 0; i != nbasis_; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      out->element(j, i) = out->element(i, j);
+    }
+  }
+  return out;
+}
+
 void RotFile::print() const {
   if (nact_ && nclosed_) {
     cout << " printing closed-active block" << endl;

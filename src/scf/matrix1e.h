@@ -109,9 +109,9 @@ class Matrix1e {
     // returns diagonal elements
     std::unique_ptr<double[]> diag() const;
 
-    void zero() { std::fill(data(), data()+nbasis_*nbasis_, 0.0); };
-    void unit() { std::fill(data(), data()+nbasis_*nbasis_, 0.0);
-                  for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);};
+    void fill(const double a) { std::fill(data(), data()+nbasis_*nbasis_, a); };
+    void zero() { fill(0.0); };
+    void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);};
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
     void purify_idempotent(const Matrix1e& s);

@@ -18,12 +18,13 @@ class JKop {
     std::unique_ptr<double[]> data_;
     const std::shared_ptr<FCI> fci_;
     const size_t nocc_;
+    const size_t nclosed_;
     const size_t nbasis_;
 
   public:
     JKop(const std::shared_ptr<DensityFit> df, const std::shared_ptr<Coeff> c, const std::shared_ptr<Fock<1> > hcore,
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
-    : fci_(fci), nocc_(nocc), nbasis_(df->nbasis()) {
+    : fci_(fci), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis()) {
       assert(nclosed+nact == nocc);
       // K operator
       std::shared_ptr<DF_Half> half = df->compute_half_transform(c->data(), nocc)->apply_J();
@@ -110,8 +111,30 @@ class JKop {
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nbasis; ++k) {
-            out->element(k, i) += ddot_(nbasis, in->element_ptr(0,j), 1, data_.get()+nbasis*(k+nbasis*(j+nocc*i)), 1);
+            out->element(k, i) += 2.0*ddot_(nbasis, in->element_ptr(0,j), 1, data_.get()+nbasis*(k+nbasis*(j+nocc*i)), 1);
           }
+        }
+      }
+      return out;
+    };
+
+    std::shared_ptr<Matrix1e> denom() const {
+      std::shared_ptr<Matrix1e> out(new Matrix1e(fci_->geom()));
+      const size_t nbasis = nbasis_; 
+      const int nocc = nocc_;
+      const int nclosed = nclosed_;
+      // virtual-occ part
+      out->fill(1.0e1);
+      for (int i = 0; i != nocc; ++i) {
+        for (int j = nocc; j != nbasis; ++j) {
+          out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))];
+        }
+      }
+      // occ-occ part
+      for (int i = 0; i != nclosed; ++i) {
+        for (int j = nclosed; j != nocc; ++j) {
+          out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] + 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]
+                                                    - 4.0*data_[j+nbasis*(i+nbasis*(j+nocc*i))];
         }
       }
       return out;

@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+//#define DEBUG4INDEX
 
 
 #include <src/casscf/werner.h>
@@ -32,6 +33,7 @@
 #include <src/util/aughess.h>
 #include <src/util/linear.h>
 #include <src/casscf/jkop.h>
+#include <src/util/bfgs.h>
 
 using namespace std;
 
@@ -72,14 +74,16 @@ void WernerKnowles::compute() {
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
     // denominator
+#ifndef DEBUG4INDEX
     shared_ptr<Matrix1e> denom;
     {
       shared_ptr<Matrix1e> f;
       shared_ptr<QFile>    fact, factp, gaa;
       shared_ptr<RotFile> denom_;
       one_body_operators(f, fact, factp, gaa, denom_, false);
-      denom = denom_->unpack(geom_, 1.0e-1);
+      denom = denom_->unpack_sym(geom_, 1.0e1);
     }
+#endif
 
     // start with U=1
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
@@ -97,7 +101,7 @@ void WernerKnowles::compute() {
 
     shared_ptr<Matrix1e> bvec0;
 
-    int miter;
+    int miter, tcount = 0;
     double error;
     for (miter = 0; miter != max_micro_iter_; ++miter) {
 
@@ -115,6 +119,7 @@ void WernerKnowles::compute() {
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
+grad->print("grad",16);
       const double error_micro = grad->ddot(*grad)/grad->size();
       if (miter == 0) error = error_micro;
       cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
@@ -133,23 +138,26 @@ void WernerKnowles::compute() {
 
       // initial dR value.
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
-      for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
+#ifndef DEBUG4INDEX
+      // if DEBUG4INDEX, denom is not ready here.
+//    for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
+#endif
 
 
-      // TODO  debug debug debug debug
-#define DEBUG4INDEX
 #ifdef DEBUG4INDEX
       JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
 #endif
-      // debug debug debug debug debug
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
-      for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter) {
+      for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter, ++tcount) {
 
         const int mstart = ::clock();
         // compute U dR
         shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
+
+        // compute  1/2 (C dR + dR C)
+        shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
 
         // update B
 #ifndef DEBUG4INDEX
@@ -158,10 +166,25 @@ void WernerKnowles::compute() {
         shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
         shared_ptr<Matrix1e> tmp = jk.contract(gg);
         shared_ptr<Matrix1e> new_bvec(new Matrix1e(*ref_->coeff() % *tmp));
-#endif
 
-        // compute  C dR + dR C
-        shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
+        unique_ptr<double[]> cdiag = C->diag();
+        shared_ptr<Matrix1e> denom = jk.denom(); 
+        for (int i = 0; i != nocc_; ++i) {
+          for (int j = nocc_; j != nbasis_; ++j) {
+            denom->element(j, i) -= cdiag[i] + cdiag[j];
+            denom->element(i, j) -= cdiag[i] + cdiag[j];
+          }
+        }
+        for (int i = 0; i != nclosed_; ++i) {
+          for (int j = nclosed_; j != nocc_; ++j) {
+            denom->element(j, i) -= cdiag[i] + cdiag[j];
+            denom->element(i, j) -= cdiag[i] + cdiag[j];
+          }
+        }
+#endif
+        BFGS<Matrix1e> bfgs(denom, nbasis_*nbasis_);
+
+        denom->print("r",16);
 
         // compute U^dagger B - B^dagger U
         // compute Eq.29
@@ -184,7 +207,9 @@ void WernerKnowles::compute() {
         if (mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
-        for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
+        //for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  denom->data(i);// max(denom->data(i),0.1);
+        bfgs.extrapolate(residual, dR); 
+
         solver.orthog(residual);
         dR = residual;
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
@@ -197,12 +222,13 @@ void WernerKnowles::compute() {
 
     }
 
-#if 1
+#if 0
 ((*U-*(U->transpose()))*0.5).print("uu", 18);
 shared_ptr<Matrix1e> bvec2 = compute_bvec(jvec, U, ref_->coeff());
 (*U%*bvec2-*bvec2%*U).print("residual",18);
 #endif
 
+    U->purify_unitary();
     shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
     ref_->set_coeff(newcc);
 
@@ -210,7 +236,7 @@ shared_ptr<Matrix1e> bvec2 = compute_bvec(jvec, U, ref_->coeff());
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       resume_stdcout();
-      cout << indent << setw(5) << iter << setw(3) << i << setw(4) << miter
+      cout << indent << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
                                         << setw(15) << fixed << setprecision(8) << energy[i] << "   "
                                         << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                                         << (end - start)/cps << endl;
