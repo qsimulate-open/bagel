@@ -40,7 +40,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
 
   const double tiny = 1.0e-20;
 
-#if 0
+#if 1
   // testing Davidson -- checked.
   {
     cout << "  testing Davidson class" << endl;
@@ -54,7 +54,9 @@ void test_solvers(shared_ptr<Geometry> geom_) {
       shared_ptr<Matrix1e> res = start->clone();
       dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
 
-      const double energy = davidson.compute(start, res);
+      shared_ptr<const Matrix1e> ss(new Matrix1e(*start)); 
+      shared_ptr<const Matrix1e> rr(new Matrix1e(*res)); 
+      const double energy = davidson.compute(ss, rr);
       shared_ptr<Matrix1e> residual = davidson.residual().front();
 
       cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;

@@ -66,13 +66,13 @@ class RotFile {
     // zero out
     void zero() { std::fill(data(), data()+size_, 0.0); };
     // returns dot product
-    double ddot(const RotFile& o) { return ddot_(size_, data(), 1, o.data(), 1); };
+    double ddot(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); };
     // returns norm of the vector
-    double norm() { return std::sqrt(ddot(*this)); };
+    double norm() const { return std::sqrt(ddot(*this)); };
     // daxpy added to self
-    void daxpy(double a, RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }; 
+    void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }; 
     // orthogonalize to the liset of RotFile's
-    double orthog(std::list<std::shared_ptr<RotFile> > c) {
+    double orthog(std::list<std::shared_ptr<const RotFile> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter)
         this->daxpy(- this->ddot(**iter), **iter);
       const double scal = 1.0/this->norm();

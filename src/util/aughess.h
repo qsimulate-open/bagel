@@ -34,16 +34,13 @@
 
 template<typename T>
 class AugHess {
-  typedef std::shared_ptr<T> RefT;
-  typedef std::list<std::pair<RefT, RefT> > Container_type_;
-  typedef typename Container_type_::iterator iterator;
 
   protected:
-    std::list<std::shared_ptr<T> > c_;
-    std::list<std::shared_ptr<T> > sigma_;
+    std::list<std::shared_ptr<const T> > c_;
+    std::list<std::shared_ptr<const T> > sigma_;
 
     const int max_;    
-    const std::shared_ptr<T> grad_;
+    const std::shared_ptr<const T> grad_;
 
     // contains 
     std::unique_ptr<double[]> mat_;
@@ -65,7 +62,7 @@ class AugHess {
 
 
   public:
-    AugHess(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad), 
+    AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
       mat_(new double[ndim*ndim]),
       scr_(new double[ndim*ndim]),
       vec_(new double[ndim]),
@@ -76,7 +73,8 @@ class AugHess {
     };
     ~AugHess() {};
 
-    std::shared_ptr<T> compute_residual(std::shared_ptr<T> c, std::shared_ptr<T> s) {
+    std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
+
       if (size_+1 == max_) throw std::runtime_error("max size reached in AugHess");
       // register new vectors
       c_.push_back(c);

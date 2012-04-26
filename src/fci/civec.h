@@ -76,6 +76,7 @@ class Civec {
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
     double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
     double* first() { return cc(); };
+    const double* first() const { return cc(); };
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
@@ -91,22 +92,22 @@ class Civec {
     int lenb() const { return lenb_; };
 
     // some functions for convenience
-    double ddot(Civec& other) {
+    double ddot(const Civec& other) const {
       return ddot_(lena_*lenb_, cc(), 1, other.first(), 1);
     };
-    void daxpy(double a, Civec& other) {
+    void daxpy(double a, const Civec& other) {
       daxpy_(lena_*lenb_, a, other.first(), 1, cc(), 1);
     };
-    double norm() {
+    double norm() const {
       return std::sqrt(ddot_(lena_*lenb_, cc(), 1, cc(), 1));
     };
-    double variance() {
+    double variance() const {
       const int lab = lena_ * lenb_;
       return ddot_(lab, cc(), 1, cc(), 1)/lab;
     }
 
     // assumes that c is already orthogonal with each other.
-    double orthog(std::list<std::shared_ptr<Civec> > c) {
+    double orthog(std::list<std::shared_ptr<const Civec> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
         const double scal = - this->ddot(**iter);
         this->daxpy(scal, **iter);
@@ -170,6 +171,14 @@ class Dvec {
     std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
     std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civec> > out;
+      int i = 0;
+      for (auto iter = dvec_.begin(); iter != dvec_.end(); ++iter, ++i) {
+        if (conv[i] == 0) out.push_back(*iter);
+      }
+      return out;
+    };
+    std::vector<std::shared_ptr<const Civec> > dvec(const std::vector<int>& conv) const {
+      std::vector<std::shared_ptr<const Civec> > out;
       int i = 0;
       for (auto iter = dvec_.begin(); iter != dvec_.end(); ++iter, ++i) {
         if (conv[i] == 0) out.push_back(*iter);

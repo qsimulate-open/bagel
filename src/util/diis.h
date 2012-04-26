@@ -38,7 +38,7 @@
 
 template <class T>
 class DIIS {
-  typedef std::shared_ptr<T> RefT;
+  typedef std::shared_ptr<const T> RefT;
   typedef std::list<std::pair<RefT, RefT> > Container_type_;
   typedef typename Container_type_::iterator iterator;
 
@@ -65,7 +65,7 @@ class DIIS {
 
     ~DIIS() { };
 
-    RefT extrapolate(const std::pair<RefT, RefT> input) {
+    std::shared_ptr<T> extrapolate(const std::pair<RefT, RefT> input) {
       RefT v = input.first;
       RefT e = input.second;
       data_.push_back(input);
@@ -99,7 +99,7 @@ class DIIS {
       dsysv_("U", cdim, 1, matrix_, nld_, ipiv_, coeff_, nld_, work_, lwork_, info);
       if (info) throw std::runtime_error("DSYSV failed in diis.h");
 
-      RefT out = input.first->clone();
+      std::shared_ptr<T> out = input.first->clone();
 
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)

@@ -287,7 +287,7 @@ void Matrix1e::daxpy(const double a, const Matrix1e& o) {
 }
 
 
-void Matrix1e::daxpy(const double a, const std::shared_ptr<Matrix1e> o) {
+void Matrix1e::daxpy(const double a, const std::shared_ptr<const Matrix1e> o) {
   daxpy_(nbasis_*nbasis_, a, o->data(), 1, data(), 1); 
 }
 
@@ -297,7 +297,7 @@ const double Matrix1e::ddot(const Matrix1e& o) const {
 }
 
 
-const double Matrix1e::ddot(const std::shared_ptr<Matrix1e> o) const {
+const double Matrix1e::ddot(const std::shared_ptr<const Matrix1e> o) const {
   return ddot_(nbasis_*nbasis_, data(), 1, o->data(), 1); 
 }
 
@@ -442,7 +442,7 @@ void Matrix1e::inverse() {
 }
 
 
-double Matrix1e::orthog(const std::list<std::shared_ptr<Matrix1e> > o) {
+double Matrix1e::orthog(const std::list<std::shared_ptr<const Matrix1e> > o) {
   for (auto iter = o.begin(); iter != o.end(); ++iter) {
     const double m = this->ddot(*iter);
     this->daxpy(-m, *iter);

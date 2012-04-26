@@ -100,8 +100,8 @@ void FCI::compute() {
     form_sigma(cc_, sigma, d, e, conv);
 
     // constructing Dvec's for Davidson
-    shared_ptr<Dvec> ccn(new Dvec(cc_));
-    shared_ptr<Dvec> sigman(new Dvec(sigma));
+    shared_ptr<const Dvec> ccn(new Dvec(cc_));
+    shared_ptr<const Dvec> sigman(new Dvec(sigma));
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
@@ -127,7 +127,7 @@ void FCI::compute() {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
         davidson.orthog(cc_->data(ist));
-        list<shared_ptr<Civec> > tmp;
+        list<shared_ptr<const Civec> > tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst)); 
         cc_->data(ist)->orthog(tmp);
       }

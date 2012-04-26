@@ -41,8 +41,8 @@
 template <typename T>
 class DavidsonDiag {
   protected:
-    std::list<std::shared_ptr<T> > c_;
-    std::list<std::shared_ptr<T> > sigma_;
+    std::list<std::shared_ptr<const T> > c_;
+    std::list<std::shared_ptr<const T> > sigma_;
     const int max_;
     const int nstate_;
     int size_;
@@ -72,14 +72,14 @@ class DavidsonDiag {
     };
     ~DavidsonDiag(){};
 
-    double compute(std::shared_ptr<T> cc, std::shared_ptr<T> cs) {
+    double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
       assert(nstate_ == 1);
-      std::vector<std::shared_ptr<T> > c; c.push_back(cc);
-      std::vector<std::shared_ptr<T> > s; s.push_back(cs);
+      std::vector<std::shared_ptr<const T> > c; c.push_back(cc);
+      std::vector<std::shared_ptr<const T> > s; s.push_back(cs);
       return compute(c,s).front();
     };
 
-    std::vector<double> compute(std::vector<std::shared_ptr<T> > cc, std::vector<std::shared_ptr<T> > cs) {
+    std::vector<double> compute(std::vector<std::shared_ptr<const T> > cc, std::vector<std::shared_ptr<const T> > cs) {
       if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
       // add entry
       for (auto iter = cc.begin(); iter != cc.end(); ++iter) c_.push_back(*iter);
@@ -139,7 +139,7 @@ class DavidsonDiag {
     };
 
     // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T> cc) { return cc->orthog(c_); }
+    double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 }; 
 

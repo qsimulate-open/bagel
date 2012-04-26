@@ -34,16 +34,13 @@
 
 template<typename T>
 class Linear {
-  typedef std::shared_ptr<T> RefT;
-  typedef std::list<std::pair<RefT, RefT> > Container_type_;
-  typedef typename Container_type_::iterator iterator;
 
   protected:
-    std::list<std::shared_ptr<T> > c_;
-    std::list<std::shared_ptr<T> > sigma_;
+    std::list<std::shared_ptr<const T> > c_;
+    std::list<std::shared_ptr<const T> > sigma_;
 
     const int max_;    
-    const std::shared_ptr<T> grad_;
+    const std::shared_ptr<const T> grad_;
 
     // contains 
     std::unique_ptr<double[]> mat_;
@@ -61,7 +58,7 @@ class Linear {
 
 
   public:
-    Linear(const int ndim, std::shared_ptr<T> grad) : max_(ndim), size_(0), grad_(grad),
+    Linear(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
       mat_(new double[max_*max_]),
       scr_(new double[max_*max_]),
       vec_(new double[max_]),
@@ -70,10 +67,7 @@ class Linear {
     };
     ~Linear() {};
 
-    std::shared_ptr<T> compute_residual(const std::shared_ptr<T> _c, const std::shared_ptr<T> _s) {
-      // these copy can be avoided, but to make sure...
-      std::shared_ptr<T> c(new T(*_c));
-      std::shared_ptr<T> s(new T(*_s));
+    std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
 
       if (size_ == max_) throw std::runtime_error("max size reached in Linear");
       // register new vectors

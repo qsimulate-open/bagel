@@ -60,6 +60,7 @@ class Matrix1e {
     const int mdim() const { return mdim_; }; 
     double* data() const { return data_.get(); };
     double& data(const size_t i) { return *(data_.get()+i); };
+    const double& data(const size_t i) const { return *(data_.get()+i); };
     double& element(int i, int j) { return *element_ptr(i, j); };
     double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
     const double& element(int i, int j) const { return *element_ptr(i, j); };
@@ -95,10 +96,10 @@ class Matrix1e {
     std::shared_ptr<Matrix1e> transpose() const;
 
     void daxpy(const double, const Matrix1e&);
-    void daxpy(const double, const std::shared_ptr<Matrix1e>);
+    void daxpy(const double, const std::shared_ptr<const Matrix1e>);
     const double ddot(const Matrix1e&) const;
     const double norm() const { return std::sqrt(ddot(*this)); };
-    const double ddot(const std::shared_ptr<Matrix1e>) const;
+    const double ddot(const std::shared_ptr<const Matrix1e>) const;
     const double rms() const;
     const double trace() const;
     
@@ -119,7 +120,7 @@ class Matrix1e {
 
     void print(const std::string in = "", const int size = 10) const;
 
-    double orthog(const std::list<std::shared_ptr<Matrix1e> > o);
+    double orthog(const std::list<std::shared_ptr<const Matrix1e> > o);
 };
 
 #endif

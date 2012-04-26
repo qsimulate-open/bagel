@@ -39,28 +39,33 @@
 
 template<class T>
 class HPW_DIIS  {
-  typedef std::shared_ptr<T> RefT;
+  typedef std::shared_ptr<const T> RefT;
   protected:
     DIIS<T> diis_;
     RefT base_;
     const RefT orig_;
 
   public:
-    HPW_DIIS(const int n, RefT o) : diis_(n), base_(o->clone()), orig_(o) { base_->unit(); };
+    HPW_DIIS(const int n, RefT o) : diis_(n), orig_(o) {
+      std::shared_ptr<T> b = o->clone(); 
+      b->unit();
+      RefT tmp(new T(*b));
+      base_ = tmp;
+    };
     ~HPW_DIIS() {};
 
-    RefT extrapolate(const RefT rot) {
+    std::shared_ptr<T> extrapolate(const RefT rot) {
       // prev = log(base)
       RefT expo = (*base_**rot).log();
       RefT prev_ = base_->log();
       RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
 
-      RefT extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
+      std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
       // this is important
       extrap->purify_unitary();
       // returns unitary matrix with respect to the original matrix
-      RefT out(new T(*orig_* *extrap));
-      *base_ = *extrap;
+      std::shared_ptr<T> out(new T(*orig_* *extrap));
+      base_ = extrap;
       return out;
     };
 

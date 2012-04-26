@@ -142,8 +142,8 @@ void SuperCI::compute() {
       }
 
       // enters davidson iteration
-      shared_ptr<RotFile> ccp(new RotFile(*cc_));
-      shared_ptr<RotFile> sigmap(new RotFile(*sigma_));
+      shared_ptr<const RotFile> ccp(new RotFile(*cc_));
+      shared_ptr<const RotFile> sigmap(new RotFile(*sigma_));
       const double mic_energy = davidson.compute(ccp, sigmap);
 
       // residual vector and error
@@ -184,9 +184,8 @@ void SuperCI::compute() {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
-      tmp = tailor_rotation(tmp);
-      
-      shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp);
+      shared_ptr<const Matrix1e> tmp2(new Matrix1e(*tailor_rotation(tmp)));
+      shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp2);
       shared_ptr<Coeff> newcc(new Coeff(*mcc));
       ref_->set_coeff(newcc);
     }
