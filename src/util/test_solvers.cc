@@ -40,7 +40,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
 
   const double tiny = 1.0e-20;
 
-#if 1
+#if 0
   // testing Davidson -- checked.
   {
     cout << "  testing Davidson class" << endl;
@@ -79,22 +79,21 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     prev->element(0,0) = 1.0;
 
     for (int i = 0; i != n; ++i) {
-      shared_ptr<Matrix1e> start(new Matrix1e(*prev));
-      linear.orthog(start);
-      shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      linear.orthog(prev);
+      shared_ptr<Matrix1e> res = prev->clone();
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1); 
 
-      shared_ptr<Matrix1e> residual = linear.compute_residual(start, res);
+      shared_ptr<Matrix1e> residual = linear.compute_residual(prev, res);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
       if (::pow(residual->norm(),2.0) < tiny) break;
 
-      for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
+      for (int i = 0; i != diag->size(); ++i) residual->data(i) /= diag->data(i);
       prev = residual;
     }
     linear.civec()->print();
   }
 
-#if 0
+#if 1
   // TODO to be checked!!!!!!!!!!!!
   // testing AugHess
   {
@@ -109,12 +108,15 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int i = 0; i != n; ++i) {
       shared_ptr<Matrix1e> start(new Matrix1e(*prev));
       linear.orthog(start);
+
       shared_ptr<Matrix1e> res = start->clone();
       dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
 
       shared_ptr<Matrix1e> residual = linear.compute_residual(start, res);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
       if (::pow(residual->norm(),2.0) < tiny) break;
+
+      cout << "lamba " << linear.eig() << endl;
 
       for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
       prev = residual;
@@ -148,6 +150,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 #endif
 
+#if 0
   // testing BFGS update
   {
     cout << "  testing BFGS class" << endl;
@@ -202,6 +205,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     }
     linear.civec()->print();
   }
+#endif
 
 #if 0
   // reference

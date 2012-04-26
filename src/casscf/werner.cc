@@ -40,16 +40,6 @@ using namespace std;
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void WernerKnowles::compute() {
-  const string indent = "  ";
-
-  cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
-
-  // initializing Hcore matrix (redundant copy, but I can live with it).
-  {
-    shared_ptr<Hcore> hc(new Hcore(geom_));
-    shared_ptr<Fock<1> > fc(new Fock<1>(geom_, hc));
-    hcore_ = fc;
-  }
 
   // All the equation numbers refer to those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
   // macro iteration
@@ -65,12 +55,7 @@ void WernerKnowles::compute() {
     vector<double> energy = fci_->energy();
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
-#if 1
     form_natural_orbs();
-#else
-    occup_ = fci_->rdm1_av()->diag();
-#endif
-
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
     // denominator
@@ -119,7 +104,6 @@ void WernerKnowles::compute() {
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
-grad->print("grad",16);
       const double error_micro = grad->ddot(*grad)/grad->size();
       if (miter == 0) error = error_micro;
       cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
@@ -127,7 +111,7 @@ grad->print("grad",16);
       if (error_micro < thresh_micro_) break;
 
       // initializing a Davidson manager
-#if 0
+#if 1
       AugHess<Matrix1e> solver(max_mmicro_iter_+1, grad);
 #else
       Linear<Matrix1e> solver(max_mmicro_iter_, grad);
@@ -140,17 +124,35 @@ grad->print("grad",16);
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
 #ifndef DEBUG4INDEX
       // if DEBUG4INDEX, denom is not ready here.
-//    for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  max(std::abs(denom->data(i)),0.1);
+      for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  denom->data(i);
 #endif
 
 
 #ifdef DEBUG4INDEX
       JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
+
+      unique_ptr<double[]> cdiag = C->diag();
+      shared_ptr<Matrix1e> denom = jk.denom(); 
+      for (int i = 0; i != nocc_; ++i) {
+        for (int j = nocc_; j != nbasis_; ++j) {
+          denom->element(j, i) -= cdiag[i] + cdiag[j];
+          denom->element(i, j) -= cdiag[i] + cdiag[j];
+        }
+      }
+      for (int i = 0; i != nclosed_; ++i) {
+        for (int j = nclosed_; j != nocc_; ++j) {
+          denom->element(j, i) -= cdiag[i] + cdiag[j];
+          denom->element(i, j) -= cdiag[i] + cdiag[j];
+        }
+      }
 #endif
+      BFGS<Matrix1e> bfgs(denom);
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
       for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter, ++tcount) {
+        // first need to orthonomalize
+        solver.orthog(dR);
 
         const int mstart = ::clock();
         // compute U dR
@@ -166,25 +168,7 @@ grad->print("grad",16);
         shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
         shared_ptr<Matrix1e> tmp = jk.contract(gg);
         shared_ptr<Matrix1e> new_bvec(new Matrix1e(*ref_->coeff() % *tmp));
-
-        unique_ptr<double[]> cdiag = C->diag();
-        shared_ptr<Matrix1e> denom = jk.denom(); 
-        for (int i = 0; i != nocc_; ++i) {
-          for (int j = nocc_; j != nbasis_; ++j) {
-            denom->element(j, i) -= cdiag[i] + cdiag[j];
-            denom->element(i, j) -= cdiag[i] + cdiag[j];
-          }
-        }
-        for (int i = 0; i != nclosed_; ++i) {
-          for (int j = nclosed_; j != nocc_; ++j) {
-            denom->element(j, i) -= cdiag[i] + cdiag[j];
-            denom->element(i, j) -= cdiag[i] + cdiag[j];
-          }
-        }
 #endif
-        BFGS<Matrix1e> bfgs(denom, nbasis_*nbasis_);
-
-        denom->print("r",16);
 
         // compute U^dagger B - B^dagger U
         // compute Eq.29
@@ -192,9 +176,7 @@ grad->print("grad",16);
         sigma->purify_redrotation(nclosed_,nact_,nvirt_);
 
         shared_ptr<Matrix1e> residual = solver.compute_residual(dR, sigma);
-
-        const double error_mmicro = residual->ddot(*residual) / residual->size();
-        const double mic_energy = 0.0; // TODO
+        const double error_mmicro = ::pow(residual->norm(),2.0) / residual->size();
 
         const int mend = ::clock();
 #if 1
@@ -207,11 +189,7 @@ grad->print("grad",16);
         if (mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
-        //for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  denom->data(i);// max(denom->data(i),0.1);
-        bfgs.extrapolate(residual, dR); 
-
-        solver.orthog(residual);
-        dR = residual;
+        dR = bfgs.extrapolate(residual, solver.civec()); 
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
 
       }
@@ -222,26 +200,14 @@ grad->print("grad",16);
 
     }
 
-#if 0
-((*U-*(U->transpose()))*0.5).print("uu", 18);
-shared_ptr<Matrix1e> bvec2 = compute_bvec(jvec, U, ref_->coeff());
-(*U%*bvec2-*bvec2%*U).print("residual",18);
-#endif
-
     U->purify_unitary();
     shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
     ref_->set_coeff(newcc);
 
     int end = ::clock();
-    if (nstate_ != 1 && iter) cout << endl;
-    for (int i = 0; i != nstate_; ++i) {
-      resume_stdcout();
-      cout << indent << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-                                        << setw(15) << fixed << setprecision(8) << energy[i] << "   "
-                                        << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
-                                        << (end - start)/cps << endl;
-      mute_stdcout();
-    }
+    resume_stdcout();
+    print_iteration(iter, miter, tcount, energy, error, (end - start)/cps);
+    mute_stdcout();
     if (error < thresh_) break;
 
   }

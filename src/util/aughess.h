@@ -77,6 +77,7 @@ class AugHess {
 
       if (size_+1 == max_) throw std::runtime_error("max size reached in AugHess");
       // register new vectors
+      assert(abs(c->norm()-1.0) < 1.0e-8);
       c_.push_back(c);
       sigma_.push_back(s);
       // first set mat (=x(i)Ax(j)) and prod (= x(i)*y)
@@ -89,6 +90,7 @@ class AugHess {
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
+      // adding (1,0) vector as an additional basis function
       for (int i = 0; i != size_; ++i) {
         scr(size_, i) = scr(i, size_) = prod_[i];
       }

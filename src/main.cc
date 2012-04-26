@@ -115,10 +115,6 @@ int main(int argc, char** argv) {
           shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
           werner->compute();
           ref = werner->conv_to_ref();
-        } else if (algorithm == "werner4") {
-          shared_ptr<CASSCF> werner(new Werner4(iter->second, geom, ref));
-          werner->compute();
-          ref = werner->conv_to_ref();
         } else {
           throw runtime_error("unknown CASSCF algorithm specified.");
         }
@@ -136,7 +132,7 @@ int main(int argc, char** argv) {
     /////////////////////////////////////
     //smith_test(ref);
     /////////////////////////////////////
-    test_solvers(geom);
+    //test_solvers(geom);
     /////////////////////////////////////
 
     // end of the main file

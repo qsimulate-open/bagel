@@ -66,6 +66,7 @@ class CASSCF {
     std::shared_ptr<FCI> fci_;
     const std::shared_ptr<Geometry> geom_;
     void print_header() const;
+    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
     void common_init();
 
     void mute_stdcout();
@@ -73,7 +74,7 @@ class CASSCF {
 
     std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
 
-    std::shared_ptr<Fock<1> > hcore_;
+    const std::shared_ptr<Fock<1> > hcore_;
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
                             std::shared_ptr<RotFile>&, const bool superci=true);
 

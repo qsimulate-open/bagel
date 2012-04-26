@@ -41,15 +41,6 @@ using namespace std;
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void SuperCI::compute() {
-  const string indent = "  ";
-
-  cout << indent << "=== CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
-
-  // initializing Hcore matrix (redundant copy, but I can live with it).
-  {
-    shared_ptr<Hcore> hc(new Hcore(geom_));
-    shared_ptr<Fock<DF> > fc(new Fock<DF>(geom_, hc)); hcore_ = fc;
-  }
 
   // DIIS: will be turned on at iter = diis_start_ (>1), 
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
@@ -192,20 +183,14 @@ void SuperCI::compute() {
 
     // print out...
     int end = ::clock();
-    if (nstate_ != 1 && iter) cout << endl;
-    for (int i = 0; i != nstate_; ++i) {
-      resume_stdcout();
-      cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (diis ? "*" : " ") 
-                                        << setw(17) << fixed << setprecision(8) << energy[i] << "   "
-                                        << setw(10) << scientific << setprecision(2) << (i==0 ? gradient : 0.0) << fixed << setw(10) << setprecision(2)
-                                        << (end - start)/cps << endl;
-      mute_stdcout();
-    }
+    resume_stdcout();
+    print_iteration(iter, 0, 0, energy, gradient, (end - start)/cps);
+    mute_stdcout();
 
     if (gradient < thresh_) break;
     if (iter == max_iter_-1) {
       resume_stdcout();
-      cout << indent << endl << indent << "  * Max iteration reached in the CASSCF macro interation." << endl << endl;
+      cout << "  " << endl << "    * Max iteration reached in the CASSCF macro interation." << endl << endl;
       mute_stdcout();
       break;
     }
