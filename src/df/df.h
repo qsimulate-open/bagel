@@ -66,7 +66,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc);
+    std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
 }; 
 
@@ -75,11 +75,11 @@ class DF_Half {
 
   protected:
     std::unique_ptr<double[]> data_;
-    const std::shared_ptr<DensityFit> df_;
+    const std::shared_ptr<const DensityFit> df_;
     const int nocc_;
 
   public:
-    DF_Half(const std::shared_ptr<DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
+    DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
      : df_(df), nocc_(nocc), data_(std::move(in)) {}; 
 
     ~DF_Half() {};
@@ -103,10 +103,10 @@ class DF_Half {
       return tmp; 
     } 
 
-    std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc);
+    std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
     void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
-    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<DF_Full> o, const double a = 1.0, const double b = 0.0) const;
+    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
 
     // form K operator
     std::unique_ptr<double[]> form_4index() const;
@@ -118,12 +118,12 @@ class DF_Full {
 
   protected:
     std::unique_ptr<double[]> data_;
-    const std::shared_ptr<DensityFit> df_;
+    const std::shared_ptr<const DensityFit> df_;
     const int nocc1_; // inner
     const int nocc2_; // outer
 
   public:
-    DF_Full(const std::shared_ptr<DensityFit> df, const int nocc1, const int nocc2, std::unique_ptr<double[]>& in)
+    DF_Full(const std::shared_ptr<const DensityFit> df, const int nocc1, const int nocc2, std::unique_ptr<double[]>& in)
       : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(std::move(in)) {};
 
     ~DF_Full() {};
@@ -148,14 +148,14 @@ class DF_Full {
     };
 
     void form_4index(std::unique_ptr<double[]>& target) const;
-    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<DF_Full> o) const;
+    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o) const;
 
-    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<DensityFit> o) const;
-    std::unique_ptr<double[]> form_4index(const std::shared_ptr<DensityFit> o) const;
+    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DensityFit> o) const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
 
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
-    const std::shared_ptr<DensityFit> df() const { return df_; };
+    const std::shared_ptr<const DensityFit> df() const { return df_; };
 
 };
 

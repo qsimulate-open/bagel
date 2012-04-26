@@ -109,7 +109,7 @@ class K2ext {
 
               auto iter23 = dflist.find(generate_hash_key(i23));
               assert(iter23 != dflist.end());
-              std::shared_ptr<DF_Full> df23 = iter23->second; 
+              std::shared_ptr<const DF_Full> df23 = iter23->second; 
 
               const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 

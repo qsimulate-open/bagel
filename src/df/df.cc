@@ -158,7 +158,7 @@ DensityFit::DensityFit(const int nbas, const int naux,
 
 
 
-shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) {
+shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
   unique_ptr<double[]> tmp(new double[naux_*nbasis_*nocc]);
   for (size_t i = 0; i != nbasis_; ++i) {
     dgemm_("N", "N", naux_, nocc, nbasis_, 1.0, data_.get()+i*naux_*nbasis_, naux_, c, nbasis_, 0.0, tmp.get()+i*naux_*nocc, naux_);
@@ -175,7 +175,7 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, const double a, const do
 }
 
 
-void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<DF_Full> o, const double a, const double b) const {
+void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DF_Full> o, const double a, const double b) const {
   assert(nocc_ == o->nocc1());
   const int nbasis = df_->nbasis();
   const int common = nocc_ * df_->naux();
@@ -196,7 +196,7 @@ unique_ptr<double[]> DF_Half::form_4index() const {
   return move(out);
 }
 
-shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) {
+shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) const {
   const int naux = df_->naux();
   const int nbasis = df_->nbasis();
   unique_ptr<double[]> tmp(new double[naux*nocc_*nocc]);
@@ -213,7 +213,7 @@ void DF_Full::form_4index(unique_ptr<double[]>& target) const {
 }
 
 
-void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<DF_Full> o) const {
+void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const DF_Full> o) const {
   const int dim = nocc1_ * nocc2_;
   const int odim = o->nocc1_ * o->nocc2_;
   const int naux = df_->naux();
@@ -222,7 +222,7 @@ void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<DF_Full
 
 
 // Joperator. Note that (r,s) runs first; i.e., in the operator form
-void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<DensityFit> o) const {
+void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const DensityFit> o) const {
   const int dim = nocc1_ * nocc2_;
   const int odim = o->nbasis() * o->nbasis();
   const int naux = df_->naux();
@@ -230,7 +230,7 @@ void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<Density
   dgemm_("T", "N", odim, dim, naux, 1.0, o->data_3index(), naux, tmp->data(), naux, 0.0, target.get(), odim); 
 }
 
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<DensityFit> o) const {
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) const {
   const size_t dim = nocc1_ * o->nbasis();
   assert(nocc1_ == nocc2_);
   unique_ptr<double[]> out(new double[dim*dim]);
