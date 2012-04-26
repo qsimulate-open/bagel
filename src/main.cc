@@ -54,6 +54,7 @@ StackMem* stack;
 
 // debugging SMITH
 extern void smith_test(shared_ptr<Reference>);
+extern void test_solvers(shared_ptr<Geometry>);
 
 int main(int argc, char** argv) {
   // openmp is broken now due to the use of stack.
@@ -134,6 +135,8 @@ int main(int argc, char** argv) {
 
     /////////////////////////////////////
     //smith_test(ref);
+    /////////////////////////////////////
+    test_solvers(geom);
     /////////////////////////////////////
 
     // end of the main file

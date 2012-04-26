@@ -70,7 +70,11 @@ class Linear {
     };
     ~Linear() {};
 
-    std::shared_ptr<T> compute_residual(std::shared_ptr<T> c, std::shared_ptr<T> s) {
+    std::shared_ptr<T> compute_residual(const std::shared_ptr<T> _c, const std::shared_ptr<T> _s) {
+      // these copy can be avoided, but to make sure...
+      std::shared_ptr<T> c(new T(*_c));
+      std::shared_ptr<T> s(new T(*_s));
+
       if (size_ == max_) throw std::runtime_error("max size reached in Linear");
       // register new vectors
       c_.push_back(c);
@@ -81,7 +85,8 @@ class Linear {
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
       } 
-      prod_[size_-1] = -c->ddot(*grad_); 
+      // NOTE THE MINUS SIGN HERE!!
+      prod_[size_-1] = - c->ddot(*grad_); 
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
@@ -107,7 +112,7 @@ class Linear {
     };
 
     // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T> cc) { return cc->orthog(c_); }
+    double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
 
 };
 

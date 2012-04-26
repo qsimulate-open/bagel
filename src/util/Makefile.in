@@ -70,7 +70,8 @@ ARFLAGS = cru
 libutil_a_AR = $(AR) $(ARFLAGS)
 libutil_a_LIBADD =
 am_libutil_a_OBJECTS = filename.$(OBJEXT) pmatrix1e.$(OBJEXT) \
-	complex_transpose.$(OBJEXT) input.$(OBJEXT)
+	complex_transpose.$(OBJEXT) input.$(OBJEXT) \
+	test_solvers.$(OBJEXT)
 libutil_a_OBJECTS = $(am_libutil_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -186,7 +187,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libutil.a
-libutil_a_SOURCES = filename.cc pmatrix1e.cc complex_transpose.f input.cc
+libutil_a_SOURCES = filename.cc pmatrix1e.cc complex_transpose.f input.cc test_solvers.cc
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -268,6 +269,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmatrix1e.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_solvers.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

@@ -123,7 +123,7 @@ class AugHess {
     };
 
     // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T> cc) { return cc->orthog(c_); }
+    double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 };
 
