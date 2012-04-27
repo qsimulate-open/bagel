@@ -36,6 +36,10 @@
 #include <src/util/bfgs.h>
 
 using namespace std;
+static const vector<double> zero(1,0.0);
+
+//#define SOLVER Linear
+#define SOLVER AugHess
 
 static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
@@ -44,9 +48,7 @@ void WernerKnowles::compute() {
   // All the equation numbers refer to those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
   // macro iteration
   mute_stdcout();
-  for (int iter = 0; iter != max_iter_; ++iter) {
-
-    int start = ::clock();
+  for (int iter = 0, start = ::clock(); iter != max_iter_; ++iter, start = ::clock()) {
 
     // performs FCI, which also computes one-index transformed integrals
     fci_->compute();
@@ -59,32 +61,11 @@ void WernerKnowles::compute() {
     shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
 
     // denominator
-#ifndef DEBUG4INDEX
-    shared_ptr<Matrix1e> denom;
-    {
-      shared_ptr<Matrix1e> f;
-      shared_ptr<QFile>    fact, factp, gaa;
-      shared_ptr<RotFile> denom_;
-      one_body_operators(f, fact, factp, gaa, denom_, false);
-      denom = denom_->unpack_sym(geom_, 1.0e1);
-    }
-#endif
 
     // start with U=1
     shared_ptr<Matrix1e> U(new Matrix1e(geom_));
-    {
-      U->unit();
-#if 0
-      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
-      shared_ptr<Matrix1e> residual(new Matrix1e(*bvec - *bvec->transpose()));
-      for (int i = 0; i != residual->size(); ++i) residual->data(i) /=  max(std::abs(denom->data(i)),0.1);
-      U = residual->exp();
-      U->purify_unitary();
-#endif
-    }
+    U->unit();
 
-
-    shared_ptr<Matrix1e> bvec0;
 
     int miter, tcount = 0;
     double error;
@@ -92,107 +73,49 @@ void WernerKnowles::compute() {
 
       // compute initial B (Eq. 19)
       shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
-      if (miter == 0) bvec0 = bvec;
-
-      { // for debug
-        shared_ptr<Matrix1e> t(new Matrix1e(*U));
-        for (int i = 0; i != t->ndim(); ++i) t->element(i,i) -= 1.0;
-        const double energy_micro = (bvec0->ddot(*t)*0.5+ bvec->ddot(*t)*0.5)+ energy[0];
-        cout << "micro energy " << setw(20) << setprecision(10) << energy_micro << " " << bvec0->ddot(*t) << " " << bvec->ddot(*t) << endl;
-      }
 
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
+
       const double error_micro = grad->ddot(*grad)/grad->size();
       if (miter == 0) error = error_micro;
       cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
 
       if (error_micro < thresh_micro_) break;
 
-      // initializing a Davidson manager
-#if 1
-      AugHess<Matrix1e> solver(max_mmicro_iter_+1, grad);
-#else
-      Linear<Matrix1e> solver(max_mmicro_iter_, grad);
-#endif
+      // initializing a linear solver (SOLVER is defined above in this file) 
+      SOLVER<Matrix1e> solver(max_mmicro_iter_+1, grad);
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
       shared_ptr<Matrix1e> C(new Matrix1e((*U % *bvec + *bvec % *U)*0.5));
 
       // initial dR value.
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
-#ifndef DEBUG4INDEX
-      // if DEBUG4INDEX, denom is not ready here.
-      for (int i = 0; i != dR->size(); ++i) dR->data(i) /=  denom->data(i);
-#endif
+      shared_ptr<const Matrix1e> denom = compute_denom(C);
+      for (int i = 0; i != dR->size(); ++i)
+        dR->data(i) /=  denom->data(i);
 
-
-#ifdef DEBUG4INDEX
-      JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
-
-      unique_ptr<double[]> cdiag = C->diag();
-      shared_ptr<Matrix1e> denom = jk.denom(); 
-      for (int i = 0; i != nocc_; ++i) {
-        for (int j = nocc_; j != nbasis_; ++j) {
-          denom->element(j, i) -= cdiag[i] + cdiag[j];
-          denom->element(i, j) -= cdiag[i] + cdiag[j];
-        }
-      }
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = nclosed_; j != nocc_; ++j) {
-          denom->element(j, i) -= cdiag[i] + cdiag[j];
-          denom->element(i, j) -= cdiag[i] + cdiag[j];
-        }
-      }
-#endif
       BFGS<Matrix1e> bfgs(denom);
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
-      for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter, ++tcount) {
+      for (int mmiter = 0, mstart = ::clock(); mmiter != max_mmicro_iter_; ++mmiter, ++tcount, mstart = ::clock()) {
         // first need to orthonomalize
         solver.orthog(dR);
-
-        const int mstart = ::clock();
-        // compute U dR
-        shared_ptr<Matrix1e> UdR(new Matrix1e(*U**dR));
-
-        // compute  1/2 (C dR + dR C)
-        shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
-
-        // update B
-#ifndef DEBUG4INDEX
-        shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, ref_->coeff());
-#else
-        shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
-        shared_ptr<Matrix1e> tmp = jk.contract(gg);
-        shared_ptr<Matrix1e> new_bvec(new Matrix1e(*ref_->coeff() % *tmp));
-#endif
-
-        // compute U^dagger B - B^dagger U
-        // compute Eq.29
-        shared_ptr<Matrix1e> sigma(new Matrix1e(*U%*new_bvec-*new_bvec%*U-*dRA));
-        sigma->purify_redrotation(nclosed_,nact_,nvirt_);
-
+        shared_ptr<Matrix1e> sigma = compute_sigma_R(jvec, dR, C, U);
         shared_ptr<Matrix1e> residual = solver.compute_residual(dR, sigma);
+
         const double error_mmicro = ::pow(residual->norm(),2.0) / residual->size();
-
-        const int mend = ::clock();
-#if 1
-        if (mmiter == 0) cout << endl << "     == micro iteration == " << endl;
-        cout << setw(10) << mmiter << "   " << setw(20) << setprecision(12)
-             << setw(20) << setprecision(14) << error_mmicro << " " << setprecision(2) << (mend - mstart)/cps << endl;
-#endif
-
-        if (error_mmicro < thresh_mmicro_) { cout << endl; break; }
-        if (mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
+        print_iteration(iter, miter, tcount, zero, error_mmicro, (::clock() - mstart)/cps);
+        if (error_mmicro < thresh_mmicro_ || mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
         dR = bfgs.extrapolate(residual, solver.civec()); 
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
-
       }
+
+      // update U
       dR = solver.civec();
       shared_ptr<Matrix1e> dU = dR->exp();
       dU->purify_unitary();
@@ -204,9 +127,8 @@ void WernerKnowles::compute() {
     shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
     ref_->set_coeff(newcc);
 
-    int end = ::clock();
     resume_stdcout();
-    print_iteration(iter, miter, tcount, energy, error, (end - start)/cps);
+    print_iteration(iter, miter, tcount, energy, error, (::clock() - start)/cps);
     mute_stdcout();
     if (error < thresh_) break;
 
@@ -215,57 +137,5 @@ void WernerKnowles::compute() {
 
 }
 
-
-
-// compute B according to Eq. (19).
-// B = 2[h_rs U_sj D_ji + (rs|D)Usj <D|ji> + 2(rk|D)(D|ls)T_sj D_jl,ik]
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Jvec> jvec, shared_ptr<Matrix1e> u, const shared_ptr<Coeff> cc) {
-  shared_ptr<Matrix1e> t(new Matrix1e(*u));
-  for (int i = 0; i != u->ndim(); ++i) t->element(i,i) -= 1.0;
-  return compute_bvec(jvec, u, t, cc);
-}
-
-
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(shared_ptr<Jvec> jvec,
-                                                 shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<Coeff> cc) {
-  shared_ptr<DensityFit> df = geom_->df();
-  const int naux = df->naux();
-  const int nbas = df->nbasis();
-
-// TODO make sure if this works
-if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
-
-  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
-  {
-    shared_ptr<Matrix1e> hcore_mo_(new Matrix1e(*cc % *hcore_ * *cc));
-
-    // first term
-    Matrix1e all1(geom_);
-    for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
-    for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci_->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1);
-    shared_ptr<Matrix1e> buf(new Matrix1e(geom_));
-    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbas, 0.0, buf->data(), nbas);
-    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);
-  }
-
-  unique_ptr<double[]> tmp(new double[nbas*nbas]);
-  // second term
-  {
-    Matrix1e Umat(*cc * *u);
-    shared_ptr<DF_Half> half = df->compute_half_transform(Umat.data(), nocc_);
-    half->form_2index(tmp, jvec->jvec(), 2.0, 0.0);
-  }
-
-  // third term
-  if (t->norm() > 1.0e-15) {
-    Matrix1e Tmat(*cc * *t);
-    shared_ptr<DF_Full> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
-    jvec->half()->form_2index(tmp, full, 4.0, 1.0);
-  }
-
-  dgemm_("T", "N", nbasis_, nocc_, nbas, 1.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);
-
-  return out;
-}
 
 

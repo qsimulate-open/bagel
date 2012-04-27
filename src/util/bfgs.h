@@ -25,7 +25,7 @@ class BFGS {
     const std::shared_ptr<const T> denom_;
 
   public:
-    BFGS(std::shared_ptr<T> denom) : denom_(denom) {};
+    BFGS(std::shared_ptr<const T> denom) : denom_(denom) {};
     ~BFGS() {};
 
     std::shared_ptr<T> extrapolate(std::shared_ptr<T> _grad, std::shared_ptr<T> _value) {
