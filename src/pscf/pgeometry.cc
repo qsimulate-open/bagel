@@ -33,6 +33,7 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cmath>
+#include <src/stackmem.h>
 
 using namespace std;
 using namespace boost;

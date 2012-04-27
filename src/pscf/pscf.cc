@@ -146,7 +146,7 @@ void PSCF::compute() {
     cout << indent << setw(5) << iter << setw(18) << fixed << setprecision(10) << energy << space3
                                       << setw(15) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
 
-    if (error < SCF_THRESH) {
+    if (error < SCF_THRESH*1.0e-4) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       break;
     }

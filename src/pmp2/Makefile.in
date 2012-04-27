@@ -71,7 +71,7 @@ libpmp2_a_AR = $(AR) $(ARFLAGS)
 libpmp2_a_LIBADD =
 am_libpmp2_a_OBJECTS = pmp2.$(OBJEXT) compute_conv_mp2.$(OBJEXT) \
 	cabs.$(OBJEXT) coulomb_runtime.$(OBJEXT) \
-	exchange_runtime.$(OBJEXT) ri.$(OBJEXT)
+	exchange_runtime.$(OBJEXT) ri.$(OBJEXT) test_mp2f12.$(OBJEXT)
 libpmp2_a_OBJECTS = $(am_libpmp2_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -183,7 +183,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libpmp2.a
-libpmp2_a_SOURCES = pmp2.cc compute_conv_mp2.cc cabs.cc coulomb_runtime.cc exchange_runtime.cc ri.cc
+libpmp2_a_SOURCES = pmp2.cc compute_conv_mp2.cc cabs.cc coulomb_runtime.cc exchange_runtime.cc ri.cc test_mp2f12.cc
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -268,6 +268,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exchange_runtime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmp2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ri.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_mp2f12.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

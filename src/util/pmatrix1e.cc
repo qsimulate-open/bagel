@@ -118,7 +118,11 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source1, const shared_ptr<PMatr
   blocksize_(source1->ndim() * (source1->mdim()+source2->mdim())),
   totalsize_((2*source1->K()+1)*source1->ndim()*(source1->mdim()+source2->mdim())) {
 
-  assert(source1->ndim() == source2->ndim());
+  if (source1->ndim() != source2->ndim()) {
+    cout << " source 1 dimension: " << source1->ndim() << " " << source1->mdim() << " " << source1->nbasis() << " " << source1->blocksize() << endl;
+    cout << " source 2 dimension: " << source2->ndim() << " " << source2->mdim() << " " << source2->nbasis() << " " << source2->blocksize() << endl;
+    throw runtime_error("source 1 and source 2 should have the same ndim"); 
+  }
 
   shared_ptr<PData> tmp(new PData(totalsize_));
   data_ = tmp;

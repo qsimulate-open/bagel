@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_global_h
-#define __src_global_h
+#ifndef __SRC_GLOBAL__H
+#define __SRC_GLOBAL__H
 
 #include <iostream>
 #include <fstream>
@@ -33,7 +33,7 @@
 #include <stdexcept>
 #include <boost/regex.hpp>
 
-void print_header() {
+static void print_header() {
   std::cout << std::endl; 
   std::cout << "  ===============================================================" << std::endl;
   std::cout << "    In-house code for everything (since 2009)                    " << std::endl;
@@ -42,7 +42,7 @@ void print_header() {
 }
 
 
-void print_footer() {
+static void print_footer() {
   std::cout << std::endl;
   std::cout << "  " << std::endl;
   std::cout << "  ===============================================================" << std::endl;
@@ -50,7 +50,7 @@ void print_footer() {
 }
 
 
-const int count_string(const std::string inputfile, const std::string keyword) {
+static const int count_string(const std::string inputfile, const std::string keyword) {
   try {
     std::ifstream ifs;
     ifs.open(inputfile.c_str());

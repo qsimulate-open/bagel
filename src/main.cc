@@ -55,6 +55,7 @@ StackMem* stack;
 // debugging SMITH
 extern void smith_test(shared_ptr<Reference>);
 extern void test_solvers(shared_ptr<Geometry>);
+extern void test_mp2f12();
 
 int main(int argc, char** argv) {
   // openmp is broken now due to the use of stack.
@@ -62,6 +63,9 @@ int main(int argc, char** argv) {
   #ifdef _OPENMP
   assert(false); // trap
   #endif
+
+  test_mp2f12();
+  abort();
 
   try {
     print_header();
