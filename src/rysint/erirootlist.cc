@@ -38,6 +38,9 @@ ERIRootList::ERIRootList() {
   rfunc[7] = &eriroot7_;
   rfunc[8] = &eriroot8_;
   rfunc[9] = &eriroot9_;
+  rfunc[10] = &eriroot10_;
+  rfunc[11] = &eriroot11_;
+  rfunc[12] = &eriroot12_;
 }
 
 

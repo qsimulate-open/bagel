@@ -37,6 +37,10 @@ extern "C" {
  void root7_(const double*, const double*, double*, double*, const int*);
  void root8_(const double*, const double*, double*, double*, const int*);
  void root9_(const double*, const double*, double*, double*, const int*);
+ void root10_(const double*, const double*, double*, double*, const int*);
+ void root11_(const double*, const double*, double*, double*, const int*);
+ void root12_(const double*, const double*, double*, double*, const int*);
+ void root13_(const double*, const double*, double*, double*, const int*);
 }
 
 SRootList::SRootList() {
@@ -50,6 +54,10 @@ SRootList::SRootList() {
   srfunc[7] = &root7_;
   srfunc[8] = &root8_;
   srfunc[9] = &root9_;
+  srfunc[10] = &root10_;
+  srfunc[11] = &root11_;
+  srfunc[12] = &root12_;
+  srfunc[13] = &root13_;
 }
 
 

@@ -23,7 +23,7 @@ using namespace std;
 extern  StackMem* stack;
 
 void test_mp2f12() {
-  StackMem* a = new StackMem(static_cast<size_t>(1000000000LU));
+  StackMem* a = new StackMem(static_cast<size_t>(100000000LU));
   stack = a;
 
   shared_ptr<PGeometry> pgeom(new PGeometry("oldinp", 0));

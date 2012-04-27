@@ -278,7 +278,6 @@ void PMP2::compute() {
     }
 #endif
     RefMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, "F * F (ii/ii) OBS");
-FF->rprint();
     RefMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
 #ifdef ONLY_X
     {
@@ -290,7 +289,6 @@ FF->rprint();
     RefMOFile X_cabs = stg_ii_Ai_->contract(stg_ii_Ai_, "F * F (ii/ii) CABS");
 
     X_cabs->flip_symmetry();
-    X_cabs->rprint();
 #ifdef ONLY_X
     {
       const complex<double> en_xtt = X_cabs->get_energy_two_amp_X(eig_);
@@ -300,7 +298,6 @@ FF->rprint();
     RefMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
 
     X_ = X_pre;
-    X_->rprint();
     cout << "**** debug ****  X contrib. for debug" << setprecision(10) << X_->get_energy_two_amp_B().real() << endl;
 #endif // ifndef ONLY_B
   }
@@ -329,7 +326,6 @@ FF->rprint();
 #ifndef ONLY_P
     // T intermediate (direct)
     RefMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
-    T->rprint();
 
 #ifdef DEBUG_PRINT
     cout << "**** debug ****  T contrib. " << setprecision(10) << T->get_energy_two_amp_B().real() << endl;
@@ -380,7 +376,6 @@ FF->rprint();
       RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_hi));
       Q = Qtmp;
       Q->scale(2.0);
-      Q->rprint();
     } // end of Q intermediate construction.
 
 #ifdef DEBUG_PRINT
@@ -552,7 +547,6 @@ FF->rprint();
     }
 
 #ifndef ONLY_P1
-    coeff_->rprint();
     RefCoeff cfobs(new PCoeff(*coeff_ * *fock_obs_obs_));
 
     RefCoeff cfri(new PCoeff(*coeff_cabs_ * *fock_obs_cabs_));

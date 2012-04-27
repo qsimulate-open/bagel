@@ -8,4 +8,8 @@ subroutine start_up_slater()
   call fill7;
   call fill8;
   call fill9;
+! call fill10;
+! call fill11;
+! call fill12;
+! call fill13;
 end
