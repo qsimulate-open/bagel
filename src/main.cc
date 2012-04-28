@@ -42,7 +42,7 @@
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
-#include <src/casscf/werner4.h>
+#include <src/mp2/mp2.h>
 #include <src/global.h>
 #include <src/stackmem.h>
 
@@ -88,7 +88,6 @@ int main(int argc, char** argv) {
     bool casscf_done = false;
     shared_ptr<SCF_base> scf;
     shared_ptr<CASSCF> casscf;
-    shared_ptr<FCI> fci;
     shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
@@ -126,9 +125,14 @@ int main(int argc, char** argv) {
       } else if (method == "fci") {
         if (!ref) throw runtime_error("FCI needs a reference");
 
-        shared_ptr<FCI> fci_(new FCI(iter->second, geom, ref)); fci = fci_;
+        shared_ptr<FCI> fci(new FCI(iter->second, geom, ref));
         fci->compute();
 
+      } else if (method == "mp2") {
+        if (!ref) throw runtime_error("MP2 needs a reference");
+
+        shared_ptr<MP2> mp2(new MP2(iter->second, geom, ref));
+        mp2->compute();
       }
     }
     print_footer();
@@ -138,83 +142,6 @@ int main(int argc, char** argv) {
     /////////////////////////////////////
     //test_solvers(geom);
     /////////////////////////////////////
-
-    // end of the main file
-
-#if 0
-    const bool use_hy2 = (bool)count_string(input, "HY2");
-    const int depth_basis = count_string(input, "Basis");
-    const bool periodic = (bool)count_string(input, "Periodic");
-    const bool domp2 = (bool)count_string(input, "MP2");
-    typedef std::shared_ptr<Geometry> RefGeom;
-    typedef std::shared_ptr<PGeometry> RefPGeom;
-    typedef std::shared_ptr<PSCF_DISK> RefPSCF_DISK;
-
-    RefPSCF_DISK pscf;
-
-    if (depth_basis == 2) {
-      if (!periodic) {
-        throw runtime_error("Haven't supported projection in molecular cases.");
-      } else {
-        RefPGeom pgeom(new PGeometry(input, 0));
-        RefPGeom pgeom2(new PGeometry(input, 1));
-        RefPSCF_DISK pscf2(new PSCF_DISK(pgeom2));
-        pscf2->compute();
-
-        // DO PROJECTION!
-        shared_ptr<PMatrix1e> density_new;
-        {
-          RefPGeom uniongeom(new PGeometry(*pgeom2));
-          uniongeom->merge_obs_cabs();
-          POverlap union_overlap_r(uniongeom);
-          PMatrix1e union_overlap(union_overlap_r.ft());
-          const int nold = pgeom2->nbasis();
-          const int nnew = pgeom2->ncabs();
-          PMatrix1e s_new_old(union_overlap.split(nold, nnew).first, make_pair(nold, nold+nnew));
-          PMatrix1e s_new_new(union_overlap.split(nold, nnew).second, make_pair(nold, nold+nnew));
-          PMatrix1e s_new_new_inv = *s_new_new.inverse();
-          PMatrix1e density_old = pscf2->coeff()->form_density_rhf(false);
-          PMatrix1e transform = s_new_old * s_new_new_inv;
-          PMatrix1e density_new_k = transform % density_old * transform;
-
-          density_new_k.set_geom(pgeom);
-          shared_ptr<PMatrix1e> density_new_i(new PMatrix1e(density_new_k.bft()));
-          density_new = density_new_i;
-        }
-        RefPSCF_DISK tmp(new PSCF_DISK(pgeom, density_new));
-        pscf = tmp;
-        pscf->compute();
-      }
-    } else if (depth_basis == 1) {
-      if (!periodic) {
-        RefGeom geom(new Geometry(input, 0));
-        if (!fci_card && !casscf_card) {
-          SCF scf(geom);
-          scf.compute();
-        } else if (casscf_card) {
-          SuperCI casscf(geom);
-          casscf.compute();
-        } else {
-          FCI fci(geom);
-          fci.compute();
-        }
-      } else {
-        RefPGeom pgeom(new PGeometry(input, 0));
-        RefPSCF_DISK tmp(new PSCF_DISK(pgeom));
-        pscf = tmp;
-        pscf->compute();
-      }
-    } else {
-      throw runtime_error("Haven't supported triple basis sets..");
-    }
-
-    if (periodic && domp2) {
-      PMP2 pmp2(pscf->geom(), pscf->coeff(), pscf->eig(), pscf->ao_eri(), use_hy2);
-      pmp2.compute();
-    }
-    print_footer();
-#endif
-
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

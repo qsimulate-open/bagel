@@ -72,7 +72,7 @@ class SCF : public SCF_base {
       }
     
       if (highest_level) {
-        std::cout << indent << "=== Nuclear Repulsion===" << std::endl << indent << std::endl;
+        std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
         std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl;
         std::cout << std::endl; 
       }

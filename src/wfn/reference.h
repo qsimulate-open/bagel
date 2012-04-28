@@ -40,6 +40,7 @@ class Reference {
     std::shared_ptr<Coeff> coeff_;
     std::shared_ptr<Hcore> hcore_;
     std::vector<double> schwarz_;
+    std::vector<double> eig_;
 
     const int nclosed_;
     const int nact_;
@@ -57,6 +58,9 @@ class Reference {
     std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> c) { coeff_ = c; };
+
+    void set_eig(const std::vector<double>& eig) { eig_ = eig; };
+    std::vector<double> eig() const { return eig_; };
 
     int nclosed() const { return nclosed_; };
     int nact() const { return nact_; };

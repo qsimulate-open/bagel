@@ -253,6 +253,7 @@ shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const siz
 }
 
 
+// forms all-internal 4-index MO integrals
 void DF_Full::form_4index(unique_ptr<double[]>& target) const {
   const int dim = nocc1_ * nocc2_;
   const int naux = df_->naux();
@@ -265,6 +266,21 @@ void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const D
   const int odim = o->nocc1_ * o->nocc2_;
   const int naux = df_->naux();
   dgemm_("T", "N", dim, odim, naux, 1.0, data_.get(), naux, o->data_.get(), naux, 0.0, target.get(), dim); 
+}
+
+
+// for MP2-like quantities
+void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const DF_Full> o, const size_t n) const {
+  const int dim = nocc1_ * nocc2_;
+  const int odim = o->nocc1_; // o->nocc2_ is fixed at n;
+  const int naux = df_->naux();
+  dgemm_("T", "N", dim, odim, naux, 1.0, data_.get(), naux, o->data_.get()+naux*odim*n, naux, 0.0, target.get(), dim); 
+}
+
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const size_t n) const {
+  unique_ptr<double[]> target(new double[o->nocc1_*nocc1_*nocc2_]);
+  form_4index(target, o, n);
+  return move(target);
 }
 
 

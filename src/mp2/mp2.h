@@ -27,17 +27,21 @@
 #ifndef __SRC_MP2_MP2_H
 #define __SRC_MP2_MP2_H
 
+#include <src/scf/geometry.h>
+#include <src/wfn/reference.h>
 #include <src/mp2/f12int.h>
 
 class MP2 {
   protected:
-    std::shared_ptr<F12Int> f12int_;
+    const std::shared_ptr<Geometry> geom_; 
+    const std::shared_ptr<Reference> ref_;
+//  std::shared_ptr<F12Int> f12int_;
 
   public:
-    MP2();
-
+    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
     ~MP2() {};
 
+    void compute();
 };
 
 #endif
