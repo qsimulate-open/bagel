@@ -47,9 +47,10 @@ AtomMap::AtomMap () {
   angmap.insert(make_pair("g", 4));
   angmap.insert(make_pair("h", 5));
   angmap.insert(make_pair("i", 6));
-  angmap.insert(make_pair("j", 7));
-  angmap.insert(make_pair("k", 8));
-  angmap.insert(make_pair("l", 9));
+// Since they are not implemented yet
+//angmap.insert(make_pair("j", 7));
+//angmap.insert(make_pair("k", 8));
+//angmap.insert(make_pair("l", 9));
 
 }
 
