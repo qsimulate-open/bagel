@@ -1,6 +1,6 @@
 #SUBDIRS = carsph sort_gen vrr_gen vrr_driver_gen hrr_gen interpolate 
 lib_LIBRARIES = librysint.a
-librysint_a_SOURCES = rysint.cc eribatch.cc compute.cc contraction.cc vrr.cc vrr_template.cc \
+librysint_a_SOURCES = rysint.cc eribatch.cc compute.cc gcompute.cc contraction.cc vrr.cc vrr_template.cc \
 hrr_template.cc sort_template.cc sort.cc \
 int2d.cc rys.f vrrlist.cc hrrlist.cc sortlist.cc transpose.f scalelist.cc \
 _vrr_4000.cc _vrr_0040.cc \

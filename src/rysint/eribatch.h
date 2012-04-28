@@ -88,7 +88,7 @@ class ERIBatch : public RysInt {
     ~ERIBatch();
 
     /// compute a batch of integrals
-    void compute(); 
+    virtual void compute(); 
 
 };
 

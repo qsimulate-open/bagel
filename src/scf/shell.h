@@ -34,6 +34,7 @@
 class Shell {
 
   protected:
+    const bool dummy_;
     bool spherical_;
 
     std::vector<double> position_;
@@ -55,6 +56,7 @@ class Shell {
 
     ~Shell();
 
+    const bool dummy() const { return dummy_; };
     const bool spherical() const { return spherical_; };
     const int num_primitive() const { return exponents_.size(); };
     const int num_contracted() const { return contractions_.size(); };

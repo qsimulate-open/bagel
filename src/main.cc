@@ -29,13 +29,6 @@
 #include <cassert>
 #include <stdexcept>
 #include <memory>
-#if 0
-#include <src/pscf/pgeometry.h>
-#include <src/pscf/poverlap.h>
-#include <src/pscf/pscf.h>
-#include <src/pscf/pscf_disk.h>
-#include <src/pmp2/pmp2.h>
-#endif
 #include <src/scf/geometry.h>
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
@@ -45,17 +38,17 @@
 #include <src/mp2/mp2.h>
 #include <src/global.h>
 #include <src/stackmem.h>
-
 #include <src/util/input.h>
 
 using namespace std;
 
 StackMem* stack;
 
-// debugging SMITH
+// debugging
 extern void smith_test(shared_ptr<Reference>);
 extern void test_solvers(shared_ptr<Geometry>);
 extern void test_mp2f12();
+extern void test_grad(shared_ptr<Reference>);
 
 int main(int argc, char** argv) {
   // openmp is broken now due to the use of stack.
@@ -64,8 +57,8 @@ int main(int argc, char** argv) {
   assert(false); // trap
   #endif
 
-//test_mp2f12();
-//abort();
+  //test_mp2f12();
+  //abort();
 
   try {
     print_header();
@@ -141,6 +134,7 @@ int main(int argc, char** argv) {
     //smith_test(ref);
     /////////////////////////////////////
     //test_solvers(geom);
+    test_grad(ref);
     /////////////////////////////////////
 
   } catch (const std::exception &e) {

@@ -70,8 +70,8 @@ ARFLAGS = cru
 librysint_a_AR = $(AR) $(ARFLAGS)
 librysint_a_LIBADD =
 am_librysint_a_OBJECTS = rysint.$(OBJEXT) eribatch.$(OBJEXT) \
-	compute.$(OBJEXT) contraction.$(OBJEXT) vrr.$(OBJEXT) \
-	vrr_template.$(OBJEXT) hrr_template.$(OBJEXT) \
+	compute.$(OBJEXT) gcompute.$(OBJEXT) contraction.$(OBJEXT) \
+	vrr.$(OBJEXT) vrr_template.$(OBJEXT) hrr_template.$(OBJEXT) \
 	sort_template.$(OBJEXT) sort.$(OBJEXT) int2d.$(OBJEXT) \
 	rys.$(OBJEXT) vrrlist.$(OBJEXT) hrrlist.$(OBJEXT) \
 	sortlist.$(OBJEXT) transpose.$(OBJEXT) scalelist.$(OBJEXT) \
@@ -268,7 +268,7 @@ top_srcdir = @top_srcdir@
 
 #SUBDIRS = carsph sort_gen vrr_gen vrr_driver_gen hrr_gen interpolate 
 lib_LIBRARIES = librysint.a
-librysint_a_SOURCES = rysint.cc eribatch.cc compute.cc contraction.cc vrr.cc vrr_template.cc \
+librysint_a_SOURCES = rysint.cc eribatch.cc compute.cc gcompute.cc contraction.cc vrr.cc vrr_template.cc \
 hrr_template.cc sort_template.cc sort.cc \
 int2d.cc rys.f vrrlist.cc hrrlist.cc sortlist.cc transpose.f scalelist.cc \
 _vrr_4000.cc _vrr_0040.cc \
@@ -569,6 +569,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contraction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eribatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/erirootlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcompute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hrr_template.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hrrlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/int2d.Po@am__quote@
