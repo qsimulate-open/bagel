@@ -74,11 +74,11 @@ static void ddot_to_amp(const F12Mat& inp, int n, double gam, string name = "ano
   for (int k=0; k!=n; ++k) {
   for (int l=0; l!=n; ++l) {
     if (l == j && k == i && l == k) {
-      a+= inp.data(l,k,j,i)* (sing+trip);
+      a+= inp.data(l,j,k,i)* (sing+trip);
     } else if (l == j && k == i) {
-      a+= inp.data(l,k,j,i) * (2.0*sing-trip);
+      a+= inp.data(l,j,k,i) * (2.0*sing-trip);
     } else if (l == i && k == j) {
-      a+= inp.data(l,k,j,i) * (2.0*trip-sing);
+      a+= inp.data(l,j,k,i) * (2.0*trip-sing);
     }
   } } } }
   cout << setw(8) << name << " " << fixed << setw(20) << setprecision(15) << a << endl;
@@ -108,19 +108,26 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   // Yukawa integral can be thrown right away
   shared_ptr<DensityFit> yukawa(dynamic_cast<DensityFit*>(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
                                geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
-                               0.0, geom->df())));
+                               0.0, false)));
 
   const shared_ptr<const DF_Half> yxo = yukawa->compute_half_transform(oc, nocc);
-  const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J();
+  const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
 
-  shared_ptr<F12Mat> ym(new F12Mat(nocc, yoo->form_4index(doo))); ymat = ym;
+  shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo)));
+  // robust fitting
+  shared_ptr<const DF_Full> doo_J = doo->apply_J();
+  shared_ptr<const DF_Full> doo_JS = doo_J->apply_J(yukawa);
+  shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_J->form_4index(doo_JS)));
+  shared_ptr<F12Mat> ym(new F12Mat(*ym0*2.0 - *ym1));
+  ymat = ym;
 // debug....
 ddot_to_amp(*ym, nocc, gamma_, "Y matrix ");
+ddot_to_amp(*ym0, nocc, gamma_, "Y matrix ");
 //..........
   }
 
   shared_ptr<SlaterFit> slater(new SlaterFit(geom->nbasis(), geom->naux(), gamma_,
                                geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
-                               0.0, geom->df()));
+                               0.0, false));
   
 };

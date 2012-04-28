@@ -42,15 +42,9 @@ class ERIFit : public DensityFit {
     ERIFit(const int nbas, const int naux,
        const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
        const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
-       const bool j2, const std::shared_ptr<DensityFit> df = std::shared_ptr<DensityFit>())
+       const bool inverse)
      : DensityFit(nbas, naux) {
-       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, !df);
-
-       if (df) {
-         std::unique_ptr<double[]> d(new double[naux_*naux_]); 
-         std::copy(df->data_2index(), df->data_2index()+naux_*naux_, d.get());
-         data2_ = move(d);
-       }
+       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
 
     };
     ~ERIFit() {};
@@ -72,15 +66,9 @@ class YukawaFit : public DensityFit {
     YukawaFit(const int nbas, const int naux, const double gam,
        const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
        const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
-       const std::shared_ptr<const DensityFit> df = std::shared_ptr<DensityFit>())
+       const bool inverse)
      : DensityFit(nbas, naux), gamma_(gam) {
-       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, !df);
-
-       if (df) {
-         std::unique_ptr<double[]> d(new double[naux_*naux_]); 
-         std::copy(df->data_2index(), df->data_2index()+naux_*naux_, d.get());
-         data2_ = move(d);
-       }
+       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
 
     };
     ~YukawaFit() {};
@@ -100,15 +88,9 @@ class SlaterFit : public DensityFit {
     SlaterFit(const int nbas, const int naux, const double gam,
        const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
        const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
-       const std::shared_ptr<const DensityFit> df = std::shared_ptr<DensityFit>())
+       const bool inverse) 
      : DensityFit(nbas, naux), gamma_(gam) {
-       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, !df);
-
-       if (df) {
-         std::unique_ptr<double[]> d(new double[naux_*naux_]); 
-         std::copy(df->data_2index(), df->data_2index()+naux_*naux_, d.get());
-         data2_ = move(d);
-       }
+       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
 
     };
     ~SlaterFit() {};

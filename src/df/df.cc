@@ -36,7 +36,8 @@ using namespace std;
 
 void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vector<vector<int> >& offsets0,
                              const vector<shared_ptr<Atom> >& atoms1,  const vector<vector<int> >& offsets1,
-                             const vector<shared_ptr<Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap, const bool j2) {
+                             const vector<shared_ptr<Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap, 
+                             const bool compute_inverse) {
 
   // this will be distributed in the future.
   std::unique_ptr<double[]> data__(new double[nbasis0_*nbasis1_*naux_]);
@@ -155,35 +156,35 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  if (j2) {
-    unique_ptr<double[]> data2__(new double[naux_*naux_]);
-    data2_ = move(data2__);
-    fill(data2(), data2()+naux_*naux_, 0.0);
+  unique_ptr<double[]> data2__(new double[naux_*naux_]);
+  data2_ = move(data2__);
+  fill(data2(), data2()+naux_*naux_, 0.0);
 
-    for (int i0 = 0; i0 != aux_size; ++i0) {
-      const std::shared_ptr<Shell>  b0 = aux_basis[i0];
-      const int b0offset = aux_offset[i0]; 
-      const int b0size = b0->nbasis();
-      for (int i1 = i0; i1 != aux_size; ++i1) {
-        const std::shared_ptr<Shell>  b1 = aux_basis[i1];
-        const int b1offset = aux_offset[i1]; 
-        const int b1size = b1->nbasis();
+  for (int i0 = 0; i0 != aux_size; ++i0) {
+    const std::shared_ptr<Shell>  b0 = aux_basis[i0];
+    const int b0offset = aux_offset[i0]; 
+    const int b0size = b0->nbasis();
+    for (int i1 = i0; i1 != aux_size; ++i1) {
+      const std::shared_ptr<Shell>  b1 = aux_basis[i1];
+      const int b1offset = aux_offset[i1]; 
+      const int b1size = b1->nbasis();
 
-        std::vector<std::shared_ptr<Shell> > input;
-        input.push_back(b1);
-        input.push_back(b3);
-        input.push_back(b0);
-        input.push_back(b3);
+      std::vector<std::shared_ptr<Shell> > input;
+      input.push_back(b1);
+      input.push_back(b3);
+      input.push_back(b0);
+      input.push_back(b3);
 
-        // pointer to stack
-        const double* ppt = compute_batch(input);
-        for (int j0 = b0offset; j0 != b0offset+b0size; ++j0)
-          for (int j1 = b1offset; j1 != b1offset+b1size; ++j1, ++ppt)
-            data2_[j1+j0*naux_] = data2_[j0+j1*naux_] = *ppt;
+      // pointer to stack
+      const double* ppt = compute_batch(input);
+      for (int j0 = b0offset; j0 != b0offset+b0size; ++j0)
+        for (int j1 = b1offset; j1 != b1offset+b1size; ++j1, ++ppt)
+          data2_[j1+j0*naux_] = data2_[j0+j1*naux_] = *ppt;
 
-      }
     }
+  }
 
+  if (compute_inverse) {
     const size_t lwork = 5*naux_;
     std::unique_ptr<double[]> vec(new double[naux_]);
     std::unique_ptr<double[]> work(new double[std::max(lwork,naux_*naux_)]);

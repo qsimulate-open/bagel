@@ -42,7 +42,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
   protected:
     // AO three-index integrals (naux, nbasis1, nbasis0);
     std::unique_ptr<double[]> data_;
-    // AO two-index integrals
+    // AO two-index integrals ^ -1/2
     std::unique_ptr<double[]> data2_;
     // #orbital basis
     const size_t nbasis0_;
@@ -52,10 +52,10 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 
     // returns three-index integrals
     double* data() { return data_.get(); };
-    // returns two-index integrals
+    // returns two-index integrals ^-1/2
     double* data2() { return data2_.get(); };
     const double* const data() const { return data_.get(); };
-    const double* const data2() const { return data2_.get(); };
+    const double*  const data2() const { return data2_.get(); };
 
     void common_init(const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
                      const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
@@ -73,21 +73,12 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
-#if 0
-    size_t nbasis() const {
-      if (nbasis0_ == nbasis1_) {
-        return nbasis0_;
-      } else {
-        throw std::logic_error("I used to use this function to get #basis, but it should refer to a Geometry object.");
-      }
-    };
-#endif
     size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
-}; 
+};
 
 
 class DF_Half {
@@ -101,7 +92,7 @@ class DF_Half {
 
   public:
     DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
-     : df_(df), nocc_(nocc), data_(std::move(in)), nbasis_(df->nbasis0()), naux_(df->naux()) {}; 
+     : df_(df), nocc_(nocc), data_(std::move(in)), nbasis_(df->nbasis0()), naux_(df->naux()) {};
 
     ~DF_Half() {};
 
@@ -111,16 +102,17 @@ class DF_Half {
 
     std::shared_ptr<DF_Half> clone() const {
       std::unique_ptr<double[]> dat(new double[nocc_*naux_*nbasis_]);
-      std::shared_ptr<DF_Half> out(new DF_Half(df_, nocc_, dat)); 
+      std::shared_ptr<DF_Half> out(new DF_Half(df_, nocc_, dat));
       return out;
     };
 
-    std::shared_ptr<DF_Half> apply_J() const {
+    std::shared_ptr<DF_Half> apply_J() const { return apply_J(df_); };
+    std::shared_ptr<DF_Half> apply_J(std::shared_ptr<const DensityFit> d) const {
       std::unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
-      dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, df_->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_); 
+      dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
       std::shared_ptr<DF_Half> tmp(new DF_Half(df_, nocc_, out));
-      return tmp; 
-    } 
+      return tmp;
+    }
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
@@ -151,18 +143,19 @@ class DF_Full {
     const int nocc1() const { return nocc1_; };
     const int nocc2() const { return nocc2_; };
 
-    std::shared_ptr<DF_Full> apply_J() const {
+    std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
+    std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const {
       std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-      dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, df_->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_); 
+      dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
       std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
-      return tmp; 
+      return tmp;
     };
 
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) {
       std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-      dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_); 
+      dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_);
       std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
-      return tmp; 
+      return tmp;
     };
 
     // forming all internal 4-index MO integrals

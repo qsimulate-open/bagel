@@ -29,6 +29,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <src/util/f77.h>
 
 class F12Mat {
   protected:
@@ -38,10 +39,38 @@ class F12Mat {
   public:
     F12Mat(const size_t i) : data_(new double[i*i*i*i]), nocc_(i) { };
     F12Mat(const size_t i, std::unique_ptr<double[]> b) : data_(std::move(b)), nocc_(i) { };
+    F12Mat(const F12Mat& o) : data_(new double[o.size()]), nocc_(o.nocc()) {
+      std::copy(o.data(), o.data()+o.size(), data_.get());
+    }
     ~F12Mat() {};
+
+    F12Mat operator*(const double a) const {
+      F12Mat f(*this);
+      dscal_(size(), a, f.data(), 1); 
+      return f;
+    };
+    F12Mat operator-(const F12Mat& o) const {
+      F12Mat f(*this);
+      daxpy_(size(), -1.0, o.data(), 1, f.data(), 1);
+      return f;
+    };
+    F12Mat& operator-=(const F12Mat& o) {
+      daxpy_(size(), -1.0, o.data(), 1, data(), 1);
+      return *this;
+    };
+    F12Mat operator+(const F12Mat& o) const {
+      F12Mat f(*this);
+      daxpy_(size(), 1.0, o.data(), 1, f.data(), 1);
+      return f;
+    };
+    F12Mat& operator+=(const F12Mat& o) {
+      daxpy_(size(), 1.0, o.data(), 1, data(), 1);
+      return *this;
+    };
 
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
+    size_t nocc() const { return nocc_; };
     size_t size() const { return nocc_*nocc_*nocc_*nocc_; };
 
     double& data(const size_t i) { return data_[i]; };
@@ -55,8 +84,7 @@ class F12Mat {
       return out;
     };
     std::shared_ptr<F12Mat> copy() const {
-      std::shared_ptr<F12Mat> out = clone();
-      std::copy(data(), data()+size(), out->data());
+      std::shared_ptr<F12Mat> out(new F12Mat(*this));
       return out;
     };
 
