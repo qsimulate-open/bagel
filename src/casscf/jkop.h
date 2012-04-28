@@ -24,8 +24,10 @@ class JKop {
   public:
     JKop(const std::shared_ptr<DensityFit> df, const std::shared_ptr<Coeff> c, const std::shared_ptr<Fock<1> > hcore,
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
-    : fci_(fci), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis()) {
+    : fci_(fci), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
+
       assert(nclosed+nact == nocc);
+      assert(df->nbasis0() == df->nbasis1());
       // K operator
       std::shared_ptr<DF_Half> half = df->compute_half_transform(c->data(), nocc)->apply_J();
       data_ = std::move(half->form_4index());
@@ -75,29 +77,28 @@ class JKop {
         }
       }
       // sort K 
-      const size_t nbasis = df->nbasis();
-      std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis*nbasis]);
+      std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis_*nbasis_]);
       for (int i = 0; i != nocc; ++i) { 
         for (int j = 0; j != nocc; ++j) { 
-          for (int k = 0; k != nbasis; ++k) {
-            for (int l = 0; l != nbasis; ++l) {
-              buf[l+nbasis*(k+nbasis*(j+nocc*i))] = data_[j+nocc*(l+nbasis*(i+nocc*k))]; 
+          for (int k = 0; k != nbasis_; ++k) {
+            for (int l = 0; l != nbasis_; ++l) {
+              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_[j+nocc*(l+nbasis_*(i+nocc*k))]; 
             }
           }
         }
       }
       // first K contribution to G operator
-      dgemm_("N", "N", nbasis*nbasis, nocc*nocc, nocc*nocc, 2.0, buf, nbasis*nbasis, rdm2allk, nocc*nocc, 0.0, data_, nbasis*nbasis);
+      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 2.0, buf, nbasis_*nbasis_, rdm2allk, nocc*nocc, 0.0, data_, nbasis_*nbasis_);
       // second J contribution to G operator
-      dgemm_("N", "N", nbasis*nbasis, nocc*nocc, nocc*nocc, 1.0, jdata_, nbasis*nbasis, rdm2all, nocc*nocc, 1.0, data_, nbasis*nbasis);
+      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 1.0, jdata_, nbasis_*nbasis_, rdm2all, nocc*nocc, 1.0, data_, nbasis_*nbasis_);
       // last h contribution
       size_t icnt = 0lu;
       for (int i = 0; i != nocc; ++i) {
-        for (int j = 0; j != nocc; ++j, icnt += nbasis*nbasis) {
+        for (int j = 0; j != nocc; ++j, icnt += nbasis_*nbasis_) {
           if (i >= nclosed && j >= nclosed) { 
-            daxpy_(nbasis*nbasis, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1); 
+            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1); 
           } else if (i == j) {
-            daxpy_(nbasis*nbasis, 2.0, hcore->data(), 1, data_.get()+icnt, 1); 
+            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_.get()+icnt, 1); 
           } 
         }
       }
@@ -107,11 +108,10 @@ class JKop {
     std::shared_ptr<Matrix1e> contract(const std::shared_ptr<Matrix1e> in) {
       std::shared_ptr<Matrix1e> out(new Matrix1e(fci_->geom()));
       const int nocc = nocc_;
-      const int nbasis = nbasis_; 
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
-          for (int k = 0; k != nbasis; ++k) {
-            out->element(k, i) += 2.0*ddot_(nbasis, in->element_ptr(0,j), 1, data_.get()+nbasis*(k+nbasis*(j+nocc*i)), 1);
+          for (int k = 0; k != nbasis_; ++k) {
+            out->element(k, i) += 2.0*ddot_(nbasis_, in->element_ptr(0,j), 1, data_.get()+nbasis_*(k+nbasis_*(j+nocc*i)), 1);
           }
         }
       }

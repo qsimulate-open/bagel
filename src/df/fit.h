@@ -22,9 +22,18 @@ class ERIFit : public DensityFit {
   public:
     ERIFit(const int nbas, const int naux,
        const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr)
+       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
+       const bool j2, const std::shared_ptr<DensityFit> df = std::shared_ptr<DensityFit>())
      : DensityFit(nbas, naux) {
-       common_init(atoms, offsets, aux_atoms, aux_offsets, thr);
+       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, j2);
+
+       if (!j2) {
+         if (!df) throw std::logic_error("ERI fit should be called with j2 = true, IF df is not provided!"); 
+         std::unique_ptr<double[]> d(new double[naux_*naux_]); 
+         std::copy(df->data_2index(), df->data_2index()+naux_*naux_, d.get());
+         data2_ = move(d);
+       }
+
     };
     ~ERIFit() {};
     

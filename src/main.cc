@@ -64,8 +64,8 @@ int main(int argc, char** argv) {
   assert(false); // trap
   #endif
 
-  test_mp2f12();
-  abort();
+//test_mp2f12();
+//abort();
 
   try {
     print_header();

@@ -31,7 +31,8 @@ using namespace std;
 Qvec::Qvec(const int n, const int m, shared_ptr<DensityFit> df, shared_ptr<Coeff> coeff, const size_t nclosed, shared_ptr<FCI> fci)
  : QFile(n,m) {
 
-  const int nbasis = df->nbasis();
+  const int nbasis = df->nbasis0();
+  assert(df->nbasis0() == df->nbasis1());
 
   shared_ptr<DF_Half> half = fci->jop()->mo2e_1ext();
 

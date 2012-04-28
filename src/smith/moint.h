@@ -57,7 +57,8 @@ class K2ext {
       assert(blocks_.size() == 4);
       std::map<size_t, std::shared_ptr<DF_Full> > dflist;
       // AO dimension
-      const size_t nbasis = df->nbasis();
+      const size_t nbasis = df->nbasis0();
+      assert(df->nbasis0() == df->nbasis1());
 
       // TODO this part should be heavily parallelized
       // Also need to think a bit on the data layout. 

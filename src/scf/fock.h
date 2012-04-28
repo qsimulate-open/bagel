@@ -233,9 +233,9 @@ void Fock<DF>::fock_two_electron_part() {
     // some constants
     const int nocc_ = geom_->nocc()/2;
     const int naux = df->naux();
-    assert(nbasis_ == df->nbasis());
+    assert(nbasis_ == df->nbasis0());
 
-    // for the time being, natural orbitals are made here...
+    // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
     std::unique_ptr<double[]> coeff(new double[nbasis_ * nbasis_]);
     int nocc = 0;
     {

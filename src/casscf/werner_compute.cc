@@ -79,7 +79,8 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jv
                                                  shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<Coeff> cc) {
   shared_ptr<DensityFit> df = geom_->df();
   const int naux = df->naux();
-  const int nbas = df->nbasis();
+  const int nbas = df->nbasis0();
+  assert(df->nbasis0() == df->nbasis1());
 
 // TODO make sure if this works
 if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
