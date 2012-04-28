@@ -27,6 +27,8 @@
 #ifndef __SRC_MP2_F12MAT_H
 #define __SRC_MP2_F12MAT_H
 
+#include <iostream>
+#include <iomanip>
 #include <memory>
 #include <algorithm>
 #include <src/util/f77.h>
@@ -88,6 +90,20 @@ class F12Mat {
       return out;
     };
 
+    #define OUTSIZE 4
+    void print() const {
+      for (int i = 0; i != OUTSIZE; ++i) {
+        for (int j = 0; j != OUTSIZE; ++j) {
+          for (int k = 0; k != OUTSIZE; ++k) {
+            for (int l = 0; l != OUTSIZE; ++l) {
+              std::cout << i << j << k << l << " " << std::setprecision(10) <<  data(l,k,j,i) << std::endl;
+            }
+          }
+        }
+      }
+    };
+
+    void symmetrize(const bool braket = true);
 };
 
 #endif

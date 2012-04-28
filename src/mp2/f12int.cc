@@ -107,27 +107,34 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   {
   // Yukawa integral can be thrown right away
   shared_ptr<DensityFit> yukawa(dynamic_cast<DensityFit*>(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
-                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
-                               0.0, false)));
-
+                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(), 0.0, false)));
   const shared_ptr<const DF_Half> yxo = yukawa->compute_half_transform(oc, nocc);
   const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
-
-  shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo)));
-  // robust fitting
-  shared_ptr<const DF_Full> doo_J = doo->apply_J();
-  shared_ptr<const DF_Full> doo_JS = doo_J->apply_J(yukawa);
-  shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_J->form_4index(doo_JS)));
-  shared_ptr<F12Mat> ym(new F12Mat(*ym0*2.0 - *ym1));
-  ymat = ym;
-// debug....
-ddot_to_amp(*ym, nocc, gamma_, "Y matrix ");
-ddot_to_amp(*ym0, nocc, gamma_, "Y matrix ");
-//..........
+  ymat = robust_fitting(doo, yoo);
   }
 
   shared_ptr<SlaterFit> slater(new SlaterFit(geom->nbasis(), geom->naux(), gamma_,
                                geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
                                0.0, false));
-  
-};
+
+  // debug area
+  ddot_to_amp(*ymat, nocc, gamma_, "Y matrix ");
+}
+
+
+// df and slater are supposed to be J-applied.
+shared_ptr<F12Mat> F12Int::robust_fitting(shared_ptr<const DF_Full> doo, shared_ptr<const DF_Full> yoo) {
+  const int nocc = yoo->nocc1();
+  assert(nocc == yoo->nocc2());
+
+  shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo)));
+  ddot_to_amp(*ym0, nocc, gamma_, "Y matrix orig");
+
+  shared_ptr<const DF_Full> doo_J = doo->apply_J();
+  shared_ptr<const DF_Full> doo_JS = doo_J->apply_J(yoo->df());
+  shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_JS->form_4index(doo_J)));
+  ddot_to_amp(*ym1, nocc, gamma_, "Y matrix orig");
+  shared_ptr<F12Mat> ym(new F12Mat(*ym0*2.0 - *ym1));
+  return ym;
+}
+
