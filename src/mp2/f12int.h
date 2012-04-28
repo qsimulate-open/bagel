@@ -46,7 +46,8 @@ class F12Int {
     std::shared_ptr<F12Mat> vmat_;
 
   public:
-    F12Int(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref, const double);
+    F12Int(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref,
+           const double, const int);
     ~F12Int() {};
 
 };

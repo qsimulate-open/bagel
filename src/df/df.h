@@ -61,8 +61,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
                      const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
                      const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
 
-    virtual void compute_batch(std::unique_ptr<double[]>&, std::vector<std::shared_ptr<Shell> >&,
-                               const int, const int, const int, const int, const int) = 0;
+    // returns a pointer to a stack memory area
+    virtual const double* compute_batch(std::vector<std::shared_ptr<Shell> >&) = 0;
 
   public:
     DensityFit(const int nbas, const int naux) : nbasis0_(nbas), nbasis1_(nbas), naux_(naux) {};

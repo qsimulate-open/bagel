@@ -40,7 +40,7 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<Geometry> g, sha
   // checks for frozen core
   const bool frozen = read_input<bool>(idata_, "frozen", false);
   ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore()/2 : 0));
-  cout << "   freezing " << ncore_ << " orbitals" << endl;
+  if (ncore_) cout << "  * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   if (!geom_->df()) throw logic_error("MP2 is only implemented in DF");
 
@@ -73,6 +73,7 @@ void MP2::compute() {
   vector<double> eig(eig_tm.begin()+ncore_, eig_tm.end());
 
   // TODO in priciple this should run over occupied (for optimal implementations)...
+
   double sum = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
     // nocc * nvirt * nocc
@@ -91,6 +92,7 @@ void MP2::compute() {
     }
     sum += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
   }
+
   const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << "  * assembly done" << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
@@ -101,7 +103,7 @@ void MP2::compute() {
   if (do_f12) {
     const double gamma = read_input<double>(idata_, "gamma", 1.5);
     cout << "  * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
-    shared_ptr<F12Int> f12int(new F12Int(idata_, geom_, ref_, gamma));
+    shared_ptr<F12Int> f12int(new F12Int(idata_, geom_, ref_, gamma, ncore_));
   }
 }
 

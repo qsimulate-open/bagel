@@ -32,14 +32,11 @@
 
 class ERIFit : public DensityFit {
   protected:
-    void compute_batch(std::unique_ptr<double[]>& data, std::vector<std::shared_ptr<Shell> >& input,
-                       const int j0st, const int j0fen, const int j1st, const int j1fen, const int naux) {
+    // TODO if I turn on primitive screening, it is broken.
+    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
       ERIBatch eribatch(input, 0.0);
       eribatch.compute();
-      const double* eridata = eribatch.data();
-      for (int j0 = j0st; j0 != j0fen; ++j0)
-        for (int j1 = j1st; j1 != j1fen; ++j1, ++eridata)
-          data[j1+j0*naux] = data[j0+j1*naux] = *eridata; 
+      return eribatch.data();
     };
   public:
     ERIFit(const int nbas, const int naux,
@@ -66,14 +63,10 @@ class YukawaFit : public DensityFit {
   protected:
     const double gamma_;
 
-    void compute_batch(std::unique_ptr<double[]>& data, std::vector<std::shared_ptr<Shell> >& input,
-                       const int j0st, const int j0fen, const int j1st, const int j1fen, const int naux) {
+    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
       SlaterBatch slaterbatch(input, 0.0, gamma_, true); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
       slaterbatch.compute();
-      const double* eridata = slaterbatch.data2();
-      for (int j0 = j0st; j0 != j0fen; ++j0)
-        for (int j1 = j1st; j1 != j1fen; ++j1, ++eridata)
-          data[j1+j0*naux] = data[j0+j1*naux] = *eridata; 
+      return slaterbatch.data2();
     };
   public:
     YukawaFit(const int nbas, const int naux, const double gam,
@@ -98,14 +91,10 @@ class SlaterFit : public DensityFit {
   protected:
     const double gamma_;
 
-    void compute_batch(std::unique_ptr<double[]>& data, std::vector<std::shared_ptr<Shell> >& input,
-                       const int j0st, const int j0fen, const int j1st, const int j1fen, const int naux) {
+    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
       SlaterBatch slaterbatch(input, 0.0, gamma_, false);
       slaterbatch.compute();
-      const double* eridata = slaterbatch.data();
-      for (int j0 = j0st; j0 != j0fen; ++j0)
-        for (int j1 = j1st; j1 != j1fen; ++j1, ++eridata)
-          data[j1+j0*naux] = data[j0+j1*naux] = *eridata; 
+      return slaterbatch.data();
     };
   public:
     SlaterFit(const int nbas, const int naux, const double gam,

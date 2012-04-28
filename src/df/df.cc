@@ -103,16 +103,14 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
           input.push_back(b1);
           input.push_back(b0);
   
-          // TODO if I turn on primitive screening, it is broken.
-          ERIBatch eribatch(input, 0.0);
-          eribatch.compute();
-          const double* eridata = eribatch.data();
+          // pointer to stack
+          const double* ppt = compute_batch(input);
   
           // all slot in
           for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
             for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++eridata) {  
-                data_[j2+naux_*(j1+nbasis1_*j0)] = data_[j2+naux_*(j0+nbasis1_*j1)] = *eridata;
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
+                data_[j2+naux_*(j1+nbasis1_*j0)] = data_[j2+naux_*(j0+nbasis1_*j1)] = *ppt;
               }
             }
           }
@@ -140,16 +138,14 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
           input.push_back(b1);
           input.push_back(b0);
   
-          // TODO if I turn on primitive screening, it is broken.
-          ERIBatch eribatch(input, 0.0);
-          eribatch.compute();
-          const double* eridata = eribatch.data();
+          // pointer to stack
+          const double* ppt = compute_batch(input);
   
           // all slot in
           for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
             for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++eridata) {  
-                data_[j2+naux_*(j1+nbasis1_*j0)] = *eridata;
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
+                data_[j2+naux_*(j1+nbasis1_*j0)] = *ppt;
               }
             }
           }
@@ -179,8 +175,11 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
         input.push_back(b0);
         input.push_back(b3);
 
-        // TODO if I turn on primitive screening, it is broken.
-        compute_batch(data2_, input, b0offset, b0offset+b0size, b1offset, b1offset+b1size, naux_);
+        // pointer to stack
+        const double* ppt = compute_batch(input);
+        for (int j0 = b0offset; j0 != b0offset+b0size; ++j0)
+          for (int j1 = b1offset; j1 != b1offset+b1size; ++j1, ++ppt)
+            data2_[j1+j0*naux_] = data2_[j0+j1*naux_] = *ppt;
 
       }
     }

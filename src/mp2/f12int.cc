@@ -26,31 +26,97 @@
 
 #include <src/mp2/f12int.h>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
+#if 0
+int perm(const int i, const int j, const int k, const int l){
+  int retval;
+  int ival, jval, kval, lval;
+  retval = 1;
+  if(j < i) { ival = j; jval = i; }
+  else { ival = i; jval = j; }
+  if(l < k) { kval = l; lval = k; }
+  else { kval = k; lval = l; }
+  if(ival != jval) retval = retval*2;
+  if(kval != lval) retval = retval*2;
+  if((ival != kval) || (jval != lval))retval = retval*2;
+  return retval;
+}
 
-F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const double gam)
+void print_local(orz::DTensor inp) {
+  for (int i=0; i!=OUTSIZE; ++i) {
+  for (int j=0; j!=OUTSIZE; ++j) {
+  for (int k=0; k!=OUTSIZE; ++k) {
+  for (int l=0; l!=OUTSIZE; ++l) {
+    cout << fixed << setw(9) << setprecision(6) << inp(l,j,k,i);
+  }} cout << endl; }}
+}
+
+void print_local1(orz::DTensor inp) {
+  cout << endl;
+  for (int i=0; i!= inp.shape(0); ++i) {
+  for (int j=0; j!= inp.shape(1); ++j) {
+    cout << fixed << setw(11) << setprecision(7) << inp(i,j);
+  } cout << endl;}
+  cout << endl;
+}
+#endif
+
+static void ddot_to_amp(const F12Mat& inp, int n, double gam, string name = "anon") {
+  cout << endl;
+  double sing = 1.0/gam/gam*(10.0/64.0);
+  double trip = 1.0/gam/gam*(6.0/64.0);
+  double a = 0.0;
+  for (int i=0; i!=n; ++i) {
+  for (int j=0; j!=n; ++j) {
+  for (int k=0; k!=n; ++k) {
+  for (int l=0; l!=n; ++l) {
+    if (l == j && k == i && l == k) {
+      a+= inp.data(l,k,j,i)* (sing+trip);
+    } else if (l == j && k == i) {
+      a+= inp.data(l,k,j,i) * (2.0*sing-trip);
+    } else if (l == i && k == j) {
+      a+= inp.data(l,k,j,i) * (2.0*trip-sing);
+    }
+  } } } }
+  cout << setw(8) << name << " " << fixed << setw(20) << setprecision(15) << a << endl;
+  cout << endl;
+}
+
+
+F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re,
+               const double gam, const int ncore)
  : idata_(id), geom_(geom), ref_(re), gamma_(gam) {
 
   // somewhat naive implementations based on 4-index MO integrals *incore*
 
   // coefficient sets
-  const size_t nocc = geom->nocc();
+  const size_t nocc = geom->nocc()/2 - ncore;
   const size_t nbasis = geom->nbasis();
-  const size_t nvirt = nbasis - nocc;
-  const double* const oc = ref_->coeff()->data();
+  const size_t nvirt = nbasis - nocc - ncore;
+  const double* const oc = ref_->coeff()->data() + ncore*nbasis;
   const double* const vc = oc + nocc*nbasis; 
+
+  const shared_ptr<const DensityFit> df = geom_->df();
+  const shared_ptr<const DF_Half> dxo = df->compute_half_transform(oc, nocc)->apply_J();
+  const shared_ptr<const DF_Full> doo = dxo->compute_second_transform(oc, nocc);
  
   shared_ptr<F12Mat> ymat;
   {
   // Yukawa integral can be thrown right away
-  shared_ptr<YukawaFit> yukawa(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
+  shared_ptr<DensityFit> yukawa(dynamic_cast<DensityFit*>(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
                                geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
-                               0.0, geom->df()));
+                               0.0, geom->df())));
 
-  const shared_ptr<const DF_Full> yoo = yukawa->compute_half_transform(oc, nocc)->compute_second_transform(oc, nocc);
-  shared_ptr<F12Mat> ym(new F12Mat(nocc, yoo->form_4index(yoo))); ymat = ym;
+  const shared_ptr<const DF_Half> yxo = yukawa->compute_half_transform(oc, nocc);
+  const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J();
+
+  shared_ptr<F12Mat> ym(new F12Mat(nocc, yoo->form_4index(doo))); ymat = ym;
+// debug....
+ddot_to_amp(*ym, nocc, gamma_, "Y matrix ");
+//..........
   }
 
   shared_ptr<SlaterFit> slater(new SlaterFit(geom->nbasis(), geom->naux(), gamma_,
