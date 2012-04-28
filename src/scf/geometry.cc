@@ -179,7 +179,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
     const int t = ::clock();
-    shared_ptr<DensityFit> tmp(new DensityFit(nbasis_, naux_, atoms_, offsets_, aux_atoms_, aux_offsets_, thresh_overlap));
+    shared_ptr<DensityFit> tmp(dynamic_cast<DensityFit*>(new ERIFit(nbasis_, naux_, atoms_, offsets_, aux_atoms_, aux_offsets_, thresh_overlap)));
     df_ = tmp;
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
   }

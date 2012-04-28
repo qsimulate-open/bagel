@@ -24,6 +24,7 @@
 //
 
 
+#include <memory>
 #include <src/util/f77.h>
 #include <src/df/df.h>
 #include <src/rysint/eribatch.h>
@@ -31,15 +32,14 @@
 
 using namespace std;
 
-DensityFit::DensityFit(const int nbas, const int naux,
-                                       const vector<shared_ptr<Atom> >& atoms,  const vector<vector<int> >& offsets,
-                                       const vector<shared_ptr<Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap)
-   : nbasis_(nbas), naux_(naux) {
+
+void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms,  const vector<vector<int> >& offsets,
+                             const vector<shared_ptr<Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap) {
 
   // this will be distributed in the future.
-  std::unique_ptr<double[]> data__(new double[nbasis_*nbasis_*naux]);
+  std::unique_ptr<double[]> data__(new double[nbasis_*nbasis_*naux_]);
   data_ = move(data__);
-  fill(data_.get(), data_.get()+nbasis_*nbasis_*naux, 0.0);
+  fill(data_.get(), data_.get()+nbasis_*nbasis_*naux_, 0.0);
 
   vector<shared_ptr<Shell> > basis; 
   vector<int> offset;
@@ -94,7 +94,7 @@ DensityFit::DensityFit(const int nbas, const int naux,
         for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
           for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
             for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++eridata) {  
-              data_[j2+naux*(j1+nbasis_*j0)] = data_[j2+naux*(j0+nbasis_*j1)] = *eridata;
+              data_[j2+naux_*(j1+nbasis_*j0)] = data_[j2+naux_*(j0+nbasis_*j1)] = *eridata;
             }
           }
         }
@@ -103,9 +103,9 @@ DensityFit::DensityFit(const int nbas, const int naux,
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  unique_ptr<double[]> data2__(new double[naux*naux]);
+  unique_ptr<double[]> data2__(new double[naux_*naux_]);
   data2_ = move(data2__);
-  fill(data2(), data2()+naux*naux, 0.0);
+  fill(data2(), data2()+naux_*naux_, 0.0);
 
   for (int i0 = 0; i0 != aux_size; ++i0) {
     const std::shared_ptr<Shell>  b0 = aux_basis[i0];
@@ -123,36 +123,29 @@ DensityFit::DensityFit(const int nbas, const int naux,
       input.push_back(b3);
 
       // TODO if I turn on primitive screening, it is broken.
-      ERIBatch eribatch(input, 0.0);
-      eribatch.compute();
-      const double* eridata = eribatch.data();
+      compute_batch(data2_, input, b0offset, b0offset+b0size, b1offset, b1offset+b1size, naux_);
 
-      for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
-        for (int j1 = b1offset; j1 != b1offset + b1size; ++j1, ++eridata) {  
-          data2_[j1+j0*naux] = data2_[j0+j1*naux] = *eridata; 
-        }
-      }
     }
   }
 
-  const int lwork = 5*naux;
-  std::unique_ptr<double[]> vec(new double[naux]);
-  std::unique_ptr<double[]> work(new double[std::max(lwork,naux*naux)]);
+  const size_t lwork = 5*naux_;
+  std::unique_ptr<double[]> vec(new double[naux_]);
+  std::unique_ptr<double[]> work(new double[std::max(lwork,naux_*naux_)]);
 
   int info;
-  dsyev_("V", "U", naux, data2_, naux, vec, work, lwork, info); 
+  dsyev_("V", "U", naux_, data2_, naux_, vec, work, lwork, info); 
   if (info) throw std::runtime_error("dsyev failed in DF fock builder");
 
-  for (int i = 0; i != naux; ++i)
+  for (int i = 0; i != naux_; ++i)
     vec[i] = vec[i] > throverlap ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
-  for (int i = 0; i != naux; ++i) {
-    for (int j = 0; j != naux; ++j) {
-      data2_[j+i*naux] *= vec[i];
+  for (int i = 0; i != naux_; ++i) {
+    for (int j = 0; j != naux_; ++j) {
+      data2_[j+i*naux_] *= vec[i];
     }
   }
   // work now contains -1/2
-  dgemm_("N", "T", naux, naux, naux, 1.0, data2_, naux, data2_, naux, 0.0, work, naux); 
-  copy(work.get(), work.get()+naux*naux, data2());
+  dgemm_("N", "T", naux_, naux_, naux_, 1.0, data2_, naux_, data2_, naux_, 0.0, work, naux_); 
+  copy(work.get(), work.get()+naux_*naux_, data2());
 
 }
 

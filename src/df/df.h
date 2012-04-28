@@ -31,9 +31,12 @@
 #include <memory>
 #include <src/scf/atom.h>
 #include <src/util/f77.h>
+#include <src/rysint/eribatch.h>
+#include <stdexcept>
 
 class DF_Half;
 class DF_Full;
+
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
   protected:
@@ -53,10 +56,14 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     const double* const data() const { return data_.get(); };
     const double* const data2() const { return data2_.get(); };
 
+    void common_init(const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
+                     const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&, const double);
+
+    virtual void compute_batch(std::unique_ptr<double[]>&, std::vector<std::shared_ptr<Shell> >&,
+                               const int, const int, const int, const int, const int) = 0;
+
   public:
-    DensityFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr);
+    DensityFit(const int nbas, const int naux) : nbasis_(nbas), naux_(naux) {};
     ~DensityFit() {};
 
     const double* const data_3index() const { return data(); };

@@ -32,7 +32,7 @@
 #include <src/scf/atom.h>
 #include <src/scf/petite.h>
 #include <memory>
-#include <src/df/df.h>
+#include <src/df/fit.h>
 #include <src/util/input.h>
 
 class Geometry {
