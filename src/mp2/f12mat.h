@@ -37,6 +37,7 @@ class F12Mat {
 
   public:
     F12Mat(const size_t i) : data_(new double[i*i*i*i]), nocc_(i) { };
+    F12Mat(const size_t i, std::unique_ptr<double[]> b) : data_(std::move(b)), nocc_(i) { };
     ~F12Mat() {};
 
     double* data() { return data_.get(); };

@@ -130,6 +130,7 @@ class Geometry {
 
     // Rerurns DF data
     std::shared_ptr<DensityFit> df() { return df_; };
+    const std::shared_ptr<const DensityFit> df() const { return df_; };
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

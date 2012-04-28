@@ -30,9 +30,12 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/mp2/f12int.h>
+#include <string>
+#include <map>
 
 class MP2 {
   protected:
+    const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<Geometry> geom_; 
     const std::shared_ptr<Reference> ref_;
 //  std::shared_ptr<F12Int> f12int_;

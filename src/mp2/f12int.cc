@@ -25,7 +25,36 @@
 
 
 #include <src/mp2/f12int.h>
+#include <iostream>
 
-F12Int::F12Int() {
+using namespace std;
 
+
+F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const double gam)
+ : idata_(id), geom_(geom), ref_(re), gamma_(gam) {
+
+  // somewhat naive implementations based on 4-index MO integrals *incore*
+
+  // coefficient sets
+  const size_t nocc = geom->nocc();
+  const size_t nbasis = geom->nbasis();
+  const size_t nvirt = nbasis - nocc;
+  const double* const oc = ref_->coeff()->data();
+  const double* const vc = oc + nocc*nbasis; 
+ 
+  shared_ptr<F12Mat> ymat;
+  {
+  // Yukawa integral can be thrown right away
+  shared_ptr<YukawaFit> yukawa(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
+                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
+                               0.0, geom->df()));
+
+  const shared_ptr<const DF_Full> yoo = yukawa->compute_half_transform(oc, nocc)->compute_second_transform(oc, nocc);
+  shared_ptr<F12Mat> ym(new F12Mat(nocc, yoo->form_4index(yoo))); ymat = ym;
+  }
+
+  shared_ptr<SlaterFit> slater(new SlaterFit(geom->nbasis(), geom->naux(), gamma_,
+                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
+                               0.0, geom->df()));
+  
 };

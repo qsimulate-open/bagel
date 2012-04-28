@@ -27,16 +27,26 @@
 #ifndef __SRC_MP2_F12INT_H
 #define __SRC_MP2_F12INT_H
 
+#include <memory>
+#include <map>
 #include <src/mp2/f12mat.h>
+#include <src/scf/geometry.h>
+#include <src/wfn/reference.h>
 
 class F12Int {
   protected:
+    double gamma_;
+
+    const std::multimap<std::string, std::string> idata_;
+    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Reference> ref_;
+
     std::shared_ptr<F12Mat> bmat_;
     std::shared_ptr<F12Mat> xmat_;
     std::shared_ptr<F12Mat> vmat_;
 
   public:
-    F12Int();
+    F12Int(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref, const double);
     ~F12Int() {};
 
 };

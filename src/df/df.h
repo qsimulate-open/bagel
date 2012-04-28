@@ -167,7 +167,9 @@ class DF_Full {
 
     // forming all internal 4-index MO integrals
     void form_4index(std::unique_ptr<double[]>& target) const;
+    std::unique_ptr<double[]> form_4index() const;
     void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o) const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o) const;
 
     // the same as above, but with one index fixed at n (of nocc2).
     void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const size_t n) const;

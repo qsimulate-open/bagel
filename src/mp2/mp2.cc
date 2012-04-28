@@ -34,7 +34,7 @@
 
 using namespace std;
 
-MP2::MP2(const multimap<string, string> input, const shared_ptr<Geometry> g, shared_ptr<Reference> r) : geom_(g), ref_(r) {
+MP2::MP2(const multimap<string, string> input, const shared_ptr<Geometry> g, shared_ptr<Reference> r) : idata_(input), geom_(g), ref_(r) {
   cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
 
   if (!geom_->df()) throw logic_error("MP2 is only implemented in DF");
@@ -48,13 +48,15 @@ void MP2::compute() {
   assert(geom_->nbasis() == ref_->coeff()->mdim());
   const size_t nbasis = geom_->nbasis();
 
+  const long time = ::clock();
+
   // first compute half transformed integrals
   shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(ref_->coeff()->data(), nocc);  
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
   shared_ptr<DF_Full> full = half->compute_second_transform(ref_->coeff()->data()+nocc*nbasis, nvirt)->apply_J();
 
-  cout << "  * 3-index integral transformation done" << endl << endl;
+  cout << "  * 3-index integral transformation done" << endl;
 
   // assemble
   unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]);
@@ -79,5 +81,18 @@ void MP2::compute() {
     }
     sum += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
   }
-  cout << "  MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum << endl;
+  const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  cout << "  * assembly done" << endl;
+  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
+                                                    << setw(10) << setprecision(2) << elapsed << endl << endl;
+
+  // check if F12 is requested.
+  const bool do_f12 = read_input<bool>(idata_, "f12", false);
+  if (do_f12) {
+    const double gamma = read_input<double>(idata_, "gamma", 1.5);
+    cout << "  * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
+    shared_ptr<F12Int> f12int(new F12Int(idata_, geom_, ref_, gamma));
+  }
 }
+
+
