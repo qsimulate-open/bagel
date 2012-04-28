@@ -38,7 +38,7 @@ class MP2 {
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<Geometry> geom_; 
     const std::shared_ptr<Reference> ref_;
-//  std::shared_ptr<F12Int> f12int_;
+    int ncore_;
 
   public:
     MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
