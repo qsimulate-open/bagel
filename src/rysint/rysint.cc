@@ -29,7 +29,7 @@
 using namespace std;
 
 RysInt::RysInt(const vector<std::shared_ptr<Shell> > info)
- : basisinfo_(info), spherical_(info.front()->spherical()), sort_(info.front()->spherical()) {
+ : basisinfo_(info), spherical_(info.front()->spherical()), sort_(info.front()->spherical()), deriv_rank_(0) {
 
 }
 

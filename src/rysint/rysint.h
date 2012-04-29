@@ -38,6 +38,11 @@
 
 class RysInt {
   protected:
+    // information on how many derivatives you take
+    // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
+    // over written in the constructor of a derived class 
+    int deriv_rank_;
+
     VRRList vrr_; 
     HRRList hrr_; 
     SortList sort_;

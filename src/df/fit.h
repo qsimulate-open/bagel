@@ -28,7 +28,7 @@
 #define __SRC_DF_FIT_H
 
 #include <src/df/df.h>
-#include <src/rysint/gradbatch.h>
+#include <src/grad/gradbatch.h>
 #include <src/slater/slaterbatch.h>
 
 class ERIFit : public DensityFit {

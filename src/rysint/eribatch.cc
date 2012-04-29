@@ -86,8 +86,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const int ang2 = basisinfo_[2]->angular_number();
   const int ang3 = basisinfo_[3]->angular_number();
 
-  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1));
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1); 
+  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_));
+  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_); 
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -368,6 +368,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
     eriroot11_(T_, roots_, weights_, &ps); 
   } else if (rank_ == 12) {
     eriroot12_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 13) {
+    eriroot13_(T_, roots_, weights_, &ps); 
   } else {
 #else
     rysroot_(T_, roots_, weights_, &rank_, &ps); // <- buggy!

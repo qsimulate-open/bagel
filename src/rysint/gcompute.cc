@@ -24,7 +24,7 @@
 //
 
 
-#include <src/rysint/gradbatch.h>
+#include <src/grad/gradbatch.h>
 
 using namespace std;
 

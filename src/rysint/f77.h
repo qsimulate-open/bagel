@@ -41,6 +41,7 @@ extern "C" {
  void eriroot10_(const double*, double*, double*, const int*);
  void eriroot11_(const double*, double*, double*, const int*);
  void eriroot12_(const double*, double*, double*, const int*);
+ void eriroot13_(const double*, double*, double*, const int*);
 };
 
 #endif

@@ -35,7 +35,8 @@
 
 class GradBatch : public ERIBatch {
   protected:
-    // if we only compute three-center integrals
+    // if we only compute three-center integrals, we want to use this info
+    // to reduce the number of differentiation
     int centers_;
 
   public:
@@ -44,6 +45,9 @@ class GradBatch : public ERIBatch {
       centers_ = 4;  
       for (auto i = shells.begin(); i != shells.end(); ++i)
         if ((*i)->dummy()) --centers_;
+
+      // a member variable in RysInt <- ERIBatch <- GradBatch.
+      deriv_rank_ = 1;
     };
     ~GradBatch() {};
 
