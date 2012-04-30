@@ -229,18 +229,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
     struct SRootList root;
     root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 
   }
-
-
-#if 0
-  cout << endl;
-  int jk = 0;
-  for (int i = 0; i != primsize_; ++i) { 
-    cout << T_[i] << " " << U_[i] << endl;
-    for (int j = 0; j != rank_; ++j, ++jk) 
-      cout << fixed << setprecision(17) << setw(25) << roots_[jk] << " " << weights_[jk] << endl;
-    cout << endl;
-  }
-#endif
 }
 
 

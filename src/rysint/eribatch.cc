@@ -33,6 +33,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <stdexcept>
 #include <src/rysint/eribatch.h>
 #include <src/util/f77.h>
 #include <src/rysint/f77.h>
@@ -259,17 +260,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   // determine the quadrature grid
   if (basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() +
       basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number() == 0) { // in this case, roots not needed; avoids exp
-    for (int j = 0; j != screening_size_; ++j) {
-      int i = screening_[j];
-      if (T_[i] < 1.0e-8) { 
-        weights_[i] = 1.0;
-      } else {
-        const double sqrtt = ::sqrt(T_[i]);
-        const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * SQRTPI2 / sqrtt;
-      }
-    }
-#if 1
+    root0_direct();
   } else if (rank_ == 1) {
     eriroot1_(T_, roots_, weights_, &ps); 
   } else if (rank_ == 2) {
@@ -297,9 +288,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   } else if (rank_ == 13) {
     eriroot13_(T_, roots_, weights_, &ps); 
   } else {
-#else
-    rysroot_(T_, roots_, weights_, &rank_, &ps); // <- buggy!
-#endif
+    throw logic_error("ERI beyond root=13 are not implemented yet");
   }
 
   stack->release(prim2size_*prim3size_*4);
@@ -313,3 +302,15 @@ ERIBatch::~ERIBatch() {
 }
 
 
+void ERIBatch::root0_direct() {
+  for (int j = 0; j != screening_size_; ++j) {
+    int i = screening_[j];
+    if (T_[i] < 1.0e-8) { 
+      weights_[i] = 1.0;
+    } else {
+      const double sqrtt = ::sqrt(T_[i]);
+      const double erfsqt = inline_erf(sqrtt);
+      weights_[i] = erfsqt * SQRTPI2 / sqrtt;
+    }
+  }
+}

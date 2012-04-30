@@ -51,6 +51,7 @@ class ERIBatch : public RysInt {
     void perform_VRR13();
     void perform_VRR();
 
+    void root0_direct();
 
   public:
     
