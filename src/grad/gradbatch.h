@@ -40,16 +40,8 @@ class GradBatch : public RysInt {
     int centers_;
 
   public:
-    GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true)
-      : RysInt(shells) {
-      centers_ = 4;  
-      for (auto i = shells.begin(); i != shells.end(); ++i)
-        if ((*i)->dummy()) --centers_;
-
-      // a member variable in RysInt <- ERIBatch <- GradBatch.
-      deriv_rank_ = 1;
-    };
-    ~GradBatch() {};
+    GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true);
+    ~GradBatch();
 
     void compute();
 
