@@ -54,33 +54,14 @@ extern StackMem* stack;
 
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
+  // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
-
   vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new SVRRList()));
 
   const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
   set_swap_info(false);
-
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-
-  AB_[0] = ax - bx; 
-  AB_[1] = ay - by; 
-  AB_[2] = az - bz; 
-  CD_[0] = cx - dx; 
-  CD_[1] = cy - dy; 
-  CD_[2] = cz - dz; 
+  set_ab_cd();
 
   // set primsize_ and contsize_, as well as relevant members
   set_prim_contsizes();
@@ -108,112 +89,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   T_ = pointer;     pointer += primsize_;
   U_ = pointer;     pointer += primsize_;
 
-  vector<double>::const_iterator expi0, expi1, expi2, expi3;
-  const vector<double> exp0 = basisinfo_[0]->exponents();
-  const vector<double> exp1 = basisinfo_[1]->exponents();
-  const vector<double> exp2 = basisinfo_[2]->exponents();
-  const vector<double> exp3 = basisinfo_[3]->exponents();
-
-  vector<double> Ecd_save(prim2size_ * prim3size_); 
-  vector<double> qx_save(prim2size_ * prim3size_);
-  vector<double> qy_save(prim2size_ * prim3size_);
-  vector<double> qz_save(prim2size_ * prim3size_);
-
-  const double minexp0 = *min_element(exp0.begin(), exp0.end());
-  const double minexp1 = *min_element(exp1.begin(), exp1.end());
-  const double minexp2 = *min_element(exp2.begin(), exp2.end());
-  const double minexp3 = *min_element(exp3.begin(), exp3.end());
-  const double min_ab = minexp0 * minexp1;
-  const double min_cd = minexp2 * minexp3;
-
-  indexpair23_.reserve(prim2size_ * prim3size_);
-
-  const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]; 
-  const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
-
-  {
-    const double cxp_min = minexp0 + minexp1; 
-    const double cxp_inv_min = 1.0 / cxp_min; 
-    const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
-    int index23 = 0;
-    for (expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) { 
-      for (expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) { 
-        const double cxq = *expi2 + *expi3;
-        const double cd = *expi2 * *expi3;
-        const double cxq_inv = 1.0 / cxq;
-
-        if (-r23_sq * (cd * cxq_inv) < MIN_EXPONENT) continue;
-        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
-        qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
-        qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
-        qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
-
-        indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
-      }
-    }
-  }
-
-  int index = 0;
-  int index01 = 0;
-  fill(coeff_, coeff_ + primsize_, 0.0);
-  fill(coeffy_, coeffy_ + primsize_, 0.0);
-  fill(T_, T_ + primsize_, -1.0);
-  fill(U_, U_ + primsize_, 1.0e-100);
-  screening_ = (int*)stack->get(primsize_);
-  screening_size_ = 0;
-
-  const double twogamma = 2.0 / gamma_;
-  for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
-    for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
-      const double cxp = *expi0 + *expi1;
-      const double ab = *expi0 * *expi1; 
-      const double cxp_inv = 1.0 / cxp;
-      if (-r01_sq * (ab * cxp_inv) < MIN_EXPONENT) continue;
-      const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
-      const double coeff_half = 2 * Eab * PITWOHALF;
-      const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
-      const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
-      const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
-
-      const int index_base = prim2size_ * prim3size_ * index01;
-
-      for (vector<tuple<int, double, double> >::const_iterator expi23 = indexpair23_.begin(); 
-                                                               expi23 != indexpair23_.end(); ++expi23) {
-          const int index23 = get<0>(*expi23);
-          const int index = index_base + index23;
-          const double exp2value = get<1>(*expi23); 
-          const double exp3value = get<2>(*expi23); 
-          const double cxq = exp2value + exp3value;
-          xp_[index] = cxp;
-          xq_[index] = cxq; 
-          const double cxpxq = cxp * cxq;
-          const double onepqp_q = 1.0 / (::sqrt(cxp + cxq) * cxpxq);
-          coeffy_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
-          const double rho = cxpxq / (cxp + cxq);
-          const double xpq = qx_save[index23] - px;
-          const double ypq = qy_save[index23] - py;
-          const double zpq = qz_save[index23] - pz;
-          const double pq_sq = xpq * xpq + ypq * ypq + zpq * zpq;
-          const double U = 0.25 * gamma_ * gamma_ / rho;
-          if (U - gamma_ * sqrt(pq_sq) < MIN_EXPONENT) continue;
-          if (coeffy_[index] * exp(U - gamma_ * sqrt(pq_sq)) < integral_thresh) continue;
-
-          const double T = rho * pq_sq;
-          coeff_[index] = coeffy_[index] * twogamma * U;
-          const int index3 = index * 3;
-          p_[index3] = px; 
-          p_[index3 + 1] = py;
-          p_[index3 + 2] = pz;
-          q_[index3] =     qx_save[index23]; 
-          q_[index3 + 1] = qy_save[index23];
-          q_[index3 + 2] = qz_save[index23];
-          T_[index] = T; 
-          U_[index] = U; 
-          screening_[screening_size_] = index;
-          ++screening_size_;
-      }
-    }
-  }
+  compute_ssss(integral_thresh);
 
   roots_ = pointer; pointer += rank_ * primsize_; 
   weights_ = pointer;
@@ -365,6 +241,127 @@ void SlaterBatch::root2_direct() {
       roots_[offset + 1] = c;
       weights_[offset] = lp1 * gm1;
       weights_[offset + 1] = lp2 * gm1;
+    }
+  }
+}
+
+
+void SlaterBatch::compute_ssss(const double integral_thresh) {
+  const double ax = basisinfo_[0]->position(0);
+  const double ay = basisinfo_[0]->position(1);
+  const double az = basisinfo_[0]->position(2);
+  const double bx = basisinfo_[1]->position(0);
+  const double by = basisinfo_[1]->position(1);
+  const double bz = basisinfo_[1]->position(2);
+  const double cx = basisinfo_[2]->position(0);
+  const double cy = basisinfo_[2]->position(1);
+  const double cz = basisinfo_[2]->position(2);
+  const double dx = basisinfo_[3]->position(0);
+  const double dy = basisinfo_[3]->position(1);
+  const double dz = basisinfo_[3]->position(2);
+
+  const vector<double> exp0 = basisinfo_[0]->exponents();
+  const vector<double> exp1 = basisinfo_[1]->exponents();
+  const vector<double> exp2 = basisinfo_[2]->exponents();
+  const vector<double> exp3 = basisinfo_[3]->exponents();
+
+  vector<double> Ecd_save(prim2size_ * prim3size_); 
+  vector<double> qx_save(prim2size_ * prim3size_);
+  vector<double> qy_save(prim2size_ * prim3size_);
+  vector<double> qz_save(prim2size_ * prim3size_);
+
+  const double minexp0 = *min_element(exp0.begin(), exp0.end());
+  const double minexp1 = *min_element(exp1.begin(), exp1.end());
+  const double minexp2 = *min_element(exp2.begin(), exp2.end());
+  const double minexp3 = *min_element(exp3.begin(), exp3.end());
+  const double min_ab = minexp0 * minexp1;
+  const double min_cd = minexp2 * minexp3;
+
+  indexpair23_.reserve(prim2size_ * prim3size_);
+
+  const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]; 
+  const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
+
+  {
+    const double cxp_min = minexp0 + minexp1; 
+    const double cxp_inv_min = 1.0 / cxp_min; 
+    const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
+    int index23 = 0;
+    for (auto expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) { 
+      for (auto expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) { 
+        const double cxq = *expi2 + *expi3;
+        const double cd = *expi2 * *expi3;
+        const double cxq_inv = 1.0 / cxq;
+
+        if (-r23_sq * (cd * cxq_inv) < MIN_EXPONENT) continue;
+        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
+        qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
+        qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
+        qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
+
+        indexpair23_.push_back(make_tuple(index23, *expi2, *expi3));
+      }
+    }
+  }
+
+  int index = 0;
+  int index01 = 0;
+  fill(coeff_, coeff_ + primsize_, 0.0);
+  fill(coeffy_, coeffy_ + primsize_, 0.0);
+  fill(T_, T_ + primsize_, -1.0);
+  fill(U_, U_ + primsize_, 1.0e-100);
+  screening_ = (int*)stack->get(primsize_);
+  screening_size_ = 0;
+
+  const double twogamma = 2.0 / gamma_;
+  for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
+    for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
+      const double cxp = *expi0 + *expi1;
+      const double ab = *expi0 * *expi1; 
+      const double cxp_inv = 1.0 / cxp;
+      if (-r01_sq * (ab * cxp_inv) < MIN_EXPONENT) continue;
+      const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
+      const double coeff_half = 2 * Eab * PITWOHALF;
+      const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
+      const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
+      const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
+
+      const int index_base = prim2size_ * prim3size_ * index01;
+
+      for (auto expi23 = indexpair23_.begin(); expi23 != indexpair23_.end(); ++expi23) {
+          const int index23 = get<0>(*expi23);
+          const int index = index_base + index23;
+          const double exp2value = get<1>(*expi23); 
+          const double exp3value = get<2>(*expi23); 
+          const double cxq = exp2value + exp3value;
+          xp_[index] = cxp;
+          xq_[index] = cxq; 
+          const double cxpxq = cxp * cxq;
+          const double onepqp_q = 1.0 / (::sqrt(cxp + cxq) * cxpxq);
+          coeffy_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
+          const double rho = cxpxq / (cxp + cxq);
+          const double xpq = qx_save[index23] - px;
+          const double ypq = qy_save[index23] - py;
+          const double zpq = qz_save[index23] - pz;
+          const double pq_sq = xpq * xpq + ypq * ypq + zpq * zpq;
+          const double U = 0.25 * gamma_ * gamma_ / rho;
+          if (U - gamma_ * sqrt(pq_sq) < MIN_EXPONENT) continue;
+          if (coeffy_[index] * exp(U - gamma_ * sqrt(pq_sq)) < integral_thresh) continue;
+
+          const double T = rho * pq_sq;
+          coeff_[index] = coeffy_[index] * twogamma * U;
+          const int index3 = index * 3;
+          p_[index3] = px; 
+          p_[index3 + 1] = py;
+          p_[index3 + 2] = pz;
+          q_[index3] =     qx_save[index23]; 
+          q_[index3 + 1] = qy_save[index23];
+          q_[index3 + 2] = qz_save[index23];
+          T_[index] = T; 
+          U_[index] = U; 
+          screening_[screening_size_] = index;
+          ++screening_size_;
+      }
     }
   }
 }

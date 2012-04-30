@@ -43,6 +43,8 @@ class NAIBatch : public RysInt {
     const int L_;
     const double A_;
 
+    void compute_ssss(const double thresh);
+
   public:
     
     NAIBatch(const std::vector<std::shared_ptr<Shell> >, const std::shared_ptr<Geometry>, const int L = 0, const double A = 0.0);

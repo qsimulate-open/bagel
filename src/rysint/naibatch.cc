@@ -59,15 +59,11 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   // cartesian to spherical tranformation has not yet been implemented.
   const bool spherical = false;
-  assert(_info[0]->spherical());
+  if (!_info[0]->spherical())
+    throw logic_error("cartesian to spherical tranformation has not yet been implemented."); 
 
-  // swap 01 indices when needed: Larger angular momentum function comes first
   set_swap_info();
-
-  AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
-  AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
-  AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
-
+  set_ab_cd();
   set_prim_contsizes();
 
   int asize_intermediate, asize_final, dum0, dum1;
@@ -89,9 +85,25 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   T_ = pointer;     pointer += primsize_ * natom_;
 
   screening_ = (int*)(stack->get(primsize_ * natom_));
+
+  compute_ssss(integral_thresh);
+
+  roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
+  weights_ = pointer;
+
+  root_weight(primsize_ * natom_);
+
+}
+
+
+NAIBatch::~NAIBatch() {
+  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
+}
+
+
+void NAIBatch::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
-  vector<double>::const_iterator expi0, expi1, expi2, expi3;
   const vector<double> exp0 = basisinfo_[0]->exponents();
   const vector<double> exp1 = basisinfo_[1]->exponents();
 
@@ -100,8 +112,8 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   const double onepi2 = 1.0 / (PI * PI);
   const double sqrtpi = ::sqrt(PI);
-  for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
-    for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) { 
+  for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
+    for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) { 
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
         double Z = static_cast<double>((*aiter)->atom_number()); 
         const double cxp = *expi0 + *expi1;
@@ -130,17 +142,4 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
       }
     }
   }
-
-  roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
-  weights_ = pointer;
-
-  root_weight(primsize_ * natom_);
-
 }
-
-
-NAIBatch::~NAIBatch() {
-  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
-}
-
-

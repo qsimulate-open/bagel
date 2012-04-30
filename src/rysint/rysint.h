@@ -83,11 +83,13 @@ class RysInt {
 
     // init functions
     void set_swap_info(const bool swap_bra_ket = false);
+    void set_ab_cd();
     void set_prim_contsizes();
     std::tuple<int, int, int, int> set_angular_info();
     // virtual init functions. The default is for ERI, NAI and their derivatives.
     // should be overloaded in Slater-type integrals
     virtual void root_weight(const int ps);
+    virtual void compute_ssss(const double thr);
 
 
     // contraction
