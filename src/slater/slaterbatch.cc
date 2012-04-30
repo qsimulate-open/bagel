@@ -39,6 +39,7 @@
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
 #include <src/slater/sinline.h>
+#include <src/stackmem.h>
 
 using namespace std;
 
@@ -48,25 +49,15 @@ using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
 
+// This object lives in main.cc
+extern StackMem* stack;
+
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
   const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
-  // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
-    swap(basisinfo_[0], basisinfo_[1]);
-    swap01_ = true;
-  } else {
-    swap01_ = false;
-  }
-  // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
-    swap(basisinfo_[2], basisinfo_[3]);
-    swap23_ = true;
-  } else {
-    swap23_ = false;
-  }
+  set_swap_info(false);
 
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
@@ -156,10 +147,10 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  data_ = new double[size_alloc_];
-  data2_ = new double[size_alloc_];
+  data_ = stack->get(size_alloc_);
+  data2_ = stack->get(size_alloc_);
 
-  buff_ = new double[(rank_ * 2 + 12) * primsize_];
+  buff_ = stack->get((rank_ * 2 + 12) * primsize_);
   double* pointer = buff_; 
   p_ = pointer;     pointer += primsize_ * 3;
   q_ = pointer;     pointer += primsize_ * 3;
@@ -234,7 +225,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   fill(coeffy_, coeffy_ + primsize_, 0.0);
   fill(T_, T_ + primsize_, -1.0);
   fill(U_, U_ + primsize_, 1.0e-100);
-  screening_ = new int[primsize_];
+  screening_ = (int*)stack->get(primsize_);
   screening_size_ = 0;
 
 #if 0
@@ -441,10 +432,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
 
 SlaterBatch::~SlaterBatch() {
-  delete[] data2_;
-  delete[] data_;
-  delete[] buff_;
-  delete[] screening_;
+  stack->release(size_alloc_*2 + (rank_ * 2 + 12) * primsize_ + primsize_);
 
 }
 

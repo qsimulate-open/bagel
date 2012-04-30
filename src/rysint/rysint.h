@@ -38,6 +38,22 @@
 
 class RysInt {
   protected:
+    // some basic info for integral evaluations
+    bool swap01_, swap23_;
+    bool no_transpose_;
+    double AB_[3], CD_[3];
+    int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
+    int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
+    double *p_, *q_;
+    double *xp_, *xq_, *coeff_, *coeffy_;
+    double *T_, *U_;
+    unsigned int contsize_, primsize_, size_alloc_; 
+    int prim0size_, prim1size_, prim2size_, prim3size_;
+    int cont0size_, cont1size_, cont2size_, cont3size_;
+    int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
+    double *buff_;
+    double *bkup_;
+
     // information on how many derivatives you take
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
     // over written in the constructor of a derived class 
@@ -62,6 +78,18 @@ class RysInt {
     // for screening
     int* screening_;
     int screening_size_;
+
+    // init functions
+    void set_swap_info(const bool swap_bra_ket = false);
+
+
+    // HRR, contraction and sorting
+    void perform_contraction_new_outer(const int, const double*, const int, const int, double*,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
+    void perform_contraction_new_inner(const int, const double*, const int, const int, double*,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
+                 const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
 
   public:
     RysInt(const std::vector<std::shared_ptr<Shell> >);

@@ -25,7 +25,7 @@
 
 
 #include <src/util/f77.h>
-#include <src/rysint/eribatch.h>
+#include <src/rysint/rysint.h>
 #include <cstring>
 #include <iostream>
 #include <iomanip>
@@ -37,7 +37,7 @@ using namespace std;
 // This object lives in main.cc
 extern StackMem* stack;
 
-void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
+void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int unit = 1;
@@ -67,7 +67,7 @@ void ERIBatch::perform_contraction_new_outer(const int nsize, const double* prim
 }
 
 
-void ERIBatch::perform_contraction_new_inner(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
+void RysInt::perform_contraction_new_inner(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   // transformation of index1

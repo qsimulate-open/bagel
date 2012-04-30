@@ -56,30 +56,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
 //const double integral_thresh = 0.0; 
 
-  // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()
-   || (basisinfo_[0]->angular_number() == 0 && basisinfo_[1]->angular_number() == 0)) {
-    swap(basisinfo_[0], basisinfo_[1]);
-    swap01_ = true;
-  } else {
-    swap01_ = false;
-  }
-  // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()
-   || (basisinfo_[2]->angular_number() == 0 && basisinfo_[3]->angular_number() == 0)) {
-    swap(basisinfo_[2], basisinfo_[3]);
-    swap23_ = true;
-  } else {
-    swap23_ = false;
-  }
-
-  no_transpose_ = false;
-  if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
-    no_transpose_ = true;
-    swap(basisinfo_[0], basisinfo_[2]); 
-    swap(basisinfo_[1], basisinfo_[3]); 
-    swap(swap01_, swap23_); 
-  }
+  set_swap_info(true);
 
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
@@ -376,11 +353,44 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 #endif
   }
 
+  stack->release(prim2size_*prim3size_*4);
+
 }
 
 
 ERIBatch::~ERIBatch() {
-  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_ + prim2size_ * prim3size_ * 4);
+  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
 
 }
+
+
+void RysInt::set_swap_info(const bool swap_bra_ket) {
+  // swap 01 indices when needed: Larger angular momentum function comes first
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()
+   || (basisinfo_[0]->angular_number() == 0 && basisinfo_[1]->angular_number() == 0)) {
+    swap(basisinfo_[0], basisinfo_[1]);
+    swap01_ = true;
+  } else {
+    swap01_ = false;
+  }
+  // swap 23 indices when needed
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()
+   || (basisinfo_[2]->angular_number() == 0 && basisinfo_[3]->angular_number() == 0)) {
+    swap(basisinfo_[2], basisinfo_[3]);
+    swap23_ = true;
+  } else {
+    swap23_ = false;
+  }
+
+  if (swap_bra_ket) {
+    no_transpose_ = false;
+    if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
+      no_transpose_ = true;
+      swap(basisinfo_[0], basisinfo_[2]); 
+      swap(basisinfo_[1], basisinfo_[3]); 
+      swap(swap01_, swap23_); 
+    }
+  }
+}
+
 
