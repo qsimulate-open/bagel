@@ -54,6 +54,7 @@ extern StackMem* stack;
 
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
+  ++tenno_;
 
   vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new SVRRList()));
 
@@ -101,48 +102,9 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   cont3size_ = basisinfo_[3]->num_contracted();
   contsize_ = cont0size_ * cont1size_ * cont2size_ * cont3size_;
 
-  amax_ = ang0 + ang1;
-  cmax_ = ang2 + ang3;
-  amin_ = ang0;
-  cmin_ = ang2;
-  amax1_ = amax_ + 1;
-  cmax1_ = cmax_ + 1;
-
-  asize_ = 0; 
-  for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
-  csize_ = 0; 
-  for (int i = cmin_; i <= cmax_; ++i) csize_ += (i + 1) * (i + 2) / 2;
-
-  const int asize_final = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4;
-  const int csize_final = (ang2 + 1) * (ang2 + 2) * (ang3 + 1) * (ang3 + 2) / 4;
-
-  const int asize_final_sph = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_final;
-  const int csize_final_sph = spherical_ ? (2 * ang2 + 1) * (2 * ang3 + 1) : csize_final;
-
-  int cnt = 0;
-  for (int i = cmin_; i <= cmax_; ++i) {
-    for (int iz = 0; iz <= i; ++iz) { 
-      for (int iy = 0; iy <= i - iz; ++iy) { 
-        const int ix = i - iy - iz;
-        if (ix >= 0) {
-          cmapping_[ix + cmax1_ * (iy + cmax1_ * iz)] = cnt;
-          ++cnt;
-        }
-      }
-    }
-  }
-  cnt = 0;
-  for (int j = amin_; j <= amax_; ++j) {
-    for (int jz = 0; jz <= j; ++jz) { 
-      for (int jy = 0; jy <= j - jz; ++jy) { 
-        const int jx = j - jy - jz;
-        if (jx >= 0){
-          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt; 
-          ++cnt;
-        }
-      }
-    }
-  }
+  // set members for angular information
+  int asize_final, csize_final, asize_final_sph, csize_final_sph;
+  tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
   
   const unsigned int size_start = asize_ * csize_ * primsize_; 
   const unsigned int size_intermediate = asize_final * csize_ * contsize_;

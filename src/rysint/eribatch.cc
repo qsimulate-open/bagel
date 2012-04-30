@@ -57,15 +57,9 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
 //const double integral_thresh = 0.0; 
 
+  // determins if we want to swap shells
   set_swap_info(true);
 
-  const int ang0 = basisinfo_[0]->angular_number();
-  const int ang1 = basisinfo_[1]->angular_number();
-  const int ang2 = basisinfo_[2]->angular_number();
-  const int ang3 = basisinfo_[3]->angular_number();
-
-  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_));
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_); 
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -98,48 +92,9 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   cont3size_ = basisinfo_[3]->num_contracted();
   contsize_ = cont0size_ * cont1size_ * cont2size_ * cont3size_;
 
-  amax_ = ang0 + ang1;
-  cmax_ = ang2 + ang3;
-  amin_ = ang0;
-  cmin_ = ang2;
-  amax1_ = amax_ + 1;
-  cmax1_ = cmax_ + 1;
+  int asize_final, csize_final, asize_final_sph, csize_final_sph;
+  tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
 
-  asize_ = 0; 
-  for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
-  csize_ = 0; 
-  for (int i = cmin_; i <= cmax_; ++i) csize_ += (i + 1) * (i + 2) / 2;
-
-  const int asize_final = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4;
-  const int csize_final = (ang2 + 1) * (ang2 + 2) * (ang3 + 1) * (ang3 + 2) / 4;
-
-  const int asize_final_sph = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_final;
-  const int csize_final_sph = spherical_ ? (2 * ang2 + 1) * (2 * ang3 + 1) : csize_final;
-
-  int cnt = 0;
-  for (int i = cmin_; i <= cmax_; ++i) {
-    for (int iz = 0; iz <= i; ++iz) { 
-      for (int iy = 0; iy <= i - iz; ++iy) { 
-        const int ix = i - iy - iz;
-        if (ix >= 0) {
-          cmapping_[ix + cmax1_ * (iy + cmax1_ * iz)] = cnt;
-          ++cnt;
-        }
-      }
-    }
-  }
-  cnt = 0;
-  for (int j = amin_; j <= amax_; ++j) {
-    for (int jz = 0; jz <= j; ++jz) { 
-      for (int jy = 0; jy <= j - jz; ++jy) { 
-        const int jx = j - jy - jz;
-        if (jx >= 0){
-          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt; 
-          ++cnt;
-        }
-      }
-    }
-  }
   
   const unsigned int size_start = asize_ * csize_ * primsize_; 
   const unsigned int size_intermediate = asize_final * csize_ * contsize_;
@@ -310,7 +265,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   int ps = (int)primsize_; 
 
   // determine the quadrature grid
-  if (ang0 + ang1 + ang2 + ang3 == 0) { // in this case, roots not needed; avoids exp
+  if (basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() +
+      basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number() == 0) { // in this case, roots not needed; avoids exp
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
       if (T_[i] < 1.0e-8) { 
@@ -362,36 +318,6 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 ERIBatch::~ERIBatch() {
   stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
 
-}
-
-
-void RysInt::set_swap_info(const bool swap_bra_ket) {
-  // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()
-   || (basisinfo_[0]->angular_number() == 0 && basisinfo_[1]->angular_number() == 0)) {
-    swap(basisinfo_[0], basisinfo_[1]);
-    swap01_ = true;
-  } else {
-    swap01_ = false;
-  }
-  // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()
-   || (basisinfo_[2]->angular_number() == 0 && basisinfo_[3]->angular_number() == 0)) {
-    swap(basisinfo_[2], basisinfo_[3]);
-    swap23_ = true;
-  } else {
-    swap23_ = false;
-  }
-
-  if (swap_bra_ket) {
-    no_transpose_ = false;
-    if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
-      no_transpose_ = true;
-      swap(basisinfo_[0], basisinfo_[2]); 
-      swap(basisinfo_[1], basisinfo_[3]); 
-      swap(swap01_, swap23_); 
-    }
-  }
 }
 
 

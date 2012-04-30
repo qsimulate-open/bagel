@@ -33,6 +33,7 @@
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
+#include <tuple>
 #include <vector>
 #include <memory>
 
@@ -58,6 +59,7 @@ class RysInt {
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
     // over written in the constructor of a derived class 
     int deriv_rank_;
+    int tenno_;
 
     std::shared_ptr<VRRListBase> vrr_; 
     std::shared_ptr<HRRList> hrr_; 
@@ -81,6 +83,8 @@ class RysInt {
 
     // init functions
     void set_swap_info(const bool swap_bra_ket = false);
+    void set_prim_contsizes();
+    std::tuple<int, int, int, int> set_angular_info();
 
 
     // contraction
