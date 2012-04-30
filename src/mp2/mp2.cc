@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
+#include <src/mp2/f12int4.h>
 
 using namespace std;
 
@@ -103,7 +104,13 @@ void MP2::compute() {
   if (do_f12) {
     const double gamma = read_input<double>(idata_, "gamma", 1.5);
     cout << "  * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
+#if 0
     shared_ptr<F12Int> f12int(new F12Int(idata_, geom_, ref_, gamma, ncore_));
+#else
+    shared_ptr<F12Ref> f12ref(new F12Ref(geom_, ref_, ncore_, gamma));
+    f12ref->compute();
+#endif
+
   }
 }
 

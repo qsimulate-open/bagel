@@ -34,7 +34,7 @@
 
 using namespace std;
 
-#define USE_CANONICAL
+//#define USE_CANONICAL
 
 TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix1e(olp->geom())  {
 

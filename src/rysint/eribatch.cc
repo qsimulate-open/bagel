@@ -75,21 +75,9 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   data_ = stack->get(size_alloc_);
   data2_ = NULL;
 
-  screening_ = (int*)(stack->get(primsize_));
-
-  buff_ = stack->get((rank_ * 2 + 10) * primsize_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * primsize_)
-  double* pointer = buff_; 
-  p_ = pointer;     pointer += primsize_ * 3;
-  q_ = pointer;     pointer += primsize_ * 3;
-  xp_ = pointer;    pointer += primsize_;
-  xq_ = pointer;    pointer += primsize_;
-  coeff_ = pointer; pointer += primsize_;
-  T_ = pointer;     pointer += primsize_;
+  allocate_arrays(primsize_);
 
   compute_ssss(integral_thresh);
-
-  roots_ = pointer; pointer += rank_ * primsize_; 
-  weights_ = pointer;
 
   root_weight(primsize_);
 
@@ -97,8 +85,6 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
 
 
 ERIBatch::~ERIBatch() {
-  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
-
 }
 
 

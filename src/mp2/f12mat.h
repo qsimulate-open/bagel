@@ -32,18 +32,45 @@
 #include <memory>
 #include <algorithm>
 #include <src/util/f77.h>
+#include <stdexcept>
 
-class F12Mat {
+class F12Mat;
+
+class F12Ten {
   protected:
     std::unique_ptr<double[]> data_;
     const size_t nocc_;
+    const size_t dim0_;
+    const size_t dim1_;
+
+  public:   
+    F12Ten(const size_t i, const size_t d0, const size_t d1) : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[i*i*d0*d1]) {};
+    F12Ten(const size_t i, const size_t d0, const size_t d1, std::unique_ptr<double[]> b)
+     : nocc_(i), dim0_(d0), dim1_(d1), data_(std::move(b)) {};
+    F12Ten(const F12Ten& o) : nocc_(o.nocc_), dim0_(o.dim0_), dim1_(o.dim1_), data_(new double[o.size()]) {
+      std::copy(o.data(), o.data()+o.size(), data_.get());
+    };
+    ~F12Ten() {};
+
+    double* data() { return data_.get(); };
+    const double* data() const { return data_.get(); };
+
+    size_t nocc() const { return nocc_; };
+    size_t dim0() const { return dim0_; };
+    size_t dim1() const { return dim1_; };
+
+    size_t size() const { return nocc_*nocc_*dim0_*dim1_; };
+
+    std::shared_ptr<F12Mat> contract(const std::shared_ptr<const F12Ten> o) const;
+};
+
+class F12Mat : public F12Ten {
+  protected:
 
   public:
-    F12Mat(const size_t i) : data_(new double[i*i*i*i]), nocc_(i) { };
-    F12Mat(const size_t i, std::unique_ptr<double[]> b) : data_(std::move(b)), nocc_(i) { };
-    F12Mat(const F12Mat& o) : data_(new double[o.size()]), nocc_(o.nocc()) {
-      std::copy(o.data(), o.data()+o.size(), data_.get());
-    }
+    F12Mat(const size_t i) : F12Ten(i,i,i) { };
+    F12Mat(const size_t i, std::unique_ptr<double[]> b) : F12Ten(i, i, i, std::move(b)) { };
+    F12Mat(const F12Mat& o) : F12Ten(o) { };
     ~F12Mat() {};
 
     F12Mat operator*(const double a) const {
@@ -72,8 +99,6 @@ class F12Mat {
 
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
-    size_t nocc() const { return nocc_; };
-    size_t size() const { return nocc_*nocc_*nocc_*nocc_; };
 
     double& data(const size_t i) { return data_[i]; };
     const double& data(const size_t i) const { return data_[i]; };
@@ -92,13 +117,15 @@ class F12Mat {
 
     #define OUTSIZE 4
     void print() const {
+      std::cout << "++++++++" << std::endl;
       for (int i = 0; i != OUTSIZE; ++i) {
         for (int j = 0; j != OUTSIZE; ++j) {
           for (int k = 0; k != OUTSIZE; ++k) {
             for (int l = 0; l != OUTSIZE; ++l) {
-              std::cout << i << j << k << l << " " << std::setprecision(10) <<  data(l,k,j,i) << std::endl;
+              std::cout << std::fixed << std::setw(9) << std::setprecision(6) << data(l,k,j,i)  << " "; 
             }
           }
+          std::cout << std::endl;
         }
       }
     };

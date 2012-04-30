@@ -67,7 +67,9 @@ class Matrix1e {
     const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; };
 
     void symmetrize();
+    std::shared_ptr<Matrix1e> resize(std::shared_ptr<Geometry>, const int) const;
     void diagonalize(double*);
+    void svd(std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>);
     void inverse();
 
     Matrix1e operator*(const Matrix1e&) const;

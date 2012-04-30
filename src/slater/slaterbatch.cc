@@ -78,21 +78,9 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   data_ = stack->get(size_alloc_);
   data2_ = stack->get(size_alloc_);
 
-  buff_ = stack->get((rank_ * 2 + 12) * primsize_);
-  double* pointer = buff_; 
-  p_ = pointer;     pointer += primsize_ * 3;
-  q_ = pointer;     pointer += primsize_ * 3;
-  xp_ = pointer;    pointer += primsize_;
-  xq_ = pointer;    pointer += primsize_;
-  coeff_ = pointer; pointer += primsize_;
-  coeffy_ = pointer;pointer += primsize_;
-  T_ = pointer;     pointer += primsize_;
-  U_ = pointer;     pointer += primsize_;
+  allocate_arrays(primsize_);
 
   compute_ssss(integral_thresh);
-
-  roots_ = pointer; pointer += rank_ * primsize_; 
-  weights_ = pointer;
 
   // obtain quadrature grid
   root_weight(primsize_);
@@ -100,19 +88,21 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
 
 SlaterBatch::~SlaterBatch() {
-  stack->release(size_alloc_*2 + (rank_ * 2 + 12) * primsize_ + primsize_);
-
 }
 
 
 void SlaterBatch::root_weight(const int prim) {
   // determine the quadrature grid
   fill(weights_, weights_ + primsize_, 0.0);
+#if 0
   if (rank_ == 1)
     root1_direct();
   else if (rank_ == 2)
     root2_direct();
   else {
+#else
+  {
+#endif
     int ps = (int)primsize_; 
     struct SRootList root;
     root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 

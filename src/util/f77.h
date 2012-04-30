@@ -74,6 +74,8 @@ extern "C" {
              std::complex<double>* b, const int* ldb, std::complex<double>* work, const int* lwork, int* info);
  void zgesv_(const int* n, const int* nrhs, std::complex<double>* a, const int* lda, int* ipiv, 
              std::complex<double>* b, const int* ldb, int* info);
+ void dgesvd_(const char*, const char*, const int*, const int*, double*, const int*, const double*,
+     double*, const int*, double*, const int*,  double*, const int*, int*);
  void zgesvd_(const char*, const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
      std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*);
  void zgesdd_(const char*, const int*, const int*, std::complex<double>*, const int*, const double*,

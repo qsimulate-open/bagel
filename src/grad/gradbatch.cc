@@ -1,7 +1,7 @@
 //
 // Newint - Parallel electron correlation program.
 // Filename: gradbatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -81,21 +81,9 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
   data_ = stack->get(size_alloc_);
   data2_ = NULL;
 
-  screening_ = (int*)(stack->get(primsize_));
-
-  buff_ = stack->get((rank_ * 2 + 10) * primsize_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * primsize_)
-  double* pointer = buff_; 
-  p_ = pointer;     pointer += primsize_ * 3;
-  q_ = pointer;     pointer += primsize_ * 3;
-  xp_ = pointer;    pointer += primsize_;
-  xq_ = pointer;    pointer += primsize_;
-  coeff_ = pointer; pointer += primsize_;
-  T_ = pointer;     pointer += primsize_;
+  allocate_arrays(primsize_);
 
   compute_ssss(integral_thresh);
-
-  roots_ = pointer; pointer += rank_ * primsize_; 
-  weights_ = pointer;
 
   root_weight(primsize_);
 
@@ -103,8 +91,6 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
 
 
 GradBatch::~GradBatch() {
-  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
-
 }
 
 

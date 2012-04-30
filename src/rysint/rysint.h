@@ -90,6 +90,8 @@ class RysInt {
     // should be overloaded in Slater-type integrals
     virtual void root_weight(const int ps);
     virtual void compute_ssss(const double thr);
+    void allocate_arrays(const size_t);
+    size_t size_allocated_;
 
 
     // contraction

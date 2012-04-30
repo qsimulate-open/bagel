@@ -50,7 +50,9 @@ RysInt::RysInt(const vector<std::shared_ptr<Shell> > info)
 
 
 RysInt::~RysInt() {
-
+  // TODO this is a little inconsistent
+  // stack should be allocated in the constructor of this class
+  stack->release(size_allocated_ + size_alloc_*(tenno_+1));
 }
 
 
@@ -378,4 +380,26 @@ void RysInt::set_ab_cd() {
   CD_[0] = cx - dx; 
   CD_[1] = cy - dy; 
   CD_[2] = cz - dz; 
+}
+
+
+void RysInt::allocate_arrays(const size_t ps) {
+  size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
+
+  buff_ = stack->get(size_allocated_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * ps)
+  double* pointer = buff_; 
+  screening_ = (int*)pointer;
+                    pointer += ps;
+  p_ = pointer;     pointer += ps * 3;
+  q_ = pointer;     pointer += ps * 3;
+  xp_ = pointer;    pointer += ps;
+  xq_ = pointer;    pointer += ps;
+  coeff_ = pointer; pointer += ps;
+  T_ = pointer;     pointer += ps;
+  roots_ = pointer; pointer += rank_ * ps; 
+  weights_ = pointer; pointer += rank_ * ps;
+  if (tenno_) {
+    coeffy_ = pointer;pointer += ps;
+    U_ = pointer;     pointer += ps;
+  } 
 }

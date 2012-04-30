@@ -77,27 +77,16 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   fill(data_, data_ + size_alloc_, 0.0);
   assert(size_final_ <= size_alloc_);
 
-  buff_ = stack->get((rank_ * 2 + 6) * primsize_ * natom_);
-  double* pointer = buff_;
-  p_ = pointer;     pointer += primsize_ * natom_ * 3;
-  xp_ = pointer;    pointer += primsize_ * natom_;
-  coeff_ = pointer; pointer += primsize_ * natom_;
-  T_ = pointer;     pointer += primsize_ * natom_;
-
-  screening_ = (int*)(stack->get(primsize_ * natom_));
+  allocate_arrays(primsize_*natom_);
 
   compute_ssss(integral_thresh);
 
-  roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
-  weights_ = pointer;
-
-  root_weight(primsize_ * natom_);
+  root_weight(primsize_*natom_);
 
 }
 
 
 NAIBatch::~NAIBatch() {
-  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
 }
 
 
