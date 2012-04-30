@@ -33,7 +33,7 @@
 #include <src/scf/shell.h>
 #include <src/rysint/eribatch.h>
 
-class GradBatch : public ERIBatch {
+class GradBatch : public RysInt {
   protected:
     // if we only compute three-center integrals, we want to use this info
     // to reduce the number of differentiation
@@ -41,7 +41,7 @@ class GradBatch : public ERIBatch {
 
   public:
     GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true)
-      : ERIBatch(shells, max_density, dummy, dum) {
+      : RysInt(shells) {
       centers_ = 4;  
       for (auto i = shells.begin(); i != shells.end(); ++i)
         if ((*i)->dummy()) --centers_;

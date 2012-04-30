@@ -76,7 +76,7 @@ class SlaterBatch : public RysInt {
     void perform_SVRR();
     void perform_USVRR();
 
-    void root_weight();
+    void root_weight(const int primsize_);
     void root1_direct();
     void root2_direct();
 

@@ -88,8 +88,8 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   asize_ = 0; 
   for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
 
-  asize_intermediate_ = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4; 
-  asize_final_ = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_intermediate_;
+  const size_t asize_intermediate = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4; 
+  const size_t asize_final = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_intermediate;
 
   int cnt = 0;
   for (int j = amin_; j <= amax_; ++j) {
@@ -105,8 +105,8 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   }
 
   const unsigned int size_start = asize_ * primsize_; 
-  size_final_ = asize_final_ * contsize_;
-  const unsigned int size_intermediate = asize_intermediate_ * primsize_;
+  size_final_ = asize_final * contsize_;
+  const unsigned int size_intermediate = asize_intermediate * primsize_;
   size_alloc_ = max(max(size_start, size_intermediate), size_final_);
   data_ = stack->get(size_alloc_);
   fill(data_, data_ + size_alloc_, 0.0);
@@ -164,8 +164,9 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
   weights_ = pointer;
+  fill(weights_, weights_+primsize_ * natom_, 0.0);
 
-  root_weight();
+  root_weight(primsize_ * natom_);
 
 }
 
@@ -175,41 +176,3 @@ NAIBatch::~NAIBatch() {
 }
 
 
-void NAIBatch::root_weight() {
-  fill(weights_, weights_ + rank_ * primsize_ * natom_, 0.0);
-  int ps = (int)primsize_ * natom_; 
-
-  if (rank_ == 1) {
-    for (int i = 0; i != ps; ++i) {
-      const double t = T_[i];
-      const double sqrtt = ::sqrt(t);
-      weights_[i] = t < 1.0e-10 ? 1.0 : inline_erf(sqrtt) * SQRTPI2 / sqrtt;
-      roots_[i] = t < 1.0e-10 ? 0.5 : (weights_[i] - ::exp(-t)) / t * 0.5 / weights_[i];
-    }
-  } else if (rank_ == 2) {
-    eriroot2_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 3) {
-    eriroot3_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 4) {
-    eriroot4_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 5) {
-    eriroot5_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 6) {
-    eriroot6_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 7) {
-    eriroot7_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 8) {
-    eriroot8_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 9) {
-    eriroot9_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 10) {
-    eriroot10_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 11) {
-    eriroot11_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 12) {
-    eriroot12_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 13) {
-    eriroot13_(T_, roots_, weights_, &ps); 
-  }
-
-};

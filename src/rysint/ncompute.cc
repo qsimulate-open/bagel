@@ -138,8 +138,7 @@ void NAIBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr_->hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      const unsigned int array_size = contsize_ * asize_intermediate_;
-      ::memcpy(data_, bkup_, array_size * sizeof(double)); 
+      ::memcpy(data_, bkup_, size_alloc_ * sizeof(double)); 
     }
   }
 
@@ -160,7 +159,7 @@ void NAIBatch::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_->sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    ::memcpy(data_, bkup_, asize_final_ * contsize_ * sizeof(double)); 
+    ::memcpy(data_, bkup_, size_final_ * sizeof(double)); 
   }
 
   stack->release(size_alloc_ + rank_ * amax1_ * 3);

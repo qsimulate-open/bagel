@@ -35,10 +35,8 @@
 #include <algorithm>
 #include <stdexcept>
 #include <src/rysint/eribatch.h>
-#include <src/util/f77.h>
-#include <src/rysint/f77.h>
-#include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
+#include <src/rysint/macros.h>
 #include <src/stackmem.h>
 
 using namespace std;
@@ -255,7 +253,7 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   roots_ = pointer; pointer += rank_ * primsize_; 
   weights_ = pointer;
 
-  root_weight();
+  root_weight(primsize_);
 
   stack->release(prim2size_*prim3size_*4);
 
@@ -268,53 +266,3 @@ ERIBatch::~ERIBatch() {
 }
 
 
-void ERIBatch::root_weight() {
-  int ps = (int)primsize_; 
-  // determine the quadrature grid
-  if (basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() +
-      basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number() == 0) { // in this case, roots not needed; avoids exp
-    root0_direct();
-  } else if (rank_ == 1) {
-    eriroot1_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 2) {
-    eriroot2_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 3) {
-    eriroot3_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 4) {
-    eriroot4_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 5) {
-    eriroot5_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 6) {
-    eriroot6_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 7) {
-    eriroot7_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 8) {
-    eriroot8_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 9) {
-    eriroot9_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 10) {
-    eriroot10_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 11) {
-    eriroot11_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 12) {
-    eriroot12_(T_, roots_, weights_, &ps); 
-  } else if (rank_ == 13) {
-    eriroot13_(T_, roots_, weights_, &ps); 
-  } else {
-    throw logic_error("ERI beyond root=13 are not implemented yet");
-  }
-}
-
-
-void ERIBatch::root0_direct() {
-  for (int j = 0; j != screening_size_; ++j) {
-    int i = screening_[j];
-    if (T_[i] < 1.0e-8) { 
-      weights_[i] = 1.0;
-    } else {
-      const double sqrtt = ::sqrt(T_[i]);
-      const double erfsqt = inline_erf(sqrtt);
-      weights_[i] = erfsqt * SQRTPI2 / sqrtt;
-    }
-  }
-}

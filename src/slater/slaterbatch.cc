@@ -219,7 +219,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   weights_ = pointer;
 
   // obtain quadrature grid
-  root_weight();
+  root_weight(primsize_);
 }
 
 
@@ -229,7 +229,7 @@ SlaterBatch::~SlaterBatch() {
 }
 
 
-void SlaterBatch::root_weight() {
+void SlaterBatch::root_weight(const int prim) {
   // determine the quadrature grid
   fill(weights_, weights_ + primsize_, 0.0);
   if (rank_ == 1)

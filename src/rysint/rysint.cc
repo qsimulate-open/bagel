@@ -25,8 +25,11 @@
 
 
 #include <src/rysint/rysint.h>
+#include <src/rysint/inline.h>
 #include <cmath>
 #include <cassert>
+#include <src/rysint/f77.h>
+#define SQRTPI2 0.886226925452758013649083741671
 
 using namespace std;
 
@@ -72,6 +75,49 @@ void RysInt::set_swap_info(const bool swap_bra_ket) {
 }
 
 
+void RysInt::root_weight(const int ps) {
+
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (T_[i] < 1.0e-8) { 
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = ::sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * SQRTPI2 / sqrtt;
+      }
+    }
+  } else if (rank_ == 1) {
+    eriroot1_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 2) {
+    eriroot2_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 3) {
+    eriroot3_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 4) {
+    eriroot4_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 5) {
+    eriroot5_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 6) {
+    eriroot6_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 7) {
+    eriroot7_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 8) {
+    eriroot8_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 9) {
+    eriroot9_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 10) {
+    eriroot10_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 11) {
+    eriroot11_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 12) {
+    eriroot12_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 13) {
+    eriroot13_(T_, roots_, weights_, &ps); 
+  }
+};
+
+
 void RysInt::set_prim_contsizes() {
   prim0size_ = basisinfo_[0]->num_primitive();
   prim1size_ = basisinfo_[1]->num_primitive();
@@ -84,6 +130,7 @@ void RysInt::set_prim_contsizes() {
   cont3size_ = basisinfo_[3]->num_contracted();
   contsize_ = cont0size_ * cont1size_ * cont2size_ * cont3size_;
 }
+
 
 tuple<int,int,int,int> RysInt::set_angular_info() {
   const int ang0 = basisinfo_[0]->angular_number();
