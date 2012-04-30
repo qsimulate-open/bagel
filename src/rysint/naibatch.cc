@@ -179,15 +179,37 @@ void NAIBatch::root_weight() {
   fill(weights_, weights_ + rank_ * primsize_ * natom_, 0.0);
   int ps = (int)primsize_ * natom_; 
 
-  if(rank_ != 1) {
-    rysroot_(T_, roots_, weights_, &rank_, &ps);
-  } else {
+  if (rank_ == 1) {
     for (int i = 0; i != ps; ++i) {
       const double t = T_[i];
       const double sqrtt = ::sqrt(t);
       weights_[i] = t < 1.0e-10 ? 1.0 : inline_erf(sqrtt) * SQRTPI2 / sqrtt;
       roots_[i] = t < 1.0e-10 ? 0.5 : (weights_[i] - ::exp(-t)) / t * 0.5 / weights_[i];
     }
+  } else if (rank_ == 2) {
+    eriroot2_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 3) {
+    eriroot3_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 4) {
+    eriroot4_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 5) {
+    eriroot5_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 6) {
+    eriroot6_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 7) {
+    eriroot7_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 8) {
+    eriroot8_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 9) {
+    eriroot9_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 10) {
+    eriroot10_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 11) {
+    eriroot11_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 12) {
+    eriroot12_(T_, roots_, weights_, &ps); 
+  } else if (rank_ == 13) {
+    eriroot13_(T_, roots_, weights_, &ps); 
   }
 
 };
