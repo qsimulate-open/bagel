@@ -85,6 +85,8 @@ class RysInt {
     void set_swap_info(const bool swap_bra_ket = false);
     void set_prim_contsizes();
     std::tuple<int, int, int, int> set_angular_info();
+    // virtual init functions
+    virtual void root_weight() = 0;
 
 
     // contraction
@@ -94,6 +96,10 @@ class RysInt {
     void perform_contraction_new_inner(const int, const double*, const int, const int, double*,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
+    // contraction for 1-e integrals
+    void perform_contraction(const int, const double*, const int, const int, double*,
+                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
+                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
   public:
     RysInt(const std::vector<std::shared_ptr<Shell> >);

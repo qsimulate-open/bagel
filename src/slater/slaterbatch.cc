@@ -217,9 +217,21 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
   roots_ = pointer; pointer += rank_ * primsize_; 
   weights_ = pointer;
-  fill(weights_, weights_ + primsize_, 0.0);
 
+  // obtain quadrature grid
+  root_weight();
+}
+
+
+SlaterBatch::~SlaterBatch() {
+  stack->release(size_alloc_*2 + (rank_ * 2 + 12) * primsize_ + primsize_);
+
+}
+
+
+void SlaterBatch::root_weight() {
   // determine the quadrature grid
+  fill(weights_, weights_ + primsize_, 0.0);
   if (rank_ == 1)
     root1_direct();
   else if (rank_ == 2)
@@ -229,12 +241,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
     struct SRootList root;
     root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 
   }
-}
-
-
-SlaterBatch::~SlaterBatch() {
-  stack->release(size_alloc_*2 + (rank_ * 2 + 12) * primsize_ + primsize_);
-
 }
 
 

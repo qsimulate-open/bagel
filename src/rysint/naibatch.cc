@@ -164,8 +164,19 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
   weights_ = pointer;
-  fill(weights_, weights_ + rank_ * primsize_ * natom_, 0.0);
 
+  root_weight();
+
+}
+
+
+NAIBatch::~NAIBatch() {
+  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
+}
+
+
+void NAIBatch::root_weight() {
+  fill(weights_, weights_ + rank_ * primsize_ * natom_, 0.0);
   int ps = (int)primsize_ * natom_; 
 
   if(rank_ != 1) {
@@ -179,10 +190,4 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
     }
   }
 
-}
-
-
-NAIBatch::~NAIBatch() {
-  stack->release(size_alloc_ + (rank_ * 2 + 6) * primsize_ * natom_+primsize_ * natom_);
-}
-
+};

@@ -255,8 +255,21 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   roots_ = pointer; pointer += rank_ * primsize_; 
   weights_ = pointer;
 
-  int ps = (int)primsize_; 
+  root_weight();
 
+  stack->release(prim2size_*prim3size_*4);
+
+}
+
+
+ERIBatch::~ERIBatch() {
+  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
+
+}
+
+
+void ERIBatch::root_weight() {
+  int ps = (int)primsize_; 
   // determine the quadrature grid
   if (basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() +
       basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number() == 0) { // in this case, roots not needed; avoids exp
@@ -290,15 +303,6 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   } else {
     throw logic_error("ERI beyond root=13 are not implemented yet");
   }
-
-  stack->release(prim2size_*prim3size_*4);
-
-}
-
-
-ERIBatch::~ERIBatch() {
-  stack->release(size_alloc_+(rank_ * 2 + 11) * primsize_);
-
 }
 
 

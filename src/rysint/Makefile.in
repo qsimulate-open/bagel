@@ -134,20 +134,20 @@ am_librysint_a_OBJECTS = rysint.$(OBJEXT) eribatch.$(OBJEXT) \
 	_hrr_90_63.$(OBJEXT) _hrr_b0_65.$(OBJEXT) _hrr_40_22.$(OBJEXT) \
 	_hrr_50_41.$(OBJEXT) _hrr_60_51.$(OBJEXT) _hrr_70_61.$(OBJEXT) \
 	_hrr_80_62.$(OBJEXT) _hrr_a0_55.$(OBJEXT) _hrr_c0_66.$(OBJEXT) \
-	naibatch.$(OBJEXT) ncompute.$(OBJEXT) ncontraction.$(OBJEXT) \
-	carsphlist.$(OBJEXT) sort_sph.$(OBJEXT) _carsph_00.$(OBJEXT) \
-	_carsph_10.$(OBJEXT) _carsph_20.$(OBJEXT) _carsph_30.$(OBJEXT) \
-	_carsph_40.$(OBJEXT) _carsph_50.$(OBJEXT) _carsph_60.$(OBJEXT) \
-	_carsph_11.$(OBJEXT) _carsph_21.$(OBJEXT) _carsph_31.$(OBJEXT) \
-	_carsph_41.$(OBJEXT) _carsph_51.$(OBJEXT) _carsph_61.$(OBJEXT) \
-	_carsph_22.$(OBJEXT) _carsph_32.$(OBJEXT) _carsph_42.$(OBJEXT) \
-	_carsph_52.$(OBJEXT) _carsph_62.$(OBJEXT) _carsph_33.$(OBJEXT) \
-	_carsph_43.$(OBJEXT) _carsph_53.$(OBJEXT) _carsph_63.$(OBJEXT) \
-	_carsph_44.$(OBJEXT) _carsph_54.$(OBJEXT) _carsph_64.$(OBJEXT) \
-	_carsph_55.$(OBJEXT) _carsph_65.$(OBJEXT) _carsph_66.$(OBJEXT) \
-	_eriroot_1.$(OBJEXT) _eriroot_2.$(OBJEXT) _eriroot_3.$(OBJEXT) \
-	_eriroot_4.$(OBJEXT) _eriroot_5.$(OBJEXT) _eriroot_6.$(OBJEXT) \
-	_eriroot_7.$(OBJEXT) _eriroot_8.$(OBJEXT) _eriroot_9.$(OBJEXT) \
+	naibatch.$(OBJEXT) ncompute.$(OBJEXT) carsphlist.$(OBJEXT) \
+	sort_sph.$(OBJEXT) _carsph_00.$(OBJEXT) _carsph_10.$(OBJEXT) \
+	_carsph_20.$(OBJEXT) _carsph_30.$(OBJEXT) _carsph_40.$(OBJEXT) \
+	_carsph_50.$(OBJEXT) _carsph_60.$(OBJEXT) _carsph_11.$(OBJEXT) \
+	_carsph_21.$(OBJEXT) _carsph_31.$(OBJEXT) _carsph_41.$(OBJEXT) \
+	_carsph_51.$(OBJEXT) _carsph_61.$(OBJEXT) _carsph_22.$(OBJEXT) \
+	_carsph_32.$(OBJEXT) _carsph_42.$(OBJEXT) _carsph_52.$(OBJEXT) \
+	_carsph_62.$(OBJEXT) _carsph_33.$(OBJEXT) _carsph_43.$(OBJEXT) \
+	_carsph_53.$(OBJEXT) _carsph_63.$(OBJEXT) _carsph_44.$(OBJEXT) \
+	_carsph_54.$(OBJEXT) _carsph_64.$(OBJEXT) _carsph_55.$(OBJEXT) \
+	_carsph_65.$(OBJEXT) _carsph_66.$(OBJEXT) _eriroot_1.$(OBJEXT) \
+	_eriroot_2.$(OBJEXT) _eriroot_3.$(OBJEXT) _eriroot_4.$(OBJEXT) \
+	_eriroot_5.$(OBJEXT) _eriroot_6.$(OBJEXT) _eriroot_7.$(OBJEXT) \
+	_eriroot_8.$(OBJEXT) _eriroot_9.$(OBJEXT) \
 	_eriroot_10.$(OBJEXT) _eriroot_11.$(OBJEXT) \
 	_eriroot_12.$(OBJEXT) _eriroot_13.$(OBJEXT) \
 	erirootlist.$(OBJEXT)
@@ -273,7 +273,7 @@ int2d.cc rys.f vrrlist.cc hrrlist.cc sortlist.cc transpose.f scalelist.cc \
 _vrr_4000.cc _vrr_0040.cc \
 _vrr_0050.cc _vrr_0060.cc _vrr_0070.cc _vrr_0080.cc _vrr_0090.cc _vrr_00a0.cc _vrr_00b0.cc _vrr_00c0.cc _vrr_1030.cc _vrr_1040.cc _vrr_1050.cc _vrr_1060.cc _vrr_1070.cc _vrr_1080.cc _vrr_1090.cc _vrr_10a0.cc _vrr_10b0.cc _vrr_10c0.cc _vrr_2030.cc _vrr_2040.cc _vrr_2050.cc _vrr_2060.cc _vrr_2070.cc _vrr_2080.cc _vrr_2090.cc _vrr_20a0.cc _vrr_20b0.cc _vrr_20c0.cc _vrr_3010.cc _vrr_3020.cc _vrr_3030.cc _vrr_3040.cc _vrr_3050.cc _vrr_3060.cc _vrr_3070.cc _vrr_3080.cc _vrr_3090.cc _vrr_30a0.cc _vrr_30b0.cc _vrr_30c0.cc _vrr_4010.cc _vrr_4020.cc _vrr_4030.cc _vrr_4040.cc _vrr_4050.cc _vrr_4060.cc _vrr_4070.cc _vrr_4080.cc _vrr_4090.cc _vrr_40a0.cc _vrr_40b0.cc _vrr_40c0.cc _vrr_5000.cc _vrr_5010.cc _vrr_5020.cc _vrr_5030.cc _vrr_5040.cc _vrr_5050.cc _vrr_5060.cc _vrr_5070.cc _vrr_5080.cc _vrr_5090.cc _vrr_50a0.cc _vrr_50b0.cc _vrr_50c0.cc _vrr_6000.cc _vrr_6010.cc _vrr_6020.cc _vrr_6030.cc _vrr_6040.cc _vrr_6050.cc _vrr_6060.cc _vrr_6070.cc _vrr_6080.cc _vrr_6090.cc _vrr_60a0.cc _vrr_60b0.cc _vrr_60c0.cc _vrr_7000.cc _vrr_7010.cc _vrr_7020.cc _vrr_7030.cc _vrr_7040.cc _vrr_7050.cc _vrr_7060.cc _vrr_7070.cc _vrr_7080.cc _vrr_7090.cc _vrr_70a0.cc _vrr_70b0.cc _vrr_70c0.cc _vrr_8000.cc _vrr_8010.cc _vrr_8020.cc _vrr_8030.cc _vrr_8040.cc _vrr_8050.cc _vrr_8060.cc _vrr_8070.cc _vrr_8080.cc _vrr_8090.cc _vrr_80a0.cc _vrr_80b0.cc _vrr_80c0.cc _vrr_9000.cc _vrr_9010.cc _vrr_9020.cc _vrr_9030.cc _vrr_9040.cc _vrr_9050.cc _vrr_9060.cc _vrr_9070.cc _vrr_9080.cc _vrr_9090.cc _vrr_90a0.cc _vrr_90b0.cc _vrr_90c0.cc _vrr_a000.cc _vrr_a010.cc _vrr_a020.cc _vrr_a030.cc _vrr_a040.cc _vrr_a050.cc _vrr_a060.cc _vrr_a070.cc _vrr_a080.cc _vrr_a090.cc _vrr_a0a0.cc _vrr_a0b0.cc _vrr_a0c0.cc _vrr_b000.cc _vrr_b010.cc _vrr_b020.cc _vrr_b030.cc _vrr_b040.cc _vrr_b050.cc _vrr_b060.cc _vrr_b070.cc _vrr_b080.cc _vrr_b090.cc _vrr_b0a0.cc _vrr_b0b0.cc _vrr_b0c0.cc _vrr_c000.cc _vrr_c010.cc _vrr_c020.cc _vrr_c030.cc _vrr_c040.cc _vrr_c050.cc _vrr_c060.cc _vrr_c070.cc _vrr_c080.cc _vrr_c090.cc _vrr_c0a0.cc _vrr_c0b0.cc _vrr_c0c0.cc \
 _hrr_20_11.cc  _hrr_40_31.cc  _hrr_60_33.cc  _hrr_70_43.cc  _hrr_80_44.cc  _hrr_90_54.cc  _hrr_a0_64.cc _hrr_30_21.cc  _hrr_50_32.cc  _hrr_60_42.cc  _hrr_70_52.cc  _hrr_80_53.cc  _hrr_90_63.cc  _hrr_b0_65.cc _hrr_40_22.cc  _hrr_50_41.cc  _hrr_60_51.cc  _hrr_70_61.cc  _hrr_80_62.cc  _hrr_a0_55.cc  _hrr_c0_66.cc \
-naibatch.cc ncompute.cc ncontraction.cc  carsphlist.cc sort_sph.cc \
+naibatch.cc ncompute.cc carsphlist.cc sort_sph.cc \
 _carsph_00.cc _carsph_10.cc _carsph_20.cc _carsph_30.cc _carsph_40.cc _carsph_50.cc _carsph_60.cc _carsph_11.cc _carsph_21.cc _carsph_31.cc _carsph_41.cc _carsph_51.cc _carsph_61.cc _carsph_22.cc _carsph_32.cc _carsph_42.cc _carsph_52.cc _carsph_62.cc _carsph_33.cc _carsph_43.cc _carsph_53.cc _carsph_63.cc _carsph_44.cc _carsph_54.cc _carsph_64.cc _carsph_55.cc _carsph_65.cc _carsph_66.cc \
 _eriroot_1.f _eriroot_2.f _eriroot_3.f _eriroot_4.f _eriroot_5.f _eriroot_6.f _eriroot_7.f _eriroot_8.f _eriroot_9.f _eriroot_10.f _eriroot_11.f _eriroot_12.f _eriroot_13.f \
 erirootlist.cc
@@ -573,7 +573,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/int2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/naibatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncompute.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncontraction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rysint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scalelist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sort.Po@am__quote@

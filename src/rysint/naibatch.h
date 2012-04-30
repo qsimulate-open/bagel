@@ -60,9 +60,8 @@ class NAIBatch : public RysInt {
     const int L_;
     const double A_;
 
-    void perform_contraction(const int, const double*, const int, const int, double*,
-                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
-                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
+    // init function
+    void root_weight();
 
   public:
     
