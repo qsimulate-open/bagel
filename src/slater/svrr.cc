@@ -72,7 +72,7 @@ void SlaterBatch::perform_SVRR4() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 4, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 4, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[4];
     double wt[4];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -86,10 +86,10 @@ void SlaterBatch::perform_SVRR4() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 4, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 4, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 4, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 4, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -167,7 +167,7 @@ void SlaterBatch::perform_SVRR5() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 5, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 5, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[5];
     double wt[5];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -183,10 +183,10 @@ void SlaterBatch::perform_SVRR5() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 5, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 5, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 5, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 5, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -266,7 +266,7 @@ void SlaterBatch::perform_SVRR6() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 6, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 6, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[6];
     double wt[6];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -284,10 +284,10 @@ void SlaterBatch::perform_SVRR6() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 6, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 6, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 6, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 6, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -369,7 +369,7 @@ void SlaterBatch::perform_SVRR7() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 7, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 7, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[7];
     double wt[7];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -389,10 +389,10 @@ void SlaterBatch::perform_SVRR7() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 7, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 7, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 7, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 7, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -476,7 +476,7 @@ void SlaterBatch::perform_SVRR8() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 8, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 8, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[8];
     double wt[8];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -498,10 +498,10 @@ void SlaterBatch::perform_SVRR8() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 8, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 8, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 8, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 8, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -587,7 +587,7 @@ void SlaterBatch::perform_SVRR9() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 9, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 9, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[9];
     double wt[9];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -611,10 +611,10 @@ void SlaterBatch::perform_SVRR9() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 9, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 9, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 9, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 9, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -702,7 +702,7 @@ void SlaterBatch::perform_SVRR10() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 10, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 10, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[10];
     double wt[10];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -728,10 +728,10 @@ void SlaterBatch::perform_SVRR10() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 10, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 10, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 10, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 10, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -821,7 +821,7 @@ void SlaterBatch::perform_SVRR11() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 11, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 11, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[11];
     double wt[11];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -849,10 +849,10 @@ void SlaterBatch::perform_SVRR11() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 11, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 11, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 11, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 11, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -944,7 +944,7 @@ void SlaterBatch::perform_SVRR12() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 12, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 12, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[12];
     double wt[12];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -974,10 +974,10 @@ void SlaterBatch::perform_SVRR12() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 12, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 12, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 12, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 12, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -1071,7 +1071,7 @@ void SlaterBatch::perform_SVRR13() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], 13, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], 13, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[13];
     double wt[13];
     wt[0] = weights_[offset + 0] * roots_[offset + 0];
@@ -1103,10 +1103,10 @@ void SlaterBatch::perform_SVRR13() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], 13, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], 13, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], 13, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], 13, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -1204,7 +1204,7 @@ void SlaterBatch::perform_SVRR() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, vrr_->vrrfunc[svrr_index]);
     double womt[RYS_MAX];
     double wt[RYS_MAX];
     for (int i = 0; i != rank_; ++i) {
@@ -1214,10 +1214,10 @@ void SlaterBatch::perform_SVRR() {
     cix.scale_data(womt, coeff_[ii]);
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[svrr_index]);
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) { 
       for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -1302,7 +1302,7 @@ void SlaterBatch::perform_SVRR() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-    Int2D cix(dparamx, roots_+offset, rank_, worksize, workx, svrr_.svrrfunc[svrr_index]);
+    Int2D cix(dparamx, roots_+offset, rank_, worksize, workx, vrr_->vrrfunc[svrr_index]);
 
     for (int i = 0; i != rank_; ++i) {
       wt[i] = weights_[offset + i] * roots_[offset + i];
@@ -1311,10 +1311,10 @@ void SlaterBatch::perform_SVRR() {
     cix.scale_data(womt, coeff_[ii]);
 
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, roots_+offset, rank_, worksize, worky, svrr_.svrrfunc[svrr_index]);
+    Int2D ciy(dparamy, roots_+offset, rank_, worksize, worky, vrr_->vrrfunc[svrr_index]);
 
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, roots_+offset, rank_, worksize, workz, svrr_.svrrfunc[svrr_index]);
+    Int2D ciz(dparamz, roots_+offset, rank_, worksize, workz, vrr_->vrrfunc[svrr_index]);
 
     /// assembly process
 

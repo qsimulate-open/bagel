@@ -55,6 +55,8 @@ extern StackMem* stack;
 SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
 
+  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new SVRRList()));
+
   const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
   set_swap_info(false);

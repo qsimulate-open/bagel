@@ -32,8 +32,9 @@
 #define __slater_svrrlist_h
 
 #include <src/rysint/macros.h>
+#include <src/rysint/vrrlist.h>
  
-struct SVRRList {
+struct SVRRList : public VRRList {
   SVRRList();
   ~SVRRList();
 //
@@ -221,11 +222,6 @@ struct SVRRList {
   static void _svrr_c0b0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _svrr_c0c0(double*, const double*, const double*, const double*, const double*, const double*);
 
-  void svrrfunc_call(const unsigned int i, double* a, const double* b, const double* c, const double* d, const double* e, const double* f) {
-    return (svrrfunc[i])(a, b, c, d, e, f);
-  };
-
-  void (*svrrfunc[ANG_VRR_END * ANG_VRR_END])(double*, const double*, const double*, const double*, const double*, const double*);
 };
 
 #endif

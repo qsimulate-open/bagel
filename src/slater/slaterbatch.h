@@ -38,8 +38,6 @@
 class SlaterBatch : public RysInt {
 
   protected:
-    SVRRList svrr_;
-
     bool yukawa_;
     double gamma_;
 

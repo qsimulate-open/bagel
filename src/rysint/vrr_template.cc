@@ -1488,14 +1488,14 @@ void ERIBatch::perform_VRR3() {
       const double oxq2 = 0.5 / cxq;
       const double opq = 1.0 / (cxp + cxq);
       const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
-      Int2D cix(dparamx, &roots_[offset], 3, worksize, workx, vrr_.vrrfunc[vrr_index]);
+      Int2D cix(dparamx, &roots_[offset], 3, worksize, workx, vrr_->vrrfunc[vrr_index]);
       cix.scale_data(&weights_[offset], coeff_[ii]);
    
       const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-      Int2D ciy(dparamy, &roots_[offset], 3, worksize, worky, vrr_.vrrfunc[vrr_index]);
+      Int2D ciy(dparamy, &roots_[offset], 3, worksize, worky, vrr_->vrrfunc[vrr_index]);
    
       const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-      Int2D ciz(dparamz, &roots_[offset], 3, worksize, workz, vrr_.vrrfunc[vrr_index]);
+      Int2D ciz(dparamz, &roots_[offset], 3, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
       for (int iz = 0; iz <= cmax_; ++iz) { 
         for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
@@ -2683,16 +2683,16 @@ void ERIBatch::perform_VRR() {
     const int ii3 = 3 * ii;
     const double dparamx[8] = {p_[ii3], q_[ii3], basisinfo_[0]->position(0), basisinfo_[1]->position(0), 
                                                  basisinfo_[2]->position(0), basisinfo_[3]->position(0), xp_[ii], xq_[ii]};
-    Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, vrr_.vrrfunc[vrr_index]);
+    Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
   
     const double dparamy[8] = {p_[ii3 + 1], q_[ii3 + 1], basisinfo_[0]->position(1), basisinfo_[1]->position(1), 
                                                          basisinfo_[2]->position(1), basisinfo_[3]->position(1), xp_[ii], xq_[ii] };
-    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_.vrrfunc[vrr_index]);
+    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[vrr_index]);
   
     const double dparamz[8] = {p_[ii3 + 2], q_[ii3 + 2], basisinfo_[0]->position(2), basisinfo_[1]->position(2), 
                                                          basisinfo_[2]->position(2), basisinfo_[3]->position(2), xp_[ii], xq_[ii] };
-    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_.vrrfunc[vrr_index]);
+    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     /// assembly process
 

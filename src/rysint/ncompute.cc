@@ -136,7 +136,7 @@ void NAIBatch::compute() {
   {
     if (basisinfo_[1]->angular_number() != 0) { 
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      hrr_.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
+      hrr_->hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
       const unsigned int array_size = contsize_ * asize_intermediate_;
       ::memcpy(data_, bkup_, array_size * sizeof(double)); 
@@ -156,10 +156,10 @@ void NAIBatch::compute() {
   // data will be stored in data_: cont1b{ cont0a{ } }
   if (spherical_) {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(index, data_, bkup_, cont1size_, cont0size_, 1, swap01_);
+    sort_->sortfunc_call(index, data_, bkup_, cont1size_, cont0size_, 1, swap01_);
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
+    sort_->sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
     ::memcpy(data_, bkup_, asize_final_ * contsize_ * sizeof(double)); 
   }
 

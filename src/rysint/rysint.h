@@ -59,9 +59,9 @@ class RysInt {
     // over written in the constructor of a derived class 
     int deriv_rank_;
 
-    VRRList vrr_; 
-    HRRList hrr_; 
-    SortList sort_;
+    std::shared_ptr<VRRListBase> vrr_; 
+    std::shared_ptr<HRRList> hrr_; 
+    std::shared_ptr<SortList> sort_;
 
     bool spherical_;
 
@@ -83,7 +83,7 @@ class RysInt {
     void set_swap_info(const bool swap_bra_ket = false);
 
 
-    // HRR, contraction and sorting
+    // contraction
     void perform_contraction_new_outer(const int, const double*, const int, const int, double*,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);

@@ -32,8 +32,19 @@
 #define __rysint_vrrlist_h
 
 #include <src/rysint/macros.h>
+
+struct VRRListBase {
+  VRRListBase() {};
+  ~VRRListBase() {};
+
+  void vrrfunc_call(const unsigned int i, double* a, const double* b, const double* c, const double* d, const double* e, const double* f) {
+    return (vrrfunc[i])(a, b, c, d, e, f);
+  };
+
+  void (*vrrfunc[ANG_VRR_END * ANG_VRR_END])(double*, const double*, const double*, const double*, const double*, const double*);
+};
  
-struct VRRList {
+struct VRRList : public VRRListBase {
   VRRList();
   ~VRRList();
 //
@@ -221,11 +232,6 @@ struct VRRList {
   static void _vrr_c0b0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_c0c0(double*, const double*, const double*, const double*, const double*, const double*);
 
-  void vrrfunc_call(const unsigned int i, double* a, const double* b, const double* c, const double* d, const double* e, const double* f) {
-    return (vrrfunc[i])(a, b, c, d, e, f);
-  };
-
-  void (*vrrfunc[ANG_VRR_END * ANG_VRR_END])(double*, const double*, const double*, const double*, const double*, const double*);
 };
 
 #endif
