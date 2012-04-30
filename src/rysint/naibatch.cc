@@ -49,26 +49,20 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
  :  RysInt(_info), geom_(gm), L_(L), A_(A) {
 
   const double integral_thresh = PRIM_SCREEN_THRESH; 
-//const double integral_thresh = 0.0;
+
+  assert(_info.size() == 2);
+  shared_ptr<Shell> dum(new Shell(_info[0]->spherical()));
+  basisinfo_.push_back(dum); basisinfo_.push_back(dum);
 
   // natom_ 
   natom_ = geom_->natom() * (2 * L + 1);
 
   // cartesian to spherical tranformation has not yet been implemented.
   const bool spherical = false;
+  assert(_info[0]->spherical());
 
   // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
-    swap(basisinfo_[0], basisinfo_[1]);
-    swap01_ = true;
-  } else {
-    swap01_ = false;
-  }
-
-  const int ang0 = basisinfo_[0]->angular_number();
-  const int ang1 = basisinfo_[1]->angular_number();
-
-  rank_ = ceil(0.5 * (ang0 + ang1 + 1));
+  set_swap_info();
 
   AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
@@ -81,28 +75,8 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   cont1size_ = basisinfo_[1]->num_contracted();
   contsize_ = cont0size_ * cont1size_;
 
-  amax_ = ang0 + ang1;
-  amin_ = max(ang0, ang1);
-  amax1_ = amax_ + 1;
-
-  asize_ = 0; 
-  for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
-
-  const size_t asize_intermediate = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4; 
-  const size_t asize_final = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_intermediate;
-
-  int cnt = 0;
-  for (int j = amin_; j <= amax_; ++j) {
-    for (int jz = 0; jz <= j; ++jz) { 
-      for (int jy = 0; jy <= j - jz; ++jy) { 
-        const int jx = j - jy - jz;
-        if (jx >= 0){
-          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt; 
-          ++cnt;
-        }
-      }
-    }
-  }
+  int asize_intermediate, asize_final, dum0, dum1;
+  tie(asize_intermediate, dum0, asize_final, dum1) = set_angular_info();
 
   const unsigned int size_start = asize_ * primsize_; 
   size_final_ = asize_final * contsize_;
@@ -164,7 +138,6 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   roots_ = pointer; pointer += rank_ * primsize_ * natom_; 
   weights_ = pointer;
-  fill(weights_, weights_+primsize_ * natom_, 0.0);
 
   root_weight(primsize_ * natom_);
 
