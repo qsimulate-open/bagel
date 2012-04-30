@@ -62,15 +62,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 
   set_swap_info(false);
 
-  const int ang0 = basisinfo_[0]->angular_number();
-  const int ang1 = basisinfo_[1]->angular_number();
-  const int ang2 = basisinfo_[2]->angular_number();
-  const int ang3 = basisinfo_[3]->angular_number();
-
-  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3)) + 1; // for slater!!
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 2);
-
-
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
   const double az = basisinfo_[0]->position(2);
@@ -91,16 +82,8 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   CD_[1] = cy - dy; 
   CD_[2] = cz - dz; 
 
-  prim0size_ = basisinfo_[0]->num_primitive();
-  prim1size_ = basisinfo_[1]->num_primitive();
-  prim2size_ = basisinfo_[2]->num_primitive();
-  prim3size_ = basisinfo_[3]->num_primitive();
-  primsize_ = prim0size_ * prim1size_ * prim2size_ * prim3size_;
-  cont0size_ = basisinfo_[0]->num_contracted();
-  cont1size_ = basisinfo_[1]->num_contracted();
-  cont2size_ = basisinfo_[2]->num_contracted();
-  cont3size_ = basisinfo_[3]->num_contracted();
-  contsize_ = cont0size_ * cont1size_ * cont2size_ * cont3size_;
+  // set primsize_ and contsize_, as well as relevant members
+  set_prim_contsizes();
 
   // set members for angular information
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
@@ -143,19 +126,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   const double min_ab = minexp0 * minexp1;
   const double min_cd = minexp2 * minexp3;
 
-#if 0
-  // minimum distance between two lines (AB and CD)
-  const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1]; 
-  const double y_ab_cd = AB_[2] * CD_[0] - AB_[0] * CD_[2]; 
-  const double z_ab_cd = AB_[0] * CD_[1] - AB_[1] * CD_[0]; 
-  const double x_n_ac = x_ab_cd * (ax - cx);
-  const double y_n_ac = y_ab_cd * (ay - cy);
-  const double z_n_ac = z_ab_cd * (az - cz);
-  const double innerproduct = x_n_ac + y_n_ac + z_n_ac; 
-  const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
-  const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq; 
-#endif
-
   indexpair23_.reserve(prim2size_ * prim3size_);
 
   const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]; 
@@ -192,11 +162,6 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   screening_ = (int*)stack->get(primsize_);
   screening_size_ = 0;
 
-#if 0
-  const double cxq_min = minexp2 + minexp3; 
-  const double cxq_inv_min = 1.0 / cxq_min; 
-  const double min_Ecd = ::exp(-r23_sq * min_cd * cxq_inv_min);
-#endif
   const double twogamma = 2.0 / gamma_;
   for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
     for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
@@ -255,127 +220,11 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   fill(weights_, weights_ + primsize_, 0.0);
 
   // determine the quadrature grid
-  if (rank_ == 1) {
-    const double prefac = SQRTPI2 * 0.5;
-    for (int i = 0; i != screening_size_; ++i) {
-      const int ii = screening_[i];
-      const double ct = T_[ii];
-      const double cu = U_[ii];
-      const double sqct = ::sqrt(ct);
-      const double sqcu = ::sqrt(cu);
-      const double lambda = sqct + sqcu;
-      const double kappa = sqcu - sqct;
-      double gm1, g0;
-
-      if (fabs(ct) < 1.0e-10) {
-        const double experfc_lambda = experfc(lambda);
-        gm1 = SQRTPI2 / sqcu * experfc_lambda;
-        g0  = 1 - (cu + cu) * gm1;
-      } else {
-        if (kappa < 0.0) {
-          const double experfc_lambda = experfc(lambda);
-          const double erfc_kappa = experfcm(kappa);
-          const double factor1 = ::exp(-ct) * prefac;
-          const double factor2 = ::exp(kappa * kappa - ct) * prefac;
-          gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
-          g0 =  (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
-        } else {
-          const double experfc_lambda = experfc(lambda);
-          const double experfc_kappa  = experfc(kappa);
-          const double factor = ::exp(-ct) * prefac;
-          gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
-          g0 =  factor / sqct * (experfc_kappa - experfc_lambda);
-        }
-      }
-
-      if (gm1 > GM1_THRESH) {
-        weights_[ii] = gm1; 
-        roots_[ii] = g0 / gm1;
-      } else {
-        weights_[ii] = 0.0; 
-        roots_[ii] = 0.0;
-      }
-    }
-  } else if (rank_ == 2) {
-    const double prefac = SQRTPI2 * 0.5;
-    for (int i = 0; i != screening_size_; ++i) {
-      const int ii = screening_[i];
-      const double ct = T_[ii];
-      const double cu = U_[ii];
-      const double sqct = ::sqrt(ct);
-      const double sqcu = ::sqrt(cu);
-      const double lambda = sqct + sqcu;
-      const double kappa = sqcu - sqct;
-      double gm1, g0, g1, g2;
-
-      if (fabs(ct) < 1.0e-10) {
-        const double experfc_lambda = experfc(lambda);
-        const double cu2 = cu + cu;
-        gm1 = SQRTPI2 / sqcu * experfc_lambda;
-        g0  = 1.0 - cu2 * gm1;
-        g1  = (1.0 - cu2 * g0) * 0.33333333333333333;
-        g2  = (1.0 - cu2 * g1) * 0.2;
-      } else {
-        if (kappa < 0.0) {
-          const double experfc_lambda = experfc(lambda);
-          const double erfc_kappa = experfcm(kappa);
-          const double expct = ::exp(-ct);
-          const double factor1 = expct * prefac;
-          const double factor2 = ::exp(kappa * kappa - ct) * prefac;
-          gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
-          g0 = (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
-          const double cu2 = cu + cu;
-          const double one2t = 0.5 / ct;
-          g1 = (g0 + cu2 * gm1 - expct) * one2t;  
-          g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
-        } else {
-          const double experfc_lambda = experfc(lambda);
-          const double experfc_kappa  = experfc(kappa);
-          const double expct = ::exp(-ct);
-          const double factor = expct * prefac;
-          gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
-          g0 = factor / sqct * (experfc_kappa - experfc_lambda);
-          const double cu2 = cu + cu;
-          const double one2t = 0.5 / ct;
-          g1 = (g0 + cu2 * gm1 - expct) * one2t;  
-          g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
-        }
-      }
-
-      if (gm1 < GM1_THRESH) {
-        const int offset =  ii + ii;
-        roots_[offset] = 0.0;
-        roots_[offset + 1] = 0.0;
-        weights_[offset] = 0.0;
-        weights_[offset + 1] = 0.0;
-      } else {
-        double x[2];
-        double w[1];
-        x[0] = g0 / gm1;
-        const double sigma11 = g1 - x[0] * g0; 
-        const double sigma12 = g2 - x[0] * g1; 
-        x[1] = sigma12 / sigma11 - x[0]; 
-        w[0] = sigma11 / gm1;
-
-        const double dd = x[0] + x[1];
-        double g = x[0] - x[1];
-        g = ::sqrt(g * g + 4.0 * w[0]);
-        const double s = (dd - g) * 0.5;
-        const double c = (dd + g) * 0.5;
-        const double bb = w[0];
-        const double p = x[0] - s;
-        const double f = x[0] - c;
-        const double lp1 = bb / (p * p + bb);
-        const double lp2 = bb / (f * f + bb);
-
-        const int offset =  ii + ii;
-        roots_[offset] = s;
-        roots_[offset + 1] = c;
-        weights_[offset] = lp1 * gm1;
-        weights_[offset + 1] = lp2 * gm1;
-      }
-    }
-  } else {
+  if (rank_ == 1)
+    root1_direct();
+  else if (rank_ == 2)
+    root2_direct();
+  else {
     int ps = (int)primsize_; 
     struct SRootList root;
     root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 
@@ -400,3 +249,128 @@ SlaterBatch::~SlaterBatch() {
 
 }
 
+
+void SlaterBatch::root1_direct() {
+  const double prefac = SQRTPI2 * 0.5;
+  for (int i = 0; i != screening_size_; ++i) {
+    const int ii = screening_[i];
+    const double ct = T_[ii];
+    const double cu = U_[ii];
+    const double sqct = ::sqrt(ct);
+    const double sqcu = ::sqrt(cu);
+    const double lambda = sqct + sqcu;
+    const double kappa = sqcu - sqct;
+    double gm1, g0;
+
+    if (fabs(ct) < 1.0e-10) {
+      const double experfc_lambda = experfc(lambda);
+      gm1 = SQRTPI2 / sqcu * experfc_lambda;
+      g0  = 1 - (cu + cu) * gm1;
+    } else {
+      if (kappa < 0.0) {
+        const double experfc_lambda = experfc(lambda);
+        const double erfc_kappa = experfcm(kappa);
+        const double factor1 = ::exp(-ct) * prefac;
+        const double factor2 = ::exp(kappa * kappa - ct) * prefac;
+        gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
+        g0 =  (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
+      } else {
+        const double experfc_lambda = experfc(lambda);
+        const double experfc_kappa  = experfc(kappa);
+        const double factor = ::exp(-ct) * prefac;
+        gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
+        g0 =  factor / sqct * (experfc_kappa - experfc_lambda);
+      }
+    }
+
+    if (gm1 > GM1_THRESH) {
+      weights_[ii] = gm1; 
+      roots_[ii] = g0 / gm1;
+    } else {
+      weights_[ii] = 0.0; 
+      roots_[ii] = 0.0;
+    }
+  }
+}
+
+
+void SlaterBatch::root2_direct() {
+  const double prefac = SQRTPI2 * 0.5;
+  for (int i = 0; i != screening_size_; ++i) {
+    const int ii = screening_[i];
+    const double ct = T_[ii];
+    const double cu = U_[ii];
+    const double sqct = ::sqrt(ct);
+    const double sqcu = ::sqrt(cu);
+    const double lambda = sqct + sqcu;
+    const double kappa = sqcu - sqct;
+    double gm1, g0, g1, g2;
+
+    if (fabs(ct) < 1.0e-10) {
+      const double experfc_lambda = experfc(lambda);
+      const double cu2 = cu + cu;
+      gm1 = SQRTPI2 / sqcu * experfc_lambda;
+      g0  = 1.0 - cu2 * gm1;
+      g1  = (1.0 - cu2 * g0) * 0.33333333333333333;
+      g2  = (1.0 - cu2 * g1) * 0.2;
+    } else {
+      if (kappa < 0.0) {
+        const double experfc_lambda = experfc(lambda);
+        const double erfc_kappa = experfcm(kappa);
+        const double expct = ::exp(-ct);
+        const double factor1 = expct * prefac;
+        const double factor2 = ::exp(kappa * kappa - ct) * prefac;
+        gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
+        g0 = (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
+        const double cu2 = cu + cu;
+        const double one2t = 0.5 / ct;
+        g1 = (g0 + cu2 * gm1 - expct) * one2t;  
+        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
+      } else {
+        const double experfc_lambda = experfc(lambda);
+        const double experfc_kappa  = experfc(kappa);
+        const double expct = ::exp(-ct);
+        const double factor = expct * prefac;
+        gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
+        g0 = factor / sqct * (experfc_kappa - experfc_lambda);
+        const double cu2 = cu + cu;
+        const double one2t = 0.5 / ct;
+        g1 = (g0 + cu2 * gm1 - expct) * one2t;  
+        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
+      }
+    }
+
+    if (gm1 < GM1_THRESH) {
+      const int offset =  ii + ii;
+      roots_[offset] = 0.0;
+      roots_[offset + 1] = 0.0;
+      weights_[offset] = 0.0;
+      weights_[offset + 1] = 0.0;
+    } else {
+      double x[2];
+      double w[1];
+      x[0] = g0 / gm1;
+      const double sigma11 = g1 - x[0] * g0; 
+      const double sigma12 = g2 - x[0] * g1; 
+      x[1] = sigma12 / sigma11 - x[0]; 
+      w[0] = sigma11 / gm1;
+
+      const double dd = x[0] + x[1];
+      double g = x[0] - x[1];
+      g = ::sqrt(g * g + 4.0 * w[0]);
+      const double s = (dd - g) * 0.5;
+      const double c = (dd + g) * 0.5;
+      const double bb = w[0];
+      const double p = x[0] - s;
+      const double f = x[0] - c;
+      const double lp1 = bb / (p * p + bb);
+      const double lp2 = bb / (f * f + bb);
+
+      const int offset =  ii + ii;
+      roots_[offset] = s;
+      roots_[offset + 1] = c;
+      weights_[offset] = lp1 * gm1;
+      weights_[offset + 1] = lp2 * gm1;
+    }
+  }
+}

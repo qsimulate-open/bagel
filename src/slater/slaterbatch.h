@@ -76,6 +76,9 @@ class SlaterBatch : public RysInt {
     void perform_SVRR();
     void perform_USVRR();
 
+    void root1_direct();
+    void root2_direct();
+
   public:
     
     SlaterBatch(const std::vector<std::shared_ptr<Shell> >, const double, const double gamma, const bool doyukawa = false);

@@ -81,16 +81,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   CD_[1] = cy - dy; 
   CD_[2] = cz - dz; 
 
-  prim0size_ = basisinfo_[0]->num_primitive();
-  prim1size_ = basisinfo_[1]->num_primitive();
-  prim2size_ = basisinfo_[2]->num_primitive();
-  prim3size_ = basisinfo_[3]->num_primitive();
-  primsize_ = prim0size_ * prim1size_ * prim2size_ * prim3size_;
-  cont0size_ = basisinfo_[0]->num_contracted();
-  cont1size_ = basisinfo_[1]->num_contracted();
-  cont2size_ = basisinfo_[2]->num_contracted();
-  cont3size_ = basisinfo_[3]->num_contracted();
-  contsize_ = cont0size_ * cont1size_ * cont2size_ * cont3size_;
+  // set primsize_ and contsize_, as well as relevant members
+  set_prim_contsizes();
 
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
   tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
