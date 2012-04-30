@@ -50,7 +50,7 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
 
   const double integral_thresh = PRIM_SCREEN_THRESH; 
 
-  assert(_info.size() == 2);
+  if (_info.size() != 2) throw logic_error("NAIBatch should be called with shell pairs");
   shared_ptr<Shell> dum(new Shell(_info[0]->spherical()));
   basisinfo_.push_back(dum); basisinfo_.push_back(dum);
 
@@ -68,12 +68,7 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
 
-  prim0size_ = basisinfo_[0]->num_primitive();
-  prim1size_ = basisinfo_[1]->num_primitive();
-  primsize_ = prim0size_ * prim1size_;
-  cont0size_ = basisinfo_[0]->num_contracted();
-  cont1size_ = basisinfo_[1]->num_contracted();
-  contsize_ = cont0size_ * cont1size_;
+  set_prim_contsizes();
 
   int asize_intermediate, asize_final, dum0, dum1;
   tie(asize_intermediate, dum0, asize_final, dum1) = set_angular_info();
@@ -107,7 +102,7 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   const double sqrtpi = ::sqrt(PI);
   for (expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
     for (expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) { 
-      for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
+      for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
         double Z = static_cast<double>((*aiter)->atom_number()); 
         const double cxp = *expi0 + *expi1;
         xp_[index] = cxp;
