@@ -64,11 +64,8 @@ class SCF : public SCF_base {
        
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig());
-        RefCoeff new_coeff(new Coeff(*tildex_ * intermediate));
-        coeff_ = new_coeff;
-        RefMatrix1e guess_density(new Matrix1e(new_coeff->form_density_rhf()));
-    
-        aodensity_ = guess_density;
+        coeff_ = static_cast<std::shared_ptr<Coeff> >(new Coeff(*tildex_ * intermediate));
+        aodensity_ = static_cast<std::shared_ptr<Matrix1e> >(new Matrix1e(coeff_->form_density_rhf()));
       }
     
       if (highest_level) {
@@ -133,14 +130,12 @@ class SCF : public SCF_base {
           RefMatrix1e intermediate(new Matrix1e(*tildex_ % *tmp_fock * *tildex_));
           intermediate->diagonalize(eig());
           RefCoeff tmp_coeff(new Coeff(*tildex_**intermediate));
-          RefMatrix1e tmp(new Matrix1e(tmp_coeff->form_density_rhf())); 
-          diis_density = tmp;
+          diis_density = static_cast<std::shared_ptr<Matrix1e> >(new Matrix1e(tmp_coeff->form_density_rhf()));
         } else {
           diis_density = new_density;
         }
     
-        RefMatrix1e dtmp(new Matrix1e(*diis_density - *aodensity_));
-        densitychange = dtmp; 
+        densitychange = static_cast<std::shared_ptr<Matrix1e> >(new Matrix1e(*diis_density - *aodensity_));
         aodensity_ = diis_density;
       }
     };

@@ -57,8 +57,7 @@ void SuperCI::compute() {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && !diis) {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*ref_->coeff()));
-      shared_ptr<HPW_DIIS<Matrix1e> > d(new HPW_DIIS<Matrix1e>(5, tmp));
-      diis = d;
+      diis = static_cast<shared_ptr<HPW_DIIS<Matrix1e> > >(new HPW_DIIS<Matrix1e>(5, tmp));
     }
 
     // first perform CASCI to obtain RDMs
