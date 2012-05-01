@@ -171,39 +171,41 @@ void ERIBatch::compute() {
   c = csph;
   d = dsph;
 
-  double *data_now = swapped ? bkup_ : data_;
-  double *bkup_now = swapped ? data_ : bkup_;
+  // if swapped  bkup contains info 
+  // if !swapped  data contains info 
+  double *target_now = swapped ? bkup_ : data_;
+  double *source_now = swapped ? data_ : bkup_;
 
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   if (basisinfo_[2]->angular_number() != 0) {
     const int nloop = a * b * cont0size_ * cont1size_;
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-    sort_->sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
+    sort_->sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
   } else {
     swapped = (swapped ^ true);
   }
 
-  data_now = swapped ? bkup_ : data_;
-  bkup_now = swapped ? data_ : bkup_;
+  target_now = swapped ? data_ : bkup_;
+  source_now = swapped ? bkup_ : data_;
   // transpose batch
   // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
   if (!no_transpose_) {
     const int m = c * d * cont2size_ * cont3size_;
     const int n = a * b * cont0size_ * cont1size_; 
-    mytranspose_(data_now, &m, &n, bkup_now);
+    mytranspose_(source_now, &m, &n, target_now);
   } else {
     swapped = (swapped ^ true);
   } 
 
-  data_now = swapped ? bkup_ : data_;
-  bkup_now = swapped ? data_ : bkup_;
+  target_now = swapped ? bkup_ : data_;
+  source_now = swapped ? data_ : bkup_;
   // Sort cont01 and xyzab
   // data will be stored in data_: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
   if (basisinfo_[0]->angular_number() != 0) {
     const int nloop = c * d * cont2size_ * cont3size_;
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
+    sort_->sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
   } else {
     swapped = (swapped ^ true);
   }
