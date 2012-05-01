@@ -26,9 +26,12 @@
 
 #include <src/stackmem.h>
 #include <src/grad/gradbatch.h>
+#include <src/fci/comb.h>
+#include <src/util/f77.h>
 
 using namespace std;
 
+static const Comb comb;
 extern StackMem* stack;
 
 void GradBatch::compute() {
@@ -62,6 +65,14 @@ void GradBatch::compute() {
 }
 
 
+size_t GradBatch::m(int i, int a, int b, int c, int d) {
+  const int la = basisinfo_[0]->angular_number()+2;
+  const int lb = basisinfo_[1]->angular_number()+2;
+  const int lc = basisinfo_[2]->angular_number()+2;
+  const int ld = basisinfo_[3]->angular_number()+2;
+  return i+rank_*(a+la*(b+lb*(c+lc*d)));
+}
+
 void GradBatch::perform_VRR() {
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
@@ -72,7 +83,6 @@ void GradBatch::perform_VRR() {
   double* workz = worky + worksize; 
   double iyiz[rank_];
 
-  const int acsize = asize_ * csize_;
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
   const double az = basisinfo_[0]->position(2);
@@ -85,12 +95,73 @@ void GradBatch::perform_VRR() {
   const double dx = basisinfo_[3]->position(0);
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
+  // transformation matrix
+  const int a = basisinfo_[0]->angular_number();
+  const int b = basisinfo_[1]->angular_number();
+  const int c = basisinfo_[2]->angular_number();
+  const int d = basisinfo_[3]->angular_number();
+  assert(a+b+1 == amax_ && c+d+1 == cmax_); 
+
+  double* trans  = stack->get((amax_+1)*(a+2)*(b+2));
+  double* trans2 = stack->get((cmax_+1)*(c+2)*(d+2));
+  fill(trans,  trans +(amax_+1)*(a+2)*(b+2), 0.0);
+  fill(trans2, trans2+(cmax_+1)*(c+2)*(d+2), 0.0);
+  double* tmp = trans;
+  // for usual integrals
+  for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
+    for (int ia = 0; ia <= a+1; ++ia, ++k) {
+      if (ia == a+1 && ib == b+1) continue;
+      for (int i = ia; i <= ia+ib; ++i) {
+        trans[i + (amax_+1)*k] += comb.c(ib, ia+ib-i);
+      }
+    }
+  }
+  for (int id = 0, k = 0; id <= d+1; ++id) { 
+    for (int ic = 0; ic <= c+1; ++ic, ++k) {
+      if (ic == c+1 && id == d+1) continue;
+      for (int i = ic; i <= ic+id; ++i) {
+        trans2[i + (cmax_+1)*k] += comb.c(id, ic+id-i);
+      }
+    }
+  }
+  double* intermediate = stack->get(((b+2)*(a+2)-1)*(cmax_+1)*rank_);
+  double* final_x  = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_xa = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_xb = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_xc = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_xd = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_y  = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_ya = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_yb = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_yc = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_yd = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_z  = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_za = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_zb = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_zc = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+  double* final_zd = stack->get((b+2)*(a+2)*(c+2)*(d+2)*rank_);
+
+  double* expo = exponents_.get();
+  assert((size_alloc_/12)*12 == size_alloc_);
+  const int acsize = size_alloc_ / 12 / primsize_;
+
+  for (int j = 0; j != screening_size_; ++j, expo+=4) {
     const int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
-    double* current_data = &data_[data_offset_ii];
+    double* current_data0 = &data_[data_offset_ii];
+    double* current_data1 = &data_[data_offset_ii + acsize];
+    double* current_data2 = &data_[data_offset_ii + acsize*2];
+    double* current_data3 = &data_[data_offset_ii + acsize*3];
+    double* current_data4 = &data_[data_offset_ii + acsize*4];
+    double* current_data5 = &data_[data_offset_ii + acsize*5];
+    double* current_data6 = &data_[data_offset_ii + acsize*6];
+    double* current_data7 = &data_[data_offset_ii + acsize*7];
+    double* current_data8 = &data_[data_offset_ii + acsize*8];
+    double* current_data9 = &data_[data_offset_ii + acsize*9];
+    double* current_data10 = &data_[data_offset_ii + acsize*10];
+    double* current_data11 = &data_[data_offset_ii + acsize*11];
 
     const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
@@ -101,42 +172,133 @@ void GradBatch::perform_VRR() {
     const double dparamx[11] = {p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq};
     Int2D cix(dparamx, &roots_[offset], rank_, worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
- 
-    const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[vrr_index]);
- 
-    const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
-    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
-    for (int iz = 0; iz <= cmax_; ++iz) { 
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) { 
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) { 
-          const int offsetz = rank_ * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) { 
-            const int offsety = rank_ * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != rank_; ++i)
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) { 
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) { 
-                const int offsetx = rank_ * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
+    // first (0:a+b, 0, 0:c+d, 0)-> (0:a+1, 0:b+1, 0:c+1, 0:d+1) (except a+1,b+1)
+    for (int i = 0; i <= cmax_; ++i)
+      dgemm_("N", "N", rank_, (b+2)*(a+2), amax_+1, 1.0, workx+i*rank_*(amax_+1), rank_, trans, amax_+1, 0.0, intermediate+i*rank_*(b+2)*(a+2), rank_);
+    dgemm_("N", "N", rank_*(b+2)*(a+2), (c+2)*(d+2), cmax_+1, 1.0, intermediate, rank_*(b+2)*(a+2), trans2, cmax_+1, 0.0, final_x, rank_*(b+2)*(a+2));
 
-                current_data[ijposition] = 0.0;
-                for (int i = 0; i != rank_; ++i)
-                  current_data[ijposition + i] += iyiz[i] * workx[offsetx + i]; 
-              }
+    for (int id = 0; id <= d; ++id) {
+      for (int ic = 0; ic <= c; ++ic) {
+        for (int ib = 0; ib <= b; ++ib) {
+          for (int ia = 0; ia <= a; ++ia) {
+            for (int r = 0; r != rank_; ++r) {
+              final_xa[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_x[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_x[m(r,ia-1,ib,ic,id)]);
+              final_xb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_x[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_x[m(r,ia,ib-1,ic,id)]);
+              final_xc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_x[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_x[m(r,ia,ib,ic-1,id)]);
+              final_xd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_x[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_x[m(r,ia,ib,ic,id-1)]);
             }
           }
         }
       }
     }
+ 
+    const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[vrr_index]);
+
+    for (int i = 0; i <= cmax_; ++i)
+      dgemm_("N", "N", rank_, (b+2)*(a+2), amax_+1, 1.0, worky+i*rank_*(amax_+1), rank_, trans, amax_+1, 0.0, intermediate+i*rank_*(b+2)*(a+2), rank_);
+    dgemm_("N", "N", rank_*(b+2)*(a+2), (c+2)*(d+2), cmax_+1, 1.0, intermediate, rank_*(b+2)*(a+2), trans2, cmax_+1, 0.0, final_y, rank_*(b+2)*(a+2));
+
+    for (int id = 0; id <= d; ++id) {
+      for (int ic = 0; ic <= c; ++ic) {
+        for (int ib = 0; ib <= b; ++ib) {
+          for (int ia = 0; ia <= a; ++ia) {
+            for (int r = 0; r != rank_; ++r) {
+              final_ya[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_y[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_y[m(r,ia-1,ib,ic,id)]);
+              final_yb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_y[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_y[m(r,ia,ib-1,ic,id)]);
+              final_yc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_y[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_y[m(r,ia,ib,ic-1,id)]);
+              final_yd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_y[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_y[m(r,ia,ib,ic,id-1)]);
+            }
+          }
+        }
+      }
+    }
+ 
+    const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
+    Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[vrr_index]);
+
+    for (int i = 0; i <= cmax_; ++i)
+      dgemm_("N", "N", rank_, (b+2)*(a+2), amax_+1, 1.0, workz+i*rank_*(amax_+1), rank_, trans, amax_+1, 0.0, intermediate+i*rank_*(b+2)*(a+2), rank_);
+    dgemm_("N", "N", rank_*(b+2)*(a+2), (c+2)*(d+2), cmax_+1, 1.0, intermediate, rank_*(b+2)*(a+2), trans2, cmax_+1, 0.0, final_z, rank_*(b+2)*(a+2));
+
+    for (int id = 0; id <= d; ++id) {
+      for (int ic = 0; ic <= c; ++ic) {
+        for (int ib = 0; ib <= b; ++ib) {
+          for (int ia = 0; ia <= a; ++ia) {
+            for (int r = 0; r != rank_; ++r) {
+              final_za[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_z[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_z[m(r,ia-1,ib,ic,id)]);
+              final_zb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_z[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_z[m(r,ia,ib-1,ic,id)]);
+              final_zc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_z[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_z[m(r,ia,ib,ic-1,id)]);
+              final_zd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_z[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_z[m(r,ia,ib,ic,id-1)]);
+            }
+          }
+        }
+      }
+    }
+ 
+#if 1
+    for (int iax = 0; iax <= a; ++iax) { 
+    for (int iay = 0; iay <= a - iax; ++iay) { 
+    const int iaz = a - iax - iay; 
+    for (int ibx = 0; ibx <= b; ++ibx) { 
+    for (int iby = 0; iby <= b - ibx; ++iby) { 
+    const int ibz = b - ibx - iby; 
+    for (int icx = 0; icx <= c; ++icx) { 
+    for (int icy = 0; icy <= c - icx; ++icy) { 
+    const int icz = c - icx - icy; 
+    for (int idx = 0; idx <= d; ++idx) { 
+    for (int idy = 0; idy <= d - idx; ++idy) { 
+    const int idz = d - idx - idy; 
+
+    *current_data0 = 0.0;
+    *current_data1 = 0.0;
+    *current_data2 = 0.0;
+    *current_data3 = 0.0;
+    *current_data4 = 0.0;
+    *current_data5 = 0.0;
+    *current_data6 = 0.0;
+    *current_data7 = 0.0;
+    *current_data8 = 0.0;
+    *current_data9 = 0.0;
+    *current_data10 = 0.0;
+    *current_data11 = 0.0;
+    for (int i = 0; i != rank_; ++i) {
+      *current_data0 += final_xa[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data1 += final_x[m(i, iax, ibx, icx, idx)] * final_ya[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data2 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_za[m(i, iaz, ibz, icz, idz)];
+      *current_data3 += final_xb[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data4 += final_x[m(i, iax, ibx, icx, idx)] * final_yb[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data5 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_zb[m(i, iaz, ibz, icz, idz)];
+      *current_data6 += final_xc[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data7 += final_x[m(i, iax, ibx, icx, idx)] * final_yc[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data8 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_zc[m(i, iaz, ibz, icz, idz)];
+      *current_data9 += final_xd[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data10+= final_x[m(i, iax, ibx, icx, idx)] * final_yd[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+      *current_data11+= final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_zd[m(i, iaz, ibz, icz, idz)];
+    }
+    ++current_data0;
+    ++current_data1;
+    ++current_data2;
+    ++current_data3;
+    ++current_data4;
+    ++current_data5;
+    ++current_data6;
+    ++current_data7;
+    ++current_data8;
+    ++current_data9;
+    ++current_data10;
+    ++current_data11;
+
+    }} }}
+    }} }}
+#endif
 
   }
 
+  stack->release((b+2)*(a+2)*(c+2)*(d+2)*rank_ * 15);
+  stack->release(((b+2)*(a+2)-1)*(cmax_+1)*rank_);
+  stack->release((cmax_+1)*(c+2)*(d+2));
+  stack->release((amax_+1)*(b+2)*(a+2));
   stack->release(worksize*3);
 }

@@ -29,17 +29,18 @@
 #include <vector>
 #include <map>
 #include <src/rysint/scalelist.h>
+#include <src/rysint/macros.h>
 
 class Int2D {
 
   protected:
 
     /// for recursion
-    double C00_[20]; 
-    double D00_[20]; 
-    double B00_[20]; 
-    double B10_[20];
-    double B01_[20];
+    double C00_[RYS_MAX]; 
+    double D00_[RYS_MAX]; 
+    double B00_[RYS_MAX]; 
+    double B10_[RYS_MAX];
+    double B01_[RYS_MAX];
 
     // two index intermediate
     int rank_;

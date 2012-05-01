@@ -78,7 +78,23 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
 
   root_weight(primsize_);
 
+  set_exponents();
 }
+
+
+void GradBatch::set_exponents() {
+  exponents_ = static_cast<unique_ptr<double[]> >(new double[primsize_*4]);
+  double* tmp = exponents_.get();
+  for (auto i0 = basisinfo_[0]->exponents().begin(); i0 != basisinfo_[0]->exponents().begin(); ++i0) {
+  for (auto i1 = basisinfo_[1]->exponents().begin(); i1 != basisinfo_[1]->exponents().begin(); ++i1) {
+  for (auto i2 = basisinfo_[2]->exponents().begin(); i2 != basisinfo_[2]->exponents().begin(); ++i2) {
+  for (auto i3 = basisinfo_[3]->exponents().begin(); i3 != basisinfo_[3]->exponents().begin(); ++i3, tmp += 4) {
+    tmp[0] = *i0;
+    tmp[1] = *i1;
+    tmp[2] = *i2;
+    tmp[3] = *i3;
+  } } } }
+};
 
 
 GradBatch::~GradBatch() {

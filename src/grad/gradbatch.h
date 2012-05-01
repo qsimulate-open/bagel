@@ -56,6 +56,10 @@ class GradBatch : public RysInt {
     void perform_VRR13();
     void perform_VRR();
 
+    void set_exponents();
+    std::unique_ptr<double[]> exponents_;
+    size_t m(const int, const int, const int, const int, const int);
+
   public:
     GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~GradBatch();
