@@ -47,13 +47,11 @@ struct VRRListBase {
 struct VRRList : public VRRListBase {
   VRRList();
   ~VRRList();
-//
-// commented-out lines are hand-written, which is implimented in vrr_template.cc 
-//
-//static void _vrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_0010(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_0020(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_0030(double*, const double*, const double*, const double*, const double*, const double*);
+  
+  static void _vrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_0010(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_0020(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_0030(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_0040(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_0050(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_0060(double*, const double*, const double*, const double*, const double*, const double*);
@@ -64,9 +62,9 @@ struct VRRList : public VRRListBase {
   static void _vrr_00b0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_00c0(double*, const double*, const double*, const double*, const double*, const double*);
 
-//static void _vrr_1000(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_1010(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_1020(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_1000(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_1010(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_1020(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_1030(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_1040(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_1050(double*, const double*, const double*, const double*, const double*, const double*);
@@ -78,9 +76,9 @@ struct VRRList : public VRRListBase {
   static void _vrr_10b0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_10c0(double*, const double*, const double*, const double*, const double*, const double*);
 
-//static void _vrr_2000(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_2010(double*, const double*, const double*, const double*, const double*, const double*);
-//static void _vrr_2020(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_2000(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_2010(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_2020(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_2030(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_2040(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_2050(double*, const double*, const double*, const double*, const double*, const double*);
@@ -92,7 +90,7 @@ struct VRRList : public VRRListBase {
   static void _vrr_20b0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_20c0(double*, const double*, const double*, const double*, const double*, const double*);
 
-//static void _vrr_3000(double*, const double*, const double*, const double*, const double*, const double*);
+  static void _vrr_3000(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_3010(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_3020(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_3030(double*, const double*, const double*, const double*, const double*, const double*);

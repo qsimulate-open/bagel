@@ -27,10 +27,10 @@
 #include <src/rysint/vrrlist.h>
 
 VRRList::VRRList() {
-//    vrrfunc[                  0] = &_vrr_0000;
-//    vrrfunc[                  1] = &_vrr_0010;
-//    vrrfunc[                  2] = &_vrr_0020;
-//    vrrfunc[                  3] = &_vrr_0030;
+      vrrfunc[                  0] = &_vrr_0000;
+      vrrfunc[                  1] = &_vrr_0010;
+      vrrfunc[                  2] = &_vrr_0020;
+      vrrfunc[                  3] = &_vrr_0030;
       vrrfunc[                  4] = &_vrr_0040;
       vrrfunc[                  5] = &_vrr_0050;
       vrrfunc[                  6] = &_vrr_0060;
@@ -40,9 +40,9 @@ VRRList::VRRList() {
       vrrfunc[                 10] = &_vrr_00a0;
       vrrfunc[                 11] = &_vrr_00b0;
       vrrfunc[                 12] = &_vrr_00c0;
-//    vrrfunc[ANG_VRR_END        ] = &_vrr_1000;
-//    vrrfunc[ANG_VRR_END     + 1] = &_vrr_1010;
-//    vrrfunc[ANG_VRR_END     + 2] = &_vrr_1020;
+      vrrfunc[ANG_VRR_END        ] = &_vrr_1000;
+      vrrfunc[ANG_VRR_END     + 1] = &_vrr_1010;
+      vrrfunc[ANG_VRR_END     + 2] = &_vrr_1020;
       vrrfunc[ANG_VRR_END     + 3] = &_vrr_1030;
       vrrfunc[ANG_VRR_END     + 4] = &_vrr_1040;
       vrrfunc[ANG_VRR_END     + 5] = &_vrr_1050;
@@ -53,9 +53,9 @@ VRRList::VRRList() {
       vrrfunc[ANG_VRR_END     +10] = &_vrr_10a0;
       vrrfunc[ANG_VRR_END     +11] = &_vrr_10b0;
       vrrfunc[ANG_VRR_END     +12] = &_vrr_10c0;
-//    vrrfunc[ANG_VRR_END * 2    ] = &_vrr_2000;
-//    vrrfunc[ANG_VRR_END * 2 + 1] = &_vrr_2010;
-//    vrrfunc[ANG_VRR_END * 2 + 2] = &_vrr_2020;
+      vrrfunc[ANG_VRR_END * 2    ] = &_vrr_2000;
+      vrrfunc[ANG_VRR_END * 2 + 1] = &_vrr_2010;
+      vrrfunc[ANG_VRR_END * 2 + 2] = &_vrr_2020;
       vrrfunc[ANG_VRR_END * 2 + 3] = &_vrr_2030;
       vrrfunc[ANG_VRR_END * 2 + 4] = &_vrr_2040;
       vrrfunc[ANG_VRR_END * 2 + 5] = &_vrr_2050;
@@ -66,7 +66,7 @@ VRRList::VRRList() {
       vrrfunc[ANG_VRR_END * 2 +10] = &_vrr_20a0;
       vrrfunc[ANG_VRR_END * 2 +11] = &_vrr_20b0;
       vrrfunc[ANG_VRR_END * 2 +12] = &_vrr_20c0;
-//    vrrfunc[ANG_VRR_END * 3    ] = &_vrr_3000;
+      vrrfunc[ANG_VRR_END * 3    ] = &_vrr_3000;
       vrrfunc[ANG_VRR_END * 3 + 1] = &_vrr_3010;
       vrrfunc[ANG_VRR_END * 3 + 2] = &_vrr_3020;
       vrrfunc[ANG_VRR_END * 3 + 3] = &_vrr_3030;
