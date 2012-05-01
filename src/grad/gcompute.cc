@@ -238,18 +238,20 @@ void GradBatch::perform_VRR() {
     }
  
 #if 1
-    for (int iax = 0; iax <= a; ++iax) { 
-    for (int iay = 0; iay <= a - iax; ++iay) { 
-    const int iaz = a - iax - iay; 
-    for (int ibx = 0; ibx <= b; ++ibx) { 
-    for (int iby = 0; iby <= b - ibx; ++iby) { 
-    const int ibz = b - ibx - iby; 
+    // CAUTION!
+    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
     for (int icx = 0; icx <= c; ++icx) { 
     for (int icy = 0; icy <= c - icx; ++icy) { 
     const int icz = c - icx - icy; 
     for (int idx = 0; idx <= d; ++idx) { 
     for (int idy = 0; idy <= d - idx; ++idy) { 
     const int idz = d - idx - idy; 
+    for (int iax = 0; iax <= a; ++iax) { 
+    for (int iay = 0; iay <= a - iax; ++iay) { 
+    const int iaz = a - iax - iay; 
+    for (int ibx = 0; ibx <= b; ++ibx) { 
+    for (int iby = 0; iby <= b - ibx; ++iby) { 
+    const int ibz = b - ibx - iby; 
 
     *current_data0 = 0.0;
     *current_data1 = 0.0;
