@@ -49,7 +49,7 @@ extern StackMem* stack;
 
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
 :  RysInt(_info) { 
-  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new VRRList()));
+  vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new VRRList()));
 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
 

@@ -50,7 +50,7 @@ extern StackMem* stack;
 GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, const double dummy, const bool dum) :  RysInt(shells) { 
   centers_ = 4;  
   for (auto i = shells.begin(); i != shells.end(); ++i) if ((*i)->dummy()) --centers_;
-  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new VRRList()));
+  vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new VRRList()));
 
   // a member variable in RysInt <- ERIBatch <- GradBatch.
   deriv_rank_ = 1;
@@ -83,7 +83,7 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
 
 
 void GradBatch::set_exponents() {
-  exponents_ = static_cast<unique_ptr<double[]> >(new double[primsize_*4]);
+  exponents_ = unique_ptr<double[]>(new double[primsize_*4]);
   double* tmp = exponents_.get();
   for (auto i0 = basisinfo_[0]->exponents().begin(); i0 != basisinfo_[0]->exponents().begin(); ++i0) {
   for (auto i1 = basisinfo_[1]->exponents().begin(); i1 != basisinfo_[1]->exponents().begin(); ++i1) {

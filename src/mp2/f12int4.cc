@@ -267,7 +267,7 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
   tmp->svd(U, V); 
 
   shared_ptr<Matrix1e> Ured = U->slice(tmdim, tndim); //(new Matrix1e(U, make_pair(tmdim, tndim)));
-  shared_ptr<Coeff> coeff_cabs = static_cast<shared_ptr<Coeff> >(new Coeff(*ri_coeff * *Ured));
+  shared_ptr<Coeff> coeff_cabs = shared_ptr<Coeff>(new Coeff(*ri_coeff * *Ured));
 
   shared_ptr<Matrix1e> coeff_entire = ri_reshaped->merge(coeff_cabs);
 

@@ -106,7 +106,7 @@ void CASSCF::common_init() {
     for (auto iter = fullci_data.equal_range("norb").first; iter != fullci_data.equal_range("norb").second; ++iter)
       fullci_data.erase(iter);
     fullci_data.insert(make_pair("norb", boost::lexical_cast<string>(nact_)));
-    fci_ = static_cast<shared_ptr<FCI> >(new FCI(fullci_data, geom_, ref_));
+    fci_ = shared_ptr<FCI>(new FCI(fullci_data, geom_, ref_));
   }
   resume_stdcout();
 
@@ -170,7 +170,7 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
   // transform into AO basis
   const shared_ptr<Coeff> coeff = ref_->coeff();
   // TODO make sure when overlap is truncated
-  return static_cast<shared_ptr<Matrix1e> >(new Matrix1e(*coeff * *mo_rdm1 ^ *coeff));
+  return shared_ptr<Matrix1e>(new Matrix1e(*coeff * *mo_rdm1 ^ *coeff));
 }
 
 
@@ -191,24 +191,24 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
       shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
       shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
       dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
-      finact = static_cast<shared_ptr<Matrix1e> >(new Matrix1e(*coeff % *f_inactao * *coeff));
+      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_inactao * *coeff));
 
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
       shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, ref_->schwarz()));
       shared_ptr<Matrix1e> fact(new Matrix1e(*coeff % (*fact_ao-*hcore_) * *coeff));
-      f = static_cast<shared_ptr<Matrix1e> >(new Matrix1e(*finact+*fact));
+      f = shared_ptr<Matrix1e>(new Matrix1e(*finact+*fact));
     } else {
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, ref_->schwarz()));
-      f = static_cast<shared_ptr<Matrix1e> >(new Matrix1e(*coeff % *f_ao * *coeff));
+      f = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_ao * *coeff));
 
       finact = hcore_;
     }
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
-    fact = static_cast<shared_ptr<QFile> >(new QFile(*qxr));// nbasis_ runs first
+    fact = shared_ptr<QFile>(new QFile(*qxr));// nbasis_ runs first
     if (nclosed_) {
       for (int i = 0; i != nact_; ++i)
         daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
@@ -216,14 +216,14 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   }
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
-    factp = static_cast<shared_ptr<QFile> >(new QFile(nact_, nact_));
+    factp = shared_ptr<QFile>(new QFile(nact_, nact_));
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j)
         factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
   }
 
   // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  gaa = static_cast<shared_ptr<QFile> >(new QFile(nact_, nact_));
+  gaa = shared_ptr<QFile>(new QFile(nact_, nact_));
   dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
   for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
@@ -275,7 +275,7 @@ shared_ptr<Coeff> CASSCF::update_coeff(const shared_ptr<Coeff> cold, vector<doub
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
-  return static_cast<shared_ptr<Coeff> >(new Coeff(*cnew));
+  return shared_ptr<Coeff>(new Coeff(*cnew));
 }
 
 

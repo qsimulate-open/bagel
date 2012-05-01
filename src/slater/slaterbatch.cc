@@ -56,7 +56,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
-  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new SVRRList()));
+  vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new SVRRList()));
 
   const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
