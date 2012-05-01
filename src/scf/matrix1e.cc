@@ -139,6 +139,29 @@ shared_ptr<Matrix1e> Matrix1e::resize(shared_ptr<Geometry> g, const int n) const
 }
 
 
+shared_ptr<Matrix1e> Matrix1e::slice(const int start, const int fence) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+  out->ndim_ = ndim_;
+  out->mdim_ = fence - start;
+  assert(fence <= geom_->nbasis());
+
+  copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
+  return out;
+}
+
+shared_ptr<Matrix1e> Matrix1e::merge(const shared_ptr<const Matrix1e> o) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(*this));
+  assert(nbasis_ == o->geom()->nbasis());
+  assert(ndim_ == o->ndim_);
+  out->ndim_ = ndim_;
+  out->mdim_ = mdim_ + o->mdim_;
+  assert(out->mdim_ <= nbasis_);
+
+  copy(o->data_.get(), o->data_.get()+nbasis_*o->mdim_, out->data_.get()+mdim_*nbasis_);
+  return out;
+}
+
+
 void Matrix1e::symmetrize() {
   for (int i = 0; i != nbasis_; ++i) {
     for (int j = i + 1; j != nbasis_; ++j) {

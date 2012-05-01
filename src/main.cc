@@ -74,6 +74,20 @@ int main(int argc, char** argv) {
     const bool fci_card = idata->exist("fci"); 
     const bool casscf_card = idata->exist("casscf");
 
+    { // stack
+      multimap<string, string> geominfo = idata->get_input("molecule");
+      double size = 1.0e6;
+      auto iter = geominfo.find("stack");
+      if (iter != geominfo.end()) {
+        string p = iter->second;
+        if (p.find("m") != string::npos)
+          size = 1.0e6*boost::lexical_cast<int>(p.erase(p.size()-1));
+        else if (p.find("g") != string::npos)
+          size = 1.0e9*boost::lexical_cast<int>(p.erase(p.size()-1));
+      }
+      stack = new StackMem(static_cast<size_t>(size));
+      cout << "  Stack memory of " << setprecision(2) << fixed << size*8.0e-6 << " MB allocated" << endl << endl; 
+    }
     shared_ptr<Geometry> geom(new Geometry(idata));
     list<pair<string, multimap<string, string> > > keys = idata->data();
 
@@ -136,6 +150,8 @@ int main(int argc, char** argv) {
     //test_solvers(geom);
     test_grad(ref);
     /////////////////////////////////////
+
+    delete stack;
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

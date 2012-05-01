@@ -29,6 +29,7 @@
 
 #include <src/scf/geometry.h>
 #include <src/scf/matrix1e.h>
+#include <memory>
 
 class Coeff : public Matrix1e {
   protected:
@@ -36,10 +37,12 @@ class Coeff : public Matrix1e {
   public:
     Coeff() : Matrix1e() {};
     Coeff(const Matrix1e&);
+    Coeff(std::shared_ptr<Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
     ~Coeff();
 
     Matrix1e form_density_rhf() const;
     Matrix1e form_core_density_rhf() const;
+    std::pair<std::shared_ptr<Coeff>, std::shared_ptr<Coeff> > split(const int, const int) const;
 };
 
 #endif

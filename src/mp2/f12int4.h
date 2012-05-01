@@ -16,6 +16,7 @@
 #include <src/wfn/reference.h>
 #include <src/smith/prim_op.h>
 #include <src/mp2/f12mat.h>
+#include <tuple>
 
 
 // Reference implementation of an F12 theory
@@ -33,7 +34,7 @@ class F12Ref {
 
     void compute();
 
-    std::pair<std::shared_ptr<Coeff>, std::shared_ptr<Coeff> > generate_cabs() const;
+    std::tuple<std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>, int> generate_cabs() const;
 };
 
 

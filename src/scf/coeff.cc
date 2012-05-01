@@ -23,13 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
+#include <algorithm>
 #include <src/scf/coeff.h>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
 
+using namespace std;
 
 Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 
@@ -71,3 +72,20 @@ Matrix1e Coeff::form_core_density_rhf() const {
 }
  
 
+pair<shared_ptr<Coeff>, shared_ptr<Coeff> > Coeff::split(const int nrow1, const int nrow2) const {
+  shared_ptr<Coeff> out1(new Coeff(geom_, nrow1, mdim_));
+  shared_ptr<Coeff> out2(new Coeff(geom_, nrow2, mdim_));
+
+  assert(nrow1+nrow2 == ndim_);
+
+  const double* source = data();
+  double* data1 = out1->data();
+  double* data2 = out2->data();
+
+  for (int m = 0; m != mdim_; ++m, data1+=out1->nbasis(), data2+=out2->nbasis(), source+=nbasis_) {
+    copy(source,       source+nrow1,       data1);
+    copy(source+nrow1, source+nrow1+nrow2, data2);
+  }
+
+  return make_pair(out1, out2);
+}

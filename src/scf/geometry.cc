@@ -67,21 +67,6 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   // symmetry
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
-  { // stack
-    double size = 1.0e6;
-    auto iter = geominfo.find("stack");
-    if (iter != geominfo.end()) {
-      string p = iter->second;
-      if (p.find("m") != string::npos) {
-        size = 1.0e6*boost::lexical_cast<int>(p.erase(p.size()-1));
-      } else if (p.find("g") != string::npos) {
-        size = 1.0e9*boost::lexical_cast<int>(p.erase(p.size()-1));
-      }
-    }
-    StackMem* a = new StackMem(static_cast<size_t>(size));
-    cout << "  Stack memory of " << setprecision(2) << fixed << size*8.0e-6 << " MB allocated" << endl << endl; 
-    stack = a; 
-  }
 
   const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
@@ -393,7 +378,6 @@ Geometry::Geometry(const string s, const int levl)
 
 
 Geometry::~Geometry() {
-  delete stack;
 }
 
 

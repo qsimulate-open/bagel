@@ -52,6 +52,30 @@ class F12Ten {
     };
     ~F12Ten() {};
 
+    F12Ten operator*(const double a) const {
+      F12Ten f(*this);
+      dscal_(size(), a, f.data(), 1); 
+      return f;
+    };
+    F12Ten operator-(const F12Ten& o) const {
+      F12Ten f(*this);
+      daxpy_(size(), -1.0, o.data(), 1, f.data(), 1);
+      return f;
+    };
+    F12Ten& operator-=(const F12Ten& o) {
+      daxpy_(size(), -1.0, o.data(), 1, data(), 1);
+      return *this;
+    };
+    F12Ten operator+(const F12Ten& o) const {
+      F12Ten f(*this);
+      daxpy_(size(), 1.0, o.data(), 1, f.data(), 1);
+      return f;
+    };
+    F12Ten& operator+=(const F12Ten& o) {
+      daxpy_(size(), 1.0, o.data(), 1, data(), 1);
+      return *this;
+    };
+
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
 

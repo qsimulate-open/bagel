@@ -30,7 +30,10 @@ void F12Ref::compute() {
 
     start_up_slater_();
 
-    generate_cabs();
+    shared_ptr<Matrix1e> caom, cxxm, callm;
+    int ncabs;
+    tie(caom, cxxm, callm, ncabs) = generate_cabs();
+    double *cao, *cxx, *call;
 
     // first compute half-transformed integrals
     shared_ptr<File2> eri, slater, yukawa, slater2;
@@ -48,9 +51,9 @@ void F12Ref::compute() {
     slater2 = slater2b.data()->half_transform(ocoeff, nval);
     } {
     cout << "  * AO integrals with 1 aux" << endl;
-    AOInt<ERIBatch>    erib    (geom_, 0.0,        false, true);
-    AOInt<SlaterBatch> slaterb (geom_, gamma_,     false, true);
-    AOInt<SlaterBatch> slater2b(geom_, gamma_*2.0, false, true);
+    AOInt<ERIBatch>    erib    (geom_, 0.0,        false, false, true);
+    AOInt<SlaterBatch> slaterb (geom_, gamma_,     false, false, true);
+    AOInt<SlaterBatch> slater2b(geom_, gamma_*2.0, false, false, true);
     eric =       erib.data()->half_transform(ocoeff, nval);
     slaterc = slaterb.data()->half_transform(ocoeff, nval);
     slater2c = slater2b.data()->half_transform(ocoeff, nval);
@@ -64,9 +67,12 @@ void F12Ref::compute() {
     shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff); 
     shared_ptr<F12Mat> x(new F12Mat(*x2));
     shared_ptr<F12Ten> s = slater->f12ten(coeff, coeff, nbasis, nbasis);
+    shared_ptr<F12Ten> sox =   slater->f12ten(coeff, cao, nocc, ncabs);
+                      *sox += *slaterc->f12ten(coeff, cxx, nocc, ncabs);
     {
-      *x -= *s->contract(s);
+      *x -= *s->contract(s) + *sox->contract(sox);
     }
+x->print();
 
     // V intermediate
     shared_ptr<F12Mat> v = yukawa->f12mat(ocoeff); 
@@ -240,7 +246,7 @@ v->print();
 
 #define thresh 1.0e-8
 
-pair<shared_ptr<Coeff>, shared_ptr<Coeff> > F12Ref::generate_cabs() const {
+tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12Ref::generate_cabs() const {
 
   // Form RI space which is a union of OBS and CABS.
   shared_ptr<Geometry> newgeom(new Geometry(*geom_));
@@ -248,7 +254,6 @@ pair<shared_ptr<Coeff>, shared_ptr<Coeff> > F12Ref::generate_cabs() const {
 
   shared_ptr<Overlap> union_overlap(new Overlap(newgeom));
   shared_ptr<TildeX> ri_coeff(new TildeX(union_overlap, thresh));
-  // Take 
   shared_ptr<Matrix1e> ri_reshaped = ref_->coeff()->resize(newgeom, ri_coeff->ndim());
 
   // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
@@ -257,25 +262,20 @@ pair<shared_ptr<Coeff>, shared_ptr<Coeff> > F12Ref::generate_cabs() const {
   const int tmdim = tmp->mdim();
   const int tndim = tmp->ndim();
 
-  shared_ptr<Matrix1e> U(new Matrix1e(geom_, tndim, tndim));
-  shared_ptr<Matrix1e> V(new Matrix1e(geom_, tmdim, tmdim));
+  shared_ptr<Matrix1e> U(new Matrix1e(newgeom, tndim, tndim));
+  shared_ptr<Matrix1e> V(new Matrix1e(newgeom, tmdim, tmdim));
   tmp->svd(U, V); 
 
-#if 0
-  RefMatrix Ured(new PMatrix1e(U, make_pair(tmdim, tndim)));
-  RefCoeff coeff_cabs(new PCoeff(*ri_coeff * *Ured));
-  coeff_cabs_ = coeff_cabs;
+  shared_ptr<Matrix1e> Ured = U->slice(tmdim, tndim); //(new Matrix1e(U, make_pair(tmdim, tndim)));
+  shared_ptr<Coeff> coeff_cabs = static_cast<shared_ptr<Coeff> >(new Coeff(*ri_coeff * *Ured));
 
-  RefMatrix coeff_fit(new PMatrix1e(coeff_, tndim));
-  RefMatrix coeff_entire(new PMatrix1e(coeff_fit, coeff_cabs_));
-  coeff_entire_ = coeff_entire;
+  shared_ptr<Matrix1e> coeff_entire = ri_reshaped->merge(coeff_cabs);
 
-  //(*coeff_entire_ % *uft * *coeff_entire_).rprint(15);
+  pair<shared_ptr<Coeff>, shared_ptr<Coeff> > t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
 
-  pair<RefCoeff, RefCoeff> cabs_coeff_spl = coeff_cabs_->split(geom_->nbasis(), geom_->naux());
-
-  return cabs_coeff_spl;
-#endif
+  // TODO check
+  int ncabs = ri_coeff->mdim();
+  return make_tuple(t.first, t.second, coeff_entire, ncabs); 
 }
 
 
