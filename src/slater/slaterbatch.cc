@@ -70,13 +70,7 @@ SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density,
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
   tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
   
-  const unsigned int size_start = asize_ * csize_ * primsize_; 
-  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-  size_final_ = asize_final_sph * csize_final_sph * contsize_;
-  size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  data_ = stack->get(size_alloc_);
-  data2_ = stack->get(size_alloc_);
+  allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
 
   allocate_arrays(primsize_);
 
@@ -94,15 +88,11 @@ SlaterBatch::~SlaterBatch() {
 void SlaterBatch::root_weight(const int prim) {
   // determine the quadrature grid
   fill(weights_, weights_ + primsize_, 0.0);
-#if 0
   if (rank_ == 1)
     root1_direct();
   else if (rank_ == 2)
     root2_direct();
   else {
-#else
-  {
-#endif
     int ps = (int)primsize_; 
     struct SRootList root;
     root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 

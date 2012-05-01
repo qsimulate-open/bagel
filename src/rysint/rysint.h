@@ -91,6 +91,7 @@ class RysInt {
     virtual void root_weight(const int ps);
     virtual void compute_ssss(const double thr);
     void allocate_arrays(const size_t);
+    void allocate_data(const int, const int, const int, const int);
     size_t size_allocated_;
 
 

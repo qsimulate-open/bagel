@@ -57,7 +57,7 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
 
   vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new VRRList()));
 
-  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+  const double integral_thresh = 0.0;
 
   // determins if we want to swap shells
   set_swap_info(true);
@@ -72,15 +72,8 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
   tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
 
+  allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
   
-  const unsigned int size_start = asize_ * csize_ * primsize_; 
-  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-  size_final_ = asize_final_sph * csize_final_sph * contsize_;
-  size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  data_ = stack->get(size_alloc_);
-  data2_ = NULL;
-
   allocate_arrays(primsize_);
 
   compute_ssss(integral_thresh);

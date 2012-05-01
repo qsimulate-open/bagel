@@ -57,8 +57,11 @@ int main(int argc, char** argv) {
   assert(false); // trap
   #endif
 
-  //test_mp2f12();
-  //abort();
+#if 0
+  stack = new StackMem(static_cast<size_t>(100000000));
+  test_mp2f12();
+  abort();
+#endif
 
   try {
     print_header();

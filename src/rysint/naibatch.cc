@@ -69,13 +69,7 @@ NAIBatch::NAIBatch(const vector<RefShell> _info, const RefGeometry gm, const int
   int asize_intermediate, asize_final, dum0, dum1;
   tie(asize_intermediate, dum0, asize_final, dum1) = set_angular_info();
 
-  const unsigned int size_start = asize_ * primsize_; 
-  size_final_ = asize_final * contsize_;
-  const unsigned int size_intermediate = asize_intermediate * primsize_;
-  size_alloc_ = max(max(size_start, size_intermediate), size_final_);
-  data_ = stack->get(size_alloc_);
-  fill(data_, data_ + size_alloc_, 0.0);
-  assert(size_final_ <= size_alloc_);
+  allocate_data(asize_intermediate, 1, asize_final, 1);
 
   allocate_arrays(primsize_*natom_);
 

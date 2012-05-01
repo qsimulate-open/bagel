@@ -66,15 +66,8 @@ ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
   tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
 
-  
-  const unsigned int size_start = asize_ * csize_ * primsize_; 
-  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-  size_final_ = asize_final_sph * csize_final_sph * contsize_;
-  size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  data_ = stack->get(size_alloc_);
-  data2_ = NULL;
-
+  // allocate
+  allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
   allocate_arrays(primsize_);
 
   compute_ssss(integral_thresh);

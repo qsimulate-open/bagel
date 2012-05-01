@@ -403,3 +403,20 @@ void RysInt::allocate_arrays(const size_t ps) {
     U_ = pointer;     pointer += ps;
   } 
 }
+
+
+void RysInt::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+  const unsigned int size_start = asize_ * csize_ * primsize_; 
+  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
+  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
+  size_final_ = asize_final_sph * csize_final_sph * contsize_;
+  size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
+  data_ = stack->get(size_alloc_);
+  if (tenno_) {
+    data2_ = stack->get(size_alloc_);
+  } else {
+    data2_ = NULL;
+  }
+}
+
+
