@@ -42,14 +42,9 @@ extern StackMem* stack;
 
 void ERIBatch::compute() {
   bool swapped = false;
-  const double zero = 0.0;
-  const int zeroint = 0;
-  const int unit = 1;
 
   bkup_ = stack->get(size_alloc_);
-  
-  const int size = size_alloc_;
-  fill(data_, data_ + size, zero);
+  fill(data_, data_ + size_alloc_, 0.0);
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
@@ -213,7 +208,7 @@ void ERIBatch::compute() {
     swapped = (swapped ^ true);
   }
   
-  if (swapped) ::memcpy(data_, bkup_, size * sizeof(double)); 
+  if (swapped) ::memcpy(data_, bkup_, size_alloc_ * sizeof(double)); 
 
   stack->release(size_alloc_);
 }

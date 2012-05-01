@@ -34,7 +34,7 @@ for ff in files:
 // Filename: " + filename + "\n\
 // Copyright (C) " + yearprint + " Toru Shiozaki\n\
 //\n\
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>\n\
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
 // Maintainer: Shiozaki group\n\
 //\n\
 // This file is part of the Newint package (to be renamed).\n\

@@ -49,13 +49,11 @@ extern StackMem* stack;
 
 GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, const double dummy, const bool dum) :  RysInt(shells) { 
   centers_ = 4;  
-
   for (auto i = shells.begin(); i != shells.end(); ++i) if ((*i)->dummy()) --centers_;
+  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new VRRList()));
 
   // a member variable in RysInt <- ERIBatch <- GradBatch.
   deriv_rank_ = 1;
-
-  vrr_ = static_cast<shared_ptr<VRRListBase> >(dynamic_cast<VRRListBase*>(new VRRList()));
 
   const double integral_thresh = 0.0;
 

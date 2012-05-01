@@ -314,10 +314,10 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_));
   assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_); 
 
-  amax_ = ang0 + ang1;
-  cmax_ = ang2 + ang3;
-  amin_ = ang0;
-  cmin_ = ang2;
+  amax_ = ang0 + ang1 + deriv_rank_;
+  cmax_ = ang2 + ang3 + deriv_rank_;
+  amin_ = max(ang0 - deriv_rank_, 0);
+  cmin_ = max(ang2 - deriv_rank_, 0);
   amax1_ = amax_ + 1;
   cmax1_ = cmax_ + 1;
 

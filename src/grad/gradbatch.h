@@ -39,6 +39,23 @@ class GradBatch : public RysInt {
     // to reduce the number of differentiation
     int centers_;
 
+    // in the gradient computation, we don't assemble until we operate differential operators.
+    // we don't use translational invariance so far.
+    void perform_VRR1();
+    void perform_VRR2();
+    void perform_VRR3();
+    void perform_VRR4();
+    void perform_VRR5();
+    void perform_VRR6();
+    void perform_VRR7();
+    void perform_VRR8();
+    void perform_VRR9();
+    void perform_VRR10();
+    void perform_VRR11();
+    void perform_VRR12();
+    void perform_VRR13();
+    void perform_VRR();
+
   public:
     GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~GradBatch();
