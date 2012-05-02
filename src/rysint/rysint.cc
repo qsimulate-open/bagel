@@ -31,6 +31,7 @@
 #include <cassert>
 #include <src/rysint/f77.h>
 #include <src/stackmem.h>
+#include <stdexcept>
 #define SQRTPI2 0.886226925452758013649083741671
 #define PITWOHALF 17.493418327624862
 #define PIMHALF 0.564189583547756
@@ -74,8 +75,8 @@ void RysInt::set_swap_info(const bool swap_bra_ket) {
     swap23_ = false;
   }
 
+  no_transpose_ = false;
   if (swap_bra_ket) {
-    no_transpose_ = false;
     if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
       no_transpose_ = true;
       swap(basisinfo_[0], basisinfo_[2]); 
@@ -322,8 +323,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   cmax1_ = cmax_ + 1;
 
   asize_ = 0; 
-  for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   csize_ = 0; 
+  for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   for (int i = cmin_; i <= cmax_; ++i) csize_ += (i + 1) * (i + 2) / 2;
 
   const int asize_final = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4;

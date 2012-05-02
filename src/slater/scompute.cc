@@ -118,12 +118,11 @@ void SlaterBatch::compute() {
   // data will be stored in data_: cont01{ cont23{ xyz{ } } }
   {
     const int n = cont0size_ * cont1size_;
-    const int datasize = n * cont2size_ * cont3size_ * asize_ * csize_; 
-    perform_contraction_new_inner(n, bkup_, prim2size_, prim3size_, data_, 
+    perform_contraction_new_inner(n, asize_*csize_, bkup_, prim2size_, prim3size_, data_, 
             basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
             basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
     if (yukawa_)
-      perform_contraction_new_inner(n, bkup2_, prim2size_, prim3size_, data2_, 
+      perform_contraction_new_inner(n, asize_*csize_, bkup2_, prim2size_, prim3size_, data2_, 
               basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
               basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }

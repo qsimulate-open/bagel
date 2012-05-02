@@ -41,8 +41,6 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int unit = 1;
-  const int zeroint = 0;
-  const double zero = 0.0;
   const int worksize = nsize * pdim1; 
   double* work = stack->get(worksize);
   double* current_cont = cont;
@@ -50,7 +48,7 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = lower0[i];
     const int end0   = upper0[i];
-    fill(work, work + worksize, zero);
+    fill(work, work + worksize, 0.0);
     for (int j = begin0; j != end0; ++j) 
       daxpy_(&worksize, &coeff0[i][j], &prim[j * worksize], &unit, work, &unit); 
 
@@ -67,14 +65,9 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
 }
 
 
-void RysInt::perform_contraction_new_inner(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
+void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const double* prim, const int pdim0, const int pdim1, double* cont, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
-  // transformation of index1
-  const int unit = 1;
-  const double zero = 0.0;
-  const int zeroint = 0;
-  const int ac = asize_ * csize_;
   const int worksize = pdim1 * ac;
   double* work = stack->get(worksize);
   double* current_cont = cont;
@@ -86,16 +79,16 @@ void RysInt::perform_contraction_new_inner(const int nsize, const double* prim, 
 
       const int begin0 = lower0[i];
       const int end0   = upper0[i];
-      fill(work, work + worksize, zero);
+      fill(work, work + worksize,  0.0);
       for (int j = begin0; j != end0; ++j) 
-        daxpy_(&worksize, &coeff0[i][j], &current_prim[j * worksize], &unit, work, &unit); 
+        daxpy_(worksize, coeff0[i][j], &current_prim[j * worksize], 1, work, 1); 
 
       for (int k = 0; k != cdim1; ++k, current_cont += ac) {
         const int begin1 = lower1[k];
         const int end1   = upper1[k];
         fill(current_cont, current_cont + ac, 0.0); 
         for (int j = begin1; j != end1; ++j) {
-          daxpy_(&ac, &coeff1[k][j], &work[j * ac], &unit, current_cont, &unit); 
+          daxpy_(ac, coeff1[k][j], &work[j * ac], 1, current_cont, 1); 
         }
       }
     }
@@ -109,15 +102,13 @@ void RysInt::perform_contraction(const int asize, const double* prim, const int 
                                  const vector<vector<double> >& coeff1, const vector<pair<int, int> >& ranges1, const int cdim1) {
   // transformation of index1
   const int unit = 1;
-  const double zero = 0.0;
-  const int zeroint = 0;
   const int worksize = pdim1 * asize;
   double* work = stack->get(worksize);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    std::fill(work, work + worksize, zero);
+    std::fill(work, work + worksize, 0.0);
     for (int j = begin0; j != end0; ++j) 
       daxpy_(&worksize, &coeff0[i][j], &prim[j * worksize], &unit, work, &unit); 
 

@@ -52,8 +52,7 @@ void FCI::compute() {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  shared_ptr<MOFile> Jop(new MOFile(geom_, ref_));
-  jop_ = Jop;
+  jop_ = shared_ptr<MOFile>(new MOFile(geom_, ref_));
 
   // right now full basis is used. 
   int start_int = ::clock();
@@ -149,8 +148,7 @@ void FCI::compute() {
 
   vector<shared_ptr<Civec> > s = davidson.civec();
   print_civectors(s, 0.05);
-  shared_ptr<Dvec> t(new Dvec(s));
-  cc_ = t;
+  cc_ = shared_ptr<Dvec>(new Dvec(s));
 
 }
 

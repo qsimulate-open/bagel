@@ -99,7 +99,7 @@ class RysInt {
     void perform_contraction_new_outer(const int, const double*, const int, const int, double*,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
-    void perform_contraction_new_inner(const int, const double*, const int, const int, double*,
+    void perform_contraction_new_inner(const int, const int, const double*, const int, const int, double*,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int,
                  const std::vector<std::vector<double> >&, const std::vector<int>&, const std::vector<int>&, const int);
     // contraction for 1-e integrals

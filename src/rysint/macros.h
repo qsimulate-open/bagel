@@ -31,7 +31,7 @@
 
 #define ANG_HRR_END 7
 
-#define ANG_VRR_END 13
+#define ANG_VRR_END 14
 
 #define RYS_MAX 13
 
