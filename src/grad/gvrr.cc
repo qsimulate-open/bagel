@@ -139,6 +139,7 @@ void GradBatch::perform_VRR() {
     
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
+    double* expo = exponents_.get() + ii*4;
 
     const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
@@ -155,7 +156,6 @@ void GradBatch::perform_VRR() {
       dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workx+i*rank_*(amax_+1), rank_, transx, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2x, cmax_+1, 0.0, final_x, rank_*b2*a2);
 
-#if 0
     for (int id = 0; id <= d; ++id) {
       for (int ic = 0; ic <= c; ++ic) {
         for (int ib = 0; ib <= b; ++ib) {
@@ -170,7 +170,6 @@ void GradBatch::perform_VRR() {
         }
       }
     }
-#endif
  
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
     Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -179,8 +178,6 @@ void GradBatch::perform_VRR() {
       dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky+i*rank_*(amax_+1), rank_, transy, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2y, cmax_+1, 0.0, final_y, rank_*b2*a2);
 
-#if 0
-    double* expo = exponents_.get() + ii*4;
     for (int id = 0; id <= d; ++id) {
       for (int ic = 0; ic <= c; ++ic) {
         for (int ib = 0; ib <= b; ++ib) {
@@ -195,7 +192,6 @@ void GradBatch::perform_VRR() {
         }
       }
     }
-#endif
  
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
     Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[vrr_index]);
@@ -204,7 +200,6 @@ void GradBatch::perform_VRR() {
       dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz+i*rank_*(amax_+1), rank_, transz, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2z, cmax_+1, 0.0, final_z, rank_*b2*a2);
 
-#if 0
     for (int id = 0; id <= d; ++id) {
       for (int ic = 0; ic <= c; ++ic) {
         for (int ib = 0; ib <= b; ++ib) {
@@ -219,7 +214,6 @@ void GradBatch::perform_VRR() {
         }
       }
     }
-#endif
  
 #if 1
     double* current_data0 = &data_[data_offset_ii];

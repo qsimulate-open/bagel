@@ -40,6 +40,8 @@
 #include <src/rysint/macros.h>
 #include <src/stackmem.h>
 
+
+#include <src/rysint/vrrlist.h>
 using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
@@ -52,6 +54,8 @@ GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, co
   centers_ = 4;  
   for (auto i = shells.begin(); i != shells.end(); ++i) if ((*i)->dummy()) --centers_;
   vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new GVRRList()));
+
+cout << " debugging with GradBatch!" << endl;
 
   // a member variable in RysInt <- ERIBatch <- GradBatch.
   deriv_rank_ = 1;

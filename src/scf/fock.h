@@ -161,7 +161,11 @@ void Fock<DF>::fock_two_electron_part() {
             input.push_back(b1);
             input.push_back(b0);
 
+#if 1
             ERIBatch eribatch(input, mulfactor);
+#else
+            GradBatch eribatch(input, mulfactor);
+#endif
             eribatch.compute();
             const double* eridata = eribatch.data();
 
