@@ -35,10 +35,8 @@ using namespace std;
 extern StackMem* stack;
 
 void GradBatch::compute() {
-
-  bkup_ = stack->get(size_alloc_);
-  bool swapped = false;
-
+  const size_t onepathsize = size_alloc_/12;
+  bkup_ = stack->get(onepathsize);
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
@@ -47,8 +45,6 @@ void GradBatch::compute() {
   const int cdsize_cart = (ang2+1) * (ang2+2) * (ang3+1) * (ang3+2) / 4;
   const int absize_sph = spherical_ ? (2*ang0+1)*(2*ang1+1) : absize_cart;
   const int cdsize_sph = spherical_ ? (2*ang2+1)*(2*ang3+1) : cdsize_cart;
-
-  assert(12* prim0size_ * prim1size_ * prim2size_ * prim3size_ * absize_cart * cdsize_cart == size_alloc_);
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
@@ -73,140 +69,132 @@ void GradBatch::compute() {
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
   perform_VRR();
-#if 0
-for (int i = 0; i != size_alloc_/12; ++i) {
-  cout << setw(10) << setprecision(5) << data_[i];
-  if (i-(i/10)*10==9) cout << endl;
-}
-cout << endl << endl;
-#endif
 
-  double* target_now = bkup_;
-  const double* source_now = data_;
-  // contract indices 01 
-  // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
-  {
-    const int m = prim2size_ * prim3size_ * absize_cart * cdsize_cart;
-    perform_contraction_new_outer(m, source_now, prim0size_, prim1size_, target_now, 
-      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
-      basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
-  }
+  // loop over gradient...
+  double* cdata = data_;
+  for (int i = 0; i != 12; ++i, cdata += onepathsize) {
 
-  target_now = data_;
-  source_now = bkup_;
-  // contract indices 23 
-  // data will be stored in data_: cont01{ cont23{ xyz{ } } }
-  {
-    const int n = cont0size_ * cont1size_;
-    perform_contraction_new_inner(n, absize_cart*cdsize_cart, source_now, prim2size_, prim3size_, target_now, 
-      basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
-      basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
-  }
+    bool swapped = false;
 
-  // Cartesian to spherical 01 if necesarry
-  // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
-  struct CarSphList carsphlist;
-  const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
-  if (spherical_ && need_sph01) {
-    const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-    const int nloops = contsize_ * cdsize_cart;
-    carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
-  } else {
-    swapped = (swapped ^ true); 
-  }
-
-  int a = (ang0 + 1) * (ang0 + 2) / 2;
-  int b = (ang1 + 1) * (ang1 + 2) / 2;
-  int c = (ang2 + 1) * (ang2 + 2) / 2;
-  int d = (ang3 + 1) * (ang3 + 2) / 2;
-  const int asph = 2 * ang0 + 1;
-  const int bsph = 2 * ang1 + 1;
-  const int csph = 2 * ang2 + 1;
-  const int dsph = 2 * ang3 + 1;
-
-  // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
-  if (basisinfo_[0]->angular_number() != 0) {
-    const int m = spherical_ ? (asph * bsph) : (a * b);
-    const int n = cont2size_ * cont3size_ * cdsize_cart;
-    const int nloop = cont0size_ * cont1size_;
-    int offset = 0;
-    if (swapped) {
-      for (int i = 0; i != nloop; ++i, offset += m * n)  
-        mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
-    } else {
-      for (int i = 0; i != nloop; ++i, offset += m * n)  
-        mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
+    double* target_now = bkup_;
+    const double* source_now = cdata;
+    // contract indices 01 
+    // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
+    {
+      const int m = prim2size_ * prim3size_ * absize_cart * cdsize_cart;
+      perform_contraction_new_outer(m, source_now, prim0size_, prim1size_, target_now, 
+        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+        basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
     }
-  } else {
-    swapped = (swapped ^ true);
-  }
 
-  // Cartesian to spherical 23 if necesarry
-  // data will be stored in bkup_
-  // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
-  const bool need_sph23 = basisinfo_[2]->angular_number() > 1;
-  if (spherical_ && need_sph23) {
-    const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
-    const int nloops = contsize_ * asph * bsph;
-    if (swapped)
-      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
-    else
-      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
-  } else {
-    swapped = (swapped ^ true);
-  }
+    target_now = cdata;
+    source_now = bkup_;
+    // contract indices 23 
+    // data will be stored in data_: cont01{ cont23{ xyz{ } } }
+    {
+      const int n = cont0size_ * cont1size_;
+      perform_contraction_new_inner(n, absize_cart*cdsize_cart, source_now, prim2size_, prim3size_, target_now, 
+        basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+        basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
+    }
 
-  a = asph;
-  b = bsph;
-  c = csph;
-  d = dsph;
+    target_now = bkup_;
+    source_now = cdata;
+    // Cartesian to spherical 01 if necesarry
+    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
+    struct CarSphList carsphlist;
+    const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
+    if (spherical_ && need_sph01) {
+      const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
+      const int nloops = contsize_ * cdsize_cart;
+      carsphlist.carsphfunc_call(carsphindex, nloops, source_now, target_now); 
+    } else {
+      swapped = (swapped ^ true); 
+    }
 
-  target_now = swapped ? bkup_ : data_;
-  source_now = swapped ? data_ : bkup_;
+    int a = (ang0 + 1) * (ang0 + 2) / 2;
+    int b = (ang1 + 1) * (ang1 + 2) / 2;
+    int c = (ang2 + 1) * (ang2 + 2) / 2;
+    int d = (ang3 + 1) * (ang3 + 2) / 2;
+    const int asph = 2 * ang0 + 1;
+    const int bsph = 2 * ang1 + 1;
+    const int csph = 2 * ang2 + 1;
+    const int dsph = 2 * ang3 + 1;
 
-  // Sort cont23 and xyzcd
-  // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
-  if (basisinfo_[2]->angular_number() != 0) {
-    const int nloop = a * b * cont0size_ * cont1size_;
-    const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-    sort_->sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
-  } else {
-    swapped = (swapped ^ true);
-  }
+    target_now = swapped ? bkup_ : cdata;
+    source_now = swapped ? cdata : bkup_;
+    // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
+    if (basisinfo_[0]->angular_number() != 0) {
+      const int m = spherical_ ? (asph * bsph) : (a * b);
+      const int n = cont2size_ * cont3size_ * cdsize_cart;
+      const int nloop = cont0size_ * cont1size_;
+      int offset = 0;
+      for (int i = 0; i != nloop; ++i, offset += m * n)  
+        mytranspose_(source_now+offset, &m, &n, target_now+offset);
+    } else {
+      swapped = (swapped ^ true);
+    }
 
-  target_now = swapped ? data_ : bkup_;
-  source_now = swapped ? bkup_ : data_;
-  // transpose batch
-  // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
-  if (!no_transpose_) {
-    const int m = c * d * cont2size_ * cont3size_;
-    const int n = a * b * cont0size_ * cont1size_; 
-    mytranspose_(source_now, &m, &n, target_now);
-  } else {
-    swapped = (swapped ^ true);
-  }
+    target_now = swapped ? cdata : bkup_;
+    source_now = swapped ? bkup_ : cdata;
+    // Cartesian to spherical 23 if necesarry
+    // data will be stored in bkup_
+    // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
+    const bool need_sph23 = basisinfo_[2]->angular_number() > 1;
+    if (spherical_ && need_sph23) {
+      const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
+      const int nloops = contsize_ * asph * bsph;
+      carsphlist.carsphfunc_call(carsphindex, nloops, source_now, target_now); 
+    } else {
+      swapped = (swapped ^ true);
+    }
 
-  target_now = swapped ? bkup_ : data_;
-  source_now = swapped ? data_ : bkup_;
-  // Sort cont01 and xyzab
-  // data will be stored in data_: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
-  if (basisinfo_[0]->angular_number() != 0) {
-    const int nloop = c * d * cont2size_ * cont3size_;
-    const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
-  } else {
-    swapped = (swapped ^ true);
-  }
+    a = asph;
+    b = bsph;
+    c = csph;
+    d = dsph;
 
-  if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
+    target_now = swapped ? bkup_ : cdata;
+    source_now = swapped ? cdata : bkup_;
 
-#if 0
-for (int i = 0; i != size_alloc_/12; ++i) {
-  cout << setw(10) << setprecision(5) << data_[i];
-  if (i-(i/10)*10==9) cout << endl;
-}
-abort();
-#endif
-  stack->release(size_alloc_);
+    // Sort cont23 and xyzcd
+    // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
+    if (basisinfo_[2]->angular_number() != 0) {
+      const int nloop = a * b * cont0size_ * cont1size_;
+      const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
+      sort_->sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
+    } else {
+      swapped = (swapped ^ true);
+    }
+
+    target_now = swapped ? cdata : bkup_;
+    source_now = swapped ? bkup_ : cdata;
+    // transpose batch
+    // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
+    if (!no_transpose_) {
+      const int m = c * d * cont2size_ * cont3size_;
+      const int n = a * b * cont0size_ * cont1size_; 
+      mytranspose_(source_now, &m, &n, target_now);
+    } else {
+      swapped = (swapped ^ true);
+    }
+
+    target_now = swapped ? bkup_ : cdata;
+    source_now = swapped ? cdata : bkup_;
+    // Sort cont01 and xyzab
+    // data will be stored in data_: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
+    if (basisinfo_[0]->angular_number() != 0) {
+      const int nloop = c * d * cont2size_ * cont3size_;
+      const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
+      sort_->sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
+    } else {
+      swapped = (swapped ^ true);
+    }
+
+    if (swapped) copy(bkup_, bkup_+onepathsize, cdata);
+
+  } // end of loop 12
+
+  stack->release(onepathsize);
 }
 

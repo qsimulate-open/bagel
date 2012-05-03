@@ -38,7 +38,7 @@ extern StackMem* stack;
 
 static const Comb comb;
 
-size_t GradBatch::m(int i, int a, int b, int c, int d) {
+inline size_t GradBatch::m(int i, int a, int b, int c, int d) {
   const int la = basisinfo_[0]->angular_number()+2;
   const int lb = basisinfo_[1]->angular_number()+2;
   const int lc = basisinfo_[2]->angular_number()+2;
@@ -157,21 +157,6 @@ void GradBatch::perform_VRR() {
       dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workx+i*rank_*(amax_+1), rank_, transx, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2x, cmax_+1, 0.0, final_x, rank_*b2*a2);
 
-    for (int id = 0; id <= d; ++id) {
-      for (int ic = 0; ic <= c; ++ic) {
-        for (int ib = 0; ib <= b; ++ib) {
-          for (int ia = 0; ia <= a; ++ia) {
-            for (int r = 0; r != rank_; ++r) {
-              final_xa[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_x[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_x[m(r,ia-1,ib,ic,id)]);
-              final_xb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_x[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_x[m(r,ia,ib-1,ic,id)]);
-              final_xc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_x[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_x[m(r,ia,ib,ic-1,id)]);
-              final_xd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_x[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_x[m(r,ia,ib,ic,id-1)]);
-            }
-          }
-        }
-      }
-    }
- 
     const double dparamy[11] = {p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq};
     Int2D ciy(dparamy, &roots_[offset], rank_, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
@@ -179,21 +164,6 @@ void GradBatch::perform_VRR() {
       dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky+i*rank_*(amax_+1), rank_, transy, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2y, cmax_+1, 0.0, final_y, rank_*b2*a2);
 
-    for (int id = 0; id <= d; ++id) {
-      for (int ic = 0; ic <= c; ++ic) {
-        for (int ib = 0; ib <= b; ++ib) {
-          for (int ia = 0; ia <= a; ++ia) {
-            for (int r = 0; r != rank_; ++r) {
-              final_ya[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_y[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_y[m(r,ia-1,ib,ic,id)]);
-              final_yb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_y[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_y[m(r,ia,ib-1,ic,id)]);
-              final_yc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_y[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_y[m(r,ia,ib,ic-1,id)]);
-              final_yd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_y[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_y[m(r,ia,ib,ic,id-1)]);
-            }
-          }
-        }
-      }
-    }
- 
     const double dparamz[11] = {p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq};
     Int2D ciz(dparamz, &roots_[offset], rank_, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
@@ -202,21 +172,33 @@ void GradBatch::perform_VRR() {
     dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2z, cmax_+1, 0.0, final_z, rank_*b2*a2);
 
     for (int id = 0; id <= d; ++id) {
+      const double idd = id;
       for (int ic = 0; ic <= c; ++ic) {
+        const double icc = ic;
         for (int ib = 0; ib <= b; ++ib) {
+          const double ibb = ib;
           for (int ia = 0; ia <= a; ++ia) {
+            const double iaa = ia;
             for (int r = 0; r != rank_; ++r) {
-              final_za[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_z[m(r,ia+1,ib,ic,id)] - (ia == 0 ? 0.0 : ia*final_z[m(r,ia-1,ib,ic,id)]);
-              final_zb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_z[m(r,ia,ib+1,ic,id)] - (ib == 0 ? 0.0 : ib*final_z[m(r,ia,ib-1,ic,id)]);
-              final_zc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_z[m(r,ia,ib,ic+1,id)] - (ic == 0 ? 0.0 : ic*final_z[m(r,ia,ib,ic-1,id)]);
-              final_zd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_z[m(r,ia,ib,ic,id+1)] - (id == 0 ? 0.0 : id*final_z[m(r,ia,ib,ic,id-1)]);
+                                                                                // v- this is a little dangerous, but perhaps the best
+              final_xa[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_x[m(r,ia+1,ib,ic,id)] - ia*final_x[m(r,ia-1,ib,ic,id)];
+              final_xb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_x[m(r,ia,ib+1,ic,id)] - ib*final_x[m(r,ia,ib-1,ic,id)];
+              final_xc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_x[m(r,ia,ib,ic+1,id)] - ic*final_x[m(r,ia,ib,ic-1,id)];
+              final_xd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_x[m(r,ia,ib,ic,id+1)] - id*final_x[m(r,ia,ib,ic,id-1)];
+              final_ya[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_y[m(r,ia+1,ib,ic,id)] - ia*final_y[m(r,ia-1,ib,ic,id)];
+              final_yb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_y[m(r,ia,ib+1,ic,id)] - ib*final_y[m(r,ia,ib-1,ic,id)];
+              final_yc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_y[m(r,ia,ib,ic+1,id)] - ic*final_y[m(r,ia,ib,ic-1,id)];
+              final_yd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_y[m(r,ia,ib,ic,id+1)] - id*final_y[m(r,ia,ib,ic,id-1)];
+              final_za[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_z[m(r,ia+1,ib,ic,id)] - ia*final_z[m(r,ia-1,ib,ic,id)];
+              final_zb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_z[m(r,ia,ib+1,ic,id)] - ib*final_z[m(r,ia,ib-1,ic,id)];
+              final_zc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_z[m(r,ia,ib,ic+1,id)] - ic*final_z[m(r,ia,ib,ic-1,id)];
+              final_zd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_z[m(r,ia,ib,ic,id+1)] - id*final_z[m(r,ia,ib,ic,id-1)];
             }
           }
         }
       }
     }
  
-#if 1
     double* current_data0 = &data_[data_offset_ii];
     double* current_data1 = &data_[data_offset_ii + acpsize];
     double* current_data2 = &data_[data_offset_ii + acpsize*2];
@@ -261,12 +243,12 @@ void GradBatch::perform_VRR() {
             *current_data10 = 0.0;
             *current_data11 = 0.0;
             for (int i = 0; i != rank_; ++i) {
-#if 0
-              *current_data0 += final_xa[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
-#else
+#define ERI_DEBUG
+#ifdef ERI_DEBUG
               *current_data0 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
+#else
+              *current_data0 += final_xa[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
 #endif
-#if 0
               *current_data1 += final_x[m(i, iax, ibx, icx, idx)] * final_ya[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
               *current_data2 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_za[m(i, iaz, ibz, icz, idz)];
               *current_data3 += final_xb[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
@@ -278,7 +260,6 @@ void GradBatch::perform_VRR() {
               *current_data9 += final_xd[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
               *current_data10+= final_x[m(i, iax, ibx, icx, idx)] * final_yd[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
               *current_data11+= final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_zd[m(i, iaz, ibz, icz, idz)];
-#endif
             }
             ++current_data0;
             ++current_data1;
@@ -297,12 +278,11 @@ void GradBatch::perform_VRR() {
         }}
       }}
     }}
-#endif
 
   }
 
-  stack->release(b2*a2*c2*d2*rank_ * 15);
-  stack->release(b2*a2*(cmax_+1)*rank_);
+  stack->release(a2*b2*c2*d2*rank_ * 15);
+  stack->release(a2*b2*(cmax_+1)*rank_);
   stack->release((cmax_+1)*c2*d2*3);
   stack->release((amax_+1)*b2*a2*3);
   stack->release(worksize*3);
