@@ -28,8 +28,10 @@
 
 // returns double array of length 2
 void VRRList::_vrr_1000(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
-  data_[0] = 1.0;
+  for (int t = 0; t != 1; ++t)
+    data_[0+t] = 1.0;
 
-  data_[1] = C00_[0];
+  for (int t = 0; t != 1; ++t)
+    data_[1+t] = C00_[t];
 }
 

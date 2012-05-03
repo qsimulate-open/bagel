@@ -30,10 +30,9 @@
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <src/util/input.h>
-#include <boost/regex.hpp>
+#include <regex>
 
 using namespace std;
-using namespace boost;
 
 InputData::InputData(const string filename) : inputfile_(filename) {
   ifstream ifs;
@@ -68,13 +67,15 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     auto end = ss.end();
     smatch what;
     while (regex_search(start, end, what, reg_true)) {
-      const string sk = what[1] + "=1;" + what[5];  
+      stringstream ss; ss << what[1] << "=1;" << what[5];
+      const string sk = ss.str(); 
       start = sk.begin();
       end = sk.end();
       content = sk;
     }
     while (regex_search(start, end, what, reg_false)) {
-      const string sk = what[1] + "=0;" + what[5];  
+      stringstream ss; ss << what[1] << "=0;" << what[5];
+      const string sk = ss.str(); 
       start = sk.begin();
       end = sk.end();
       content = sk;
@@ -91,7 +92,7 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     if (iter->size() == 0) continue;
     split(pairs, *iter, boost::is_any_of("{"));
     if (pairs[1].size() > 0) {
-      trim(pairs[0]);
+      boost::trim(pairs[0]);
       string tag = pairs[0];
       transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
 
@@ -106,7 +107,7 @@ InputData::InputData(const string filename) : inputfile_(filename) {
             ss << "There seem " << ll.size()-1 << " '=' in a single directive. Check your input.";
             throw runtime_error(ss.str());
           }
-          trim(ll[0]); trim(ll[1]);
+          boost::trim(ll[0]); boost::trim(ll[1]);
           transform(ll[0].begin(), ll[0].end(), ll[0].begin(), ::tolower);
           transform(ll[1].begin(), ll[1].end(), ll[1].begin(), ::tolower);
           tmp.insert(make_pair(ll[0],ll[1]));

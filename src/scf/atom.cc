@@ -33,7 +33,7 @@
 #include <cassert>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/lexical_cast.hpp>
 #include <tuple>
 #include <src/osint/overlapbatch.h>
@@ -41,7 +41,6 @@
 #define PI 3.1415926535897932
 
 using namespace std;
-using namespace boost;
 
 typedef std::shared_ptr<Shell> RefShell;
 
@@ -132,26 +131,26 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
             }
             const string ang(what[1].first, what[1].second);
             const string exp_str(what[2].first, what[2].second);
-            exponents.push_back(lexical_cast<double>(exp_str));
+            exponents.push_back(boost::lexical_cast<double>(exp_str));
             angular_number = ang;
 
             start = what[0].second;
             vector<double> tmp;
             while(regex_search(start, end, what, coeff_line)) {
               const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(lexical_cast<double>(coeff_str));
+              tmp.push_back(boost::lexical_cast<double>(coeff_str));
               start = what[0].second;
             }
             coefficients.push_back(tmp);
           } else if (regex_search(start, end, what, other_line)) {
             const string exp_str(what[1].first, what[1].second);
-            exponents.push_back(lexical_cast<double>(exp_str));
+            exponents.push_back(boost::lexical_cast<double>(exp_str));
             
             start = what[0].second;
             vector<double> tmp;
             while(regex_search(start, end, what, coeff_line)) {
               const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(lexical_cast<double>(coeff_str));
+              tmp.push_back(boost::lexical_cast<double>(coeff_str));
               start = what[0].second;
             }
             coefficients.push_back(tmp);

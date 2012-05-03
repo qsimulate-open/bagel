@@ -248,7 +248,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
             const unsigned int mbit = jbit^nbit;
             const int minij = std::min(i,j); 
             const int maxij = std::max(i,j);
-            phi[minij+((maxij*(maxij+1))>>1)].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
+            phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if (ibit & *iter) {
@@ -258,7 +258,7 @@ void FCI::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j); 
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            phi[i+j*norb_].push_back(make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
+            phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       }

@@ -24,3690 +24,860 @@
 //
 
 
-#include <src/slater/svrrlist.h>
+#include "svrrlist.h"
 
 // returns double array of length 1716
 void SVRRList::_svrr_c0a0(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
-  data_[0] = 1.0;
-  data_[1] = 1.0;
-  data_[2] = 1.0;
-  data_[3] = 1.0;
-  data_[4] = 1.0;
-  data_[5] = 1.0;
-  data_[6] = 1.0;
-  data_[7] = 1.0;
-  data_[8] = 1.0;
-  data_[9] = 1.0;
-  data_[10] = 1.0;
-  data_[11] = 1.0;
+  for (int t = 0; t != 12; ++t)
+    data_[0+t] = 1.0;
 
-  data_[12] = C00_[0];
-  data_[13] = C00_[1];
-  data_[14] = C00_[2];
-  data_[15] = C00_[3];
-  data_[16] = C00_[4];
-  data_[17] = C00_[5];
-  data_[18] = C00_[6];
-  data_[19] = C00_[7];
-  data_[20] = C00_[8];
-  data_[21] = C00_[9];
-  data_[22] = C00_[10];
-  data_[23] = C00_[11];
+  for (int t = 0; t != 12; ++t)
+    data_[12+t] = C00_[t];
 
   double B10_current[12];
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[24] = C00_[0] * data_[12] + B10_current[0];
-  data_[25] = C00_[1] * data_[13] + B10_current[1];
-  data_[26] = C00_[2] * data_[14] + B10_current[2];
-  data_[27] = C00_[3] * data_[15] + B10_current[3];
-  data_[28] = C00_[4] * data_[16] + B10_current[4];
-  data_[29] = C00_[5] * data_[17] + B10_current[5];
-  data_[30] = C00_[6] * data_[18] + B10_current[6];
-  data_[31] = C00_[7] * data_[19] + B10_current[7];
-  data_[32] = C00_[8] * data_[20] + B10_current[8];
-  data_[33] = C00_[9] * data_[21] + B10_current[9];
-  data_[34] = C00_[10] * data_[22] + B10_current[10];
-  data_[35] = C00_[11] * data_[23] + B10_current[11];
+  for (int t = 0; t != 12; ++t)
+    data_[24+t] = C00_[t] * data_[12+t] + B10_current[t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[36] = C00_[0] * data_[24] + B10_current[0] * data_[12];
-  data_[37] = C00_[1] * data_[25] + B10_current[1] * data_[13];
-  data_[38] = C00_[2] * data_[26] + B10_current[2] * data_[14];
-  data_[39] = C00_[3] * data_[27] + B10_current[3] * data_[15];
-  data_[40] = C00_[4] * data_[28] + B10_current[4] * data_[16];
-  data_[41] = C00_[5] * data_[29] + B10_current[5] * data_[17];
-  data_[42] = C00_[6] * data_[30] + B10_current[6] * data_[18];
-  data_[43] = C00_[7] * data_[31] + B10_current[7] * data_[19];
-  data_[44] = C00_[8] * data_[32] + B10_current[8] * data_[20];
-  data_[45] = C00_[9] * data_[33] + B10_current[9] * data_[21];
-  data_[46] = C00_[10] * data_[34] + B10_current[10] * data_[22];
-  data_[47] = C00_[11] * data_[35] + B10_current[11] * data_[23];
+  for (int t = 0; t != 12; ++t)
+    data_[36+t] = C00_[t] * data_[24+t] + B10_current[t] * data_[12+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[48] = C00_[0] * data_[36] + B10_current[0] * data_[24];
-  data_[49] = C00_[1] * data_[37] + B10_current[1] * data_[25];
-  data_[50] = C00_[2] * data_[38] + B10_current[2] * data_[26];
-  data_[51] = C00_[3] * data_[39] + B10_current[3] * data_[27];
-  data_[52] = C00_[4] * data_[40] + B10_current[4] * data_[28];
-  data_[53] = C00_[5] * data_[41] + B10_current[5] * data_[29];
-  data_[54] = C00_[6] * data_[42] + B10_current[6] * data_[30];
-  data_[55] = C00_[7] * data_[43] + B10_current[7] * data_[31];
-  data_[56] = C00_[8] * data_[44] + B10_current[8] * data_[32];
-  data_[57] = C00_[9] * data_[45] + B10_current[9] * data_[33];
-  data_[58] = C00_[10] * data_[46] + B10_current[10] * data_[34];
-  data_[59] = C00_[11] * data_[47] + B10_current[11] * data_[35];
+  for (int t = 0; t != 12; ++t)
+    data_[48+t] = C00_[t] * data_[36+t] + B10_current[t] * data_[24+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[60] = C00_[0] * data_[48] + B10_current[0] * data_[36];
-  data_[61] = C00_[1] * data_[49] + B10_current[1] * data_[37];
-  data_[62] = C00_[2] * data_[50] + B10_current[2] * data_[38];
-  data_[63] = C00_[3] * data_[51] + B10_current[3] * data_[39];
-  data_[64] = C00_[4] * data_[52] + B10_current[4] * data_[40];
-  data_[65] = C00_[5] * data_[53] + B10_current[5] * data_[41];
-  data_[66] = C00_[6] * data_[54] + B10_current[6] * data_[42];
-  data_[67] = C00_[7] * data_[55] + B10_current[7] * data_[43];
-  data_[68] = C00_[8] * data_[56] + B10_current[8] * data_[44];
-  data_[69] = C00_[9] * data_[57] + B10_current[9] * data_[45];
-  data_[70] = C00_[10] * data_[58] + B10_current[10] * data_[46];
-  data_[71] = C00_[11] * data_[59] + B10_current[11] * data_[47];
+  for (int t = 0; t != 12; ++t)
+    data_[60+t] = C00_[t] * data_[48+t] + B10_current[t] * data_[36+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[72] = C00_[0] * data_[60] + B10_current[0] * data_[48];
-  data_[73] = C00_[1] * data_[61] + B10_current[1] * data_[49];
-  data_[74] = C00_[2] * data_[62] + B10_current[2] * data_[50];
-  data_[75] = C00_[3] * data_[63] + B10_current[3] * data_[51];
-  data_[76] = C00_[4] * data_[64] + B10_current[4] * data_[52];
-  data_[77] = C00_[5] * data_[65] + B10_current[5] * data_[53];
-  data_[78] = C00_[6] * data_[66] + B10_current[6] * data_[54];
-  data_[79] = C00_[7] * data_[67] + B10_current[7] * data_[55];
-  data_[80] = C00_[8] * data_[68] + B10_current[8] * data_[56];
-  data_[81] = C00_[9] * data_[69] + B10_current[9] * data_[57];
-  data_[82] = C00_[10] * data_[70] + B10_current[10] * data_[58];
-  data_[83] = C00_[11] * data_[71] + B10_current[11] * data_[59];
+  for (int t = 0; t != 12; ++t)
+    data_[72+t] = C00_[t] * data_[60+t] + B10_current[t] * data_[48+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[84] = C00_[0] * data_[72] + B10_current[0] * data_[60];
-  data_[85] = C00_[1] * data_[73] + B10_current[1] * data_[61];
-  data_[86] = C00_[2] * data_[74] + B10_current[2] * data_[62];
-  data_[87] = C00_[3] * data_[75] + B10_current[3] * data_[63];
-  data_[88] = C00_[4] * data_[76] + B10_current[4] * data_[64];
-  data_[89] = C00_[5] * data_[77] + B10_current[5] * data_[65];
-  data_[90] = C00_[6] * data_[78] + B10_current[6] * data_[66];
-  data_[91] = C00_[7] * data_[79] + B10_current[7] * data_[67];
-  data_[92] = C00_[8] * data_[80] + B10_current[8] * data_[68];
-  data_[93] = C00_[9] * data_[81] + B10_current[9] * data_[69];
-  data_[94] = C00_[10] * data_[82] + B10_current[10] * data_[70];
-  data_[95] = C00_[11] * data_[83] + B10_current[11] * data_[71];
+  for (int t = 0; t != 12; ++t)
+    data_[84+t] = C00_[t] * data_[72+t] + B10_current[t] * data_[60+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[96] = C00_[0] * data_[84] + B10_current[0] * data_[72];
-  data_[97] = C00_[1] * data_[85] + B10_current[1] * data_[73];
-  data_[98] = C00_[2] * data_[86] + B10_current[2] * data_[74];
-  data_[99] = C00_[3] * data_[87] + B10_current[3] * data_[75];
-  data_[100] = C00_[4] * data_[88] + B10_current[4] * data_[76];
-  data_[101] = C00_[5] * data_[89] + B10_current[5] * data_[77];
-  data_[102] = C00_[6] * data_[90] + B10_current[6] * data_[78];
-  data_[103] = C00_[7] * data_[91] + B10_current[7] * data_[79];
-  data_[104] = C00_[8] * data_[92] + B10_current[8] * data_[80];
-  data_[105] = C00_[9] * data_[93] + B10_current[9] * data_[81];
-  data_[106] = C00_[10] * data_[94] + B10_current[10] * data_[82];
-  data_[107] = C00_[11] * data_[95] + B10_current[11] * data_[83];
+  for (int t = 0; t != 12; ++t)
+    data_[96+t] = C00_[t] * data_[84+t] + B10_current[t] * data_[72+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[108] = C00_[0] * data_[96] + B10_current[0] * data_[84];
-  data_[109] = C00_[1] * data_[97] + B10_current[1] * data_[85];
-  data_[110] = C00_[2] * data_[98] + B10_current[2] * data_[86];
-  data_[111] = C00_[3] * data_[99] + B10_current[3] * data_[87];
-  data_[112] = C00_[4] * data_[100] + B10_current[4] * data_[88];
-  data_[113] = C00_[5] * data_[101] + B10_current[5] * data_[89];
-  data_[114] = C00_[6] * data_[102] + B10_current[6] * data_[90];
-  data_[115] = C00_[7] * data_[103] + B10_current[7] * data_[91];
-  data_[116] = C00_[8] * data_[104] + B10_current[8] * data_[92];
-  data_[117] = C00_[9] * data_[105] + B10_current[9] * data_[93];
-  data_[118] = C00_[10] * data_[106] + B10_current[10] * data_[94];
-  data_[119] = C00_[11] * data_[107] + B10_current[11] * data_[95];
+  for (int t = 0; t != 12; ++t)
+    data_[108+t] = C00_[t] * data_[96+t] + B10_current[t] * data_[84+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[120] = C00_[0] * data_[108] + B10_current[0] * data_[96];
-  data_[121] = C00_[1] * data_[109] + B10_current[1] * data_[97];
-  data_[122] = C00_[2] * data_[110] + B10_current[2] * data_[98];
-  data_[123] = C00_[3] * data_[111] + B10_current[3] * data_[99];
-  data_[124] = C00_[4] * data_[112] + B10_current[4] * data_[100];
-  data_[125] = C00_[5] * data_[113] + B10_current[5] * data_[101];
-  data_[126] = C00_[6] * data_[114] + B10_current[6] * data_[102];
-  data_[127] = C00_[7] * data_[115] + B10_current[7] * data_[103];
-  data_[128] = C00_[8] * data_[116] + B10_current[8] * data_[104];
-  data_[129] = C00_[9] * data_[117] + B10_current[9] * data_[105];
-  data_[130] = C00_[10] * data_[118] + B10_current[10] * data_[106];
-  data_[131] = C00_[11] * data_[119] + B10_current[11] * data_[107];
+  for (int t = 0; t != 12; ++t)
+    data_[120+t] = C00_[t] * data_[108+t] + B10_current[t] * data_[96+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[132] = C00_[0] * data_[120] + B10_current[0] * data_[108];
-  data_[133] = C00_[1] * data_[121] + B10_current[1] * data_[109];
-  data_[134] = C00_[2] * data_[122] + B10_current[2] * data_[110];
-  data_[135] = C00_[3] * data_[123] + B10_current[3] * data_[111];
-  data_[136] = C00_[4] * data_[124] + B10_current[4] * data_[112];
-  data_[137] = C00_[5] * data_[125] + B10_current[5] * data_[113];
-  data_[138] = C00_[6] * data_[126] + B10_current[6] * data_[114];
-  data_[139] = C00_[7] * data_[127] + B10_current[7] * data_[115];
-  data_[140] = C00_[8] * data_[128] + B10_current[8] * data_[116];
-  data_[141] = C00_[9] * data_[129] + B10_current[9] * data_[117];
-  data_[142] = C00_[10] * data_[130] + B10_current[10] * data_[118];
-  data_[143] = C00_[11] * data_[131] + B10_current[11] * data_[119];
+  for (int t = 0; t != 12; ++t)
+    data_[132+t] = C00_[t] * data_[120+t] + B10_current[t] * data_[108+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[144] = C00_[0] * data_[132] + B10_current[0] * data_[120];
-  data_[145] = C00_[1] * data_[133] + B10_current[1] * data_[121];
-  data_[146] = C00_[2] * data_[134] + B10_current[2] * data_[122];
-  data_[147] = C00_[3] * data_[135] + B10_current[3] * data_[123];
-  data_[148] = C00_[4] * data_[136] + B10_current[4] * data_[124];
-  data_[149] = C00_[5] * data_[137] + B10_current[5] * data_[125];
-  data_[150] = C00_[6] * data_[138] + B10_current[6] * data_[126];
-  data_[151] = C00_[7] * data_[139] + B10_current[7] * data_[127];
-  data_[152] = C00_[8] * data_[140] + B10_current[8] * data_[128];
-  data_[153] = C00_[9] * data_[141] + B10_current[9] * data_[129];
-  data_[154] = C00_[10] * data_[142] + B10_current[10] * data_[130];
-  data_[155] = C00_[11] * data_[143] + B10_current[11] * data_[131];
+  for (int t = 0; t != 12; ++t)
+    data_[144+t] = C00_[t] * data_[132+t] + B10_current[t] * data_[120+t];
 
-  data_[156] = D00_[0];
-  data_[157] = D00_[1];
-  data_[158] = D00_[2];
-  data_[159] = D00_[3];
-  data_[160] = D00_[4];
-  data_[161] = D00_[5];
-  data_[162] = D00_[6];
-  data_[163] = D00_[7];
-  data_[164] = D00_[8];
-  data_[165] = D00_[9];
-  data_[166] = D00_[10];
-  data_[167] = D00_[11];
+  for (int t = 0; t != 12; ++t)
+    data_[156+t] = D00_[t];
 
   double cB00_current[12];
-  cB00_current[0] = B00_[0];
-  cB00_current[1] = B00_[1];
-  cB00_current[2] = B00_[2];
-  cB00_current[3] = B00_[3];
-  cB00_current[4] = B00_[4];
-  cB00_current[5] = B00_[5];
-  cB00_current[6] = B00_[6];
-  cB00_current[7] = B00_[7];
-  cB00_current[8] = B00_[8];
-  cB00_current[9] = B00_[9];
-  cB00_current[10] = B00_[10];
-  cB00_current[11] = B00_[11];
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] = B00_[t];
 
-  data_[168] = C00_[0] * data_[156] + cB00_current[0];
-  data_[169] = C00_[1] * data_[157] + cB00_current[1];
-  data_[170] = C00_[2] * data_[158] + cB00_current[2];
-  data_[171] = C00_[3] * data_[159] + cB00_current[3];
-  data_[172] = C00_[4] * data_[160] + cB00_current[4];
-  data_[173] = C00_[5] * data_[161] + cB00_current[5];
-  data_[174] = C00_[6] * data_[162] + cB00_current[6];
-  data_[175] = C00_[7] * data_[163] + cB00_current[7];
-  data_[176] = C00_[8] * data_[164] + cB00_current[8];
-  data_[177] = C00_[9] * data_[165] + cB00_current[9];
-  data_[178] = C00_[10] * data_[166] + cB00_current[10];
-  data_[179] = C00_[11] * data_[167] + cB00_current[11];
+  for (int t = 0; t != 12; ++t)
+    data_[168+t] = C00_[t] * data_[156+t] + cB00_current[t];
 
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[180] = C00_[0] * data_[168] + B10_current[0] * data_[156] + cB00_current[0] * data_[12];
-  data_[181] = C00_[1] * data_[169] + B10_current[1] * data_[157] + cB00_current[1] * data_[13];
-  data_[182] = C00_[2] * data_[170] + B10_current[2] * data_[158] + cB00_current[2] * data_[14];
-  data_[183] = C00_[3] * data_[171] + B10_current[3] * data_[159] + cB00_current[3] * data_[15];
-  data_[184] = C00_[4] * data_[172] + B10_current[4] * data_[160] + cB00_current[4] * data_[16];
-  data_[185] = C00_[5] * data_[173] + B10_current[5] * data_[161] + cB00_current[5] * data_[17];
-  data_[186] = C00_[6] * data_[174] + B10_current[6] * data_[162] + cB00_current[6] * data_[18];
-  data_[187] = C00_[7] * data_[175] + B10_current[7] * data_[163] + cB00_current[7] * data_[19];
-  data_[188] = C00_[8] * data_[176] + B10_current[8] * data_[164] + cB00_current[8] * data_[20];
-  data_[189] = C00_[9] * data_[177] + B10_current[9] * data_[165] + cB00_current[9] * data_[21];
-  data_[190] = C00_[10] * data_[178] + B10_current[10] * data_[166] + cB00_current[10] * data_[22];
-  data_[191] = C00_[11] * data_[179] + B10_current[11] * data_[167] + cB00_current[11] * data_[23];
+  for (int t = 0; t != 12; ++t)
+    data_[180+t] = C00_[t] * data_[168+t] + B10_current[t] * data_[156+t] + cB00_current[t] * data_[12+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[192] = C00_[0] * data_[180] + B10_current[0] * data_[168] + cB00_current[0] * data_[24];
-  data_[193] = C00_[1] * data_[181] + B10_current[1] * data_[169] + cB00_current[1] * data_[25];
-  data_[194] = C00_[2] * data_[182] + B10_current[2] * data_[170] + cB00_current[2] * data_[26];
-  data_[195] = C00_[3] * data_[183] + B10_current[3] * data_[171] + cB00_current[3] * data_[27];
-  data_[196] = C00_[4] * data_[184] + B10_current[4] * data_[172] + cB00_current[4] * data_[28];
-  data_[197] = C00_[5] * data_[185] + B10_current[5] * data_[173] + cB00_current[5] * data_[29];
-  data_[198] = C00_[6] * data_[186] + B10_current[6] * data_[174] + cB00_current[6] * data_[30];
-  data_[199] = C00_[7] * data_[187] + B10_current[7] * data_[175] + cB00_current[7] * data_[31];
-  data_[200] = C00_[8] * data_[188] + B10_current[8] * data_[176] + cB00_current[8] * data_[32];
-  data_[201] = C00_[9] * data_[189] + B10_current[9] * data_[177] + cB00_current[9] * data_[33];
-  data_[202] = C00_[10] * data_[190] + B10_current[10] * data_[178] + cB00_current[10] * data_[34];
-  data_[203] = C00_[11] * data_[191] + B10_current[11] * data_[179] + cB00_current[11] * data_[35];
+  for (int t = 0; t != 12; ++t)
+    data_[192+t] = C00_[t] * data_[180+t] + B10_current[t] * data_[168+t] + cB00_current[t] * data_[24+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[204] = C00_[0] * data_[192] + B10_current[0] * data_[180] + cB00_current[0] * data_[36];
-  data_[205] = C00_[1] * data_[193] + B10_current[1] * data_[181] + cB00_current[1] * data_[37];
-  data_[206] = C00_[2] * data_[194] + B10_current[2] * data_[182] + cB00_current[2] * data_[38];
-  data_[207] = C00_[3] * data_[195] + B10_current[3] * data_[183] + cB00_current[3] * data_[39];
-  data_[208] = C00_[4] * data_[196] + B10_current[4] * data_[184] + cB00_current[4] * data_[40];
-  data_[209] = C00_[5] * data_[197] + B10_current[5] * data_[185] + cB00_current[5] * data_[41];
-  data_[210] = C00_[6] * data_[198] + B10_current[6] * data_[186] + cB00_current[6] * data_[42];
-  data_[211] = C00_[7] * data_[199] + B10_current[7] * data_[187] + cB00_current[7] * data_[43];
-  data_[212] = C00_[8] * data_[200] + B10_current[8] * data_[188] + cB00_current[8] * data_[44];
-  data_[213] = C00_[9] * data_[201] + B10_current[9] * data_[189] + cB00_current[9] * data_[45];
-  data_[214] = C00_[10] * data_[202] + B10_current[10] * data_[190] + cB00_current[10] * data_[46];
-  data_[215] = C00_[11] * data_[203] + B10_current[11] * data_[191] + cB00_current[11] * data_[47];
+  for (int t = 0; t != 12; ++t)
+    data_[204+t] = C00_[t] * data_[192+t] + B10_current[t] * data_[180+t] + cB00_current[t] * data_[36+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[216] = C00_[0] * data_[204] + B10_current[0] * data_[192] + cB00_current[0] * data_[48];
-  data_[217] = C00_[1] * data_[205] + B10_current[1] * data_[193] + cB00_current[1] * data_[49];
-  data_[218] = C00_[2] * data_[206] + B10_current[2] * data_[194] + cB00_current[2] * data_[50];
-  data_[219] = C00_[3] * data_[207] + B10_current[3] * data_[195] + cB00_current[3] * data_[51];
-  data_[220] = C00_[4] * data_[208] + B10_current[4] * data_[196] + cB00_current[4] * data_[52];
-  data_[221] = C00_[5] * data_[209] + B10_current[5] * data_[197] + cB00_current[5] * data_[53];
-  data_[222] = C00_[6] * data_[210] + B10_current[6] * data_[198] + cB00_current[6] * data_[54];
-  data_[223] = C00_[7] * data_[211] + B10_current[7] * data_[199] + cB00_current[7] * data_[55];
-  data_[224] = C00_[8] * data_[212] + B10_current[8] * data_[200] + cB00_current[8] * data_[56];
-  data_[225] = C00_[9] * data_[213] + B10_current[9] * data_[201] + cB00_current[9] * data_[57];
-  data_[226] = C00_[10] * data_[214] + B10_current[10] * data_[202] + cB00_current[10] * data_[58];
-  data_[227] = C00_[11] * data_[215] + B10_current[11] * data_[203] + cB00_current[11] * data_[59];
+  for (int t = 0; t != 12; ++t)
+    data_[216+t] = C00_[t] * data_[204+t] + B10_current[t] * data_[192+t] + cB00_current[t] * data_[48+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[228] = C00_[0] * data_[216] + B10_current[0] * data_[204] + cB00_current[0] * data_[60];
-  data_[229] = C00_[1] * data_[217] + B10_current[1] * data_[205] + cB00_current[1] * data_[61];
-  data_[230] = C00_[2] * data_[218] + B10_current[2] * data_[206] + cB00_current[2] * data_[62];
-  data_[231] = C00_[3] * data_[219] + B10_current[3] * data_[207] + cB00_current[3] * data_[63];
-  data_[232] = C00_[4] * data_[220] + B10_current[4] * data_[208] + cB00_current[4] * data_[64];
-  data_[233] = C00_[5] * data_[221] + B10_current[5] * data_[209] + cB00_current[5] * data_[65];
-  data_[234] = C00_[6] * data_[222] + B10_current[6] * data_[210] + cB00_current[6] * data_[66];
-  data_[235] = C00_[7] * data_[223] + B10_current[7] * data_[211] + cB00_current[7] * data_[67];
-  data_[236] = C00_[8] * data_[224] + B10_current[8] * data_[212] + cB00_current[8] * data_[68];
-  data_[237] = C00_[9] * data_[225] + B10_current[9] * data_[213] + cB00_current[9] * data_[69];
-  data_[238] = C00_[10] * data_[226] + B10_current[10] * data_[214] + cB00_current[10] * data_[70];
-  data_[239] = C00_[11] * data_[227] + B10_current[11] * data_[215] + cB00_current[11] * data_[71];
+  for (int t = 0; t != 12; ++t)
+    data_[228+t] = C00_[t] * data_[216+t] + B10_current[t] * data_[204+t] + cB00_current[t] * data_[60+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[240] = C00_[0] * data_[228] + B10_current[0] * data_[216] + cB00_current[0] * data_[72];
-  data_[241] = C00_[1] * data_[229] + B10_current[1] * data_[217] + cB00_current[1] * data_[73];
-  data_[242] = C00_[2] * data_[230] + B10_current[2] * data_[218] + cB00_current[2] * data_[74];
-  data_[243] = C00_[3] * data_[231] + B10_current[3] * data_[219] + cB00_current[3] * data_[75];
-  data_[244] = C00_[4] * data_[232] + B10_current[4] * data_[220] + cB00_current[4] * data_[76];
-  data_[245] = C00_[5] * data_[233] + B10_current[5] * data_[221] + cB00_current[5] * data_[77];
-  data_[246] = C00_[6] * data_[234] + B10_current[6] * data_[222] + cB00_current[6] * data_[78];
-  data_[247] = C00_[7] * data_[235] + B10_current[7] * data_[223] + cB00_current[7] * data_[79];
-  data_[248] = C00_[8] * data_[236] + B10_current[8] * data_[224] + cB00_current[8] * data_[80];
-  data_[249] = C00_[9] * data_[237] + B10_current[9] * data_[225] + cB00_current[9] * data_[81];
-  data_[250] = C00_[10] * data_[238] + B10_current[10] * data_[226] + cB00_current[10] * data_[82];
-  data_[251] = C00_[11] * data_[239] + B10_current[11] * data_[227] + cB00_current[11] * data_[83];
+  for (int t = 0; t != 12; ++t)
+    data_[240+t] = C00_[t] * data_[228+t] + B10_current[t] * data_[216+t] + cB00_current[t] * data_[72+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[252] = C00_[0] * data_[240] + B10_current[0] * data_[228] + cB00_current[0] * data_[84];
-  data_[253] = C00_[1] * data_[241] + B10_current[1] * data_[229] + cB00_current[1] * data_[85];
-  data_[254] = C00_[2] * data_[242] + B10_current[2] * data_[230] + cB00_current[2] * data_[86];
-  data_[255] = C00_[3] * data_[243] + B10_current[3] * data_[231] + cB00_current[3] * data_[87];
-  data_[256] = C00_[4] * data_[244] + B10_current[4] * data_[232] + cB00_current[4] * data_[88];
-  data_[257] = C00_[5] * data_[245] + B10_current[5] * data_[233] + cB00_current[5] * data_[89];
-  data_[258] = C00_[6] * data_[246] + B10_current[6] * data_[234] + cB00_current[6] * data_[90];
-  data_[259] = C00_[7] * data_[247] + B10_current[7] * data_[235] + cB00_current[7] * data_[91];
-  data_[260] = C00_[8] * data_[248] + B10_current[8] * data_[236] + cB00_current[8] * data_[92];
-  data_[261] = C00_[9] * data_[249] + B10_current[9] * data_[237] + cB00_current[9] * data_[93];
-  data_[262] = C00_[10] * data_[250] + B10_current[10] * data_[238] + cB00_current[10] * data_[94];
-  data_[263] = C00_[11] * data_[251] + B10_current[11] * data_[239] + cB00_current[11] * data_[95];
+  for (int t = 0; t != 12; ++t)
+    data_[252+t] = C00_[t] * data_[240+t] + B10_current[t] * data_[228+t] + cB00_current[t] * data_[84+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[264] = C00_[0] * data_[252] + B10_current[0] * data_[240] + cB00_current[0] * data_[96];
-  data_[265] = C00_[1] * data_[253] + B10_current[1] * data_[241] + cB00_current[1] * data_[97];
-  data_[266] = C00_[2] * data_[254] + B10_current[2] * data_[242] + cB00_current[2] * data_[98];
-  data_[267] = C00_[3] * data_[255] + B10_current[3] * data_[243] + cB00_current[3] * data_[99];
-  data_[268] = C00_[4] * data_[256] + B10_current[4] * data_[244] + cB00_current[4] * data_[100];
-  data_[269] = C00_[5] * data_[257] + B10_current[5] * data_[245] + cB00_current[5] * data_[101];
-  data_[270] = C00_[6] * data_[258] + B10_current[6] * data_[246] + cB00_current[6] * data_[102];
-  data_[271] = C00_[7] * data_[259] + B10_current[7] * data_[247] + cB00_current[7] * data_[103];
-  data_[272] = C00_[8] * data_[260] + B10_current[8] * data_[248] + cB00_current[8] * data_[104];
-  data_[273] = C00_[9] * data_[261] + B10_current[9] * data_[249] + cB00_current[9] * data_[105];
-  data_[274] = C00_[10] * data_[262] + B10_current[10] * data_[250] + cB00_current[10] * data_[106];
-  data_[275] = C00_[11] * data_[263] + B10_current[11] * data_[251] + cB00_current[11] * data_[107];
+  for (int t = 0; t != 12; ++t)
+    data_[264+t] = C00_[t] * data_[252+t] + B10_current[t] * data_[240+t] + cB00_current[t] * data_[96+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[276] = C00_[0] * data_[264] + B10_current[0] * data_[252] + cB00_current[0] * data_[108];
-  data_[277] = C00_[1] * data_[265] + B10_current[1] * data_[253] + cB00_current[1] * data_[109];
-  data_[278] = C00_[2] * data_[266] + B10_current[2] * data_[254] + cB00_current[2] * data_[110];
-  data_[279] = C00_[3] * data_[267] + B10_current[3] * data_[255] + cB00_current[3] * data_[111];
-  data_[280] = C00_[4] * data_[268] + B10_current[4] * data_[256] + cB00_current[4] * data_[112];
-  data_[281] = C00_[5] * data_[269] + B10_current[5] * data_[257] + cB00_current[5] * data_[113];
-  data_[282] = C00_[6] * data_[270] + B10_current[6] * data_[258] + cB00_current[6] * data_[114];
-  data_[283] = C00_[7] * data_[271] + B10_current[7] * data_[259] + cB00_current[7] * data_[115];
-  data_[284] = C00_[8] * data_[272] + B10_current[8] * data_[260] + cB00_current[8] * data_[116];
-  data_[285] = C00_[9] * data_[273] + B10_current[9] * data_[261] + cB00_current[9] * data_[117];
-  data_[286] = C00_[10] * data_[274] + B10_current[10] * data_[262] + cB00_current[10] * data_[118];
-  data_[287] = C00_[11] * data_[275] + B10_current[11] * data_[263] + cB00_current[11] * data_[119];
+  for (int t = 0; t != 12; ++t)
+    data_[276+t] = C00_[t] * data_[264+t] + B10_current[t] * data_[252+t] + cB00_current[t] * data_[108+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[288] = C00_[0] * data_[276] + B10_current[0] * data_[264] + cB00_current[0] * data_[120];
-  data_[289] = C00_[1] * data_[277] + B10_current[1] * data_[265] + cB00_current[1] * data_[121];
-  data_[290] = C00_[2] * data_[278] + B10_current[2] * data_[266] + cB00_current[2] * data_[122];
-  data_[291] = C00_[3] * data_[279] + B10_current[3] * data_[267] + cB00_current[3] * data_[123];
-  data_[292] = C00_[4] * data_[280] + B10_current[4] * data_[268] + cB00_current[4] * data_[124];
-  data_[293] = C00_[5] * data_[281] + B10_current[5] * data_[269] + cB00_current[5] * data_[125];
-  data_[294] = C00_[6] * data_[282] + B10_current[6] * data_[270] + cB00_current[6] * data_[126];
-  data_[295] = C00_[7] * data_[283] + B10_current[7] * data_[271] + cB00_current[7] * data_[127];
-  data_[296] = C00_[8] * data_[284] + B10_current[8] * data_[272] + cB00_current[8] * data_[128];
-  data_[297] = C00_[9] * data_[285] + B10_current[9] * data_[273] + cB00_current[9] * data_[129];
-  data_[298] = C00_[10] * data_[286] + B10_current[10] * data_[274] + cB00_current[10] * data_[130];
-  data_[299] = C00_[11] * data_[287] + B10_current[11] * data_[275] + cB00_current[11] * data_[131];
+  for (int t = 0; t != 12; ++t)
+    data_[288+t] = C00_[t] * data_[276+t] + B10_current[t] * data_[264+t] + cB00_current[t] * data_[120+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[300] = C00_[0] * data_[288] + B10_current[0] * data_[276] + cB00_current[0] * data_[132];
-  data_[301] = C00_[1] * data_[289] + B10_current[1] * data_[277] + cB00_current[1] * data_[133];
-  data_[302] = C00_[2] * data_[290] + B10_current[2] * data_[278] + cB00_current[2] * data_[134];
-  data_[303] = C00_[3] * data_[291] + B10_current[3] * data_[279] + cB00_current[3] * data_[135];
-  data_[304] = C00_[4] * data_[292] + B10_current[4] * data_[280] + cB00_current[4] * data_[136];
-  data_[305] = C00_[5] * data_[293] + B10_current[5] * data_[281] + cB00_current[5] * data_[137];
-  data_[306] = C00_[6] * data_[294] + B10_current[6] * data_[282] + cB00_current[6] * data_[138];
-  data_[307] = C00_[7] * data_[295] + B10_current[7] * data_[283] + cB00_current[7] * data_[139];
-  data_[308] = C00_[8] * data_[296] + B10_current[8] * data_[284] + cB00_current[8] * data_[140];
-  data_[309] = C00_[9] * data_[297] + B10_current[9] * data_[285] + cB00_current[9] * data_[141];
-  data_[310] = C00_[10] * data_[298] + B10_current[10] * data_[286] + cB00_current[10] * data_[142];
-  data_[311] = C00_[11] * data_[299] + B10_current[11] * data_[287] + cB00_current[11] * data_[143];
+  for (int t = 0; t != 12; ++t)
+    data_[300+t] = C00_[t] * data_[288+t] + B10_current[t] * data_[276+t] + cB00_current[t] * data_[132+t];
 
   double B01_current[12];
-  B01_current[0] = B01_[0];
-  B01_current[1] = B01_[1];
-  B01_current[2] = B01_[2];
-  B01_current[3] = B01_[3];
-  B01_current[4] = B01_[4];
-  B01_current[5] = B01_[5];
-  B01_current[6] = B01_[6];
-  B01_current[7] = B01_[7];
-  B01_current[8] = B01_[8];
-  B01_current[9] = B01_[9];
-  B01_current[10] = B01_[10];
-  B01_current[11] = B01_[11];
-
-  data_[312] = D00_[0] * data_[156] + B01_current[0];
-  data_[313] = D00_[1] * data_[157] + B01_current[1];
-  data_[314] = D00_[2] * data_[158] + B01_current[2];
-  data_[315] = D00_[3] * data_[159] + B01_current[3];
-  data_[316] = D00_[4] * data_[160] + B01_current[4];
-  data_[317] = D00_[5] * data_[161] + B01_current[5];
-  data_[318] = D00_[6] * data_[162] + B01_current[6];
-  data_[319] = D00_[7] * data_[163] + B01_current[7];
-  data_[320] = D00_[8] * data_[164] + B01_current[8];
-  data_[321] = D00_[9] * data_[165] + B01_current[9];
-  data_[322] = D00_[10] * data_[166] + B01_current[10];
-  data_[323] = D00_[11] * data_[167] + B01_current[11];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[324] = C00_[0] * data_[312] + cB00_current[0] * data_[156];
-  data_[325] = C00_[1] * data_[313] + cB00_current[1] * data_[157];
-  data_[326] = C00_[2] * data_[314] + cB00_current[2] * data_[158];
-  data_[327] = C00_[3] * data_[315] + cB00_current[3] * data_[159];
-  data_[328] = C00_[4] * data_[316] + cB00_current[4] * data_[160];
-  data_[329] = C00_[5] * data_[317] + cB00_current[5] * data_[161];
-  data_[330] = C00_[6] * data_[318] + cB00_current[6] * data_[162];
-  data_[331] = C00_[7] * data_[319] + cB00_current[7] * data_[163];
-  data_[332] = C00_[8] * data_[320] + cB00_current[8] * data_[164];
-  data_[333] = C00_[9] * data_[321] + cB00_current[9] * data_[165];
-  data_[334] = C00_[10] * data_[322] + cB00_current[10] * data_[166];
-  data_[335] = C00_[11] * data_[323] + cB00_current[11] * data_[167];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[336] = C00_[0] * data_[324] + B10_current[0] * data_[312] + cB00_current[0] * data_[168];
-  data_[337] = C00_[1] * data_[325] + B10_current[1] * data_[313] + cB00_current[1] * data_[169];
-  data_[338] = C00_[2] * data_[326] + B10_current[2] * data_[314] + cB00_current[2] * data_[170];
-  data_[339] = C00_[3] * data_[327] + B10_current[3] * data_[315] + cB00_current[3] * data_[171];
-  data_[340] = C00_[4] * data_[328] + B10_current[4] * data_[316] + cB00_current[4] * data_[172];
-  data_[341] = C00_[5] * data_[329] + B10_current[5] * data_[317] + cB00_current[5] * data_[173];
-  data_[342] = C00_[6] * data_[330] + B10_current[6] * data_[318] + cB00_current[6] * data_[174];
-  data_[343] = C00_[7] * data_[331] + B10_current[7] * data_[319] + cB00_current[7] * data_[175];
-  data_[344] = C00_[8] * data_[332] + B10_current[8] * data_[320] + cB00_current[8] * data_[176];
-  data_[345] = C00_[9] * data_[333] + B10_current[9] * data_[321] + cB00_current[9] * data_[177];
-  data_[346] = C00_[10] * data_[334] + B10_current[10] * data_[322] + cB00_current[10] * data_[178];
-  data_[347] = C00_[11] * data_[335] + B10_current[11] * data_[323] + cB00_current[11] * data_[179];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[348] = C00_[0] * data_[336] + B10_current[0] * data_[324] + cB00_current[0] * data_[180];
-  data_[349] = C00_[1] * data_[337] + B10_current[1] * data_[325] + cB00_current[1] * data_[181];
-  data_[350] = C00_[2] * data_[338] + B10_current[2] * data_[326] + cB00_current[2] * data_[182];
-  data_[351] = C00_[3] * data_[339] + B10_current[3] * data_[327] + cB00_current[3] * data_[183];
-  data_[352] = C00_[4] * data_[340] + B10_current[4] * data_[328] + cB00_current[4] * data_[184];
-  data_[353] = C00_[5] * data_[341] + B10_current[5] * data_[329] + cB00_current[5] * data_[185];
-  data_[354] = C00_[6] * data_[342] + B10_current[6] * data_[330] + cB00_current[6] * data_[186];
-  data_[355] = C00_[7] * data_[343] + B10_current[7] * data_[331] + cB00_current[7] * data_[187];
-  data_[356] = C00_[8] * data_[344] + B10_current[8] * data_[332] + cB00_current[8] * data_[188];
-  data_[357] = C00_[9] * data_[345] + B10_current[9] * data_[333] + cB00_current[9] * data_[189];
-  data_[358] = C00_[10] * data_[346] + B10_current[10] * data_[334] + cB00_current[10] * data_[190];
-  data_[359] = C00_[11] * data_[347] + B10_current[11] * data_[335] + cB00_current[11] * data_[191];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[360] = C00_[0] * data_[348] + B10_current[0] * data_[336] + cB00_current[0] * data_[192];
-  data_[361] = C00_[1] * data_[349] + B10_current[1] * data_[337] + cB00_current[1] * data_[193];
-  data_[362] = C00_[2] * data_[350] + B10_current[2] * data_[338] + cB00_current[2] * data_[194];
-  data_[363] = C00_[3] * data_[351] + B10_current[3] * data_[339] + cB00_current[3] * data_[195];
-  data_[364] = C00_[4] * data_[352] + B10_current[4] * data_[340] + cB00_current[4] * data_[196];
-  data_[365] = C00_[5] * data_[353] + B10_current[5] * data_[341] + cB00_current[5] * data_[197];
-  data_[366] = C00_[6] * data_[354] + B10_current[6] * data_[342] + cB00_current[6] * data_[198];
-  data_[367] = C00_[7] * data_[355] + B10_current[7] * data_[343] + cB00_current[7] * data_[199];
-  data_[368] = C00_[8] * data_[356] + B10_current[8] * data_[344] + cB00_current[8] * data_[200];
-  data_[369] = C00_[9] * data_[357] + B10_current[9] * data_[345] + cB00_current[9] * data_[201];
-  data_[370] = C00_[10] * data_[358] + B10_current[10] * data_[346] + cB00_current[10] * data_[202];
-  data_[371] = C00_[11] * data_[359] + B10_current[11] * data_[347] + cB00_current[11] * data_[203];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[372] = C00_[0] * data_[360] + B10_current[0] * data_[348] + cB00_current[0] * data_[204];
-  data_[373] = C00_[1] * data_[361] + B10_current[1] * data_[349] + cB00_current[1] * data_[205];
-  data_[374] = C00_[2] * data_[362] + B10_current[2] * data_[350] + cB00_current[2] * data_[206];
-  data_[375] = C00_[3] * data_[363] + B10_current[3] * data_[351] + cB00_current[3] * data_[207];
-  data_[376] = C00_[4] * data_[364] + B10_current[4] * data_[352] + cB00_current[4] * data_[208];
-  data_[377] = C00_[5] * data_[365] + B10_current[5] * data_[353] + cB00_current[5] * data_[209];
-  data_[378] = C00_[6] * data_[366] + B10_current[6] * data_[354] + cB00_current[6] * data_[210];
-  data_[379] = C00_[7] * data_[367] + B10_current[7] * data_[355] + cB00_current[7] * data_[211];
-  data_[380] = C00_[8] * data_[368] + B10_current[8] * data_[356] + cB00_current[8] * data_[212];
-  data_[381] = C00_[9] * data_[369] + B10_current[9] * data_[357] + cB00_current[9] * data_[213];
-  data_[382] = C00_[10] * data_[370] + B10_current[10] * data_[358] + cB00_current[10] * data_[214];
-  data_[383] = C00_[11] * data_[371] + B10_current[11] * data_[359] + cB00_current[11] * data_[215];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[384] = C00_[0] * data_[372] + B10_current[0] * data_[360] + cB00_current[0] * data_[216];
-  data_[385] = C00_[1] * data_[373] + B10_current[1] * data_[361] + cB00_current[1] * data_[217];
-  data_[386] = C00_[2] * data_[374] + B10_current[2] * data_[362] + cB00_current[2] * data_[218];
-  data_[387] = C00_[3] * data_[375] + B10_current[3] * data_[363] + cB00_current[3] * data_[219];
-  data_[388] = C00_[4] * data_[376] + B10_current[4] * data_[364] + cB00_current[4] * data_[220];
-  data_[389] = C00_[5] * data_[377] + B10_current[5] * data_[365] + cB00_current[5] * data_[221];
-  data_[390] = C00_[6] * data_[378] + B10_current[6] * data_[366] + cB00_current[6] * data_[222];
-  data_[391] = C00_[7] * data_[379] + B10_current[7] * data_[367] + cB00_current[7] * data_[223];
-  data_[392] = C00_[8] * data_[380] + B10_current[8] * data_[368] + cB00_current[8] * data_[224];
-  data_[393] = C00_[9] * data_[381] + B10_current[9] * data_[369] + cB00_current[9] * data_[225];
-  data_[394] = C00_[10] * data_[382] + B10_current[10] * data_[370] + cB00_current[10] * data_[226];
-  data_[395] = C00_[11] * data_[383] + B10_current[11] * data_[371] + cB00_current[11] * data_[227];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[396] = C00_[0] * data_[384] + B10_current[0] * data_[372] + cB00_current[0] * data_[228];
-  data_[397] = C00_[1] * data_[385] + B10_current[1] * data_[373] + cB00_current[1] * data_[229];
-  data_[398] = C00_[2] * data_[386] + B10_current[2] * data_[374] + cB00_current[2] * data_[230];
-  data_[399] = C00_[3] * data_[387] + B10_current[3] * data_[375] + cB00_current[3] * data_[231];
-  data_[400] = C00_[4] * data_[388] + B10_current[4] * data_[376] + cB00_current[4] * data_[232];
-  data_[401] = C00_[5] * data_[389] + B10_current[5] * data_[377] + cB00_current[5] * data_[233];
-  data_[402] = C00_[6] * data_[390] + B10_current[6] * data_[378] + cB00_current[6] * data_[234];
-  data_[403] = C00_[7] * data_[391] + B10_current[7] * data_[379] + cB00_current[7] * data_[235];
-  data_[404] = C00_[8] * data_[392] + B10_current[8] * data_[380] + cB00_current[8] * data_[236];
-  data_[405] = C00_[9] * data_[393] + B10_current[9] * data_[381] + cB00_current[9] * data_[237];
-  data_[406] = C00_[10] * data_[394] + B10_current[10] * data_[382] + cB00_current[10] * data_[238];
-  data_[407] = C00_[11] * data_[395] + B10_current[11] * data_[383] + cB00_current[11] * data_[239];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[408] = C00_[0] * data_[396] + B10_current[0] * data_[384] + cB00_current[0] * data_[240];
-  data_[409] = C00_[1] * data_[397] + B10_current[1] * data_[385] + cB00_current[1] * data_[241];
-  data_[410] = C00_[2] * data_[398] + B10_current[2] * data_[386] + cB00_current[2] * data_[242];
-  data_[411] = C00_[3] * data_[399] + B10_current[3] * data_[387] + cB00_current[3] * data_[243];
-  data_[412] = C00_[4] * data_[400] + B10_current[4] * data_[388] + cB00_current[4] * data_[244];
-  data_[413] = C00_[5] * data_[401] + B10_current[5] * data_[389] + cB00_current[5] * data_[245];
-  data_[414] = C00_[6] * data_[402] + B10_current[6] * data_[390] + cB00_current[6] * data_[246];
-  data_[415] = C00_[7] * data_[403] + B10_current[7] * data_[391] + cB00_current[7] * data_[247];
-  data_[416] = C00_[8] * data_[404] + B10_current[8] * data_[392] + cB00_current[8] * data_[248];
-  data_[417] = C00_[9] * data_[405] + B10_current[9] * data_[393] + cB00_current[9] * data_[249];
-  data_[418] = C00_[10] * data_[406] + B10_current[10] * data_[394] + cB00_current[10] * data_[250];
-  data_[419] = C00_[11] * data_[407] + B10_current[11] * data_[395] + cB00_current[11] * data_[251];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[420] = C00_[0] * data_[408] + B10_current[0] * data_[396] + cB00_current[0] * data_[252];
-  data_[421] = C00_[1] * data_[409] + B10_current[1] * data_[397] + cB00_current[1] * data_[253];
-  data_[422] = C00_[2] * data_[410] + B10_current[2] * data_[398] + cB00_current[2] * data_[254];
-  data_[423] = C00_[3] * data_[411] + B10_current[3] * data_[399] + cB00_current[3] * data_[255];
-  data_[424] = C00_[4] * data_[412] + B10_current[4] * data_[400] + cB00_current[4] * data_[256];
-  data_[425] = C00_[5] * data_[413] + B10_current[5] * data_[401] + cB00_current[5] * data_[257];
-  data_[426] = C00_[6] * data_[414] + B10_current[6] * data_[402] + cB00_current[6] * data_[258];
-  data_[427] = C00_[7] * data_[415] + B10_current[7] * data_[403] + cB00_current[7] * data_[259];
-  data_[428] = C00_[8] * data_[416] + B10_current[8] * data_[404] + cB00_current[8] * data_[260];
-  data_[429] = C00_[9] * data_[417] + B10_current[9] * data_[405] + cB00_current[9] * data_[261];
-  data_[430] = C00_[10] * data_[418] + B10_current[10] * data_[406] + cB00_current[10] * data_[262];
-  data_[431] = C00_[11] * data_[419] + B10_current[11] * data_[407] + cB00_current[11] * data_[263];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[432] = C00_[0] * data_[420] + B10_current[0] * data_[408] + cB00_current[0] * data_[264];
-  data_[433] = C00_[1] * data_[421] + B10_current[1] * data_[409] + cB00_current[1] * data_[265];
-  data_[434] = C00_[2] * data_[422] + B10_current[2] * data_[410] + cB00_current[2] * data_[266];
-  data_[435] = C00_[3] * data_[423] + B10_current[3] * data_[411] + cB00_current[3] * data_[267];
-  data_[436] = C00_[4] * data_[424] + B10_current[4] * data_[412] + cB00_current[4] * data_[268];
-  data_[437] = C00_[5] * data_[425] + B10_current[5] * data_[413] + cB00_current[5] * data_[269];
-  data_[438] = C00_[6] * data_[426] + B10_current[6] * data_[414] + cB00_current[6] * data_[270];
-  data_[439] = C00_[7] * data_[427] + B10_current[7] * data_[415] + cB00_current[7] * data_[271];
-  data_[440] = C00_[8] * data_[428] + B10_current[8] * data_[416] + cB00_current[8] * data_[272];
-  data_[441] = C00_[9] * data_[429] + B10_current[9] * data_[417] + cB00_current[9] * data_[273];
-  data_[442] = C00_[10] * data_[430] + B10_current[10] * data_[418] + cB00_current[10] * data_[274];
-  data_[443] = C00_[11] * data_[431] + B10_current[11] * data_[419] + cB00_current[11] * data_[275];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[444] = C00_[0] * data_[432] + B10_current[0] * data_[420] + cB00_current[0] * data_[276];
-  data_[445] = C00_[1] * data_[433] + B10_current[1] * data_[421] + cB00_current[1] * data_[277];
-  data_[446] = C00_[2] * data_[434] + B10_current[2] * data_[422] + cB00_current[2] * data_[278];
-  data_[447] = C00_[3] * data_[435] + B10_current[3] * data_[423] + cB00_current[3] * data_[279];
-  data_[448] = C00_[4] * data_[436] + B10_current[4] * data_[424] + cB00_current[4] * data_[280];
-  data_[449] = C00_[5] * data_[437] + B10_current[5] * data_[425] + cB00_current[5] * data_[281];
-  data_[450] = C00_[6] * data_[438] + B10_current[6] * data_[426] + cB00_current[6] * data_[282];
-  data_[451] = C00_[7] * data_[439] + B10_current[7] * data_[427] + cB00_current[7] * data_[283];
-  data_[452] = C00_[8] * data_[440] + B10_current[8] * data_[428] + cB00_current[8] * data_[284];
-  data_[453] = C00_[9] * data_[441] + B10_current[9] * data_[429] + cB00_current[9] * data_[285];
-  data_[454] = C00_[10] * data_[442] + B10_current[10] * data_[430] + cB00_current[10] * data_[286];
-  data_[455] = C00_[11] * data_[443] + B10_current[11] * data_[431] + cB00_current[11] * data_[287];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[456] = C00_[0] * data_[444] + B10_current[0] * data_[432] + cB00_current[0] * data_[288];
-  data_[457] = C00_[1] * data_[445] + B10_current[1] * data_[433] + cB00_current[1] * data_[289];
-  data_[458] = C00_[2] * data_[446] + B10_current[2] * data_[434] + cB00_current[2] * data_[290];
-  data_[459] = C00_[3] * data_[447] + B10_current[3] * data_[435] + cB00_current[3] * data_[291];
-  data_[460] = C00_[4] * data_[448] + B10_current[4] * data_[436] + cB00_current[4] * data_[292];
-  data_[461] = C00_[5] * data_[449] + B10_current[5] * data_[437] + cB00_current[5] * data_[293];
-  data_[462] = C00_[6] * data_[450] + B10_current[6] * data_[438] + cB00_current[6] * data_[294];
-  data_[463] = C00_[7] * data_[451] + B10_current[7] * data_[439] + cB00_current[7] * data_[295];
-  data_[464] = C00_[8] * data_[452] + B10_current[8] * data_[440] + cB00_current[8] * data_[296];
-  data_[465] = C00_[9] * data_[453] + B10_current[9] * data_[441] + cB00_current[9] * data_[297];
-  data_[466] = C00_[10] * data_[454] + B10_current[10] * data_[442] + cB00_current[10] * data_[298];
-  data_[467] = C00_[11] * data_[455] + B10_current[11] * data_[443] + cB00_current[11] * data_[299];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[468] = D00_[0] * data_[312] + B01_current[0] * data_[156];
-  data_[469] = D00_[1] * data_[313] + B01_current[1] * data_[157];
-  data_[470] = D00_[2] * data_[314] + B01_current[2] * data_[158];
-  data_[471] = D00_[3] * data_[315] + B01_current[3] * data_[159];
-  data_[472] = D00_[4] * data_[316] + B01_current[4] * data_[160];
-  data_[473] = D00_[5] * data_[317] + B01_current[5] * data_[161];
-  data_[474] = D00_[6] * data_[318] + B01_current[6] * data_[162];
-  data_[475] = D00_[7] * data_[319] + B01_current[7] * data_[163];
-  data_[476] = D00_[8] * data_[320] + B01_current[8] * data_[164];
-  data_[477] = D00_[9] * data_[321] + B01_current[9] * data_[165];
-  data_[478] = D00_[10] * data_[322] + B01_current[10] * data_[166];
-  data_[479] = D00_[11] * data_[323] + B01_current[11] * data_[167];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[480] = C00_[0] * data_[468] + cB00_current[0] * data_[312];
-  data_[481] = C00_[1] * data_[469] + cB00_current[1] * data_[313];
-  data_[482] = C00_[2] * data_[470] + cB00_current[2] * data_[314];
-  data_[483] = C00_[3] * data_[471] + cB00_current[3] * data_[315];
-  data_[484] = C00_[4] * data_[472] + cB00_current[4] * data_[316];
-  data_[485] = C00_[5] * data_[473] + cB00_current[5] * data_[317];
-  data_[486] = C00_[6] * data_[474] + cB00_current[6] * data_[318];
-  data_[487] = C00_[7] * data_[475] + cB00_current[7] * data_[319];
-  data_[488] = C00_[8] * data_[476] + cB00_current[8] * data_[320];
-  data_[489] = C00_[9] * data_[477] + cB00_current[9] * data_[321];
-  data_[490] = C00_[10] * data_[478] + cB00_current[10] * data_[322];
-  data_[491] = C00_[11] * data_[479] + cB00_current[11] * data_[323];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[492] = C00_[0] * data_[480] + B10_current[0] * data_[468] + cB00_current[0] * data_[324];
-  data_[493] = C00_[1] * data_[481] + B10_current[1] * data_[469] + cB00_current[1] * data_[325];
-  data_[494] = C00_[2] * data_[482] + B10_current[2] * data_[470] + cB00_current[2] * data_[326];
-  data_[495] = C00_[3] * data_[483] + B10_current[3] * data_[471] + cB00_current[3] * data_[327];
-  data_[496] = C00_[4] * data_[484] + B10_current[4] * data_[472] + cB00_current[4] * data_[328];
-  data_[497] = C00_[5] * data_[485] + B10_current[5] * data_[473] + cB00_current[5] * data_[329];
-  data_[498] = C00_[6] * data_[486] + B10_current[6] * data_[474] + cB00_current[6] * data_[330];
-  data_[499] = C00_[7] * data_[487] + B10_current[7] * data_[475] + cB00_current[7] * data_[331];
-  data_[500] = C00_[8] * data_[488] + B10_current[8] * data_[476] + cB00_current[8] * data_[332];
-  data_[501] = C00_[9] * data_[489] + B10_current[9] * data_[477] + cB00_current[9] * data_[333];
-  data_[502] = C00_[10] * data_[490] + B10_current[10] * data_[478] + cB00_current[10] * data_[334];
-  data_[503] = C00_[11] * data_[491] + B10_current[11] * data_[479] + cB00_current[11] * data_[335];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[504] = C00_[0] * data_[492] + B10_current[0] * data_[480] + cB00_current[0] * data_[336];
-  data_[505] = C00_[1] * data_[493] + B10_current[1] * data_[481] + cB00_current[1] * data_[337];
-  data_[506] = C00_[2] * data_[494] + B10_current[2] * data_[482] + cB00_current[2] * data_[338];
-  data_[507] = C00_[3] * data_[495] + B10_current[3] * data_[483] + cB00_current[3] * data_[339];
-  data_[508] = C00_[4] * data_[496] + B10_current[4] * data_[484] + cB00_current[4] * data_[340];
-  data_[509] = C00_[5] * data_[497] + B10_current[5] * data_[485] + cB00_current[5] * data_[341];
-  data_[510] = C00_[6] * data_[498] + B10_current[6] * data_[486] + cB00_current[6] * data_[342];
-  data_[511] = C00_[7] * data_[499] + B10_current[7] * data_[487] + cB00_current[7] * data_[343];
-  data_[512] = C00_[8] * data_[500] + B10_current[8] * data_[488] + cB00_current[8] * data_[344];
-  data_[513] = C00_[9] * data_[501] + B10_current[9] * data_[489] + cB00_current[9] * data_[345];
-  data_[514] = C00_[10] * data_[502] + B10_current[10] * data_[490] + cB00_current[10] * data_[346];
-  data_[515] = C00_[11] * data_[503] + B10_current[11] * data_[491] + cB00_current[11] * data_[347];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[516] = C00_[0] * data_[504] + B10_current[0] * data_[492] + cB00_current[0] * data_[348];
-  data_[517] = C00_[1] * data_[505] + B10_current[1] * data_[493] + cB00_current[1] * data_[349];
-  data_[518] = C00_[2] * data_[506] + B10_current[2] * data_[494] + cB00_current[2] * data_[350];
-  data_[519] = C00_[3] * data_[507] + B10_current[3] * data_[495] + cB00_current[3] * data_[351];
-  data_[520] = C00_[4] * data_[508] + B10_current[4] * data_[496] + cB00_current[4] * data_[352];
-  data_[521] = C00_[5] * data_[509] + B10_current[5] * data_[497] + cB00_current[5] * data_[353];
-  data_[522] = C00_[6] * data_[510] + B10_current[6] * data_[498] + cB00_current[6] * data_[354];
-  data_[523] = C00_[7] * data_[511] + B10_current[7] * data_[499] + cB00_current[7] * data_[355];
-  data_[524] = C00_[8] * data_[512] + B10_current[8] * data_[500] + cB00_current[8] * data_[356];
-  data_[525] = C00_[9] * data_[513] + B10_current[9] * data_[501] + cB00_current[9] * data_[357];
-  data_[526] = C00_[10] * data_[514] + B10_current[10] * data_[502] + cB00_current[10] * data_[358];
-  data_[527] = C00_[11] * data_[515] + B10_current[11] * data_[503] + cB00_current[11] * data_[359];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[528] = C00_[0] * data_[516] + B10_current[0] * data_[504] + cB00_current[0] * data_[360];
-  data_[529] = C00_[1] * data_[517] + B10_current[1] * data_[505] + cB00_current[1] * data_[361];
-  data_[530] = C00_[2] * data_[518] + B10_current[2] * data_[506] + cB00_current[2] * data_[362];
-  data_[531] = C00_[3] * data_[519] + B10_current[3] * data_[507] + cB00_current[3] * data_[363];
-  data_[532] = C00_[4] * data_[520] + B10_current[4] * data_[508] + cB00_current[4] * data_[364];
-  data_[533] = C00_[5] * data_[521] + B10_current[5] * data_[509] + cB00_current[5] * data_[365];
-  data_[534] = C00_[6] * data_[522] + B10_current[6] * data_[510] + cB00_current[6] * data_[366];
-  data_[535] = C00_[7] * data_[523] + B10_current[7] * data_[511] + cB00_current[7] * data_[367];
-  data_[536] = C00_[8] * data_[524] + B10_current[8] * data_[512] + cB00_current[8] * data_[368];
-  data_[537] = C00_[9] * data_[525] + B10_current[9] * data_[513] + cB00_current[9] * data_[369];
-  data_[538] = C00_[10] * data_[526] + B10_current[10] * data_[514] + cB00_current[10] * data_[370];
-  data_[539] = C00_[11] * data_[527] + B10_current[11] * data_[515] + cB00_current[11] * data_[371];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[540] = C00_[0] * data_[528] + B10_current[0] * data_[516] + cB00_current[0] * data_[372];
-  data_[541] = C00_[1] * data_[529] + B10_current[1] * data_[517] + cB00_current[1] * data_[373];
-  data_[542] = C00_[2] * data_[530] + B10_current[2] * data_[518] + cB00_current[2] * data_[374];
-  data_[543] = C00_[3] * data_[531] + B10_current[3] * data_[519] + cB00_current[3] * data_[375];
-  data_[544] = C00_[4] * data_[532] + B10_current[4] * data_[520] + cB00_current[4] * data_[376];
-  data_[545] = C00_[5] * data_[533] + B10_current[5] * data_[521] + cB00_current[5] * data_[377];
-  data_[546] = C00_[6] * data_[534] + B10_current[6] * data_[522] + cB00_current[6] * data_[378];
-  data_[547] = C00_[7] * data_[535] + B10_current[7] * data_[523] + cB00_current[7] * data_[379];
-  data_[548] = C00_[8] * data_[536] + B10_current[8] * data_[524] + cB00_current[8] * data_[380];
-  data_[549] = C00_[9] * data_[537] + B10_current[9] * data_[525] + cB00_current[9] * data_[381];
-  data_[550] = C00_[10] * data_[538] + B10_current[10] * data_[526] + cB00_current[10] * data_[382];
-  data_[551] = C00_[11] * data_[539] + B10_current[11] * data_[527] + cB00_current[11] * data_[383];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[552] = C00_[0] * data_[540] + B10_current[0] * data_[528] + cB00_current[0] * data_[384];
-  data_[553] = C00_[1] * data_[541] + B10_current[1] * data_[529] + cB00_current[1] * data_[385];
-  data_[554] = C00_[2] * data_[542] + B10_current[2] * data_[530] + cB00_current[2] * data_[386];
-  data_[555] = C00_[3] * data_[543] + B10_current[3] * data_[531] + cB00_current[3] * data_[387];
-  data_[556] = C00_[4] * data_[544] + B10_current[4] * data_[532] + cB00_current[4] * data_[388];
-  data_[557] = C00_[5] * data_[545] + B10_current[5] * data_[533] + cB00_current[5] * data_[389];
-  data_[558] = C00_[6] * data_[546] + B10_current[6] * data_[534] + cB00_current[6] * data_[390];
-  data_[559] = C00_[7] * data_[547] + B10_current[7] * data_[535] + cB00_current[7] * data_[391];
-  data_[560] = C00_[8] * data_[548] + B10_current[8] * data_[536] + cB00_current[8] * data_[392];
-  data_[561] = C00_[9] * data_[549] + B10_current[9] * data_[537] + cB00_current[9] * data_[393];
-  data_[562] = C00_[10] * data_[550] + B10_current[10] * data_[538] + cB00_current[10] * data_[394];
-  data_[563] = C00_[11] * data_[551] + B10_current[11] * data_[539] + cB00_current[11] * data_[395];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[564] = C00_[0] * data_[552] + B10_current[0] * data_[540] + cB00_current[0] * data_[396];
-  data_[565] = C00_[1] * data_[553] + B10_current[1] * data_[541] + cB00_current[1] * data_[397];
-  data_[566] = C00_[2] * data_[554] + B10_current[2] * data_[542] + cB00_current[2] * data_[398];
-  data_[567] = C00_[3] * data_[555] + B10_current[3] * data_[543] + cB00_current[3] * data_[399];
-  data_[568] = C00_[4] * data_[556] + B10_current[4] * data_[544] + cB00_current[4] * data_[400];
-  data_[569] = C00_[5] * data_[557] + B10_current[5] * data_[545] + cB00_current[5] * data_[401];
-  data_[570] = C00_[6] * data_[558] + B10_current[6] * data_[546] + cB00_current[6] * data_[402];
-  data_[571] = C00_[7] * data_[559] + B10_current[7] * data_[547] + cB00_current[7] * data_[403];
-  data_[572] = C00_[8] * data_[560] + B10_current[8] * data_[548] + cB00_current[8] * data_[404];
-  data_[573] = C00_[9] * data_[561] + B10_current[9] * data_[549] + cB00_current[9] * data_[405];
-  data_[574] = C00_[10] * data_[562] + B10_current[10] * data_[550] + cB00_current[10] * data_[406];
-  data_[575] = C00_[11] * data_[563] + B10_current[11] * data_[551] + cB00_current[11] * data_[407];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[576] = C00_[0] * data_[564] + B10_current[0] * data_[552] + cB00_current[0] * data_[408];
-  data_[577] = C00_[1] * data_[565] + B10_current[1] * data_[553] + cB00_current[1] * data_[409];
-  data_[578] = C00_[2] * data_[566] + B10_current[2] * data_[554] + cB00_current[2] * data_[410];
-  data_[579] = C00_[3] * data_[567] + B10_current[3] * data_[555] + cB00_current[3] * data_[411];
-  data_[580] = C00_[4] * data_[568] + B10_current[4] * data_[556] + cB00_current[4] * data_[412];
-  data_[581] = C00_[5] * data_[569] + B10_current[5] * data_[557] + cB00_current[5] * data_[413];
-  data_[582] = C00_[6] * data_[570] + B10_current[6] * data_[558] + cB00_current[6] * data_[414];
-  data_[583] = C00_[7] * data_[571] + B10_current[7] * data_[559] + cB00_current[7] * data_[415];
-  data_[584] = C00_[8] * data_[572] + B10_current[8] * data_[560] + cB00_current[8] * data_[416];
-  data_[585] = C00_[9] * data_[573] + B10_current[9] * data_[561] + cB00_current[9] * data_[417];
-  data_[586] = C00_[10] * data_[574] + B10_current[10] * data_[562] + cB00_current[10] * data_[418];
-  data_[587] = C00_[11] * data_[575] + B10_current[11] * data_[563] + cB00_current[11] * data_[419];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[588] = C00_[0] * data_[576] + B10_current[0] * data_[564] + cB00_current[0] * data_[420];
-  data_[589] = C00_[1] * data_[577] + B10_current[1] * data_[565] + cB00_current[1] * data_[421];
-  data_[590] = C00_[2] * data_[578] + B10_current[2] * data_[566] + cB00_current[2] * data_[422];
-  data_[591] = C00_[3] * data_[579] + B10_current[3] * data_[567] + cB00_current[3] * data_[423];
-  data_[592] = C00_[4] * data_[580] + B10_current[4] * data_[568] + cB00_current[4] * data_[424];
-  data_[593] = C00_[5] * data_[581] + B10_current[5] * data_[569] + cB00_current[5] * data_[425];
-  data_[594] = C00_[6] * data_[582] + B10_current[6] * data_[570] + cB00_current[6] * data_[426];
-  data_[595] = C00_[7] * data_[583] + B10_current[7] * data_[571] + cB00_current[7] * data_[427];
-  data_[596] = C00_[8] * data_[584] + B10_current[8] * data_[572] + cB00_current[8] * data_[428];
-  data_[597] = C00_[9] * data_[585] + B10_current[9] * data_[573] + cB00_current[9] * data_[429];
-  data_[598] = C00_[10] * data_[586] + B10_current[10] * data_[574] + cB00_current[10] * data_[430];
-  data_[599] = C00_[11] * data_[587] + B10_current[11] * data_[575] + cB00_current[11] * data_[431];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[600] = C00_[0] * data_[588] + B10_current[0] * data_[576] + cB00_current[0] * data_[432];
-  data_[601] = C00_[1] * data_[589] + B10_current[1] * data_[577] + cB00_current[1] * data_[433];
-  data_[602] = C00_[2] * data_[590] + B10_current[2] * data_[578] + cB00_current[2] * data_[434];
-  data_[603] = C00_[3] * data_[591] + B10_current[3] * data_[579] + cB00_current[3] * data_[435];
-  data_[604] = C00_[4] * data_[592] + B10_current[4] * data_[580] + cB00_current[4] * data_[436];
-  data_[605] = C00_[5] * data_[593] + B10_current[5] * data_[581] + cB00_current[5] * data_[437];
-  data_[606] = C00_[6] * data_[594] + B10_current[6] * data_[582] + cB00_current[6] * data_[438];
-  data_[607] = C00_[7] * data_[595] + B10_current[7] * data_[583] + cB00_current[7] * data_[439];
-  data_[608] = C00_[8] * data_[596] + B10_current[8] * data_[584] + cB00_current[8] * data_[440];
-  data_[609] = C00_[9] * data_[597] + B10_current[9] * data_[585] + cB00_current[9] * data_[441];
-  data_[610] = C00_[10] * data_[598] + B10_current[10] * data_[586] + cB00_current[10] * data_[442];
-  data_[611] = C00_[11] * data_[599] + B10_current[11] * data_[587] + cB00_current[11] * data_[443];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[612] = C00_[0] * data_[600] + B10_current[0] * data_[588] + cB00_current[0] * data_[444];
-  data_[613] = C00_[1] * data_[601] + B10_current[1] * data_[589] + cB00_current[1] * data_[445];
-  data_[614] = C00_[2] * data_[602] + B10_current[2] * data_[590] + cB00_current[2] * data_[446];
-  data_[615] = C00_[3] * data_[603] + B10_current[3] * data_[591] + cB00_current[3] * data_[447];
-  data_[616] = C00_[4] * data_[604] + B10_current[4] * data_[592] + cB00_current[4] * data_[448];
-  data_[617] = C00_[5] * data_[605] + B10_current[5] * data_[593] + cB00_current[5] * data_[449];
-  data_[618] = C00_[6] * data_[606] + B10_current[6] * data_[594] + cB00_current[6] * data_[450];
-  data_[619] = C00_[7] * data_[607] + B10_current[7] * data_[595] + cB00_current[7] * data_[451];
-  data_[620] = C00_[8] * data_[608] + B10_current[8] * data_[596] + cB00_current[8] * data_[452];
-  data_[621] = C00_[9] * data_[609] + B10_current[9] * data_[597] + cB00_current[9] * data_[453];
-  data_[622] = C00_[10] * data_[610] + B10_current[10] * data_[598] + cB00_current[10] * data_[454];
-  data_[623] = C00_[11] * data_[611] + B10_current[11] * data_[599] + cB00_current[11] * data_[455];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[624] = D00_[0] * data_[468] + B01_current[0] * data_[312];
-  data_[625] = D00_[1] * data_[469] + B01_current[1] * data_[313];
-  data_[626] = D00_[2] * data_[470] + B01_current[2] * data_[314];
-  data_[627] = D00_[3] * data_[471] + B01_current[3] * data_[315];
-  data_[628] = D00_[4] * data_[472] + B01_current[4] * data_[316];
-  data_[629] = D00_[5] * data_[473] + B01_current[5] * data_[317];
-  data_[630] = D00_[6] * data_[474] + B01_current[6] * data_[318];
-  data_[631] = D00_[7] * data_[475] + B01_current[7] * data_[319];
-  data_[632] = D00_[8] * data_[476] + B01_current[8] * data_[320];
-  data_[633] = D00_[9] * data_[477] + B01_current[9] * data_[321];
-  data_[634] = D00_[10] * data_[478] + B01_current[10] * data_[322];
-  data_[635] = D00_[11] * data_[479] + B01_current[11] * data_[323];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[636] = C00_[0] * data_[624] + cB00_current[0] * data_[468];
-  data_[637] = C00_[1] * data_[625] + cB00_current[1] * data_[469];
-  data_[638] = C00_[2] * data_[626] + cB00_current[2] * data_[470];
-  data_[639] = C00_[3] * data_[627] + cB00_current[3] * data_[471];
-  data_[640] = C00_[4] * data_[628] + cB00_current[4] * data_[472];
-  data_[641] = C00_[5] * data_[629] + cB00_current[5] * data_[473];
-  data_[642] = C00_[6] * data_[630] + cB00_current[6] * data_[474];
-  data_[643] = C00_[7] * data_[631] + cB00_current[7] * data_[475];
-  data_[644] = C00_[8] * data_[632] + cB00_current[8] * data_[476];
-  data_[645] = C00_[9] * data_[633] + cB00_current[9] * data_[477];
-  data_[646] = C00_[10] * data_[634] + cB00_current[10] * data_[478];
-  data_[647] = C00_[11] * data_[635] + cB00_current[11] * data_[479];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[648] = C00_[0] * data_[636] + B10_current[0] * data_[624] + cB00_current[0] * data_[480];
-  data_[649] = C00_[1] * data_[637] + B10_current[1] * data_[625] + cB00_current[1] * data_[481];
-  data_[650] = C00_[2] * data_[638] + B10_current[2] * data_[626] + cB00_current[2] * data_[482];
-  data_[651] = C00_[3] * data_[639] + B10_current[3] * data_[627] + cB00_current[3] * data_[483];
-  data_[652] = C00_[4] * data_[640] + B10_current[4] * data_[628] + cB00_current[4] * data_[484];
-  data_[653] = C00_[5] * data_[641] + B10_current[5] * data_[629] + cB00_current[5] * data_[485];
-  data_[654] = C00_[6] * data_[642] + B10_current[6] * data_[630] + cB00_current[6] * data_[486];
-  data_[655] = C00_[7] * data_[643] + B10_current[7] * data_[631] + cB00_current[7] * data_[487];
-  data_[656] = C00_[8] * data_[644] + B10_current[8] * data_[632] + cB00_current[8] * data_[488];
-  data_[657] = C00_[9] * data_[645] + B10_current[9] * data_[633] + cB00_current[9] * data_[489];
-  data_[658] = C00_[10] * data_[646] + B10_current[10] * data_[634] + cB00_current[10] * data_[490];
-  data_[659] = C00_[11] * data_[647] + B10_current[11] * data_[635] + cB00_current[11] * data_[491];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[660] = C00_[0] * data_[648] + B10_current[0] * data_[636] + cB00_current[0] * data_[492];
-  data_[661] = C00_[1] * data_[649] + B10_current[1] * data_[637] + cB00_current[1] * data_[493];
-  data_[662] = C00_[2] * data_[650] + B10_current[2] * data_[638] + cB00_current[2] * data_[494];
-  data_[663] = C00_[3] * data_[651] + B10_current[3] * data_[639] + cB00_current[3] * data_[495];
-  data_[664] = C00_[4] * data_[652] + B10_current[4] * data_[640] + cB00_current[4] * data_[496];
-  data_[665] = C00_[5] * data_[653] + B10_current[5] * data_[641] + cB00_current[5] * data_[497];
-  data_[666] = C00_[6] * data_[654] + B10_current[6] * data_[642] + cB00_current[6] * data_[498];
-  data_[667] = C00_[7] * data_[655] + B10_current[7] * data_[643] + cB00_current[7] * data_[499];
-  data_[668] = C00_[8] * data_[656] + B10_current[8] * data_[644] + cB00_current[8] * data_[500];
-  data_[669] = C00_[9] * data_[657] + B10_current[9] * data_[645] + cB00_current[9] * data_[501];
-  data_[670] = C00_[10] * data_[658] + B10_current[10] * data_[646] + cB00_current[10] * data_[502];
-  data_[671] = C00_[11] * data_[659] + B10_current[11] * data_[647] + cB00_current[11] * data_[503];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[672] = C00_[0] * data_[660] + B10_current[0] * data_[648] + cB00_current[0] * data_[504];
-  data_[673] = C00_[1] * data_[661] + B10_current[1] * data_[649] + cB00_current[1] * data_[505];
-  data_[674] = C00_[2] * data_[662] + B10_current[2] * data_[650] + cB00_current[2] * data_[506];
-  data_[675] = C00_[3] * data_[663] + B10_current[3] * data_[651] + cB00_current[3] * data_[507];
-  data_[676] = C00_[4] * data_[664] + B10_current[4] * data_[652] + cB00_current[4] * data_[508];
-  data_[677] = C00_[5] * data_[665] + B10_current[5] * data_[653] + cB00_current[5] * data_[509];
-  data_[678] = C00_[6] * data_[666] + B10_current[6] * data_[654] + cB00_current[6] * data_[510];
-  data_[679] = C00_[7] * data_[667] + B10_current[7] * data_[655] + cB00_current[7] * data_[511];
-  data_[680] = C00_[8] * data_[668] + B10_current[8] * data_[656] + cB00_current[8] * data_[512];
-  data_[681] = C00_[9] * data_[669] + B10_current[9] * data_[657] + cB00_current[9] * data_[513];
-  data_[682] = C00_[10] * data_[670] + B10_current[10] * data_[658] + cB00_current[10] * data_[514];
-  data_[683] = C00_[11] * data_[671] + B10_current[11] * data_[659] + cB00_current[11] * data_[515];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[684] = C00_[0] * data_[672] + B10_current[0] * data_[660] + cB00_current[0] * data_[516];
-  data_[685] = C00_[1] * data_[673] + B10_current[1] * data_[661] + cB00_current[1] * data_[517];
-  data_[686] = C00_[2] * data_[674] + B10_current[2] * data_[662] + cB00_current[2] * data_[518];
-  data_[687] = C00_[3] * data_[675] + B10_current[3] * data_[663] + cB00_current[3] * data_[519];
-  data_[688] = C00_[4] * data_[676] + B10_current[4] * data_[664] + cB00_current[4] * data_[520];
-  data_[689] = C00_[5] * data_[677] + B10_current[5] * data_[665] + cB00_current[5] * data_[521];
-  data_[690] = C00_[6] * data_[678] + B10_current[6] * data_[666] + cB00_current[6] * data_[522];
-  data_[691] = C00_[7] * data_[679] + B10_current[7] * data_[667] + cB00_current[7] * data_[523];
-  data_[692] = C00_[8] * data_[680] + B10_current[8] * data_[668] + cB00_current[8] * data_[524];
-  data_[693] = C00_[9] * data_[681] + B10_current[9] * data_[669] + cB00_current[9] * data_[525];
-  data_[694] = C00_[10] * data_[682] + B10_current[10] * data_[670] + cB00_current[10] * data_[526];
-  data_[695] = C00_[11] * data_[683] + B10_current[11] * data_[671] + cB00_current[11] * data_[527];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[696] = C00_[0] * data_[684] + B10_current[0] * data_[672] + cB00_current[0] * data_[528];
-  data_[697] = C00_[1] * data_[685] + B10_current[1] * data_[673] + cB00_current[1] * data_[529];
-  data_[698] = C00_[2] * data_[686] + B10_current[2] * data_[674] + cB00_current[2] * data_[530];
-  data_[699] = C00_[3] * data_[687] + B10_current[3] * data_[675] + cB00_current[3] * data_[531];
-  data_[700] = C00_[4] * data_[688] + B10_current[4] * data_[676] + cB00_current[4] * data_[532];
-  data_[701] = C00_[5] * data_[689] + B10_current[5] * data_[677] + cB00_current[5] * data_[533];
-  data_[702] = C00_[6] * data_[690] + B10_current[6] * data_[678] + cB00_current[6] * data_[534];
-  data_[703] = C00_[7] * data_[691] + B10_current[7] * data_[679] + cB00_current[7] * data_[535];
-  data_[704] = C00_[8] * data_[692] + B10_current[8] * data_[680] + cB00_current[8] * data_[536];
-  data_[705] = C00_[9] * data_[693] + B10_current[9] * data_[681] + cB00_current[9] * data_[537];
-  data_[706] = C00_[10] * data_[694] + B10_current[10] * data_[682] + cB00_current[10] * data_[538];
-  data_[707] = C00_[11] * data_[695] + B10_current[11] * data_[683] + cB00_current[11] * data_[539];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[708] = C00_[0] * data_[696] + B10_current[0] * data_[684] + cB00_current[0] * data_[540];
-  data_[709] = C00_[1] * data_[697] + B10_current[1] * data_[685] + cB00_current[1] * data_[541];
-  data_[710] = C00_[2] * data_[698] + B10_current[2] * data_[686] + cB00_current[2] * data_[542];
-  data_[711] = C00_[3] * data_[699] + B10_current[3] * data_[687] + cB00_current[3] * data_[543];
-  data_[712] = C00_[4] * data_[700] + B10_current[4] * data_[688] + cB00_current[4] * data_[544];
-  data_[713] = C00_[5] * data_[701] + B10_current[5] * data_[689] + cB00_current[5] * data_[545];
-  data_[714] = C00_[6] * data_[702] + B10_current[6] * data_[690] + cB00_current[6] * data_[546];
-  data_[715] = C00_[7] * data_[703] + B10_current[7] * data_[691] + cB00_current[7] * data_[547];
-  data_[716] = C00_[8] * data_[704] + B10_current[8] * data_[692] + cB00_current[8] * data_[548];
-  data_[717] = C00_[9] * data_[705] + B10_current[9] * data_[693] + cB00_current[9] * data_[549];
-  data_[718] = C00_[10] * data_[706] + B10_current[10] * data_[694] + cB00_current[10] * data_[550];
-  data_[719] = C00_[11] * data_[707] + B10_current[11] * data_[695] + cB00_current[11] * data_[551];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[720] = C00_[0] * data_[708] + B10_current[0] * data_[696] + cB00_current[0] * data_[552];
-  data_[721] = C00_[1] * data_[709] + B10_current[1] * data_[697] + cB00_current[1] * data_[553];
-  data_[722] = C00_[2] * data_[710] + B10_current[2] * data_[698] + cB00_current[2] * data_[554];
-  data_[723] = C00_[3] * data_[711] + B10_current[3] * data_[699] + cB00_current[3] * data_[555];
-  data_[724] = C00_[4] * data_[712] + B10_current[4] * data_[700] + cB00_current[4] * data_[556];
-  data_[725] = C00_[5] * data_[713] + B10_current[5] * data_[701] + cB00_current[5] * data_[557];
-  data_[726] = C00_[6] * data_[714] + B10_current[6] * data_[702] + cB00_current[6] * data_[558];
-  data_[727] = C00_[7] * data_[715] + B10_current[7] * data_[703] + cB00_current[7] * data_[559];
-  data_[728] = C00_[8] * data_[716] + B10_current[8] * data_[704] + cB00_current[8] * data_[560];
-  data_[729] = C00_[9] * data_[717] + B10_current[9] * data_[705] + cB00_current[9] * data_[561];
-  data_[730] = C00_[10] * data_[718] + B10_current[10] * data_[706] + cB00_current[10] * data_[562];
-  data_[731] = C00_[11] * data_[719] + B10_current[11] * data_[707] + cB00_current[11] * data_[563];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[732] = C00_[0] * data_[720] + B10_current[0] * data_[708] + cB00_current[0] * data_[564];
-  data_[733] = C00_[1] * data_[721] + B10_current[1] * data_[709] + cB00_current[1] * data_[565];
-  data_[734] = C00_[2] * data_[722] + B10_current[2] * data_[710] + cB00_current[2] * data_[566];
-  data_[735] = C00_[3] * data_[723] + B10_current[3] * data_[711] + cB00_current[3] * data_[567];
-  data_[736] = C00_[4] * data_[724] + B10_current[4] * data_[712] + cB00_current[4] * data_[568];
-  data_[737] = C00_[5] * data_[725] + B10_current[5] * data_[713] + cB00_current[5] * data_[569];
-  data_[738] = C00_[6] * data_[726] + B10_current[6] * data_[714] + cB00_current[6] * data_[570];
-  data_[739] = C00_[7] * data_[727] + B10_current[7] * data_[715] + cB00_current[7] * data_[571];
-  data_[740] = C00_[8] * data_[728] + B10_current[8] * data_[716] + cB00_current[8] * data_[572];
-  data_[741] = C00_[9] * data_[729] + B10_current[9] * data_[717] + cB00_current[9] * data_[573];
-  data_[742] = C00_[10] * data_[730] + B10_current[10] * data_[718] + cB00_current[10] * data_[574];
-  data_[743] = C00_[11] * data_[731] + B10_current[11] * data_[719] + cB00_current[11] * data_[575];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[744] = C00_[0] * data_[732] + B10_current[0] * data_[720] + cB00_current[0] * data_[576];
-  data_[745] = C00_[1] * data_[733] + B10_current[1] * data_[721] + cB00_current[1] * data_[577];
-  data_[746] = C00_[2] * data_[734] + B10_current[2] * data_[722] + cB00_current[2] * data_[578];
-  data_[747] = C00_[3] * data_[735] + B10_current[3] * data_[723] + cB00_current[3] * data_[579];
-  data_[748] = C00_[4] * data_[736] + B10_current[4] * data_[724] + cB00_current[4] * data_[580];
-  data_[749] = C00_[5] * data_[737] + B10_current[5] * data_[725] + cB00_current[5] * data_[581];
-  data_[750] = C00_[6] * data_[738] + B10_current[6] * data_[726] + cB00_current[6] * data_[582];
-  data_[751] = C00_[7] * data_[739] + B10_current[7] * data_[727] + cB00_current[7] * data_[583];
-  data_[752] = C00_[8] * data_[740] + B10_current[8] * data_[728] + cB00_current[8] * data_[584];
-  data_[753] = C00_[9] * data_[741] + B10_current[9] * data_[729] + cB00_current[9] * data_[585];
-  data_[754] = C00_[10] * data_[742] + B10_current[10] * data_[730] + cB00_current[10] * data_[586];
-  data_[755] = C00_[11] * data_[743] + B10_current[11] * data_[731] + cB00_current[11] * data_[587];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[756] = C00_[0] * data_[744] + B10_current[0] * data_[732] + cB00_current[0] * data_[588];
-  data_[757] = C00_[1] * data_[745] + B10_current[1] * data_[733] + cB00_current[1] * data_[589];
-  data_[758] = C00_[2] * data_[746] + B10_current[2] * data_[734] + cB00_current[2] * data_[590];
-  data_[759] = C00_[3] * data_[747] + B10_current[3] * data_[735] + cB00_current[3] * data_[591];
-  data_[760] = C00_[4] * data_[748] + B10_current[4] * data_[736] + cB00_current[4] * data_[592];
-  data_[761] = C00_[5] * data_[749] + B10_current[5] * data_[737] + cB00_current[5] * data_[593];
-  data_[762] = C00_[6] * data_[750] + B10_current[6] * data_[738] + cB00_current[6] * data_[594];
-  data_[763] = C00_[7] * data_[751] + B10_current[7] * data_[739] + cB00_current[7] * data_[595];
-  data_[764] = C00_[8] * data_[752] + B10_current[8] * data_[740] + cB00_current[8] * data_[596];
-  data_[765] = C00_[9] * data_[753] + B10_current[9] * data_[741] + cB00_current[9] * data_[597];
-  data_[766] = C00_[10] * data_[754] + B10_current[10] * data_[742] + cB00_current[10] * data_[598];
-  data_[767] = C00_[11] * data_[755] + B10_current[11] * data_[743] + cB00_current[11] * data_[599];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[768] = C00_[0] * data_[756] + B10_current[0] * data_[744] + cB00_current[0] * data_[600];
-  data_[769] = C00_[1] * data_[757] + B10_current[1] * data_[745] + cB00_current[1] * data_[601];
-  data_[770] = C00_[2] * data_[758] + B10_current[2] * data_[746] + cB00_current[2] * data_[602];
-  data_[771] = C00_[3] * data_[759] + B10_current[3] * data_[747] + cB00_current[3] * data_[603];
-  data_[772] = C00_[4] * data_[760] + B10_current[4] * data_[748] + cB00_current[4] * data_[604];
-  data_[773] = C00_[5] * data_[761] + B10_current[5] * data_[749] + cB00_current[5] * data_[605];
-  data_[774] = C00_[6] * data_[762] + B10_current[6] * data_[750] + cB00_current[6] * data_[606];
-  data_[775] = C00_[7] * data_[763] + B10_current[7] * data_[751] + cB00_current[7] * data_[607];
-  data_[776] = C00_[8] * data_[764] + B10_current[8] * data_[752] + cB00_current[8] * data_[608];
-  data_[777] = C00_[9] * data_[765] + B10_current[9] * data_[753] + cB00_current[9] * data_[609];
-  data_[778] = C00_[10] * data_[766] + B10_current[10] * data_[754] + cB00_current[10] * data_[610];
-  data_[779] = C00_[11] * data_[767] + B10_current[11] * data_[755] + cB00_current[11] * data_[611];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[780] = D00_[0] * data_[624] + B01_current[0] * data_[468];
-  data_[781] = D00_[1] * data_[625] + B01_current[1] * data_[469];
-  data_[782] = D00_[2] * data_[626] + B01_current[2] * data_[470];
-  data_[783] = D00_[3] * data_[627] + B01_current[3] * data_[471];
-  data_[784] = D00_[4] * data_[628] + B01_current[4] * data_[472];
-  data_[785] = D00_[5] * data_[629] + B01_current[5] * data_[473];
-  data_[786] = D00_[6] * data_[630] + B01_current[6] * data_[474];
-  data_[787] = D00_[7] * data_[631] + B01_current[7] * data_[475];
-  data_[788] = D00_[8] * data_[632] + B01_current[8] * data_[476];
-  data_[789] = D00_[9] * data_[633] + B01_current[9] * data_[477];
-  data_[790] = D00_[10] * data_[634] + B01_current[10] * data_[478];
-  data_[791] = D00_[11] * data_[635] + B01_current[11] * data_[479];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[792] = C00_[0] * data_[780] + cB00_current[0] * data_[624];
-  data_[793] = C00_[1] * data_[781] + cB00_current[1] * data_[625];
-  data_[794] = C00_[2] * data_[782] + cB00_current[2] * data_[626];
-  data_[795] = C00_[3] * data_[783] + cB00_current[3] * data_[627];
-  data_[796] = C00_[4] * data_[784] + cB00_current[4] * data_[628];
-  data_[797] = C00_[5] * data_[785] + cB00_current[5] * data_[629];
-  data_[798] = C00_[6] * data_[786] + cB00_current[6] * data_[630];
-  data_[799] = C00_[7] * data_[787] + cB00_current[7] * data_[631];
-  data_[800] = C00_[8] * data_[788] + cB00_current[8] * data_[632];
-  data_[801] = C00_[9] * data_[789] + cB00_current[9] * data_[633];
-  data_[802] = C00_[10] * data_[790] + cB00_current[10] * data_[634];
-  data_[803] = C00_[11] * data_[791] + cB00_current[11] * data_[635];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[804] = C00_[0] * data_[792] + B10_current[0] * data_[780] + cB00_current[0] * data_[636];
-  data_[805] = C00_[1] * data_[793] + B10_current[1] * data_[781] + cB00_current[1] * data_[637];
-  data_[806] = C00_[2] * data_[794] + B10_current[2] * data_[782] + cB00_current[2] * data_[638];
-  data_[807] = C00_[3] * data_[795] + B10_current[3] * data_[783] + cB00_current[3] * data_[639];
-  data_[808] = C00_[4] * data_[796] + B10_current[4] * data_[784] + cB00_current[4] * data_[640];
-  data_[809] = C00_[5] * data_[797] + B10_current[5] * data_[785] + cB00_current[5] * data_[641];
-  data_[810] = C00_[6] * data_[798] + B10_current[6] * data_[786] + cB00_current[6] * data_[642];
-  data_[811] = C00_[7] * data_[799] + B10_current[7] * data_[787] + cB00_current[7] * data_[643];
-  data_[812] = C00_[8] * data_[800] + B10_current[8] * data_[788] + cB00_current[8] * data_[644];
-  data_[813] = C00_[9] * data_[801] + B10_current[9] * data_[789] + cB00_current[9] * data_[645];
-  data_[814] = C00_[10] * data_[802] + B10_current[10] * data_[790] + cB00_current[10] * data_[646];
-  data_[815] = C00_[11] * data_[803] + B10_current[11] * data_[791] + cB00_current[11] * data_[647];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[816] = C00_[0] * data_[804] + B10_current[0] * data_[792] + cB00_current[0] * data_[648];
-  data_[817] = C00_[1] * data_[805] + B10_current[1] * data_[793] + cB00_current[1] * data_[649];
-  data_[818] = C00_[2] * data_[806] + B10_current[2] * data_[794] + cB00_current[2] * data_[650];
-  data_[819] = C00_[3] * data_[807] + B10_current[3] * data_[795] + cB00_current[3] * data_[651];
-  data_[820] = C00_[4] * data_[808] + B10_current[4] * data_[796] + cB00_current[4] * data_[652];
-  data_[821] = C00_[5] * data_[809] + B10_current[5] * data_[797] + cB00_current[5] * data_[653];
-  data_[822] = C00_[6] * data_[810] + B10_current[6] * data_[798] + cB00_current[6] * data_[654];
-  data_[823] = C00_[7] * data_[811] + B10_current[7] * data_[799] + cB00_current[7] * data_[655];
-  data_[824] = C00_[8] * data_[812] + B10_current[8] * data_[800] + cB00_current[8] * data_[656];
-  data_[825] = C00_[9] * data_[813] + B10_current[9] * data_[801] + cB00_current[9] * data_[657];
-  data_[826] = C00_[10] * data_[814] + B10_current[10] * data_[802] + cB00_current[10] * data_[658];
-  data_[827] = C00_[11] * data_[815] + B10_current[11] * data_[803] + cB00_current[11] * data_[659];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[828] = C00_[0] * data_[816] + B10_current[0] * data_[804] + cB00_current[0] * data_[660];
-  data_[829] = C00_[1] * data_[817] + B10_current[1] * data_[805] + cB00_current[1] * data_[661];
-  data_[830] = C00_[2] * data_[818] + B10_current[2] * data_[806] + cB00_current[2] * data_[662];
-  data_[831] = C00_[3] * data_[819] + B10_current[3] * data_[807] + cB00_current[3] * data_[663];
-  data_[832] = C00_[4] * data_[820] + B10_current[4] * data_[808] + cB00_current[4] * data_[664];
-  data_[833] = C00_[5] * data_[821] + B10_current[5] * data_[809] + cB00_current[5] * data_[665];
-  data_[834] = C00_[6] * data_[822] + B10_current[6] * data_[810] + cB00_current[6] * data_[666];
-  data_[835] = C00_[7] * data_[823] + B10_current[7] * data_[811] + cB00_current[7] * data_[667];
-  data_[836] = C00_[8] * data_[824] + B10_current[8] * data_[812] + cB00_current[8] * data_[668];
-  data_[837] = C00_[9] * data_[825] + B10_current[9] * data_[813] + cB00_current[9] * data_[669];
-  data_[838] = C00_[10] * data_[826] + B10_current[10] * data_[814] + cB00_current[10] * data_[670];
-  data_[839] = C00_[11] * data_[827] + B10_current[11] * data_[815] + cB00_current[11] * data_[671];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[840] = C00_[0] * data_[828] + B10_current[0] * data_[816] + cB00_current[0] * data_[672];
-  data_[841] = C00_[1] * data_[829] + B10_current[1] * data_[817] + cB00_current[1] * data_[673];
-  data_[842] = C00_[2] * data_[830] + B10_current[2] * data_[818] + cB00_current[2] * data_[674];
-  data_[843] = C00_[3] * data_[831] + B10_current[3] * data_[819] + cB00_current[3] * data_[675];
-  data_[844] = C00_[4] * data_[832] + B10_current[4] * data_[820] + cB00_current[4] * data_[676];
-  data_[845] = C00_[5] * data_[833] + B10_current[5] * data_[821] + cB00_current[5] * data_[677];
-  data_[846] = C00_[6] * data_[834] + B10_current[6] * data_[822] + cB00_current[6] * data_[678];
-  data_[847] = C00_[7] * data_[835] + B10_current[7] * data_[823] + cB00_current[7] * data_[679];
-  data_[848] = C00_[8] * data_[836] + B10_current[8] * data_[824] + cB00_current[8] * data_[680];
-  data_[849] = C00_[9] * data_[837] + B10_current[9] * data_[825] + cB00_current[9] * data_[681];
-  data_[850] = C00_[10] * data_[838] + B10_current[10] * data_[826] + cB00_current[10] * data_[682];
-  data_[851] = C00_[11] * data_[839] + B10_current[11] * data_[827] + cB00_current[11] * data_[683];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[852] = C00_[0] * data_[840] + B10_current[0] * data_[828] + cB00_current[0] * data_[684];
-  data_[853] = C00_[1] * data_[841] + B10_current[1] * data_[829] + cB00_current[1] * data_[685];
-  data_[854] = C00_[2] * data_[842] + B10_current[2] * data_[830] + cB00_current[2] * data_[686];
-  data_[855] = C00_[3] * data_[843] + B10_current[3] * data_[831] + cB00_current[3] * data_[687];
-  data_[856] = C00_[4] * data_[844] + B10_current[4] * data_[832] + cB00_current[4] * data_[688];
-  data_[857] = C00_[5] * data_[845] + B10_current[5] * data_[833] + cB00_current[5] * data_[689];
-  data_[858] = C00_[6] * data_[846] + B10_current[6] * data_[834] + cB00_current[6] * data_[690];
-  data_[859] = C00_[7] * data_[847] + B10_current[7] * data_[835] + cB00_current[7] * data_[691];
-  data_[860] = C00_[8] * data_[848] + B10_current[8] * data_[836] + cB00_current[8] * data_[692];
-  data_[861] = C00_[9] * data_[849] + B10_current[9] * data_[837] + cB00_current[9] * data_[693];
-  data_[862] = C00_[10] * data_[850] + B10_current[10] * data_[838] + cB00_current[10] * data_[694];
-  data_[863] = C00_[11] * data_[851] + B10_current[11] * data_[839] + cB00_current[11] * data_[695];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[864] = C00_[0] * data_[852] + B10_current[0] * data_[840] + cB00_current[0] * data_[696];
-  data_[865] = C00_[1] * data_[853] + B10_current[1] * data_[841] + cB00_current[1] * data_[697];
-  data_[866] = C00_[2] * data_[854] + B10_current[2] * data_[842] + cB00_current[2] * data_[698];
-  data_[867] = C00_[3] * data_[855] + B10_current[3] * data_[843] + cB00_current[3] * data_[699];
-  data_[868] = C00_[4] * data_[856] + B10_current[4] * data_[844] + cB00_current[4] * data_[700];
-  data_[869] = C00_[5] * data_[857] + B10_current[5] * data_[845] + cB00_current[5] * data_[701];
-  data_[870] = C00_[6] * data_[858] + B10_current[6] * data_[846] + cB00_current[6] * data_[702];
-  data_[871] = C00_[7] * data_[859] + B10_current[7] * data_[847] + cB00_current[7] * data_[703];
-  data_[872] = C00_[8] * data_[860] + B10_current[8] * data_[848] + cB00_current[8] * data_[704];
-  data_[873] = C00_[9] * data_[861] + B10_current[9] * data_[849] + cB00_current[9] * data_[705];
-  data_[874] = C00_[10] * data_[862] + B10_current[10] * data_[850] + cB00_current[10] * data_[706];
-  data_[875] = C00_[11] * data_[863] + B10_current[11] * data_[851] + cB00_current[11] * data_[707];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[876] = C00_[0] * data_[864] + B10_current[0] * data_[852] + cB00_current[0] * data_[708];
-  data_[877] = C00_[1] * data_[865] + B10_current[1] * data_[853] + cB00_current[1] * data_[709];
-  data_[878] = C00_[2] * data_[866] + B10_current[2] * data_[854] + cB00_current[2] * data_[710];
-  data_[879] = C00_[3] * data_[867] + B10_current[3] * data_[855] + cB00_current[3] * data_[711];
-  data_[880] = C00_[4] * data_[868] + B10_current[4] * data_[856] + cB00_current[4] * data_[712];
-  data_[881] = C00_[5] * data_[869] + B10_current[5] * data_[857] + cB00_current[5] * data_[713];
-  data_[882] = C00_[6] * data_[870] + B10_current[6] * data_[858] + cB00_current[6] * data_[714];
-  data_[883] = C00_[7] * data_[871] + B10_current[7] * data_[859] + cB00_current[7] * data_[715];
-  data_[884] = C00_[8] * data_[872] + B10_current[8] * data_[860] + cB00_current[8] * data_[716];
-  data_[885] = C00_[9] * data_[873] + B10_current[9] * data_[861] + cB00_current[9] * data_[717];
-  data_[886] = C00_[10] * data_[874] + B10_current[10] * data_[862] + cB00_current[10] * data_[718];
-  data_[887] = C00_[11] * data_[875] + B10_current[11] * data_[863] + cB00_current[11] * data_[719];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[888] = C00_[0] * data_[876] + B10_current[0] * data_[864] + cB00_current[0] * data_[720];
-  data_[889] = C00_[1] * data_[877] + B10_current[1] * data_[865] + cB00_current[1] * data_[721];
-  data_[890] = C00_[2] * data_[878] + B10_current[2] * data_[866] + cB00_current[2] * data_[722];
-  data_[891] = C00_[3] * data_[879] + B10_current[3] * data_[867] + cB00_current[3] * data_[723];
-  data_[892] = C00_[4] * data_[880] + B10_current[4] * data_[868] + cB00_current[4] * data_[724];
-  data_[893] = C00_[5] * data_[881] + B10_current[5] * data_[869] + cB00_current[5] * data_[725];
-  data_[894] = C00_[6] * data_[882] + B10_current[6] * data_[870] + cB00_current[6] * data_[726];
-  data_[895] = C00_[7] * data_[883] + B10_current[7] * data_[871] + cB00_current[7] * data_[727];
-  data_[896] = C00_[8] * data_[884] + B10_current[8] * data_[872] + cB00_current[8] * data_[728];
-  data_[897] = C00_[9] * data_[885] + B10_current[9] * data_[873] + cB00_current[9] * data_[729];
-  data_[898] = C00_[10] * data_[886] + B10_current[10] * data_[874] + cB00_current[10] * data_[730];
-  data_[899] = C00_[11] * data_[887] + B10_current[11] * data_[875] + cB00_current[11] * data_[731];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[900] = C00_[0] * data_[888] + B10_current[0] * data_[876] + cB00_current[0] * data_[732];
-  data_[901] = C00_[1] * data_[889] + B10_current[1] * data_[877] + cB00_current[1] * data_[733];
-  data_[902] = C00_[2] * data_[890] + B10_current[2] * data_[878] + cB00_current[2] * data_[734];
-  data_[903] = C00_[3] * data_[891] + B10_current[3] * data_[879] + cB00_current[3] * data_[735];
-  data_[904] = C00_[4] * data_[892] + B10_current[4] * data_[880] + cB00_current[4] * data_[736];
-  data_[905] = C00_[5] * data_[893] + B10_current[5] * data_[881] + cB00_current[5] * data_[737];
-  data_[906] = C00_[6] * data_[894] + B10_current[6] * data_[882] + cB00_current[6] * data_[738];
-  data_[907] = C00_[7] * data_[895] + B10_current[7] * data_[883] + cB00_current[7] * data_[739];
-  data_[908] = C00_[8] * data_[896] + B10_current[8] * data_[884] + cB00_current[8] * data_[740];
-  data_[909] = C00_[9] * data_[897] + B10_current[9] * data_[885] + cB00_current[9] * data_[741];
-  data_[910] = C00_[10] * data_[898] + B10_current[10] * data_[886] + cB00_current[10] * data_[742];
-  data_[911] = C00_[11] * data_[899] + B10_current[11] * data_[887] + cB00_current[11] * data_[743];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[912] = C00_[0] * data_[900] + B10_current[0] * data_[888] + cB00_current[0] * data_[744];
-  data_[913] = C00_[1] * data_[901] + B10_current[1] * data_[889] + cB00_current[1] * data_[745];
-  data_[914] = C00_[2] * data_[902] + B10_current[2] * data_[890] + cB00_current[2] * data_[746];
-  data_[915] = C00_[3] * data_[903] + B10_current[3] * data_[891] + cB00_current[3] * data_[747];
-  data_[916] = C00_[4] * data_[904] + B10_current[4] * data_[892] + cB00_current[4] * data_[748];
-  data_[917] = C00_[5] * data_[905] + B10_current[5] * data_[893] + cB00_current[5] * data_[749];
-  data_[918] = C00_[6] * data_[906] + B10_current[6] * data_[894] + cB00_current[6] * data_[750];
-  data_[919] = C00_[7] * data_[907] + B10_current[7] * data_[895] + cB00_current[7] * data_[751];
-  data_[920] = C00_[8] * data_[908] + B10_current[8] * data_[896] + cB00_current[8] * data_[752];
-  data_[921] = C00_[9] * data_[909] + B10_current[9] * data_[897] + cB00_current[9] * data_[753];
-  data_[922] = C00_[10] * data_[910] + B10_current[10] * data_[898] + cB00_current[10] * data_[754];
-  data_[923] = C00_[11] * data_[911] + B10_current[11] * data_[899] + cB00_current[11] * data_[755];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[924] = C00_[0] * data_[912] + B10_current[0] * data_[900] + cB00_current[0] * data_[756];
-  data_[925] = C00_[1] * data_[913] + B10_current[1] * data_[901] + cB00_current[1] * data_[757];
-  data_[926] = C00_[2] * data_[914] + B10_current[2] * data_[902] + cB00_current[2] * data_[758];
-  data_[927] = C00_[3] * data_[915] + B10_current[3] * data_[903] + cB00_current[3] * data_[759];
-  data_[928] = C00_[4] * data_[916] + B10_current[4] * data_[904] + cB00_current[4] * data_[760];
-  data_[929] = C00_[5] * data_[917] + B10_current[5] * data_[905] + cB00_current[5] * data_[761];
-  data_[930] = C00_[6] * data_[918] + B10_current[6] * data_[906] + cB00_current[6] * data_[762];
-  data_[931] = C00_[7] * data_[919] + B10_current[7] * data_[907] + cB00_current[7] * data_[763];
-  data_[932] = C00_[8] * data_[920] + B10_current[8] * data_[908] + cB00_current[8] * data_[764];
-  data_[933] = C00_[9] * data_[921] + B10_current[9] * data_[909] + cB00_current[9] * data_[765];
-  data_[934] = C00_[10] * data_[922] + B10_current[10] * data_[910] + cB00_current[10] * data_[766];
-  data_[935] = C00_[11] * data_[923] + B10_current[11] * data_[911] + cB00_current[11] * data_[767];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[936] = D00_[0] * data_[780] + B01_current[0] * data_[624];
-  data_[937] = D00_[1] * data_[781] + B01_current[1] * data_[625];
-  data_[938] = D00_[2] * data_[782] + B01_current[2] * data_[626];
-  data_[939] = D00_[3] * data_[783] + B01_current[3] * data_[627];
-  data_[940] = D00_[4] * data_[784] + B01_current[4] * data_[628];
-  data_[941] = D00_[5] * data_[785] + B01_current[5] * data_[629];
-  data_[942] = D00_[6] * data_[786] + B01_current[6] * data_[630];
-  data_[943] = D00_[7] * data_[787] + B01_current[7] * data_[631];
-  data_[944] = D00_[8] * data_[788] + B01_current[8] * data_[632];
-  data_[945] = D00_[9] * data_[789] + B01_current[9] * data_[633];
-  data_[946] = D00_[10] * data_[790] + B01_current[10] * data_[634];
-  data_[947] = D00_[11] * data_[791] + B01_current[11] * data_[635];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[948] = C00_[0] * data_[936] + cB00_current[0] * data_[780];
-  data_[949] = C00_[1] * data_[937] + cB00_current[1] * data_[781];
-  data_[950] = C00_[2] * data_[938] + cB00_current[2] * data_[782];
-  data_[951] = C00_[3] * data_[939] + cB00_current[3] * data_[783];
-  data_[952] = C00_[4] * data_[940] + cB00_current[4] * data_[784];
-  data_[953] = C00_[5] * data_[941] + cB00_current[5] * data_[785];
-  data_[954] = C00_[6] * data_[942] + cB00_current[6] * data_[786];
-  data_[955] = C00_[7] * data_[943] + cB00_current[7] * data_[787];
-  data_[956] = C00_[8] * data_[944] + cB00_current[8] * data_[788];
-  data_[957] = C00_[9] * data_[945] + cB00_current[9] * data_[789];
-  data_[958] = C00_[10] * data_[946] + cB00_current[10] * data_[790];
-  data_[959] = C00_[11] * data_[947] + cB00_current[11] * data_[791];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[960] = C00_[0] * data_[948] + B10_current[0] * data_[936] + cB00_current[0] * data_[792];
-  data_[961] = C00_[1] * data_[949] + B10_current[1] * data_[937] + cB00_current[1] * data_[793];
-  data_[962] = C00_[2] * data_[950] + B10_current[2] * data_[938] + cB00_current[2] * data_[794];
-  data_[963] = C00_[3] * data_[951] + B10_current[3] * data_[939] + cB00_current[3] * data_[795];
-  data_[964] = C00_[4] * data_[952] + B10_current[4] * data_[940] + cB00_current[4] * data_[796];
-  data_[965] = C00_[5] * data_[953] + B10_current[5] * data_[941] + cB00_current[5] * data_[797];
-  data_[966] = C00_[6] * data_[954] + B10_current[6] * data_[942] + cB00_current[6] * data_[798];
-  data_[967] = C00_[7] * data_[955] + B10_current[7] * data_[943] + cB00_current[7] * data_[799];
-  data_[968] = C00_[8] * data_[956] + B10_current[8] * data_[944] + cB00_current[8] * data_[800];
-  data_[969] = C00_[9] * data_[957] + B10_current[9] * data_[945] + cB00_current[9] * data_[801];
-  data_[970] = C00_[10] * data_[958] + B10_current[10] * data_[946] + cB00_current[10] * data_[802];
-  data_[971] = C00_[11] * data_[959] + B10_current[11] * data_[947] + cB00_current[11] * data_[803];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[972] = C00_[0] * data_[960] + B10_current[0] * data_[948] + cB00_current[0] * data_[804];
-  data_[973] = C00_[1] * data_[961] + B10_current[1] * data_[949] + cB00_current[1] * data_[805];
-  data_[974] = C00_[2] * data_[962] + B10_current[2] * data_[950] + cB00_current[2] * data_[806];
-  data_[975] = C00_[3] * data_[963] + B10_current[3] * data_[951] + cB00_current[3] * data_[807];
-  data_[976] = C00_[4] * data_[964] + B10_current[4] * data_[952] + cB00_current[4] * data_[808];
-  data_[977] = C00_[5] * data_[965] + B10_current[5] * data_[953] + cB00_current[5] * data_[809];
-  data_[978] = C00_[6] * data_[966] + B10_current[6] * data_[954] + cB00_current[6] * data_[810];
-  data_[979] = C00_[7] * data_[967] + B10_current[7] * data_[955] + cB00_current[7] * data_[811];
-  data_[980] = C00_[8] * data_[968] + B10_current[8] * data_[956] + cB00_current[8] * data_[812];
-  data_[981] = C00_[9] * data_[969] + B10_current[9] * data_[957] + cB00_current[9] * data_[813];
-  data_[982] = C00_[10] * data_[970] + B10_current[10] * data_[958] + cB00_current[10] * data_[814];
-  data_[983] = C00_[11] * data_[971] + B10_current[11] * data_[959] + cB00_current[11] * data_[815];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[984] = C00_[0] * data_[972] + B10_current[0] * data_[960] + cB00_current[0] * data_[816];
-  data_[985] = C00_[1] * data_[973] + B10_current[1] * data_[961] + cB00_current[1] * data_[817];
-  data_[986] = C00_[2] * data_[974] + B10_current[2] * data_[962] + cB00_current[2] * data_[818];
-  data_[987] = C00_[3] * data_[975] + B10_current[3] * data_[963] + cB00_current[3] * data_[819];
-  data_[988] = C00_[4] * data_[976] + B10_current[4] * data_[964] + cB00_current[4] * data_[820];
-  data_[989] = C00_[5] * data_[977] + B10_current[5] * data_[965] + cB00_current[5] * data_[821];
-  data_[990] = C00_[6] * data_[978] + B10_current[6] * data_[966] + cB00_current[6] * data_[822];
-  data_[991] = C00_[7] * data_[979] + B10_current[7] * data_[967] + cB00_current[7] * data_[823];
-  data_[992] = C00_[8] * data_[980] + B10_current[8] * data_[968] + cB00_current[8] * data_[824];
-  data_[993] = C00_[9] * data_[981] + B10_current[9] * data_[969] + cB00_current[9] * data_[825];
-  data_[994] = C00_[10] * data_[982] + B10_current[10] * data_[970] + cB00_current[10] * data_[826];
-  data_[995] = C00_[11] * data_[983] + B10_current[11] * data_[971] + cB00_current[11] * data_[827];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[996] = C00_[0] * data_[984] + B10_current[0] * data_[972] + cB00_current[0] * data_[828];
-  data_[997] = C00_[1] * data_[985] + B10_current[1] * data_[973] + cB00_current[1] * data_[829];
-  data_[998] = C00_[2] * data_[986] + B10_current[2] * data_[974] + cB00_current[2] * data_[830];
-  data_[999] = C00_[3] * data_[987] + B10_current[3] * data_[975] + cB00_current[3] * data_[831];
-  data_[1000] = C00_[4] * data_[988] + B10_current[4] * data_[976] + cB00_current[4] * data_[832];
-  data_[1001] = C00_[5] * data_[989] + B10_current[5] * data_[977] + cB00_current[5] * data_[833];
-  data_[1002] = C00_[6] * data_[990] + B10_current[6] * data_[978] + cB00_current[6] * data_[834];
-  data_[1003] = C00_[7] * data_[991] + B10_current[7] * data_[979] + cB00_current[7] * data_[835];
-  data_[1004] = C00_[8] * data_[992] + B10_current[8] * data_[980] + cB00_current[8] * data_[836];
-  data_[1005] = C00_[9] * data_[993] + B10_current[9] * data_[981] + cB00_current[9] * data_[837];
-  data_[1006] = C00_[10] * data_[994] + B10_current[10] * data_[982] + cB00_current[10] * data_[838];
-  data_[1007] = C00_[11] * data_[995] + B10_current[11] * data_[983] + cB00_current[11] * data_[839];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1008] = C00_[0] * data_[996] + B10_current[0] * data_[984] + cB00_current[0] * data_[840];
-  data_[1009] = C00_[1] * data_[997] + B10_current[1] * data_[985] + cB00_current[1] * data_[841];
-  data_[1010] = C00_[2] * data_[998] + B10_current[2] * data_[986] + cB00_current[2] * data_[842];
-  data_[1011] = C00_[3] * data_[999] + B10_current[3] * data_[987] + cB00_current[3] * data_[843];
-  data_[1012] = C00_[4] * data_[1000] + B10_current[4] * data_[988] + cB00_current[4] * data_[844];
-  data_[1013] = C00_[5] * data_[1001] + B10_current[5] * data_[989] + cB00_current[5] * data_[845];
-  data_[1014] = C00_[6] * data_[1002] + B10_current[6] * data_[990] + cB00_current[6] * data_[846];
-  data_[1015] = C00_[7] * data_[1003] + B10_current[7] * data_[991] + cB00_current[7] * data_[847];
-  data_[1016] = C00_[8] * data_[1004] + B10_current[8] * data_[992] + cB00_current[8] * data_[848];
-  data_[1017] = C00_[9] * data_[1005] + B10_current[9] * data_[993] + cB00_current[9] * data_[849];
-  data_[1018] = C00_[10] * data_[1006] + B10_current[10] * data_[994] + cB00_current[10] * data_[850];
-  data_[1019] = C00_[11] * data_[1007] + B10_current[11] * data_[995] + cB00_current[11] * data_[851];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1020] = C00_[0] * data_[1008] + B10_current[0] * data_[996] + cB00_current[0] * data_[852];
-  data_[1021] = C00_[1] * data_[1009] + B10_current[1] * data_[997] + cB00_current[1] * data_[853];
-  data_[1022] = C00_[2] * data_[1010] + B10_current[2] * data_[998] + cB00_current[2] * data_[854];
-  data_[1023] = C00_[3] * data_[1011] + B10_current[3] * data_[999] + cB00_current[3] * data_[855];
-  data_[1024] = C00_[4] * data_[1012] + B10_current[4] * data_[1000] + cB00_current[4] * data_[856];
-  data_[1025] = C00_[5] * data_[1013] + B10_current[5] * data_[1001] + cB00_current[5] * data_[857];
-  data_[1026] = C00_[6] * data_[1014] + B10_current[6] * data_[1002] + cB00_current[6] * data_[858];
-  data_[1027] = C00_[7] * data_[1015] + B10_current[7] * data_[1003] + cB00_current[7] * data_[859];
-  data_[1028] = C00_[8] * data_[1016] + B10_current[8] * data_[1004] + cB00_current[8] * data_[860];
-  data_[1029] = C00_[9] * data_[1017] + B10_current[9] * data_[1005] + cB00_current[9] * data_[861];
-  data_[1030] = C00_[10] * data_[1018] + B10_current[10] * data_[1006] + cB00_current[10] * data_[862];
-  data_[1031] = C00_[11] * data_[1019] + B10_current[11] * data_[1007] + cB00_current[11] * data_[863];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1032] = C00_[0] * data_[1020] + B10_current[0] * data_[1008] + cB00_current[0] * data_[864];
-  data_[1033] = C00_[1] * data_[1021] + B10_current[1] * data_[1009] + cB00_current[1] * data_[865];
-  data_[1034] = C00_[2] * data_[1022] + B10_current[2] * data_[1010] + cB00_current[2] * data_[866];
-  data_[1035] = C00_[3] * data_[1023] + B10_current[3] * data_[1011] + cB00_current[3] * data_[867];
-  data_[1036] = C00_[4] * data_[1024] + B10_current[4] * data_[1012] + cB00_current[4] * data_[868];
-  data_[1037] = C00_[5] * data_[1025] + B10_current[5] * data_[1013] + cB00_current[5] * data_[869];
-  data_[1038] = C00_[6] * data_[1026] + B10_current[6] * data_[1014] + cB00_current[6] * data_[870];
-  data_[1039] = C00_[7] * data_[1027] + B10_current[7] * data_[1015] + cB00_current[7] * data_[871];
-  data_[1040] = C00_[8] * data_[1028] + B10_current[8] * data_[1016] + cB00_current[8] * data_[872];
-  data_[1041] = C00_[9] * data_[1029] + B10_current[9] * data_[1017] + cB00_current[9] * data_[873];
-  data_[1042] = C00_[10] * data_[1030] + B10_current[10] * data_[1018] + cB00_current[10] * data_[874];
-  data_[1043] = C00_[11] * data_[1031] + B10_current[11] * data_[1019] + cB00_current[11] * data_[875];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1044] = C00_[0] * data_[1032] + B10_current[0] * data_[1020] + cB00_current[0] * data_[876];
-  data_[1045] = C00_[1] * data_[1033] + B10_current[1] * data_[1021] + cB00_current[1] * data_[877];
-  data_[1046] = C00_[2] * data_[1034] + B10_current[2] * data_[1022] + cB00_current[2] * data_[878];
-  data_[1047] = C00_[3] * data_[1035] + B10_current[3] * data_[1023] + cB00_current[3] * data_[879];
-  data_[1048] = C00_[4] * data_[1036] + B10_current[4] * data_[1024] + cB00_current[4] * data_[880];
-  data_[1049] = C00_[5] * data_[1037] + B10_current[5] * data_[1025] + cB00_current[5] * data_[881];
-  data_[1050] = C00_[6] * data_[1038] + B10_current[6] * data_[1026] + cB00_current[6] * data_[882];
-  data_[1051] = C00_[7] * data_[1039] + B10_current[7] * data_[1027] + cB00_current[7] * data_[883];
-  data_[1052] = C00_[8] * data_[1040] + B10_current[8] * data_[1028] + cB00_current[8] * data_[884];
-  data_[1053] = C00_[9] * data_[1041] + B10_current[9] * data_[1029] + cB00_current[9] * data_[885];
-  data_[1054] = C00_[10] * data_[1042] + B10_current[10] * data_[1030] + cB00_current[10] * data_[886];
-  data_[1055] = C00_[11] * data_[1043] + B10_current[11] * data_[1031] + cB00_current[11] * data_[887];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1056] = C00_[0] * data_[1044] + B10_current[0] * data_[1032] + cB00_current[0] * data_[888];
-  data_[1057] = C00_[1] * data_[1045] + B10_current[1] * data_[1033] + cB00_current[1] * data_[889];
-  data_[1058] = C00_[2] * data_[1046] + B10_current[2] * data_[1034] + cB00_current[2] * data_[890];
-  data_[1059] = C00_[3] * data_[1047] + B10_current[3] * data_[1035] + cB00_current[3] * data_[891];
-  data_[1060] = C00_[4] * data_[1048] + B10_current[4] * data_[1036] + cB00_current[4] * data_[892];
-  data_[1061] = C00_[5] * data_[1049] + B10_current[5] * data_[1037] + cB00_current[5] * data_[893];
-  data_[1062] = C00_[6] * data_[1050] + B10_current[6] * data_[1038] + cB00_current[6] * data_[894];
-  data_[1063] = C00_[7] * data_[1051] + B10_current[7] * data_[1039] + cB00_current[7] * data_[895];
-  data_[1064] = C00_[8] * data_[1052] + B10_current[8] * data_[1040] + cB00_current[8] * data_[896];
-  data_[1065] = C00_[9] * data_[1053] + B10_current[9] * data_[1041] + cB00_current[9] * data_[897];
-  data_[1066] = C00_[10] * data_[1054] + B10_current[10] * data_[1042] + cB00_current[10] * data_[898];
-  data_[1067] = C00_[11] * data_[1055] + B10_current[11] * data_[1043] + cB00_current[11] * data_[899];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1068] = C00_[0] * data_[1056] + B10_current[0] * data_[1044] + cB00_current[0] * data_[900];
-  data_[1069] = C00_[1] * data_[1057] + B10_current[1] * data_[1045] + cB00_current[1] * data_[901];
-  data_[1070] = C00_[2] * data_[1058] + B10_current[2] * data_[1046] + cB00_current[2] * data_[902];
-  data_[1071] = C00_[3] * data_[1059] + B10_current[3] * data_[1047] + cB00_current[3] * data_[903];
-  data_[1072] = C00_[4] * data_[1060] + B10_current[4] * data_[1048] + cB00_current[4] * data_[904];
-  data_[1073] = C00_[5] * data_[1061] + B10_current[5] * data_[1049] + cB00_current[5] * data_[905];
-  data_[1074] = C00_[6] * data_[1062] + B10_current[6] * data_[1050] + cB00_current[6] * data_[906];
-  data_[1075] = C00_[7] * data_[1063] + B10_current[7] * data_[1051] + cB00_current[7] * data_[907];
-  data_[1076] = C00_[8] * data_[1064] + B10_current[8] * data_[1052] + cB00_current[8] * data_[908];
-  data_[1077] = C00_[9] * data_[1065] + B10_current[9] * data_[1053] + cB00_current[9] * data_[909];
-  data_[1078] = C00_[10] * data_[1066] + B10_current[10] * data_[1054] + cB00_current[10] * data_[910];
-  data_[1079] = C00_[11] * data_[1067] + B10_current[11] * data_[1055] + cB00_current[11] * data_[911];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1080] = C00_[0] * data_[1068] + B10_current[0] * data_[1056] + cB00_current[0] * data_[912];
-  data_[1081] = C00_[1] * data_[1069] + B10_current[1] * data_[1057] + cB00_current[1] * data_[913];
-  data_[1082] = C00_[2] * data_[1070] + B10_current[2] * data_[1058] + cB00_current[2] * data_[914];
-  data_[1083] = C00_[3] * data_[1071] + B10_current[3] * data_[1059] + cB00_current[3] * data_[915];
-  data_[1084] = C00_[4] * data_[1072] + B10_current[4] * data_[1060] + cB00_current[4] * data_[916];
-  data_[1085] = C00_[5] * data_[1073] + B10_current[5] * data_[1061] + cB00_current[5] * data_[917];
-  data_[1086] = C00_[6] * data_[1074] + B10_current[6] * data_[1062] + cB00_current[6] * data_[918];
-  data_[1087] = C00_[7] * data_[1075] + B10_current[7] * data_[1063] + cB00_current[7] * data_[919];
-  data_[1088] = C00_[8] * data_[1076] + B10_current[8] * data_[1064] + cB00_current[8] * data_[920];
-  data_[1089] = C00_[9] * data_[1077] + B10_current[9] * data_[1065] + cB00_current[9] * data_[921];
-  data_[1090] = C00_[10] * data_[1078] + B10_current[10] * data_[1066] + cB00_current[10] * data_[922];
-  data_[1091] = C00_[11] * data_[1079] + B10_current[11] * data_[1067] + cB00_current[11] * data_[923];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[1092] = D00_[0] * data_[936] + B01_current[0] * data_[780];
-  data_[1093] = D00_[1] * data_[937] + B01_current[1] * data_[781];
-  data_[1094] = D00_[2] * data_[938] + B01_current[2] * data_[782];
-  data_[1095] = D00_[3] * data_[939] + B01_current[3] * data_[783];
-  data_[1096] = D00_[4] * data_[940] + B01_current[4] * data_[784];
-  data_[1097] = D00_[5] * data_[941] + B01_current[5] * data_[785];
-  data_[1098] = D00_[6] * data_[942] + B01_current[6] * data_[786];
-  data_[1099] = D00_[7] * data_[943] + B01_current[7] * data_[787];
-  data_[1100] = D00_[8] * data_[944] + B01_current[8] * data_[788];
-  data_[1101] = D00_[9] * data_[945] + B01_current[9] * data_[789];
-  data_[1102] = D00_[10] * data_[946] + B01_current[10] * data_[790];
-  data_[1103] = D00_[11] * data_[947] + B01_current[11] * data_[791];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[1104] = C00_[0] * data_[1092] + cB00_current[0] * data_[936];
-  data_[1105] = C00_[1] * data_[1093] + cB00_current[1] * data_[937];
-  data_[1106] = C00_[2] * data_[1094] + cB00_current[2] * data_[938];
-  data_[1107] = C00_[3] * data_[1095] + cB00_current[3] * data_[939];
-  data_[1108] = C00_[4] * data_[1096] + cB00_current[4] * data_[940];
-  data_[1109] = C00_[5] * data_[1097] + cB00_current[5] * data_[941];
-  data_[1110] = C00_[6] * data_[1098] + cB00_current[6] * data_[942];
-  data_[1111] = C00_[7] * data_[1099] + cB00_current[7] * data_[943];
-  data_[1112] = C00_[8] * data_[1100] + cB00_current[8] * data_[944];
-  data_[1113] = C00_[9] * data_[1101] + cB00_current[9] * data_[945];
-  data_[1114] = C00_[10] * data_[1102] + cB00_current[10] * data_[946];
-  data_[1115] = C00_[11] * data_[1103] + cB00_current[11] * data_[947];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[1116] = C00_[0] * data_[1104] + B10_current[0] * data_[1092] + cB00_current[0] * data_[948];
-  data_[1117] = C00_[1] * data_[1105] + B10_current[1] * data_[1093] + cB00_current[1] * data_[949];
-  data_[1118] = C00_[2] * data_[1106] + B10_current[2] * data_[1094] + cB00_current[2] * data_[950];
-  data_[1119] = C00_[3] * data_[1107] + B10_current[3] * data_[1095] + cB00_current[3] * data_[951];
-  data_[1120] = C00_[4] * data_[1108] + B10_current[4] * data_[1096] + cB00_current[4] * data_[952];
-  data_[1121] = C00_[5] * data_[1109] + B10_current[5] * data_[1097] + cB00_current[5] * data_[953];
-  data_[1122] = C00_[6] * data_[1110] + B10_current[6] * data_[1098] + cB00_current[6] * data_[954];
-  data_[1123] = C00_[7] * data_[1111] + B10_current[7] * data_[1099] + cB00_current[7] * data_[955];
-  data_[1124] = C00_[8] * data_[1112] + B10_current[8] * data_[1100] + cB00_current[8] * data_[956];
-  data_[1125] = C00_[9] * data_[1113] + B10_current[9] * data_[1101] + cB00_current[9] * data_[957];
-  data_[1126] = C00_[10] * data_[1114] + B10_current[10] * data_[1102] + cB00_current[10] * data_[958];
-  data_[1127] = C00_[11] * data_[1115] + B10_current[11] * data_[1103] + cB00_current[11] * data_[959];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1128] = C00_[0] * data_[1116] + B10_current[0] * data_[1104] + cB00_current[0] * data_[960];
-  data_[1129] = C00_[1] * data_[1117] + B10_current[1] * data_[1105] + cB00_current[1] * data_[961];
-  data_[1130] = C00_[2] * data_[1118] + B10_current[2] * data_[1106] + cB00_current[2] * data_[962];
-  data_[1131] = C00_[3] * data_[1119] + B10_current[3] * data_[1107] + cB00_current[3] * data_[963];
-  data_[1132] = C00_[4] * data_[1120] + B10_current[4] * data_[1108] + cB00_current[4] * data_[964];
-  data_[1133] = C00_[5] * data_[1121] + B10_current[5] * data_[1109] + cB00_current[5] * data_[965];
-  data_[1134] = C00_[6] * data_[1122] + B10_current[6] * data_[1110] + cB00_current[6] * data_[966];
-  data_[1135] = C00_[7] * data_[1123] + B10_current[7] * data_[1111] + cB00_current[7] * data_[967];
-  data_[1136] = C00_[8] * data_[1124] + B10_current[8] * data_[1112] + cB00_current[8] * data_[968];
-  data_[1137] = C00_[9] * data_[1125] + B10_current[9] * data_[1113] + cB00_current[9] * data_[969];
-  data_[1138] = C00_[10] * data_[1126] + B10_current[10] * data_[1114] + cB00_current[10] * data_[970];
-  data_[1139] = C00_[11] * data_[1127] + B10_current[11] * data_[1115] + cB00_current[11] * data_[971];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1140] = C00_[0] * data_[1128] + B10_current[0] * data_[1116] + cB00_current[0] * data_[972];
-  data_[1141] = C00_[1] * data_[1129] + B10_current[1] * data_[1117] + cB00_current[1] * data_[973];
-  data_[1142] = C00_[2] * data_[1130] + B10_current[2] * data_[1118] + cB00_current[2] * data_[974];
-  data_[1143] = C00_[3] * data_[1131] + B10_current[3] * data_[1119] + cB00_current[3] * data_[975];
-  data_[1144] = C00_[4] * data_[1132] + B10_current[4] * data_[1120] + cB00_current[4] * data_[976];
-  data_[1145] = C00_[5] * data_[1133] + B10_current[5] * data_[1121] + cB00_current[5] * data_[977];
-  data_[1146] = C00_[6] * data_[1134] + B10_current[6] * data_[1122] + cB00_current[6] * data_[978];
-  data_[1147] = C00_[7] * data_[1135] + B10_current[7] * data_[1123] + cB00_current[7] * data_[979];
-  data_[1148] = C00_[8] * data_[1136] + B10_current[8] * data_[1124] + cB00_current[8] * data_[980];
-  data_[1149] = C00_[9] * data_[1137] + B10_current[9] * data_[1125] + cB00_current[9] * data_[981];
-  data_[1150] = C00_[10] * data_[1138] + B10_current[10] * data_[1126] + cB00_current[10] * data_[982];
-  data_[1151] = C00_[11] * data_[1139] + B10_current[11] * data_[1127] + cB00_current[11] * data_[983];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1152] = C00_[0] * data_[1140] + B10_current[0] * data_[1128] + cB00_current[0] * data_[984];
-  data_[1153] = C00_[1] * data_[1141] + B10_current[1] * data_[1129] + cB00_current[1] * data_[985];
-  data_[1154] = C00_[2] * data_[1142] + B10_current[2] * data_[1130] + cB00_current[2] * data_[986];
-  data_[1155] = C00_[3] * data_[1143] + B10_current[3] * data_[1131] + cB00_current[3] * data_[987];
-  data_[1156] = C00_[4] * data_[1144] + B10_current[4] * data_[1132] + cB00_current[4] * data_[988];
-  data_[1157] = C00_[5] * data_[1145] + B10_current[5] * data_[1133] + cB00_current[5] * data_[989];
-  data_[1158] = C00_[6] * data_[1146] + B10_current[6] * data_[1134] + cB00_current[6] * data_[990];
-  data_[1159] = C00_[7] * data_[1147] + B10_current[7] * data_[1135] + cB00_current[7] * data_[991];
-  data_[1160] = C00_[8] * data_[1148] + B10_current[8] * data_[1136] + cB00_current[8] * data_[992];
-  data_[1161] = C00_[9] * data_[1149] + B10_current[9] * data_[1137] + cB00_current[9] * data_[993];
-  data_[1162] = C00_[10] * data_[1150] + B10_current[10] * data_[1138] + cB00_current[10] * data_[994];
-  data_[1163] = C00_[11] * data_[1151] + B10_current[11] * data_[1139] + cB00_current[11] * data_[995];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1164] = C00_[0] * data_[1152] + B10_current[0] * data_[1140] + cB00_current[0] * data_[996];
-  data_[1165] = C00_[1] * data_[1153] + B10_current[1] * data_[1141] + cB00_current[1] * data_[997];
-  data_[1166] = C00_[2] * data_[1154] + B10_current[2] * data_[1142] + cB00_current[2] * data_[998];
-  data_[1167] = C00_[3] * data_[1155] + B10_current[3] * data_[1143] + cB00_current[3] * data_[999];
-  data_[1168] = C00_[4] * data_[1156] + B10_current[4] * data_[1144] + cB00_current[4] * data_[1000];
-  data_[1169] = C00_[5] * data_[1157] + B10_current[5] * data_[1145] + cB00_current[5] * data_[1001];
-  data_[1170] = C00_[6] * data_[1158] + B10_current[6] * data_[1146] + cB00_current[6] * data_[1002];
-  data_[1171] = C00_[7] * data_[1159] + B10_current[7] * data_[1147] + cB00_current[7] * data_[1003];
-  data_[1172] = C00_[8] * data_[1160] + B10_current[8] * data_[1148] + cB00_current[8] * data_[1004];
-  data_[1173] = C00_[9] * data_[1161] + B10_current[9] * data_[1149] + cB00_current[9] * data_[1005];
-  data_[1174] = C00_[10] * data_[1162] + B10_current[10] * data_[1150] + cB00_current[10] * data_[1006];
-  data_[1175] = C00_[11] * data_[1163] + B10_current[11] * data_[1151] + cB00_current[11] * data_[1007];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1176] = C00_[0] * data_[1164] + B10_current[0] * data_[1152] + cB00_current[0] * data_[1008];
-  data_[1177] = C00_[1] * data_[1165] + B10_current[1] * data_[1153] + cB00_current[1] * data_[1009];
-  data_[1178] = C00_[2] * data_[1166] + B10_current[2] * data_[1154] + cB00_current[2] * data_[1010];
-  data_[1179] = C00_[3] * data_[1167] + B10_current[3] * data_[1155] + cB00_current[3] * data_[1011];
-  data_[1180] = C00_[4] * data_[1168] + B10_current[4] * data_[1156] + cB00_current[4] * data_[1012];
-  data_[1181] = C00_[5] * data_[1169] + B10_current[5] * data_[1157] + cB00_current[5] * data_[1013];
-  data_[1182] = C00_[6] * data_[1170] + B10_current[6] * data_[1158] + cB00_current[6] * data_[1014];
-  data_[1183] = C00_[7] * data_[1171] + B10_current[7] * data_[1159] + cB00_current[7] * data_[1015];
-  data_[1184] = C00_[8] * data_[1172] + B10_current[8] * data_[1160] + cB00_current[8] * data_[1016];
-  data_[1185] = C00_[9] * data_[1173] + B10_current[9] * data_[1161] + cB00_current[9] * data_[1017];
-  data_[1186] = C00_[10] * data_[1174] + B10_current[10] * data_[1162] + cB00_current[10] * data_[1018];
-  data_[1187] = C00_[11] * data_[1175] + B10_current[11] * data_[1163] + cB00_current[11] * data_[1019];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1188] = C00_[0] * data_[1176] + B10_current[0] * data_[1164] + cB00_current[0] * data_[1020];
-  data_[1189] = C00_[1] * data_[1177] + B10_current[1] * data_[1165] + cB00_current[1] * data_[1021];
-  data_[1190] = C00_[2] * data_[1178] + B10_current[2] * data_[1166] + cB00_current[2] * data_[1022];
-  data_[1191] = C00_[3] * data_[1179] + B10_current[3] * data_[1167] + cB00_current[3] * data_[1023];
-  data_[1192] = C00_[4] * data_[1180] + B10_current[4] * data_[1168] + cB00_current[4] * data_[1024];
-  data_[1193] = C00_[5] * data_[1181] + B10_current[5] * data_[1169] + cB00_current[5] * data_[1025];
-  data_[1194] = C00_[6] * data_[1182] + B10_current[6] * data_[1170] + cB00_current[6] * data_[1026];
-  data_[1195] = C00_[7] * data_[1183] + B10_current[7] * data_[1171] + cB00_current[7] * data_[1027];
-  data_[1196] = C00_[8] * data_[1184] + B10_current[8] * data_[1172] + cB00_current[8] * data_[1028];
-  data_[1197] = C00_[9] * data_[1185] + B10_current[9] * data_[1173] + cB00_current[9] * data_[1029];
-  data_[1198] = C00_[10] * data_[1186] + B10_current[10] * data_[1174] + cB00_current[10] * data_[1030];
-  data_[1199] = C00_[11] * data_[1187] + B10_current[11] * data_[1175] + cB00_current[11] * data_[1031];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1200] = C00_[0] * data_[1188] + B10_current[0] * data_[1176] + cB00_current[0] * data_[1032];
-  data_[1201] = C00_[1] * data_[1189] + B10_current[1] * data_[1177] + cB00_current[1] * data_[1033];
-  data_[1202] = C00_[2] * data_[1190] + B10_current[2] * data_[1178] + cB00_current[2] * data_[1034];
-  data_[1203] = C00_[3] * data_[1191] + B10_current[3] * data_[1179] + cB00_current[3] * data_[1035];
-  data_[1204] = C00_[4] * data_[1192] + B10_current[4] * data_[1180] + cB00_current[4] * data_[1036];
-  data_[1205] = C00_[5] * data_[1193] + B10_current[5] * data_[1181] + cB00_current[5] * data_[1037];
-  data_[1206] = C00_[6] * data_[1194] + B10_current[6] * data_[1182] + cB00_current[6] * data_[1038];
-  data_[1207] = C00_[7] * data_[1195] + B10_current[7] * data_[1183] + cB00_current[7] * data_[1039];
-  data_[1208] = C00_[8] * data_[1196] + B10_current[8] * data_[1184] + cB00_current[8] * data_[1040];
-  data_[1209] = C00_[9] * data_[1197] + B10_current[9] * data_[1185] + cB00_current[9] * data_[1041];
-  data_[1210] = C00_[10] * data_[1198] + B10_current[10] * data_[1186] + cB00_current[10] * data_[1042];
-  data_[1211] = C00_[11] * data_[1199] + B10_current[11] * data_[1187] + cB00_current[11] * data_[1043];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1212] = C00_[0] * data_[1200] + B10_current[0] * data_[1188] + cB00_current[0] * data_[1044];
-  data_[1213] = C00_[1] * data_[1201] + B10_current[1] * data_[1189] + cB00_current[1] * data_[1045];
-  data_[1214] = C00_[2] * data_[1202] + B10_current[2] * data_[1190] + cB00_current[2] * data_[1046];
-  data_[1215] = C00_[3] * data_[1203] + B10_current[3] * data_[1191] + cB00_current[3] * data_[1047];
-  data_[1216] = C00_[4] * data_[1204] + B10_current[4] * data_[1192] + cB00_current[4] * data_[1048];
-  data_[1217] = C00_[5] * data_[1205] + B10_current[5] * data_[1193] + cB00_current[5] * data_[1049];
-  data_[1218] = C00_[6] * data_[1206] + B10_current[6] * data_[1194] + cB00_current[6] * data_[1050];
-  data_[1219] = C00_[7] * data_[1207] + B10_current[7] * data_[1195] + cB00_current[7] * data_[1051];
-  data_[1220] = C00_[8] * data_[1208] + B10_current[8] * data_[1196] + cB00_current[8] * data_[1052];
-  data_[1221] = C00_[9] * data_[1209] + B10_current[9] * data_[1197] + cB00_current[9] * data_[1053];
-  data_[1222] = C00_[10] * data_[1210] + B10_current[10] * data_[1198] + cB00_current[10] * data_[1054];
-  data_[1223] = C00_[11] * data_[1211] + B10_current[11] * data_[1199] + cB00_current[11] * data_[1055];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1224] = C00_[0] * data_[1212] + B10_current[0] * data_[1200] + cB00_current[0] * data_[1056];
-  data_[1225] = C00_[1] * data_[1213] + B10_current[1] * data_[1201] + cB00_current[1] * data_[1057];
-  data_[1226] = C00_[2] * data_[1214] + B10_current[2] * data_[1202] + cB00_current[2] * data_[1058];
-  data_[1227] = C00_[3] * data_[1215] + B10_current[3] * data_[1203] + cB00_current[3] * data_[1059];
-  data_[1228] = C00_[4] * data_[1216] + B10_current[4] * data_[1204] + cB00_current[4] * data_[1060];
-  data_[1229] = C00_[5] * data_[1217] + B10_current[5] * data_[1205] + cB00_current[5] * data_[1061];
-  data_[1230] = C00_[6] * data_[1218] + B10_current[6] * data_[1206] + cB00_current[6] * data_[1062];
-  data_[1231] = C00_[7] * data_[1219] + B10_current[7] * data_[1207] + cB00_current[7] * data_[1063];
-  data_[1232] = C00_[8] * data_[1220] + B10_current[8] * data_[1208] + cB00_current[8] * data_[1064];
-  data_[1233] = C00_[9] * data_[1221] + B10_current[9] * data_[1209] + cB00_current[9] * data_[1065];
-  data_[1234] = C00_[10] * data_[1222] + B10_current[10] * data_[1210] + cB00_current[10] * data_[1066];
-  data_[1235] = C00_[11] * data_[1223] + B10_current[11] * data_[1211] + cB00_current[11] * data_[1067];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1236] = C00_[0] * data_[1224] + B10_current[0] * data_[1212] + cB00_current[0] * data_[1068];
-  data_[1237] = C00_[1] * data_[1225] + B10_current[1] * data_[1213] + cB00_current[1] * data_[1069];
-  data_[1238] = C00_[2] * data_[1226] + B10_current[2] * data_[1214] + cB00_current[2] * data_[1070];
-  data_[1239] = C00_[3] * data_[1227] + B10_current[3] * data_[1215] + cB00_current[3] * data_[1071];
-  data_[1240] = C00_[4] * data_[1228] + B10_current[4] * data_[1216] + cB00_current[4] * data_[1072];
-  data_[1241] = C00_[5] * data_[1229] + B10_current[5] * data_[1217] + cB00_current[5] * data_[1073];
-  data_[1242] = C00_[6] * data_[1230] + B10_current[6] * data_[1218] + cB00_current[6] * data_[1074];
-  data_[1243] = C00_[7] * data_[1231] + B10_current[7] * data_[1219] + cB00_current[7] * data_[1075];
-  data_[1244] = C00_[8] * data_[1232] + B10_current[8] * data_[1220] + cB00_current[8] * data_[1076];
-  data_[1245] = C00_[9] * data_[1233] + B10_current[9] * data_[1221] + cB00_current[9] * data_[1077];
-  data_[1246] = C00_[10] * data_[1234] + B10_current[10] * data_[1222] + cB00_current[10] * data_[1078];
-  data_[1247] = C00_[11] * data_[1235] + B10_current[11] * data_[1223] + cB00_current[11] * data_[1079];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[1248] = D00_[0] * data_[1092] + B01_current[0] * data_[936];
-  data_[1249] = D00_[1] * data_[1093] + B01_current[1] * data_[937];
-  data_[1250] = D00_[2] * data_[1094] + B01_current[2] * data_[938];
-  data_[1251] = D00_[3] * data_[1095] + B01_current[3] * data_[939];
-  data_[1252] = D00_[4] * data_[1096] + B01_current[4] * data_[940];
-  data_[1253] = D00_[5] * data_[1097] + B01_current[5] * data_[941];
-  data_[1254] = D00_[6] * data_[1098] + B01_current[6] * data_[942];
-  data_[1255] = D00_[7] * data_[1099] + B01_current[7] * data_[943];
-  data_[1256] = D00_[8] * data_[1100] + B01_current[8] * data_[944];
-  data_[1257] = D00_[9] * data_[1101] + B01_current[9] * data_[945];
-  data_[1258] = D00_[10] * data_[1102] + B01_current[10] * data_[946];
-  data_[1259] = D00_[11] * data_[1103] + B01_current[11] * data_[947];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[1260] = C00_[0] * data_[1248] + cB00_current[0] * data_[1092];
-  data_[1261] = C00_[1] * data_[1249] + cB00_current[1] * data_[1093];
-  data_[1262] = C00_[2] * data_[1250] + cB00_current[2] * data_[1094];
-  data_[1263] = C00_[3] * data_[1251] + cB00_current[3] * data_[1095];
-  data_[1264] = C00_[4] * data_[1252] + cB00_current[4] * data_[1096];
-  data_[1265] = C00_[5] * data_[1253] + cB00_current[5] * data_[1097];
-  data_[1266] = C00_[6] * data_[1254] + cB00_current[6] * data_[1098];
-  data_[1267] = C00_[7] * data_[1255] + cB00_current[7] * data_[1099];
-  data_[1268] = C00_[8] * data_[1256] + cB00_current[8] * data_[1100];
-  data_[1269] = C00_[9] * data_[1257] + cB00_current[9] * data_[1101];
-  data_[1270] = C00_[10] * data_[1258] + cB00_current[10] * data_[1102];
-  data_[1271] = C00_[11] * data_[1259] + cB00_current[11] * data_[1103];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[1272] = C00_[0] * data_[1260] + B10_current[0] * data_[1248] + cB00_current[0] * data_[1104];
-  data_[1273] = C00_[1] * data_[1261] + B10_current[1] * data_[1249] + cB00_current[1] * data_[1105];
-  data_[1274] = C00_[2] * data_[1262] + B10_current[2] * data_[1250] + cB00_current[2] * data_[1106];
-  data_[1275] = C00_[3] * data_[1263] + B10_current[3] * data_[1251] + cB00_current[3] * data_[1107];
-  data_[1276] = C00_[4] * data_[1264] + B10_current[4] * data_[1252] + cB00_current[4] * data_[1108];
-  data_[1277] = C00_[5] * data_[1265] + B10_current[5] * data_[1253] + cB00_current[5] * data_[1109];
-  data_[1278] = C00_[6] * data_[1266] + B10_current[6] * data_[1254] + cB00_current[6] * data_[1110];
-  data_[1279] = C00_[7] * data_[1267] + B10_current[7] * data_[1255] + cB00_current[7] * data_[1111];
-  data_[1280] = C00_[8] * data_[1268] + B10_current[8] * data_[1256] + cB00_current[8] * data_[1112];
-  data_[1281] = C00_[9] * data_[1269] + B10_current[9] * data_[1257] + cB00_current[9] * data_[1113];
-  data_[1282] = C00_[10] * data_[1270] + B10_current[10] * data_[1258] + cB00_current[10] * data_[1114];
-  data_[1283] = C00_[11] * data_[1271] + B10_current[11] * data_[1259] + cB00_current[11] * data_[1115];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1284] = C00_[0] * data_[1272] + B10_current[0] * data_[1260] + cB00_current[0] * data_[1116];
-  data_[1285] = C00_[1] * data_[1273] + B10_current[1] * data_[1261] + cB00_current[1] * data_[1117];
-  data_[1286] = C00_[2] * data_[1274] + B10_current[2] * data_[1262] + cB00_current[2] * data_[1118];
-  data_[1287] = C00_[3] * data_[1275] + B10_current[3] * data_[1263] + cB00_current[3] * data_[1119];
-  data_[1288] = C00_[4] * data_[1276] + B10_current[4] * data_[1264] + cB00_current[4] * data_[1120];
-  data_[1289] = C00_[5] * data_[1277] + B10_current[5] * data_[1265] + cB00_current[5] * data_[1121];
-  data_[1290] = C00_[6] * data_[1278] + B10_current[6] * data_[1266] + cB00_current[6] * data_[1122];
-  data_[1291] = C00_[7] * data_[1279] + B10_current[7] * data_[1267] + cB00_current[7] * data_[1123];
-  data_[1292] = C00_[8] * data_[1280] + B10_current[8] * data_[1268] + cB00_current[8] * data_[1124];
-  data_[1293] = C00_[9] * data_[1281] + B10_current[9] * data_[1269] + cB00_current[9] * data_[1125];
-  data_[1294] = C00_[10] * data_[1282] + B10_current[10] * data_[1270] + cB00_current[10] * data_[1126];
-  data_[1295] = C00_[11] * data_[1283] + B10_current[11] * data_[1271] + cB00_current[11] * data_[1127];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1296] = C00_[0] * data_[1284] + B10_current[0] * data_[1272] + cB00_current[0] * data_[1128];
-  data_[1297] = C00_[1] * data_[1285] + B10_current[1] * data_[1273] + cB00_current[1] * data_[1129];
-  data_[1298] = C00_[2] * data_[1286] + B10_current[2] * data_[1274] + cB00_current[2] * data_[1130];
-  data_[1299] = C00_[3] * data_[1287] + B10_current[3] * data_[1275] + cB00_current[3] * data_[1131];
-  data_[1300] = C00_[4] * data_[1288] + B10_current[4] * data_[1276] + cB00_current[4] * data_[1132];
-  data_[1301] = C00_[5] * data_[1289] + B10_current[5] * data_[1277] + cB00_current[5] * data_[1133];
-  data_[1302] = C00_[6] * data_[1290] + B10_current[6] * data_[1278] + cB00_current[6] * data_[1134];
-  data_[1303] = C00_[7] * data_[1291] + B10_current[7] * data_[1279] + cB00_current[7] * data_[1135];
-  data_[1304] = C00_[8] * data_[1292] + B10_current[8] * data_[1280] + cB00_current[8] * data_[1136];
-  data_[1305] = C00_[9] * data_[1293] + B10_current[9] * data_[1281] + cB00_current[9] * data_[1137];
-  data_[1306] = C00_[10] * data_[1294] + B10_current[10] * data_[1282] + cB00_current[10] * data_[1138];
-  data_[1307] = C00_[11] * data_[1295] + B10_current[11] * data_[1283] + cB00_current[11] * data_[1139];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1308] = C00_[0] * data_[1296] + B10_current[0] * data_[1284] + cB00_current[0] * data_[1140];
-  data_[1309] = C00_[1] * data_[1297] + B10_current[1] * data_[1285] + cB00_current[1] * data_[1141];
-  data_[1310] = C00_[2] * data_[1298] + B10_current[2] * data_[1286] + cB00_current[2] * data_[1142];
-  data_[1311] = C00_[3] * data_[1299] + B10_current[3] * data_[1287] + cB00_current[3] * data_[1143];
-  data_[1312] = C00_[4] * data_[1300] + B10_current[4] * data_[1288] + cB00_current[4] * data_[1144];
-  data_[1313] = C00_[5] * data_[1301] + B10_current[5] * data_[1289] + cB00_current[5] * data_[1145];
-  data_[1314] = C00_[6] * data_[1302] + B10_current[6] * data_[1290] + cB00_current[6] * data_[1146];
-  data_[1315] = C00_[7] * data_[1303] + B10_current[7] * data_[1291] + cB00_current[7] * data_[1147];
-  data_[1316] = C00_[8] * data_[1304] + B10_current[8] * data_[1292] + cB00_current[8] * data_[1148];
-  data_[1317] = C00_[9] * data_[1305] + B10_current[9] * data_[1293] + cB00_current[9] * data_[1149];
-  data_[1318] = C00_[10] * data_[1306] + B10_current[10] * data_[1294] + cB00_current[10] * data_[1150];
-  data_[1319] = C00_[11] * data_[1307] + B10_current[11] * data_[1295] + cB00_current[11] * data_[1151];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1320] = C00_[0] * data_[1308] + B10_current[0] * data_[1296] + cB00_current[0] * data_[1152];
-  data_[1321] = C00_[1] * data_[1309] + B10_current[1] * data_[1297] + cB00_current[1] * data_[1153];
-  data_[1322] = C00_[2] * data_[1310] + B10_current[2] * data_[1298] + cB00_current[2] * data_[1154];
-  data_[1323] = C00_[3] * data_[1311] + B10_current[3] * data_[1299] + cB00_current[3] * data_[1155];
-  data_[1324] = C00_[4] * data_[1312] + B10_current[4] * data_[1300] + cB00_current[4] * data_[1156];
-  data_[1325] = C00_[5] * data_[1313] + B10_current[5] * data_[1301] + cB00_current[5] * data_[1157];
-  data_[1326] = C00_[6] * data_[1314] + B10_current[6] * data_[1302] + cB00_current[6] * data_[1158];
-  data_[1327] = C00_[7] * data_[1315] + B10_current[7] * data_[1303] + cB00_current[7] * data_[1159];
-  data_[1328] = C00_[8] * data_[1316] + B10_current[8] * data_[1304] + cB00_current[8] * data_[1160];
-  data_[1329] = C00_[9] * data_[1317] + B10_current[9] * data_[1305] + cB00_current[9] * data_[1161];
-  data_[1330] = C00_[10] * data_[1318] + B10_current[10] * data_[1306] + cB00_current[10] * data_[1162];
-  data_[1331] = C00_[11] * data_[1319] + B10_current[11] * data_[1307] + cB00_current[11] * data_[1163];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1332] = C00_[0] * data_[1320] + B10_current[0] * data_[1308] + cB00_current[0] * data_[1164];
-  data_[1333] = C00_[1] * data_[1321] + B10_current[1] * data_[1309] + cB00_current[1] * data_[1165];
-  data_[1334] = C00_[2] * data_[1322] + B10_current[2] * data_[1310] + cB00_current[2] * data_[1166];
-  data_[1335] = C00_[3] * data_[1323] + B10_current[3] * data_[1311] + cB00_current[3] * data_[1167];
-  data_[1336] = C00_[4] * data_[1324] + B10_current[4] * data_[1312] + cB00_current[4] * data_[1168];
-  data_[1337] = C00_[5] * data_[1325] + B10_current[5] * data_[1313] + cB00_current[5] * data_[1169];
-  data_[1338] = C00_[6] * data_[1326] + B10_current[6] * data_[1314] + cB00_current[6] * data_[1170];
-  data_[1339] = C00_[7] * data_[1327] + B10_current[7] * data_[1315] + cB00_current[7] * data_[1171];
-  data_[1340] = C00_[8] * data_[1328] + B10_current[8] * data_[1316] + cB00_current[8] * data_[1172];
-  data_[1341] = C00_[9] * data_[1329] + B10_current[9] * data_[1317] + cB00_current[9] * data_[1173];
-  data_[1342] = C00_[10] * data_[1330] + B10_current[10] * data_[1318] + cB00_current[10] * data_[1174];
-  data_[1343] = C00_[11] * data_[1331] + B10_current[11] * data_[1319] + cB00_current[11] * data_[1175];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1344] = C00_[0] * data_[1332] + B10_current[0] * data_[1320] + cB00_current[0] * data_[1176];
-  data_[1345] = C00_[1] * data_[1333] + B10_current[1] * data_[1321] + cB00_current[1] * data_[1177];
-  data_[1346] = C00_[2] * data_[1334] + B10_current[2] * data_[1322] + cB00_current[2] * data_[1178];
-  data_[1347] = C00_[3] * data_[1335] + B10_current[3] * data_[1323] + cB00_current[3] * data_[1179];
-  data_[1348] = C00_[4] * data_[1336] + B10_current[4] * data_[1324] + cB00_current[4] * data_[1180];
-  data_[1349] = C00_[5] * data_[1337] + B10_current[5] * data_[1325] + cB00_current[5] * data_[1181];
-  data_[1350] = C00_[6] * data_[1338] + B10_current[6] * data_[1326] + cB00_current[6] * data_[1182];
-  data_[1351] = C00_[7] * data_[1339] + B10_current[7] * data_[1327] + cB00_current[7] * data_[1183];
-  data_[1352] = C00_[8] * data_[1340] + B10_current[8] * data_[1328] + cB00_current[8] * data_[1184];
-  data_[1353] = C00_[9] * data_[1341] + B10_current[9] * data_[1329] + cB00_current[9] * data_[1185];
-  data_[1354] = C00_[10] * data_[1342] + B10_current[10] * data_[1330] + cB00_current[10] * data_[1186];
-  data_[1355] = C00_[11] * data_[1343] + B10_current[11] * data_[1331] + cB00_current[11] * data_[1187];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1356] = C00_[0] * data_[1344] + B10_current[0] * data_[1332] + cB00_current[0] * data_[1188];
-  data_[1357] = C00_[1] * data_[1345] + B10_current[1] * data_[1333] + cB00_current[1] * data_[1189];
-  data_[1358] = C00_[2] * data_[1346] + B10_current[2] * data_[1334] + cB00_current[2] * data_[1190];
-  data_[1359] = C00_[3] * data_[1347] + B10_current[3] * data_[1335] + cB00_current[3] * data_[1191];
-  data_[1360] = C00_[4] * data_[1348] + B10_current[4] * data_[1336] + cB00_current[4] * data_[1192];
-  data_[1361] = C00_[5] * data_[1349] + B10_current[5] * data_[1337] + cB00_current[5] * data_[1193];
-  data_[1362] = C00_[6] * data_[1350] + B10_current[6] * data_[1338] + cB00_current[6] * data_[1194];
-  data_[1363] = C00_[7] * data_[1351] + B10_current[7] * data_[1339] + cB00_current[7] * data_[1195];
-  data_[1364] = C00_[8] * data_[1352] + B10_current[8] * data_[1340] + cB00_current[8] * data_[1196];
-  data_[1365] = C00_[9] * data_[1353] + B10_current[9] * data_[1341] + cB00_current[9] * data_[1197];
-  data_[1366] = C00_[10] * data_[1354] + B10_current[10] * data_[1342] + cB00_current[10] * data_[1198];
-  data_[1367] = C00_[11] * data_[1355] + B10_current[11] * data_[1343] + cB00_current[11] * data_[1199];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1368] = C00_[0] * data_[1356] + B10_current[0] * data_[1344] + cB00_current[0] * data_[1200];
-  data_[1369] = C00_[1] * data_[1357] + B10_current[1] * data_[1345] + cB00_current[1] * data_[1201];
-  data_[1370] = C00_[2] * data_[1358] + B10_current[2] * data_[1346] + cB00_current[2] * data_[1202];
-  data_[1371] = C00_[3] * data_[1359] + B10_current[3] * data_[1347] + cB00_current[3] * data_[1203];
-  data_[1372] = C00_[4] * data_[1360] + B10_current[4] * data_[1348] + cB00_current[4] * data_[1204];
-  data_[1373] = C00_[5] * data_[1361] + B10_current[5] * data_[1349] + cB00_current[5] * data_[1205];
-  data_[1374] = C00_[6] * data_[1362] + B10_current[6] * data_[1350] + cB00_current[6] * data_[1206];
-  data_[1375] = C00_[7] * data_[1363] + B10_current[7] * data_[1351] + cB00_current[7] * data_[1207];
-  data_[1376] = C00_[8] * data_[1364] + B10_current[8] * data_[1352] + cB00_current[8] * data_[1208];
-  data_[1377] = C00_[9] * data_[1365] + B10_current[9] * data_[1353] + cB00_current[9] * data_[1209];
-  data_[1378] = C00_[10] * data_[1366] + B10_current[10] * data_[1354] + cB00_current[10] * data_[1210];
-  data_[1379] = C00_[11] * data_[1367] + B10_current[11] * data_[1355] + cB00_current[11] * data_[1211];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1380] = C00_[0] * data_[1368] + B10_current[0] * data_[1356] + cB00_current[0] * data_[1212];
-  data_[1381] = C00_[1] * data_[1369] + B10_current[1] * data_[1357] + cB00_current[1] * data_[1213];
-  data_[1382] = C00_[2] * data_[1370] + B10_current[2] * data_[1358] + cB00_current[2] * data_[1214];
-  data_[1383] = C00_[3] * data_[1371] + B10_current[3] * data_[1359] + cB00_current[3] * data_[1215];
-  data_[1384] = C00_[4] * data_[1372] + B10_current[4] * data_[1360] + cB00_current[4] * data_[1216];
-  data_[1385] = C00_[5] * data_[1373] + B10_current[5] * data_[1361] + cB00_current[5] * data_[1217];
-  data_[1386] = C00_[6] * data_[1374] + B10_current[6] * data_[1362] + cB00_current[6] * data_[1218];
-  data_[1387] = C00_[7] * data_[1375] + B10_current[7] * data_[1363] + cB00_current[7] * data_[1219];
-  data_[1388] = C00_[8] * data_[1376] + B10_current[8] * data_[1364] + cB00_current[8] * data_[1220];
-  data_[1389] = C00_[9] * data_[1377] + B10_current[9] * data_[1365] + cB00_current[9] * data_[1221];
-  data_[1390] = C00_[10] * data_[1378] + B10_current[10] * data_[1366] + cB00_current[10] * data_[1222];
-  data_[1391] = C00_[11] * data_[1379] + B10_current[11] * data_[1367] + cB00_current[11] * data_[1223];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1392] = C00_[0] * data_[1380] + B10_current[0] * data_[1368] + cB00_current[0] * data_[1224];
-  data_[1393] = C00_[1] * data_[1381] + B10_current[1] * data_[1369] + cB00_current[1] * data_[1225];
-  data_[1394] = C00_[2] * data_[1382] + B10_current[2] * data_[1370] + cB00_current[2] * data_[1226];
-  data_[1395] = C00_[3] * data_[1383] + B10_current[3] * data_[1371] + cB00_current[3] * data_[1227];
-  data_[1396] = C00_[4] * data_[1384] + B10_current[4] * data_[1372] + cB00_current[4] * data_[1228];
-  data_[1397] = C00_[5] * data_[1385] + B10_current[5] * data_[1373] + cB00_current[5] * data_[1229];
-  data_[1398] = C00_[6] * data_[1386] + B10_current[6] * data_[1374] + cB00_current[6] * data_[1230];
-  data_[1399] = C00_[7] * data_[1387] + B10_current[7] * data_[1375] + cB00_current[7] * data_[1231];
-  data_[1400] = C00_[8] * data_[1388] + B10_current[8] * data_[1376] + cB00_current[8] * data_[1232];
-  data_[1401] = C00_[9] * data_[1389] + B10_current[9] * data_[1377] + cB00_current[9] * data_[1233];
-  data_[1402] = C00_[10] * data_[1390] + B10_current[10] * data_[1378] + cB00_current[10] * data_[1234];
-  data_[1403] = C00_[11] * data_[1391] + B10_current[11] * data_[1379] + cB00_current[11] * data_[1235];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[1404] = D00_[0] * data_[1248] + B01_current[0] * data_[1092];
-  data_[1405] = D00_[1] * data_[1249] + B01_current[1] * data_[1093];
-  data_[1406] = D00_[2] * data_[1250] + B01_current[2] * data_[1094];
-  data_[1407] = D00_[3] * data_[1251] + B01_current[3] * data_[1095];
-  data_[1408] = D00_[4] * data_[1252] + B01_current[4] * data_[1096];
-  data_[1409] = D00_[5] * data_[1253] + B01_current[5] * data_[1097];
-  data_[1410] = D00_[6] * data_[1254] + B01_current[6] * data_[1098];
-  data_[1411] = D00_[7] * data_[1255] + B01_current[7] * data_[1099];
-  data_[1412] = D00_[8] * data_[1256] + B01_current[8] * data_[1100];
-  data_[1413] = D00_[9] * data_[1257] + B01_current[9] * data_[1101];
-  data_[1414] = D00_[10] * data_[1258] + B01_current[10] * data_[1102];
-  data_[1415] = D00_[11] * data_[1259] + B01_current[11] * data_[1103];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[1416] = C00_[0] * data_[1404] + cB00_current[0] * data_[1248];
-  data_[1417] = C00_[1] * data_[1405] + cB00_current[1] * data_[1249];
-  data_[1418] = C00_[2] * data_[1406] + cB00_current[2] * data_[1250];
-  data_[1419] = C00_[3] * data_[1407] + cB00_current[3] * data_[1251];
-  data_[1420] = C00_[4] * data_[1408] + cB00_current[4] * data_[1252];
-  data_[1421] = C00_[5] * data_[1409] + cB00_current[5] * data_[1253];
-  data_[1422] = C00_[6] * data_[1410] + cB00_current[6] * data_[1254];
-  data_[1423] = C00_[7] * data_[1411] + cB00_current[7] * data_[1255];
-  data_[1424] = C00_[8] * data_[1412] + cB00_current[8] * data_[1256];
-  data_[1425] = C00_[9] * data_[1413] + cB00_current[9] * data_[1257];
-  data_[1426] = C00_[10] * data_[1414] + cB00_current[10] * data_[1258];
-  data_[1427] = C00_[11] * data_[1415] + cB00_current[11] * data_[1259];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[1428] = C00_[0] * data_[1416] + B10_current[0] * data_[1404] + cB00_current[0] * data_[1260];
-  data_[1429] = C00_[1] * data_[1417] + B10_current[1] * data_[1405] + cB00_current[1] * data_[1261];
-  data_[1430] = C00_[2] * data_[1418] + B10_current[2] * data_[1406] + cB00_current[2] * data_[1262];
-  data_[1431] = C00_[3] * data_[1419] + B10_current[3] * data_[1407] + cB00_current[3] * data_[1263];
-  data_[1432] = C00_[4] * data_[1420] + B10_current[4] * data_[1408] + cB00_current[4] * data_[1264];
-  data_[1433] = C00_[5] * data_[1421] + B10_current[5] * data_[1409] + cB00_current[5] * data_[1265];
-  data_[1434] = C00_[6] * data_[1422] + B10_current[6] * data_[1410] + cB00_current[6] * data_[1266];
-  data_[1435] = C00_[7] * data_[1423] + B10_current[7] * data_[1411] + cB00_current[7] * data_[1267];
-  data_[1436] = C00_[8] * data_[1424] + B10_current[8] * data_[1412] + cB00_current[8] * data_[1268];
-  data_[1437] = C00_[9] * data_[1425] + B10_current[9] * data_[1413] + cB00_current[9] * data_[1269];
-  data_[1438] = C00_[10] * data_[1426] + B10_current[10] * data_[1414] + cB00_current[10] * data_[1270];
-  data_[1439] = C00_[11] * data_[1427] + B10_current[11] * data_[1415] + cB00_current[11] * data_[1271];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1440] = C00_[0] * data_[1428] + B10_current[0] * data_[1416] + cB00_current[0] * data_[1272];
-  data_[1441] = C00_[1] * data_[1429] + B10_current[1] * data_[1417] + cB00_current[1] * data_[1273];
-  data_[1442] = C00_[2] * data_[1430] + B10_current[2] * data_[1418] + cB00_current[2] * data_[1274];
-  data_[1443] = C00_[3] * data_[1431] + B10_current[3] * data_[1419] + cB00_current[3] * data_[1275];
-  data_[1444] = C00_[4] * data_[1432] + B10_current[4] * data_[1420] + cB00_current[4] * data_[1276];
-  data_[1445] = C00_[5] * data_[1433] + B10_current[5] * data_[1421] + cB00_current[5] * data_[1277];
-  data_[1446] = C00_[6] * data_[1434] + B10_current[6] * data_[1422] + cB00_current[6] * data_[1278];
-  data_[1447] = C00_[7] * data_[1435] + B10_current[7] * data_[1423] + cB00_current[7] * data_[1279];
-  data_[1448] = C00_[8] * data_[1436] + B10_current[8] * data_[1424] + cB00_current[8] * data_[1280];
-  data_[1449] = C00_[9] * data_[1437] + B10_current[9] * data_[1425] + cB00_current[9] * data_[1281];
-  data_[1450] = C00_[10] * data_[1438] + B10_current[10] * data_[1426] + cB00_current[10] * data_[1282];
-  data_[1451] = C00_[11] * data_[1439] + B10_current[11] * data_[1427] + cB00_current[11] * data_[1283];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1452] = C00_[0] * data_[1440] + B10_current[0] * data_[1428] + cB00_current[0] * data_[1284];
-  data_[1453] = C00_[1] * data_[1441] + B10_current[1] * data_[1429] + cB00_current[1] * data_[1285];
-  data_[1454] = C00_[2] * data_[1442] + B10_current[2] * data_[1430] + cB00_current[2] * data_[1286];
-  data_[1455] = C00_[3] * data_[1443] + B10_current[3] * data_[1431] + cB00_current[3] * data_[1287];
-  data_[1456] = C00_[4] * data_[1444] + B10_current[4] * data_[1432] + cB00_current[4] * data_[1288];
-  data_[1457] = C00_[5] * data_[1445] + B10_current[5] * data_[1433] + cB00_current[5] * data_[1289];
-  data_[1458] = C00_[6] * data_[1446] + B10_current[6] * data_[1434] + cB00_current[6] * data_[1290];
-  data_[1459] = C00_[7] * data_[1447] + B10_current[7] * data_[1435] + cB00_current[7] * data_[1291];
-  data_[1460] = C00_[8] * data_[1448] + B10_current[8] * data_[1436] + cB00_current[8] * data_[1292];
-  data_[1461] = C00_[9] * data_[1449] + B10_current[9] * data_[1437] + cB00_current[9] * data_[1293];
-  data_[1462] = C00_[10] * data_[1450] + B10_current[10] * data_[1438] + cB00_current[10] * data_[1294];
-  data_[1463] = C00_[11] * data_[1451] + B10_current[11] * data_[1439] + cB00_current[11] * data_[1295];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1464] = C00_[0] * data_[1452] + B10_current[0] * data_[1440] + cB00_current[0] * data_[1296];
-  data_[1465] = C00_[1] * data_[1453] + B10_current[1] * data_[1441] + cB00_current[1] * data_[1297];
-  data_[1466] = C00_[2] * data_[1454] + B10_current[2] * data_[1442] + cB00_current[2] * data_[1298];
-  data_[1467] = C00_[3] * data_[1455] + B10_current[3] * data_[1443] + cB00_current[3] * data_[1299];
-  data_[1468] = C00_[4] * data_[1456] + B10_current[4] * data_[1444] + cB00_current[4] * data_[1300];
-  data_[1469] = C00_[5] * data_[1457] + B10_current[5] * data_[1445] + cB00_current[5] * data_[1301];
-  data_[1470] = C00_[6] * data_[1458] + B10_current[6] * data_[1446] + cB00_current[6] * data_[1302];
-  data_[1471] = C00_[7] * data_[1459] + B10_current[7] * data_[1447] + cB00_current[7] * data_[1303];
-  data_[1472] = C00_[8] * data_[1460] + B10_current[8] * data_[1448] + cB00_current[8] * data_[1304];
-  data_[1473] = C00_[9] * data_[1461] + B10_current[9] * data_[1449] + cB00_current[9] * data_[1305];
-  data_[1474] = C00_[10] * data_[1462] + B10_current[10] * data_[1450] + cB00_current[10] * data_[1306];
-  data_[1475] = C00_[11] * data_[1463] + B10_current[11] * data_[1451] + cB00_current[11] * data_[1307];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1476] = C00_[0] * data_[1464] + B10_current[0] * data_[1452] + cB00_current[0] * data_[1308];
-  data_[1477] = C00_[1] * data_[1465] + B10_current[1] * data_[1453] + cB00_current[1] * data_[1309];
-  data_[1478] = C00_[2] * data_[1466] + B10_current[2] * data_[1454] + cB00_current[2] * data_[1310];
-  data_[1479] = C00_[3] * data_[1467] + B10_current[3] * data_[1455] + cB00_current[3] * data_[1311];
-  data_[1480] = C00_[4] * data_[1468] + B10_current[4] * data_[1456] + cB00_current[4] * data_[1312];
-  data_[1481] = C00_[5] * data_[1469] + B10_current[5] * data_[1457] + cB00_current[5] * data_[1313];
-  data_[1482] = C00_[6] * data_[1470] + B10_current[6] * data_[1458] + cB00_current[6] * data_[1314];
-  data_[1483] = C00_[7] * data_[1471] + B10_current[7] * data_[1459] + cB00_current[7] * data_[1315];
-  data_[1484] = C00_[8] * data_[1472] + B10_current[8] * data_[1460] + cB00_current[8] * data_[1316];
-  data_[1485] = C00_[9] * data_[1473] + B10_current[9] * data_[1461] + cB00_current[9] * data_[1317];
-  data_[1486] = C00_[10] * data_[1474] + B10_current[10] * data_[1462] + cB00_current[10] * data_[1318];
-  data_[1487] = C00_[11] * data_[1475] + B10_current[11] * data_[1463] + cB00_current[11] * data_[1319];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1488] = C00_[0] * data_[1476] + B10_current[0] * data_[1464] + cB00_current[0] * data_[1320];
-  data_[1489] = C00_[1] * data_[1477] + B10_current[1] * data_[1465] + cB00_current[1] * data_[1321];
-  data_[1490] = C00_[2] * data_[1478] + B10_current[2] * data_[1466] + cB00_current[2] * data_[1322];
-  data_[1491] = C00_[3] * data_[1479] + B10_current[3] * data_[1467] + cB00_current[3] * data_[1323];
-  data_[1492] = C00_[4] * data_[1480] + B10_current[4] * data_[1468] + cB00_current[4] * data_[1324];
-  data_[1493] = C00_[5] * data_[1481] + B10_current[5] * data_[1469] + cB00_current[5] * data_[1325];
-  data_[1494] = C00_[6] * data_[1482] + B10_current[6] * data_[1470] + cB00_current[6] * data_[1326];
-  data_[1495] = C00_[7] * data_[1483] + B10_current[7] * data_[1471] + cB00_current[7] * data_[1327];
-  data_[1496] = C00_[8] * data_[1484] + B10_current[8] * data_[1472] + cB00_current[8] * data_[1328];
-  data_[1497] = C00_[9] * data_[1485] + B10_current[9] * data_[1473] + cB00_current[9] * data_[1329];
-  data_[1498] = C00_[10] * data_[1486] + B10_current[10] * data_[1474] + cB00_current[10] * data_[1330];
-  data_[1499] = C00_[11] * data_[1487] + B10_current[11] * data_[1475] + cB00_current[11] * data_[1331];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1500] = C00_[0] * data_[1488] + B10_current[0] * data_[1476] + cB00_current[0] * data_[1332];
-  data_[1501] = C00_[1] * data_[1489] + B10_current[1] * data_[1477] + cB00_current[1] * data_[1333];
-  data_[1502] = C00_[2] * data_[1490] + B10_current[2] * data_[1478] + cB00_current[2] * data_[1334];
-  data_[1503] = C00_[3] * data_[1491] + B10_current[3] * data_[1479] + cB00_current[3] * data_[1335];
-  data_[1504] = C00_[4] * data_[1492] + B10_current[4] * data_[1480] + cB00_current[4] * data_[1336];
-  data_[1505] = C00_[5] * data_[1493] + B10_current[5] * data_[1481] + cB00_current[5] * data_[1337];
-  data_[1506] = C00_[6] * data_[1494] + B10_current[6] * data_[1482] + cB00_current[6] * data_[1338];
-  data_[1507] = C00_[7] * data_[1495] + B10_current[7] * data_[1483] + cB00_current[7] * data_[1339];
-  data_[1508] = C00_[8] * data_[1496] + B10_current[8] * data_[1484] + cB00_current[8] * data_[1340];
-  data_[1509] = C00_[9] * data_[1497] + B10_current[9] * data_[1485] + cB00_current[9] * data_[1341];
-  data_[1510] = C00_[10] * data_[1498] + B10_current[10] * data_[1486] + cB00_current[10] * data_[1342];
-  data_[1511] = C00_[11] * data_[1499] + B10_current[11] * data_[1487] + cB00_current[11] * data_[1343];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1512] = C00_[0] * data_[1500] + B10_current[0] * data_[1488] + cB00_current[0] * data_[1344];
-  data_[1513] = C00_[1] * data_[1501] + B10_current[1] * data_[1489] + cB00_current[1] * data_[1345];
-  data_[1514] = C00_[2] * data_[1502] + B10_current[2] * data_[1490] + cB00_current[2] * data_[1346];
-  data_[1515] = C00_[3] * data_[1503] + B10_current[3] * data_[1491] + cB00_current[3] * data_[1347];
-  data_[1516] = C00_[4] * data_[1504] + B10_current[4] * data_[1492] + cB00_current[4] * data_[1348];
-  data_[1517] = C00_[5] * data_[1505] + B10_current[5] * data_[1493] + cB00_current[5] * data_[1349];
-  data_[1518] = C00_[6] * data_[1506] + B10_current[6] * data_[1494] + cB00_current[6] * data_[1350];
-  data_[1519] = C00_[7] * data_[1507] + B10_current[7] * data_[1495] + cB00_current[7] * data_[1351];
-  data_[1520] = C00_[8] * data_[1508] + B10_current[8] * data_[1496] + cB00_current[8] * data_[1352];
-  data_[1521] = C00_[9] * data_[1509] + B10_current[9] * data_[1497] + cB00_current[9] * data_[1353];
-  data_[1522] = C00_[10] * data_[1510] + B10_current[10] * data_[1498] + cB00_current[10] * data_[1354];
-  data_[1523] = C00_[11] * data_[1511] + B10_current[11] * data_[1499] + cB00_current[11] * data_[1355];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1524] = C00_[0] * data_[1512] + B10_current[0] * data_[1500] + cB00_current[0] * data_[1356];
-  data_[1525] = C00_[1] * data_[1513] + B10_current[1] * data_[1501] + cB00_current[1] * data_[1357];
-  data_[1526] = C00_[2] * data_[1514] + B10_current[2] * data_[1502] + cB00_current[2] * data_[1358];
-  data_[1527] = C00_[3] * data_[1515] + B10_current[3] * data_[1503] + cB00_current[3] * data_[1359];
-  data_[1528] = C00_[4] * data_[1516] + B10_current[4] * data_[1504] + cB00_current[4] * data_[1360];
-  data_[1529] = C00_[5] * data_[1517] + B10_current[5] * data_[1505] + cB00_current[5] * data_[1361];
-  data_[1530] = C00_[6] * data_[1518] + B10_current[6] * data_[1506] + cB00_current[6] * data_[1362];
-  data_[1531] = C00_[7] * data_[1519] + B10_current[7] * data_[1507] + cB00_current[7] * data_[1363];
-  data_[1532] = C00_[8] * data_[1520] + B10_current[8] * data_[1508] + cB00_current[8] * data_[1364];
-  data_[1533] = C00_[9] * data_[1521] + B10_current[9] * data_[1509] + cB00_current[9] * data_[1365];
-  data_[1534] = C00_[10] * data_[1522] + B10_current[10] * data_[1510] + cB00_current[10] * data_[1366];
-  data_[1535] = C00_[11] * data_[1523] + B10_current[11] * data_[1511] + cB00_current[11] * data_[1367];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1536] = C00_[0] * data_[1524] + B10_current[0] * data_[1512] + cB00_current[0] * data_[1368];
-  data_[1537] = C00_[1] * data_[1525] + B10_current[1] * data_[1513] + cB00_current[1] * data_[1369];
-  data_[1538] = C00_[2] * data_[1526] + B10_current[2] * data_[1514] + cB00_current[2] * data_[1370];
-  data_[1539] = C00_[3] * data_[1527] + B10_current[3] * data_[1515] + cB00_current[3] * data_[1371];
-  data_[1540] = C00_[4] * data_[1528] + B10_current[4] * data_[1516] + cB00_current[4] * data_[1372];
-  data_[1541] = C00_[5] * data_[1529] + B10_current[5] * data_[1517] + cB00_current[5] * data_[1373];
-  data_[1542] = C00_[6] * data_[1530] + B10_current[6] * data_[1518] + cB00_current[6] * data_[1374];
-  data_[1543] = C00_[7] * data_[1531] + B10_current[7] * data_[1519] + cB00_current[7] * data_[1375];
-  data_[1544] = C00_[8] * data_[1532] + B10_current[8] * data_[1520] + cB00_current[8] * data_[1376];
-  data_[1545] = C00_[9] * data_[1533] + B10_current[9] * data_[1521] + cB00_current[9] * data_[1377];
-  data_[1546] = C00_[10] * data_[1534] + B10_current[10] * data_[1522] + cB00_current[10] * data_[1378];
-  data_[1547] = C00_[11] * data_[1535] + B10_current[11] * data_[1523] + cB00_current[11] * data_[1379];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1548] = C00_[0] * data_[1536] + B10_current[0] * data_[1524] + cB00_current[0] * data_[1380];
-  data_[1549] = C00_[1] * data_[1537] + B10_current[1] * data_[1525] + cB00_current[1] * data_[1381];
-  data_[1550] = C00_[2] * data_[1538] + B10_current[2] * data_[1526] + cB00_current[2] * data_[1382];
-  data_[1551] = C00_[3] * data_[1539] + B10_current[3] * data_[1527] + cB00_current[3] * data_[1383];
-  data_[1552] = C00_[4] * data_[1540] + B10_current[4] * data_[1528] + cB00_current[4] * data_[1384];
-  data_[1553] = C00_[5] * data_[1541] + B10_current[5] * data_[1529] + cB00_current[5] * data_[1385];
-  data_[1554] = C00_[6] * data_[1542] + B10_current[6] * data_[1530] + cB00_current[6] * data_[1386];
-  data_[1555] = C00_[7] * data_[1543] + B10_current[7] * data_[1531] + cB00_current[7] * data_[1387];
-  data_[1556] = C00_[8] * data_[1544] + B10_current[8] * data_[1532] + cB00_current[8] * data_[1388];
-  data_[1557] = C00_[9] * data_[1545] + B10_current[9] * data_[1533] + cB00_current[9] * data_[1389];
-  data_[1558] = C00_[10] * data_[1546] + B10_current[10] * data_[1534] + cB00_current[10] * data_[1390];
-  data_[1559] = C00_[11] * data_[1547] + B10_current[11] * data_[1535] + cB00_current[11] * data_[1391];
-
-  B01_current[0] += B01_[0];
-  B01_current[1] += B01_[1];
-  B01_current[2] += B01_[2];
-  B01_current[3] += B01_[3];
-  B01_current[4] += B01_[4];
-  B01_current[5] += B01_[5];
-  B01_current[6] += B01_[6];
-  B01_current[7] += B01_[7];
-  B01_current[8] += B01_[8];
-  B01_current[9] += B01_[9];
-  B01_current[10] += B01_[10];
-  B01_current[11] += B01_[11];
-
-  data_[1560] = D00_[0] * data_[1404] + B01_current[0] * data_[1248];
-  data_[1561] = D00_[1] * data_[1405] + B01_current[1] * data_[1249];
-  data_[1562] = D00_[2] * data_[1406] + B01_current[2] * data_[1250];
-  data_[1563] = D00_[3] * data_[1407] + B01_current[3] * data_[1251];
-  data_[1564] = D00_[4] * data_[1408] + B01_current[4] * data_[1252];
-  data_[1565] = D00_[5] * data_[1409] + B01_current[5] * data_[1253];
-  data_[1566] = D00_[6] * data_[1410] + B01_current[6] * data_[1254];
-  data_[1567] = D00_[7] * data_[1411] + B01_current[7] * data_[1255];
-  data_[1568] = D00_[8] * data_[1412] + B01_current[8] * data_[1256];
-  data_[1569] = D00_[9] * data_[1413] + B01_current[9] * data_[1257];
-  data_[1570] = D00_[10] * data_[1414] + B01_current[10] * data_[1258];
-  data_[1571] = D00_[11] * data_[1415] + B01_current[11] * data_[1259];
-
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
-  cB00_current[3] += B00_[3];
-  cB00_current[4] += B00_[4];
-  cB00_current[5] += B00_[5];
-  cB00_current[6] += B00_[6];
-  cB00_current[7] += B00_[7];
-  cB00_current[8] += B00_[8];
-  cB00_current[9] += B00_[9];
-  cB00_current[10] += B00_[10];
-  cB00_current[11] += B00_[11];
-
-  data_[1572] = C00_[0] * data_[1560] + cB00_current[0] * data_[1404];
-  data_[1573] = C00_[1] * data_[1561] + cB00_current[1] * data_[1405];
-  data_[1574] = C00_[2] * data_[1562] + cB00_current[2] * data_[1406];
-  data_[1575] = C00_[3] * data_[1563] + cB00_current[3] * data_[1407];
-  data_[1576] = C00_[4] * data_[1564] + cB00_current[4] * data_[1408];
-  data_[1577] = C00_[5] * data_[1565] + cB00_current[5] * data_[1409];
-  data_[1578] = C00_[6] * data_[1566] + cB00_current[6] * data_[1410];
-  data_[1579] = C00_[7] * data_[1567] + cB00_current[7] * data_[1411];
-  data_[1580] = C00_[8] * data_[1568] + cB00_current[8] * data_[1412];
-  data_[1581] = C00_[9] * data_[1569] + cB00_current[9] * data_[1413];
-  data_[1582] = C00_[10] * data_[1570] + cB00_current[10] * data_[1414];
-  data_[1583] = C00_[11] * data_[1571] + cB00_current[11] * data_[1415];
-
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
-  B10_current[3] = B10_[3];
-  B10_current[4] = B10_[4];
-  B10_current[5] = B10_[5];
-  B10_current[6] = B10_[6];
-  B10_current[7] = B10_[7];
-  B10_current[8] = B10_[8];
-  B10_current[9] = B10_[9];
-  B10_current[10] = B10_[10];
-  B10_current[11] = B10_[11];
-
-  data_[1584] = C00_[0] * data_[1572] + B10_current[0] * data_[1560] + cB00_current[0] * data_[1416];
-  data_[1585] = C00_[1] * data_[1573] + B10_current[1] * data_[1561] + cB00_current[1] * data_[1417];
-  data_[1586] = C00_[2] * data_[1574] + B10_current[2] * data_[1562] + cB00_current[2] * data_[1418];
-  data_[1587] = C00_[3] * data_[1575] + B10_current[3] * data_[1563] + cB00_current[3] * data_[1419];
-  data_[1588] = C00_[4] * data_[1576] + B10_current[4] * data_[1564] + cB00_current[4] * data_[1420];
-  data_[1589] = C00_[5] * data_[1577] + B10_current[5] * data_[1565] + cB00_current[5] * data_[1421];
-  data_[1590] = C00_[6] * data_[1578] + B10_current[6] * data_[1566] + cB00_current[6] * data_[1422];
-  data_[1591] = C00_[7] * data_[1579] + B10_current[7] * data_[1567] + cB00_current[7] * data_[1423];
-  data_[1592] = C00_[8] * data_[1580] + B10_current[8] * data_[1568] + cB00_current[8] * data_[1424];
-  data_[1593] = C00_[9] * data_[1581] + B10_current[9] * data_[1569] + cB00_current[9] * data_[1425];
-  data_[1594] = C00_[10] * data_[1582] + B10_current[10] * data_[1570] + cB00_current[10] * data_[1426];
-  data_[1595] = C00_[11] * data_[1583] + B10_current[11] * data_[1571] + cB00_current[11] * data_[1427];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1596] = C00_[0] * data_[1584] + B10_current[0] * data_[1572] + cB00_current[0] * data_[1428];
-  data_[1597] = C00_[1] * data_[1585] + B10_current[1] * data_[1573] + cB00_current[1] * data_[1429];
-  data_[1598] = C00_[2] * data_[1586] + B10_current[2] * data_[1574] + cB00_current[2] * data_[1430];
-  data_[1599] = C00_[3] * data_[1587] + B10_current[3] * data_[1575] + cB00_current[3] * data_[1431];
-  data_[1600] = C00_[4] * data_[1588] + B10_current[4] * data_[1576] + cB00_current[4] * data_[1432];
-  data_[1601] = C00_[5] * data_[1589] + B10_current[5] * data_[1577] + cB00_current[5] * data_[1433];
-  data_[1602] = C00_[6] * data_[1590] + B10_current[6] * data_[1578] + cB00_current[6] * data_[1434];
-  data_[1603] = C00_[7] * data_[1591] + B10_current[7] * data_[1579] + cB00_current[7] * data_[1435];
-  data_[1604] = C00_[8] * data_[1592] + B10_current[8] * data_[1580] + cB00_current[8] * data_[1436];
-  data_[1605] = C00_[9] * data_[1593] + B10_current[9] * data_[1581] + cB00_current[9] * data_[1437];
-  data_[1606] = C00_[10] * data_[1594] + B10_current[10] * data_[1582] + cB00_current[10] * data_[1438];
-  data_[1607] = C00_[11] * data_[1595] + B10_current[11] * data_[1583] + cB00_current[11] * data_[1439];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1608] = C00_[0] * data_[1596] + B10_current[0] * data_[1584] + cB00_current[0] * data_[1440];
-  data_[1609] = C00_[1] * data_[1597] + B10_current[1] * data_[1585] + cB00_current[1] * data_[1441];
-  data_[1610] = C00_[2] * data_[1598] + B10_current[2] * data_[1586] + cB00_current[2] * data_[1442];
-  data_[1611] = C00_[3] * data_[1599] + B10_current[3] * data_[1587] + cB00_current[3] * data_[1443];
-  data_[1612] = C00_[4] * data_[1600] + B10_current[4] * data_[1588] + cB00_current[4] * data_[1444];
-  data_[1613] = C00_[5] * data_[1601] + B10_current[5] * data_[1589] + cB00_current[5] * data_[1445];
-  data_[1614] = C00_[6] * data_[1602] + B10_current[6] * data_[1590] + cB00_current[6] * data_[1446];
-  data_[1615] = C00_[7] * data_[1603] + B10_current[7] * data_[1591] + cB00_current[7] * data_[1447];
-  data_[1616] = C00_[8] * data_[1604] + B10_current[8] * data_[1592] + cB00_current[8] * data_[1448];
-  data_[1617] = C00_[9] * data_[1605] + B10_current[9] * data_[1593] + cB00_current[9] * data_[1449];
-  data_[1618] = C00_[10] * data_[1606] + B10_current[10] * data_[1594] + cB00_current[10] * data_[1450];
-  data_[1619] = C00_[11] * data_[1607] + B10_current[11] * data_[1595] + cB00_current[11] * data_[1451];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1620] = C00_[0] * data_[1608] + B10_current[0] * data_[1596] + cB00_current[0] * data_[1452];
-  data_[1621] = C00_[1] * data_[1609] + B10_current[1] * data_[1597] + cB00_current[1] * data_[1453];
-  data_[1622] = C00_[2] * data_[1610] + B10_current[2] * data_[1598] + cB00_current[2] * data_[1454];
-  data_[1623] = C00_[3] * data_[1611] + B10_current[3] * data_[1599] + cB00_current[3] * data_[1455];
-  data_[1624] = C00_[4] * data_[1612] + B10_current[4] * data_[1600] + cB00_current[4] * data_[1456];
-  data_[1625] = C00_[5] * data_[1613] + B10_current[5] * data_[1601] + cB00_current[5] * data_[1457];
-  data_[1626] = C00_[6] * data_[1614] + B10_current[6] * data_[1602] + cB00_current[6] * data_[1458];
-  data_[1627] = C00_[7] * data_[1615] + B10_current[7] * data_[1603] + cB00_current[7] * data_[1459];
-  data_[1628] = C00_[8] * data_[1616] + B10_current[8] * data_[1604] + cB00_current[8] * data_[1460];
-  data_[1629] = C00_[9] * data_[1617] + B10_current[9] * data_[1605] + cB00_current[9] * data_[1461];
-  data_[1630] = C00_[10] * data_[1618] + B10_current[10] * data_[1606] + cB00_current[10] * data_[1462];
-  data_[1631] = C00_[11] * data_[1619] + B10_current[11] * data_[1607] + cB00_current[11] * data_[1463];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1632] = C00_[0] * data_[1620] + B10_current[0] * data_[1608] + cB00_current[0] * data_[1464];
-  data_[1633] = C00_[1] * data_[1621] + B10_current[1] * data_[1609] + cB00_current[1] * data_[1465];
-  data_[1634] = C00_[2] * data_[1622] + B10_current[2] * data_[1610] + cB00_current[2] * data_[1466];
-  data_[1635] = C00_[3] * data_[1623] + B10_current[3] * data_[1611] + cB00_current[3] * data_[1467];
-  data_[1636] = C00_[4] * data_[1624] + B10_current[4] * data_[1612] + cB00_current[4] * data_[1468];
-  data_[1637] = C00_[5] * data_[1625] + B10_current[5] * data_[1613] + cB00_current[5] * data_[1469];
-  data_[1638] = C00_[6] * data_[1626] + B10_current[6] * data_[1614] + cB00_current[6] * data_[1470];
-  data_[1639] = C00_[7] * data_[1627] + B10_current[7] * data_[1615] + cB00_current[7] * data_[1471];
-  data_[1640] = C00_[8] * data_[1628] + B10_current[8] * data_[1616] + cB00_current[8] * data_[1472];
-  data_[1641] = C00_[9] * data_[1629] + B10_current[9] * data_[1617] + cB00_current[9] * data_[1473];
-  data_[1642] = C00_[10] * data_[1630] + B10_current[10] * data_[1618] + cB00_current[10] * data_[1474];
-  data_[1643] = C00_[11] * data_[1631] + B10_current[11] * data_[1619] + cB00_current[11] * data_[1475];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1644] = C00_[0] * data_[1632] + B10_current[0] * data_[1620] + cB00_current[0] * data_[1476];
-  data_[1645] = C00_[1] * data_[1633] + B10_current[1] * data_[1621] + cB00_current[1] * data_[1477];
-  data_[1646] = C00_[2] * data_[1634] + B10_current[2] * data_[1622] + cB00_current[2] * data_[1478];
-  data_[1647] = C00_[3] * data_[1635] + B10_current[3] * data_[1623] + cB00_current[3] * data_[1479];
-  data_[1648] = C00_[4] * data_[1636] + B10_current[4] * data_[1624] + cB00_current[4] * data_[1480];
-  data_[1649] = C00_[5] * data_[1637] + B10_current[5] * data_[1625] + cB00_current[5] * data_[1481];
-  data_[1650] = C00_[6] * data_[1638] + B10_current[6] * data_[1626] + cB00_current[6] * data_[1482];
-  data_[1651] = C00_[7] * data_[1639] + B10_current[7] * data_[1627] + cB00_current[7] * data_[1483];
-  data_[1652] = C00_[8] * data_[1640] + B10_current[8] * data_[1628] + cB00_current[8] * data_[1484];
-  data_[1653] = C00_[9] * data_[1641] + B10_current[9] * data_[1629] + cB00_current[9] * data_[1485];
-  data_[1654] = C00_[10] * data_[1642] + B10_current[10] * data_[1630] + cB00_current[10] * data_[1486];
-  data_[1655] = C00_[11] * data_[1643] + B10_current[11] * data_[1631] + cB00_current[11] * data_[1487];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1656] = C00_[0] * data_[1644] + B10_current[0] * data_[1632] + cB00_current[0] * data_[1488];
-  data_[1657] = C00_[1] * data_[1645] + B10_current[1] * data_[1633] + cB00_current[1] * data_[1489];
-  data_[1658] = C00_[2] * data_[1646] + B10_current[2] * data_[1634] + cB00_current[2] * data_[1490];
-  data_[1659] = C00_[3] * data_[1647] + B10_current[3] * data_[1635] + cB00_current[3] * data_[1491];
-  data_[1660] = C00_[4] * data_[1648] + B10_current[4] * data_[1636] + cB00_current[4] * data_[1492];
-  data_[1661] = C00_[5] * data_[1649] + B10_current[5] * data_[1637] + cB00_current[5] * data_[1493];
-  data_[1662] = C00_[6] * data_[1650] + B10_current[6] * data_[1638] + cB00_current[6] * data_[1494];
-  data_[1663] = C00_[7] * data_[1651] + B10_current[7] * data_[1639] + cB00_current[7] * data_[1495];
-  data_[1664] = C00_[8] * data_[1652] + B10_current[8] * data_[1640] + cB00_current[8] * data_[1496];
-  data_[1665] = C00_[9] * data_[1653] + B10_current[9] * data_[1641] + cB00_current[9] * data_[1497];
-  data_[1666] = C00_[10] * data_[1654] + B10_current[10] * data_[1642] + cB00_current[10] * data_[1498];
-  data_[1667] = C00_[11] * data_[1655] + B10_current[11] * data_[1643] + cB00_current[11] * data_[1499];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1668] = C00_[0] * data_[1656] + B10_current[0] * data_[1644] + cB00_current[0] * data_[1500];
-  data_[1669] = C00_[1] * data_[1657] + B10_current[1] * data_[1645] + cB00_current[1] * data_[1501];
-  data_[1670] = C00_[2] * data_[1658] + B10_current[2] * data_[1646] + cB00_current[2] * data_[1502];
-  data_[1671] = C00_[3] * data_[1659] + B10_current[3] * data_[1647] + cB00_current[3] * data_[1503];
-  data_[1672] = C00_[4] * data_[1660] + B10_current[4] * data_[1648] + cB00_current[4] * data_[1504];
-  data_[1673] = C00_[5] * data_[1661] + B10_current[5] * data_[1649] + cB00_current[5] * data_[1505];
-  data_[1674] = C00_[6] * data_[1662] + B10_current[6] * data_[1650] + cB00_current[6] * data_[1506];
-  data_[1675] = C00_[7] * data_[1663] + B10_current[7] * data_[1651] + cB00_current[7] * data_[1507];
-  data_[1676] = C00_[8] * data_[1664] + B10_current[8] * data_[1652] + cB00_current[8] * data_[1508];
-  data_[1677] = C00_[9] * data_[1665] + B10_current[9] * data_[1653] + cB00_current[9] * data_[1509];
-  data_[1678] = C00_[10] * data_[1666] + B10_current[10] * data_[1654] + cB00_current[10] * data_[1510];
-  data_[1679] = C00_[11] * data_[1667] + B10_current[11] * data_[1655] + cB00_current[11] * data_[1511];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1680] = C00_[0] * data_[1668] + B10_current[0] * data_[1656] + cB00_current[0] * data_[1512];
-  data_[1681] = C00_[1] * data_[1669] + B10_current[1] * data_[1657] + cB00_current[1] * data_[1513];
-  data_[1682] = C00_[2] * data_[1670] + B10_current[2] * data_[1658] + cB00_current[2] * data_[1514];
-  data_[1683] = C00_[3] * data_[1671] + B10_current[3] * data_[1659] + cB00_current[3] * data_[1515];
-  data_[1684] = C00_[4] * data_[1672] + B10_current[4] * data_[1660] + cB00_current[4] * data_[1516];
-  data_[1685] = C00_[5] * data_[1673] + B10_current[5] * data_[1661] + cB00_current[5] * data_[1517];
-  data_[1686] = C00_[6] * data_[1674] + B10_current[6] * data_[1662] + cB00_current[6] * data_[1518];
-  data_[1687] = C00_[7] * data_[1675] + B10_current[7] * data_[1663] + cB00_current[7] * data_[1519];
-  data_[1688] = C00_[8] * data_[1676] + B10_current[8] * data_[1664] + cB00_current[8] * data_[1520];
-  data_[1689] = C00_[9] * data_[1677] + B10_current[9] * data_[1665] + cB00_current[9] * data_[1521];
-  data_[1690] = C00_[10] * data_[1678] + B10_current[10] * data_[1666] + cB00_current[10] * data_[1522];
-  data_[1691] = C00_[11] * data_[1679] + B10_current[11] * data_[1667] + cB00_current[11] * data_[1523];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1692] = C00_[0] * data_[1680] + B10_current[0] * data_[1668] + cB00_current[0] * data_[1524];
-  data_[1693] = C00_[1] * data_[1681] + B10_current[1] * data_[1669] + cB00_current[1] * data_[1525];
-  data_[1694] = C00_[2] * data_[1682] + B10_current[2] * data_[1670] + cB00_current[2] * data_[1526];
-  data_[1695] = C00_[3] * data_[1683] + B10_current[3] * data_[1671] + cB00_current[3] * data_[1527];
-  data_[1696] = C00_[4] * data_[1684] + B10_current[4] * data_[1672] + cB00_current[4] * data_[1528];
-  data_[1697] = C00_[5] * data_[1685] + B10_current[5] * data_[1673] + cB00_current[5] * data_[1529];
-  data_[1698] = C00_[6] * data_[1686] + B10_current[6] * data_[1674] + cB00_current[6] * data_[1530];
-  data_[1699] = C00_[7] * data_[1687] + B10_current[7] * data_[1675] + cB00_current[7] * data_[1531];
-  data_[1700] = C00_[8] * data_[1688] + B10_current[8] * data_[1676] + cB00_current[8] * data_[1532];
-  data_[1701] = C00_[9] * data_[1689] + B10_current[9] * data_[1677] + cB00_current[9] * data_[1533];
-  data_[1702] = C00_[10] * data_[1690] + B10_current[10] * data_[1678] + cB00_current[10] * data_[1534];
-  data_[1703] = C00_[11] * data_[1691] + B10_current[11] * data_[1679] + cB00_current[11] * data_[1535];
-
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
-  B10_current[3] += B10_[3];
-  B10_current[4] += B10_[4];
-  B10_current[5] += B10_[5];
-  B10_current[6] += B10_[6];
-  B10_current[7] += B10_[7];
-  B10_current[8] += B10_[8];
-  B10_current[9] += B10_[9];
-  B10_current[10] += B10_[10];
-  B10_current[11] += B10_[11];
-
-  data_[1704] = C00_[0] * data_[1692] + B10_current[0] * data_[1680] + cB00_current[0] * data_[1536];
-  data_[1705] = C00_[1] * data_[1693] + B10_current[1] * data_[1681] + cB00_current[1] * data_[1537];
-  data_[1706] = C00_[2] * data_[1694] + B10_current[2] * data_[1682] + cB00_current[2] * data_[1538];
-  data_[1707] = C00_[3] * data_[1695] + B10_current[3] * data_[1683] + cB00_current[3] * data_[1539];
-  data_[1708] = C00_[4] * data_[1696] + B10_current[4] * data_[1684] + cB00_current[4] * data_[1540];
-  data_[1709] = C00_[5] * data_[1697] + B10_current[5] * data_[1685] + cB00_current[5] * data_[1541];
-  data_[1710] = C00_[6] * data_[1698] + B10_current[6] * data_[1686] + cB00_current[6] * data_[1542];
-  data_[1711] = C00_[7] * data_[1699] + B10_current[7] * data_[1687] + cB00_current[7] * data_[1543];
-  data_[1712] = C00_[8] * data_[1700] + B10_current[8] * data_[1688] + cB00_current[8] * data_[1544];
-  data_[1713] = C00_[9] * data_[1701] + B10_current[9] * data_[1689] + cB00_current[9] * data_[1545];
-  data_[1714] = C00_[10] * data_[1702] + B10_current[10] * data_[1690] + cB00_current[10] * data_[1546];
-  data_[1715] = C00_[11] * data_[1703] + B10_current[11] * data_[1691] + cB00_current[11] * data_[1547];
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] = B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[312+t] = D00_[t] * data_[156+t] + B01_current[t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[324+t] = C00_[t] * data_[312+t] + cB00_current[t] * data_[156+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[336+t] = C00_[t] * data_[324+t] + B10_current[t] * data_[312+t] + cB00_current[t] * data_[168+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[348+t] = C00_[t] * data_[336+t] + B10_current[t] * data_[324+t] + cB00_current[t] * data_[180+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[360+t] = C00_[t] * data_[348+t] + B10_current[t] * data_[336+t] + cB00_current[t] * data_[192+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[372+t] = C00_[t] * data_[360+t] + B10_current[t] * data_[348+t] + cB00_current[t] * data_[204+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[384+t] = C00_[t] * data_[372+t] + B10_current[t] * data_[360+t] + cB00_current[t] * data_[216+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[396+t] = C00_[t] * data_[384+t] + B10_current[t] * data_[372+t] + cB00_current[t] * data_[228+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[408+t] = C00_[t] * data_[396+t] + B10_current[t] * data_[384+t] + cB00_current[t] * data_[240+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[420+t] = C00_[t] * data_[408+t] + B10_current[t] * data_[396+t] + cB00_current[t] * data_[252+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[432+t] = C00_[t] * data_[420+t] + B10_current[t] * data_[408+t] + cB00_current[t] * data_[264+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[444+t] = C00_[t] * data_[432+t] + B10_current[t] * data_[420+t] + cB00_current[t] * data_[276+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[456+t] = C00_[t] * data_[444+t] + B10_current[t] * data_[432+t] + cB00_current[t] * data_[288+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[468+t] = D00_[t] * data_[312+t] + B01_current[t] * data_[156+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[480+t] = C00_[t] * data_[468+t] + cB00_current[t] * data_[312+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[492+t] = C00_[t] * data_[480+t] + B10_current[t] * data_[468+t] + cB00_current[t] * data_[324+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[504+t] = C00_[t] * data_[492+t] + B10_current[t] * data_[480+t] + cB00_current[t] * data_[336+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[516+t] = C00_[t] * data_[504+t] + B10_current[t] * data_[492+t] + cB00_current[t] * data_[348+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[528+t] = C00_[t] * data_[516+t] + B10_current[t] * data_[504+t] + cB00_current[t] * data_[360+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[540+t] = C00_[t] * data_[528+t] + B10_current[t] * data_[516+t] + cB00_current[t] * data_[372+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[552+t] = C00_[t] * data_[540+t] + B10_current[t] * data_[528+t] + cB00_current[t] * data_[384+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[564+t] = C00_[t] * data_[552+t] + B10_current[t] * data_[540+t] + cB00_current[t] * data_[396+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[576+t] = C00_[t] * data_[564+t] + B10_current[t] * data_[552+t] + cB00_current[t] * data_[408+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[588+t] = C00_[t] * data_[576+t] + B10_current[t] * data_[564+t] + cB00_current[t] * data_[420+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[600+t] = C00_[t] * data_[588+t] + B10_current[t] * data_[576+t] + cB00_current[t] * data_[432+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[612+t] = C00_[t] * data_[600+t] + B10_current[t] * data_[588+t] + cB00_current[t] * data_[444+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[624+t] = D00_[t] * data_[468+t] + B01_current[t] * data_[312+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[636+t] = C00_[t] * data_[624+t] + cB00_current[t] * data_[468+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[648+t] = C00_[t] * data_[636+t] + B10_current[t] * data_[624+t] + cB00_current[t] * data_[480+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[660+t] = C00_[t] * data_[648+t] + B10_current[t] * data_[636+t] + cB00_current[t] * data_[492+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[672+t] = C00_[t] * data_[660+t] + B10_current[t] * data_[648+t] + cB00_current[t] * data_[504+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[684+t] = C00_[t] * data_[672+t] + B10_current[t] * data_[660+t] + cB00_current[t] * data_[516+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[696+t] = C00_[t] * data_[684+t] + B10_current[t] * data_[672+t] + cB00_current[t] * data_[528+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[708+t] = C00_[t] * data_[696+t] + B10_current[t] * data_[684+t] + cB00_current[t] * data_[540+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[720+t] = C00_[t] * data_[708+t] + B10_current[t] * data_[696+t] + cB00_current[t] * data_[552+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[732+t] = C00_[t] * data_[720+t] + B10_current[t] * data_[708+t] + cB00_current[t] * data_[564+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[744+t] = C00_[t] * data_[732+t] + B10_current[t] * data_[720+t] + cB00_current[t] * data_[576+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[756+t] = C00_[t] * data_[744+t] + B10_current[t] * data_[732+t] + cB00_current[t] * data_[588+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[768+t] = C00_[t] * data_[756+t] + B10_current[t] * data_[744+t] + cB00_current[t] * data_[600+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[780+t] = D00_[t] * data_[624+t] + B01_current[t] * data_[468+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[792+t] = C00_[t] * data_[780+t] + cB00_current[t] * data_[624+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[804+t] = C00_[t] * data_[792+t] + B10_current[t] * data_[780+t] + cB00_current[t] * data_[636+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[816+t] = C00_[t] * data_[804+t] + B10_current[t] * data_[792+t] + cB00_current[t] * data_[648+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[828+t] = C00_[t] * data_[816+t] + B10_current[t] * data_[804+t] + cB00_current[t] * data_[660+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[840+t] = C00_[t] * data_[828+t] + B10_current[t] * data_[816+t] + cB00_current[t] * data_[672+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[852+t] = C00_[t] * data_[840+t] + B10_current[t] * data_[828+t] + cB00_current[t] * data_[684+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[864+t] = C00_[t] * data_[852+t] + B10_current[t] * data_[840+t] + cB00_current[t] * data_[696+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[876+t] = C00_[t] * data_[864+t] + B10_current[t] * data_[852+t] + cB00_current[t] * data_[708+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[888+t] = C00_[t] * data_[876+t] + B10_current[t] * data_[864+t] + cB00_current[t] * data_[720+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[900+t] = C00_[t] * data_[888+t] + B10_current[t] * data_[876+t] + cB00_current[t] * data_[732+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[912+t] = C00_[t] * data_[900+t] + B10_current[t] * data_[888+t] + cB00_current[t] * data_[744+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[924+t] = C00_[t] * data_[912+t] + B10_current[t] * data_[900+t] + cB00_current[t] * data_[756+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[936+t] = D00_[t] * data_[780+t] + B01_current[t] * data_[624+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[948+t] = C00_[t] * data_[936+t] + cB00_current[t] * data_[780+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[960+t] = C00_[t] * data_[948+t] + B10_current[t] * data_[936+t] + cB00_current[t] * data_[792+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[972+t] = C00_[t] * data_[960+t] + B10_current[t] * data_[948+t] + cB00_current[t] * data_[804+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[984+t] = C00_[t] * data_[972+t] + B10_current[t] * data_[960+t] + cB00_current[t] * data_[816+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[996+t] = C00_[t] * data_[984+t] + B10_current[t] * data_[972+t] + cB00_current[t] * data_[828+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1008+t] = C00_[t] * data_[996+t] + B10_current[t] * data_[984+t] + cB00_current[t] * data_[840+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1020+t] = C00_[t] * data_[1008+t] + B10_current[t] * data_[996+t] + cB00_current[t] * data_[852+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1032+t] = C00_[t] * data_[1020+t] + B10_current[t] * data_[1008+t] + cB00_current[t] * data_[864+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1044+t] = C00_[t] * data_[1032+t] + B10_current[t] * data_[1020+t] + cB00_current[t] * data_[876+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1056+t] = C00_[t] * data_[1044+t] + B10_current[t] * data_[1032+t] + cB00_current[t] * data_[888+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1068+t] = C00_[t] * data_[1056+t] + B10_current[t] * data_[1044+t] + cB00_current[t] * data_[900+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1080+t] = C00_[t] * data_[1068+t] + B10_current[t] * data_[1056+t] + cB00_current[t] * data_[912+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1092+t] = D00_[t] * data_[936+t] + B01_current[t] * data_[780+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1104+t] = C00_[t] * data_[1092+t] + cB00_current[t] * data_[936+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1116+t] = C00_[t] * data_[1104+t] + B10_current[t] * data_[1092+t] + cB00_current[t] * data_[948+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1128+t] = C00_[t] * data_[1116+t] + B10_current[t] * data_[1104+t] + cB00_current[t] * data_[960+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1140+t] = C00_[t] * data_[1128+t] + B10_current[t] * data_[1116+t] + cB00_current[t] * data_[972+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1152+t] = C00_[t] * data_[1140+t] + B10_current[t] * data_[1128+t] + cB00_current[t] * data_[984+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1164+t] = C00_[t] * data_[1152+t] + B10_current[t] * data_[1140+t] + cB00_current[t] * data_[996+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1176+t] = C00_[t] * data_[1164+t] + B10_current[t] * data_[1152+t] + cB00_current[t] * data_[1008+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1188+t] = C00_[t] * data_[1176+t] + B10_current[t] * data_[1164+t] + cB00_current[t] * data_[1020+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1200+t] = C00_[t] * data_[1188+t] + B10_current[t] * data_[1176+t] + cB00_current[t] * data_[1032+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1212+t] = C00_[t] * data_[1200+t] + B10_current[t] * data_[1188+t] + cB00_current[t] * data_[1044+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1224+t] = C00_[t] * data_[1212+t] + B10_current[t] * data_[1200+t] + cB00_current[t] * data_[1056+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1236+t] = C00_[t] * data_[1224+t] + B10_current[t] * data_[1212+t] + cB00_current[t] * data_[1068+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1248+t] = D00_[t] * data_[1092+t] + B01_current[t] * data_[936+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1260+t] = C00_[t] * data_[1248+t] + cB00_current[t] * data_[1092+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1272+t] = C00_[t] * data_[1260+t] + B10_current[t] * data_[1248+t] + cB00_current[t] * data_[1104+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1284+t] = C00_[t] * data_[1272+t] + B10_current[t] * data_[1260+t] + cB00_current[t] * data_[1116+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1296+t] = C00_[t] * data_[1284+t] + B10_current[t] * data_[1272+t] + cB00_current[t] * data_[1128+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1308+t] = C00_[t] * data_[1296+t] + B10_current[t] * data_[1284+t] + cB00_current[t] * data_[1140+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1320+t] = C00_[t] * data_[1308+t] + B10_current[t] * data_[1296+t] + cB00_current[t] * data_[1152+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1332+t] = C00_[t] * data_[1320+t] + B10_current[t] * data_[1308+t] + cB00_current[t] * data_[1164+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1344+t] = C00_[t] * data_[1332+t] + B10_current[t] * data_[1320+t] + cB00_current[t] * data_[1176+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1356+t] = C00_[t] * data_[1344+t] + B10_current[t] * data_[1332+t] + cB00_current[t] * data_[1188+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1368+t] = C00_[t] * data_[1356+t] + B10_current[t] * data_[1344+t] + cB00_current[t] * data_[1200+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1380+t] = C00_[t] * data_[1368+t] + B10_current[t] * data_[1356+t] + cB00_current[t] * data_[1212+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1392+t] = C00_[t] * data_[1380+t] + B10_current[t] * data_[1368+t] + cB00_current[t] * data_[1224+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1404+t] = D00_[t] * data_[1248+t] + B01_current[t] * data_[1092+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1416+t] = C00_[t] * data_[1404+t] + cB00_current[t] * data_[1248+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1428+t] = C00_[t] * data_[1416+t] + B10_current[t] * data_[1404+t] + cB00_current[t] * data_[1260+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1440+t] = C00_[t] * data_[1428+t] + B10_current[t] * data_[1416+t] + cB00_current[t] * data_[1272+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1452+t] = C00_[t] * data_[1440+t] + B10_current[t] * data_[1428+t] + cB00_current[t] * data_[1284+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1464+t] = C00_[t] * data_[1452+t] + B10_current[t] * data_[1440+t] + cB00_current[t] * data_[1296+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1476+t] = C00_[t] * data_[1464+t] + B10_current[t] * data_[1452+t] + cB00_current[t] * data_[1308+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1488+t] = C00_[t] * data_[1476+t] + B10_current[t] * data_[1464+t] + cB00_current[t] * data_[1320+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1500+t] = C00_[t] * data_[1488+t] + B10_current[t] * data_[1476+t] + cB00_current[t] * data_[1332+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1512+t] = C00_[t] * data_[1500+t] + B10_current[t] * data_[1488+t] + cB00_current[t] * data_[1344+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1524+t] = C00_[t] * data_[1512+t] + B10_current[t] * data_[1500+t] + cB00_current[t] * data_[1356+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1536+t] = C00_[t] * data_[1524+t] + B10_current[t] * data_[1512+t] + cB00_current[t] * data_[1368+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1548+t] = C00_[t] * data_[1536+t] + B10_current[t] * data_[1524+t] + cB00_current[t] * data_[1380+t];
+
+  for (int t = 0; t != 12; ++t)
+    B01_current[t] += B01_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1560+t] = D00_[t] * data_[1404+t] + B01_current[t] * data_[1248+t];
+
+  for (int t = 0; t != 12; ++t)
+    cB00_current[t] += B00_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1572+t] = C00_[t] * data_[1560+t] + cB00_current[t] * data_[1404+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] = B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1584+t] = C00_[t] * data_[1572+t] + B10_current[t] * data_[1560+t] + cB00_current[t] * data_[1416+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1596+t] = C00_[t] * data_[1584+t] + B10_current[t] * data_[1572+t] + cB00_current[t] * data_[1428+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1608+t] = C00_[t] * data_[1596+t] + B10_current[t] * data_[1584+t] + cB00_current[t] * data_[1440+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1620+t] = C00_[t] * data_[1608+t] + B10_current[t] * data_[1596+t] + cB00_current[t] * data_[1452+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1632+t] = C00_[t] * data_[1620+t] + B10_current[t] * data_[1608+t] + cB00_current[t] * data_[1464+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1644+t] = C00_[t] * data_[1632+t] + B10_current[t] * data_[1620+t] + cB00_current[t] * data_[1476+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1656+t] = C00_[t] * data_[1644+t] + B10_current[t] * data_[1632+t] + cB00_current[t] * data_[1488+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1668+t] = C00_[t] * data_[1656+t] + B10_current[t] * data_[1644+t] + cB00_current[t] * data_[1500+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1680+t] = C00_[t] * data_[1668+t] + B10_current[t] * data_[1656+t] + cB00_current[t] * data_[1512+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1692+t] = C00_[t] * data_[1680+t] + B10_current[t] * data_[1668+t] + cB00_current[t] * data_[1524+t];
+
+  for (int t = 0; t != 12; ++t)
+    B10_current[t] += B10_[t];
+
+  for (int t = 0; t != 12; ++t)
+    data_[1704+t] = C00_[t] * data_[1692+t] + B10_current[t] * data_[1680+t] + cB00_current[t] * data_[1536+t];
 }
 

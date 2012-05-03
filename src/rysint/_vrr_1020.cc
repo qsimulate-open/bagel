@@ -28,30 +28,30 @@
 
 // returns double array of length 12
 void VRRList::_vrr_1020(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
-  data_[0] = 1.0;
-  data_[1] = 1.0;
+  for (int t = 0; t != 2; ++t)
+    data_[0+t] = 1.0;
 
-  data_[2] = C00_[0];
-  data_[3] = C00_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[2+t] = C00_[t];
 
-  data_[4] = D00_[0];
-  data_[5] = D00_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[4+t] = D00_[t];
 
   double cB00_current[2];
-  cB00_current[0] = B00_[0];
-  cB00_current[1] = B00_[1];
+  for (int t = 0; t != 2; ++t)
+    cB00_current[t] = B00_[t];
 
-  data_[6] = C00_[0] * data_[4] + cB00_current[0];
-  data_[7] = C00_[1] * data_[5] + cB00_current[1];
+  for (int t = 0; t != 2; ++t)
+    data_[6+t] = C00_[t] * data_[4+t] + cB00_current[t];
 
 
-  data_[8] = D00_[0] * data_[4] + B01_[0];
-  data_[9] = D00_[1] * data_[5] + B01_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[8+t] = D00_[t] * data_[4+t] + B01_[t];
 
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
+  for (int t = 0; t != 2; ++t)
+    cB00_current[t] += B00_[t];
 
-  data_[10] = C00_[0] * data_[8] + cB00_current[0] * data_[4];
-  data_[11] = C00_[1] * data_[9] + cB00_current[1] * data_[5];
+  for (int t = 0; t != 2; ++t)
+    data_[10+t] = C00_[t] * data_[8+t] + cB00_current[t] * data_[4+t];
 }
 

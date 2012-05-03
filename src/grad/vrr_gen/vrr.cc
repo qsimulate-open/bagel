@@ -5,6 +5,7 @@
 
 #include "vrr.h"
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 
@@ -58,284 +59,247 @@ const pair<string, int> VRR::vrr00() const {
 
 
 const pair<string, int> VRR::vrrn0(const int n) const {
-  string contents;
+  stringstream contents;
   int i = 0;
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = 1.0;\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = C00_[" + lexical_cast<string>(t) + "];\n";
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = 1.0;\n";
+  i += rank_;
+  contents << endl;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = C00_[t];" << endl;
+  i += rank_;
   for (int a = 2; a != n + 1; ++a) {
-    contents += "\n";
+    contents << endl;
     if (n == 2) {
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_[" + lexical_cast<string>(t) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B10_[t];\n";
+      i += rank_;
     } else {
-      if (a == 2) contents += "  double B10_current[" + lexical_cast<string>(rank_) + "];\n";
-      for (int t = 0; t != rank_; ++t) { 
-        contents += "  B10_current[" + lexical_cast<string>(t) + "] " + (a == 2 ? "=" : "+=");
-        contents += " B10_[" + lexical_cast<string>(t) + "];\n";
+      if (a == 2) contents << "  double B10_current[" << rank_ << "];\n";
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+      contents << "    B10_current[t] " << (a == 2 ? "=" : "+=");
+      contents << " B10_[t];" << endl;
+      contents << endl;
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B10_current[t]";
+      if (a != 2) { 
+        contents << " * data_[" << (i - 2 * rank_) << "+t];";
+      } else {
+        contents << ";";
       }
-      contents += "\n";
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_current[" + lexical_cast<string>(t) + "]";
-        if (a != 2) { 
-          contents += " * data_[" + lexical_cast<string>(i - 2 * rank_) + "];\n";
-        } else {
-          contents += ";\n";
-        }
-      }
+      contents << endl;
+      i += rank_;
     }
   }
   
-  return make_pair(contents, i);
+  return make_pair(contents.str(), i);
 }
 
 
 const pair<string, int> VRR::vrr0m(const int m) const {
-  string contents;
+  stringstream contents;
   int i = 0;
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = 1.0;\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = D00_[" + lexical_cast<string>(t) + "];\n";
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = 1.0;\n";
+  contents << endl;
+  i += rank_;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = D00_[t];\n";
+  i += rank_;
   for (int c = 2; c != m + 1; ++c) {
-    contents += "\n";
+    contents << endl;
     if (m == 2) {
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B01_[" + lexical_cast<string>(t) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = D00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B01_[t];" << endl;
+      i += rank_;
     } else {
-      if (c == 2) contents += "  double B01_current[" + lexical_cast<string>(rank_) + "];\n";
-      for (int t = 0; t != rank_; ++t) { 
-        contents += "  B01_current[" + lexical_cast<string>(t) + "] " + (c == 2 ? "=" : "+=");
-        contents += " B01_[" + lexical_cast<string>(t) + "];\n";
+      if (c == 2) contents << "  double B01_current[" << rank_ << "];\n";
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    B01_current[t] " << (c == 2 ? "=" : "+=");
+      contents << " B01_[t];" << endl;
+      contents << endl;
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = D00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B01_current[t]";
+      if (c != 2) { 
+        contents << " * data_[" << (i - 2 * rank_) << "+t];";
+      } else {
+        contents << ";";
       }
-      contents += "\n";
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B01_current[" + lexical_cast<string>(t) + "]";
-        if (c != 2) { 
-          contents += " * data_[" + lexical_cast<string>(i - 2 * rank_) + "];\n";
-        } else {
-          contents += ";\n";
-        }
-      }
+      contents << endl;
+      i += rank_;
     }
   } 
-  return make_pair(contents, i);
+  return make_pair(contents.str(), i);
 }
 
 
 const pair<string, int> VRR::vrr11() const {
-  string contents;
+  stringstream contents;
   int i = 0;
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = 1.0;\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = C00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = D00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) {
-    contents += "  data_[" + lexical_cast<string>(i) + "]";
-    contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-    contents += " + B00_[" + lexical_cast<string>(t) + "];\n"; //* data_[" + lexical_cast<string>(i - rank_ * 3) + "];\n";
-  }
-  return make_pair(contents, i);
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = 1.0;\n";
+  i += rank_;
+  contents << "\n";
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = C00_[t];\n";
+  contents << "\n";
+  i += rank_;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+  contents << "    data_[" << i << "+t] = D00_[t];\n";
+  contents << "\n";
+  i += rank_;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+  contents << "    data_[" << i << "+t]";
+  contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+  contents << " + B00_[t];\n"; //* data_[" + lexical_cast<string>(i - rank_ * 3) + "];\n";
+  return make_pair(contents.str(), i);
 }
-
-/*
-const pair<string, int> VRR::vrr1m(const int m) const {
-  string contents;
-  pair<string, int> zm = vrr0m(m);
-  contents += zm.first;
-  int i = zm.second;
-
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = C00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) { 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-    contents += " + B00_[" + lexical_cast<string>(t) + "];\n";
-  }
-  for (int c = 2; c != m + 1; ++c) {
-    contents += "\n";
-    if (m == 2) {
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B01_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + B00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (m + 2) * rank_) + "];\n";
-      }
-    } else {
-      for (int t = 0; t != rank_; ++t) { 
-        contents += "  B01_current[" + lexical_cast<string>(t) + "] " + (c == 2 ? "=" : "+=");
-        contents += " B01_[" + lexical_cast<string>(t) + "];\n";
-      }
-      contents += "\n";
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B01_current[" + lexical_cast<string>(t) + "]";
-        contents += " * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + B00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (m + 2) * rank_) + "];\n";
-      }
-    }
-  } 
-  return make_pair(contents, i);
-}
-*/
 
 
 const pair<string, int> VRR::vrrn1(const int n) const {
-  string contents;
+  stringstream contents;
   pair<string, int> n0 = vrrn0(n);
-  contents = n0.first;
+  contents << n0.first;
   int i = n0.second;
 
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = D00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) { 
-    contents += "  data_[" + lexical_cast<string>(i) + "]";
-    contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-    contents += " + B00_[" + lexical_cast<string>(t) + "];\n";
-  }
+  contents << "\n";
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = D00_[t];\n";
+  contents << "\n";
+  i += rank_;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+  contents << "    data_[" << i << "+t]";
+  contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+  contents << " + B00_[t];\n";
+  i += rank_;
   for (int a = 2; a != n + 1; ++a) {
-    contents += "\n";
+    contents << "\n";
     if (n == 2) {
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + B00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B10_[t] * data_[" << (i - 2 * rank_) << "+t]";
+      contents << " + B00_[t] * data_[" << (i - (n + 2) * rank_) << "+t];\n";
+      i += rank_;
     } else {
-      for (int t = 0; t != rank_; ++t) 
-        contents += "  B10_current[" + lexical_cast<string>(t) + "] " + ((a == 2) ? "=" : "+=") + " B10_[" + lexical_cast<string>(t) + "];\n";
-      contents += "\n";
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + B00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    B10_current[t] " << ((a == 2) ? "=" : "+=") << " B10_[t];\n";
+      contents << endl;
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B10_current[t] * data_[" << (i - 2 * rank_) << "+t]";
+      contents << " + B00_[t] * data_[" << (i - (n + 2) * rank_) << "+t];\n";
+      i += rank_;
     }
   }
 
-  return make_pair(contents, i);
+  return make_pair(contents.str(), i);
 }
 
 
 const pair<string, int> VRR::vrrnm(const int n, const int m) const {
-  string contents;
+  stringstream contents;
   pair<string, int> n0 = vrrn0(n);
-  contents = n0.first;
+  contents << n0.first;
   int i = n0.second;
 
   ////////// c = 1 //////////
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) 
-    contents += "  data_[" + lexical_cast<string>(i) + "] = D00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  contents += "  double cB00_current[" + lexical_cast<string>(rank_) + "];\n";
-  for (int t = 0; t != rank_; ++t) 
-    contents += "  cB00_current[" + lexical_cast<string>(t) + "] = B00_[" + lexical_cast<string>(t) + "];\n";
-  contents += "\n";
-  for (int t = 0; t != rank_; ++t, ++i) { 
-    contents += "  data_[" + lexical_cast<string>(i) + "]";
-    contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-    contents += " + cB00_current[" + lexical_cast<string>(t) + "];\n";
-  }
+  contents << endl;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+  contents << "    data_[" << i << "+t] = D00_[t];" << endl;
+  i += rank_;
+  contents << endl;
+  contents << "  double cB00_current[" << rank_ << "];\n";
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+  contents << "    cB00_current[t] = B00_[t];" << endl;
+  contents << endl;
+  contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+  contents << "    data_[" << i << "+t] = C00_[t] * data_[" << i - rank_ << "+t] + cB00_current[t];" << endl;
+  i += rank_;
+
   for (int a = 2; a != n + 1; ++a) {
-    contents += "\n";
+    contents << endl;
     if (n == 2) {
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + cB00_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << i - rank_ << "+t]";
+      contents << " + B10_[t] * data_[" << i - 2 * rank_ << "+t]";
+      contents << " + cB00_current[t] * data_[" << (i - (n + 2) * rank_) << "+t];\n";
+      i += rank_;
     } else {
-      for (int t = 0; t != rank_; ++t) 
-        contents += "  B10_current[" + lexical_cast<string>(t) + "] " + ((a == 2) ? "=" : "+=") + " B10_[" + lexical_cast<string>(t) + "];\n";
-      contents += "\n";
-      for (int t = 0; t != rank_; ++t, ++i) { 
-        contents += "  data_[" + lexical_cast<string>(i) + "]";
-        contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-        contents += " + B10_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-        contents += " + cB00_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-      }
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    B10_current[t] " << ((a == 2) ? "=" : "+=") << " B10_[t];\n";
+      contents << endl;
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    data_[" << i << "+t]";
+      contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+      contents << " + B10_current[t] * data_[" << (i - 2 * rank_) << "+t]";
+      contents << " + cB00_current[t] * data_[" << (i - (n + 2) * rank_) << "+t];\n";
+      i += rank_;
     }
   }
   ///////////////////////////
   for (int c = 2; c != m + 1; ++c) {
-    contents += "\n";
+    contents << "\n";
     if (m != 2) {
       if (c == 2)
-        contents += "  double B01_current[" + lexical_cast<string>(rank_) + "];\n";
-      for (int t = 0; t != rank_; ++t) 
-        contents += "  B01_current[" + lexical_cast<string>(t) + "] " + (c == 2 ? "=" : "+=") + " B01_[" + lexical_cast<string>(t) + "];\n";
+      contents << "  double B01_current[" << rank_ << "];" << endl;
+      contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+      contents << "    B01_current[t] " << (c == 2 ? "=" : "+=") << " B01_[t];\n";
     }
-    contents += "\n";
-    for (int t = 0; t != rank_; ++t, ++i) { 
-      contents += "  data_[" + lexical_cast<string>(i) + "]";
-      contents += " = D00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 1) * rank_) + "]";
-      if (m == 2) {
-        contents += " + B01_[" + lexical_cast<string>(t) + "];";
-      } else {
-        contents += " + B01_current[" + lexical_cast<string>(t) + "]";
-        contents += c == 2 ? ";" :" * data_[" + lexical_cast<string>(i - 2 * (n + 1) * rank_) + "];";
-      } 
-      contents += "\n";
-    }
-    contents += "\n";
-    for (int t = 0; t != rank_; ++t) 
-      contents += "  cB00_current[" + lexical_cast<string>(t) + "] += B00_[" + lexical_cast<string>(t) + "];\n";
-    contents += "\n";
-    for (int t = 0; t != rank_; ++t, ++i) { 
-      contents += "  data_[" + lexical_cast<string>(i) + "]";
-      contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-      contents += " + cB00_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-    }
+    contents << endl;
+    contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+    contents << "    data_[" << i << "+t]";
+    contents << " = D00_[t] * data_[" << (i - (n + 1) * rank_) << "+t]";
+    if (m == 2) {
+      contents << " + B01_[t];";
+    } else {
+      contents << " + B01_current[t]" << (c == 2 ? ";" :" * data_[" + lexical_cast<string>(i-2*(n+1)*rank_) + "+t];");
+    } 
+    contents << endl;
+    i += rank_;
+    contents << endl;
+    contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+    contents << "    cB00_current[t] += B00_[t];\n";
+    contents << endl;
+    contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+    contents << "    data_[" << i << "+t]";
+    contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+    contents << " + cB00_current[t] * data_[" << (i - (n + 2) * rank_) << "+t];" << endl;
+    i += rank_;
     for (int a = 2; a != n + 1; ++a) {
-      contents += "\n";
+      contents << endl;
       if (n == 2) {
-        for (int t = 0; t != rank_; ++t, ++i) { 
-          contents += "  data_[" + lexical_cast<string>(i) + "]";
-          contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-          contents += " + B10_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-          contents += " + cB00_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-        }
+        contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+        contents << "    data_[" << i << "+t]";
+        contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+        contents << " + B10_[t] * data_[" << (i - 2 * rank_) << "+t]";
+        contents << " + cB00_current[t] * data_[" << (i - (n + 2) * rank_) << "+t];" << endl;
+        i += rank_;
       } else {
-        for (int t = 0; t != rank_; ++t) 
-          contents += "  B10_current[" + lexical_cast<string>(t) + "] " + ((a == 2) ? "=" : "+=") + " B10_[" + lexical_cast<string>(t) + "];\n";
-        contents += "\n";
-        for (int t = 0; t != rank_; ++t, ++i) { 
-          contents += "  data_[" + lexical_cast<string>(i) + "]";
-          contents += " = C00_[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - rank_) + "]";
-          contents += " + B10_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - 2 * rank_) + "]";
-          contents += " + cB00_current[" + lexical_cast<string>(t) + "] * data_[" + lexical_cast<string>(i - (n + 2) * rank_) + "];\n";
-        }
+        contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl; 
+        contents << "    B10_current[t] " << ((a == 2) ? "=" : "+=") << " B10_[t];" << endl;
+        contents << endl;
+        contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
+        contents << "    data_[" << i << "+t]";
+        contents << " = C00_[t] * data_[" << (i - rank_) << "+t]";
+        contents << " + B10_current[t] * data_[" << (i - 2 * rank_) << "+t]";
+        contents << " + cB00_current[t] * data_[" << (i - (n + 2) * rank_) << "+t];" << endl;
+        i += rank_;
       }
     }
   }
 
-  return make_pair(contents, i);
+  return make_pair(contents.str(), i);
 }
 
 

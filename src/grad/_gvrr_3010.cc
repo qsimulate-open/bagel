@@ -28,41 +28,41 @@
 
 // returns double array of length 16
 void GVRRList::_gvrr_3010(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
-  data_[0] = 1.0;
-  data_[1] = 1.0;
+  for (int t = 0; t != 2; ++t)
+    data_[0+t] = 1.0;
 
-  data_[2] = C00_[0];
-  data_[3] = C00_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[2+t] = C00_[t];
 
   double B10_current[2];
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
+  for (int t = 0; t != 2; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[4] = C00_[0] * data_[2] + B10_current[0];
-  data_[5] = C00_[1] * data_[3] + B10_current[1];
+  for (int t = 0; t != 2; ++t)
+    data_[4+t] = C00_[t] * data_[2+t] + B10_current[t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
+  for (int t = 0; t != 2; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[6] = C00_[0] * data_[4] + B10_current[0] * data_[2];
-  data_[7] = C00_[1] * data_[5] + B10_current[1] * data_[3];
+  for (int t = 0; t != 2; ++t)
+    data_[6+t] = C00_[t] * data_[4+t] + B10_current[t] * data_[2+t];
 
-  data_[8] = D00_[0];
-  data_[9] = D00_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[8+t] = D00_[t];
 
-  data_[10] = C00_[0] * data_[8] + B00_[0];
-  data_[11] = C00_[1] * data_[9] + B00_[1];
+  for (int t = 0; t != 2; ++t)
+    data_[10+t] = C00_[t] * data_[8+t] + B00_[t];
 
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
+  for (int t = 0; t != 2; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[12] = C00_[0] * data_[10] + B10_current[0] * data_[8] + B00_[0] * data_[2];
-  data_[13] = C00_[1] * data_[11] + B10_current[1] * data_[9] + B00_[1] * data_[3];
+  for (int t = 0; t != 2; ++t)
+    data_[12+t] = C00_[t] * data_[10+t] + B10_current[t] * data_[8+t] + B00_[t] * data_[2+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
+  for (int t = 0; t != 2; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[14] = C00_[0] * data_[12] + B10_current[0] * data_[10] + B00_[0] * data_[4];
-  data_[15] = C00_[1] * data_[13] + B10_current[1] * data_[11] + B00_[1] * data_[5];
+  for (int t = 0; t != 2; ++t)
+    data_[14+t] = C00_[t] * data_[12+t] + B10_current[t] * data_[10+t] + B00_[t] * data_[4+t];
 }
 

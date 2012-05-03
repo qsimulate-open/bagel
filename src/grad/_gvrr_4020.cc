@@ -28,111 +28,85 @@
 
 // returns double array of length 45
 void GVRRList::_gvrr_4020(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
-  data_[0] = 1.0;
-  data_[1] = 1.0;
-  data_[2] = 1.0;
+  for (int t = 0; t != 3; ++t)
+    data_[0+t] = 1.0;
 
-  data_[3] = C00_[0];
-  data_[4] = C00_[1];
-  data_[5] = C00_[2];
+  for (int t = 0; t != 3; ++t)
+    data_[3+t] = C00_[t];
 
   double B10_current[3];
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[6] = C00_[0] * data_[3] + B10_current[0];
-  data_[7] = C00_[1] * data_[4] + B10_current[1];
-  data_[8] = C00_[2] * data_[5] + B10_current[2];
+  for (int t = 0; t != 3; ++t)
+    data_[6+t] = C00_[t] * data_[3+t] + B10_current[t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[9] = C00_[0] * data_[6] + B10_current[0] * data_[3];
-  data_[10] = C00_[1] * data_[7] + B10_current[1] * data_[4];
-  data_[11] = C00_[2] * data_[8] + B10_current[2] * data_[5];
+  for (int t = 0; t != 3; ++t)
+    data_[9+t] = C00_[t] * data_[6+t] + B10_current[t] * data_[3+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[12] = C00_[0] * data_[9] + B10_current[0] * data_[6];
-  data_[13] = C00_[1] * data_[10] + B10_current[1] * data_[7];
-  data_[14] = C00_[2] * data_[11] + B10_current[2] * data_[8];
+  for (int t = 0; t != 3; ++t)
+    data_[12+t] = C00_[t] * data_[9+t] + B10_current[t] * data_[6+t];
 
-  data_[15] = D00_[0];
-  data_[16] = D00_[1];
-  data_[17] = D00_[2];
+  for (int t = 0; t != 3; ++t)
+    data_[15+t] = D00_[t];
 
   double cB00_current[3];
-  cB00_current[0] = B00_[0];
-  cB00_current[1] = B00_[1];
-  cB00_current[2] = B00_[2];
+  for (int t = 0; t != 3; ++t)
+    cB00_current[t] = B00_[t];
 
-  data_[18] = C00_[0] * data_[15] + cB00_current[0];
-  data_[19] = C00_[1] * data_[16] + cB00_current[1];
-  data_[20] = C00_[2] * data_[17] + cB00_current[2];
+  for (int t = 0; t != 3; ++t)
+    data_[18+t] = C00_[t] * data_[15+t] + cB00_current[t];
 
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[21] = C00_[0] * data_[18] + B10_current[0] * data_[15] + cB00_current[0] * data_[3];
-  data_[22] = C00_[1] * data_[19] + B10_current[1] * data_[16] + cB00_current[1] * data_[4];
-  data_[23] = C00_[2] * data_[20] + B10_current[2] * data_[17] + cB00_current[2] * data_[5];
+  for (int t = 0; t != 3; ++t)
+    data_[21+t] = C00_[t] * data_[18+t] + B10_current[t] * data_[15+t] + cB00_current[t] * data_[3+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[24] = C00_[0] * data_[21] + B10_current[0] * data_[18] + cB00_current[0] * data_[6];
-  data_[25] = C00_[1] * data_[22] + B10_current[1] * data_[19] + cB00_current[1] * data_[7];
-  data_[26] = C00_[2] * data_[23] + B10_current[2] * data_[20] + cB00_current[2] * data_[8];
+  for (int t = 0; t != 3; ++t)
+    data_[24+t] = C00_[t] * data_[21+t] + B10_current[t] * data_[18+t] + cB00_current[t] * data_[6+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[27] = C00_[0] * data_[24] + B10_current[0] * data_[21] + cB00_current[0] * data_[9];
-  data_[28] = C00_[1] * data_[25] + B10_current[1] * data_[22] + cB00_current[1] * data_[10];
-  data_[29] = C00_[2] * data_[26] + B10_current[2] * data_[23] + cB00_current[2] * data_[11];
+  for (int t = 0; t != 3; ++t)
+    data_[27+t] = C00_[t] * data_[24+t] + B10_current[t] * data_[21+t] + cB00_current[t] * data_[9+t];
 
 
-  data_[30] = D00_[0] * data_[15] + B01_[0];
-  data_[31] = D00_[1] * data_[16] + B01_[1];
-  data_[32] = D00_[2] * data_[17] + B01_[2];
+  for (int t = 0; t != 3; ++t)
+    data_[30+t] = D00_[t] * data_[15+t] + B01_[t];
 
-  cB00_current[0] += B00_[0];
-  cB00_current[1] += B00_[1];
-  cB00_current[2] += B00_[2];
+  for (int t = 0; t != 3; ++t)
+    cB00_current[t] += B00_[t];
 
-  data_[33] = C00_[0] * data_[30] + cB00_current[0] * data_[15];
-  data_[34] = C00_[1] * data_[31] + cB00_current[1] * data_[16];
-  data_[35] = C00_[2] * data_[32] + cB00_current[2] * data_[17];
+  for (int t = 0; t != 3; ++t)
+    data_[33+t] = C00_[t] * data_[30+t] + cB00_current[t] * data_[15+t];
 
-  B10_current[0] = B10_[0];
-  B10_current[1] = B10_[1];
-  B10_current[2] = B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] = B10_[t];
 
-  data_[36] = C00_[0] * data_[33] + B10_current[0] * data_[30] + cB00_current[0] * data_[18];
-  data_[37] = C00_[1] * data_[34] + B10_current[1] * data_[31] + cB00_current[1] * data_[19];
-  data_[38] = C00_[2] * data_[35] + B10_current[2] * data_[32] + cB00_current[2] * data_[20];
+  for (int t = 0; t != 3; ++t)
+    data_[36+t] = C00_[t] * data_[33+t] + B10_current[t] * data_[30+t] + cB00_current[t] * data_[18+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[39] = C00_[0] * data_[36] + B10_current[0] * data_[33] + cB00_current[0] * data_[21];
-  data_[40] = C00_[1] * data_[37] + B10_current[1] * data_[34] + cB00_current[1] * data_[22];
-  data_[41] = C00_[2] * data_[38] + B10_current[2] * data_[35] + cB00_current[2] * data_[23];
+  for (int t = 0; t != 3; ++t)
+    data_[39+t] = C00_[t] * data_[36+t] + B10_current[t] * data_[33+t] + cB00_current[t] * data_[21+t];
 
-  B10_current[0] += B10_[0];
-  B10_current[1] += B10_[1];
-  B10_current[2] += B10_[2];
+  for (int t = 0; t != 3; ++t)
+    B10_current[t] += B10_[t];
 
-  data_[42] = C00_[0] * data_[39] + B10_current[0] * data_[36] + cB00_current[0] * data_[24];
-  data_[43] = C00_[1] * data_[40] + B10_current[1] * data_[37] + cB00_current[1] * data_[25];
-  data_[44] = C00_[2] * data_[41] + B10_current[2] * data_[38] + cB00_current[2] * data_[26];
+  for (int t = 0; t != 3; ++t)
+    data_[42+t] = C00_[t] * data_[39+t] + B10_current[t] * data_[36+t] + cB00_current[t] * data_[24+t];
 }
 
