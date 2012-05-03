@@ -47,6 +47,7 @@ size_t GradBatch::m(int i, int a, int b, int c, int d) {
 }
 
 void GradBatch::perform_VRR() {
+  double* const start = stack->get(0);
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
@@ -300,9 +301,11 @@ void GradBatch::perform_VRR() {
 
   }
 
-  stack->release((b+2)*(a+2)*(c+2)*(d+2)*rank_ * 15);
-  stack->release(((b+2)*(a+2)-1)*(cmax_+1)*rank_);
-  stack->release((cmax_+1)*(c+2)*(d+2)*3);
-  stack->release((amax_+1)*(b+2)*(a+2)*3);
+  stack->release(b2*a2*c2*d2*rank_ * 15);
+  stack->release(b2*a2*(cmax_+1)*rank_);
+  stack->release((cmax_+1)*c2*d2*3);
+  stack->release((amax_+1)*b2*a2*3);
   stack->release(worksize*3);
+  // checking memory leaks
+  assert(start == stack->get(0));
 }
