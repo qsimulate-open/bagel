@@ -64,13 +64,6 @@ void ERIBatch::compute() {
     case 13: perform_VRR13(); break;  
     default: assert(false); break;
   }
-#if 0
-for (int i = 0; i != size_alloc_; ++i) {
-  cout << setw(10) << setprecision(5) << data_[i];
-  if (i-(i/10)*10==9) cout << endl;
-}
-cout << endl << endl;
-#endif
 
   // contract indices 01 
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }

@@ -95,9 +95,9 @@ void GradBatch::perform_VRR() {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
-        transx[i + (amax_+1)*k] += comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
-        transy[i + (amax_+1)*k] += comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
-        transz[i + (amax_+1)*k] += comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
+        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
+        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
+        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
       }
     }
   }
@@ -105,9 +105,9 @@ void GradBatch::perform_VRR() {
     for (int ic = 0; ic <= c+1; ++ic, ++k) {
       if (ic == c+1 && id == d+1) continue;
       for (int i = ic; i <= ic+id; ++i) {
-        trans2x[i + (cmax_+1)*k] += comb.c(id, ic+id-i) * pow(CD_[0], ic+id-i);
-        trans2y[i + (cmax_+1)*k] += comb.c(id, ic+id-i) * pow(CD_[1], ic+id-i);
-        trans2z[i + (cmax_+1)*k] += comb.c(id, ic+id-i) * pow(CD_[2], ic+id-i);
+        trans2x[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[0], ic+id-i);
+        trans2y[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[1], ic+id-i);
+        trans2z[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[2], ic+id-i);
       }
     }
   }
@@ -231,21 +231,21 @@ void GradBatch::perform_VRR() {
 
     // CAUTION!
     // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
-    for (int icx = 0; icx <= c; ++icx) { 
-    for (int icy = 0; icy <= c - icx; ++icy) { 
-    const int icz = c - icx - icy; 
+    for (int icz = 0; icz <= c; ++icz) { 
+    for (int icy = 0; icy <= c - icz; ++icy) { 
+    const int icx = c - icz - icy; 
 
-      for (int idx = 0; idx <= d; ++idx) { 
-      for (int idy = 0; idy <= d - idx; ++idy) { 
-      const int idz = d - idx - idy; 
+      for (int idz = 0; idz <= d; ++idz) { 
+      for (int idy = 0; idy <= d - idz; ++idy) { 
+      const int idx = d - idz - idy; 
 
-        for (int iax = 0; iax <= a; ++iax) { 
-        for (int iay = 0; iay <= a - iax; ++iay) { 
-        const int iaz = a - iax - iay; 
+        for (int iaz = 0; iaz <= a; ++iaz) { 
+        for (int iay = 0; iay <= a - iaz; ++iay) { 
+        const int iax = a - iaz - iay; 
 
-          for (int ibx = 0; ibx <= b; ++ibx) { 
-          for (int iby = 0; iby <= b - ibx; ++iby) { 
-          const int ibz = b - ibx - iby; 
+          for (int ibz = 0; ibz <= b; ++ibz) { 
+          for (int iby = 0; iby <= b - ibz; ++iby) { 
+          const int ibx = b - ibz - iby;
 
             *current_data0 = 0.0;
             *current_data1 = 0.0;

@@ -102,13 +102,6 @@ cout << endl << endl;
       basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
       basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }
-#if 0
-for (int i = 0; i != size_alloc_/12; ++i) {
-  cout << setw(10) << setprecision(5) << data_[i];
-  if (i-(i/10)*10==9) cout << endl;
-}
-cout << endl << endl;
-#endif
 
   // Cartesian to spherical 01 if necesarry
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
