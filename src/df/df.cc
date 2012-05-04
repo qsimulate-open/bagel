@@ -30,6 +30,7 @@
 #include <src/rysint/eribatch.h>
 #include <stdexcept>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 

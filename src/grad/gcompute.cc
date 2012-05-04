@@ -37,6 +37,9 @@ extern StackMem* stack;
 void GradBatch::compute() {
   const size_t onepathsize = size_alloc_/12;
   bkup_ = stack->get(onepathsize);
+
+  fill(data_, data_ + size_alloc_, 0.0);
+
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();

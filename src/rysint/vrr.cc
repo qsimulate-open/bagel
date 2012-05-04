@@ -25,6 +25,7 @@
 
 
 #include <src/rysint/eribatch.h>
+#include <src/rysint/int2d.h>
 #include <iostream>
 #include <iomanip>
 #include <cmath>

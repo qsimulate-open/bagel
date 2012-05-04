@@ -48,31 +48,9 @@ extern StackMem* stack;
 
 
 ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
-:  RysInt(_info) { 
+:  ERIBatch_base(_info, max_density, 0) { 
   vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new VRRList()));
 
-  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
-
-  // determins if we want to swap shells
-  set_swap_info(true);
-
-  // stores AB and CD
-  set_ab_cd();
-
-  // set primsize_ and contsize_, as well as relevant members
-  set_prim_contsizes();
-
-  // sets angular info
-  int asize_final, csize_final, asize_final_sph, csize_final_sph;
-  tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
-
-  // allocate
-  allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
-  allocate_arrays(primsize_);
-
-  compute_ssss(integral_thresh);
-
-  root_weight(primsize_);
 
 }
 

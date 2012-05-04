@@ -25,6 +25,7 @@
 
 
 #include <src/grad/gradbatch.h>
+#include <src/rysint/int2d.h>
 #include <src/stackmem.h>
 #include <iostream>
 #include <iomanip>

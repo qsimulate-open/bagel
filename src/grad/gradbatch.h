@@ -28,12 +28,10 @@
 #define __SRC_RYSINT_GRAD_H
 
 // compute analytic nuclear gradients
-#include <vector>
 #include <memory>
-#include <src/scf/shell.h>
-#include <src/rysint/eribatch.h>
+#include <src/rysint/eribatch_base.h>
 
-class GradBatch : public RysInt {
+class GradBatch : public ERIBatch_base {
   protected:
     // if we only compute three-center integrals, we want to use this info
     // to reduce the number of differentiation

@@ -44,6 +44,7 @@ class NAIBatch : public RysInt {
     const double A_;
 
     void compute_ssss(const double thresh);
+    void root_weight(const int ps);
 
   public:
     
