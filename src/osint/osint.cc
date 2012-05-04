@@ -35,9 +35,12 @@ using namespace std;
 
 extern StackMem* stack;
 
-OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
- : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
+static double* stack_save;
 
+OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
+ : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
+
+  stack_save = stack->get(0);
   assert(basis.size() == 2);
 
   ang0_ = basisinfo_[0]->angular_number();
@@ -112,7 +115,9 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
   for (int i = amin_; i != amax1_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
   asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
-  data_ = stack->get(cont0_ * cont1_ * max(asize_intermediate_, asize_));
+
+  size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_) * (deriv_rank_==0 ? 1.0 : 6.0);
+  data_ = stack->get(size_alloc_);
 
   amapping_.resize(amax1_ * amax1_ * amax1_);
   int cnt = 0;
@@ -130,6 +135,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis)
 }
 
 OSInt::~OSInt() {
-  stack->release(cont0_ * cont1_ * max(asize_intermediate_, asize_));
+  stack->release(size_alloc_);
+  assert(stack->get(0) == stack_save);
 }
 

@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_RYSINT_NAIBATCH_H
-#define __SRC_RYSINT_NAIBATCH_H
+#ifndef __SRC_GRAD_GNAIBATCH_H
+#define __SRC_GRAD_GNAIBATCH_H
 
 #include <memory>
 #include <src/rysint/naibatch_base.h>

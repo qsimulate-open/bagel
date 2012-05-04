@@ -36,7 +36,7 @@ static Comb comb;
 void GNAIBatch::compute() {
   double* const stack_save = stack->get(0);
 
-  bkup_ = stack->get(size_alloc_);
+  bkup_ = stack->get(size_alloc_/12);
 
   const int worksize = rank_ * amax1_;
   
@@ -66,6 +66,9 @@ void GNAIBatch::compute() {
   double* transx = stack->get((amax_+1)*a2*b2);
   double* transy = stack->get((amax_+1)*a2*b2);
   double* transz = stack->get((amax_+1)*a2*b2);
+  fill(transx, transx+(amax_+1)*a2*b2, 0.0);
+  fill(transy, transy+(amax_+1)*a2*b2, 0.0);
+  fill(transz, transz+(amax_+1)*a2*b2, 0.0);
   for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
@@ -91,7 +94,11 @@ void GNAIBatch::compute() {
 
   const int acsize = size_alloc_ / 12 / primsize_;
   const size_t acpsize = acsize*primsize_;
+  assert(acpsize == (a+1)*(a+2)*(b+1)*(b+2)/4*primsize_); 
+  assert(primsize_ == prim0size_*prim1size_);
+
   double* const data0 = data_;
+#if 0
   double* const data1 = data_ + acpsize;
   double* const data2 = data_ + acpsize*2;
   double* const data3 = data_ + acpsize*3;
@@ -100,6 +107,7 @@ void GNAIBatch::compute() {
   double* const data6 = data_ + acpsize*6;
   double* const data7 = data_ + acpsize*7;
   double* const data8 = data_ + acpsize*8;
+#endif
 
 
   // perform VRR
@@ -114,10 +122,9 @@ void GNAIBatch::compute() {
     double disp[3];
     disp[0] = disp[1] = 0.0;
     disp[2] = A_ * cell;
-    const int offset_iprim = iprim * asize_;
+    const int offset_iprim = iprim * acsize;
 
-    double* expo = exponents_.get() + i*2;
-    if (cell != 0) throw logic_error("I haven't thought about periodic case");
+    if (cell != 0) throw logic_error("I haven't thought about periodic cases");
 
     const double* croots = &roots_[i * rank_]; 
     const double* cweights = &weights_[i * rank_]; 
@@ -126,9 +133,9 @@ void GNAIBatch::compute() {
     PC[1] = p_[i*3+1] - geom_->atoms(iatom)->position(1) - disp[1];
     PC[2] = p_[i*3+2] - geom_->atoms(iatom)->position(2) - disp[2];
     for (int r = 0; r != rank_; ++r) {
-      r1x[r] = p_[i * 3    ] - ax - PC[0] * croots[r];
-      r1y[r] = p_[i * 3 + 1] - ay - PC[1] * croots[r];
-      r1z[r] = p_[i * 3 + 2] - az - PC[2] * croots[r];
+      r1x[r] = p_[i*3  ] - ax - PC[0] * croots[r];
+      r1y[r] = p_[i*3+1] - ay - PC[1] * croots[r];
+      r1z[r] = p_[i*3+2] - az - PC[2] * croots[r];
       r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
       workx[r] = cweights[r] * coeff_[i];
       worky[r] = 1.0;
@@ -149,6 +156,8 @@ void GNAIBatch::compute() {
           workz[offset + r] = r1z[r] * workz[offset - rank_ + r] + (j - 1) * r2[r] * workz[offset - rank_ * 2 + r];
         }
       }
+    } else {
+      assert(false);
     }
 
     // HRR is done in one shot
@@ -156,10 +165,12 @@ void GNAIBatch::compute() {
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky, rank_, transy, amax_+1, 0.0, bufy, rank_);
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz, rank_, transz, amax_+1, 0.0, bufz, rank_);
 
+    double* expo = exponents_.get() + i*2;
     double xpPC2[3];
     xpPC2[0] = 2.0 * xp_[i] * PC[0];
     xpPC2[1] = 2.0 * xp_[i] * PC[1];
     xpPC2[2] = 2.0 * xp_[i] * PC[2];
+#if 0
     for (int ib = 0; ib <= b; ++ib) {
       const double ibb = ib;
       for (int ia = 0; ia <= a; ++ia) {
@@ -180,9 +191,11 @@ void GNAIBatch::compute() {
         }
       }
     }
+#endif
 
     // assembly step
     double* current_data0 = data0 + offset_iprim;
+#if 0
     double* current_data1 = data1 + offset_iprim;
     double* current_data2 = data2 + offset_iprim;
     double* current_data3 = data3 + offset_iprim;
@@ -191,6 +204,8 @@ void GNAIBatch::compute() {
     double* current_data6 = data6 + offset_iprim;
     double* current_data7 = data7 + offset_iprim;
     double* current_data8 = data8 + offset_iprim;
+#endif
+
     for (int iaz = 0; iaz <= a; ++iaz) { 
       for (int iay = 0; iay <= a - iaz; ++iay) { 
         const int iax = a - iaz - iay; 
@@ -198,22 +213,14 @@ void GNAIBatch::compute() {
         for (int ibz = 0; ibz <= b; ++ibz) { 
           for (int iby = 0; iby <= b - ibz; ++iby) { 
             const int ibx = b - ibz - iby;
-            *current_data0 = 0.0;
-            *current_data1 = 0.0;
-            *current_data2 = 0.0;
-            *current_data3 = 0.0;
-            *current_data4 = 0.0;
-            *current_data5 = 0.0;
-            *current_data6 = 0.0;
-            *current_data7 = 0.0;
-            *current_data8 = 0.0;
             for (int r = 0; r != rank_; ++r) {
 #define NAIDEBUG
-#ifdef NAIDEBUG
+#ifdef  NAIDEBUG
               *current_data0 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
 #else
-              *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
+//            *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
 #endif
+#if 0
               *current_data1 += bufx[r+rank_*(iax+a2*ibx)] * bufy_a[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data2 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_a[r+rank_*(iaz+a2*ibz)];
               *current_data3 += bufx_b[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
@@ -222,8 +229,10 @@ void GNAIBatch::compute() {
               *current_data6 += bufx_c[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data7 += bufx[r+rank_*(iax+a2*ibx)] * bufy_c[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data8 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_c[r+rank_*(iaz+a2*ibz)];
+#endif
             }
             ++current_data0;
+#if 0
             ++current_data1;
             ++current_data2;
             ++current_data3;
@@ -232,6 +241,7 @@ void GNAIBatch::compute() {
             ++current_data6;
             ++current_data7;
             ++current_data8;
+#endif
           }
         }
       }
@@ -244,7 +254,7 @@ void GNAIBatch::compute() {
     const double* source = cdata;
     // contract indices 01 
     // data will be stored in bkup_: cont01{ xyz{ } }
-    const int m = asize_; 
+    const int m = acsize; 
     perform_contraction(m, source, prim0size_, prim1size_, target, 
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_, 
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1size_);
@@ -257,6 +267,7 @@ void GNAIBatch::compute() {
       struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
+assert(contsize_ == cont0size_ * cont1size_);
       carsphlist.carsphfunc_call(carsphindex, nloops, source, target); 
     }
 
@@ -278,7 +289,7 @@ void GNAIBatch::compute() {
 
   stack->release((amax_+1)*a2*b2*3);
   stack->release(rank_*a2*b2*12);
-  stack->release(size_alloc_ + rank_ * amax1_ * 3);
+  stack->release(size_alloc_/12 + worksize*3);
 
   if (stack->get(0) != stack_save) throw logic_error("memory is not completely deallocated in GNAIBatch::vrr()");
 }
