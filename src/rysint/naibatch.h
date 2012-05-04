@@ -31,8 +31,6 @@
 class NAIBatch : public NAIBatch_base {
 
   protected:
-    std::shared_ptr<Geometry> geom_;
-    int natom_;
 
   public:
     
