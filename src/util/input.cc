@@ -69,12 +69,10 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     while (regex_search(start, end, what, reg_true)) {
       stringstream ss; ss << what[1] << "=1;" << what[5];
       const string sk = ss.str(); 
-cout << sk << endl;
       start = sk.begin();
       end = sk.end();
       content = sk;
     }
-cout << "????g" << endl;
     while (regex_search(start, end, what, reg_false)) {
       stringstream ss; ss << what[1] << "=0;" << what[5];
       const string sk = ss.str(); 
@@ -84,7 +82,6 @@ cout << "????g" << endl;
     }
   }
 
-cout << "????" << endl;
   // first split with { and }
   vector<string> blocks;
   vector<string> pairs;
