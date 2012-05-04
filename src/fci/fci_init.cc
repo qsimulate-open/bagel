@@ -28,7 +28,7 @@
 #include <stdexcept>
 #include <src/fci/fci.h>
 #include <src/rysint/eribatch.h>
-#include <boost/algorithm/combination.hpp>
+#include <src/util/combination.hpp>
 #include <iostream>
 
 using namespace std;

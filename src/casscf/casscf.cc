@@ -28,18 +28,24 @@
 #include <stdexcept>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <src/casscf/qvec.h>
-#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
+template<typename T>
+static string tostring(const T i) {
+  stringstream ss;
+  ss << i; 
+  return ss.str();
+};
 
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom, const shared_ptr<Reference> scf)
   : idata_(idat), geom_(geom), ref_(scf), hcore_(new Fock<1>(geom)) {
 
   common_init();
 
-};
+}
 
 
 void CASSCF::common_init() {
@@ -102,10 +108,10 @@ void CASSCF::common_init() {
     multimap<string, string> fullci_data = idata_;
     for (auto iter = fullci_data.equal_range("ncore").first; iter != fullci_data.equal_range("ncore").second; ++iter)
       fullci_data.erase(iter);
-    fullci_data.insert(make_pair("ncore", boost::lexical_cast<string>(nclosed_)));
+    fullci_data.insert(make_pair("ncore", tostring<int>(nclosed_)));
     for (auto iter = fullci_data.equal_range("norb").first; iter != fullci_data.equal_range("norb").second; ++iter)
       fullci_data.erase(iter);
-    fullci_data.insert(make_pair("norb", boost::lexical_cast<string>(nact_)));
+    fullci_data.insert(make_pair("norb", tostring<int>(nact_)));
     fci_ = shared_ptr<FCI>(new FCI(fullci_data, geom_, ref_));
   }
   resume_stdcout();

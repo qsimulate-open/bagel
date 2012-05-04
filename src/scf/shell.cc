@@ -27,10 +27,8 @@
 #include <src/scf/shell.h>
 #include <iostream>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
 
 using namespace std;
-using namespace boost;
 
 Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> _expo, 
                        vector<vector<double> > _contr,  vector<pair<int, int> > _range)

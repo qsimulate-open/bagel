@@ -29,8 +29,7 @@
 #include <stdexcept>
 #include <src/fci/fci.h>
 #include <src/fci/comb.h>
-#include <boost/algorithm/combination.hpp>
-#include <boost/lexical_cast.hpp>
+#include <src/util/combination.hpp>
 
 using namespace std;
 
