@@ -30,7 +30,7 @@
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <src/util/input.h>
-#include <regex>
+#include <boost/regex.hpp>
 
 using namespace std;
 
@@ -45,12 +45,12 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     string sline;
     if (!getline(ifs, sline)) break;
     // get rid of comments
-    const regex comm("^(.*)//(.*)$");
+    const boost::regex comm("^(.*)//(.*)$");
     const string ss = sline;
     auto start = ss.begin();  
     auto end = ss.end();  
-    smatch what;
-    while (regex_search(start, end, what, comm)) {
+    boost::smatch what;
+    while (boost::regex_search(start, end, what, comm)) {
       sline = what[1];
       const string sk = sline;
       start = sk.begin();
@@ -60,19 +60,21 @@ InputData::InputData(const string filename) : inputfile_(filename) {
   }
   // true false to 1 and 0 to be friendly to lexical_cast which does not accept true/false
   {
-    const regex reg_true("^(.*)=(\\s*)(true)(\\s*);(.*)$");
-    const regex reg_false("^(.*)=(\\s*)(false)(\\s*);(.*)$");
+    const boost::regex reg_true("^(.*)=(\\s*)(true)(\\s*);(.*)$");
+    const boost::regex reg_false("^(.*)=(\\s*)(false)(\\s*);(.*)$");
     const string ss = content;
     auto start = ss.begin();
     auto end = ss.end();
-    smatch what;
+    boost::smatch what;
     while (regex_search(start, end, what, reg_true)) {
       stringstream ss; ss << what[1] << "=1;" << what[5];
       const string sk = ss.str(); 
+cout << sk << endl;
       start = sk.begin();
       end = sk.end();
       content = sk;
     }
+cout << "????g" << endl;
     while (regex_search(start, end, what, reg_false)) {
       stringstream ss; ss << what[1] << "=0;" << what[5];
       const string sk = ss.str(); 
@@ -82,6 +84,7 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     }
   }
 
+cout << "????" << endl;
   // first split with { and }
   vector<string> blocks;
   vector<string> pairs;

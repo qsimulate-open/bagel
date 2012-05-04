@@ -31,7 +31,7 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
-#include <regex>
+#include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
@@ -81,8 +81,8 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
   for (auto iter = bound.first; iter != bound.second; ++iter) { 
-    smatch what;
-    const regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+    boost::smatch what;
+    const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
     auto start = iter->second.begin();
     auto end = iter->second.end();
     if (regex_search(start, end, what, atom_reg)) {
@@ -180,7 +180,7 @@ Geometry::Geometry(const string s, const int levl)
   ifs.open(input_.c_str());
   assert(ifs.is_open());
 
-  regex frozen_str("frozen"); 
+  boost::regex frozen_str("frozen"); 
   bool frozen = false;
   while(!ifs.eof()) {
     string sline;
@@ -188,7 +188,7 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
+    boost::smatch what;
     if (regex_search(start, end, what, frozen_str)) {
       frozen = true; 
       break;
@@ -197,8 +197,8 @@ Geometry::Geometry(const string s, const int levl)
   ifs.clear(); 
   ifs.seekg(0);
 
-  regex gamma_str("gamma");
-  regex gamma_num("[0-9\\.eE\\+-]+");
+  boost::regex gamma_str("gamma");
+  boost::regex gamma_num("[0-9\\.eE\\+-]+");
   double gamma = 1.5;
   while(!ifs.eof()) {
     string sline;
@@ -206,7 +206,7 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
+    boost::smatch what;
     if (regex_search(start, end, what, gamma_str)) {
       start = what[0].second;
       if (regex_search(start, end, what, gamma_num)) {
@@ -225,7 +225,7 @@ Geometry::Geometry(const string s, const int levl)
   string basis_name("Basis");
   for (int i = 0; i != level_; ++i) basis_name = "G" + basis_name;
   basis_name = "\\b" + basis_name;
-  const regex basis_reg(basis_name);
+  const boost::regex basis_reg(basis_name);
 
   while(!ifs.eof()) {
     string sline;
@@ -233,18 +233,18 @@ Geometry::Geometry(const string s, const int levl)
     if(sline.empty()) continue;
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
+    boost::smatch what;
     if (regex_search(start, end, what, basis_reg)) {
       start = what[0].second;
-      regex car_reg("cartesian");
+      boost::regex car_reg("cartesian");
       if (regex_search(start, end, what, car_reg)) spherical_ = false; 
       if (!spherical_) cout << "  Cartesian basis functions are used" << endl;
       getline(ifs, sline);
       if (sline.empty()) continue;
       start = sline.begin();
       end = sline.end();
-      const regex reg("(\\S+)");
-      const bool found = regex_search(start, end, what, reg);
+      const boost::regex reg("(\\S+)");
+      const bool found = boost::regex_search(start, end, what, reg);
       const string tmpstr(what[1].first, what[1].second);
       basisfile_ = tmpstr; 
 
@@ -271,17 +271,17 @@ Geometry::Geometry(const string s, const int levl)
   nocc_ = 0;
   nfrc_ = 0;
 
-  const regex mole_reg("Molecule");
+  const boost::regex mole_reg("Molecule");
   while(!ifs.eof()){
     string sline;
     getline(ifs, sline); 
     if (sline.empty()) continue; 
     string::const_iterator start = sline.begin();
     string::const_iterator end = sline.end();
-    smatch what;
+    boost::smatch what;
     if (regex_search(start, end, what, mole_reg)) {
       start = what[0].second;
-      regex sym_reg("[cdCD][1-2]?[vdshVDSHiI]?");
+      boost::regex sym_reg("[cdCD][1-2]?[vdshVDSHiI]?");
       if (regex_search(start, end, what, sym_reg)) {
         string symtmp(what[0].first, what[0].second);
         transform(symtmp.begin(), symtmp.end(), symtmp.begin(),(int (*)(int))std::tolower);
@@ -290,7 +290,7 @@ Geometry::Geometry(const string s, const int levl)
         string symtmp("c1");
         symmetry_ = symtmp;
       }
-      const regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+      const boost::regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
       while (1) {
         string atomline; 
         getline(ifs, atomline); 

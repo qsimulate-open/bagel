@@ -33,7 +33,7 @@
 #include <cassert>
 #include <algorithm>
 #include <stdexcept>
-#include <regex>
+#include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <tuple>
 #include <src/osint/overlapbatch.h>
@@ -95,12 +95,12 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
   if (!ifs.is_open()) {
     throw std::runtime_error("Basis file not found");
   } else {
-    regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
-    regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
-    regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
+    boost::regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
+    boost::regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
+    boost::regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
     string nnm = nm;
     nnm[0] = toupper(nnm[0]); 
-    regex atom_line("Atom:" + nnm +"\\s*$");
+    boost::regex atom_line("Atom:" + nnm +"\\s*$");
  
     string buffer;
     while (!ifs.eof()) {
@@ -108,7 +108,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
       if (buffer.empty()) continue;
       string::const_iterator start = buffer.begin();
       string::const_iterator end = buffer.end();
-      smatch what;
+      boost::smatch what;
       if (regex_search(start, end, what, atom_line)) {
         basis_found = true;
         // temporary storage of info 
