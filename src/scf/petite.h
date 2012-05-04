@@ -95,7 +95,7 @@ class Symmetry {
     Symmetry() {};
     ~Symmetry() {};
 
-    virtual int nirrep() const { return -1; };
+    virtual int nirrep() = 0;
     std::vector<std::vector<double> > symop() const { return symop_; };
     
 };
