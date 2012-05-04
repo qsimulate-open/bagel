@@ -111,7 +111,7 @@ class RysInt {
     RysInt(const std::vector<std::shared_ptr<Shell> >&);
     ~RysInt();
 
-    virtual void compute() {};
+    virtual void compute() = 0;
 
     /// retrieve a batch of integrals
     const double* data() const { return data_; };

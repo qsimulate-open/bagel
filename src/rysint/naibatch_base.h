@@ -1,7 +1,7 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: naibatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: naibatch_base.h
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,35 +23,37 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <cmath>
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-#include <src/rysint/inline.h>
-#include <src/rysint/naibatch.h>
-#include <src/util/f77.h>
-#include <src/rysint/f77.h>
+
+#ifndef __SRC_RYSINT_NAIBATCH_BASE_H
+#define __SRC_RYSINT_NAIBATCH_BASE_H
+
+#include <memory>
+#include <vector>
+#include <tuple>
 #include <src/rysint/macros.h>
-#include <src/stackmem.h>
-#define PI 3.1415926535897932
-#define SQRTPI2 0.886226925452758013649083741671
-
-using namespace std;
-
-typedef std::shared_ptr<Geometry> RefGeometry;
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<Shell> RefShell;
-
-extern StackMem* stack;
-
-NAIBatch::NAIBatch(const vector<RefShell> _info, const shared_ptr<Geometry> gm, const int L, const double A)
- :  NAIBatch_base(_info, gm, 0, L, A) {
-
-}
+#include <src/scf/shell.h>
+#include <src/rysint/rysint.h>
+#include <src/scf/geometry.h>
 
 
-NAIBatch::~NAIBatch() {
-}
+class NAIBatch_base : public RysInt {
+  protected:
+    std::shared_ptr<Geometry> geom_;
+    int natom_;
+
+    /// for periodic calculations (UNCHECKED!!)
+    const int L_;
+    const double A_;
+
+    void root_weight(const int ps); 
+    void compute_ssss(const double);
+
+  public:
+    NAIBatch_base(const std::vector<std::shared_ptr<Shell> >& _info, const std::shared_ptr<Geometry> gm, const int deriv,
+                  const int L = 0, const double A = 0.0);
+    ~NAIBatch_base() {};
 
 
+}; 
+
+#endif

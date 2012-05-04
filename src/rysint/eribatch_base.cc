@@ -80,9 +80,9 @@ void ERIBatch_base::root_weight(const int ps) {
   }
 }
 
-#include <src/rysint/naibatch.h>
+#include <src/rysint/naibatch_base.h>
 
-void NAIBatch::root_weight(const int ps) {
+void NAIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];

@@ -23,28 +23,16 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __src_rysint_naiprim_h
-#define __src_rysint_naiprim_h 
+#ifndef __SRC_RYSINT_NAIBATCH_H
+#define __SRC_RYSINT_NAIBATCH_H
 
-#include <cassert>
-#include <vector>
-#include <src/scf/geometry.h>
-#include <src/rysint/int2d.h>
-#include <src/rysint/rysint.h>
-#include <memory>
+#include <src/rysint/naibatch_base.h>
 
-class NAIBatch : public RysInt {
+class NAIBatch : public NAIBatch_base {
 
   protected:
     std::shared_ptr<Geometry> geom_;
     int natom_;
-
-    /// for periodic calculations
-    const int L_;
-    const double A_;
-
-    void compute_ssss(const double thresh);
-    void root_weight(const int ps);
 
   public:
     
