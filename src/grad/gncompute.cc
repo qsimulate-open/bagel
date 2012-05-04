@@ -1,7 +1,7 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: naibatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: gncompute.cc
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,25 +23,12 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_RYSINT_NAIBATCH_H
-#define __SRC_RYSINT_NAIBATCH_H
 
-#include <src/rysint/naibatch_base.h>
+#include <src/grad/gnaibatch.h>
 
-class NAIBatch : public NAIBatch_base {
+using namespace std;
 
-  protected:
+void GNAIBatch::compute() {
 
-  public:
-    
-    NAIBatch(const std::vector<std::shared_ptr<Shell> > _info, const std::shared_ptr<Geometry> gm, const int L = 0, const double A = 0.0)
-      :  NAIBatch_base(_info, gm, 0, L, A) {};
-     ~NAIBatch() {};
-
-    /// compute a batch of integrals
-    void compute();
-
-};
-
-#endif
+}
 
