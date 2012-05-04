@@ -154,7 +154,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
 #if 1
-      update_amplitude_start(t2, this->v2_);
+      this->update_amplitude_start(t2, this->v2_);
       t2->scale(2.0);
 #endif
       r = t2->clone();
@@ -172,7 +172,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
           queue->next_compute();
         r->scale(0.25); // FIXME
 //      *r = *(r->add_dagger());
-        update_amplitude(t2, r);
+        this->update_amplitude(t2, r);
         const double err = r->rms();
 r->zero();
         const double en = energy(energ);

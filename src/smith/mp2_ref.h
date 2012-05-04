@@ -98,7 +98,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
         std::shared_ptr<Queue<T> > eng = q.second;
         while (!queue->done()) queue->next_compute(); 
 
-        update_amplitude(t2, r2);
+        this->update_amplitude(t2, r2);
         const double err = r2->rms();
         const double en = energy(eng);
 
