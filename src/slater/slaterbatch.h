@@ -38,8 +38,8 @@
 class SlaterBatch : public RysInt {
 
   protected:
-    bool yukawa_;
     double gamma_;
+    bool yukawa_;
 
     /// buffer and intermediate storage
     double *bkup2_;

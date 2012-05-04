@@ -50,6 +50,7 @@ class PDIIS {
   protected:
     const int ndiis_;
     const int nld_;
+    const int lwork_;
     const double dumping_;
 
     Container_type_ data_;
@@ -59,7 +60,6 @@ class PDIIS {
     Complex* coeff_;
     Complex* work_;
     int* ipiv_;
-    const int lwork_;
   
   public:
     PDIIS(const int ndiis, const double dump) : ndiis_(ndiis), nld_(ndiis + 1), lwork_(nld_ * nld_), dumping_(dump) {

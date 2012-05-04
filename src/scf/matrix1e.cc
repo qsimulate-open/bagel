@@ -245,6 +245,7 @@ Matrix1e& Matrix1e::operator*=(const Matrix1e& o) {
   const double* odata = o.data();
   dgemm_("N", "N", l, n, m, 1.0, data(), nbasis_, odata, nbasis_, 0.0, out.data(), nbasis_); 
   *this = out;
+  return *this;
 }
 
 

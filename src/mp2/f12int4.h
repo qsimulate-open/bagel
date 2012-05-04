@@ -100,15 +100,15 @@ class File4 {
 // unpacked AO integrals
 template<typename T> class AOInt {
   protected:
-    std::unique_ptr<double[]> data_;
-    std::unique_ptr<double[]> data2_;
+    std::shared_ptr<Geometry> geom_;
     const size_t dim_;
     const size_t dim0_;
     const size_t dim1_;
     const double gamma_;
-    std::shared_ptr<Geometry> geom_;
     const bool aux0_;
     const bool aux1_;
+    std::unique_ptr<double[]> data_;
+    std::unique_ptr<double[]> data2_;
 
     const bool yukawa_;
 

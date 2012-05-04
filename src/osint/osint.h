@@ -34,9 +34,9 @@
 
 class OSInt {
   protected:
-    bool spherical_;
 
     std::vector<std::shared_ptr<Shell> > basisinfo_;
+    bool spherical_;
 
     double* data_;
     std::vector<double> xp_, xa_, xb_, rho_, p_; 

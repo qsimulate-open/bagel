@@ -36,16 +36,17 @@
 template<class T>
 class PMOFile : public PFile<T> {
   protected:
+    const std::shared_ptr<PGeometry> geom_;
+
     const int istart_;
-    const int jstart_;
-    const int astart_;
-    const int bstart_;
     const int ifence_;
+    const int jstart_;
     const int jfence_;
+    const int astart_;
     const int afence_;
+    const int bstart_;
     const int bfence_;
 
-    const std::shared_ptr<PGeometry> geom_;
     size_t blocksize_;
     std::map<size_t, size_t> offset_;
 

@@ -84,9 +84,10 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 class DF_Half {
 
   protected:
-    std::unique_ptr<double[]> data_;
     const std::shared_ptr<const DensityFit> df_;
     const size_t nocc_;
+
+    std::unique_ptr<double[]> data_;
     const size_t nbasis_;
     const size_t naux_;
 
@@ -128,10 +129,11 @@ class DF_Half {
 class DF_Full {
 
   protected:
-    std::unique_ptr<double[]> data_;
     const std::shared_ptr<const DensityFit> df_;
     const size_t nocc1_; // inner
     const size_t nocc2_; // outer
+
+    std::unique_ptr<double[]> data_;
     const size_t naux_;
 
   public:

@@ -45,7 +45,7 @@ typedef std::shared_ptr<Atom> RefAtom;
 extern StackMem* stack;
 
 Geometry::Geometry(const std::shared_ptr<InputData> inpt)
-  : spherical_(true), input_(""), level_(0), lmax_(0) {
+  : spherical_(true), input_(""), lmax_(0), level_(0) {
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
@@ -173,7 +173,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
 
 Geometry::Geometry(const string s, const int levl)
-  : spherical_(true), input_(s), level_(levl), lmax_(0) {
+  : spherical_(true), input_(s), lmax_(0), level_(levl) {
 
   // open input file
   ifstream ifs;

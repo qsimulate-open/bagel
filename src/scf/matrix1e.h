@@ -36,12 +36,12 @@
 
 class Matrix1e {
   protected:
+    std::unique_ptr<double[]> data_;
     std::shared_ptr<Geometry> geom_;
     int nbasis_;
     int ndim_;
     int mdim_;
 
-    std::unique_ptr<double[]> data_;
     virtual void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
     virtual void init();
 

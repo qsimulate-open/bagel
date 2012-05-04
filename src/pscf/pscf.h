@@ -41,8 +41,8 @@
 class PSCF {
   protected:
     const std::shared_ptr<PGeometry> geom_;
-    const std::shared_ptr<PHcore> hcore_;
     const std::shared_ptr<POverlap> overlap_;
+    const std::shared_ptr<PHcore> hcore_;
     std::shared_ptr<PTildeX> tildex_;
     std::shared_ptr<PMatrix1e> aodensity_;
     std::shared_ptr<PCoeff> coeff_;

@@ -35,11 +35,11 @@
 
 class F12Int {
   protected:
-    double gamma_;
 
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const Reference> ref_;
+    double gamma_;
 
     std::shared_ptr<F12Mat> bmat_;
     std::shared_ptr<F12Mat> xmat_;

@@ -34,7 +34,6 @@
 class Shell {
 
   protected:
-    const bool dummy_;
     bool spherical_;
 
     std::vector<double> position_;
@@ -43,6 +42,7 @@ class Shell {
     std::vector<std::vector<double> > contractions_;  // length of contracted basis function
     std::vector<std::pair<int, int> > contraction_ranges_;
 
+    const bool dummy_;
     std::vector<int> contraction_upper_;
     std::vector<int> contraction_lower_;
 

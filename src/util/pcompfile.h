@@ -47,13 +47,17 @@
 template<class T>
 class PCompFile {
   protected:
+    const std::shared_ptr<PGeometry> geom_;
+
+    // Exponent of STG for this file. Can be different from geom_->gamma()
+    const double gamma_;
+
     std::shared_ptr<std::fstream> file_;
     long filesize_;
     std::string filename_;
     std::string jobname_;
     std::vector<double> schwarz_;
 
-    const std::shared_ptr<PGeometry> geom_;
     std::vector<size_t> num_int_each_;
 
     std::vector<std::shared_ptr<Shell> > basis_;
@@ -62,9 +66,6 @@ class PCompFile {
 
     int K_, L_, S_;
     double A_;
-
-    // Exponent of STG for this file. Can be different from geom_->gamma()
-    const double gamma_;
 
   public:
     PCompFile(std::shared_ptr<PGeometry>,  const double gam,

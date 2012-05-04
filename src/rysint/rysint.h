@@ -55,19 +55,19 @@ class RysInt {
     double *buff_;
     double *bkup_;
 
+    std::vector<std::shared_ptr<Shell> > basisinfo_;
+    bool spherical_;
+
     // information on how many derivatives you take
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
     // over written in the constructor of a derived class 
     int deriv_rank_;
     int tenno_;
 
-    std::shared_ptr<VRRListBase> vrr_; 
     std::shared_ptr<HRRList> hrr_; 
+    std::shared_ptr<VRRListBase> vrr_; 
     std::shared_ptr<SortList> sort_;
 
-    bool spherical_;
-
-    std::vector<std::shared_ptr<Shell> > basisinfo_;
     double *data_;
     double *data2_;
     unsigned int size_final_;

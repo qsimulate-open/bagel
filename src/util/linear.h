@@ -40,18 +40,17 @@ class Linear {
     std::list<std::shared_ptr<const T> > sigma_;
 
     const int max_;    
+    int size_;
     const std::shared_ptr<const T> grad_;
 
     // contains 
     std::unique_ptr<double[]> mat_;
-    std::unique_ptr<double[]> prod_;
-    // scratch area for diagonalization
     std::unique_ptr<double[]> scr_;
     std::unique_ptr<double[]> vec_; 
+    std::unique_ptr<double[]> prod_;
     std::unique_ptr<int[]> ipiv_;
     int info;
 
-    int size_;
     // for convenience below
     double& mat(int i, int j) { return mat_[i+j*max_]; };
     double& scr(int i, int j) { return scr_[i+j*max_]; };

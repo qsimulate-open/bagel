@@ -35,6 +35,9 @@
 
 class Civec {
   protected:
+    int lena_;
+    int lenb_;
+
     // !!CAUTION!!
     // cc is formated so that B runs first.
     // Also, cc_ can be null if this is constructed by Dvec.
@@ -46,9 +49,6 @@ class Civec {
     const double& cc(int i) const { return *(cc_ptr_+i); };
     double* cc() { return cc_ptr_; };
     const double* const cc() const { return cc_ptr_; };
-
-    int lena_;
-    int lenb_;
 
   public:
     Civec(const size_t lb, const size_t la) : lena_(la), lenb_(lb) {
@@ -121,13 +121,13 @@ class Civec {
 
 class Dvec {
   protected:
+    size_t lena_;
+    size_t lenb_;
+    size_t ij_;
     std::vector<std::shared_ptr<Civec> > dvec_;
     std::unique_ptr<double[]> data_;
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
-    size_t lenb_;
-    size_t lena_;
-    size_t ij_;
 
   public:
     Dvec(const size_t lb, const size_t la, const size_t ij) : lena_(la), lenb_(lb), ij_(ij) {
@@ -140,7 +140,7 @@ class Dvec {
         dvec_.push_back(c);
       }
     };
-    Dvec(const Dvec& o) : lenb_(o.lenb_), lena_(o.lena_), ij_(o.ij_) {
+    Dvec(const Dvec& o) : lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
       std::unique_ptr<double[]> data__(new double[lena_*lenb_*ij_]);
       data_ = std::move(data__);
       double* tmp = data_.get();
@@ -152,14 +152,14 @@ class Dvec {
     };
 
     // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
-    Dvec(std::shared_ptr<Dvec> o) : lenb_(o->lenb_), lena_(o->lena_), ij_(o->ij_) {
+    Dvec(std::shared_ptr<Dvec> o) : lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
       for (int i = 0; i != ij_; ++i) {
         std::shared_ptr<Civec> c(new Civec(*(o->data(i))));
         dvec_.push_back(c);
       }
     };
 
-    Dvec(std::vector<std::shared_ptr<Civec> > o) : lenb_(o.front()->lenb()), lena_(o.front()->lena()), ij_(o.size()) {
+    Dvec(std::vector<std::shared_ptr<Civec> > o) : lena_(o.front()->lena()), lenb_(o.front()->lenb()), ij_(o.size()) {
       dvec_ = o;
     };
 

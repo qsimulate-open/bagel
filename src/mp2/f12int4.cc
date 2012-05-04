@@ -66,6 +66,7 @@ void F12Ref::compute() {
     // X intermediate
     shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff); 
     shared_ptr<F12Mat> x(new F12Mat(*x2));
+#if 0
     shared_ptr<F12Ten> s = slater->f12ten(coeff, coeff, nbasis, nbasis);
     shared_ptr<F12Ten> sox =   slater->f12ten(coeff, cao, nocc, ncabs);
                       *sox += *slaterc->f12ten(coeff, cxx, nocc, ncabs);
@@ -81,6 +82,7 @@ x->print();
       *v -= *r->contract(s);
     }
 v->print();
+#endif
 
     // B intermediate
     //  - Y term

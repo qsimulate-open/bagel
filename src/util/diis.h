@@ -45,6 +45,7 @@ class DIIS {
   protected:
     const int ndiis_;
     const int nld_;
+    const int lwork_;
 
     Container_type_ data_;
 
@@ -53,7 +54,6 @@ class DIIS {
     std::unique_ptr<double[]> coeff_;
     std::unique_ptr<double[]> work_;
     std::unique_ptr<int[]> ipiv_;
-    const int lwork_;
   
   public:
     DIIS(const int ndiis) : ndiis_(ndiis), nld_(ndiis+1), lwork_((ndiis+1)*(ndiis+1)),

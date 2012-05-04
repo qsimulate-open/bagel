@@ -38,10 +38,10 @@ class F12Mat;
 
 class F12Ten {
   protected:
-    std::unique_ptr<double[]> data_;
     const size_t nocc_;
     const size_t dim0_;
     const size_t dim1_;
+    std::unique_ptr<double[]> data_;
 
   public:   
     F12Ten(const size_t i, const size_t d0, const size_t d1) : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[i*i*d0*d1]) {};

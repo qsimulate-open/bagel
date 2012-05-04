@@ -107,11 +107,11 @@ static void dscal_(const int a, const double b, std::unique_ptr<double []>& c, c
 static double ddot_(const int a, const double* b, const int c, const double* d, const int e) { return ddot_(&a,b,&c,d,&e); };
 static double ddot_(const int a, const std::unique_ptr<double []>& b, const int c, const std::unique_ptr<double []>& d, const int e)
                    { return ddot_(&a,b.get(),&c,d.get(),&e); };
-static double dsyev_(const char* a, const char* b, const int c, double* d, const int e, double* f, double* g, const int h, int& i)
-                    {dsyev_(a,b,&c,d,&e,f,g,&h,&i);};
-static double dsyev_(const char* a, const char* b, const int c, std::unique_ptr<double []>& d, const int e,
-                     std::unique_ptr<double []>& f, std::unique_ptr<double []>& g, const int h, int& i)
-                    {dsyev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,&i);};
+static void dsyev_(const char* a, const char* b, const int c, double* d, const int e, double* f, double* g, const int h, int& i)
+                  {dsyev_(a,b,&c,d,&e,f,g,&h,&i);};
+static void dsyev_(const char* a, const char* b, const int c, std::unique_ptr<double []>& d, const int e,
+                   std::unique_ptr<double []>& f, std::unique_ptr<double []>& g, const int h, int& i)
+                  {dsyev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,&i);};
 static void dsysv_(const char* uplo, const int n, const int nrhs, double* a, const int lda, int* ipiv, 
                    double* b, const int ldb, double* work, const int lwork, int& info)
                     {dsysv_(uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, &info);};

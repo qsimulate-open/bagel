@@ -41,11 +41,11 @@
 template <typename T>
 class DavidsonDiag {
   protected:
+    const int nstate_;
+    const int max_;
+    int size_;
     std::list<std::shared_ptr<const T> > c_;
     std::list<std::shared_ptr<const T> > sigma_;
-    const int max_;
-    const int nstate_;
-    int size_;
 
     // contains 
     std::vector<double> mat_;

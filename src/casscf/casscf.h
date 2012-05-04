@@ -45,6 +45,8 @@ class CASSCF {
   protected:
     // input
     std::multimap<std::string, std::string> idata_; 
+    const std::shared_ptr<Geometry> geom_;
+    std::shared_ptr<Reference> ref_;
 
     // some internal information
     int nocc_; // sum of nact_ + nclosed_
@@ -62,9 +64,7 @@ class CASSCF {
     std::vector<double> occup_;
     std::shared_ptr<Coeff> coeff_natorb_;
 
-    std::shared_ptr<Reference> ref_;
     std::shared_ptr<FCI> fci_;
-    const std::shared_ptr<Geometry> geom_;
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
     void common_init();

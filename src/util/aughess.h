@@ -40,6 +40,7 @@ class AugHess {
     std::list<std::shared_ptr<const T> > sigma_;
 
     const int max_;    
+    int size_;
     const std::shared_ptr<const T> grad_;
 
     // contains 
@@ -55,7 +56,6 @@ class AugHess {
     int lwork_;
     int info;
 
-    int size_;
     // for convenience below
     double& mat(int i, int j) { return mat_[i+j*max_]; };
     double& scr(int i, int j) { return scr_[i+j*max_]; };
@@ -64,11 +64,11 @@ class AugHess {
   public:
     AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
       mat_(new double[ndim*ndim]),
+      prod_(new double[ndim]),
       scr_(new double[ndim*ndim]),
       vec_(new double[ndim]),
-      prod_(new double[ndim]),
-      work_(new double[ndim*5]),
       eig_(new double[ndim]),
+      work_(new double[ndim*5]),
       lwork_(ndim*5) {
     };
     ~AugHess() {};

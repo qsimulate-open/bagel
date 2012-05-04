@@ -38,12 +38,12 @@
 
 class RotFile {
   protected:
-    std::unique_ptr<double[]> data_;
     const int nclosed_;
     const int nact_;
     const int nvirt_;
-    const int size_;
     const bool superci_;
+    const int size_;
+    std::unique_ptr<double[]> data_;
 
   public:
     RotFile(const int iclos, const int iact, const int ivirt, const bool superci = true)
@@ -51,11 +51,11 @@ class RotFile {
         std::unique_ptr<double[]> tmp(new double[size_]);
         data_ = std::move(tmp);
     };
-    RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), size_(o.size_), superci_(o.superci_), data_(new double[o.size_]) {
+    RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new double[o.size_]) {
       std::copy(o.data(), o.data()+size_, data());
     };
     RotFile(const std::shared_ptr<RotFile> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), size_(o->size_), superci_(o->superci_), data_(new double[o->size_]) {
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new double[o->size_]) {
       std::copy(o->data(), o->data()+size_, data());
     };
 
@@ -148,7 +148,7 @@ class QFile {
       return out;
     };
 
-    QFile& operator*=(const double a) { dscal_(nb_*na_, a, data(), 1); };
+    QFile& operator*=(const double a) { dscal_(nb_*na_, a, data(), 1); return *this; };
 
     QFile operator*(const double a) {
       QFile tmp(*this);
@@ -182,7 +182,7 @@ class QFile {
 
 
     QFile& operator+=(const QFile& o) {
-      daxpy_(nb_*na_, 1.0, o.data(), 1, data(), 1); 
+      daxpy_(nb_*na_, 1.0, o.data(), 1, data(), 1); return *this; 
     };
 
     QFile operator+(const QFile& o) {
@@ -199,7 +199,7 @@ class QFile {
 
 
     QFile& operator=(const QFile& o) {
-      dcopy_(nb_*na_, o.data(), 1, data(), 1);
+      dcopy_(nb_*na_, o.data(), 1, data(), 1); return *this;
     };
 
     void print() const {
