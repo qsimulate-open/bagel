@@ -38,6 +38,7 @@ using namespace std;
 extern StackMem* stack;
 
 void KineticBatch::compute() {
+  double* stack_save = stack->get(0);
 
   double* intermediate_p = stack->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
@@ -64,6 +65,7 @@ void KineticBatch::compute() {
   }
 
   stack->release(prim0_ * prim1_ * asize_intermediate_ + cont0_ * cont1_ * asize_intermediate_);
+  assert(stack->get(0) == stack_save);
 }
 
 

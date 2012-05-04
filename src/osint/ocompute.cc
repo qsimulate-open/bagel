@@ -37,6 +37,7 @@ using namespace std;
 extern StackMem* stack;
 
 void OverlapBatch::compute() {
+  double* stack_save = stack->get(0);
 
   double* intermediate_p = stack->get(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
@@ -73,6 +74,7 @@ void OverlapBatch::compute() {
   }
 
   stack->release(prim0_ * prim1_ * asize_ + cont0_ * cont1_ * asize_ + cont0_ * cont1_ * asize_intermediate_);
+  assert(stack->get(0) == stack_save);
 
 }
 
