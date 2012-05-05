@@ -53,6 +53,8 @@ class NAIBatch_base : public RysInt {
                   const int L = 0, const double A = 0.0);
     ~NAIBatch_base() {};
 
+    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+
 
 }; 
 

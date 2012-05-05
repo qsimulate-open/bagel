@@ -31,6 +31,8 @@
 #include <cassert>
 #include <src/stackmem.h>
 #include <stdexcept>
+#include <src/rysint/eribatch_base.h>
+#include <src/rysint/naibatch_base.h>
 #define SQRTPI2 0.886226925452758013649083741671
 #define PITWOHALF 17.493418327624862
 #define PIMHALF 0.564189583547756
@@ -195,7 +197,7 @@ void RysInt::allocate_arrays(const size_t ps) {
   } 
 }
 
-
+// TODO this is not a good design. Should refactor at certain point using virtual functions...
 void RysInt::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
@@ -203,14 +205,24 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_intermediate = asize_final * csize_ * contsize_;
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-  } else if (deriv_rank_ == 1) {
-    size_alloc_ = 12 * asize_final * csize_final * primsize_;
-  }
-  data_ = stack->get(size_alloc_);
-  if (tenno_) {
-    data2_ = stack->get(size_alloc_);
-  } else {
+    data_ = stack->get(size_alloc_);
     data2_ = NULL;
+    if (tenno_)
+      data2_ = stack->get(size_alloc_);
+
+  // derivative integrals
+  } else if (deriv_rank_ == 1) {
+    // if this is a two-electron gradient integral
+    if (dynamic_cast<ERIBatch_base*>(this)) {
+      size_alloc_ = 12 * asize_final * csize_final * primsize_;
+    // if this is an NAI gradient integral
+    } else if (dynamic_cast<NAIBatch_base*>(this)) {
+      // in this case, we store everything
+      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->geom()->natom()) * 3.0 * asize_final * csize_final * primsize_;
+    } else {
+      throw logic_error("something is strange in RysInt::allocate_data");
+    }
+    data_ = stack->get(size_alloc_);
   }
 }
 
