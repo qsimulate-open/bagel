@@ -98,7 +98,6 @@ void GNAIBatch::compute() {
   assert(primsize_ == prim0size_*prim1size_);
 
   double* const data0 = data_;
-#if 0
   double* const data1 = data_ + acpsize;
   double* const data2 = data_ + acpsize*2;
   double* const data3 = data_ + acpsize*3;
@@ -107,8 +106,6 @@ void GNAIBatch::compute() {
   double* const data6 = data_ + acpsize*6;
   double* const data7 = data_ + acpsize*7;
   double* const data8 = data_ + acpsize*8;
-#endif
-
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -170,7 +167,6 @@ void GNAIBatch::compute() {
     xpPC2[0] = 2.0 * xp_[i] * PC[0];
     xpPC2[1] = 2.0 * xp_[i] * PC[1];
     xpPC2[2] = 2.0 * xp_[i] * PC[2];
-#if 0
     for (int ib = 0; ib <= b; ++ib) {
       const double ibb = ib;
       for (int ia = 0; ia <= a; ++ia) {
@@ -191,11 +187,9 @@ void GNAIBatch::compute() {
         }
       }
     }
-#endif
 
     // assembly step
     double* current_data0 = data0 + offset_iprim;
-#if 0
     double* current_data1 = data1 + offset_iprim;
     double* current_data2 = data2 + offset_iprim;
     double* current_data3 = data3 + offset_iprim;
@@ -204,7 +198,6 @@ void GNAIBatch::compute() {
     double* current_data6 = data6 + offset_iprim;
     double* current_data7 = data7 + offset_iprim;
     double* current_data8 = data8 + offset_iprim;
-#endif
 
     for (int iaz = 0; iaz <= a; ++iaz) { 
       for (int iay = 0; iay <= a - iaz; ++iay) { 
@@ -220,7 +213,6 @@ void GNAIBatch::compute() {
 #else
 //            *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
 #endif
-#if 0
               *current_data1 += bufx[r+rank_*(iax+a2*ibx)] * bufy_a[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data2 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_a[r+rank_*(iaz+a2*ibz)];
               *current_data3 += bufx_b[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
@@ -229,10 +221,8 @@ void GNAIBatch::compute() {
               *current_data6 += bufx_c[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data7 += bufx[r+rank_*(iax+a2*ibx)] * bufy_c[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
               *current_data8 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_c[r+rank_*(iaz+a2*ibz)];
-#endif
             }
             ++current_data0;
-#if 0
             ++current_data1;
             ++current_data2;
             ++current_data3;
@@ -241,7 +231,6 @@ void GNAIBatch::compute() {
             ++current_data6;
             ++current_data7;
             ++current_data8;
-#endif
           }
         }
       }
@@ -267,7 +256,6 @@ void GNAIBatch::compute() {
       struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
-assert(contsize_ == cont0size_ * cont1size_);
       carsphlist.carsphfunc_call(carsphindex, nloops, source, target); 
     }
 

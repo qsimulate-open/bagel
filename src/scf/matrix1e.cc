@@ -61,11 +61,7 @@ Matrix1e::Matrix1e(const Matrix1e& o)
 void Matrix1e::init() {
 
   const vector<RefAtom> atoms = geom_->atoms(); 
-  vector<Atom>::const_iterator aiter0, aiter1;
-  vector<RefShell>::const_iterator biter0, biter1;
-
   const vector<vector<int> > offsets = geom_->offsets();
-
   const int nbasis = geom_->nbasis();
 
   // only lower half will be stored
