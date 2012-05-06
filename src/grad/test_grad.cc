@@ -91,35 +91,35 @@ void test_grad(shared_ptr<Reference> ref) {
           const int s = (ang1+1)*(ang1+2)*(ang0+1)*(ang0+2)/4 * b1->num_primitive()*b0->num_primitive();
 
           {
-          GNAIBatch batch2(input, geom_, tie(iatom1, iatom0));
-          batch2.compute();
-          const double* ndata = batch2.data();
-          for (int ia = 0; ia != natom*3; ++ia) {
-            int cnt = 0;
-            for (int i = offset0; i != dimb0 + offset0; ++i) {
-              for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-                grad1e[ia]->data(i*nbasis+j) -= ndata[cnt+s*(ia)];
+            GNAIBatch batch2(input, geom_, tie(iatom1, iatom0));
+            batch2.compute();
+            const double* ndata = batch2.data();
+            for (int ia = 0; ia != natom*3; ++ia) {
+              int cnt = 0;
+              for (int i = offset0; i != dimb0 + offset0; ++i) {
+                for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
+                  grad1e[ia]->data(i*nbasis+j) += ndata[cnt+s*(ia)];
+                }
               }
             }
           }
-          }
           {
-          GKineticBatch batch(input, geom_);
-          const double* kdata = batch.data();
-          batch.compute();
-          int cnt = 0;
-          for (int i = offset0; i != dimb0 + offset0; ++i) {
-            for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-              int jatom0 = batch.swap01() ? iatom1 : iatom0;
-              int jatom1 = batch.swap01() ? iatom0 : iatom1;
-              grad1e[3*jatom0+0]->data(i*nbasis+j) += kdata[cnt];
-              grad1e[3*jatom0+1]->data(i*nbasis+j) += kdata[cnt+s];
-              grad1e[3*jatom0+2]->data(i*nbasis+j) += kdata[cnt+s*2];
-              grad1e[3*jatom1+0]->data(i*nbasis+j) += kdata[cnt+s*3];
-              grad1e[3*jatom1+1]->data(i*nbasis+j) += kdata[cnt+s*4];
-              grad1e[3*jatom1+2]->data(i*nbasis+j) += kdata[cnt+s*5];
+            GKineticBatch batch(input, geom_);
+            const double* kdata = batch.data();
+            batch.compute();
+            int cnt = 0;
+            for (int i = offset0; i != dimb0 + offset0; ++i) {
+              for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
+                int jatom0 = batch.swap01() ? iatom1 : iatom0;
+                int jatom1 = batch.swap01() ? iatom0 : iatom1;
+                grad1e[3*jatom1+0]->data(i*nbasis+j) += kdata[cnt];
+                grad1e[3*jatom1+1]->data(i*nbasis+j) += kdata[cnt+s];
+                grad1e[3*jatom1+2]->data(i*nbasis+j) += kdata[cnt+s*2];
+                grad1e[3*jatom0+0]->data(i*nbasis+j) += kdata[cnt+s*3];
+                grad1e[3*jatom0+1]->data(i*nbasis+j) += kdata[cnt+s*4];
+                grad1e[3*jatom0+2]->data(i*nbasis+j) += kdata[cnt+s*5];
+              }
             }
-          }
           }
 
         }
