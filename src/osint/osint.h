@@ -65,9 +65,12 @@ class OSInt {
     OSInt(const std::vector<std::shared_ptr<Shell> >&, const int deriv = 0);
     ~OSInt();
 
-    virtual void compute() {}; 
+    virtual void compute() = 0; 
 
     const double* data() const { return data_; }; 
+
+    // since this is convenient for gradient evaluation.... 
+    bool swap01() const { return swap01_; };
 
 };
 

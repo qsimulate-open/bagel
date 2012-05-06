@@ -29,6 +29,7 @@
 #include <cassert>
 #include <iostream>
 #include <src/stackmem.h>
+#include <src/grad/goverlapbatch.h>
 #define DPISQRT 1.7724538509055160
 
 using namespace std;
@@ -107,7 +108,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
   assert(coeffsx_.size() == prim0_ * prim1_);
   assert(coefftx_.size() == prim0_ * prim1_);
 
-  amax_ = ang0_ + ang1_;
+  amax_ = ang0_ + ang1_ + deriv_rank_;
   amax1_ = amax_ + 1;
   amin_ = ang0_;
   
@@ -116,7 +117,13 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
   asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
   asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
 
-  size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_) * (deriv_rank_==0 ? 1.0 : 6.0);
+  if (deriv_rank_ == 0) {
+    size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
+  } else if (deriv_rank_ == 1) {
+    size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
+  } else {
+    throw logic_error("not yet implemented OSInt::OSInt");
+  }
   data_ = stack->get(size_alloc_);
 
   amapping_.resize(amax1_ * amax1_ * amax1_);

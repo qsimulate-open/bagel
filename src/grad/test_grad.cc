@@ -28,6 +28,7 @@
 #include <iostream>
 #include <src/osint/kineticbatch.h>
 #include <src/grad/gnaibatch.h>
+#include <src/grad/goverlapbatch.h>
 #include <tuple>
 
 using namespace std;
@@ -84,17 +85,25 @@ void test_grad(shared_ptr<Reference> ref) {
 
           const int dimb1 = input[0]->nbasis(); 
           const int dimb0 = input[1]->nbasis(); 
+#if 0
           KineticBatch kinetic(input);
           kinetic.compute();
           const double* kdata = kinetic.data();
-          GNAIBatch nai(input, geom_, tie(iatom1, iatom0));
-          nai.compute();
-          const double* ndata = nai.data();
-
+#endif
+#define GOVTEST
+#ifdef GOVTEST
+          GOverlapBatch batch(input, geom_);
+#endif
+#ifdef GNAITEST
+          GNAIBatch batch(input, geom_, tie(iatom1, iatom0));
+#endif
+          
+          batch.compute();
+          const double* ndata = batch.data();
           const int ang1 = b1->angular_number();
           const int ang0 = b0->angular_number();
           const int s = (ang1+1)*(ang1+2)*(ang0+1)*(ang0+2)/4 * b1->num_primitive()*b0->num_primitive();
-
+#ifdef GNAITEST
           for (int ia = 0; ia != natom*3; ++ia) {
             int cnt = 0;
             for (int i = offset0; i != dimb0 + offset0; ++i) {
@@ -103,6 +112,18 @@ void test_grad(shared_ptr<Reference> ref) {
               }
             }
           }
+#endif
+#ifdef GOVTEST
+          int cnt = 0;
+          for (int i = offset0; i != dimb0 + offset0; ++i) {
+            for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
+              const int jatom0 = batch.swap01() ? iatom1 : iatom0;
+              const int jatom1 = batch.swap01() ? iatom0 : iatom1;
+              grad1e[jatom1]->data(i*nbasis+j) += ndata[cnt];
+              grad1e[jatom0]->data(i*nbasis+j) += ndata[cnt+s];
+            }
+          }
+#endif
 
         }
       } 
