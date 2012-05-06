@@ -219,6 +219,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     } else if (dynamic_cast<NAIBatch_base*>(this)) {
       // in this case, we store everything
       size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->geom()->natom()) * 3.0 * asize_final * csize_final * primsize_;
+      assert(csize_final == 1);
     } else {
       throw logic_error("something is strange in RysInt::allocate_data");
     }

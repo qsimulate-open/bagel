@@ -149,26 +149,25 @@ void GNAIBatch::compute() {
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky, rank_, transy, amax_+1, 0.0, bufy, rank_);
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz, rank_, transz, amax_+1, 0.0, bufz, rank_);
 
-    double* expo = exponents_.get() + i*2;
+    const double alpha = exponents_[iprim*2+0];
+    const double beta_ = exponents_[iprim*2+1];
     double xpPC2[3];
     xpPC2[0] = 2.0 * xp_[i] * PC[0];
     xpPC2[1] = 2.0 * xp_[i] * PC[1];
     xpPC2[2] = 2.0 * xp_[i] * PC[2];
     for (int ib = 0; ib <= b; ++ib) {
-      const double ibb = ib;
       for (int ia = 0; ia <= a; ++ia) {
-        const double iaa = ia;
         for (int r = 0; r != rank_; ++r) {
-          bufx_a[r+rank_*(ia+a2*ib)] = 2.0*expo[0]*bufx[r+rank_*(ia+1+a2*(ib))] - ia*bufx[r+rank_*(ia-1+a2*(ib))];
-          bufx_b[r+rank_*(ia+a2*ib)] = 2.0*expo[1]*bufx[r+rank_*(ia+a2*(ib+1))] - ia*bufx[r+rank_*(ia+a2*(ib-1))];
+          bufx_a[r+rank_*(ia+a2*ib)] = 2.0*alpha*bufx[r+rank_*(ia+1+a2*(ib))] - ia*bufx[r+rank_*(ia-1+a2*(ib))];
+          bufx_b[r+rank_*(ia+a2*ib)] = 2.0*beta_*bufx[r+rank_*(ia+a2*(ib+1))] - ib*bufx[r+rank_*(ia+a2*(ib-1))];
           bufx_c[r+rank_*(ia+a2*ib)] = croots[r] * (xpPC2[0] * bufx[r+rank_*(ia+a2*ib)]
                                      + ia*bufx[r+rank_*(ia-1+a2*(ib))] + ib*bufx[r+rank_*(ia+a2*(ib-1))]);
-          bufy_a[r+rank_*(ia+a2*ib)] = 2.0*expo[0]*bufy[r+rank_*(ia+1+a2*(ib))] - ia*bufy[r+rank_*(ia-1+a2*(ib))];
-          bufy_b[r+rank_*(ia+a2*ib)] = 2.0*expo[1]*bufy[r+rank_*(ia+a2*(ib+1))] - ia*bufy[r+rank_*(ia+a2*(ib-1))];
+          bufy_a[r+rank_*(ia+a2*ib)] = 2.0*alpha*bufy[r+rank_*(ia+1+a2*(ib))] - ia*bufy[r+rank_*(ia-1+a2*(ib))];
+          bufy_b[r+rank_*(ia+a2*ib)] = 2.0*beta_*bufy[r+rank_*(ia+a2*(ib+1))] - ib*bufy[r+rank_*(ia+a2*(ib-1))];
           bufy_c[r+rank_*(ia+a2*ib)] = croots[r] * (xpPC2[1] * bufy[r+rank_*(ia+a2*ib)]
                                      + ia*bufy[r+rank_*(ia-1+a2*(ib))] + ib*bufy[r+rank_*(ia+a2*(ib-1))]);
-          bufz_a[r+rank_*(ia+a2*ib)] = 2.0*expo[0]*bufz[r+rank_*(ia+1+a2*(ib))] - ia*bufz[r+rank_*(ia-1+a2*(ib))];
-          bufz_b[r+rank_*(ia+a2*ib)] = 2.0*expo[1]*bufz[r+rank_*(ia+a2*(ib+1))] - ia*bufz[r+rank_*(ia+a2*(ib-1))];
+          bufz_a[r+rank_*(ia+a2*ib)] = 2.0*alpha*bufz[r+rank_*(ia+1+a2*(ib))] - ia*bufz[r+rank_*(ia-1+a2*(ib))];
+          bufz_b[r+rank_*(ia+a2*ib)] = 2.0*beta_*bufz[r+rank_*(ia+a2*(ib+1))] - ib*bufz[r+rank_*(ia+a2*(ib-1))];
           bufz_c[r+rank_*(ia+a2*ib)] = croots[r] * (xpPC2[2] * bufz[r+rank_*(ia+a2*ib)]
                                      + ia*bufz[r+rank_*(ia-1+a2*(ib))] + ib*bufz[r+rank_*(ia+a2*(ib-1))]);
         }
@@ -176,16 +175,9 @@ void GNAIBatch::compute() {
     }
 
     // assembly step
-#define NAIDEBUG
-#ifdef NAIDEBUG
-    const unsigned int aatom = 0u;
-    const unsigned int batom = 1u;
-    const unsigned int catom = 1u;
-#else
     unsigned int aatom, batom; 
     tie(aatom, batom) = iatom_;
     const unsigned int catom = iatom;
-#endif
 
     double* current_data0 = data_ + acpsize*(3*aatom+0) + offset_iprim;
     double* current_data1 = data_ + acpsize*(3*aatom+1) + offset_iprim;
@@ -205,19 +197,15 @@ void GNAIBatch::compute() {
           for (int iby = 0; iby <= b - ibz; ++iby) { 
             const int ibx = b - ibz - iby;
             for (int r = 0; r != rank_; ++r) {
-#ifdef  NAIDEBUG
-              *current_data0 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-#else
-              *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-#endif
-              *current_data1 += bufx[r+rank_*(iax+a2*ibx)] * bufy_a[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-              *current_data2 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_a[r+rank_*(iaz+a2*ibz)];
-              *current_data3 += bufx_b[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-              *current_data4 += bufx[r+rank_*(iax+a2*ibx)] * bufy_b[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-              *current_data5 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_b[r+rank_*(iaz+a2*ibz)];
-              *current_data6 += bufx_c[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-              *current_data7 += bufx[r+rank_*(iax+a2*ibx)] * bufy_c[r+rank_*(iay+a2*iby)] * bufz[r+rank_*(iaz+a2*ibz)];
-              *current_data8 += bufx[r+rank_*(iax+a2*ibx)] * bufy[r+rank_*(iay+a2*iby)] * bufz_c[r+rank_*(iaz+a2*ibz)];
+              *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data1 += bufx  [r+rank_*(iax+a2*ibx)] * bufy_a[r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data2 += bufx  [r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz_a[r+rank_*(iaz+a2*ibz)];
+              *current_data3 += bufx_b[r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data4 += bufx  [r+rank_*(iax+a2*ibx)] * bufy_b[r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data5 += bufx  [r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz_b[r+rank_*(iaz+a2*ibz)];
+              *current_data6 += bufx_c[r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data7 += bufx  [r+rank_*(iax+a2*ibx)] * bufy_c[r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
+              *current_data8 += bufx  [r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz_c[r+rank_*(iaz+a2*ibz)];
             }
             ++current_data0;
             ++current_data1;

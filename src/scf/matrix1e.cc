@@ -510,7 +510,7 @@ void Matrix1e::print(const string name, const int size) const {
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != min(size,nbasis_); ++i) {
     for (int j = 0; j != min(size,nbasis_); ++j) {
-      cout << fixed << setw(9) << setprecision(6) << data_[j * nbasis_ + i]  << " "; 
+      cout << fixed << setw(12) << setprecision(9) << data_[j * nbasis_ + i]  << " "; 
     }
     cout << endl;
   }
