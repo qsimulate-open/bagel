@@ -56,10 +56,10 @@ void GNAIBatch::compute() {
   // transformation matrix
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
-  assert(a+b+1 == amax_); 
 
   const int a2 = a+2;
   const int b2 = b+2;
+  assert(a+b+1 == amax_); 
 
   double* transx = stack->get((amax_+1)*a2*b2);
   double* transy = stack->get((amax_+1)*a2*b2);
@@ -92,7 +92,7 @@ void GNAIBatch::compute() {
 
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   const size_t acpsize = acsize*primsize_;
-  assert(primsize_ == prim0size_*prim1size_);
+  assert(primsize_ == prim0size_*prim1size_ && acpsize*natom_*3 == size_alloc_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -149,8 +149,12 @@ void GNAIBatch::compute() {
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky, rank_, transy, amax_+1, 0.0, bufy, rank_);
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz, rank_, transz, amax_+1, 0.0, bufz, rank_);
 
+    unsigned int aatom, batom; 
+    tie(aatom, batom) = iatom_;
+    const unsigned int catom = iatom;
     const double alpha = exponents_[iprim*2+0];
     const double beta_ = exponents_[iprim*2+1];
+
     double xpPC2[3];
     xpPC2[0] = 2.0 * xp_[i] * PC[0];
     xpPC2[1] = 2.0 * xp_[i] * PC[1];
@@ -175,10 +179,6 @@ void GNAIBatch::compute() {
     }
 
     // assembly step
-    unsigned int aatom, batom; 
-    tie(aatom, batom) = iatom_;
-    const unsigned int catom = iatom;
-
     double* current_data0 = data_ + acpsize*(3*aatom+0) + offset_iprim;
     double* current_data1 = data_ + acpsize*(3*aatom+1) + offset_iprim;
     double* current_data2 = data_ + acpsize*(3*aatom+2) + offset_iprim;
@@ -224,7 +224,7 @@ void GNAIBatch::compute() {
 
   bkup_ = stack->get(acpsize);
   double* cdata = data_;
-  for (int i = 0; i != 9; ++i, cdata += acpsize) {
+  for (int i = 0; i != natom_*3; ++i, cdata += acpsize) {
     double* target = bkup_;
     const double* source = cdata;
     // contract indices 01 

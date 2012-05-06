@@ -87,7 +87,7 @@ void test_grad(shared_ptr<Reference> ref) {
           KineticBatch kinetic(input);
           kinetic.compute();
           const double* kdata = kinetic.data();
-          GNAIBatch nai(input, geom_, tie(iatom1, iatom0));
+          GNAIBatch nai(input, geom_, tie(iatom0, iatom1));
           nai.compute();
           const double* ndata = nai.data();
 
