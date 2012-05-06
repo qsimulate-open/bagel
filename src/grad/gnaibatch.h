@@ -36,13 +36,16 @@ class GNAIBatch : public NAIBatch_base {
     void set_exponents();
     std::unique_ptr<double[]> exponents_;
 
-    const std::tuple<int,int> iatom_;
+    std::tuple<int,int> iatom_;
 
   public:
     
     GNAIBatch(const std::vector<std::shared_ptr<Shell> > _info, const std::shared_ptr<Geometry> gm, const std::tuple<int,int> i,
               const int L = 0, const double A = 0.0)
       :  NAIBatch_base(_info, gm, 1, L, A), iatom_(i) {
+      if (swap01_) {
+        std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
+      }
       set_exponents();
     };
     ~GNAIBatch() {};
