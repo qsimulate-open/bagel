@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: gocompute.cc
+// Filename: gkcompute.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,7 +24,7 @@
 //
 
 
-#include <src/grad/goverlapbatch.h>
+#include <src/grad/gkineticbatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/stackmem.h>
 #include <src/fci/comb.h>
@@ -34,15 +34,15 @@ using namespace std;
 extern StackMem* stack;
 Comb comb;
 
-void GOverlapBatch::compute() {
+void GKineticBatch::compute() {
 
   fill(data_, data_+size_alloc_, 0.0);
 
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
-  const int a2 = a+2;
-  const int b2 = b+2;
-  assert(amax_ == a+b+1);
+  const int a2 = a+1+deriv_rank_;
+  const int b2 = b+1+deriv_rank_;
+  assert(amax_ == a+b+deriv_rank_);
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   const size_t acpsize = acsize*prim0_*prim1_;
   assert(size_alloc_ == acpsize*6);
@@ -53,9 +53,9 @@ void GOverlapBatch::compute() {
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
-  for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
-    for (int ia = 0; ia <= a+1; ++ia, ++k) {
-      if (ia == a+1 && ib == b+1) continue;
+  for (int ib = 0, k = 0; ib <= b+deriv_rank_; ++ib) { 
+    for (int ia = 0; ia <= a+deriv_rank_; ++ia, ++k) {
+      if (ia > a && ib > b) continue;
       for (int i = ia; i <= ia+ib; ++i) {
         transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
         transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
@@ -71,12 +71,12 @@ void GOverlapBatch::compute() {
   double* bufx = stack->get(a2*b2);
   double* bufy = stack->get(a2*b2);
   double* bufz = stack->get(a2*b2);
-  double* bufx_a = stack->get(a2*b2);
-  double* bufx_b = stack->get(a2*b2);
-  double* bufy_a = stack->get(a2*b2);
-  double* bufy_b = stack->get(a2*b2);
-  double* bufz_a = stack->get(a2*b2);
-  double* bufz_b = stack->get(a2*b2);
+  double* bufx_a = stack->get(a2*b2*deriv_rank_);
+  double* bufx_b = stack->get(a2*b2*deriv_rank_);
+  double* bufy_a = stack->get(a2*b2*deriv_rank_);
+  double* bufy_b = stack->get(a2*b2*deriv_rank_);
+  double* bufz_a = stack->get(a2*b2*deriv_rank_);
+  double* bufz_b = stack->get(a2*b2*deriv_rank_);
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
@@ -98,17 +98,40 @@ void GOverlapBatch::compute() {
     dgemv_("T", amax_+1, a2*b2, 1.0, transy, amax_+1, worky, 1, 0.0, bufy, 1);
     dgemv_("T", amax_+1, a2*b2, 1.0, transz, amax_+1, workz, 1, 0.0, bufz, 1);
 
+    // TODO USE translational invariance!!
     const double alpha = xa_[ii]; 
     const double beta_ = xb_[ii];
-    for (int ib = 0; ib <= b; ++ib) {
-      for (int ia = 0; ia <= a; ++ia) {
-        bufx_a[ia+a2*ib] = 2.0*alpha*bufx[ia+1+a2*(ib)] - ia*bufx[ia-1+a2*(ib)];
-        bufx_b[ia+a2*ib] = 2.0*beta_*bufx[ia+a2*(ib+1)] - ib*bufx[ia+a2*(ib-1)];
-        bufy_a[ia+a2*ib] = 2.0*alpha*bufy[ia+1+a2*(ib)] - ia*bufy[ia-1+a2*(ib)];
-        bufy_b[ia+a2*ib] = 2.0*beta_*bufy[ia+a2*(ib+1)] - ib*bufy[ia+a2*(ib-1)];
-        bufz_a[ia+a2*ib] = 2.0*alpha*bufz[ia+1+a2*(ib)] - ia*bufz[ia-1+a2*(ib)];
-        bufz_b[ia+a2*ib] = 2.0*beta_*bufz[ia+a2*(ib+1)] - ib*bufz[ia+a2*(ib-1)];
+    const double* tmpx = bufx;
+    const double* tmpy = bufy;
+    const double* tmpz = bufz;
+    for (int i = 0; i != deriv_rank_; ++i) {
+      const int rem = deriv_rank_-i-1;
+      for (int ib = 0; ib <= b+rem; ++ib) {
+        for (int ia = 0; ia <= a+rem; ++ia) {
+          bufx_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpx[ia+1+a2*(ib)] - ia*tmpx[ia-1+a2*(ib)];
+          bufy_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpy[ia+1+a2*(ib)] - ia*tmpy[ia-1+a2*(ib)];
+          bufz_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpz[ia+1+a2*(ib)] - ia*tmpz[ia-1+a2*(ib)];
+        }
       }
+      tmpx = bufx_a+a2*b2*i;
+      tmpy = bufy_a+a2*b2*i;
+      tmpz = bufz_a+a2*b2*i;
+    }
+    tmpx = bufx;
+    tmpy = bufy;
+    tmpz = bufz;
+    for (int i = 0; i != deriv_rank_; ++i) {
+      const int rem = deriv_rank_-i-1;
+      for (int ib = 0; ib <= b+rem; ++ib) {
+        for (int ia = 0; ia <= a+rem; ++ia) {
+          bufx_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpx[ia+a2*(ib+1)] - ib*tmpx[ia+a2*(ib-1)];
+          bufy_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpy[ia+a2*(ib+1)] - ib*tmpy[ia+a2*(ib-1)];
+          bufz_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpz[ia+a2*(ib+1)] - ib*tmpz[ia+a2*(ib-1)];
+        }
+      }
+      tmpx = bufx_b+a2*b2*i;
+      tmpy = bufy_b+a2*b2*i;
+      tmpz = bufz_b+a2*b2*i;
     }
 
     /// assembly process
@@ -127,12 +150,24 @@ void GOverlapBatch::compute() {
           for (int iby = 0; iby <= b - ibz; ++iby) { 
             const int ibx = b - ibz - iby;
 
-            *current_data0 += bufx_a[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data1 += bufx  [iax+a2*ibx] * bufy_a[iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data2 += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_a[iaz+a2*ibz];
-            *current_data3 += bufx_b[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data4 += bufx  [iax+a2*ibx] * bufy_b[iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data5 += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_b[iaz+a2*ibz];
+            *current_data0 += bufx_a[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                            + bufx_a[iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
+                            + bufx_a[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
+            *current_data1 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy_a[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
+            *current_data2 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz_a[iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*2];
+            *current_data3 += bufx_b[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                            + bufx_b[iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
+                            + bufx_b[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
+            *current_data4 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy_b[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
+            *current_data5 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz_b[iaz+a2*ibz        ]
+                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*2];
             ++current_data0;
             ++current_data1;
             ++current_data2;
@@ -175,9 +210,11 @@ void GOverlapBatch::compute() {
       target = cdata;
       sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
     }
+    // since this is a kinetic operator
+    dscal_(cont0_*cont1_*acsize, -0.5, cdata, 1);
   }
 
-  stack->release(worksize*3 + (amax_+1)*a2*b2*3 + a2*b2*9 + acpsize);
+  stack->release(worksize*3 + (amax_+1)*a2*b2*3 + a2*b2*(3+6*deriv_rank_) + acpsize);
 
 }
 

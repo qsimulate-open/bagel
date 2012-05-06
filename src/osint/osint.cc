@@ -119,10 +119,8 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
 
   if (deriv_rank_ == 0) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-  } else if (deriv_rank_ == 1) {
+  } else if (deriv_rank_ >= 1) {
     size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
-  } else {
-    throw logic_error("not yet implemented OSInt::OSInt");
   }
   data_ = stack->get(size_alloc_);
 
