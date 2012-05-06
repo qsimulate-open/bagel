@@ -33,24 +33,9 @@
 class GOverlapBatch : public OSInt {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::unique_ptr<double[]> exponents_;
-
-    void set_exponents() {
-      exponents_ = std::unique_ptr<double[]>(new double[prim0_*prim1_*2]);
-      assert(prim0_ == basisinfo_[0]->exponents().size() && prim1_ == basisinfo_[1]->exponents().size());
-      double* tmp = exponents_.get();
-      for (auto i0 = basisinfo_[0]->exponents().begin(); i0 != basisinfo_[0]->exponents().end(); ++i0) {
-        for (auto i1 = basisinfo_[1]->exponents().begin(); i1 != basisinfo_[1]->exponents().end(); ++i1, tmp+=2) {
-          tmp[0] = *i0;
-          tmp[1] = *i1;
-        }
-      }
-    };
 
   public:
-    GOverlapBatch(const std::vector<std::shared_ptr<Shell> >& o, const std::shared_ptr<Geometry> ge) : OSInt(o,1), geom_(ge) {
-      set_exponents();
-    };
+    GOverlapBatch(const std::vector<std::shared_ptr<Shell> >& o, const std::shared_ptr<Geometry> ge) : OSInt(o,1), geom_(ge) { };
     ~GOverlapBatch() {};
 
     void compute();

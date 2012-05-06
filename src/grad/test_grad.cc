@@ -117,10 +117,14 @@ void test_grad(shared_ptr<Reference> ref) {
           int cnt = 0;
           for (int i = offset0; i != dimb0 + offset0; ++i) {
             for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-              const int jatom0 = batch.swap01() ? iatom1 : iatom0;
-              const int jatom1 = batch.swap01() ? iatom0 : iatom1;
-              grad1e[jatom1]->data(i*nbasis+j) += ndata[cnt];
-              grad1e[jatom0]->data(i*nbasis+j) += ndata[cnt+s];
+              int jatom0 = batch.swap01() ? iatom1 : iatom0;
+              int jatom1 = batch.swap01() ? iatom0 : iatom1;
+              grad1e[3*jatom0+0]->data(i*nbasis+j) += ndata[cnt];
+              grad1e[3*jatom0+1]->data(i*nbasis+j) += ndata[cnt+s];
+              grad1e[3*jatom0+2]->data(i*nbasis+j) += ndata[cnt+s*2];
+              grad1e[3*jatom1+0]->data(i*nbasis+j) += ndata[cnt+s*3];
+              grad1e[3*jatom1+1]->data(i*nbasis+j) += ndata[cnt+s*4];
+              grad1e[3*jatom1+2]->data(i*nbasis+j) += ndata[cnt+s*5];
             }
           }
 #endif
