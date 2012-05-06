@@ -34,14 +34,13 @@
 
 class OverlapBatch : public OSInt {
   protected:
-    HRRList hrr_;
     void perform_VRR(double*);
 
   public: 
     OverlapBatch(const std::vector<std::shared_ptr<Shell> >&);
     ~OverlapBatch();
 
-    void compute();
+    virtual void compute();
 };
 
 #endif

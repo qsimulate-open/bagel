@@ -33,6 +33,7 @@
 #include <src/stackmem.h>
 
 using namespace std;
+static HRRList hrr;
 
 extern StackMem* stack;
 
@@ -52,7 +53,7 @@ void OverlapBatch::compute() {
 
   if (basisinfo_[1]->angular_number() != 0) { 
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-    hrr_.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
+    hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
   } else {
     const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
     ::memcpy(intermediate_fi, intermediate_c, array_size * sizeof(double)); 

@@ -59,11 +59,7 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
   KineticBatch kinetic(input);
   kinetic.compute();
   const double* kdata = kinetic.data();
-#if 1
   NAIBatch nai(input, geom_);
-#else
-  GNAIBatch nai(input, geom_);
-#endif
   nai.compute();
   const double* ndata = nai.data();
 
