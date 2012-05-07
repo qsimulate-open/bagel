@@ -58,6 +58,8 @@ class SCF_base {
 
     std::unique_ptr<double[]> eig_;
 
+    int nocc_;
+
   public:
     SCF_base(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<Geometry>);
     ~SCF_base() {};
@@ -71,8 +73,10 @@ class SCF_base {
     const std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 
+    int nocc() const { return nocc_; };
+
     std::shared_ptr<Reference> conv_to_ref() {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz(), geom_->nele()/2, 0, geom_->nbasis()-geom_->nele()/2));
+      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;

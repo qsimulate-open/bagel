@@ -51,7 +51,7 @@ MOFile::~MOFile() {
 
 
 
-double MOFile::create_Jiiii(const int nstart, const int nfence) {
+double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
@@ -69,7 +69,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
     unique_ptr<double[]> aobuff(new double[nbasis*nbasis]);
     shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
     if (nstart != 0) {
-      shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_core_density_rhf()));
+      shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
       shared_ptr<Fock<1> > fock1(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
       core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
       fock0 = fock1;

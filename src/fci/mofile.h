@@ -73,7 +73,7 @@ class MOFile {
     const std::shared_ptr<Geometry> geom() const { return geom_; };
 
     // creates integral files and returns the core energy.
-    double create_Jiiii(const int, const int);
+    double create_Jiiii(const int, const int, const int);
     const int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };

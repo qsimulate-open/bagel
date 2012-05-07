@@ -35,10 +35,6 @@
 template<int DF>
 class SCF : public SCF_base {
 
-  typedef std::shared_ptr<Matrix1e> RefMatrix1e;
-  typedef std::shared_ptr<Fock<DF> > RefFock;
-  typedef std::shared_ptr<Coeff> RefCoeff;
-
   public:
     SCF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<Geometry> geom)
       : SCF_base(idata_, geom) {
@@ -49,23 +45,25 @@ class SCF : public SCF_base {
 
     ~SCF() {};
 
+    std::shared_ptr<Matrix1e> form_density_rhf() const { return coeff_->form_density_rhf(nocc_); };
+
     void compute() {
       const bool highest_level = geom_->level() == 0;
       std::string indent = "  ";
       for (int i = 0; i != geom_->level(); ++i) indent += "|";
       if (!highest_level) indent += "  ";
     
-      RefFock previous_fock;
-      RefFock hcore_fock;
+      std::shared_ptr<Fock<DF> > previous_fock;
+      std::shared_ptr<Fock<DF> > hcore_fock;
       {
-        RefFock fock(new Fock<DF>(geom_, hcore_));
+        std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, hcore_));
         previous_fock = fock;
         if (DF) hcore_fock = fock;
        
         Matrix1e intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
-        aodensity_ = std::shared_ptr<Matrix1e>(new Matrix1e(coeff_->form_density_rhf()));
+        aodensity_ = form_density_rhf();
       }
     
       if (highest_level) {
@@ -80,36 +78,36 @@ class SCF : public SCF_base {
       // starting SCF iteration
     
       DIIS<Matrix1e> diis(5);
-      RefMatrix1e densitychange = aodensity_; // assumes hcore guess...
+      std::shared_ptr<Matrix1e> densitychange = aodensity_; // assumes hcore guess...
     
       for (int iter = 0; iter != max_iter_; ++iter) {
         int start = ::clock();
     
-        RefFock fock;
+        std::shared_ptr<Fock<DF> > fock;
         if (!DF) {
-          RefFock tmp(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_)); fock = tmp;
+          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_)); fock = tmp;
         } else {
-          RefFock tmp(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_)); fock = tmp;
+          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_)); fock = tmp;
         }
         previous_fock = fock;
     
         Matrix1e intermediate = *coeff_ % *fock * *coeff_;
 
 // TODO level shift - needed?
-//      intermediate.add_diag(1.0, geom_->nocc()/2, geom_->nbasis());
+//      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
 
         intermediate.diagonalize(eig());
-        RefCoeff new_coeff(new Coeff((*coeff_) * intermediate));
+        std::shared_ptr<Coeff> new_coeff(new Coeff((*coeff_) * intermediate));
         coeff_ = new_coeff;
-        RefMatrix1e new_density(new Matrix1e(coeff_->form_density_rhf()));
+        std::shared_ptr<Matrix1e> new_density = form_density_rhf();
     
-        RefMatrix1e error_vector(new Matrix1e(
+        std::shared_ptr<Matrix1e> error_vector(new Matrix1e(
           density_change_ ? (*new_density - *aodensity_) : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)
         ));
         const double error = error_vector->rms();
     
         double energy = (*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
-        for (int i = 0; i != geom_->nele() / 2; ++i) energy += eig_[i];
+        for (int i = 0; i != this->nocc(); ++i) energy += eig_[i];
     
         int end = ::clock();
         std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy << "   "
@@ -124,13 +122,13 @@ class SCF : public SCF_base {
           break;
         }
     
-        RefMatrix1e diis_density;
+        std::shared_ptr<Matrix1e> diis_density;
         if (iter >= diis_start_) {
-          RefMatrix1e tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
-          RefMatrix1e intermediate(new Matrix1e(*tildex_ % *tmp_fock * *tildex_));
+          std::shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
+          std::shared_ptr<Matrix1e> intermediate(new Matrix1e(*tildex_ % *tmp_fock * *tildex_));
           intermediate->diagonalize(eig());
-          RefCoeff tmp_coeff(new Coeff(*tildex_**intermediate));
-          diis_density = std::shared_ptr<Matrix1e>(new Matrix1e(tmp_coeff->form_density_rhf()));
+          std::shared_ptr<Coeff> tmp_coeff(new Coeff(*tildex_**intermediate));
+          diis_density = tmp_coeff->form_density_rhf(nocc_);
         } else {
           diis_density = new_density;
         }

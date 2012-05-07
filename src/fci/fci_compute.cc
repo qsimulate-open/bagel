@@ -56,7 +56,7 @@ void FCI::compute() {
 
   // right now full basis is used. 
   int start_int = ::clock();
-  core_energy_ = jop_->create_Jiiii(ncore_, ncore_+norb_);
+  core_energy_ = jop_->create_Jiiii(ncore_, ncore_+norb_, ncore_);
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
           static_cast<double>(::clock() - start_int)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 

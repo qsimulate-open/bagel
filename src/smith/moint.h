@@ -179,7 +179,7 @@ class MOFock {
 
       // TODO parallel not considered yet at all...
       std::shared_ptr<Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
-      std::shared_ptr<Matrix1e> den(new Matrix1e(ref_->coeff()->form_density_rhf()));
+      std::shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ref_->nclosed()+ref_->nact());
       std::shared_ptr<Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
       Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
       size_t j0 = blocks_[0].keyoffset();

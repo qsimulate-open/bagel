@@ -58,6 +58,10 @@ SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<Geometry> ge
     throw runtime_error("unrecongnized option for DIIS error vectors");
   }
 
+  // so far assuming that this is RHF
+  if (geom_->nele() % 2) throw logic_error("currently only RHF is implemented");
+  else { nocc_ = geom_->nele()/2; };
+
   { shared_ptr<TildeX>    tmp(new TildeX(overlap_, thresh_overlap_));    tildex_ = tmp; }
 
   init_schwarz();

@@ -46,27 +46,11 @@ Coeff::~Coeff() {
 }
 
 
-Matrix1e Coeff::form_density_rhf() const {
-  const int nocc = geom_->nele() / 2;
-  assert(geom_->nele() % 2 == 0);
+shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+  double* out_data = out->data() + offset*nbasis_;
 
-  Matrix1e out(geom_);
-  double* out_data = out.data();
-
-  dgemm_("N", "T", nbasis_, nbasis_, nocc, 1.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
-
-  return out;
-}
- 
-
-Matrix1e Coeff::form_core_density_rhf() const {
-  const int nocc = geom_->nfrc() / 2;
-  assert(geom_->nfrc() % 2 == 0);
-
-  Matrix1e out(geom_);
-  double* out_data = out.data();
-
-  dgemm_("N", "T", nbasis_, nbasis_, nocc, 1.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
+  dgemm_("N", "T", nbasis_, nbasis_, n, 1.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
 
   return out;
 }
