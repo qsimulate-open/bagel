@@ -71,7 +71,7 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const s
   }
 
   nfrc_ = geom_->nfrc() / 2;
-  nocc_ = geom_->nocc() / 2;
+  nocc_ = geom_->nele() / 2;
   nocc_act_ = nocc_ - nfrc_;
   nbasis_ = geom_->nbasis();
   nvir_ = nbasis_ - nocc_;

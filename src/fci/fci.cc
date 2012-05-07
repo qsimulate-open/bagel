@@ -56,8 +56,8 @@ void FCI::common_init() {
   geom_->set_ncore(ncore_*2);
 
   // TODO those are still wrong!!
-  nelea_ = geom_->nocc()/2 - ncore_;
-  neleb_ = geom_->nocc()/2 - ncore_;
+  nelea_ = geom_->nele()/2 - ncore_;
+  neleb_ = geom_->nele()/2 - ncore_;
 
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
   for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));

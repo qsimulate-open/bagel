@@ -76,7 +76,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   // read geometry
   nbasis_ = 0;
   naux_ = 0;
-  nocc_ = 0;
+  nele_ = 0;
   nfrc_ = 0;
 
   pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
@@ -101,7 +101,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
         map<string, int>::const_iterator aiter = amap.find(aname);
         assert(aiter != amap.end());
-        nocc_ += aiter->second;
+        nele_ += aiter->second;
 
         const vector<RefShell> tmp = catom->shells(); 
         int cc = 0;
@@ -156,7 +156,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nocc() << endl << endl;
+  cout << "  Number of electrons      : " << setw(8) << nele() << endl << endl;
   if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
 
   if (!auxfile_.empty()) {
@@ -268,7 +268,7 @@ Geometry::Geometry(const string s, const int levl)
   // read geometry
   nbasis_ = 0;
   naux_ = 0;
-  nocc_ = 0;
+  nele_ = 0;
   nfrc_ = 0;
 
   const boost::regex mole_reg("Molecule");
@@ -311,7 +311,7 @@ Geometry::Geometry(const string s, const int levl)
 
             map<string, int>::const_iterator aiter = amap.find(aname);
             assert(aiter != amap.end());
-            nocc_ += aiter->second;
+            nele_ += aiter->second;
             if (aiter->second > 2 && frozen) nfrc_ += 2;
 
             const vector<RefShell> tmp = catom->shells(); 
@@ -371,7 +371,7 @@ Geometry::Geometry(const string s, const int levl)
 
   cout << endl;
   cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nocc() << endl << endl;
+  cout << "  Number of electrons      : " << setw(8) << nele() << endl << endl;
   if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
   cout << endl;
 }

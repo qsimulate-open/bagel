@@ -49,7 +49,7 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<Geometry> g, sha
 
 void MP2::compute() {
   // TODO this factor of 2 is very much error-prone..
-  const size_t nocc = geom_->nocc() / 2 - ncore_;
+  const size_t nocc = geom_->nele() / 2 - ncore_;
   const size_t nvirt = geom_->nbasis() - nocc - ncore_;
   assert(geom_->nbasis() == ref_->coeff()->mdim());
 

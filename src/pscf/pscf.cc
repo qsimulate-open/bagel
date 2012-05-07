@@ -227,9 +227,9 @@ void PSCF::print_eig(const double* eig) const {
     }
     cout << endl;
     for (int k = 0; k != bsize; ++k) {
-      if (k == geom_->nocc()/2 - 1) {
+      if (k == geom_->nele()/2 - 1) {
         cout << "   HOCO ";
-      } else if (k == geom_->nocc()/2) {
+      } else if (k == geom_->nele()/2) {
         cout << "   LUCO ";
       } else {
         cout << "        ";

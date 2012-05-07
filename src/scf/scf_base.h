@@ -72,7 +72,7 @@ class SCF_base {
     const std::vector<double>& schwarz() const { return schwarz_; };
 
     std::shared_ptr<Reference> conv_to_ref() {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz(), geom_->nocc()/2, 0, geom_->nbasis()-geom_->nocc()/2));
+      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz(), geom_->nele()/2, 0, geom_->nbasis()-geom_->nele()/2));
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;

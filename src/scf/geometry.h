@@ -55,7 +55,7 @@ class Geometry {
 
     // Some shared info for basis sets.
     int nbasis_;
-    int nocc_;
+    int nele_;
     int nfrc_;
     int naux_;
     int lmax_;
@@ -94,7 +94,7 @@ class Geometry {
     // Returns a constant
     const int natom() const { return atoms_.size(); };
     const size_t nbasis() const { return nbasis_; };
-    const size_t nocc() const { return nocc_; };
+    const size_t nele() const { return nele_; };
     const size_t nfrc() const { return nfrc_; };
     const size_t naux() const { return naux_; };
     const int lmax() const { return lmax_; };
@@ -110,7 +110,7 @@ class Geometry {
     const double schwarz_thresh() const { return schwarz_thresh_; };
 
     // TODO for some reasons needed now in CASSCF
-    void set_nocc(const int i) { nocc_ = i; };
+    void set_nele(const int i) { nele_ = i; };
     void set_basis(const int i) { nbasis_ = i; };
     void set_ncore(const int i) { nfrc_ = i; };
     int num_count_ncore(); // also set nfrc_

@@ -235,7 +235,7 @@ void Fock<DF>::fock_two_electron_part() {
     const double* const buf2 = df->data_2index();
 
     // some constants
-    const int nocc_ = geom_->nocc()/2;
+    const int nocc_ = geom_->nele()/2;
     const int naux = df->naux();
     assert(nbasis_ == df->nbasis0());
 

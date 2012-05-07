@@ -93,7 +93,7 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   // somewhat naive implementations based on 4-index MO integrals *incore*
 
   // coefficient sets
-  const size_t nocc = geom->nocc()/2 - ncore;
+  const size_t nocc = geom->nele()/2 - ncore;
   const size_t nbasis = geom->nbasis();
   const size_t nvirt = nbasis - nocc - ncore;
   const double* const oc = ref_->coeff()->data() + ncore*nbasis;

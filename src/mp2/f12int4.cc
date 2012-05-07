@@ -20,7 +20,7 @@ extern "C" { void start_up_slater_(); };
 void F12Ref::compute() {
     // TODO this 2 is bad
     const size_t ncore = ncore_;
-    const size_t nval = geom_->nocc()/2 - ncore;
+    const size_t nval = geom_->nele()/2 - ncore;
     const size_t nocc = nval + ncore;
     const size_t nbasis = geom_->nbasis();
     const size_t nvirt = nbasis - nocc;

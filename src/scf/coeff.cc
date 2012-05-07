@@ -47,8 +47,8 @@ Coeff::~Coeff() {
 
 
 Matrix1e Coeff::form_density_rhf() const {
-  const int nocc = geom_->nocc() / 2;
-  assert(geom_->nocc() % 2 == 0);
+  const int nocc = geom_->nele() / 2;
+  assert(geom_->nele() % 2 == 0);
 
   Matrix1e out(geom_);
   double* out_data = out.data();
