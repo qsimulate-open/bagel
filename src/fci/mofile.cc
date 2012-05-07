@@ -70,10 +70,9 @@ double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore)
     shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
     if (nstart != 0) {
       shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
-      shared_ptr<Fock<1> > fock1(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
-      core_energy = (*den * (*ref_->hcore()+*fock1)).trace();
-      fock0 = fock1;
-      dcopy_(nbasis*nbasis, fock1->data(), 1, core_fock_ptr(), 1);
+      fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
+      core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
+      dcopy_(nbasis*nbasis, fock0->data(), 1, core_fock_ptr(), 1);
     }
     fock0->symmetrize();
     dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff.get(),nbasis);
