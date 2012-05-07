@@ -89,7 +89,8 @@ class CASSCF {
 
     std::shared_ptr<Reference> ref() { return ref_; };
     std::shared_ptr<Reference> conv_to_ref() const {
-      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_));
+      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_,
+                                                   fci_->rdm1(), fci_->rdm2()));
       return out;
     };
 

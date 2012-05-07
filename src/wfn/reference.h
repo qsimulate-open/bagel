@@ -47,15 +47,15 @@ class Reference {
     const int nact_;
     const int nvirt_;
 
-    std::shared_ptr<RDM<1> > rdm1_;
-    std::shared_ptr<RDM<2> > rdm2_;
+    std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
+    std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
 
   public:
     Reference(std::shared_ptr<Geometry> g, std::shared_ptr<Coeff> c,
               std::shared_ptr<Hcore> h, const std::vector<double>& s,
               const int& nclo, const int& nact, const int& nvirt,
-              const std::shared_ptr<RDM<1> > rdm1 = std::shared_ptr<RDM<1> >(),
-              const std::shared_ptr<RDM<2> > rdm2 = std::shared_ptr<RDM<2> >());
+              const std::vector<std::shared_ptr<RDM<1> > > rdm1 = std::vector<std::shared_ptr<RDM<1> > >(),
+              const std::vector<std::shared_ptr<RDM<2> > > rdm2 = std::vector<std::shared_ptr<RDM<2> > >());
 
     ~Reference() {};
 
@@ -73,6 +73,8 @@ class Reference {
     int nact() const { return nact_; };
     int nvirt() const { return nvirt_; };
     int nocc() const { return nclosed_ + nact_; };
+
+    std::shared_ptr<Matrix1e> rdm1() const; 
 
 };
 

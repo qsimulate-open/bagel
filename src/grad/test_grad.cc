@@ -122,9 +122,10 @@ void test_grad(shared_ptr<Reference> ref) {
     }
   }
   shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->nocc());
+  shared_ptr<Matrix1e> rdm1 = ref->rdm1();
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
-    tmp.print("", 12);
+    cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << endl;
   }
 
 #if 0

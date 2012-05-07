@@ -188,6 +188,8 @@ class FCI {
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
+    std::vector<std::shared_ptr<RDM<1> > > rdm1() { return rdm1_; };
+    std::vector<std::shared_ptr<RDM<2> > > rdm2() { return rdm2_; };
     std::shared_ptr<RDM<1> > rdm1(const int i) { return rdm1_.at(i); };
     std::shared_ptr<RDM<2> > rdm2(const int i) { return rdm2_.at(i); };
     std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };

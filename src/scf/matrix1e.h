@@ -62,9 +62,9 @@ class Matrix1e {
     double& data(const size_t i) { return *(data_.get()+i); };
     const double& data(const size_t i) const { return *(data_.get()+i); };
     double& element(int i, int j) { return *element_ptr(i, j); };
-    double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
+    double* element_ptr(int i, int j) { return data()+i+j*nbasis_; };
     const double& element(int i, int j) const { return *element_ptr(i, j); };
-    const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; };
+    const double* element_ptr(int i, int j) const { return data()+i+j*nbasis_; };
 
     void symmetrize();
     std::shared_ptr<Matrix1e> resize(std::shared_ptr<Geometry>, const int) const;
