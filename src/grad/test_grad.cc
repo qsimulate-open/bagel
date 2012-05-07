@@ -126,8 +126,11 @@ void test_grad(shared_ptr<Reference> ref) {
       } 
     }
   } 
+  cout << ref->geom()->nele()/2 << endl;
+  shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->geom()->nele()/2);
   for (int i = 0; i != natom*3; ++i) {
-    grad1e[i]->print("", 12);
+    Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
+    tmp.print("", 12);
   }
 
 }
