@@ -25,7 +25,7 @@
 
 
 #include <src/fci/fci.h>
-#include <src/fci/rdm.h>
+#include <src/wfn/rdm.h>
 
 using namespace std;
 

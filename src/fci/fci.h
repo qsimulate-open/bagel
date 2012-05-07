@@ -41,7 +41,7 @@
 #include <src/util/input.h>
 #include <src/fci/civec.h>
 #include <src/fci/mofile.h>
-#include <src/fci/rdm.h>
+#include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
 
 class FCI {

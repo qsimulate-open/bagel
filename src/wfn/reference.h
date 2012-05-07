@@ -32,6 +32,7 @@
 #include <src/scf/coeff.h>
 #include <src/scf/hcore.h>
 #include <src/scf/geometry.h>
+#include <src/wfn/rdm.h>
 
 class Reference {
 
@@ -46,10 +47,15 @@ class Reference {
     const int nact_;
     const int nvirt_;
 
+    std::shared_ptr<RDM<1> > rdm1_;
+    std::shared_ptr<RDM<2> > rdm2_;
+
   public:
     Reference(std::shared_ptr<Geometry> g, std::shared_ptr<Coeff> c,
               std::shared_ptr<Hcore> h, const std::vector<double>& s,
-              const int& nclo, const int& nact, const int& nvirt);
+              const int& nclo, const int& nact, const int& nvirt,
+              const std::shared_ptr<RDM<1> > rdm1 = std::shared_ptr<RDM<1> >(),
+              const std::shared_ptr<RDM<2> > rdm2 = std::shared_ptr<RDM<2> >());
 
     ~Reference() {};
 
@@ -66,6 +72,7 @@ class Reference {
     int nclosed() const { return nclosed_; };
     int nact() const { return nact_; };
     int nvirt() const { return nvirt_; };
+    int nocc() const { return nclosed_ + nact_; };
 
 };
 

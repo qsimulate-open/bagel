@@ -32,7 +32,7 @@
 #include <map>
 #include <src/scf/scf.h>
 #include <src/casscf/casscf.h>
-#include <src/fci/rdm.h>
+#include <src/wfn/rdm.h>
 
 class SuperCI : public CASSCF {
 

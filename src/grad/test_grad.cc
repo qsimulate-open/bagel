@@ -37,11 +37,6 @@ using namespace std;
 void test_grad(shared_ptr<Reference> ref) {
 
   cout << "  testing grad.." << endl;
-#if 0
-  shared_ptr<Geometry> g = ref->geom();
-  shared_ptr<DensityFit> grad(dynamic_cast<DensityFit*>(new GradFit(g->nbasis(), g->naux(), g->atoms(), g->offsets(),
-                                                                    g->aux_atoms(), g->aux_offsets(), 0.0, false)));
-#endif
 
   // first construct explicitly grad1e object and store Natom*Nbasis**2 data.
   // This allows us to compare directly the integrals.
@@ -125,12 +120,17 @@ void test_grad(shared_ptr<Reference> ref) {
         }
       } 
     }
-  } 
-  cout << ref->geom()->nele()/2 << endl;
-  shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->geom()->nele()/2);
+  }
+  shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->nocc());
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
     tmp.print("", 12);
   }
+
+#if 0
+  shared_ptr<Geometry> g = ref->geom();
+  shared_ptr<DensityFit> grad(dynamic_cast<DensityFit*>(new GradFit(g->nbasis(), g->naux(), g->atoms(), g->offsets(),
+                                                                    g->aux_atoms(), g->aux_offsets(), 0.0, false)));
+#endif
 
 }

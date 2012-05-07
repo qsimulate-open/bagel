@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_FCI_RDM_H
-#define __NEWINT_FCI_RDM_H
+#ifndef __NEWINT_WFN_RDM_H
+#define __NEWINT_WFN_RDM_H
 
 #include <algorithm>
 #include <iostream>
@@ -86,21 +86,14 @@ class RDM {
       assert(rank == 1);
       std::vector<double> buf(dim_*dim_);
       std::vector<double> vec(dim_);
-#define ALIGN
-#ifdef ALIGN
       for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0; 
       daxpy_(dim_*dim_, -1.0, data(), 1, &(buf[0]), 1);
-#else
-      daxpy_(dim_*dim_, 1.0, data(), 1, &(buf[0]), 1);
-#endif
       int lwork = 5*dim_;
       std::unique_ptr<double[]> work(new double[lwork]);
       int info;
       dsyev_("V", "U", &dim_, &(buf[0]), &dim_, &(vec[0]), work.get(), &lwork, &info);
       assert(!info);
-#ifdef ALIGN
       for (auto i = vec.begin(); i != vec.end(); ++i) *i = 2.0-*i;
-#endif
       return std::make_pair(buf, vec);
     };
 

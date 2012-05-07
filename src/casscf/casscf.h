@@ -37,7 +37,7 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
-#include <src/fci/rdm.h>
+#include <src/wfn/rdm.h>
 #include <src/casscf/rotfile.h>
 
 class CASSCF {
