@@ -50,7 +50,7 @@ shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) cons
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));
   double* out_data = out->data() + offset*nbasis_;
 
-  dgemm_("N", "T", nbasis_, nbasis_, n, 1.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
+  dgemm_("N", "T", nbasis_, nbasis_, n, 2.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
 
   return out;
 }

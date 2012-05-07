@@ -206,7 +206,7 @@ void Fock<DF>::fock_two_electron_part() {
                     const int maxj1j3 = std::max(j1, j3); 
                     const int minj1j3 = std::min(j1, j3); 
 
-                    double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.5 : 1.0);
+                    double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
                     const double intval4 = 4.0 * intval;
 
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;
@@ -272,9 +272,11 @@ void Fock<DF>::fock_two_electron_part() {
 
     dgemv_("N", naux, nbasis_*nocc, 1.0, half->data(), naux, coeff2.get(), 1, 0.0, coeff3.get(), 1);
     dgemv_("N", naux, naux, 1.0, buf2, naux, coeff3.get(), 1, 0.0, coeff2.get(), 1); 
-    dgemv_("T", naux, nbasis_*nbasis_, 2.0, buf1, naux, coeff2.get(), 1, 1.0, data(), 1); 
+    dgemv_("T", naux, nbasis_*nbasis_, 1.0, buf1, naux, coeff2.get(), 1, 0.5, data(), 1); 
+    // the 1/2 factor in the Hamiltonian absorbed here
 
   }
+
 };
 
 

@@ -106,7 +106,7 @@ class SCF : public SCF_base {
         ));
         const double error = error_vector->rms();
     
-        double energy = (*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
+        double energy = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
         for (int i = 0; i != this->nocc(); ++i) energy += eig_[i];
     
         int end = ::clock();
