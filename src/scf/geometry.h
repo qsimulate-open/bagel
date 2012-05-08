@@ -147,6 +147,12 @@ class Geometry {
       offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
       nbasis_ += naux_;
     };
+
+    // type T should be a derived class of DensityFit
+    template<typename T>
+    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0) const {
+      return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), offsets(), aux_atoms(), aux_offsets(), thr, inverse, gam));
+    };
 };
 
 #endif

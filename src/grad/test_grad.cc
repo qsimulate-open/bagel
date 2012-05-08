@@ -128,10 +128,6 @@ void test_grad(shared_ptr<Reference> ref) {
     cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << endl;
   }
 
-#if 0
-  shared_ptr<Geometry> g = ref->geom();
-  shared_ptr<DensityFit> grad(dynamic_cast<DensityFit*>(new GradFit(g->nbasis(), g->naux(), g->atoms(), g->offsets(),
-                                                                    g->aux_atoms(), g->aux_offsets(), 0.0, false)));
-#endif
+  shared_ptr<DensityFit> grad = ref->geom()->form_fit<ERIFit>(0.0, false);
 
 }

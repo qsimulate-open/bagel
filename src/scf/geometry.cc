@@ -148,8 +148,7 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   nuclear_repulsion_ = compute_nuclear_repulsion();
 
   // symmetry set-up
-  std::shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
-  plist_ = tmpp;
+  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
   nirrep_ = plist_->nirrep();
   // Misc
   aux_merged_ = false;
@@ -164,9 +163,8 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
     const int t = ::clock();
-    shared_ptr<DensityFit> tmp(dynamic_cast<DensityFit*>(new ERIFit(nbasis_, naux_, atoms_, offsets_, aux_atoms_, aux_offsets_,
-                                                                    thresh_overlap, true)));  // true means we construct J^-1/2
-    df_ = tmp;
+    df_ = form_fit<ERIFit>(thresh_overlap, true); // true means we construct J^-1/2
+
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
   }
 }

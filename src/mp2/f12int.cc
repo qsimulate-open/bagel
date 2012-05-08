@@ -106,16 +106,13 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   shared_ptr<F12Mat> ymat;
   {
   // Yukawa integral can be thrown right away
-  shared_ptr<DensityFit> yukawa(dynamic_cast<DensityFit*>(new YukawaFit(geom->nbasis(), geom->naux(), gamma_,
-                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(), 0.0, false)));
+  shared_ptr<DensityFit> yukawa = geom->form_fit<YukawaFit>(0.0, false, gamma_);
   const shared_ptr<const DF_Half> yxo = yukawa->compute_half_transform(oc, nocc);
   const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
   ymat = robust_fitting(doo, yoo);
   }
 
-  shared_ptr<SlaterFit> slater(new SlaterFit(geom->nbasis(), geom->naux(), gamma_,
-                               geom->atoms(), geom->offsets(), geom->aux_atoms(), geom->aux_offsets(),
-                               0.0, false));
+  shared_ptr<SlaterFit> slater = geom->form_fit<SlaterFit>(0.0, false, gamma_);
 
   // debug area
   ddot_to_amp(*ymat, nocc, gamma_, "Y matrix ");
