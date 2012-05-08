@@ -377,9 +377,9 @@ shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
 // AO back transformation
 // c should be the *inverse* matrix 
 shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{
-  const int nbasis = df_->nbasis1();
-  unique_ptr<double[]> d(new double[nbasis*nocc1_*naux_]);
-  dgemm_("N", "N", naux_*nocc1_, nbasis, nocc2_, 1.0, data(), naux_*nocc1_, c, nbasis, 0.0, d.get(), naux_*nocc1_); 
+  const int nbas = df_->nbasis1();
+  unique_ptr<double[]> d(new double[nbas*nocc1_*naux_]);
+  dgemm_("N", "N", naux_*nocc1_, nbas, nocc2_, 1.0, data(), naux_*nocc1_, c, nbas, 0.0, d.get(), naux_*nocc1_); 
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc1_, d)); 
 }
 
@@ -389,7 +389,7 @@ shared_ptr<DensityFit> DF_Half::back_transform(const double* c) const{
   const int nbas = df_->nbasis0();
   unique_ptr<double[]> d(new double[nbas*nbasis_*naux_]);
   for (int i = 0; i != nbasis_; ++i)
-    dgemm_("N", "N", naux_, nbas, nocc_, 1.0, data()+i*naux_*nocc_, naux_, c, nocc_, 0.0, d.get()+i*naux_*nbas, naux_); 
+    dgemm_("N", "N", naux_, nbas, nocc_, 1.0, data()+i*naux_*nocc_, naux_, c, nbas, 0.0, d.get()+i*naux_*nbas, naux_); 
   return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d)); 
 }
 
