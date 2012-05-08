@@ -40,15 +40,15 @@ class DF_Full;
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
   protected:
-    // AO three-index integrals (naux, nbasis1, nbasis0);
-    std::unique_ptr<double[]> data_;
-    // AO two-index integrals ^ -1/2
-    std::unique_ptr<double[]> data2_;
     // #orbital basis
     const size_t nbasis0_;
     const size_t nbasis1_;
     // #auxiliary basis
     const size_t naux_;
+    // AO three-index integrals (naux, nbasis1, nbasis0);
+    std::unique_ptr<double[]> data_;
+    // AO two-index integrals ^ -1/2
+    std::unique_ptr<double[]> data2_;
 
     // returns three-index integrals
     double* data() { return data_.get(); };
@@ -66,6 +66,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 
   public:
     DensityFit(const int nbas, const int naux) : nbasis0_(nbas), nbasis1_(nbas), naux_(naux) {};
+    DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
     const double* const data_3index() const { return data(); };
@@ -81,6 +82,20 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 };
 
 
+class DF_AO : public DensityFit {
+  protected:
+    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
+      throw std::logic_error("DF_AO::compute_batch should not be called");
+    };
+  public:
+    DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
+      data_ = std::move(dat); 
+    };
+    ~DF_AO() {};
+
+};
+
+
 class DF_Half {
 
   protected:
@@ -90,6 +105,8 @@ class DF_Half {
     std::unique_ptr<double[]> data_;
     const size_t nbasis_;
     const size_t naux_;
+
+    size_t size() const { return naux_*nbasis_*nocc_; };
 
   public:
     DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
@@ -101,19 +118,11 @@ class DF_Half {
     const double* const data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
 
-    std::shared_ptr<DF_Half> clone() const {
-      std::unique_ptr<double[]> dat(new double[nocc_*naux_*nbasis_]);
-      std::shared_ptr<DF_Half> out(new DF_Half(df_, nocc_, dat));
-      return out;
-    };
+    std::shared_ptr<DF_Half> clone() const;
+    std::shared_ptr<DF_Half> copy() const;
 
     std::shared_ptr<DF_Half> apply_J() const { return apply_J(df_); };
-    std::shared_ptr<DF_Half> apply_J(std::shared_ptr<const DensityFit> d) const {
-      std::unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
-      dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
-      std::shared_ptr<DF_Half> tmp(new DF_Half(df_, nocc_, out));
-      return tmp;
-    }
+    std::shared_ptr<DF_Half> apply_J(std::shared_ptr<const DensityFit> d) const;
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
@@ -123,6 +132,9 @@ class DF_Half {
     // form K operator
     std::unique_ptr<double[]> form_4index() const;
     void form_4index(std::unique_ptr<double[]>& target) const;
+
+    // AO back transformation
+    std::shared_ptr<DensityFit> back_transform(const double*) const;
 };
 
 
@@ -136,6 +148,8 @@ class DF_Full {
     std::unique_ptr<double[]> data_;
     const size_t naux_;
 
+    size_t size() const { return nocc1_*nocc2_*naux_; };
+
   public:
     DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::unique_ptr<double[]>& in)
       : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(std::move(in)), naux_(df->naux()) {};
@@ -146,19 +160,10 @@ class DF_Full {
     const int nocc2() const { return nocc2_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
-    std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const {
-      std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-      dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
-      std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
-      return tmp;
-    };
+    std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const;
 
-    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) {
-      std::unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-      dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_);
-      std::shared_ptr<DF_Full> tmp(new DF_Full(df_, nocc1_, nocc2_, out));
-      return tmp;
-    };
+    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DF_Full> apply_closed_2RDM() const;
 
     // forming all internal 4-index MO integrals
     void form_4index(std::unique_ptr<double[]>& target) const;
@@ -177,6 +182,11 @@ class DF_Full {
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
+
+    std::shared_ptr<DF_Full> copy() const;
+
+    // AO back transformation for gradient evaluations
+    std::shared_ptr<DF_Half> back_transform(const double* c) const;
 
 };
 

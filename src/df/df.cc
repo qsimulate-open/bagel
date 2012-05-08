@@ -30,6 +30,7 @@
 #include <src/rysint/eribatch.h>
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
 #include <cassert>
 
 using namespace std;
@@ -41,8 +42,7 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
                              const bool compute_inverse) {
 
   // this will be distributed in the future.
-  std::unique_ptr<double[]> data__(new double[nbasis0_*nbasis1_*naux_]);
-  data_ = move(data__);
+  data_ = unique_ptr<double[]>(new double[nbasis0_*nbasis1_*naux_]);
   fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
 
   // info for basis 0
@@ -82,7 +82,7 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   const int aux_size = aux_basis.size();
 
   if (basis0.front()->spherical() ^ basis1.front()->spherical()) throw runtime_error("do not mix spherical to cartesian...");
-  const std::shared_ptr<Shell> b3(new Shell(basis0.front()->spherical()));
+  const shared_ptr<Shell> b3(new Shell(basis0.front()->spherical()));
 
   if (basis0 == basis1) {
     assert(nbasis0_ == nbasis1_);
@@ -157,20 +157,19 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  unique_ptr<double[]> data2__(new double[naux_*naux_]);
-  data2_ = move(data2__);
+  data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
   fill(data2(), data2()+naux_*naux_, 0.0);
 
   for (int i0 = 0; i0 != aux_size; ++i0) {
-    const std::shared_ptr<Shell>  b0 = aux_basis[i0];
+    const shared_ptr<Shell>  b0 = aux_basis[i0];
     const int b0offset = aux_offset[i0]; 
     const int b0size = b0->nbasis();
     for (int i1 = i0; i1 != aux_size; ++i1) {
-      const std::shared_ptr<Shell>  b1 = aux_basis[i1];
+      const shared_ptr<Shell>  b1 = aux_basis[i1];
       const int b1offset = aux_offset[i1]; 
       const int b1size = b1->nbasis();
 
-      std::vector<std::shared_ptr<Shell> > input;
+      vector<shared_ptr<Shell> > input;
       input.push_back(b1);
       input.push_back(b3);
       input.push_back(b0);
@@ -187,15 +186,15 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
 
   if (compute_inverse) {
     const size_t lwork = 5*naux_;
-    std::unique_ptr<double[]> vec(new double[naux_]);
-    std::unique_ptr<double[]> work(new double[std::max(lwork,naux_*naux_)]);
+    unique_ptr<double[]> vec(new double[naux_]);
+    unique_ptr<double[]> work(new double[max(lwork,naux_*naux_)]);
 
     int info;
     dsyev_("V", "U", naux_, data2_, naux_, vec, work, lwork, info); 
-    if (info) throw std::runtime_error("dsyev failed in DF fock builder");
+    if (info) throw runtime_error("dsyev failed in DF fock builder");
 
     for (int i = 0; i != naux_; ++i)
-      vec[i] = vec[i] > throverlap ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+      vec[i] = vec[i] > throverlap ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
     for (int i = 0; i != naux_; ++i) {
       for (int j = 0; j != naux_; ++j) {
         data2_[j+i*naux_] *= vec[i];
@@ -208,6 +207,25 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
 
 }
 
+shared_ptr<DF_Half> DF_Half::clone() const {
+  unique_ptr<double[]> dat(new double[size()]);
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
+}
+
+
+shared_ptr<DF_Half> DF_Half::copy() const {
+  unique_ptr<double[]> dat(new double[size()]);
+  std::copy(data_.get(), data_.get()+size(), dat.get());
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
+}
+
+
+shared_ptr<DF_Half> DF_Half::apply_J(shared_ptr<const DensityFit> d) const {
+  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
+  unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
+  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
+}
 
 
 shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
@@ -216,8 +234,7 @@ shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const si
   for (size_t i = 0; i != nbasis0_; ++i) {
     dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_.get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
   }
-  shared_ptr<DF_Half> out(new DF_Half(shared_from_this(), nocc, tmp));
-  return out;
+  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
 }
 
 
@@ -249,9 +266,23 @@ unique_ptr<double[]> DF_Half::form_4index() const {
 shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) const {
   unique_ptr<double[]> tmp(new double[naux_*nocc_*nocc]);
   dgemm_("N", "N", naux_*nocc_, nocc, nbasis_, 1.0, data_.get(), naux_*nocc_, c, nbasis_, 0.0, tmp.get(), naux_*nocc_); 
-  shared_ptr<DF_Full> out(new DF_Full(df_, nocc_, nocc, tmp)); 
-  return out;
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc_, nocc, tmp)); 
 }
+
+
+shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
+  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
+  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+}
+
+shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm) const {
+  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
+  dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_);
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+}
+
 
 
 // forms all-internal 4-index MO integrals
@@ -313,5 +344,52 @@ unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) 
   unique_ptr<double[]> out(new double[dim0*dim1]);
   form_4index(out, o);
   return move(out);
+}
+
+
+shared_ptr<DF_Full> DF_Full::copy() const {
+  unique_ptr<double[]> d(new double[size()]);
+  std::copy(data(), data()+size(), d.get()); 
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+}
+
+
+shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
+  assert(nocc1_ == nocc2_);
+  const int nocc = nocc1_; 
+  unique_ptr<double[]> d(new double[size()]);
+  fill(d.get(), d.get()+size(), 0.0);
+  // exchange contributions
+  daxpy_(size(), -2.0, data(), 1, d.get(), 1);
+  // coulomb contributions (diagonal to diagonal)
+  unique_ptr<double[]> diagsum(new double[naux_]);
+  fill(diagsum.get(), diagsum.get()+naux_, 0.0);
+  for (int i = 0; i != nocc; ++i) {
+    daxpy_(naux_, 1.0, data()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
+  }
+  for (int i = 0; i != nocc; ++i) {
+    daxpy_(naux_, 4.0, diagsum.get(), 1, d.get()+naux_*(i+nocc*i), 1);
+  }
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+}
+
+
+// AO back transformation
+// c should be the *inverse* matrix 
+shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{
+  const int nbasis = df_->nbasis1();
+  unique_ptr<double[]> d(new double[nbasis*nocc1_*naux_]);
+  dgemm_("N", "N", naux_*nocc1_, nbasis, nocc2_, 1.0, data(), naux_*nocc1_, c, nbasis, 0.0, d.get(), naux_*nocc1_); 
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc1_, d)); 
+}
+
+
+// c should be the *inverse* matrix 
+shared_ptr<DensityFit> DF_Half::back_transform(const double* c) const{
+  const int nbas = df_->nbasis0();
+  unique_ptr<double[]> d(new double[nbas*nbasis_*naux_]);
+  for (int i = 0; i != nbasis_; ++i)
+    dgemm_("N", "N", naux_, nbas, nocc_, 1.0, data()+i*naux_*nocc_, naux_, c, nocc_, 0.0, d.get()+i*naux_*nbas, naux_); 
+  return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d)); 
 }
 
