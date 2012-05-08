@@ -190,7 +190,7 @@ void ERIBatch::compute() {
   source_now = swapped ? bkup_ : data_;
   // transpose batch
   // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
-  if (!no_transpose_) {
+  if (!swap0123_) {
     const int m = c * d * cont2size_ * cont3size_;
     const int n = a * b * cont0size_ * cont1size_; 
     mytranspose_(source_now, &m, &n, target_now);

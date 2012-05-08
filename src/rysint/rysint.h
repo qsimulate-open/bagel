@@ -41,14 +41,15 @@ class RysInt {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
-    bool no_transpose_;
+    bool swap0123_;
     double AB_[3], CD_[3];
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     double *p_, *q_;
     double *xp_, *xq_, *coeff_, *coeffy_;
     double *T_, *U_;
-    unsigned int contsize_, primsize_, size_alloc_; 
+    unsigned int contsize_, primsize_;
+    size_t size_block_, size_alloc_;
     int prim0size_, prim1size_, prim2size_, prim3size_;
     int cont0size_, cont1size_, cont2size_, cont3size_;
     int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
@@ -114,11 +115,16 @@ class RysInt {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    const double* data() const { return data_; };
-    const double* data2() const { return data2_; };
-    const bool data2_exists() const { return data2_ != NULL; };
-    const unsigned int data_size() const { return size_final_; };
+    const double* const data() const { return data_; };
+    const double* const data2() const { return data2_; };
+    bool data2_exists() const { return data2_ != NULL; };
+    unsigned int data_size() const { return size_final_; };
 
+    size_t size_block() const { return size_block_; };
+
+    bool swap01() const { return swap01_; }; 
+    bool swap23() const { return swap23_; }; 
+    bool swap0123() const { return swap0123_; }; 
 };
 
 #endif

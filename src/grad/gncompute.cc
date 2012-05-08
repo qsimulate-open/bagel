@@ -91,8 +91,7 @@ void GNAIBatch::compute() {
   double* bufz_c = stack->get(rank_*a2*b2);
 
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
-  const size_t acpsize = acsize*primsize_;
-  assert(primsize_ == prim0size_*prim1size_ && acpsize*natom_*3 == size_alloc_);
+  assert(acsize*primsize_ == size_block_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -179,15 +178,15 @@ void GNAIBatch::compute() {
     }
 
     // assembly step
-    double* current_data0 = data_ + acpsize*(3*aatom+0) + offset_iprim;
-    double* current_data1 = data_ + acpsize*(3*aatom+1) + offset_iprim;
-    double* current_data2 = data_ + acpsize*(3*aatom+2) + offset_iprim;
-    double* current_data3 = data_ + acpsize*(3*batom+0) + offset_iprim;
-    double* current_data4 = data_ + acpsize*(3*batom+1) + offset_iprim;
-    double* current_data5 = data_ + acpsize*(3*batom+2) + offset_iprim;
-    double* current_data6 = data_ + acpsize*(3*catom+0) + offset_iprim;
-    double* current_data7 = data_ + acpsize*(3*catom+1) + offset_iprim;
-    double* current_data8 = data_ + acpsize*(3*catom+2) + offset_iprim;
+    double* current_data0 = data_ + size_block_*(3*aatom+0) + offset_iprim;
+    double* current_data1 = data_ + size_block_*(3*aatom+1) + offset_iprim;
+    double* current_data2 = data_ + size_block_*(3*aatom+2) + offset_iprim;
+    double* current_data3 = data_ + size_block_*(3*batom+0) + offset_iprim;
+    double* current_data4 = data_ + size_block_*(3*batom+1) + offset_iprim;
+    double* current_data5 = data_ + size_block_*(3*batom+2) + offset_iprim;
+    double* current_data6 = data_ + size_block_*(3*catom+0) + offset_iprim;
+    double* current_data7 = data_ + size_block_*(3*catom+1) + offset_iprim;
+    double* current_data8 = data_ + size_block_*(3*catom+2) + offset_iprim;
 
     for (int iaz = 0; iaz <= a; ++iaz) { 
       for (int iay = 0; iay <= a - iaz; ++iay) { 
@@ -222,9 +221,9 @@ void GNAIBatch::compute() {
     }
   }
 
-  bkup_ = stack->get(acpsize);
+  bkup_ = stack->get(size_block_);
   double* cdata = data_;
-  for (int i = 0; i != natom_*3; ++i, cdata += acpsize) {
+  for (int i = 0; i != natom_*3; ++i, cdata += size_block_) {
     double* target = bkup_;
     const double* source = cdata;
     // contract indices 01 
@@ -252,7 +251,7 @@ void GNAIBatch::compute() {
       source = cdata;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort_->sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
-      copy(bkup_, bkup_+acpsize, cdata);
+      copy(bkup_, bkup_+size_block_, cdata);
     } else {
       target = cdata; 
       source = bkup_;
@@ -263,7 +262,7 @@ void GNAIBatch::compute() {
 
   stack->release((amax_+1)*a2*b2*3);
   stack->release(rank_*a2*b2*12);
-  stack->release(acpsize + worksize*3);
+  stack->release(size_block_ + worksize*3);
 
   if (stack->get(0) != stack_save) throw logic_error("memory is not completely deallocated in GNAIBatch::vrr()");
 }

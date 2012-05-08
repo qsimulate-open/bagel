@@ -73,13 +73,12 @@ void RysInt::set_swap_info(const bool swap_bra_ket) {
     swap23_ = false;
   }
 
-  no_transpose_ = false;
+  swap0123_ = false;
   if (swap_bra_ket) {
     if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
-      no_transpose_ = true;
-      swap(basisinfo_[0], basisinfo_[2]); 
-      swap(basisinfo_[1], basisinfo_[3]); 
-      swap(swap01_, swap23_); 
+      swap0123_ = true;
+      tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
+        = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
     }
   }
 }
@@ -205,6 +204,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_intermediate = asize_final * csize_ * contsize_;
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
+    size_block_ = size_alloc_;
     data_ = stack->get(size_alloc_);
     data2_ = NULL;
     if (tenno_)
@@ -213,12 +213,13 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
   // derivative integrals
   } else if (deriv_rank_ == 1) {
     // if this is a two-electron gradient integral
+    size_block_ = asize_final * csize_final * primsize_;
     if (dynamic_cast<ERIBatch_base*>(this)) {
-      size_alloc_ = 12 * asize_final * csize_final * primsize_;
+      size_alloc_ = 12 * size_block_;
     // if this is an NAI gradient integral
     } else if (dynamic_cast<NAIBatch_base*>(this)) {
       // in this case, we store everything
-      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->geom()->natom()) * 3.0 * asize_final * csize_final * primsize_;
+      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->geom()->natom()) * 3.0 * size_block_;
       assert(csize_final == 1);
     } else {
       throw logic_error("something is strange in RysInt::allocate_data");

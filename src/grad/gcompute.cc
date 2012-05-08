@@ -35,10 +35,10 @@ using namespace std;
 extern StackMem* stack;
 
 void GradBatch::compute() {
-  const size_t onepathsize = size_alloc_/12;
-  bkup_ = stack->get(onepathsize);
 
+  bkup_ = stack->get(size_block_);
   fill(data_, data_ + size_alloc_, 0.0);
+  assert(size_block_*12 == size_alloc_);
 
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
@@ -75,7 +75,7 @@ void GradBatch::compute() {
 
   // loop over gradient...
   double* cdata = data_;
-  for (int i = 0; i != 12; ++i, cdata += onepathsize) {
+  for (int i = 0; i != 12; ++i, cdata += size_block_) {
 
     bool swapped = false;
 
@@ -174,7 +174,7 @@ void GradBatch::compute() {
     source_now = swapped ? bkup_ : cdata;
     // transpose batch
     // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
-    if (!no_transpose_) {
+    if (!swap0123_) {
       const int m = c * d * cont2size_ * cont3size_;
       const int n = a * b * cont0size_ * cont1size_; 
       mytranspose_(source_now, &m, &n, target_now);
@@ -194,10 +194,10 @@ void GradBatch::compute() {
       swapped = (swapped ^ true);
     }
 
-    if (swapped) copy(bkup_, bkup_+onepathsize, cdata);
+    if (swapped) copy(bkup_, bkup_+size_block_, cdata);
 
   } // end of loop 12
 
-  stack->release(onepathsize);
+  stack->release(size_block_);
 }
 

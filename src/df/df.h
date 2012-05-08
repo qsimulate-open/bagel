@@ -41,8 +41,8 @@ class DF_Full;
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
   protected:
     // #orbital basis
-    const size_t nbasis0_;
-    const size_t nbasis1_;
+    const size_t nbasis0_; // outer
+    const size_t nbasis1_; // inner
     // #auxiliary basis
     const size_t naux_;
     // AO three-index integrals (naux, nbasis1, nbasis0);
@@ -95,6 +95,7 @@ class DF_AO : public DensityFit {
     };
     ~DF_AO() {};
 
+    double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
 };
 
 

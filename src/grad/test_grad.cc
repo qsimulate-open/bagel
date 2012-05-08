@@ -41,19 +41,19 @@ void test_grad(shared_ptr<Reference> ref) {
   // first construct explicitly grad1e object and store Natom*Nbasis**2 data.
   // This allows us to compare directly the integrals.
 
-  shared_ptr<Geometry> geom_ = ref->geom();
-  const int natom = geom_->natom();
+  shared_ptr<Geometry> geom = ref->geom();
+  const int natom = geom->natom();
 
   vector<shared_ptr<Matrix1e> > grad1e;
-  cout << "  * constructing " << natom*3 << " * " << geom_->nbasis() << " * " << geom_->nbasis() << endl; 
+  cout << "  * constructing " << natom*3 << " * " << geom->nbasis() << " * " << geom->nbasis() << endl; 
   for (int i = 0; i != natom*3; ++i) {
-    shared_ptr<Matrix1e> a(new Matrix1e(geom_));
+    shared_ptr<Matrix1e> a(new Matrix1e(geom));
     grad1e.push_back(a);
   }
 
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
-  const vector<vector<int> > offsets = geom_->offsets();
-  const int nbasis = geom_->nbasis();
+  const vector<shared_ptr<Atom> > atoms = geom->atoms(); 
+  const vector<vector<int> > offsets = geom->offsets();
+  const int nbasis = geom->nbasis();
 
   // only lower half will be stored
   for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
@@ -86,7 +86,7 @@ void test_grad(shared_ptr<Reference> ref) {
           const int s = (ang1+1)*(ang1+2)*(ang0+1)*(ang0+2)/4 * b1->num_primitive()*b0->num_primitive();
 
           {
-            GNAIBatch batch2(input, geom_, tie(iatom1, iatom0));
+            GNAIBatch batch2(input, geom, tie(iatom1, iatom0));
             batch2.compute();
             const double* ndata = batch2.data();
             for (int ia = 0; ia != natom*3; ++ia) {
@@ -99,7 +99,7 @@ void test_grad(shared_ptr<Reference> ref) {
             }
           }
           {
-            GKineticBatch batch(input, geom_);
+            GKineticBatch batch(input, geom);
             const double* kdata = batch.data();
             batch.compute();
             int cnt = 0;
@@ -136,67 +136,99 @@ void test_grad(shared_ptr<Reference> ref) {
 
   shared_ptr<DF_AO> qrs = qij->apply_closed_2RDM()->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
 
+  unique_ptr<double[]> grad2e(new double[3*natom]);
+  fill(grad2e.get(), grad2e.get()+3*natom, 0.0);
+
+/*vector<shared_ptr<Atom> > atoms = geom->atoms(); // defined above
+  vector<vector<int> > offsets = geom->offsets(); */
+  vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
+  vector<vector<int> > aux_offsets = geom->aux_offsets();
+
+  // loop over atoms
+  for (int iatom0 = 0; iatom0 != geom->natom(); ++iatom0) {
+    const shared_ptr<Atom> catom0 = atoms[iatom0];
+    const int numshell0 = catom0->shells().size();
+    const vector<int> coffset0 = offsets[iatom0];
+    const vector<shared_ptr<Shell> > shell0 = catom0->shells();
+
+    for (int iatom1 = 0; iatom1 != geom->natom(); ++iatom1) {
+      const shared_ptr<Atom> catom1 = atoms[iatom1];
+      const int numshell1 = catom1->shells().size();
+      const vector<int> coffset1 = offsets[iatom1];
+      const vector<shared_ptr<Shell> > shell1 = catom1->shells();
+
+      for (int iatom2 = 0; iatom2 != geom->natom(); ++iatom2) {
+        const shared_ptr<Atom> catom2 = aux_atoms[iatom2];
+        const int numshell2 = catom2->shells().size();
+        const vector<int> coffset2 = aux_offsets[iatom2];
+        const vector<shared_ptr<Shell> > shell2 = catom2->shells();
 
 
-  // info for basis 0
-  vector<shared_ptr<Shell> > basis;
-  vector<int> offset;
-  int cnt = 0;
-  for (auto aiter = ref->geom()->atoms().begin(); aiter != ref->geom()->atoms().end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());  
-    const vector<int> tmpoff = ref->geom()->offset(cnt); 
-    offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
-  }
-  const int size = basis.size();
+        // dummy shell
+        const shared_ptr<Shell> b3(new Shell(shell2.front()->spherical()));
 
-  // some info for auxiliary (i.e., DF) basis set
-  vector<shared_ptr<Shell> > aux_basis; 
-  vector<int> aux_offset;
-  cnt = 0;
-  for (auto aiter = ref->geom()->aux_atoms().begin(); aiter != ref->geom()->aux_atoms().end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
-    aux_basis.insert(aux_basis.end(), tmp.begin(), tmp.end());  
-    const vector<int> tmpoff = ref->geom()->aux_offset(cnt);
-    aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
-  }
-  const int aux_size = aux_basis.size();
-  const shared_ptr<Shell> b3(new Shell(basis.front()->spherical()));
+        for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
+          const int offset0 = coffset0[ibatch0]; 
+          shared_ptr<Shell> b0 = shell0[ibatch0];
 
-  for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<Shell>  b0 = basis[i0];
-    const int b0offset = offset[i0]; 
-    const int b0size = b0->nbasis();
-    for (int i1 = i0; i1 != size; ++i1) {
-      const shared_ptr<Shell>  b1 = basis[i1];
-      const int b1offset = offset[i1]; 
-      const int b1size = b1->nbasis();
-      for (int i2 = 0; i2 != aux_size; ++i2) {
-        const shared_ptr<Shell>  b2 = aux_basis[i2];
-        const int b2offset = aux_offset[i2]; 
-        const int b2size = b2->nbasis();
+          for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
+            const int offset1 = coffset1[ibatch1]; 
+            shared_ptr<Shell> b1 = shell1[ibatch1];
 
-        vector<shared_ptr<Shell> > input;
-        input.push_back(b3);
-        input.push_back(b2);
-        input.push_back(b1);
-        input.push_back(b0);
+            for (int ibatch2 = 0; ibatch2 != numshell2; ++ibatch2) {
+              const int offset2 = coffset2[ibatch2]; 
+              shared_ptr<Shell> b2 = shell2[ibatch2];
 
-        // pointer to stack
-        GradBatch gradbatch(input, 0.0);
-        gradbatch.compute();
-        const double* ppt = gradbatch.data();
+              vector<shared_ptr<Shell> > input;
+              input.push_back(b3);
+              input.push_back(b2);
+              input.push_back(b1);
+              input.push_back(b0);
 
-        // all slot in
-        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
-          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
-//            data_[j2+naux_*(j1+nbasis_*j0)] = data_[j2+naux_*(j0+nbasis_*j1)] = *ppt;
+              // pointer to stack
+              GradBatch gradbatch(input, 0.0);
+              gradbatch.compute();
+              const size_t block = gradbatch.size_block();
+
+              int jatom0 = iatom0;
+              int jatom1 = iatom1;
+              int jatom2 = iatom2;
+              int jatom3 = -1;
+              if (gradbatch.swap01()) swap(jatom0, jatom1);
+              if (gradbatch.swap23()) swap(jatom2, jatom3);
+              if (gradbatch.swap0123()) { swap(jatom0, jatom2); swap(jatom1, jatom3); }
+
+              for (int i = 0; i != 12; ++i) {
+                int target;
+                if      (i < 3) target = jatom3;
+                else if (i < 6) target = jatom2;
+                else if (i < 9) target = jatom1;
+                else if (i <12) target = jatom0;
+
+                if (target < 0) continue;
+
+                const double* ppt = gradbatch.data() + i*block;
+                double sum = 0.0;
+                for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
+                  for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1) {  
+                    for (int j2 = offset2; j2 != offset2 + b2->nbasis(); ++j2, ++ppt) {  
+                      sum += *qrs->ptr(j2, j1, j0);
+///                   sum += *ppt * *qrs->ptr(j2, j1, j0);
+                    }
+                  }
+                }
+                grad2e[3*target+i%3] += sum;
+              }
             }
           }
         }
+
       }
     }
+  }
+  cout << endl;
+  for (int i = 0; i != natom*3; ++i) {
+    cout << setw(3) << i << setprecision(10) << setw(20) << fixed << grad2e[i] << endl;
   }
 
 }
