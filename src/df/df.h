@@ -64,6 +64,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     // returns a pointer to a stack memory area
     virtual const double* compute_batch(std::vector<std::shared_ptr<Shell> >&) = 0;
 
+    size_t size() const { return nbasis0_*nbasis1_*naux_; };
+
   public:
     DensityFit(const int nbas, const int naux) : nbasis0_(nbas), nbasis1_(nbas), naux_(naux) {};
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
@@ -134,7 +136,8 @@ class DF_Half {
     void form_4index(std::unique_ptr<double[]>& target) const;
 
     // AO back transformation
-    std::shared_ptr<DensityFit> back_transform(const double*) const;
+    std::shared_ptr<DF_AO> back_transform(const double*) const;
+
 };
 
 

@@ -99,25 +99,5 @@ class SlaterFit : public DensityFit {
 };
 
 
-class GradFit : public DensityFit {
-  protected:
-    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
-      GradBatch gradbatch(input, 0.0);
-      gradbatch.compute();
-      return gradbatch.data();
-    };
-  public:
-    GradFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
-       const bool inverse, const double gam = 0) // gam is dummy
-     : DensityFit(nbas, naux) {
-       common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
-
-    };
-    ~GradFit() {};
-    
-};
-
 #endif
 

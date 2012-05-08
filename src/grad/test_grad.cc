@@ -130,4 +130,73 @@ void test_grad(shared_ptr<Reference> ref) {
 
   shared_ptr<DensityFit> grad = ref->geom()->form_fit<ERIFit>(0.0, false);
 
+  shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
+  // (J^-1)_qp(p|ij)
+  shared_ptr<DF_Full> qij =  half->compute_second_transform(coeff_occ->data(), ref->nocc())->apply_J()->apply_J();
+
+  shared_ptr<DF_AO> qrs = qij->apply_closed_2RDM()->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
+
+
+
+  // info for basis 0
+  vector<shared_ptr<Shell> > basis;
+  vector<int> offset;
+  int cnt = 0;
+  for (auto aiter = ref->geom()->atoms().begin(); aiter != ref->geom()->atoms().end(); ++aiter, ++cnt) {
+    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    basis.insert(basis.end(), tmp.begin(), tmp.end());  
+    const vector<int> tmpoff = ref->geom()->offset(cnt); 
+    offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
+  }
+  const int size = basis.size();
+
+  // some info for auxiliary (i.e., DF) basis set
+  vector<shared_ptr<Shell> > aux_basis; 
+  vector<int> aux_offset;
+  cnt = 0;
+  for (auto aiter = ref->geom()->aux_atoms().begin(); aiter != ref->geom()->aux_atoms().end(); ++aiter, ++cnt) {
+    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    aux_basis.insert(aux_basis.end(), tmp.begin(), tmp.end());  
+    const vector<int> tmpoff = ref->geom()->aux_offset(cnt);
+    aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
+  }
+  const int aux_size = aux_basis.size();
+  const shared_ptr<Shell> b3(new Shell(basis.front()->spherical()));
+
+  for (int i0 = 0; i0 != size; ++i0) {
+    const shared_ptr<Shell>  b0 = basis[i0];
+    const int b0offset = offset[i0]; 
+    const int b0size = b0->nbasis();
+    for (int i1 = i0; i1 != size; ++i1) {
+      const shared_ptr<Shell>  b1 = basis[i1];
+      const int b1offset = offset[i1]; 
+      const int b1size = b1->nbasis();
+      for (int i2 = 0; i2 != aux_size; ++i2) {
+        const shared_ptr<Shell>  b2 = aux_basis[i2];
+        const int b2offset = aux_offset[i2]; 
+        const int b2size = b2->nbasis();
+
+        vector<shared_ptr<Shell> > input;
+        input.push_back(b3);
+        input.push_back(b2);
+        input.push_back(b1);
+        input.push_back(b0);
+
+        // pointer to stack
+        GradBatch gradbatch(input, 0.0);
+        gradbatch.compute();
+        const double* ppt = gradbatch.data();
+
+        // all slot in
+        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
+          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
+            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
+//            data_[j2+naux_*(j1+nbasis_*j0)] = data_[j2+naux_*(j0+nbasis_*j1)] = *ppt;
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
