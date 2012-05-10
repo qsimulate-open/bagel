@@ -141,14 +141,12 @@ void test_grad(shared_ptr<Reference> ref) {
 
   shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->nocc());
   shared_ptr<Matrix1e> rdm1 = ref->rdm1();
-  shared_ptr<Matrix1e> erdm1(new Matrix1e(*coeff_occ % *ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig()) * *coeff_occ));
+  shared_ptr<Matrix1e> erdm1 = ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig());
 
   vector<double> gradv(3*natom);
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
-    Matrix1e tmp2(*coeff_occ % *grado[i] * *coeff_occ);
-//  gradv[i] = tmp.ddot(rdm1) - tmp2.ddot(erdm1);
-    cout << setprecision(10) << tmp.ddot(rdm1) << " " << tmp2.ddot(erdm1) << endl; 
+    gradv[i] = tmp.ddot(rdm1) - grado[i]->ddot(erdm1);
   }
   // the derivative of Vnuc
   auto giter = gradv.begin();
