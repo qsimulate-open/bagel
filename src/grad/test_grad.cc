@@ -139,8 +139,6 @@ void test_grad(shared_ptr<Reference> ref) {
   unique_ptr<double[]> grad2e(new double[3*natom]);
   fill(grad2e.get(), grad2e.get()+3*natom, 0.0);
 
-/*vector<shared_ptr<Atom> > atoms = geom->atoms(); // defined above
-  vector<vector<int> > offsets = geom->offsets(); */
   vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
   vector<vector<int> > aux_offsets = geom->aux_offsets();
 
@@ -191,23 +189,14 @@ void test_grad(shared_ptr<Reference> ref) {
               const size_t block = gradbatch.size_block();
 
               // unfortunately the convention is different...
-              int jatom0 = -1;
-              int jatom1 = iatom2;
-              int jatom2 = iatom1;
-              int jatom3 = iatom0;
-              if (gradbatch.swap01()) swap(jatom0, jatom1);
-              if (gradbatch.swap23()) swap(jatom2, jatom3);
-              if (gradbatch.swap0123()) { swap(jatom0, jatom2); swap(jatom1, jatom3); }
+              int jatom[4] = {-1, iatom2, iatom1, iatom0};
+              if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
+              if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
+              if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
 
               for (int i = 0; i != 12; ++i) {
-                int target;
-                if      (i < 3) target = jatom0;
-                else if (i < 6) target = jatom1;
-                else if (i < 9) target = jatom2;
-                else if (i <12) target = jatom3;
-
                 // if this is a dummy atom
-                if (target < 0) continue;
+                if (jatom[i/3] < 0) continue;
 
                 const double* ppt = gradbatch.data() + i*block;
                 double sum = 0.0;
@@ -218,7 +207,7 @@ void test_grad(shared_ptr<Reference> ref) {
                     }
                   }
                 }
-                grad2e[3*target+i%3] += sum;
+                grad2e[3*jatom[i/3]+i%3] += sum;
               }
             }
           }
