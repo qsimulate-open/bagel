@@ -32,7 +32,7 @@
 using namespace std;
 
 extern StackMem* stack;
-Comb comb;
+static Comb comb;
 
 void GKineticBatch::compute() {
 

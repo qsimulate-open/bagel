@@ -56,6 +56,17 @@ shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) cons
 }
  
 
+shared_ptr<Matrix1e> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+  double* out_data = out->data() + offset*nbasis_;
+  double* cdata = data();
+  for (int i = 0; i != n; ++i, cdata += nbasis_) {
+    dgemm_("N", "T", nbasis_, nbasis_, 1, 2.0*e[i], cdata, nbasis_, cdata, nbasis_, 1.0, out_data, nbasis_); 
+  }
+  return out;
+}
+ 
+
 pair<shared_ptr<Coeff>, shared_ptr<Coeff> > Coeff::split(const int nrow1, const int nrow2) const {
   shared_ptr<Coeff> out1(new Coeff(geom_, nrow1, mdim_));
   shared_ptr<Coeff> out2(new Coeff(geom_, nrow2, mdim_));

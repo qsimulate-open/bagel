@@ -44,11 +44,13 @@ void test_grad(shared_ptr<Reference> ref) {
   shared_ptr<Geometry> geom = ref->geom();
   const int natom = geom->natom();
 
-  vector<shared_ptr<Matrix1e> > grad1e;
+  vector<shared_ptr<Matrix1e> > grad1e, grado;
   cout << "  * constructing " << natom*3 << " * " << geom->nbasis() << " * " << geom->nbasis() << endl; 
   for (int i = 0; i != natom*3; ++i) {
     shared_ptr<Matrix1e> a(new Matrix1e(geom));
     grad1e.push_back(a);
+    shared_ptr<Matrix1e> b(new Matrix1e(geom));
+    grado.push_back(b);
   }
 
   const vector<shared_ptr<Atom> > atoms = geom->atoms(); 
@@ -116,6 +118,24 @@ void test_grad(shared_ptr<Reference> ref) {
               }
             }
           }
+          {
+            GOverlapBatch batch(input, geom);
+            const double* odata = batch.data();
+            batch.compute();
+            int cnt = 0;
+            for (int i = offset0; i != dimb0 + offset0; ++i) {
+              for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
+                int jatom0 = batch.swap01() ? iatom1 : iatom0;
+                int jatom1 = batch.swap01() ? iatom0 : iatom1;
+                grado[3*jatom1+0]->data(i*nbasis+j) += odata[cnt];
+                grado[3*jatom1+1]->data(i*nbasis+j) += odata[cnt+s];
+                grado[3*jatom1+2]->data(i*nbasis+j) += odata[cnt+s*2];
+                grado[3*jatom0+0]->data(i*nbasis+j) += odata[cnt+s*3];
+                grado[3*jatom0+1]->data(i*nbasis+j) += odata[cnt+s*4];
+                grado[3*jatom0+2]->data(i*nbasis+j) += odata[cnt+s*5];
+              }
+            }
+          }
 
         }
       } 
@@ -123,9 +143,11 @@ void test_grad(shared_ptr<Reference> ref) {
   }
   shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->nocc());
   shared_ptr<Matrix1e> rdm1 = ref->rdm1();
+  shared_ptr<Matrix1e> erdm1(new Matrix1e(*coeff_occ % *ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig()) * *coeff_occ));
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
-    cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << endl;
+    Matrix1e tmp2(*coeff_occ % *grado[i] * *coeff_occ);
+    cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << setw(20) << tmp2.ddot(erdm1) << endl;
   }
   // the derivative of Vnuc
   vector<double> gradv(3*natom);
@@ -134,30 +156,28 @@ void test_grad(shared_ptr<Reference> ref) {
     const double ax = (*aiter)->position(0);
     const double ay = (*aiter)->position(1);
     const double az = (*aiter)->position(2);
+    const double ac = (*aiter)->atom_number();
     for (auto biter = atoms.begin(); biter != atoms.end(); ++biter) {
       if (aiter == biter) continue;
       const double bx = (*biter)->position(0);
       const double by = (*biter)->position(1);
       const double bz = (*biter)->position(2);
+      const double c = (*biter)->atom_number() * ac;
       const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
-      *(giter+0) = (bx-ax)/(dist*dist*dist);
-      *(giter+1) = (by-ay)/(dist*dist*dist);
-      *(giter+2) = (bz-az)/(dist*dist*dist);
+      *(giter+0) = c*(bx-ax)/(dist*dist*dist);
+      *(giter+1) = c*(by-ay)/(dist*dist*dist);
+      *(giter+2) = c*(bz-az)/(dist*dist*dist);
     }
   }
-
   for (int i = 0; i != natom*3; ++i) {
     cout << setprecision(10) << setw(20) << fixed << gradv[i] << endl;
   }
 
 
   //- TWO ELECTRON PART -//
-  shared_ptr<DensityFit> grad = ref->geom()->form_fit<ERIFit>(0.0, false);
-
   shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
   // (J^-1)_qp(p|ij)
   shared_ptr<DF_Full> qij =  half->compute_second_transform(coeff_occ->data(), ref->nocc())->apply_J()->apply_J();
-
   shared_ptr<DF_AO> qrs = qij->apply_closed_2RDM()->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
 
   unique_ptr<double[]> grad2e(new double[3*natom]);
