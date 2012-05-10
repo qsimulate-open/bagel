@@ -347,6 +347,14 @@ unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) 
 }
 
 
+unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const {
+  unique_ptr<double[]> out(new double[naux_*naux_]);
+  if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
+  dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data(), naux_, o->data(), naux_, 0.0, out.get(), naux_); 
+  return out;
+}
+
+
 shared_ptr<DF_Full> DF_Full::copy() const {
   unique_ptr<double[]> d(new double[size()]);
   std::copy(data(), data()+size(), d.get()); 

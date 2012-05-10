@@ -52,6 +52,7 @@ void MP2::compute() {
   const size_t nocc = geom_->nele() / 2 - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons"); 
   const size_t nvirt = geom_->nbasis() - nocc - ncore_;
+  if (nvirt < 1) throw runtime_error("no virtuals orbitals"); 
   assert(geom_->nbasis() == ref_->coeff()->mdim());
 
   const size_t nbasis = geom_->nbasis();

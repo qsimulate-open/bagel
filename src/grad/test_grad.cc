@@ -138,16 +138,19 @@ void test_grad(shared_ptr<Reference> ref) {
       } 
     }
   }
+
   shared_ptr<Matrix1e> coeff_occ = ref->coeff()->slice(0,ref->nocc());
   shared_ptr<Matrix1e> rdm1 = ref->rdm1();
   shared_ptr<Matrix1e> erdm1(new Matrix1e(*coeff_occ % *ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig()) * *coeff_occ));
+
+  vector<double> gradv(3*natom);
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
     Matrix1e tmp2(*coeff_occ % *grado[i] * *coeff_occ);
-    cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << setw(20) << tmp2.ddot(erdm1) << endl;
+//  gradv[i] = tmp.ddot(rdm1) - tmp2.ddot(erdm1);
+    cout << setprecision(10) << tmp.ddot(rdm1) << " " << tmp2.ddot(erdm1) << endl; 
   }
   // the derivative of Vnuc
-  vector<double> gradv(3*natom);
   auto giter = gradv.begin();
   for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, giter+=3) {
     const double ax = (*aiter)->position(0);
@@ -161,9 +164,9 @@ void test_grad(shared_ptr<Reference> ref) {
       const double bz = (*biter)->position(2);
       const double c = (*biter)->atom_number() * ac;
       const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
-      *(giter+0) = c*(bx-ax)/(dist*dist*dist);
-      *(giter+1) = c*(by-ay)/(dist*dist*dist);
-      *(giter+2) = c*(bz-az)/(dist*dist*dist);
+      *(giter+0) += c*(bx-ax)/(dist*dist*dist);
+      *(giter+1) += c*(by-ay)/(dist*dist*dist);
+      *(giter+2) += c*(bz-az)/(dist*dist*dist);
     }
   }
   for (int i = 0; i != natom*3; ++i) {
@@ -175,10 +178,15 @@ void test_grad(shared_ptr<Reference> ref) {
   shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
   // (J^-1)_qp(p|ij)
   shared_ptr<DF_Full> qij =  half->compute_second_transform(coeff_occ->data(), ref->nocc())->apply_J()->apply_J();
-  shared_ptr<DF_AO> qrs = qij->apply_closed_2RDM()->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
+  shared_ptr<DF_Full> qijd = qij->apply_closed_2RDM();
+  unique_ptr<double[]> qq = qij->form_aux_2index(qijd);
+
+  shared_ptr<DF_AO> qrs = qijd->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
 
   unique_ptr<double[]> grad2e(new double[3*natom]);
+  unique_ptr<double[]> grad2ex(new double[3*natom]);
   fill(grad2e.get(), grad2e.get()+3*natom, 0.0);
+  fill(grad2ex.get(), grad2ex.get()+3*natom, 0.0);
 
   vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
   vector<vector<int> > aux_offsets = geom->aux_offsets();
@@ -257,9 +265,65 @@ void test_grad(shared_ptr<Reference> ref) {
       }
     }
   }
+
+  for (int iatom0 = 0; iatom0 != geom->natom(); ++iatom0) {
+    const shared_ptr<Atom> catom0 = aux_atoms[iatom0];
+    const int numshell0 = catom0->shells().size();
+    const vector<int> coffset0 = aux_offsets[iatom0];
+    const vector<shared_ptr<Shell> > shell0 = catom0->shells();
+    for (int iatom1 = 0; iatom1 != geom->natom(); ++iatom1) {
+      const shared_ptr<Atom> catom1 = aux_atoms[iatom1];
+      const int numshell1 = catom1->shells().size();
+      const vector<int> coffset1 = aux_offsets[iatom1];
+      const vector<shared_ptr<Shell> > shell1 = catom1->shells();
+      // dummy shell
+      const shared_ptr<Shell> b3(new Shell(shell1.front()->spherical()));
+      for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
+        const int offset0 = coffset0[ibatch0]; 
+        shared_ptr<Shell> b0 = shell0[ibatch0];
+
+        for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
+          const int offset1 = coffset1[ibatch1]; 
+          shared_ptr<Shell> b1 = shell1[ibatch1];
+
+          vector<shared_ptr<Shell> > input;
+          input.push_back(b1);
+          input.push_back(b3);
+          input.push_back(b0);
+          input.push_back(b3);
+
+          // pointer to stack
+          GradBatch gradbatch(input, 0.0);
+          gradbatch.compute();
+          const size_t block = gradbatch.size_block();
+
+          // unfortunately the convention is different...
+          int jatom[4] = {iatom1, -1, iatom0, -1};
+          if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
+          if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
+          if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
+
+          for (int i = 0; i != 12; ++i) {
+            // if this is a dummy atom
+            if (jatom[i/3] < 0) continue;
+
+            const double* ppt = gradbatch.data() + i*block;
+            double sum = 0.0;
+            for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
+              for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1, ++ppt) {  
+                sum += *ppt * qq[j1+ref->geom()->naux()*j0];
+              }
+            }
+            grad2ex[3*jatom[i/3]+i%3] -= sum;
+          }
+        }
+      }
+    }
+  }
+
   cout << endl;
   for (int i = 0; i != natom*3; ++i) {
-    cout << setw(3) << i << setprecision(10) << setw(20) << fixed << grad2e[i] << endl;
+    cout << setw(3) << i << setprecision(10) << setw(20) << fixed << grad2e[i] << setw(20) << grad2ex[i] << endl;
   }
 
 }

@@ -183,6 +183,8 @@ class DF_Full {
     void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DensityFit> o) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
 
+    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
+
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
