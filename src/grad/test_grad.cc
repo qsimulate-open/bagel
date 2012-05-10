@@ -127,7 +127,31 @@ void test_grad(shared_ptr<Reference> ref) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
     cout << setprecision(10) << setw(20) << fixed << tmp.ddot(rdm1) << endl;
   }
+  // the derivative of Vnuc
+  vector<double> gradv(3*natom);
+  auto giter = gradv.begin();
+  for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, giter+=3) {
+    const double ax = (*aiter)->position(0);
+    const double ay = (*aiter)->position(1);
+    const double az = (*aiter)->position(2);
+    for (auto biter = atoms.begin(); biter != atoms.end(); ++biter) {
+      if (aiter == biter) continue;
+      const double bx = (*biter)->position(0);
+      const double by = (*biter)->position(1);
+      const double bz = (*biter)->position(2);
+      const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
+      *(giter+0) = (bx-ax)/(dist*dist*dist);
+      *(giter+1) = (by-ay)/(dist*dist*dist);
+      *(giter+2) = (bz-az)/(dist*dist*dist);
+    }
+  }
 
+  for (int i = 0; i != natom*3; ++i) {
+    cout << setprecision(10) << setw(20) << fixed << gradv[i] << endl;
+  }
+
+
+  //- TWO ELECTRON PART -//
   shared_ptr<DensityFit> grad = ref->geom()->form_fit<ERIFit>(0.0, false);
 
   shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
