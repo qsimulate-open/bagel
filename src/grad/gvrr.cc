@@ -244,7 +244,7 @@ void GradBatch::perform_VRR() {
             *current_data10 = 0.0;
             *current_data11 = 0.0;
             for (int i = 0; i != rank_; ++i) {
-#define ERI_DEBUG
+//#define ERI_DEBUG
 #ifdef ERI_DEBUG
               *current_data0 += final_x[m(i, iax, ibx, icx, idx)] * final_y[m(i, iay, iby, icy, idy)] * final_z[m(i, iaz, ibz, icz, idz)];
 #else

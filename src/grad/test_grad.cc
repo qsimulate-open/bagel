@@ -190,21 +190,23 @@ void test_grad(shared_ptr<Reference> ref) {
               gradbatch.compute();
               const size_t block = gradbatch.size_block();
 
-              int jatom0 = iatom0;
-              int jatom1 = iatom1;
-              int jatom2 = iatom2;
-              int jatom3 = -1;
+              // unfortunately the convention is different...
+              int jatom0 = -1;
+              int jatom1 = iatom2;
+              int jatom2 = iatom1;
+              int jatom3 = iatom0;
               if (gradbatch.swap01()) swap(jatom0, jatom1);
               if (gradbatch.swap23()) swap(jatom2, jatom3);
               if (gradbatch.swap0123()) { swap(jatom0, jatom2); swap(jatom1, jatom3); }
 
               for (int i = 0; i != 12; ++i) {
                 int target;
-                if      (i < 3) target = jatom3;
-                else if (i < 6) target = jatom2;
-                else if (i < 9) target = jatom1;
-                else if (i <12) target = jatom0;
+                if      (i < 3) target = jatom0;
+                else if (i < 6) target = jatom1;
+                else if (i < 9) target = jatom2;
+                else if (i <12) target = jatom3;
 
+                // if this is a dummy atom
                 if (target < 0) continue;
 
                 const double* ppt = gradbatch.data() + i*block;
@@ -212,8 +214,7 @@ void test_grad(shared_ptr<Reference> ref) {
                 for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
                   for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1) {  
                     for (int j2 = offset2; j2 != offset2 + b2->nbasis(); ++j2, ++ppt) {  
-                      sum += *qrs->ptr(j2, j1, j0);
-///                   sum += *ppt * *qrs->ptr(j2, j1, j0);
+                      sum += *ppt * *qrs->ptr(j2, j1, j0);
                     }
                   }
                 }
