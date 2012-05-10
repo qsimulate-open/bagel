@@ -75,7 +75,7 @@ void GradBatch::set_exponents() {
       }
     }
   }
-};
+}
 
 
 GradBatch::~GradBatch() {

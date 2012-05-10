@@ -92,8 +92,7 @@ void test_grad(shared_ptr<Reference> ref) {
             batch2.compute();
             const double* ndata = batch2.data();
             for (int ia = 0; ia != natom*3; ++ia) {
-              int cnt = 0;
-              for (int i = offset0; i != dimb0 + offset0; ++i) {
+              for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
                 for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                   grad1e[ia]->data(i*nbasis+j) += ndata[cnt+s*(ia)];
                 }
@@ -104,8 +103,7 @@ void test_grad(shared_ptr<Reference> ref) {
             GKineticBatch batch(input, geom);
             const double* kdata = batch.data();
             batch.compute();
-            int cnt = 0;
-            for (int i = offset0; i != dimb0 + offset0; ++i) {
+            for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;
                 int jatom1 = batch.swap01() ? iatom0 : iatom1;
@@ -122,8 +120,7 @@ void test_grad(shared_ptr<Reference> ref) {
             GOverlapBatch batch(input, geom);
             const double* odata = batch.data();
             batch.compute();
-            int cnt = 0;
-            for (int i = offset0; i != dimb0 + offset0; ++i) {
+            for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;
                 int jatom1 = batch.swap01() ? iatom0 : iatom1;
@@ -234,9 +231,9 @@ void test_grad(shared_ptr<Reference> ref) {
 
               // unfortunately the convention is different...
               int jatom[4] = {-1, iatom2, iatom1, iatom0};
+              if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
               if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
               if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
-              if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
 
               for (int i = 0; i != 12; ++i) {
                 // if this is a dummy atom
