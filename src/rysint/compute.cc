@@ -28,7 +28,6 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <cstring>
 #include <cassert>
 #include <src/rysint/eribatch.h>
 #include <src/util/f77.h>
@@ -210,7 +209,7 @@ void ERIBatch::compute() {
     swapped = (swapped ^ true);
   }
   
-  if (swapped) ::memcpy(data_, bkup_, size_alloc_ * sizeof(double)); 
+  if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
 
   stack->release(size_alloc_);
 }

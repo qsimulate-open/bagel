@@ -29,7 +29,6 @@
 #include <iomanip>
 #include <cmath>
 #include <algorithm>
-#include <cstring>
 #include <src/rysint/naibatch.h>
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
@@ -138,7 +137,7 @@ void NAIBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr_->hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      ::memcpy(data_, bkup_, size_alloc_ * sizeof(double)); 
+      copy(bkup_, bkup_+size_alloc_, data_);
     }
   }
 
@@ -159,7 +158,7 @@ void NAIBatch::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_->sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    ::memcpy(data_, bkup_, size_final_ * sizeof(double)); 
+    copy(bkup_, bkup_+size_final_, data_);
   }
 
   stack->release(size_alloc_ + rank_ * amax1_ * 3);

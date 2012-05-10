@@ -28,7 +28,6 @@
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/macros.h>
 #include <cassert>
-#include <cstring>
 #include <iostream>
 #include <src/stackmem.h>
 
@@ -56,7 +55,7 @@ void OverlapBatch::compute() {
     hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
   } else {
     const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
-    ::memcpy(intermediate_fi, intermediate_c, array_size * sizeof(double)); 
+    copy(intermediate_c, intermediate_c+array_size, intermediate_fi);
   }
 
   if (spherical_) {
