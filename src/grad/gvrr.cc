@@ -204,9 +204,9 @@ void GradBatch::perform_VRR() {
     double* current_data6  = data_ + data_offset_ii + size_block_* 6;
     double* current_data7  = data_ + data_offset_ii + size_block_* 7;
     double* current_data8  = data_ + data_offset_ii + size_block_* 8;
-    double* current_data9  = data_ + data_offset_ii + size_block_* 9;
-    double* current_data10 = data_ + data_offset_ii + size_block_*10;
-    double* current_data11 = data_ + data_offset_ii + size_block_*11;
+//  double* current_data9  = data_ + data_offset_ii + size_block_* 9;
+//  double* current_data10 = data_ + data_offset_ii + size_block_*10;
+//  double* current_data11 = data_ + data_offset_ii + size_block_*11;
 
     // CAUTION!
     // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
@@ -259,9 +259,6 @@ void GradBatch::perform_VRR() {
     }}
 
   }
-  daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
-  daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
-  daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
 
   stack->release(a2*b2*c2*d2*rank_ * 15);
   stack->release(a2*b2*(cmax_+1)*rank_);

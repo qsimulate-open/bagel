@@ -73,6 +73,10 @@ void test_grad(shared_ptr<Reference> ref) {
 
   shared_ptr<DF_AO> qrs = qijd->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
 
+  cout << left << setw(50) << "  * Two body part (trans) computed with " << setprecision(3) << right << setw(10) << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
+  start = ::clock();
+
+
   vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
   vector<vector<int> > aux_offsets = geom->aux_offsets();
 

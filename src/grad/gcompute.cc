@@ -74,7 +74,7 @@ void GradBatch::compute() {
 
   // loop over gradient...
   double* cdata = data_;
-  for (int i = 0; i != 12; ++i, cdata += size_block_) {
+  for (int i = 0; i != 9; ++i, cdata += size_block_) {
 
     bool swapped = false;
 
@@ -196,6 +196,9 @@ void GradBatch::compute() {
     if (swapped) copy(bkup_, bkup_+size_block_, cdata);
 
   } // end of loop 12
+  daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+  daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+  daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
 
   stack->release(size_block_);
 }
