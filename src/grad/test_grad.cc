@@ -143,13 +143,15 @@ void test_grad(shared_ptr<Reference> ref) {
   shared_ptr<Matrix1e> rdm1 = ref->rdm1();
   shared_ptr<Matrix1e> erdm1 = ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig());
 
-  vector<double> gradv(3*natom);
+  // target quantity here ... ==========
+  vector<double> grad(3*natom);
+
   for (int i = 0; i != natom*3; ++i) {
     Matrix1e tmp(*coeff_occ % *grad1e[i] * *coeff_occ);
-    gradv[i] = tmp.ddot(rdm1) - grado[i]->ddot(erdm1);
+    grad[i] = tmp.ddot(rdm1) - grado[i]->ddot(erdm1);
   }
   // the derivative of Vnuc
-  auto giter = gradv.begin();
+  auto giter = grad.begin();
   for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, giter+=3) {
     const double ax = (*aiter)->position(0);
     const double ay = (*aiter)->position(1);
@@ -167,10 +169,6 @@ void test_grad(shared_ptr<Reference> ref) {
       *(giter+2) += c*(bz-az)/(dist*dist*dist);
     }
   }
-  for (int i = 0; i != natom*3; ++i) {
-    cout << setprecision(10) << setw(20) << fixed << gradv[i] << endl;
-  }
-
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
@@ -180,11 +178,6 @@ void test_grad(shared_ptr<Reference> ref) {
   unique_ptr<double[]> qq = qij->form_aux_2index(qijd);
 
   shared_ptr<DF_AO> qrs = qijd->back_transform(ref->coeff()->data())->back_transform(ref->coeff()->data());
-
-  unique_ptr<double[]> grad2e(new double[3*natom]);
-  unique_ptr<double[]> grad2ex(new double[3*natom]);
-  fill(grad2e.get(), grad2e.get()+3*natom, 0.0);
-  fill(grad2ex.get(), grad2ex.get()+3*natom, 0.0);
 
   vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
   vector<vector<int> > aux_offsets = geom->aux_offsets();
@@ -254,7 +247,7 @@ void test_grad(shared_ptr<Reference> ref) {
                     }
                   }
                 }
-                grad2e[3*jatom[i/3]+i%3] += sum;
+                grad[3*jatom[i/3]+i%3] += sum;
               }
             }
           }
@@ -312,16 +305,19 @@ void test_grad(shared_ptr<Reference> ref) {
                 sum += *ppt * qq[j1+ref->geom()->naux()*j0];
               }
             }
-            grad2ex[3*jatom[i/3]+i%3] -= sum;
+            grad[3*jatom[i/3]+i%3] -= sum * 0.5;
           }
         }
       }
     }
   }
 
-  cout << endl;
-  for (int i = 0; i != natom*3; ++i) {
-    cout << setw(3) << i << setprecision(10) << setw(20) << fixed << grad2e[i] << setw(20) << grad2ex[i] << endl;
+  cout << endl << "  * Nuclear energy gradient" << endl << endl;
+  for (int i = 0; i != natom; ++i) {
+    cout << "    o Atom " << setw(3) << i << endl;
+    cout << "        x  " << setprecision(10) << setw(20) << fixed << grad[3*i+0] << endl;
+    cout << "        y  " << setprecision(10) << setw(20) << fixed << grad[3*i+1] << endl;
+    cout << "        z  " << setprecision(10) << setw(20) << fixed << grad[3*i+2] << endl;
   }
 
 }
