@@ -29,7 +29,7 @@
 using namespace std;
 
 
-shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<Geometry> geom, const double a) const {
+shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_; 
@@ -58,7 +58,7 @@ shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<Geometry> geom, const double a) 
 }
 
 
-shared_ptr<Matrix1e> RotFile::unpack_sym(shared_ptr<Geometry> geom, const double a) const {
+shared_ptr<Matrix1e> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_; 

@@ -31,7 +31,7 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Petite> RefPetite;

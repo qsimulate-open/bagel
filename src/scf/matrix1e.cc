@@ -34,7 +34,7 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
@@ -121,7 +121,7 @@ void Matrix1e::computebatch(const std::vector<RefShell>&, const int, const int, 
 }
 
 
-shared_ptr<Matrix1e> Matrix1e::resize(shared_ptr<Geometry> g, const int n) const {
+shared_ptr<Matrix1e> Matrix1e::resize(shared_ptr<const Geometry> g, const int n) const {
   shared_ptr<Matrix1e> out(new Matrix1e(g));
   out->ndim_ = n; 
   out->mdim_ = mdim_;

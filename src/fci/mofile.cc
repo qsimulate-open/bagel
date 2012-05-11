@@ -38,7 +38,7 @@ using namespace std;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 
-MOFile::MOFile(const shared_ptr<Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref),
+MOFile::MOFile(const shared_ptr<const Geometry> geom, const shared_ptr<Reference> ref) : geom_(geom), ref_(ref),
     core_fock_(new double[geom->nbasis()*geom->nbasis()]) {
 
   do_df_ = geom->df().get();
@@ -87,7 +87,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore)
   // two electron part.
   //
 
-  shared_ptr<DensityFit> dff = geom_->df();
+  shared_ptr<const DensityFit> dff = geom_->df();
 
   // first half transformation
   shared_ptr<DF_Half> half = dff->compute_half_transform(cdata, nocc);

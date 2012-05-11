@@ -42,13 +42,13 @@ class Fock : public Fock_base {
   protected:
 
   public:
-    Fock(const std::shared_ptr<Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part();
       fock_one_electron_part();
     };
-    Fock(const std::shared_ptr<Geometry> a, const std::shared_ptr<Hcore> b) : Fock_base(a,b) {};
-    Fock(const std::shared_ptr<Geometry> a) : Fock_base(a) {};
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Hcore> b) : Fock_base(a,b) {};
+    Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {};
     ~Fock() {};
 
     void fock_two_electron_part();
@@ -226,7 +226,7 @@ void Fock<DF>::fock_two_electron_part() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {
 
-    std::shared_ptr<DensityFit> df = geom_->df();
+    std::shared_ptr<const DensityFit> df = geom_->df();
     const double* const buf1 = df->data_3index();
     const double* const buf2 = df->data_2index();
 

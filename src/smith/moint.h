@@ -50,7 +50,7 @@ class K2ext {
 
     // some handwritten drivers
     std::map<size_t, std::shared_ptr<DF_Full> > generate_list() {
-      std::shared_ptr<DensityFit> df = ref_->geom()->df();
+      std::shared_ptr<const DensityFit> df = ref_->geom()->df();
       std::shared_ptr<Coeff> coeff = ref_->coeff(); 
 
       // It is the easiest to do integral transformation for each blocks.

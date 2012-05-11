@@ -98,7 +98,7 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jv
 
 shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec,
                                                  shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<Coeff> cc) {
-  shared_ptr<DensityFit> df = geom_->df();
+  shared_ptr<const DensityFit> df = geom_->df();
   const int naux = df->naux();
   const int nbas = df->nbasis0();
   assert(df->nbasis0() == df->nbasis1());

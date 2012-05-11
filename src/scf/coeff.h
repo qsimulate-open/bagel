@@ -37,7 +37,7 @@ class Coeff : public Matrix1e {
   public:
     Coeff() : Matrix1e() {};
     Coeff(const Matrix1e&);
-    Coeff(std::shared_ptr<Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
+    Coeff(std::shared_ptr<const Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
     ~Coeff();
 
     std::shared_ptr<Matrix1e> form_density_rhf(const int n, const int offset = 0) const;

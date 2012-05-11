@@ -126,10 +126,10 @@ class Geometry {
     void print_atoms() const;
 
     // Returns the Petite list.
-    std::shared_ptr<Petite> plist() { return plist_; }; 
+    std::shared_ptr<Petite> plist() const { return plist_; }; 
 
     // Rerurns DF data
-    std::shared_ptr<DensityFit> df() { return df_; };
+//  std::shared_ptr<DensityFit> df() { return df_; };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
 
     // In R12 methods, we need to construct a union of OBS and CABS.

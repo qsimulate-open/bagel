@@ -36,7 +36,7 @@ class Overlap : public Matrix1e {
     void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
   public:
-    Overlap(const std::shared_ptr<Geometry>);
+    Overlap(const std::shared_ptr<const Geometry>);
     ~Overlap();
 
 };

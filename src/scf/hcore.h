@@ -36,7 +36,7 @@ class Hcore : public Matrix1e {
     void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
   public:
-    Hcore(const std::shared_ptr<Geometry>);
+    Hcore(const std::shared_ptr<const Geometry>);
     ~Hcore();
 
 };

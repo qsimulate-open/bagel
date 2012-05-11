@@ -37,7 +37,7 @@ class Qvec : public QFile {
   protected:
 
   public:
-    Qvec(const int n, const int m, std::shared_ptr<DensityFit> df, std::shared_ptr<Coeff> c, const size_t nclosed,
+    Qvec(const int n, const int m, std::shared_ptr<const DensityFit> df, std::shared_ptr<Coeff> c, const size_t nclosed,
          std::shared_ptr<FCI> fci);
     Qvec(const QFile& a) : QFile(a) {};
     ~Qvec() {};

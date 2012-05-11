@@ -106,8 +106,8 @@ class RotFile {
     const double& ele_ref() const { assert(superci_); return data_[size_-1]; };
 
     // unpack to Matrix1e
-    std::shared_ptr<Matrix1e> unpack(std::shared_ptr<Geometry> geom, const double a = 0.0) const;
-    std::shared_ptr<Matrix1e> unpack_sym(std::shared_ptr<Geometry> geom, const double a = 0.0) const;
+    std::shared_ptr<Matrix1e> unpack(std::shared_ptr<const Geometry> geom, const double a = 0.0) const;
+    std::shared_ptr<Matrix1e> unpack_sym(std::shared_ptr<const Geometry> geom, const double a = 0.0) const;
 
     // print matrix
     void print() const;

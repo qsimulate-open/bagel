@@ -35,7 +35,7 @@ class GOverlapBatch : public OSInt {
     const std::shared_ptr<const Geometry> geom_;
 
   public:
-    GOverlapBatch(const std::vector<std::shared_ptr<Shell> >& o, const std::shared_ptr<Geometry> ge) : OSInt(o,1), geom_(ge) { };
+    GOverlapBatch(const std::vector<std::shared_ptr<Shell> >& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,1), geom_(ge) { };
     ~GOverlapBatch() {};
 
     void compute();

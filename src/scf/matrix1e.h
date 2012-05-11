@@ -37,7 +37,7 @@
 class Matrix1e {
   protected:
     std::unique_ptr<double[]> data_;
-    std::shared_ptr<Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
     int nbasis_;
     int ndim_;
     int mdim_;
@@ -47,12 +47,12 @@ class Matrix1e {
 
   public:
     Matrix1e() : nbasis_(0), ndim_(0), mdim_(0) {};
-    Matrix1e(const std::shared_ptr<Geometry>); 
-    Matrix1e(const std::shared_ptr<Geometry>, const int n, const int m);
+    Matrix1e(const std::shared_ptr<const Geometry>); 
+    Matrix1e(const std::shared_ptr<const Geometry>, const int n, const int m);
     Matrix1e(const Matrix1e&); 
     ~Matrix1e();
 
-    const std::shared_ptr<Geometry> geom() const { return geom_; };
+    const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     const int nbasis() const { return nbasis_; };
     const int size() const { return nbasis_*nbasis_; };
@@ -67,7 +67,7 @@ class Matrix1e {
     const double* element_ptr(int i, int j) const { return data()+i+j*nbasis_; };
 
     void symmetrize();
-    std::shared_ptr<Matrix1e> resize(std::shared_ptr<Geometry>, const int) const;
+    std::shared_ptr<Matrix1e> resize(std::shared_ptr<const Geometry>, const int) const;
     std::shared_ptr<Matrix1e> slice(const int, const int) const;
     std::shared_ptr<Matrix1e> merge(const std::shared_ptr<const Matrix1e>) const;
     void diagonalize(double*);
