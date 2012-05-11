@@ -178,17 +178,17 @@ void GradBatch::perform_VRR() {
               final_xa[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_x[m(r,ia+1,ib,ic,id)] - ia*final_x[m(r,ia-1,ib,ic,id)];
               final_xb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_x[m(r,ia,ib+1,ic,id)] - ib*final_x[m(r,ia,ib-1,ic,id)];
               final_xc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_x[m(r,ia,ib,ic+1,id)] - ic*final_x[m(r,ia,ib,ic-1,id)];
-              final_xd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_x[m(r,ia,ib,ic,id+1)] - id*final_x[m(r,ia,ib,ic,id-1)];
+//            final_xd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_x[m(r,ia,ib,ic,id+1)] - id*final_x[m(r,ia,ib,ic,id-1)];
 
               final_ya[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_y[m(r,ia+1,ib,ic,id)] - ia*final_y[m(r,ia-1,ib,ic,id)];
               final_yb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_y[m(r,ia,ib+1,ic,id)] - ib*final_y[m(r,ia,ib-1,ic,id)];
               final_yc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_y[m(r,ia,ib,ic+1,id)] - ic*final_y[m(r,ia,ib,ic-1,id)];
-              final_yd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_y[m(r,ia,ib,ic,id+1)] - id*final_y[m(r,ia,ib,ic,id-1)];
+//            final_yd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_y[m(r,ia,ib,ic,id+1)] - id*final_y[m(r,ia,ib,ic,id-1)];
 
               final_za[m(r,ia,ib,ic,id)] = 2.0*expo[0]*final_z[m(r,ia+1,ib,ic,id)] - ia*final_z[m(r,ia-1,ib,ic,id)];
               final_zb[m(r,ia,ib,ic,id)] = 2.0*expo[1]*final_z[m(r,ia,ib+1,ic,id)] - ib*final_z[m(r,ia,ib-1,ic,id)];
               final_zc[m(r,ia,ib,ic,id)] = 2.0*expo[2]*final_z[m(r,ia,ib,ic+1,id)] - ic*final_z[m(r,ia,ib,ic-1,id)];
-              final_zd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_z[m(r,ia,ib,ic,id+1)] - id*final_z[m(r,ia,ib,ic,id-1)];
+//            final_zd[m(r,ia,ib,ic,id)] = 2.0*expo[3]*final_z[m(r,ia,ib,ic,id+1)] - id*final_z[m(r,ia,ib,ic,id-1)];
             }
           }
         }
@@ -226,20 +226,6 @@ void GradBatch::perform_VRR() {
           for (int iby = 0; iby <= b - ibz; ++iby) { 
           const int ibx = b - ibz - iby;
 
-#if 0
-            *current_data0  = 0.0;
-            *current_data1  = 0.0;
-            *current_data2  = 0.0;
-            *current_data3  = 0.0;
-            *current_data4  = 0.0;
-            *current_data5  = 0.0;
-            *current_data6  = 0.0;
-            *current_data7  = 0.0;
-            *current_data8  = 0.0;
-            *current_data9  = 0.0;
-            *current_data10 = 0.0;
-            *current_data11 = 0.0;
-#endif
             for (int i = 0; i != rank_; ++i) {
               *current_data0  += final_xa[m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
               *current_data1  += final_x [m(i, iax, ibx, icx, idx)] * final_ya[m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
@@ -250,9 +236,9 @@ void GradBatch::perform_VRR() {
               *current_data6  += final_xc[m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
               *current_data7  += final_x [m(i, iax, ibx, icx, idx)] * final_yc[m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
               *current_data8  += final_x [m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_zc[m(i, iaz, ibz, icz, idz)];
-              *current_data9  += final_xd[m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
-              *current_data10 += final_x [m(i, iax, ibx, icx, idx)] * final_yd[m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
-              *current_data11 += final_x [m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_zd[m(i, iaz, ibz, icz, idz)];
+//            *current_data9  += final_xd[m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
+//            *current_data10 += final_x [m(i, iax, ibx, icx, idx)] * final_yd[m(i, iay, iby, icy, idy)] * final_z [m(i, iaz, ibz, icz, idz)];
+//            *current_data11 += final_x [m(i, iax, ibx, icx, idx)] * final_y [m(i, iay, iby, icy, idy)] * final_zd[m(i, iaz, ibz, icz, idz)];
             }
             ++current_data0;
             ++current_data1;
@@ -263,9 +249,9 @@ void GradBatch::perform_VRR() {
             ++current_data6;
             ++current_data7;
             ++current_data8;
-            ++current_data9;
-            ++current_data10;
-            ++current_data11;
+//          ++current_data9;
+//          ++current_data10;
+//          ++current_data11;
 
           }}
         }}
@@ -273,6 +259,9 @@ void GradBatch::perform_VRR() {
     }}
 
   }
+  daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+  daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+  daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
 
   stack->release(a2*b2*c2*d2*rank_ * 15);
   stack->release(a2*b2*(cmax_+1)*rank_);

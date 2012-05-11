@@ -51,8 +51,8 @@ void GradBatch::compute() {
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
-#if 0
   switch (rank_) {
+#if 0
     case 1: perform_VRR1(); break;
     case 2: perform_VRR2(); break;
     case 3: perform_VRR3(); break;
@@ -66,12 +66,11 @@ void GradBatch::compute() {
     case 11: perform_VRR11(); break;  
     case 12: perform_VRR12(); break;  
     case 13: perform_VRR13(); break;  
-    default: assert(false); break;
-  }
 #endif
+    default: perform_VRR(); break;
+  }
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
-  perform_VRR();
 
   // loop over gradient...
   double* cdata = data_;

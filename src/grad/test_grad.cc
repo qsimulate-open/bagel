@@ -39,6 +39,7 @@ void test_grad(shared_ptr<Reference> ref) {
   const shared_ptr<const Geometry> geom = ref->geom();
   const int natom = geom->natom();
   // target quantity here ... ==========
+  size_t start = ::clock(); 
   vector<double> grad(3*natom);
 
   shared_ptr<Grad1eFile> grad1e, grado;
@@ -53,6 +54,9 @@ void test_grad(shared_ptr<Reference> ref) {
   auto giter = gvnuc.begin();
   for (int i = 0; i != natom*3; ++i, ++giter)
     grad[i] = (*grad1e)[i]->ddot(rdm1) - (*grado)[i]->ddot(erdm1) + *giter;
+
+  cout << left << setw(50) << "  * One body part computed with " << setprecision(3) << right << setw(10) << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
+  start = ::clock();
 
 
   const vector<shared_ptr<Atom> > atoms = geom->atoms(); 
@@ -147,6 +151,9 @@ void test_grad(shared_ptr<Reference> ref) {
     }
   }
 
+  cout << left << setw(50) << "  * Two body part (3-center) computed with " << setprecision(3) << right << setw(10) << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
+  start = ::clock();
+
   // using symmetry (b0 <-> b1)
   for (int iatom0 = 0; iatom0 != geom->natom(); ++iatom0) {
     const shared_ptr<Atom> catom0 = aux_atoms[iatom0];
@@ -210,6 +217,9 @@ void test_grad(shared_ptr<Reference> ref) {
     cout << "        y  " << setprecision(10) << setw(20) << fixed << grad[3*i+1] << endl;
     cout << "        z  " << setprecision(10) << setw(20) << fixed << grad[3*i+2] << endl;
   }
+
+  cout << setw(50) << left << "  * Two body part (2-center) computed with " << setprecision(3) << right << setw(10) << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl;
+  cout << endl;
 
 }
 
