@@ -429,3 +429,29 @@ int Geometry::num_count_full_valence_nocc() {
   }
   return out;
 };
+
+
+const vector<double> Geometry::compute_grad_vnuc() const {
+  // the derivative of Vnuc
+  vector<double> grad(natom()*3);
+  fill(grad.begin(), grad.end(), 0.0);
+  auto giter = grad.begin();
+  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter, giter+=3) {
+    const double ax = (*aiter)->position(0);
+    const double ay = (*aiter)->position(1);
+    const double az = (*aiter)->position(2);
+    const double ac = (*aiter)->atom_number();
+    for (auto biter = atoms_.begin(); biter != atoms_.end(); ++biter) {
+      if (aiter == biter) continue;
+      const double bx = (*biter)->position(0);
+      const double by = (*biter)->position(1);
+      const double bz = (*biter)->position(2);
+      const double c = (*biter)->atom_number() * ac;
+      const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
+      *(giter+0) += c*(bx-ax)/(dist*dist*dist);
+      *(giter+1) += c*(by-ay)/(dist*dist*dist);
+      *(giter+2) += c*(bz-az)/(dist*dist*dist);
+    }
+  }
+  return grad;
+}

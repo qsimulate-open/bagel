@@ -104,6 +104,7 @@ class Geometry {
     const double gamma() const {return gamma_; };
     const std::string symmetry() const { return symmetry_; };
     virtual const double nuclear_repulsion() const { return nuclear_repulsion_; };
+    const std::vector<double> compute_grad_vnuc() const;
     const int level() const { return level_; };
     const std::string basisfile() const { return basisfile_; };
     const std::string auxfile() const { return auxfile_; };
@@ -129,7 +130,6 @@ class Geometry {
     std::shared_ptr<Petite> plist() const { return plist_; }; 
 
     // Rerurns DF data
-//  std::shared_ptr<DensityFit> df() { return df_; };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
 
     // In R12 methods, we need to construct a union of OBS and CABS.

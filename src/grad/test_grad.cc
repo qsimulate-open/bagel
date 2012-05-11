@@ -49,32 +49,16 @@ void test_grad(shared_ptr<Reference> ref) {
   shared_ptr<Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref->rdm1() ^ *coeff_occ));
   shared_ptr<Matrix1e> erdm1 = ref->coeff()->form_weighted_density_rhf(ref->nocc(), ref->eig());
 
-  for (int i = 0; i != natom*3; ++i)
-    grad[i] = (*grad1e)[i]->ddot(rdm1) - (*grado)[i]->ddot(erdm1);
+  vector<double> gvnuc = geom->compute_grad_vnuc();
+  auto giter = gvnuc.begin();
+  for (int i = 0; i != natom*3; ++i, ++giter)
+    grad[i] = (*grad1e)[i]->ddot(rdm1) - (*grado)[i]->ddot(erdm1) + *giter;
+
 
   const vector<shared_ptr<Atom> > atoms = geom->atoms(); 
   const vector<vector<int> > offsets = geom->offsets();
   const int nbasis = geom->nbasis();
 
-  // the derivative of Vnuc
-  auto giter = grad.begin();
-  for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, giter+=3) {
-    const double ax = (*aiter)->position(0);
-    const double ay = (*aiter)->position(1);
-    const double az = (*aiter)->position(2);
-    const double ac = (*aiter)->atom_number();
-    for (auto biter = atoms.begin(); biter != atoms.end(); ++biter) {
-      if (aiter == biter) continue;
-      const double bx = (*biter)->position(0);
-      const double by = (*biter)->position(1);
-      const double bz = (*biter)->position(2);
-      const double c = (*biter)->atom_number() * ac;
-      const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
-      *(giter+0) += c*(bx-ax)/(dist*dist*dist);
-      *(giter+1) += c*(by-ay)/(dist*dist*dist);
-      *(giter+2) += c*(bz-az)/(dist*dist*dist);
-    }
-  }
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref->geom()->df()->compute_half_transform(coeff_occ->data(), ref->nocc());
@@ -88,14 +72,14 @@ void test_grad(shared_ptr<Reference> ref) {
   vector<shared_ptr<Atom> > aux_atoms = geom->aux_atoms();
   vector<vector<int> > aux_offsets = geom->aux_offsets();
 
-  // loop over atoms
+  // loop over atoms (using symmetry b0 <-> b1)
   for (int iatom0 = 0; iatom0 != geom->natom(); ++iatom0) {
     const shared_ptr<Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
     const vector<shared_ptr<Shell> > shell0 = catom0->shells();
 
-    for (int iatom1 = 0; iatom1 != geom->natom(); ++iatom1) {
+    for (int iatom1 = iatom0; iatom1 != geom->natom(); ++iatom1) {
       const shared_ptr<Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
@@ -115,7 +99,7 @@ void test_grad(shared_ptr<Reference> ref) {
           const int offset0 = coffset0[ibatch0]; 
           shared_ptr<Shell> b0 = shell0[ibatch0];
 
-          for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
+          for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1]; 
             shared_ptr<Shell> b1 = shell1[ibatch1];
 
@@ -153,7 +137,7 @@ void test_grad(shared_ptr<Reference> ref) {
                     }
                   }
                 }
-                grad[3*jatom[i/3]+i%3] += sum;
+                grad[3*jatom[i/3]+i%3] += sum * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
               }
             }
           }
@@ -163,12 +147,13 @@ void test_grad(shared_ptr<Reference> ref) {
     }
   }
 
+  // using symmetry (b0 <-> b1)
   for (int iatom0 = 0; iatom0 != geom->natom(); ++iatom0) {
     const shared_ptr<Atom> catom0 = aux_atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = aux_offsets[iatom0];
     const vector<shared_ptr<Shell> > shell0 = catom0->shells();
-    for (int iatom1 = 0; iatom1 != geom->natom(); ++iatom1) {
+    for (int iatom1 = iatom0; iatom1 != geom->natom(); ++iatom1) {
       const shared_ptr<Atom> catom1 = aux_atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = aux_offsets[iatom1];
@@ -179,7 +164,7 @@ void test_grad(shared_ptr<Reference> ref) {
         const int offset0 = coffset0[ibatch0]; 
         shared_ptr<Shell> b0 = shell0[ibatch0];
 
-        for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
+        for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1]; 
           shared_ptr<Shell> b1 = shell1[ibatch1];
 
@@ -211,7 +196,7 @@ void test_grad(shared_ptr<Reference> ref) {
                 sum += *ppt * qq[j1+ref->geom()->naux()*j0];
               }
             }
-            grad[3*jatom[i/3]+i%3] -= sum * 0.5;
+            grad[3*jatom[i/3]+i%3] -= sum * 0.5 * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
           }
         }
       }
