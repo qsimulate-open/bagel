@@ -35,35 +35,64 @@ using namespace boost;
 
 const string VRR::dump(const string filename) const {
   string header;
-  string contents;
+  stringstream contents;
 
-  contents += "//\n";
-  contents += "// Author: Toru Shiozaki\n";
-  contents += "// Machine Generated Code in NewInt\n";
-  contents += "//\n";
-  contents += "\n";
-  contents += "#include \"gvrrlist.h\"\n";
-  contents += "\n";
+  contents << "//" << endl;
+  contents << "// Author: Toru Shiozaki" << endl;
+  contents << "// Machine Generated Code in NewInt" << endl;
+  contents << "//" << endl;
+  contents << endl;
+  contents << "#include <src/grad/gvrrlist.h>" << endl;
+  contents << endl;
 
-  contents += "// returns double array of length " + lexical_cast<string>((a_ + 1) * (c_ + 1) * rank_) + "\n";
-  contents += "void GVRRList::" + filename + "(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {\n"; 
+  contents << "// returns double array of length " << ((a_ + 1) * (c_ + 1) * rank_) << endl;
+  contents << "void GVRRList::" << filename
+           << "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n"; 
+  contents << "#ifdef __GNUC__" << endl;
+  contents << "  double C00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+    for (int i = 0; i != rank_; ++i) 
+      contents << (i == 0 ? "" : ", ") << "C00[" << i << "]"; 
+  contents << "};" << endl;
+  contents << "  double D00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+    for (int i = 0; i != rank_; ++i) 
+      contents << (i == 0 ? "" : ", ") << "D00[" << i << "]"; 
+  contents << "};" << endl;
+  contents << "  double B00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+    for (int i = 0; i != rank_; ++i) 
+      contents << (i == 0 ? "" : ", ") << "B00[" << i << "]"; 
+  contents << "};" << endl;
+  contents << "  double B01_[" << rank_ << "]__attribute__((aligned(16))) = {";
+    for (int i = 0; i != rank_; ++i) 
+      contents << (i == 0 ? "" : ", ") << "B01[" << i << "]"; 
+  contents << "};" << endl;
+  contents << "  double B10_[" << rank_ << "]__attribute__((aligned(16))) = {";
+    for (int i = 0; i != rank_; ++i) 
+      contents << (i == 0 ? "" : ", ") << "B10[" << i << "]"; 
+  contents << "};" << endl;
+  contents << "#else" << endl;
+  contents << "  double* C00_ = C00;" << endl;
+  contents << "  double* D00_ = D00;" << endl;
+  contents << "  double* B00_ = B00;" << endl;
+  contents << "  double* B01_ = B01;" << endl;
+  contents << "  double* B10_ = B10;" << endl;
+  contents << "#endif" << endl << endl;
 
-  if (a_ > 1 && c_ > 1)        contents += vrrnm(a_, c_).first; 
-  else if (a_ == 1 && c_ >  1) contents += vrrnm(1 , c_).first;
-  else if (a_ == 0 && c_ >  0) contents += vrr0m(c_).first;
-  else if (a_ >  1 && c_ == 1) contents += vrrn1(a_).first;
-  else if (a_ == 1 && c_ == 1) contents += vrr11(  ).first;
-  else if (a_ >  0 && c_ == 0) contents += vrrn0(a_).first; 
-  else if (a_ == 0 && c_ == 0) contents += vrr00(  ).first;
+  if (a_ > 1 && c_ > 1)        contents << vrrnm(a_, c_).first; 
+  else if (a_ == 1 && c_ >  1) contents << vrrnm(1 , c_).first;
+  else if (a_ == 0 && c_ >  0) contents << vrr0m(c_).first;
+  else if (a_ >  1 && c_ == 1) contents << vrrn1(a_).first;
+  else if (a_ == 1 && c_ == 1) contents << vrr11(  ).first;
+  else if (a_ >  0 && c_ == 0) contents << vrrn0(a_).first; 
+  else if (a_ == 0 && c_ == 0) contents << vrr00(  ).first;
   else cout << "NEVER COMES HERE" << endl;
     
 
-  contents += "}\n";
+  contents << "}" << endl;
 
   ofstream cc;
   const string ccfilename = filename + ".cc";
   cc.open(ccfilename.c_str());
-  cc << contents << endl;
+  cc << contents.str() << endl;
   cc.close();
 
   return header; 

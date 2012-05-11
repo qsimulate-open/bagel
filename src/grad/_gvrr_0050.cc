@@ -24,10 +24,24 @@
 //
 
 
-#include "gvrrlist.h"
+#include <src/grad/gvrrlist.h>
 
 // returns double array of length 18
-void GVRRList::_gvrr_0050(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
+void GVRRList::_gvrr_0050(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
+#ifdef __GNUC__
+  double C00_[3]__attribute__((aligned(16))) = {C00[0], C00[1], C00[2]};
+  double D00_[3]__attribute__((aligned(16))) = {D00[0], D00[1], D00[2]};
+  double B00_[3]__attribute__((aligned(16))) = {B00[0], B00[1], B00[2]};
+  double B01_[3]__attribute__((aligned(16))) = {B01[0], B01[1], B01[2]};
+  double B10_[3]__attribute__((aligned(16))) = {B10[0], B10[1], B10[2]};
+#else
+  double* C00_ = C00;
+  double* D00_ = D00;
+  double* B00_ = B00;
+  double* B01_ = B01;
+  double* B10_ = B10;
+#endif
+
   for (int t = 0; t != 3; ++t)
     data_[0+t] = 1.0;
 
