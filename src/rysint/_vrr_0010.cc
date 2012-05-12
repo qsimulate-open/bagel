@@ -29,17 +29,17 @@
 // returns double array of length 2
 void VRRList::_vrr_0010(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 #ifdef __GNUC__
-  double C00_[1]__attribute__((aligned(16))) = {C00[0]};
-  double D00_[1]__attribute__((aligned(16))) = {D00[0]};
-  double B00_[1]__attribute__((aligned(16))) = {B00[0]};
-  double B01_[1]__attribute__((aligned(16))) = {B01[0]};
-  double B10_[1]__attribute__((aligned(16))) = {B10[0]};
+  const double C00_[1]__attribute__((aligned(16))) = {C00[0]};
+  const double D00_[1]__attribute__((aligned(16))) = {D00[0]};
+  const double B00_[1]__attribute__((aligned(16))) = {B00[0]};
+  const double B01_[1]__attribute__((aligned(16))) = {B01[0]};
+  const double B10_[1]__attribute__((aligned(16))) = {B10[0]};
 #else
-  double* C00_ = C00;
-  double* D00_ = D00;
-  double* B00_ = B00;
-  double* B01_ = B01;
-  double* B10_ = B10;
+  const double* C00_ = C00;
+  const double* D00_ = D00;
+  const double* B00_ = B00;
+  const double* B01_ = B01;
+  const double* B10_ = B10;
 #endif
 
   for (int t = 0; t != 1; ++t)

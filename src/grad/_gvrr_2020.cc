@@ -29,17 +29,17 @@
 // returns double array of length 18
 void GVRRList::_gvrr_2020(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 #ifdef __GNUC__
-  double C00_[2]__attribute__((aligned(16))) = {C00[0], C00[1]};
-  double D00_[2]__attribute__((aligned(16))) = {D00[0], D00[1]};
-  double B00_[2]__attribute__((aligned(16))) = {B00[0], B00[1]};
-  double B01_[2]__attribute__((aligned(16))) = {B01[0], B01[1]};
-  double B10_[2]__attribute__((aligned(16))) = {B10[0], B10[1]};
+  const double C00_[2]__attribute__((aligned(16))) = {C00[0], C00[1]};
+  const double D00_[2]__attribute__((aligned(16))) = {D00[0], D00[1]};
+  const double B00_[2]__attribute__((aligned(16))) = {B00[0], B00[1]};
+  const double B01_[2]__attribute__((aligned(16))) = {B01[0], B01[1]};
+  const double B10_[2]__attribute__((aligned(16))) = {B10[0], B10[1]};
 #else
-  double* C00_ = C00;
-  double* D00_ = D00;
-  double* B00_ = B00;
-  double* B01_ = B01;
-  double* B10_ = B10;
+  const double* C00_ = C00;
+  const double* D00_ = D00;
+  const double* B00_ = B00;
+  const double* B01_ = B01;
+  const double* B10_ = B10;
 #endif
 
   for (int t = 0; t != 2; ++t)

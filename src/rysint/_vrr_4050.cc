@@ -29,17 +29,17 @@
 // returns double array of length 150
 void VRRList::_vrr_4050(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 #ifdef __GNUC__
-  double C00_[5]__attribute__((aligned(16))) = {C00[0], C00[1], C00[2], C00[3], C00[4]};
-  double D00_[5]__attribute__((aligned(16))) = {D00[0], D00[1], D00[2], D00[3], D00[4]};
-  double B00_[5]__attribute__((aligned(16))) = {B00[0], B00[1], B00[2], B00[3], B00[4]};
-  double B01_[5]__attribute__((aligned(16))) = {B01[0], B01[1], B01[2], B01[3], B01[4]};
-  double B10_[5]__attribute__((aligned(16))) = {B10[0], B10[1], B10[2], B10[3], B10[4]};
+  const double C00_[5]__attribute__((aligned(16))) = {C00[0], C00[1], C00[2], C00[3], C00[4]};
+  const double D00_[5]__attribute__((aligned(16))) = {D00[0], D00[1], D00[2], D00[3], D00[4]};
+  const double B00_[5]__attribute__((aligned(16))) = {B00[0], B00[1], B00[2], B00[3], B00[4]};
+  const double B01_[5]__attribute__((aligned(16))) = {B01[0], B01[1], B01[2], B01[3], B01[4]};
+  const double B10_[5]__attribute__((aligned(16))) = {B10[0], B10[1], B10[2], B10[3], B10[4]};
 #else
-  double* C00_ = C00;
-  double* D00_ = D00;
-  double* B00_ = B00;
-  double* B01_ = B01;
-  double* B10_ = B10;
+  const double* C00_ = C00;
+  const double* D00_ = D00;
+  const double* B00_ = B00;
+  const double* B01_ = B01;
+  const double* B10_ = B10;
 #endif
 
   for (int t = 0; t != 5; ++t)

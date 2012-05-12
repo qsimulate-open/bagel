@@ -49,32 +49,32 @@ const string VRR::dump(const string filename) const {
   contents << "void VRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n"; 
 
   contents << "#ifdef __GNUC__" << endl;
-  contents << "  double C00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double C00_[" << rank_ << "]__attribute__((aligned(16))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "C00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  double D00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double D00_[" << rank_ << "]__attribute__((aligned(16))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "D00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  double B00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B00_[" << rank_ << "]__attribute__((aligned(16))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  double B01_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B01_[" << rank_ << "]__attribute__((aligned(16))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B01[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  double B10_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B10_[" << rank_ << "]__attribute__((aligned(16))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B10[" << i << "]"; 
   contents << "};" << endl;
   contents << "#else" << endl;
-  contents << "  double* C00_ = C00;" << endl;
-  contents << "  double* D00_ = D00;" << endl;
-  contents << "  double* B00_ = B00;" << endl;
-  contents << "  double* B01_ = B01;" << endl;
-  contents << "  double* B10_ = B10;" << endl;
+  contents << "  const double* C00_ = C00;" << endl;
+  contents << "  const double* D00_ = D00;" << endl;
+  contents << "  const double* B00_ = B00;" << endl;
+  contents << "  const double* B01_ = B01;" << endl;
+  contents << "  const double* B10_ = B10;" << endl;
   contents << "#endif" << endl << endl;
 
   if (a_ > 1 && c_ > 1)        contents << vrrnm(a_, c_).first; 
