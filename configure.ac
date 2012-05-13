@@ -27,6 +27,7 @@ AC_PROG_FC
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/opt/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
                  src/rysint/Makefile
