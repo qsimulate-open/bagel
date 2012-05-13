@@ -264,9 +264,9 @@ void Atom::print_basis() const {
 void Atom::print() const {
   string tmp = name_;
   tmp[0] = ::toupper(tmp[0]);
-  cout << "  " + tmp << fixed << setprecision(10) <<
-      setw(15) << position_[0] <<
-      setw(15) << position_[1] <<
-      setw(15) << position_[2] <<  endl;
+  cout << "  atom = (" << setw(2) << tmp << "," << fixed << setprecision(6) <<
+      setw(14) << position_[0] << "," <<
+      setw(14) << position_[1] << "," << 
+      setw(14) << position_[2] <<  ");" << endl;
 }
 

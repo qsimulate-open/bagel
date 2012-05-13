@@ -106,11 +106,11 @@ class SCF : public SCF_base {
         ));
         const double error = error_vector->rms();
     
-        double energy = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
-        for (int i = 0; i != this->nocc(); ++i) energy += eig_[i];
+        energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
+        for (int i = 0; i != this->nocc(); ++i) energy_ += eig_[i];
     
         int end = ::clock();
-        std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy << "   "
+        std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
                                           << std::setw(17) << error << std::setw(15) << std::setprecision(2)
                                           << (end - start) / static_cast<double>(CLOCKS_PER_SEC) << std::endl; 
     

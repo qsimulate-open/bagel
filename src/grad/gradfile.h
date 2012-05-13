@@ -55,11 +55,13 @@ class GradFile {
     void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
     void daxpy(const double a, const std::shared_ptr<const GradFile> o) { daxpy(a, *o); };
 
-    GradFile operator-(const GradFile& o) {
+    GradFile operator-(const GradFile& o) const {
       GradFile out(*this);
       out.daxpy(-1.0, o); 
       return out;
     };
+
+    GradFile& operator-=(const GradFile& o) { daxpy(-1.0, o); return *this; }; 
 
     std::shared_ptr<GradFile> clone() const { return std::shared_ptr<GradFile>(new GradFile(data_.size())); };
 
@@ -68,6 +70,10 @@ class GradFile {
 
     double& data(size_t i) { return data_[i]; };
     const double& data(size_t i) const { return data_[i]; };
+
+    void scale(const double a) { dscal_(size(), a, data(), 1); };
+
+    double norm() const { return std::sqrt(ddot(*this)); };
 
 };
 

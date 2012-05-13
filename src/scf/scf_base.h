@@ -57,6 +57,7 @@ class SCF_base {
     void init_schwarz();
 
     std::unique_ptr<double[]> eig_;
+    double energy_;
 
     int nocc_;
 
@@ -74,9 +75,10 @@ class SCF_base {
     const std::vector<double>& schwarz() const { return schwarz_; };
 
     int nocc() const { return nocc_; };
+    double energy() const { return energy_; };
 
     std::shared_ptr<Reference> conv_to_ref() {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
+      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), energy(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;

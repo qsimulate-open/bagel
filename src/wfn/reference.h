@@ -50,9 +50,11 @@ class Reference {
     std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
 
+    const double energy_;
+
   public:
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<Coeff> c,
-              std::shared_ptr<Hcore> h, const std::vector<double>& s,
+              const double en, std::shared_ptr<Hcore> h, const std::vector<double>& s,
               const int& nclo, const int& nact, const int& nvirt,
               const std::vector<std::shared_ptr<RDM<1> > > rdm1 = std::vector<std::shared_ptr<RDM<1> > >(),
               const std::vector<std::shared_ptr<RDM<2> > > rdm2 = std::vector<std::shared_ptr<RDM<2> > >());
@@ -73,6 +75,8 @@ class Reference {
     int nact() const { return nact_; };
     int nvirt() const { return nvirt_; };
     int nocc() const { return nclosed_ + nact_; };
+
+    double energy() const { return energy_; };
 
     std::shared_ptr<Matrix1e> rdm1() const; 
 

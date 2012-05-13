@@ -46,18 +46,22 @@ class GradEval : public GradEval_base {
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
 
+    double energy_;
+
   public:
     // Constructor performs energy calculation
     GradEval(std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom), geom_(geom) {
       T task(idata, geom);
       task.compute();
       ref_ = task.conv_to_ref(); 
+      energy_ = ref_->energy();
     };
     ~GradEval() {};
 
     // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute() const { assert(false); };
 
+    double energy() const { return energy_; };
 }; 
 
 // specialization

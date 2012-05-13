@@ -28,10 +28,10 @@
 
 using namespace std;
 
-Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<Coeff> c,  shared_ptr<Hcore> h, const vector<double>& s,
+Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<Coeff> c,  const double en, shared_ptr<Hcore> h, const vector<double>& s,
                      const int& ncl, const int& nac, const int& nvi,
                      const vector<shared_ptr<RDM<1> > > _rdm1, const vector<shared_ptr<RDM<2> > > _rdm2)
- : geom_(g), coeff_(c), hcore_(h), schwarz_(s), nclosed_(ncl), nact_(nac), nvirt_(nvi), rdm1_(_rdm1), rdm2_(_rdm2) {
+ : geom_(g), coeff_(c), energy_(en), hcore_(h), schwarz_(s), nclosed_(ncl), nact_(nac), nvirt_(nvi), rdm1_(_rdm1), rdm2_(_rdm2) {
 
   if (nact_ && (rdm1_.empty() || rdm2_.empty()))
     throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");

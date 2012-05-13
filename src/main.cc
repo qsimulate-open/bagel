@@ -122,10 +122,9 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-hf-opt") {
 
-        std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(iter->second, geom));
-        for (int i = 0; i != 2; ++i) {
-          opt->next();
-        }
+        std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(idata, iter->second, geom));
+        for (int i = 0; i != 100; ++i)
+          if (opt->next()) break;
 
       } else if (method == "casscf") {
         if (!ref) throw std::runtime_error("CASSCF needs a reference");

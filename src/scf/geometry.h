@@ -84,7 +84,8 @@ class Geometry {
 
   public:
     Geometry(const std::string, const int level);
-    Geometry(const std::shared_ptr<InputData> inpt);
+    Geometry(const std::shared_ptr<const InputData> inpt);
+    Geometry(const Geometry& o, const std::shared_ptr<GradFile> disp, const std::shared_ptr<const InputData> inpt);
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.

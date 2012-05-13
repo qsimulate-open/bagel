@@ -30,6 +30,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <fstream>
 #include <src/util/bfgs.h>
 #include <src/scf/geometry.h>
 #include <src/grad/gradfile.h>
@@ -38,24 +39,82 @@
 template<typename T>
 class Opt {
   protected:
+    // entire input
+    const std::shared_ptr<const InputData> idata_;
+    // options for T
     std::multimap<std::string, std::string> input_;
     std::shared_ptr<Geometry> current_;
     std::shared_ptr<BFGS<GradFile> > bfgs_;
 
+    // somehow using raw pointers
+    std::streambuf* backup_stream_;
+    std::ofstream* ofs_;
+
+    int iter_;
+
+    // TODO make it adjustable from the input
+    const double thresh_;
+
   public:
-    Opt(std::multimap<std::string, std::string>& idata, const std::shared_ptr<Geometry> geom) : input_(idata), current_(geom) {
+    Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
+      : idata_(idat), input_(inp), current_(geom), iter_(0), thresh_(1.0e-6) {
       std::shared_ptr<GradFile> denom(new GradFile(geom->natom()*3, 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
     };
     ~Opt() {};
 
-    void next() {
-      GradEval<T> opt(input_, current_);
-      std::shared_ptr<GradFile> cgrad = opt.compute(); 
+    bool next() {
+      if (iter_ > 0) mute_stdcout(); 
+      const size_t start = ::clock();
+      GradEval<T> eval(input_, current_);
+      if (iter_ == 0) {
+        print_header();
+        mute_stdcout();
+      }
+      std::shared_ptr<GradFile> cgrad = eval.compute(); 
       std::shared_ptr<GradFile> cgeom = current_->gradfile();
       std::shared_ptr<GradFile> displ = bfgs_->extrapolate(cgrad, cgeom); 
+      const double gradnorm = cgrad->norm();
+      const double disnorm = displ->norm();
+      const bool converged = gradnorm < thresh_ && disnorm < thresh_;
+      if (!converged) {
+        displ->scale(-1.0);
+        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ, idata_));
+        current_->print_atoms();
+      }
+
+      resume_stdcout(); 
+      print_iteration(eval.energy(), gradnorm, disnorm, start, ::clock());
+      
+      ++iter_;
+      if (converged) { print_footer(); current_->print_atoms(); }
+      return gradnorm < thresh_ && disnorm < thresh_;
     };
 
+    void print_footer() const { std::cout << std::endl << std::endl; };
+    void print_header() const {
+        std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl << 
+                                  "     iter           energy             res norm      step norm"
+        << std::endl << std::endl;
+    };
+     
+    void print_iteration(const double energy, const double residual, const double step, const size_t start, const size_t end) const {
+      const double time = static_cast<double>(end - start) / CLOCKS_PER_SEC; 
+      std::cout << std::setw(8) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
+                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual  
+                                         << std::setw(15) << std::setprecision(8) << std::fixed << step  
+                                         << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
+    };
+
+    void mute_stdcout() {
+      ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
+      backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+    };
+
+    void resume_stdcout() {
+      std::cout.rdbuf(backup_stream_);
+      delete ofs_;
+    };
 
 };
 

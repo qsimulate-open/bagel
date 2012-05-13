@@ -44,7 +44,7 @@ typedef std::shared_ptr<Atom> RefAtom;
 
 extern StackMem* stack;
 
-Geometry::Geometry(const std::shared_ptr<InputData> inpt)
+Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   : spherical_(true), input_(""), lmax_(0), level_(0) {
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
@@ -159,6 +159,40 @@ Geometry::Geometry(const std::shared_ptr<InputData> inpt)
   if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
 
   if (!auxfile_.empty()) {
+    cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
+    cout << "    o Being stored without compression. Storage requirement is "
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
+    const int t = ::clock();
+    df_ = form_fit<ERIFit>(thresh_overlap, true); // true means we construct J^-1/2
+
+    cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
+  }
+}
+
+static vector<double> vec3(const double i, const double j, const double k) {
+  vector<double> out(3); out[0] = i; out[1] = j; out[2] = k; return out; 
+};
+
+Geometry::Geometry(const Geometry& o, const std::shared_ptr<GradFile> displ, const std::shared_ptr<const InputData> inpt)
+  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), nbasis_(o.nbasis_), nele_(o.nele_), nfrc_(o.nfrc_), naux_(o.naux_),
+    lmax_(o.lmax_), aux_lmax_(o.aux_lmax_), offsets_(o.offsets_), aux_offsets_(o.aux_offsets_), level_(o.level_), basisfile_(o.basisfile_),
+    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) { 
+
+  // first construct atoms using displacements
+  double* disp = displ->data();
+  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, disp += 3) {
+    vector<double> cdispl = vec3(*disp, *(disp+1), *(disp+2));
+    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
+    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+  }
+
+  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
+  nirrep_ = plist_->nirrep();
+  if (nirrep_ != o.nirrep_) throw logic_error("opt with symmetry is not tested well yet"); 
+  nuclear_repulsion_ = compute_nuclear_repulsion();
+
+  if (!auxfile_.empty()) {
+    const double thresh_overlap = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
