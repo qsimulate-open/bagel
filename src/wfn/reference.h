@@ -39,6 +39,9 @@ class Reference {
   protected:
     std::shared_ptr<const Geometry> geom_; 
     std::shared_ptr<Coeff> coeff_;
+
+    const double energy_;
+
     std::shared_ptr<Hcore> hcore_;
     std::vector<double> schwarz_;
     std::vector<double> eig_;
@@ -49,8 +52,6 @@ class Reference {
 
     std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
-
-    const double energy_;
 
   public:
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<Coeff> c,
