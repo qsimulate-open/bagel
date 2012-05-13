@@ -29,7 +29,7 @@
 using namespace std;
 
 template<>
-vector<double> GradEval<SCF<1> >::compute() const {
+shared_ptr<Gradient> GradEval<SCF<1> >::compute() const {
   const size_t start = ::clock();
 
   //- One ELECTRON PART -//
@@ -44,14 +44,14 @@ vector<double> GradEval<SCF<1> >::compute() const {
   unique_ptr<double[]> qq  = qij->form_aux_2index(qijd);
   shared_ptr<DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
-  vector<double> grad = contract_gradient(rdm1, erdm1, qrs, qq); 
+  shared_ptr<Gradient> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
   cout << endl << "  * Nuclear energy gradient" << endl << endl;
   for (int i = 0; i != geom_->natom(); ++i) {
     cout << "    o Atom " << setw(3) << i << endl;
-    cout << "        x  " << setprecision(10) << setw(20) << fixed << grad[3*i+0] << endl;
-    cout << "        y  " << setprecision(10) << setw(20) << fixed << grad[3*i+1] << endl;
-    cout << "        z  " << setprecision(10) << setw(20) << fixed << grad[3*i+2] << endl;
+    cout << "        x  " << setprecision(10) << setw(20) << fixed << grad->data(i,0) << endl;
+    cout << "        y  " << setprecision(10) << setw(20) << fixed << grad->data(i,1) << endl;
+    cout << "        z  " << setprecision(10) << setw(20) << fixed << grad->data(i,2) << endl;
   }
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(3) << right <<

@@ -29,6 +29,7 @@
 
 #include <memory>
 #include <tuple>
+#include <src/grad/gradient.h>
 #include <src/scf/geometry.h>
 #include <src/scf/matrix1e.h>
 
@@ -73,9 +74,9 @@ class GradEval_base {
     ~GradEval_base() {};
 
     /// compute gradient given density matrices
-    std::vector<double> contract_gradient(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
-                                          const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2) const;
-    virtual std::vector<double> compute() const = 0;
+    std::shared_ptr<Gradient> contract_gradient(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
+                                                const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2) const;
+    virtual std::shared_ptr<Gradient> compute() const = 0;
 
 };
 

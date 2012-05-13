@@ -56,11 +56,11 @@ class GradEval : public GradEval_base {
     ~GradEval() {};
 
     // compute() computes effective density matrices and perform gradient contractions
-    std::vector<double> compute() const { assert(false); };
+    std::shared_ptr<Gradient> compute() const { assert(false); };
 
 }; 
 
 // specialization
-template<> std::vector<double> GradEval<SCF<1> >::compute() const;
+template<> std::shared_ptr<Gradient> GradEval<SCF<1> >::compute() const;
 
 #endif
