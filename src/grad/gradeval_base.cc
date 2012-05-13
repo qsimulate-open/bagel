@@ -31,6 +31,19 @@
 
 using namespace std;
 
+
+vector<double> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
+                                                const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) const {
+  vector<double> out  = contract_grad1e(d, w); 
+  vector<double> tmp0 = contract_grad2e(o);
+  vector<double> tmp1 = contract_grad2e_2index(o2);
+
+  for (auto i = out.begin(), t0 = tmp0.begin(), t1 = tmp1.begin(); i != out.end(); ++i, ++t0, ++t1)
+    *i += *t0 + *t1;
+
+  return out;
+}
+
 void GradEval_base::compute_grad1e_integrals() {
 
   const int natom = geom_->natom();
