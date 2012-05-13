@@ -28,7 +28,8 @@
 #define __SRC_UTIL_BFGS_H
 
 // implements BFGS based on Fischer & Almlof JPC 1992.
-// T needs clone, ddot and daxpy, along with overloaded operators and a copy constructor
+// T needs clone, ddot and daxpy, along with overloaded operators, a copy constructor
+//         data(const size_t)
 
 #include <vector>
 #include <memory>
@@ -55,7 +56,6 @@ class BFGS {
       std::shared_ptr<T> value(new T(*_value));
 
       std::shared_ptr<T> out(new T(*grad));
-      assert(grad->size() == grad->ndim() * grad->mdim());
       // (1)
       for (size_t i = 0; i != grad->size(); ++i) out->data(i) /= denom_->data(i);
 

@@ -455,3 +455,27 @@ const vector<double> Geometry::compute_grad_vnuc() const {
   }
   return grad;
 }
+
+
+void Geometry::merge_obs_aux() {
+  aux_merged_ = true;
+  atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
+  for (std::vector<std::vector<int> >::iterator iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
+    for (std::vector<int>::iterator citer = iter->begin(); citer != iter->end(); ++citer) {
+      *citer += nbasis_;
+    }
+  }
+  offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
+  nbasis_ += naux_;
+}
+
+
+shared_ptr<GradFile> Geometry::gradfile() const {
+  vector<double> tmp;
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
+    tmp.push_back((*i)->position(0));
+    tmp.push_back((*i)->position(1));
+    tmp.push_back((*i)->position(2));
+  }
+  return shared_ptr<GradFile>(new GradFile(tmp));
+}

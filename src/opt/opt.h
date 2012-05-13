@@ -52,6 +52,8 @@ class Opt {
     void next() {
       GradEval<T> opt(input_, current_);
       std::shared_ptr<GradFile> cgrad = opt.compute(); 
+      std::shared_ptr<GradFile> cgeom = current_->gradfile();
+      std::shared_ptr<GradFile> displ = bfgs_->extrapolate(cgrad, cgeom); 
     };
 
 

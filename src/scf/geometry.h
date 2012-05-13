@@ -33,6 +33,7 @@
 #include <src/scf/petite.h>
 #include <memory>
 #include <src/df/fit.h>
+#include <src/grad/gradfile.h>
 #include <src/util/input.h>
 
 class Geometry {
@@ -136,23 +137,15 @@ class Geometry {
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
     // After this, compute_nuclear_repulsion() should not be called.
     // Not undo-able.
-    void merge_obs_aux() {
-      aux_merged_ = true;
-      atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
-      for (std::vector<std::vector<int> >::iterator iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
-        for (std::vector<int>::iterator citer = iter->begin(); citer != iter->end(); ++citer) {
-          *citer += nbasis_;
-        }
-      }
-      offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
-      nbasis_ += naux_;
-    };
+    void merge_obs_aux();
 
     // type T should be a derived class of DensityFit
     template<typename T>
     std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0) const {
       return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), offsets(), aux_atoms(), aux_offsets(), thr, inverse, gam));
     };
+
+    std::shared_ptr<GradFile> gradfile() const;
 };
 
 #endif

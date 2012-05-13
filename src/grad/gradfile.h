@@ -46,14 +46,14 @@ class GradFile {
     ~GradFile() {};
 
     double ddot(const GradFile& o) const { return ddot_(size(), data(), 1, o.data(), 1); };
-    double ddot(const std::shared_ptr<GradFile> o) const { return ddot(*o); };
+    double ddot(const std::shared_ptr<const GradFile> o) const { return ddot(*o); };
 
     double* data() { return &data_[0]; };
     const double* data() const { return &data_[0]; };
     size_t size() const { return data_.size(); }; 
 
     void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
-    void daxpy(const double a, const std::shared_ptr<GradFile> o) { daxpy(a, *o); };
+    void daxpy(const double a, const std::shared_ptr<const GradFile> o) { daxpy(a, *o); };
 
     GradFile operator-(const GradFile& o) {
       GradFile out(*this);
@@ -61,7 +61,13 @@ class GradFile {
       return out;
     };
 
-    double data(int i, int j) { return data_.at(3*i+j); };
+    std::shared_ptr<GradFile> clone() const { return std::shared_ptr<GradFile>(new GradFile(data_.size())); };
+
+    double& data(int i, int j) { return data_.at(3*i+j); };
+    const double& data(int i, int j) const { return data_.at(3*i+j); };
+
+    double& data(size_t i) { return data_[i]; };
+    const double& data(size_t i) const { return data_[i]; };
 
 };
 
