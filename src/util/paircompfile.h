@@ -149,7 +149,7 @@ void PairCompFile<T>::calculate_num_int_each() {
   std::shared_ptr<PCompFile<T> > first = files_.first;
   std::shared_ptr<PCompFile<T> > second = files_.second;
 
-  #pragma omp parallel for reduction (+:data_written1, data_written2)
+//#pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
     const double A = first->A();
     const double m1disp[3] = {0.0, 0.0, m1 * A}; 
@@ -275,7 +275,7 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
       }
     }
   }
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int i0 = 0; i0 < size; ++i0) {
     const RefShell b0 = first->basis(i0); // b0 is the center cell
     const int b0offset_ = first->offset(i0); 

@@ -265,7 +265,7 @@ void PCompFile<T>::calculate_num_int_each() {
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
   const int size = basis_.size(); // number of shells
 
-  #pragma omp parallel for reduction (+:data_written)
+//#pragma omp parallel for reduction (+:data_written)
   for (int m1 = - S_; m1 <= S_; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
     size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);
@@ -352,7 +352,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
       }
     }
   }
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int i01 = 0; i01 < size * size; ++i01) {
     const int i1 = i01 % size;
     const int i0 = (i01 - i1) / size;
@@ -421,7 +421,7 @@ void PCompFile<T>::init_schwarz() {
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));
 
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int m = - K_; m <= K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * A_};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
@@ -592,7 +592,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           }
         }
 
-        #pragma omp parallel for
+//      #pragma omp parallel for
         for (int i0 = 0; i0 < size; ++i0) {
           int noffset = i0 * size * size * size;
           const int b0offset = offset(i0); 
@@ -654,7 +654,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           int offset1 = 0;
           int offset2 = 0;
           std::fill(datas, datas+nv, 0.0);
-          #pragma omp parallel for
+//        #pragma omp parallel for
           for (int ii = 0; ii < nbasis1; ++ii) {
             const size_t offset1 = nbasis3 * ii;
             const size_t offset2 = nbasis2 * bsize * ii;
@@ -704,7 +704,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double> exponent(0.0, K_ != 0 ? (m1 * nka * pi)/ K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
-          #pragma omp parallel for
+//        #pragma omp parallel for
           for (int ii = 0; ii < nbasis1; ++ii) {
             const int offset1 = nsize * nbasis1 * ii;
             const int offset2 = nsize * asize * ii;

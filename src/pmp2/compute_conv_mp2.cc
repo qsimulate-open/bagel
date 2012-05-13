@@ -62,7 +62,7 @@ void PMP2::compute_conv_mp2() {
           eri_ii_pp_->get_block(noovv_ * tmp2, noovv_, workoovv2);
         }
 
-        #pragma omp parallel for reduction(+:energy)
+//      #pragma omp parallel for reduction(+:energy)
         for (int i = nfrc_; i < nocc_; ++i) {
           const int xi = i - nfrc_;
           for (int j = nfrc_, xj = 0; j != nocc_; ++j, ++xj) {

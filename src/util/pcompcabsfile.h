@@ -24,7 +24,6 @@
 //
 
 
-#pragma once
 #ifndef __src_util_pcompcabsfile_h
 #define __src_util_pcompcabsfile_h
 
@@ -185,7 +184,7 @@ void PCompCABSFile<T>::init_schwarz_jb() {
 
   schwarz_jb_.resize(size_b_ * size_j_ * (2 * this->K_ + 1));
 
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int m = - this->K_; m <= this->K_; ++m) { 
     const double disp[3] = {0.0, 0.0, m * this->A_};
     for (int i0 = 0; i0 != size_j_; ++i0) { // center unit cell
@@ -221,7 +220,7 @@ void PCompCABSFile<T>::init_schwarz_ia() {
 
   schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
 
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int m = - this->K_; m <= this->K_; ++m) {
     const double disp[3] = {0.0, 0.0, m * this->A_};
     for (int i0 = 0; i0 != size_i_; ++i0) { // center unit cell
@@ -262,7 +261,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
   unsigned long data_written = 0ul;
   this->num_int_each_.resize((s+s+1) * (s+s+1) * (l+l+1));
 
-  #pragma omp parallel for reduction (+:data_written)
+//#pragma omp parallel for reduction (+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
     const double m1disp[3] = {0.0, 0.0, m1*a};
     size_t offset = (m1+s) * (l*2+1) * (s*2+1);
@@ -392,7 +391,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
       }
     }
   }
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int i01 = 0; i01 < size_i_ * size_a_; ++i01) {
     const int i1 = i01 % size_a_;
     const int i0 = (i01 - i1) / size_a_;
@@ -564,7 +563,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           }
         }
 
-        #pragma omp parallel for
+//      #pragma omp parallel for
         for (int i0 = 0; i0 < size_i_; ++i0) {
           int noffset = i0 * size_j_ * size_a_ * size_b_;
           const int b0offset = offset_i_[i0];
@@ -633,7 +632,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           size_t offset2 = 0;
           const int cn2 = nbasis_i_ * nbasis_a_;
           std::fill(datas, datas+nv, czero);
-          #pragma omp parallel for
+//        #pragma omp parallel for
           for (int ii = 0; ii < nbasis_j_; ++ii) {
             const int offset1 = cn2 * nbasis_b_ * ii;
             const int offset2 = cn2 * bsize * ii;
@@ -687,7 +686,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;
-          #pragma omp parallel for
+//        #pragma omp parallel for
           for (int ii = 0; ii < nbasis_i_; ++ii) {
             const size_t offset1 = nsize * nbasis_a_ * ii;
             const size_t offset2 = nsize * asize * ii;

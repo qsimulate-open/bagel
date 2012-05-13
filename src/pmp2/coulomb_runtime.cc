@@ -351,7 +351,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
                     const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                     if (skip_schwarz) continue;
 
-                    #pragma omp parallel for
+//                  #pragma omp parallel for
                     for (int j0 = b0offset; j0 < b0offset + b0size; ++j0) { // center unit cell
                       const size_t j0q = j0 * q;
                       const double* ccdata = cdata + (j0-b0offset)*b1size*b2size*b3size;

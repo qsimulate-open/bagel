@@ -157,7 +157,7 @@ PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
 PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
   assert(sub.totalsize() == totalsize_);
   PMatrix1e out(geom_, ndim_, mdim_);
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
   return out;
 }
@@ -360,7 +360,7 @@ void PMatrix1e::diagonalize(double* eig) {
   assert(ndim_ == mdim_);
   const int lwork = ndim_ * 6;
 
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int i = -K(); i <= K(); ++i) {
     Complex* work = new Complex[lwork];
     double* rwork = new double[ndim_ * 3 - 2];
@@ -387,7 +387,7 @@ std::shared_ptr<PMatrix1e> PMatrix1e::inverse() const {
   cpy = *this;
   shared_ptr<PMatrix1e> out(new PMatrix1e(geom_, ndim_, mdim_));
 
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int i = -K(); i < std::max(K(), 1); ++i) {
     int* ipiv = new int[ndim_];
 
@@ -443,7 +443,7 @@ void PMatrix1e::rprint(const int precision) const {
 
 void PMatrix1e::hermite() {
   assert(ndim_ == mdim_);
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
@@ -461,7 +461,7 @@ void PMatrix1e::hermite() {
 
 
 void PMatrix1e::real() {
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
     const int koffset = kcount * blocksize_; 
@@ -476,7 +476,7 @@ void PMatrix1e::real() {
 
 
 void PMatrix1e::conj() {
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
     const int koffset = kcount * blocksize_;
@@ -492,7 +492,7 @@ void PMatrix1e::conj() {
 
 void PMatrix1e::conj_transpose() {
   assert(ndim_ == mdim_);
-  #pragma omp parallel for
+//#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     Complex* work = new Complex[blocksize_];
     const int kcount = k + K();

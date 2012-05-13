@@ -24,7 +24,6 @@
 //
 
 
-#pragma once
 #ifndef __src_util_pmofile_h
 #define __src_util_pmofile_h
 
@@ -177,7 +176,7 @@ void PMOFile<T>::sort_inside_blocks() {
 
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
-    #pragma omp parallel for
+//  #pragma omp parallel for
     for (int i = 0; i < isize; ++i) {
       for (int a = 0; a != asize; ++a) {
         for (int j = 0; j != jsize; ++j) {
@@ -410,7 +409,7 @@ PMOFile<T> PMOFile<T>::operator-(const PMOFile<T>& other) const {
     this->get_block(iter->second, blocksize_, buffer1);
     other.get_block(iter->second, blocksize_, buffer2);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (int i = 0; i < blocksize_; ++i) buffer1[i] -= buffer2[i];
 
     out.put_block(iter->second, blocksize_, buffer1);
@@ -436,7 +435,7 @@ PMOFile<T> PMOFile<T>::operator+(const PMOFile<T>& other) const {
     this->get_block(iter->second, blocksize_, buffer1);
     other.get_block(iter->second, blocksize_, buffer2);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (int i = 0; i < blocksize_; ++i) buffer1[i] += buffer2[i];
 
     out.put_block(iter->second, blocksize_, buffer1);
@@ -459,7 +458,7 @@ PMOFile<T>& PMOFile<T>::operator+=(const PMOFile<T>& other) {
     this->get_block(iter->second, blocksize_, buffer1);
     other.get_block(iter->second, blocksize_, buffer2);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (int i = 0; i < blocksize_; ++i) buffer1[i] += buffer2[i];
 
     this->put_block(iter->second, blocksize_, buffer1);
@@ -482,7 +481,7 @@ PMOFile<T>& PMOFile<T>::operator-=(const PMOFile<T>& other) {
     this->get_block(iter->second, blocksize_, buffer1);
     other.get_block(iter->second, blocksize_, buffer2);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (int i = 0; i < blocksize_; ++i) buffer1[i] -= buffer2[i];
 
     this->put_block(iter->second, blocksize_, buffer1);
@@ -504,7 +503,7 @@ PMOFile<T> PMOFile<T>::operator*(const std::complex<double>& a) const {
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
     out.put_block(iter->second, blocksize_, buffer1);
@@ -523,7 +522,7 @@ void PMOFile<T>::scale(double a) {
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
 
-    #pragma omp parallel for schedule(dynamic, 100)
+//  #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < blocksize_; ++i) buffer1[i] *= a;
 
     this->put_block(iter->second, blocksize_, buffer1);

@@ -372,7 +372,7 @@ RefMatrix PMP2::exchange_runtime(const bool do_two_cabs) const {
                     if (mmmin) {
                       for (int j0 = b0offset; j0 != b0offset + b0size; ++j0          ) { // center unit cell
                         for (int j1 = b1offset; j1 != b1offset + b1size; ++j1          ) {
-                          #pragma omp parallel for
+//                        #pragma omp parallel for
                           for (int j2 = b2offset; j2 < b2offset + b2size; ++j2) {
                             const size_t j2q = j2*q;
                             const double* ccdata = cdata + (j2-b2offset)*b3size;
