@@ -36,7 +36,7 @@
 using namespace std;
 
 
-SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<Geometry> geom)
+SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<const Geometry> geom)
  : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
 
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);

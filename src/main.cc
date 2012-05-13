@@ -38,6 +38,7 @@
 #include <src/mp2/mp2.h>
 #include <src/global.h>
 #include <src/stackmem.h>
+#include <src/grad/gradeval.h>
 #include <src/util/input.h>
 
 StackMem* stack;
@@ -106,16 +107,22 @@ int main(int argc, char** argv) {
 
       if (method == "hf") {
 
-        std::shared_ptr<SCF<0> > scf_(new SCF<0>(iter->second, geom)); scf = scf_;
+        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-hf") {
 
         if (!geom->df()) throw std::runtime_error("It seems that DF basis was not specified in Geometry");
-        std::shared_ptr<SCF<1> > scf_(new SCF<1>(iter->second, geom)); scf = scf_;
+        scf = std::shared_ptr<SCF<1> >(new SCF<1>(iter->second, geom));
         scf->compute();
         ref = scf->conv_to_ref();
+
+      } else if (method == "df-hf-opt") {
+
+        if (!geom->df()) throw std::runtime_error("It seems that DF basis was not specified in Geometry");
+        std::shared_ptr<GradEval<SCF<1> > > grad(new GradEval<SCF<1> >(iter->second, geom));
+        grad->compute();
 
       } else if (method == "casscf") {
         if (!ref) throw std::runtime_error("CASSCF needs a reference");
@@ -152,7 +159,6 @@ int main(int argc, char** argv) {
     //smith_test(ref);
     /////////////////////////////////////
     //test_solvers(geom);
-    test_grad(ref);
     /////////////////////////////////////
 
     delete stack;

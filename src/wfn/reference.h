@@ -37,7 +37,7 @@
 class Reference {
 
   protected:
-    std::shared_ptr<Geometry> geom_; 
+    std::shared_ptr<const Geometry> geom_; 
     std::shared_ptr<Coeff> coeff_;
     std::shared_ptr<Hcore> hcore_;
     std::vector<double> schwarz_;
@@ -51,7 +51,7 @@ class Reference {
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
 
   public:
-    Reference(std::shared_ptr<Geometry> g, std::shared_ptr<Coeff> c,
+    Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<Coeff> c,
               std::shared_ptr<Hcore> h, const std::vector<double>& s,
               const int& nclo, const int& nact, const int& nvirt,
               const std::vector<std::shared_ptr<RDM<1> > > rdm1 = std::vector<std::shared_ptr<RDM<1> > >(),
@@ -59,7 +59,7 @@ class Reference {
 
     ~Reference() {};
 
-    std::shared_ptr<Geometry> geom() { return geom_; };
+    std::shared_ptr<const Geometry> geom() { return geom_; };
     std::vector<double> schwarz() { return schwarz_; };
     std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::shared_ptr<Coeff> coeff() { return coeff_; };

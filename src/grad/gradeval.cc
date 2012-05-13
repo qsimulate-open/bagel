@@ -1,9 +1,9 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: test_grad.cc
+// Filename: gradeval.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the Newint package (to be renamed).
@@ -23,26 +23,31 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/grad/gradeval_hf.h>
-#include <src/wfn/reference.h>
-#include <iostream>
 
+#include <src/grad/gradeval.h>
 
 using namespace std;
 
-void test_grad(shared_ptr<Reference> ref) {
-
+template<>
+vector<double> GradEval<SCF<1> >::compute() const {
   const size_t start = ::clock();
-  cout << "  testing grad.." << endl;
 
-  // target quantity here ... ==========
+  //- One ELECTRON PART -//
+  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref_->rdm1() ^ *coeff_occ));
+  shared_ptr<const Matrix1e> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
-  GradEval_HF g1(ref);
-  vector<double> grad = g1.compute();
+  //- TWO ELECTRON PART -//
+  shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
+  shared_ptr<DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
+  shared_ptr<DF_Full> qijd = qij->apply_closed_2RDM();
+  unique_ptr<double[]> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
+  vector<double> grad = contract_gradient(rdm1, erdm1, qrs, qq); 
 
   cout << endl << "  * Nuclear energy gradient" << endl << endl;
-  for (int i = 0; i != ref->geom()->natom(); ++i) {
+  for (int i = 0; i != geom_->natom(); ++i) {
     cout << "    o Atom " << setw(3) << i << endl;
     cout << "        x  " << setprecision(10) << setw(20) << fixed << grad[3*i+0] << endl;
     cout << "        y  " << setprecision(10) << setw(20) << fixed << grad[3*i+1] << endl;
@@ -52,6 +57,5 @@ void test_grad(shared_ptr<Reference> ref) {
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(3) << right <<
           setw(10) << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 
+  return grad;
 }
-
-

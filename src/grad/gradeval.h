@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: gradeval_hf.h
+// Filename: gradeval.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,25 +24,36 @@
 //
 
 
-#ifndef __SRC_GRAD_GRADEVAL_HF_H
-#define __SRC_GRAD_GRADEVAL_HF_H
+#ifndef __SRC_GRAD_GRADEVAL_H
+#define __SRC_GRAD_GRADEVAL_H
 
+#include <map>
+#include <string>
 #include <vector>
 #include <memory>
 #include <src/wfn/reference.h>
-#include <src/scf/geometry.h>
+#include <src/scf/scf.h>
 #include <src/grad/gradeval_base.h>
 
-class GradEval_HF : public GradEval_base {
+template<typename T>
+class GradEval : public GradEval_base {
   protected:
-    const std::shared_ptr<Reference> ref_;
+    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<Reference> ref_;
 
   public:
-    GradEval_HF(const std::shared_ptr<Reference> ref) : GradEval_base(ref->geom()), ref_(ref) {};
-    ~GradEval_HF() {};
+    GradEval(std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom), geom_(geom) {
+      T task(idata, geom);
+      task.compute();
+      ref_ = task.conv_to_ref(); 
+    };
+    ~GradEval() {};
 
-    std::vector<double> compute() const;
+    std::vector<double> compute() const { assert(false); };
 
 }; 
+
+// specialization
+template<> std::vector<double> GradEval<SCF<1> >::compute() const;
 
 #endif

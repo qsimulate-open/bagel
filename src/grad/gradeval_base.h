@@ -55,12 +55,12 @@ class Grad1eFile {
 class GradEval_base {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Grad1eFile> grad1e_;
-    std::shared_ptr<Grad1eFile> grado_;
-    void compute_grad1e_integrals();
+
+    void compute_grad1e_integrals(std::shared_ptr<Grad1eFile>, std::shared_ptr<Grad1eFile>) const;
 
     /// contract 1-electron gradient integrals with density matrices "d" and "w" (the latter to be contracted with overlap derivatives) 
-    std::vector<double> contract_grad1e(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w) const;
+    std::vector<double> contract_grad1e(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
+                                        const std::shared_ptr<const Grad1eFile> g1, const std::shared_ptr<const Grad1eFile> go) const;
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<double> contract_grad2e(const std::shared_ptr<const DF_AO> o) const;
@@ -68,15 +68,8 @@ class GradEval_base {
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
     std::vector<double> contract_grad2e_2index(const std::unique_ptr<double[]>& o) const;
 
-    std::shared_ptr<Matrix1e> grad1e(const int i) { return grad1e_->data(i); };
-    std::shared_ptr<Matrix1e> grado(const int i) { return grado_->data(i); };
-    std::shared_ptr<const Matrix1e> grad1e(const int i) const { return grad1e_->data(i); };
-    std::shared_ptr<const Matrix1e> grado(const int i) const { return grado_->data(i); };
-
   public:
-    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad1e_(new Grad1eFile(g)), grado_(new Grad1eFile(g)) {
-      compute_grad1e_integrals();
-    };
+    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g) { };
     ~GradEval_base() {};
 
     /// compute gradient given density matrices

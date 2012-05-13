@@ -34,17 +34,23 @@ using namespace std;
 
 vector<double> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
                                                 const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) const {
-  vector<double> out  = contract_grad1e(d, w); 
+
+  shared_ptr<Grad1eFile> g1(new Grad1eFile(geom_));
+  shared_ptr<Grad1eFile> go(new Grad1eFile(geom_));
+  compute_grad1e_integrals(g1, go);
+
+  vector<double> grad = contract_grad1e(d, w, g1, go); 
   vector<double> tmp0 = contract_grad2e(o);
   vector<double> tmp1 = contract_grad2e_2index(o2);
 
-  for (auto i = out.begin(), t0 = tmp0.begin(), t1 = tmp1.begin(); i != out.end(); ++i, ++t0, ++t1)
+  for (auto i = grad.begin(), t0 = tmp0.begin(), t1 = tmp1.begin(); i != grad.end(); ++i, ++t0, ++t1)
     *i += *t0 + *t1;
 
-  return out;
+  return grad;
 }
 
-void GradEval_base::compute_grad1e_integrals() {
+
+void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_ptr<Grad1eFile> go) const {
 
   const int natom = geom_->natom();
 
@@ -89,7 +95,7 @@ void GradEval_base::compute_grad1e_integrals() {
             for (int ia = 0; ia != natom*3; ++ia) {
               for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
                 for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-                  grad1e(ia)->data(i*nbasis+j) += ndata[cnt+s*(ia)];
+                  g1->data(ia)->data(i*nbasis+j) += ndata[cnt+s*(ia)];
                 }
               }
             }
@@ -102,12 +108,12 @@ void GradEval_base::compute_grad1e_integrals() {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;
                 int jatom1 = batch.swap01() ? iatom0 : iatom1;
-                grad1e(3*jatom1+0)->data(i*nbasis+j) += kdata[cnt];
-                grad1e(3*jatom1+1)->data(i*nbasis+j) += kdata[cnt+s];
-                grad1e(3*jatom1+2)->data(i*nbasis+j) += kdata[cnt+s*2];
-                grad1e(3*jatom0+0)->data(i*nbasis+j) += kdata[cnt+s*3];
-                grad1e(3*jatom0+1)->data(i*nbasis+j) += kdata[cnt+s*4];
-                grad1e(3*jatom0+2)->data(i*nbasis+j) += kdata[cnt+s*5];
+                g1->data(3*jatom1+0)->data(i*nbasis+j) += kdata[cnt];
+                g1->data(3*jatom1+1)->data(i*nbasis+j) += kdata[cnt+s];
+                g1->data(3*jatom1+2)->data(i*nbasis+j) += kdata[cnt+s*2];
+                g1->data(3*jatom0+0)->data(i*nbasis+j) += kdata[cnt+s*3];
+                g1->data(3*jatom0+1)->data(i*nbasis+j) += kdata[cnt+s*4];
+                g1->data(3*jatom0+2)->data(i*nbasis+j) += kdata[cnt+s*5];
               }
             }
           }
@@ -119,12 +125,12 @@ void GradEval_base::compute_grad1e_integrals() {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;
                 int jatom1 = batch.swap01() ? iatom0 : iatom1;
-                grado(3*jatom1+0)->data(i*nbasis+j) += odata[cnt];
-                grado(3*jatom1+1)->data(i*nbasis+j) += odata[cnt+s];
-                grado(3*jatom1+2)->data(i*nbasis+j) += odata[cnt+s*2];
-                grado(3*jatom0+0)->data(i*nbasis+j) += odata[cnt+s*3];
-                grado(3*jatom0+1)->data(i*nbasis+j) += odata[cnt+s*4];
-                grado(3*jatom0+2)->data(i*nbasis+j) += odata[cnt+s*5];
+                go->data(3*jatom1+0)->data(i*nbasis+j) += odata[cnt];
+                go->data(3*jatom1+1)->data(i*nbasis+j) += odata[cnt+s];
+                go->data(3*jatom1+2)->data(i*nbasis+j) += odata[cnt+s*2];
+                go->data(3*jatom0+0)->data(i*nbasis+j) += odata[cnt+s*3];
+                go->data(3*jatom0+1)->data(i*nbasis+j) += odata[cnt+s*4];
+                go->data(3*jatom0+2)->data(i*nbasis+j) += odata[cnt+s*5];
               }
             }
           }
@@ -135,7 +141,8 @@ void GradEval_base::compute_grad1e_integrals() {
   }
 }
 
-vector<double> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w) const {
+vector<double> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
+                                              const shared_ptr<const Grad1eFile> g1, const shared_ptr<const Grad1eFile> go) const {
 
   // first Vnuc derivative
   vector<double> grad = geom_->compute_grad_vnuc();
@@ -143,7 +150,7 @@ vector<double> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d
 
   int i = 0;
   for (auto g = grad.begin(); g != grad.end(); ++g, ++i)
-    *g += grad1e(i)->ddot(d) - grado(i)->ddot(w);
+    *g += g1->data(i)->ddot(d) - go->data(i)->ddot(w);
 
   return grad;
 }
