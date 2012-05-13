@@ -29,7 +29,7 @@
 using namespace std;
 
 template<>
-shared_ptr<Gradient> GradEval<SCF<1> >::compute() const {
+shared_ptr<GradFile> GradEval<SCF<1> >::compute() const {
   const size_t start = ::clock();
 
   //- One ELECTRON PART -//
@@ -44,7 +44,7 @@ shared_ptr<Gradient> GradEval<SCF<1> >::compute() const {
   unique_ptr<double[]> qq  = qij->form_aux_2index(qijd);
   shared_ptr<DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
-  shared_ptr<Gradient> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
   cout << endl << "  * Nuclear energy gradient" << endl << endl;
   for (int i = 0; i != geom_->natom(); ++i) {

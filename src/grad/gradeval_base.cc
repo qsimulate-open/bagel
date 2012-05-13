@@ -32,7 +32,7 @@
 using namespace std;
 
 
-shared_ptr<Gradient> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
+shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
                                                       const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) const {
 
   shared_ptr<Grad1eFile> g1(new Grad1eFile(geom_));
@@ -46,7 +46,7 @@ shared_ptr<Gradient> GradEval_base::contract_gradient(const shared_ptr<const Mat
   for (auto i = grad.begin(), t0 = tmp0.begin(), t1 = tmp1.begin(); i != grad.end(); ++i, ++t0, ++t1)
     *i += *t0 + *t1;
 
-  return shared_ptr<Gradient>(new Gradient(grad));
+  return shared_ptr<GradFile>(new GradFile(grad));
 }
 
 

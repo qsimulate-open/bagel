@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: gradient.h
+// Filename: gradfile.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_GRAD_GRADIENT_H
-#define __SRC_GRAD_GRADIENT_H
+#ifndef __SRC_GRAD_GRADFILE_H
+#define __SRC_GRAD_GRADFILE_H
 
 // a class for using the BFGS solver, which requires
 // "clone, ddot and daxpy, along with overloaded operators and a copy constructor"
@@ -35,28 +35,28 @@
 #include <cassert>
 #include <src/util/f77.h>
 
-class Gradient {
+class GradFile {
   protected:
     std::vector<double> data_;
 
   public:
-    Gradient(const size_t i, const double a = 0.0) : data_(i, a) {};
-    Gradient(std::vector<double> a) : data_(a.begin(), a.end()) { assert(data_.size()%3 == 0); };
-    Gradient(const Gradient& o) : data_(o.data_.begin(), o.data_.end()) {};
-    ~Gradient() {};
+    GradFile(const size_t i, const double a = 0.0) : data_(i, a) {};
+    GradFile(std::vector<double> a) : data_(a.begin(), a.end()) { assert(data_.size()%3 == 0); };
+    GradFile(const GradFile& o) : data_(o.data_.begin(), o.data_.end()) {};
+    ~GradFile() {};
 
-    double ddot(const Gradient& o) const { return ddot_(size(), data(), 1, o.data(), 1); };
-    double ddot(const std::shared_ptr<Gradient> o) const { return ddot(*o); };
+    double ddot(const GradFile& o) const { return ddot_(size(), data(), 1, o.data(), 1); };
+    double ddot(const std::shared_ptr<GradFile> o) const { return ddot(*o); };
 
     double* data() { return &data_[0]; };
     const double* data() const { return &data_[0]; };
     size_t size() const { return data_.size(); }; 
 
-    void daxpy(const double a, const Gradient& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
-    void daxpy(const double a, const std::shared_ptr<Gradient> o) { daxpy(a, *o); };
+    void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
+    void daxpy(const double a, const std::shared_ptr<GradFile> o) { daxpy(a, *o); };
 
-    Gradient operator-(const Gradient& o) {
-      Gradient out(*this);
+    GradFile operator-(const GradFile& o) {
+      GradFile out(*this);
       out.daxpy(-1.0, o); 
       return out;
     };
