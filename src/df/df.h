@@ -96,6 +96,7 @@ class DF_AO : public DensityFit {
     ~DF_AO() {};
 
     double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
+    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_.get()+i+naux_*(j+nbasis1_*k); };
 };
 
 
