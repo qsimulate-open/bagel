@@ -38,7 +38,7 @@
 #include <src/mp2/mp2.h>
 #include <src/global.h>
 #include <src/stackmem.h>
-#include <src/grad/gradeval.h>
+#include <src/opt/opt.h>
 #include <src/util/input.h>
 
 StackMem* stack;
@@ -122,8 +122,10 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-hf-opt") {
 
-        std::shared_ptr<GradEval<SCF<1> > > grad(new GradEval<SCF<1> >(iter->second, geom));
-        grad->compute();
+        std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(iter->second, geom));
+        for (int i = 0; i != 2; ++i) {
+          opt->next();
+        }
 
       } else if (method == "casscf") {
         if (!ref) throw std::runtime_error("CASSCF needs a reference");

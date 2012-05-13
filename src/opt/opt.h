@@ -27,10 +27,32 @@
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
-// T is something like a GradEval_HF object, which has
-//   std::vector<double> compute() const;
+#include <map>
+#include <memory>
+#include <string>
+#include <src/util/bfgs.h>
+#include <src/scf/geometry.h>
+#include <src/grad/gradient.h>
+#include <src/grad/gradeval.h>
+
 template<typename T>
-class Opt : public Opt_base {
+class Opt {
+  protected:
+    std::multimap<std::string, std::string> input_;
+    std::shared_ptr<Geometry> current_;
+    std::shared_ptr<BFGS<Gradient> > bfgs_;
+
+  public:
+    Opt(std::multimap<std::string, std::string>& idata, const std::shared_ptr<Geometry> geom) : input_(idata), current_(geom) {
+      std::shared_ptr<Gradient> denom(new Gradient(geom->natom()*3, 1.0));
+      bfgs_ = std::shared_ptr<BFGS<Gradient> >(new BFGS<Gradient>(denom));
+    };
+    ~Opt() {};
+
+    void next() {
+      GradEval<T> opt(input_, current_);
+      std::shared_ptr<Gradient> cgrad = opt.compute(); 
+    };
 
 
 };

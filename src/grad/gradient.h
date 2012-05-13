@@ -19,6 +19,7 @@ class Gradient {
     std::vector<double> data_;
 
   public:
+    Gradient(const size_t i, const double a = 0.0) : data_(i, a) {};
     Gradient(std::vector<double> a) : data_(a.begin(), a.end()) { assert(data_.size()%3 == 0); };
     Gradient(const Gradient& o) : data_(o.data_.begin(), o.data_.end()) {};
     ~Gradient() {};
