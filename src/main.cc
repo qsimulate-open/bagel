@@ -105,6 +105,9 @@ int main(int argc, char** argv) {
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
 
+      if (method.substr(0,3) == "df-" && !geom->df())
+        throw std::runtime_error("It seems that DF basis was not specified in Geometry");
+
       if (method == "hf") {
 
         scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
@@ -113,14 +116,12 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-hf") {
 
-        if (!geom->df()) throw std::runtime_error("It seems that DF basis was not specified in Geometry");
         scf = std::shared_ptr<SCF<1> >(new SCF<1>(iter->second, geom));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-hf-opt") {
 
-        if (!geom->df()) throw std::runtime_error("It seems that DF basis was not specified in Geometry");
         std::shared_ptr<GradEval<SCF<1> > > grad(new GradEval<SCF<1> >(iter->second, geom));
         grad->compute();
 

@@ -35,6 +35,11 @@
 #include <src/scf/scf.h>
 #include <src/grad/gradeval_base.h>
 
+// T should have
+// o Constructor with the input and geometry
+// o void compute()
+// o std::shared_ptr<Referenc> conv_to_ref()
+
 template<typename T>
 class GradEval : public GradEval_base {
   protected:
@@ -42,6 +47,7 @@ class GradEval : public GradEval_base {
     std::shared_ptr<Reference> ref_;
 
   public:
+    // Constructor performs energy calculation
     GradEval(std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom), geom_(geom) {
       T task(idata, geom);
       task.compute();
@@ -49,6 +55,7 @@ class GradEval : public GradEval_base {
     };
     ~GradEval() {};
 
+    // compute() computes effective density matrices and perform gradient contractions
     std::vector<double> compute() const { assert(false); };
 
 }; 
