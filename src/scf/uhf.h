@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: qvec.h
+// Filename: uhf.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,25 +24,35 @@
 //
 
 
-#ifndef __NEWINT_SRC_CASSCF_QVEC
-#define __NEWINT_SRC_CASSCF_QVEC
+#ifndef __NEWINT_SRC_SCF_UHF_H
+#define __NEWINT_SRC_SCF_UHF_H
 
-#include <memory>
-#include <src/df/df.h>
-#include <src/scf/coeff.h>
-#include <src/fci/fci.h> // 2RDM and half-transformed integrals
-#include <src/casscf/rotfile.h>
+#include <src/scf/scf_base.h>
+#include <src/util/diis.h>
+#include <iostream>
+#include <iomanip>
 
-class Qvec : public QFile {
+// I only implement a DF version
+//template<int DF>
+
+class UHF : public SCF_base {
   protected:
+    std::shared_ptr<Matrix1e> aodensityB_;
+    std::shared_ptr<Coeff> coeffB_;
 
   public:
-    Qvec(const int n, const int m, std::shared_ptr<const DensityFit> df, std::shared_ptr<const Coeff> c, const size_t nclosed,
-         std::shared_ptr<FCI> fci);
-    Qvec(const QFile& a) : QFile(a) {};
-    ~Qvec() {};
+    UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom)
+      : SCF_base(idata_, geom) {
+      // TODO init schwarz for auxiliary basis
+    };
 
+    ~UHF() {};
+
+    std::shared_ptr<Matrix1e> form_density_rhf() const { return coeff_->form_density_rhf(nocc_); };
+
+    void compute();
+
+    std::shared_ptr<Reference> conv_to_ref() const;
 };
-
 
 #endif

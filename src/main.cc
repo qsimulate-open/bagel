@@ -30,7 +30,7 @@
 #include <stdexcept>
 #include <memory>
 #include <src/scf/geometry.h>
-#include <src/scf/scf.h>
+#include <src/scf/uhf.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
@@ -117,6 +117,12 @@ int main(int argc, char** argv) {
       } else if (method == "df-hf") {
 
         scf = std::shared_ptr<SCF<1> >(new SCF<1>(iter->second, geom));
+        scf->compute();
+        ref = scf->conv_to_ref();
+
+      } else if (method == "df-uhf" || method == "uhf") {
+
+        scf = std::shared_ptr<UHF>(new UHF(iter->second, geom));
         scf->compute();
         ref = scf->conv_to_ref();
 

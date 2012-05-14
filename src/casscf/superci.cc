@@ -168,7 +168,9 @@ void SuperCI::compute() {
     rot->purify_unitary();
 
     if (!diis) {
-      *ref_->coeff() *= *rot;
+      shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff())); 
+      *newcc *= *rot;
+      ref_->set_coeff(newcc); 
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
@@ -176,7 +178,7 @@ void SuperCI::compute() {
                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix1e> tmp2(new Matrix1e(*tailor_rotation(tmp)));
       shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp2);
-      shared_ptr<Coeff> newcc(new Coeff(*mcc));
+      shared_ptr<const Coeff> newcc(new Coeff(*mcc));
       ref_->set_coeff(newcc);
     }
 

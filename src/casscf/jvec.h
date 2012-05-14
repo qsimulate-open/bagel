@@ -38,7 +38,7 @@ class Jvec {
     std::unique_ptr<double[]> rdm2_all_; 
 
   public:
-    Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<Coeff> c, const size_t, const size_t, const size_t);
+    Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<const Coeff> c, const size_t, const size_t, const size_t);
     ~Jvec() {};
 
     const std::shared_ptr<const DF_Half> half() const { return half_; };

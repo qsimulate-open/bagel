@@ -69,20 +69,19 @@ class SCF_base {
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
     const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
+
     const std::shared_ptr<Coeff> coeff() { return coeff_; };
+    const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
+
     const std::shared_ptr<Hcore> hcore() { return hcore_; };
+    const std::shared_ptr<const Hcore> hcore() const { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 
     int nocc() const { return nocc_; };
     double energy() const { return energy_; };
 
-    std::shared_ptr<Reference> conv_to_ref() {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), energy(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
-      std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
-      out->set_eig(e);
-      return out;
-    };
+    virtual std::shared_ptr<Reference> conv_to_ref() const = 0;
 
     double* eig() { return eig_.get(); };
 };

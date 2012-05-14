@@ -33,7 +33,7 @@
 #include <algorithm>
 
 typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<Hcore> RefHcore;
+typedef std::shared_ptr<const Hcore> RefHcore;
 typedef std::shared_ptr<Matrix1e> RefAODensity;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Fock_base> RefFock_base;

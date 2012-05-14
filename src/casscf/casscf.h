@@ -78,7 +78,7 @@ class CASSCF {
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
                             std::shared_ptr<RotFile>&, const bool superci=true);
 
-    std::shared_ptr<Coeff> update_coeff(const std::shared_ptr<Coeff>, std::vector<double>) const;
+    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
     std::vector<double> form_natural_orbs();
 
     double energy() const { throw std::logic_error("CASSCF::energy() not implemented yet"); return 0.0; };

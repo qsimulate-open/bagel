@@ -87,7 +87,7 @@ shared_ptr<const Matrix1e> WernerKnowles::compute_denom(const shared_ptr<const M
 
 // compute B according to Eq. (19).
 // B = 2[h_rs U_sj D_ji + (rs|D)Usj <D|ji> + 2(rk|D)(D|ls)T_sj D_jl,ik]
-shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec, shared_ptr<Matrix1e> u, const shared_ptr<Coeff> cc) {
+shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec, shared_ptr<Matrix1e> u, const shared_ptr<const Coeff> cc) {
   shared_ptr<Matrix1e> t(new Matrix1e(*u));
   for (int i = 0; i != u->ndim(); ++i) t->element(i,i) -= 1.0;
   return compute_bvec(jvec, u, t, cc);
@@ -97,7 +97,7 @@ shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jv
 
 
 shared_ptr<Matrix1e> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec,
-                                                 shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<Coeff> cc) {
+                                                 shared_ptr<Matrix1e> u, shared_ptr<Matrix1e> t, const shared_ptr<const Coeff> cc) {
   shared_ptr<const DensityFit> df = geom_->df();
   const int naux = df->naux();
   const int nbas = df->nbasis0();

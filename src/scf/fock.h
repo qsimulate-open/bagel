@@ -47,7 +47,7 @@ class Fock : public Fock_base {
       fock_two_electron_part();
       fock_one_electron_part();
     };
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Hcore> b) : Fock_base(a,b) {};
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Hcore> b) : Fock_base(a,b) {};
     Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {};
     ~Fock() {};
 

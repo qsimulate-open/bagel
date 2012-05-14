@@ -124,7 +124,7 @@ void WernerKnowles::compute() {
     }
 
     U->purify_unitary();
-    shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff() * *U));
+    shared_ptr<const Coeff> newcc(new Coeff(*ref_->coeff() * *U));
     ref_->set_coeff(newcc);
 
     resume_stdcout();

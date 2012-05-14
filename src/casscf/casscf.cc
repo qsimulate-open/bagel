@@ -174,7 +174,7 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
     }
   }
   // transform into AO basis
-  const shared_ptr<Coeff> coeff = ref_->coeff();
+  const shared_ptr<const Coeff> coeff = ref_->coeff();
   // TODO make sure when overlap is truncated
   return shared_ptr<Matrix1e>(new Matrix1e(*coeff * *mo_rdm1 ^ *coeff));
 }
@@ -185,7 +185,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
                                 shared_ptr<RotFile>& d, const bool superci) {
 
   shared_ptr<Matrix1e> finact;
-  shared_ptr<Coeff> coeff = ref_->coeff();
+  shared_ptr<const Coeff> coeff = ref_->coeff();
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
@@ -276,12 +276,12 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 }
 
 
-shared_ptr<Coeff> CASSCF::update_coeff(const shared_ptr<Coeff> cold, vector<double> mat) const {
-  shared_ptr<Matrix1e> cnew(new Matrix1e(*dynamic_cast<Matrix1e*>(cold.get())));
+shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold, vector<double> mat) const {
+  shared_ptr<const Matrix1e> cnew(new const Matrix1e(*dynamic_cast<const Matrix1e*>(cold.get())));
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
-  return shared_ptr<Coeff>(new Coeff(*cnew));
+  return shared_ptr<const Coeff>(new Coeff(*cnew));
 }
 
 
@@ -291,7 +291,7 @@ vector<double> CASSCF::form_natural_orbs() {
     // this effectively updates 1,2RDM and integrals
     const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
     // new coefficients
-    shared_ptr<Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
+    shared_ptr<const Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
     ref_->set_coeff(new_coeff);
     // occupation number of the natural orbitals
     occup_ = natorb.second;

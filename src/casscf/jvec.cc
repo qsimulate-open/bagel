@@ -28,7 +28,7 @@
 
 using namespace std;
 
-Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
+Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
 
   shared_ptr<const DensityFit> df = fci->geom()->df();
   const double* const cc = coeff->data();

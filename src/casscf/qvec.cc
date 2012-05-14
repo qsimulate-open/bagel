@@ -28,7 +28,7 @@
 
 using namespace std;
 
-Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<Coeff> coeff, const size_t nclosed, shared_ptr<FCI> fci)
+Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<FCI> fci)
  : QFile(n,m) {
 
   const int nbasis = df->nbasis0();
