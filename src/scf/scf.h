@@ -84,9 +84,9 @@ class SCF : public SCF_base {
     
         std::shared_ptr<Fock<DF> > fock;
         if (!DF) {
-          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_)); fock = tmp;
+          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
         } else {
-          std::shared_ptr<Fock<DF> > tmp(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_)); fock = tmp;
+          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_));
         }
         previous_fock = fock;
     
@@ -96,8 +96,7 @@ class SCF : public SCF_base {
 //      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
 
         intermediate.diagonalize(eig());
-        std::shared_ptr<Coeff> new_coeff(new Coeff((*coeff_) * intermediate));
-        coeff_ = new_coeff;
+        coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
         std::shared_ptr<Matrix1e> new_density = form_density_rhf();
     
         std::shared_ptr<Matrix1e> error_vector(new Matrix1e(

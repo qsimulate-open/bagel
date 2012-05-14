@@ -31,13 +31,11 @@ using namespace std;
 void UHF::compute() {
 
   string indent = "  ";
-  shared_ptr<Fock<1> > previous_fock;
   shared_ptr<Fock<1> > hcore_fock;
   {
-    previous_fock = shared_ptr<Fock<1> >(new Fock<1>(geom_, hcore_));
-    hcore_fock = previous_fock;
+    hcore_fock = shared_ptr<Fock<1> >(new Fock<1>(geom_, hcore_));
    
-    Matrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
+    Matrix1e intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_));
@@ -54,23 +52,16 @@ void UHF::compute() {
   // starting SCF iteration
 
   DIIS<Matrix1e> diis(5);
-  shared_ptr<Matrix1e> densitychange = aodensity_; // assumes hcore guess...
-
+  DIIS<Matrix1e> diisB(5);
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
-    shared_ptr<Fock<1> > fock;
-    shared_ptr<Fock<1> > tmp(new Fock<1>(geom_, hcore_fock, aodensity_, schwarz_)); fock = tmp;
-    previous_fock = fock;
+    shared_ptr<Fock<1> > fock(new Fock<1>(geom_, hcore_fock, aodensity_, aodensity_, schwarz_));
 
     Matrix1e intermediate = *coeff_ % *fock * *coeff_;
 
-// TODO level shift - needed?
-//      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
-
     intermediate.diagonalize(eig());
-    shared_ptr<Coeff> new_coeff(new Coeff((*coeff_) * intermediate));
-    coeff_ = new_coeff;
+    coeff_ = shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
     shared_ptr<Matrix1e> new_density = form_density_rhf();
 
     shared_ptr<Matrix1e> error_vector(new Matrix1e(
@@ -105,7 +96,6 @@ void UHF::compute() {
       diis_density = new_density;
     }
 
-    densitychange = shared_ptr<Matrix1e>(new Matrix1e(*diis_density - *aodensity_));
     aodensity_ = diis_density;
   }
 }
