@@ -34,13 +34,13 @@ void UHF::compute() {
   shared_ptr<Fock<1> > previous_fock;
   shared_ptr<Fock<1> > hcore_fock;
   {
-    shared_ptr<Fock<1> > fock(new Fock<1>(geom_, hcore_));
-    previous_fock = fock;
-    hcore_fock = fock;
+    previous_fock = shared_ptr<Fock<1> >(new Fock<1>(geom_, hcore_));
+    hcore_fock = previous_fock;
    
-    Matrix1e intermediate = *tildex_ % *fock * *tildex_;
+    Matrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
+    coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_));
     aodensity_ = form_density_rhf();
   }
 
@@ -112,6 +112,7 @@ void UHF::compute() {
 
 
 shared_ptr<Reference> UHF::conv_to_ref() const {
+  assert(false);
   shared_ptr<Reference> out(new Reference(geom_, coeff(), energy(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);

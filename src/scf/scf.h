@@ -56,11 +56,10 @@ class SCF : public SCF_base {
       std::shared_ptr<Fock<DF> > previous_fock;
       std::shared_ptr<Fock<DF> > hcore_fock;
       {
-        std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, hcore_));
-        previous_fock = fock;
-        if (DF) hcore_fock = fock;
+        previous_fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_));
+        if (DF) hcore_fock = previous_fock;
        
-        Matrix1e intermediate = *tildex_ % *fock * *tildex_;
+        Matrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
         aodensity_ = form_density_rhf();

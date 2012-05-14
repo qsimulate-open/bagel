@@ -40,7 +40,7 @@ class Fock_base : public Matrix1e {
     void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
     // virtual function that is to be defined in the derived class
-    virtual void fock_two_electron_part() = 0;
+    virtual void fock_two_electron_part(std::shared_ptr<const Matrix1e>) = 0;
     void fock_one_electron_part();
 
 //  for debug

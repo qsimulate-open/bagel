@@ -40,6 +40,7 @@
 template<int DF>
 class Fock : public Fock_base {
   protected:
+    void fock_two_electron_part(std::shared_ptr<const Matrix1e> den = std::shared_ptr<Matrix1e>());
 
   public:
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
@@ -47,19 +48,27 @@ class Fock : public Fock_base {
       fock_two_electron_part();
       fock_one_electron_part();
     };
+    // Fock operator with a different density matrix for exchange
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, std::shared_ptr<const Matrix1e> ex,
+         const std::vector<double>& d)
+     : Fock_base(a,b,c,d) {
+      fock_two_electron_part(ex);
+      fock_one_electron_part();
+    };
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Hcore> b) : Fock_base(a,b) {};
     Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {};
     ~Fock() {};
 
-    void fock_two_electron_part();
 };
 
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part() {
+void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   
   // for debug <- what did I mean by this?? TODO
   density_->symmetrize();
+  if (den_ex && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
+  if (!den_ex) den_ex = density_;
 
   const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
   std::vector<std::shared_ptr<Shell> > basis; 
@@ -241,7 +250,7 @@ void Fock<DF>::fock_two_electron_part() {
       const int lwork = nbasis_*5;
       std::unique_ptr<double[]> work4(new double[lwork]);
       std::unique_ptr<double[]> vec(new double[nbasis_]);
-      std::copy(density_->data(), density_->data()+nbasis_*nbasis_, coeff.get());
+      std::copy(den_ex->data(), den_ex->data()+nbasis_*nbasis_, coeff.get());
       dscal_(nbasis_*nbasis_, -1.0, coeff, 1);
       int info;
       dsyev_("V", "U", nbasis_, coeff, nbasis_, vec, work4, lwork, info); 
