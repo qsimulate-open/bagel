@@ -33,6 +33,7 @@
 #include <memory>
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
+#include <src/scf/uhf.h>
 #include <src/grad/gradeval_base.h>
 
 // T should have
@@ -53,7 +54,7 @@ class GradEval : public GradEval_base {
     GradEval(std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom), geom_(geom) {
       T task(idata, geom);
       task.compute();
-      ref_ = task.conv_to_ref(); 
+      ref_  = task.conv_to_ref();
       energy_ = ref_->energy();
     };
     ~GradEval() {};
@@ -66,5 +67,6 @@ class GradEval : public GradEval_base {
 
 // specialization
 template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute() const;
+template<> std::shared_ptr<GradFile> GradEval<UHF>::compute() const;
 
 #endif

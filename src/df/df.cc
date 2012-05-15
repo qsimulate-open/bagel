@@ -382,6 +382,41 @@ shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
 }
 
 
+// Caution
+//   o strictly assuming that we are using natural orbitals. 
+//
+shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bmat) const {
+  assert(nocc1_ == nocc2_);
+  const int nocc = nocc1_; 
+  unique_ptr<double[]> d(new double[size()]);
+  {
+    unique_ptr<double[]> d2(new double[size()]);
+    // exchange contributions
+    dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data(), naux_*nocc, amat, nocc, 0.0, d2.get(), naux_*nocc);
+    for (int i = 0; i != nocc; ++i) {
+      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, amat, nocc, 0.0, d.get()+naux_*nocc*i, naux_);
+    }
+    dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data(), naux_*nocc, bmat, nocc, 0.0, d2.get(), naux_*nocc);
+    for (int i = 0; i != nocc; ++i) {
+      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, bmat, nocc, 1.0, d.get()+naux_*nocc*i, naux_);
+    }
+  }
+
+  unique_ptr<double[]> sum(new double[nocc]);
+  for (int i = 0; i != nocc; ++i) sum[i] = amat[i+i*nocc] + bmat[i+i*nocc]; 
+  // coulomb contributions (diagonal to diagonal)
+  unique_ptr<double[]> diagsum(new double[naux_]);
+  fill(diagsum.get(), diagsum.get()+naux_, 0.0);
+  for (int i = 0; i != nocc; ++i) {
+    daxpy_(naux_, sum[i], data()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
+  }
+  for (int i = 0; i != nocc; ++i) {
+    daxpy_(naux_, sum[i], diagsum.get(), 1, d.get()+naux_*(i+nocc*i), 1);
+  }
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+} 
+
+
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su 
 shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{
   const int nbas = df_->nbasis1();

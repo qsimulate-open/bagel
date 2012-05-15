@@ -53,6 +53,9 @@ class Reference {
     std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
 
+    // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
+    std::shared_ptr<const Matrix1e> erdm1_;
+
   public:
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const double en, std::shared_ptr<const Hcore> h, const std::vector<double>& s,
@@ -70,6 +73,8 @@ class Reference {
 
     void set_eig(const std::vector<double>& eig) { eig_ = eig; };
     std::vector<double> eig() const { return eig_; };
+    void set_erdm1(const std::shared_ptr<const Matrix1e> o) { erdm1_ = o; };
+    std::shared_ptr<const Matrix1e> erdm1() const { return erdm1_; };
 
     int nclosed() const { return nclosed_; };
     int nact() const { return nact_; };
@@ -78,7 +83,8 @@ class Reference {
 
     double energy() const { return energy_; };
 
-    std::shared_ptr<Matrix1e> rdm1() const; 
+    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }; 
+    std::shared_ptr<Matrix1e> rdm1_mat(const int irdm = 0) const; 
 
 };
 

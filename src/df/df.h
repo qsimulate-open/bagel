@@ -169,6 +169,7 @@ class DF_Full {
 
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) const;
     std::shared_ptr<DF_Full> apply_closed_2RDM() const;
+    std::shared_ptr<DF_Full> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
 
     // forming all internal 4-index MO integrals
     void form_4index(std::unique_ptr<double[]>& target) const;

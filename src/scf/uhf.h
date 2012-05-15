@@ -29,8 +29,6 @@
 
 #include <src/scf/scf_base.h>
 #include <src/util/diis.h>
-#include <iostream>
-#include <iomanip>
 
 // I only implement a DF version
 //template<int DF>
@@ -57,6 +55,8 @@ class UHF : public SCF_base {
     void compute();
 
     std::shared_ptr<Reference> conv_to_ref() const;
+    // return the natural orbital coefficients and nclosed and nact
+    std::tuple<std::shared_ptr<Coeff>, int, std::vector<std::shared_ptr<RDM<1> > > > natural_orbitals() const;
 };
 
 #endif

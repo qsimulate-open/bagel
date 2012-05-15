@@ -126,6 +126,12 @@ int main(int argc, char** argv) {
         scf->compute();
         ref = scf->conv_to_ref();
 
+      } else if (method == "df-uhf-opt" || method == "uhf-opt") {
+
+        std::shared_ptr<Opt<UHF> > opt(new Opt<UHF>(idata, iter->second, geom));
+        for (int i = 0; i != 100; ++i)
+          if (opt->next()) break;
+
       } else if (method == "df-hf-opt") {
 
         std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(idata, iter->second, geom));

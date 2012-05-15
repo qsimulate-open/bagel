@@ -116,9 +116,60 @@ void UHF::compute() {
 }
 
 
+tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
+  shared_ptr<Matrix1e> cinv(new Matrix1e(*coeff_));
+  cinv->inverse(); // TODO maybe unnecessary
+  shared_ptr<Matrix1e> intermediate(new Matrix1e(*cinv * *aodensity_ ^ *cinv)); 
+  *intermediate *= -1.0;
+  unique_ptr<double[]> occup(new double[geom_->nbasis()]);
+  intermediate->diagonalize(occup.get());
+
+  shared_ptr<Matrix1e> amat(new Matrix1e(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate));
+  shared_ptr<Matrix1e> bmat(new Matrix1e(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate));
+
+  int nocc = 0;
+  const double tiny = 1.0e-15;
+  for (int i = 0; i != geom_->nbasis(); ++i)
+    if (occup[i] < -tiny) ++nocc;
+
+  shared_ptr<RDM<1> > r(new RDM<1>(nocc));
+  shared_ptr<RDM<1> > ra(new RDM<1>(nocc));
+  shared_ptr<RDM<1> > rb(new RDM<1>(nocc));
+  r->zero();
+  for (int i = 0; i != nocc; ++i) r->element(i,i) = occup[i] * (-1.0);
+
+  for (int i = 0; i != nocc; ++i) {
+    for (int j = 0; j != nocc; ++j) {
+      ra->element(j,i) = amat->element(j,i) * 0.5;
+      rb->element(j,i) = bmat->element(j,i) * 0.5;
+    }
+  } 
+
+  vector<shared_ptr<RDM<1> > > rdm(1,r);
+  rdm.push_back(ra);
+  rdm.push_back(rb);
+  shared_ptr<Coeff> natorb(new Coeff(*coeff_ * *intermediate));
+
+  return make_tuple(natorb, nocc, rdm);
+}
+
+
 shared_ptr<Reference> UHF::conv_to_ref() const {
-  assert(false);
-  shared_ptr<Reference> out(new Reference(geom_, coeff(), energy(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
+  shared_ptr<Coeff> natorb;
+  int nocc;
+  vector<shared_ptr<RDM<1> > > rdm1;
+  tie(natorb, nocc, rdm1) = natural_orbitals();
+  shared_ptr<Reference> out(new Reference(geom_, natorb, energy(), hcore(), schwarz(), 0, nocc, geom_->nbasis()-nocc, rdm1));
+
+  // compute an energy weighted 1RDM and store
+  vector<double> ea(eig_.get(), eig_.get()+nocc_);
+  vector<double> eb(eigB_.get(), eigB_.get()+nocc_);
+  shared_ptr<Matrix1e> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
+  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
+  *erdm *= 0.5;
+  out->set_erdm1(erdm);
+  
+  // this is just dummy...
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);
   return out;
@@ -128,13 +179,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
 tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e> > UHF::form_density_uhf() const {
   shared_ptr<Matrix1e> outA = coeff_->form_density_rhf(nocc_);
   shared_ptr<Matrix1e> outB = coeffB_->form_density_rhf(noccB_);
-#if 0
-  *outA *= 0.5;
-  *outB *= 0.5;
-  shared_ptr<Matrix1e> out(new Matrix1e(*outA+*outB));
-#else
   shared_ptr<Matrix1e> out(new Matrix1e(*outA+*outB));
   *out *= 0.5;
-#endif
   return make_tuple(out, outA, outB);
 }

@@ -33,13 +33,13 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,  c
                      const vector<shared_ptr<RDM<1> > > _rdm1, const vector<shared_ptr<RDM<2> > > _rdm2)
  : geom_(g), coeff_(c), energy_(en), hcore_(h), schwarz_(s), nclosed_(ncl), nact_(nac), nvirt_(nvi), rdm1_(_rdm1), rdm2_(_rdm2) {
 
-  if (nact_ && (rdm1_.empty() || rdm2_.empty()))
+  if (nact_ && rdm1_.empty())
     throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
 }
 
 
-shared_ptr<Matrix1e> Reference::rdm1() const {
+shared_ptr<Matrix1e> Reference::rdm1_mat(const int irdm) const {
   shared_ptr<Matrix1e> out(new Matrix1e(geom_, nocc(), nocc()));
 
   // first fill in diagonal elements for closed orbitals
@@ -47,9 +47,10 @@ shared_ptr<Matrix1e> Reference::rdm1() const {
     out->element(i,i) = 2.0;
   }
 
-  // TODO
   for (int i = 0; i != nact_; ++i) {
-    throw logic_error("not yet implemented!!!!");
+    for (int j = 0; j != nact_; ++j) {
+      out->element(j+nclosed_, i+nclosed_) = rdm1_[irdm]->element(j,i);
+    }
   }
   return out;
 }

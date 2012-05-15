@@ -46,12 +46,10 @@ class RDM {
       assert(rank > 0);
       dim_ = 1;
       for (int i = 0; i != rank; ++i) dim_ *= n;
-      std::unique_ptr<double[]> data__(new double[dim_*dim_]);
-      data_ = std::move(data__);
+      data_ = std::unique_ptr<double[]>(new double[dim_*dim_]);
     };
     RDM(const RDM& o) : norb_(o.norb_), dim_(o.dim_) {
-      std::unique_ptr<double[]> data__(new double[dim_*dim_]);
-      data_ = std::move(data__);
+      data_ = std::unique_ptr<double[]>(new double[dim_*dim_]);
       std::copy(o.data(), o.data()+dim_*dim_, data());
     };
     ~RDM() {  };

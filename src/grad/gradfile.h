@@ -33,6 +33,8 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 #include <src/util/f77.h>
 
 class GradFile {
@@ -74,6 +76,17 @@ class GradFile {
     void scale(const double a) { dscal_(size(), a, data(), 1); };
 
     double norm() const { return std::sqrt(ddot(*this)); };
+
+    void print() const {
+      std::cout << std::endl << "  * Nuclear energy gradient" << std::endl << std::endl;
+      assert(data_.size()%3 == 0);
+      for (int i = 0; i != data_.size()/3; ++i) {
+        std::cout << "    o Atom " << std::setw(3) << i << std::endl;
+        std::cout << "        x  " << std::setprecision(10) << std::setw(20) << std::fixed << data(i,0) << std::endl;
+        std::cout << "        y  " << std::setprecision(10) << std::setw(20) << std::fixed << data(i,1) << std::endl;
+        std::cout << "        z  " << std::setprecision(10) << std::setw(20) << std::fixed << data(i,2) << std::endl;
+      }
+    };
 
 };
 
