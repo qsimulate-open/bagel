@@ -35,10 +35,24 @@
 // I only implement a DF version
 //template<int DF>
 
+
+class PairMatrix1e {
+  protected:
+    Matrix1e mat1_, mat2_;
+  public:
+    PairMatrix1e(const Matrix1e& i, const Matrix1e& j) : mat1_(i), mat2_(j) {};
+    ~PairMatrix1e() {};
+
+};
+
 class UHF : public SCF_base {
   protected:
+    std::shared_ptr<Matrix1e> aodensityA_;
     std::shared_ptr<Matrix1e> aodensityB_;
     std::shared_ptr<Coeff> coeffB_;
+
+    std::unique_ptr<double[]> eigB_;
+    double* eigB() { return eigB_.get(); };
 
   public:
     UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom)
@@ -48,7 +62,7 @@ class UHF : public SCF_base {
 
     ~UHF() {};
 
-    std::shared_ptr<Matrix1e> form_density_rhf() const { return coeff_->form_density_rhf(nocc_); };
+    std::tuple<std::shared_ptr<Matrix1e>,std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e> > form_density_uhf() const;
 
     void compute();
 

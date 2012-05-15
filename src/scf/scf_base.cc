@@ -59,10 +59,13 @@ SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<const Geomet
   }
 
   // so far assuming that this is RHF
-  if (geom_->nele() % 2) throw logic_error("currently only RHF is implemented");
-  else { nocc_ = geom_->nele()/2; };
+  int nact = read_input<int>(idata_, "nact", 0);
+  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2); 
+  noccB_ = nocc_ - nact;
 
-  { shared_ptr<TildeX>    tmp(new TildeX(overlap_, thresh_overlap_));    tildex_ = tmp; }
+  if (nocc_+noccB_ != geom_->nele()) throw runtime_error("nocc and nact are not consistently specified");
+
+  tildex_ = shared_ptr<TildeX>(new TildeX(overlap_, thresh_overlap_));
 
   init_schwarz();
 }

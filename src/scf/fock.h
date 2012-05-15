@@ -268,14 +268,19 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
     std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff.get(), nocc)->apply_J();
     half->form_2index(data_, -1.0);
 
-    // Coulomb comes with virtually no cost
-    // half2: naux * nbasis_ * nocc
-    // coeff: nbasis_* nocc 
     std::unique_ptr<double[]> coeff2(new double[std::max(nbasis_*nocc, naux)]);
     std::unique_ptr<double[]> coeff3(new double[naux]);
-    mytranspose_(coeff.get(), &nbasis_, &nocc, coeff2.get());
-
-    dgemv_("N", naux, nbasis_*nocc, 1.0, half->data(), naux, coeff2.get(), 1, 0.0, coeff3.get(), 1);
+    if (den_ex == density_) {
+      // Coulomb comes with virtually no cost
+      // half2: naux * nbasis_ * nocc
+      // coeff: nbasis_* nocc 
+      mytranspose_(coeff.get(), &nbasis_, &nocc, coeff2.get());
+      dgemv_("N", naux, nbasis_*nocc, 1.0, half->data(), naux, coeff2.get(), 1, 0.0, coeff3.get(), 1);
+    } else {
+      std::unique_ptr<double[]> tmp(new double[naux]);
+      dgemv_("N", naux, nbasis_*nbasis_, 1.0, df->data_3index(), naux, density_->data(), 1, 0.0, tmp.get(), 1);
+      dgemv_("N", naux, naux, 1.0, buf2, naux, tmp.get(), 1, 0.0, coeff3.get(), 1);
+    }
     dgemv_("N", naux, naux, 1.0, buf2, naux, coeff3.get(), 1, 0.0, coeff2.get(), 1); 
     dgemv_("T", naux, nbasis_*nbasis_, 1.0, buf1, naux, coeff2.get(), 1, 0.5, data(), 1); 
     // the 1/2 factor in the Hamiltonian absorbed here

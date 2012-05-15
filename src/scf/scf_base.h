@@ -60,6 +60,7 @@ class SCF_base {
     double energy_;
 
     int nocc_;
+    int noccB_;
 
   public:
     SCF_base(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>);
@@ -79,6 +80,7 @@ class SCF_base {
     const std::vector<double>& schwarz() const { return schwarz_; };
 
     int nocc() const { return nocc_; };
+    int noccB() const { return noccB_; };
     double energy() const { return energy_; };
 
     virtual std::shared_ptr<Reference> conv_to_ref() const = 0;
