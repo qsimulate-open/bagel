@@ -35,16 +35,6 @@
 // I only implement a DF version
 //template<int DF>
 
-
-class PairMatrix1e {
-  protected:
-    Matrix1e mat1_, mat2_;
-  public:
-    PairMatrix1e(const Matrix1e& i, const Matrix1e& j) : mat1_(i), mat2_(j) {};
-    ~PairMatrix1e() {};
-
-};
-
 class UHF : public SCF_base {
   protected:
     std::shared_ptr<Matrix1e> aodensityA_;
