@@ -73,7 +73,8 @@ void ROHF::compute() {
     intermediateB->diagonalize(eigB());
 
     shared_ptr<Matrix1e> new_density, new_densityA, new_densityB;
-    tie(new_density, new_densityA, new_densityB) = form_density_uhf();
+    if (density_change_)
+      tie(new_density, new_densityA, new_densityB) = form_density_uhf();
 
     shared_ptr<Matrix1e> error_vector(new Matrix1e(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
@@ -99,27 +100,24 @@ void ROHF::compute() {
     }
 
     if (iter >= diis_start_) {
-      {
-        shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-        shared_ptr<Matrix1e> intermediateA(new Matrix1e(*natorb % *tmp_fock * *natorb));
-                             tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-        shared_ptr<Matrix1e> intermediateB(new Matrix1e(*natorb % *tmp_fock * *natorb));
+      shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
+      shared_ptr<Matrix1e> intermediateA(new Matrix1e(*natorb % *tmp_fock * *natorb));
+                           tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
+      shared_ptr<Matrix1e> intermediateB(new Matrix1e(*natorb % *tmp_fock * *natorb));
 
-        // Specific to ROHF:
-        //   here we want to symmetrize closed-virtual blocks
-        symmetrize_cv(intermediateA, intermediateB);
+      // Specific to ROHF:
+      //   here we want to symmetrize closed-virtual blocks
+      symmetrize_cv(intermediateA, intermediateB);
 
-        intermediateA->diagonalize(eig());
-        intermediateB->diagonalize(eigB());
-        coeff_ = shared_ptr<Coeff>(new Coeff(*natorb**intermediateA));
-        coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb**intermediateB));
-      }
-      tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+      intermediateA->diagonalize(eig());
+      intermediateB->diagonalize(eigB());
+      coeff_  = shared_ptr<Coeff>(new Coeff(*natorb**intermediateA));
+      coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb**intermediateB));
     } else {
-      aodensityA_ = new_densityA;
-      aodensityB_ = new_densityB;
-      aodensity_  = new_density;
+      coeff_  = shared_ptr<Coeff>(new Coeff(*natorb * *intermediateA));
+      coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb * *intermediateB));
     }
+    tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
   }
 }
 
