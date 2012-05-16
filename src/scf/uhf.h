@@ -42,6 +42,8 @@ class UHF : public SCF_base {
     std::unique_ptr<double[]> eigB_;
     double* eigB() { return eigB_.get(); };
 
+    void print_S2(const std::string) const;
+
   public:
     UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom)
       : SCF_base(idata_, geom) {

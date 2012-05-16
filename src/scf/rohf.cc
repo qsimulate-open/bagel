@@ -119,6 +119,8 @@ void ROHF::compute() {
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
   }
+
+  print_S2("ROHF");
 }
 
 
