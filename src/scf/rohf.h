@@ -42,6 +42,8 @@ class ROHF : public UHF {
 
     void compute();
 
+    void symmetrize_cv(std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>);
+
 };
 
 #endif
