@@ -74,7 +74,7 @@ am_libscf_a_OBJECTS = scf_base.$(OBJEXT) atom.$(OBJEXT) \
 	matrix1e.$(OBJEXT) hcore.$(OBJEXT) overlap.$(OBJEXT) \
 	tildex.$(OBJEXT) fock_base.$(OBJEXT) coeff.$(OBJEXT) \
 	petite.$(OBJEXT) symrot.$(OBJEXT) symmat.$(OBJEXT) \
-	slater2e.$(OBJEXT) uhf.$(OBJEXT)
+	slater2e.$(OBJEXT) uhf.$(OBJEXT) rohf.$(OBJEXT)
 libscf_a_OBJECTS = $(am_libscf_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -186,7 +186,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libscf.a
-libscf_a_SOURCES = scf_base.cc atom.cc atommap.cc shell.cc geometry.cc matrix1e.cc hcore.cc overlap.cc tildex.cc fock_base.cc coeff.cc petite.cc symrot.cc symmat.cc slater2e.cc uhf.cc
+libscf_a_SOURCES = scf_base.cc atom.cc atommap.cc shell.cc geometry.cc matrix1e.cc hcore.cc overlap.cc tildex.cc fock_base.cc coeff.cc petite.cc symrot.cc symmat.cc slater2e.cc uhf.cc rohf.cc
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -274,6 +274,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix1e.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/overlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petite.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rohf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scf_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slater2e.Po@am__quote@
