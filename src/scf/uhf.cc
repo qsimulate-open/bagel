@@ -113,6 +113,10 @@ void UHF::compute() {
       aodensity_  = new_density;
     }
   }
+  // now computes S^2 to see the spin contamination
+  const double S2exact = (nocc_-noccB_)*(nocc_-noccB_+2)*0.25;
+  const double contam = noccB_ - (*aodensityA_**overlap_**aodensityB_**overlap_).trace() * 0.25;
+  cout << "    * S^2 (UHF) is " << setprecision(4) << fixed << S2exact + contam << endl << endl;
 }
 
 
