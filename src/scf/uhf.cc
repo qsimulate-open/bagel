@@ -128,7 +128,8 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
   shared_ptr<Matrix1e> bmat(new Matrix1e(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate));
 
   int nocc = 0;
-  const double tiny = 1.0e-15;
+  // TODO adjust?
+  const double tiny = 1.0e-10;
   for (int i = 0; i != geom_->nbasis(); ++i)
     if (occup[i] < -tiny) ++nocc;
 
