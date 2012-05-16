@@ -138,6 +138,12 @@ int main(int argc, char** argv) {
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
+      } else if (method == "df-rohf-opt" || method == "rohf-opt") {
+
+        std::shared_ptr<Opt<ROHF> > opt(new Opt<ROHF>(idata, iter->second, geom));
+        for (int i = 0; i != 100; ++i)
+          if (opt->next()) break;
+
       } else if (method == "df-hf-opt") {
 
         std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(idata, iter->second, geom));

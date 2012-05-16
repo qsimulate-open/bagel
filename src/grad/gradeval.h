@@ -33,7 +33,7 @@
 #include <memory>
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
-#include <src/scf/uhf.h>
+#include <src/scf/rohf.h>
 #include <src/grad/gradeval_base.h>
 
 // T should have
@@ -68,5 +68,6 @@ class GradEval : public GradEval_base {
 // specialization
 template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute() const;
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute() const;
+template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute() const;
 
 #endif
