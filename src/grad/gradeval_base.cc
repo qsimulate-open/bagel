@@ -84,14 +84,12 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
 
           const int dimb1 = input[0]->nbasis(); 
           const int dimb0 = input[1]->nbasis(); 
-          const int ang1 = b1->angular_number();
-          const int ang0 = b0->angular_number();
-          const int s = (ang1+1)*(ang1+2)*(ang0+1)*(ang0+2)/4 * b1->num_primitive()*b0->num_primitive();
 
           {
             GNAIBatch batch2(input, geom_, tie(iatom1, iatom0));
             batch2.compute();
             const double* ndata = batch2.data();
+            const size_t s = batch2.size_block();
             for (int ia = 0; ia != natom*3; ++ia) {
               for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
                 for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
@@ -104,6 +102,7 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
             GKineticBatch batch(input, geom_);
             const double* kdata = batch.data();
             batch.compute();
+            const size_t s = batch.size_block();
             for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;
@@ -121,6 +120,7 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
             GOverlapBatch batch(input, geom_);
             const double* odata = batch.data();
             batch.compute();
+            const size_t s = batch.size_block();
             for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
               for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
                 int jatom0 = batch.swap01() ? iatom1 : iatom0;

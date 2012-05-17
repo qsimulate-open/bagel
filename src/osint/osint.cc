@@ -119,8 +119,10 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
 
   if (deriv_rank_ == 0 || deriv_rank_ == -1) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-  } else if (deriv_rank_ == 1) {
+    size_block_ = size_alloc_;
+  } else if (deriv_rank_ >= 1) {
     size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
+    size_block_ = prim0_ * prim1_ * asize_intermediate_;
   } else {
     throw logic_error("high-order multipoles and derivatives not implemented yet");
   }

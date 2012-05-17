@@ -55,6 +55,7 @@ class OSInt {
 
     const int deriv_rank_;
     size_t size_alloc_;
+    size_t size_block_;
 
     virtual void perform_VRR(double*) {};
     void perform_contraction(const int, const double*, const int, const int, double*, 
@@ -73,6 +74,7 @@ class OSInt {
     // since this is convenient for gradient evaluation.... 
     bool swap01() const { return swap01_; };
 
+    size_t size_block() const { return size_block_; };
 };
 
 #endif
