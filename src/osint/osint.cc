@@ -108,19 +108,21 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
   assert(coeffsx_.size() == prim0_ * prim1_);
   assert(coefftx_.size() == prim0_ * prim1_);
 
-  amax_ = ang0_ + ang1_ + deriv_rank_;
+  amax_ = ang0_ + ang1_ + abs(deriv_rank_);
   amax1_ = amax_ + 1;
   amin_ = ang0_;
-  
+
   asize_ = 0;
   for (int i = amin_; i != amax1_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
   asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
 
-  if (deriv_rank_ == 0) {
+  if (deriv_rank_ == 0 || deriv_rank_ == -1) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-  } else if (deriv_rank_ >= 1) {
+  } else if (deriv_rank_ == 1) {
     size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
+  } else {
+    throw logic_error("high-order multipoles and derivatives not implemented yet");
   }
   data_ = stack->get(size_alloc_);
 

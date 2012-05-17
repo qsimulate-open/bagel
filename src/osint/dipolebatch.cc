@@ -1,7 +1,7 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: overlapbatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: dipolebatch.cc
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,22 +24,16 @@
 //
 
 
-#ifndef __src_osint_overlapbatch_h
-#define __src_osint_overlapbatch_h
+#include <src/osint/dipolebatch.h>
 
-#include <vector>
-#include <src/osint/osint.h>
-#include <memory>
+using namespace std;
 
-class OverlapBatch : public OSInt {
-  protected:
-    void perform_VRR(double*);
+DipoleBatch::DipoleBatch(const vector<std::shared_ptr<Shell> >& _basis) 
+ : OSInt(_basis, -1) {
 
-  public: 
-    OverlapBatch(const std::vector<std::shared_ptr<Shell> >&);
-    ~OverlapBatch();
+}  
 
-    void compute();
-};
 
-#endif
+DipoleBatch::~DipoleBatch() {
+}
+

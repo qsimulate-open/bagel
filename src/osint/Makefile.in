@@ -71,7 +71,8 @@ libosint_a_AR = $(AR) $(ARFLAGS)
 libosint_a_LIBADD =
 am_libosint_a_OBJECTS = osint.$(OBJEXT) oscontraction.$(OBJEXT) \
 	overlapbatch.$(OBJEXT) ocompute.$(OBJEXT) ovrr.$(OBJEXT) \
-	kineticbatch.$(OBJEXT) kcompute.$(OBJEXT)
+	kineticbatch.$(OBJEXT) kcompute.$(OBJEXT) \
+	dipolebatch.$(OBJEXT)
 libosint_a_OBJECTS = $(am_libosint_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -185,7 +186,7 @@ top_srcdir = @top_srcdir@
 
 #INCLUDES = -I$(SRCDIR)/newint/src
 lib_LIBRARIES = libosint.a
-libosint_a_SOURCES = osint.cc oscontraction.cc overlapbatch.cc ocompute.cc ovrr.cc kineticbatch.cc kcompute.cc
+libosint_a_SOURCES = osint.cc oscontraction.cc overlapbatch.cc ocompute.cc ovrr.cc kineticbatch.cc kcompute.cc dipolebatch.cc
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -264,6 +265,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dipolebatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kcompute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kineticbatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ocompute.Po@am__quote@

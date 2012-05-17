@@ -62,6 +62,7 @@ class OSInt {
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
   public:
+    // deriv rank negative means multipole integrals
     OSInt(const std::vector<std::shared_ptr<Shell> >&, const int deriv = 0);
     ~OSInt();
 

@@ -25,6 +25,7 @@
 
 
 #include <src/scf/uhf.h>
+#include <src/prop/dipole.h>
 
 using namespace std;
 
@@ -115,6 +116,10 @@ void UHF::compute() {
   }
   // now computes S^2 to see the spin contamination
   print_S2("UHF");
+
+  // by default we compute dipoles
+  Dipole mu(aodensity_);
+  mu.compute();
 }
 
 

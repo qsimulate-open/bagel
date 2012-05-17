@@ -25,6 +25,7 @@
 
 
 #include <src/osint/overlapbatch.h>
+#include <src/rysint/hrrlist.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/macros.h>
 #include <cassert>

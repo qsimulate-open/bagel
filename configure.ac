@@ -35,6 +35,7 @@ AC_CONFIG_FILES([Makefile
                  src/slater/Makefile
                  src/scf/Makefile
                  src/df/Makefile
+                 src/prop/Makefile
                  src/smith/Makefile
                  src/mp2/Makefile
                  src/pmp2/Makefile
