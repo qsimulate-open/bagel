@@ -528,3 +528,4 @@ vector<double> Geometry::charge_center() const {
   out[2] /= sum;
   return out; 
 }
+

@@ -108,7 +108,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
   assert(coeffsx_.size() == prim0_ * prim1_);
   assert(coefftx_.size() == prim0_ * prim1_);
 
-  amax_ = ang0_ + ang1_ + abs(deriv_rank_);
+  amax_ = ang0_ + ang1_ + max(deriv_rank_, 0);
   amax1_ = amax_ + 1;
   amin_ = ang0_;
 

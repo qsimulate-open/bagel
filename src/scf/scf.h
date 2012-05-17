@@ -29,6 +29,7 @@
 
 #include <src/scf/scf_base.h>
 #include <src/util/diis.h>
+#include <src/prop/dipole.h>
 #include <iostream>
 #include <iomanip>
 
@@ -134,6 +135,9 @@ class SCF : public SCF_base {
         densitychange = std::shared_ptr<Matrix1e>(new Matrix1e(*diis_density - *aodensity_));
         aodensity_ = diis_density;
       }
+      // by default we compute dipoles
+      Dipole mu(geom_, aodensity_);
+      mu.compute();
     };
 
     std::shared_ptr<Reference> conv_to_ref() const {

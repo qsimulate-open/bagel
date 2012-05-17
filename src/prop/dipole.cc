@@ -19,7 +19,7 @@ Dipole::~Dipole() {
 }
 
 
-void Dipole::compute() {
+void Dipole::compute() const {
   vector<double> out(3, 0.0);
 
   // charge center (length 3)
@@ -50,12 +50,26 @@ void Dipole::compute() {
         for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1]; 
           shared_ptr<Shell> b1 = shell1[ibatch1];
+
           vector<shared_ptr<Shell> > input;
           input.push_back(b1);
           input.push_back(b0);
-
-          DipoleBatch dipole(input);
+          DipoleBatch dipole(input, center);
           dipole.compute();
+
+          const int dimb1 = input[0]->nbasis(); 
+          const int dimb0 = input[1]->nbasis(); 
+          const double* dat0 = dipole.data();
+          const double* dat1 = dipole.data() + dipole.size_block();
+          const double* dat2 = dipole.data() + dipole.size_block()*2;
+          for (int i = offset0; i != dimb0 + offset0; ++i) {
+            for (int j = offset1; j != dimb1 + offset1; ++j, ++dat0, ++dat1, ++dat2) {
+              out[0] += *dat0 * den_->element(j,i);
+              out[1] += *dat1 * den_->element(j,i);
+              out[2] += *dat2 * den_->element(j,i);
+            }
+          }
+
         }
       }
     }
