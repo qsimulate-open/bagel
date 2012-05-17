@@ -72,14 +72,14 @@ class Opt {
         mute_stdcout();
       }
       std::shared_ptr<GradFile> cgrad = eval.compute(); 
-      std::shared_ptr<GradFile> cgeom = current_->gradfile();
+      std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
       std::shared_ptr<GradFile> displ = bfgs_->extrapolate(cgrad, cgeom); 
       const double gradnorm = cgrad->norm();
       const double disnorm = displ->norm();
       const bool converged = gradnorm < thresh_ && disnorm < thresh_;
       if (!converged) {
         displ->scale(-1.0);
-        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ, idata_));
+        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), idata_));
         current_->print_atoms();
       }
 

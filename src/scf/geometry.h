@@ -33,7 +33,6 @@
 #include <src/scf/petite.h>
 #include <memory>
 #include <src/df/fit.h>
-#include <src/grad/gradfile.h>
 #include <src/util/input.h>
 
 class Geometry {
@@ -85,7 +84,7 @@ class Geometry {
   public:
     Geometry(const std::string, const int level);
     Geometry(const std::shared_ptr<const InputData> inpt);
-    Geometry(const Geometry& o, const std::shared_ptr<GradFile> disp, const std::shared_ptr<const InputData> inpt);
+    Geometry(const Geometry& o, const std::vector<double> disp, const std::shared_ptr<const InputData> inpt);
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
@@ -146,7 +145,9 @@ class Geometry {
       return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), offsets(), aux_atoms(), aux_offsets(), thr, inverse, gam));
     };
 
-    std::shared_ptr<GradFile> gradfile() const;
+    std::vector<double> xyz() const;
+
+    std::vector<double> charge_center() const;
 };
 
 #endif

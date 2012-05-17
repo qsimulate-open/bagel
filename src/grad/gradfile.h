@@ -67,6 +67,7 @@ class GradFile {
 
     std::shared_ptr<GradFile> clone() const { return std::shared_ptr<GradFile>(new GradFile(data_.size())); };
 
+    const std::vector<double>& xyz() const { return data_; };
     double& data(int i, int j) { return data_.at(3*i+j); };
     const double& data(int i, int j) const { return data_.at(3*i+j); };
 

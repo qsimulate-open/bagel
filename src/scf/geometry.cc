@@ -173,13 +173,13 @@ static vector<double> vec3(const double i, const double j, const double k) {
   vector<double> out(3); out[0] = i; out[1] = j; out[2] = k; return out; 
 };
 
-Geometry::Geometry(const Geometry& o, const std::shared_ptr<GradFile> displ, const std::shared_ptr<const InputData> inpt)
+Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_ptr<const InputData> inpt)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), nbasis_(o.nbasis_), nele_(o.nele_), nfrc_(o.nfrc_), naux_(o.naux_),
     lmax_(o.lmax_), aux_lmax_(o.aux_lmax_), offsets_(o.offsets_), aux_offsets_(o.aux_offsets_), level_(o.level_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) { 
 
   // first construct atoms using displacements
-  double* disp = displ->data();
+  auto disp = displ.begin();
   for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, disp += 3) {
     vector<double> cdispl = vec3(*disp, *(disp+1), *(disp+2));
     atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
@@ -504,12 +504,27 @@ void Geometry::merge_obs_aux() {
 }
 
 
-shared_ptr<GradFile> Geometry::gradfile() const {
-  vector<double> tmp;
+vector<double> Geometry::xyz() const {
+  vector<double> out;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
-    tmp.push_back((*i)->position(0));
-    tmp.push_back((*i)->position(1));
-    tmp.push_back((*i)->position(2));
+    out.push_back((*i)->position(0));
+    out.push_back((*i)->position(1));
+    out.push_back((*i)->position(2));
   }
-  return shared_ptr<GradFile>(new GradFile(tmp));
+  return out; 
+}
+
+vector<double> Geometry::charge_center() const {
+  vector<double> out(3, 0.0);
+  double sum = 0.0;
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
+    out[0] += (*i)->atom_number() * (*i)->position(0);
+    out[1] += (*i)->atom_number() * (*i)->position(1);
+    out[2] += (*i)->atom_number() * (*i)->position(2);
+    sum += (*i)->atom_number();
+  }
+  out[0] /= sum;
+  out[1] /= sum;
+  out[2] /= sum;
+  return out; 
 }
