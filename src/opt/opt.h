@@ -46,11 +46,11 @@ class Opt {
     std::shared_ptr<Geometry> current_;
     std::shared_ptr<BFGS<GradFile> > bfgs_;
 
+    int iter_;
+
     // somehow using raw pointers
     std::streambuf* backup_stream_;
     std::ofstream* ofs_;
-
-    int iter_;
 
     // TODO make it adjustable from the input
     const double thresh_;

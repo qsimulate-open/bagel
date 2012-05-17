@@ -39,7 +39,7 @@ class DipoleBatch : public OSInt {
     DipoleBatch(const std::vector<std::shared_ptr<Shell> >&);
     ~DipoleBatch();
 
-    void compute() {};
+    void compute();
 };
 
 #endif

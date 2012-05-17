@@ -122,7 +122,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
     size_block_ = size_alloc_;
   } else if (deriv_rank_ == -1) {
     size_block_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-    size_alloc_ = size_block_ * 6;
+    size_alloc_ = size_block_ * 3;
   } else if (deriv_rank_ >= 1) {
     size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
     size_block_ = prim0_ * prim1_ * asize_intermediate_;

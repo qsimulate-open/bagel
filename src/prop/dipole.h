@@ -11,10 +11,11 @@
 
 class Dipole {
   protected:
+    std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Matrix1e> den_;
 
   public:
-    Dipole(std::shared_ptr<const Matrix1e>);
+    Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix1e>);
     ~Dipole();
 
     void compute();

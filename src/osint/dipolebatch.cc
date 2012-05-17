@@ -37,3 +37,12 @@ DipoleBatch::DipoleBatch(const vector<std::shared_ptr<Shell> >& _basis)
 DipoleBatch::~DipoleBatch() {
 }
 
+
+void DipoleBatch::perform_VRR(double* data) {
+
+}
+
+
+void DipoleBatch::compute() {
+
+}

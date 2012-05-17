@@ -58,9 +58,8 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
 
-  // only lower half will be stored
+  // TODO perhaps we could reduce operation by a factor of 2
   for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
-    // iatom1 = iatom1;
     const shared_ptr<Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
