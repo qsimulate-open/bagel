@@ -117,9 +117,12 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
   asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
   asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
 
-  if (deriv_rank_ == 0 || deriv_rank_ == -1) {
+  if (deriv_rank_ == 0) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
     size_block_ = size_alloc_;
+  } else if (deriv_rank_ == -1) {
+    size_block_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
+    size_alloc_ = size_block_ * 6;
   } else if (deriv_rank_ >= 1) {
     size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
     size_block_ = prim0_ * prim1_ * asize_intermediate_;
