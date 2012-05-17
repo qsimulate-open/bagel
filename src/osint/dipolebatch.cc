@@ -64,7 +64,7 @@ void DipoleBatch::compute() {
 
     if (basisinfo_[1]->angular_number() != 0) { 
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
+      hrr.hrrfunc_call(hrr_index, cont0_*cont1_, intermediate_c, AB_, intermediate_fi);
     } else {
       const unsigned int array_size = cont0_*cont1_*asize_intermediate_;
       copy(intermediate_c, intermediate_c+array_size, intermediate_fi);
@@ -94,7 +94,7 @@ void DipoleBatch::compute() {
 
 
 void DipoleBatch::perform_VRR(double* intermediate) {
-  const int worksize = amax1_;
+  const int worksize = amax1_+1;
   double* workx = stack->get(worksize);
   double* worky = stack->get(worksize);
   double* workz = stack->get(worksize);
