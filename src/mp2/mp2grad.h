@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: mp2.h
+// Filename: mp2grad.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
@@ -24,27 +24,21 @@
 //
 
 
-#ifndef __SRC_MP2_MP2_H
-#define __SRC_MP2_MP2_H
+#ifndef __SRC_MP2_MP2GRAD_H
+#define __SRC_MP2_MP2GRAD_H
 
-#include <src/scf/geometry.h>
-#include <src/wfn/reference.h>
-#include <src/mp2/f12int.h>
+#include <src/mp2/mp2.h>
 #include <string>
 #include <map>
 
-class MP2 {
+class MP2Grad : public MP2 {
   protected:
-    const std::multimap<std::string, std::string> idata_;
-    const std::shared_ptr<Geometry> geom_; 
-    const std::shared_ptr<Reference> ref_;
-    int ncore_;
 
   public:
-    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
-    ~MP2() {};
+    MP2Grad(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
+    ~MP2Grad() {};
 
-    virtual void compute();
+    void compute();
 };
 
 #endif

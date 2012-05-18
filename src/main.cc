@@ -35,7 +35,7 @@
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
-#include <src/mp2/mp2.h>
+#include <src/mp2/mp2grad.h>
 #include <src/global.h>
 #include <src/stackmem.h>
 #include <src/opt/opt.h>
@@ -176,6 +176,12 @@ int main(int argc, char** argv) {
         if (!ref) throw std::runtime_error("MP2 needs a reference");
 
         std::shared_ptr<MP2> mp2(new MP2(iter->second, geom, ref));
+        mp2->compute();
+
+      } else if (method == "mp2-opt") {
+        if (!ref) throw std::runtime_error("MP2 needs a reference");
+
+        std::shared_ptr<MP2Grad> mp2(new MP2Grad(iter->second, geom, ref));
         mp2->compute();
       }
     }
