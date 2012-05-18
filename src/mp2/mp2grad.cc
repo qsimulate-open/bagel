@@ -110,7 +110,7 @@ void MP2Grad::compute() {
   // computes dipole mements
   shared_ptr<Matrix1e> cinv(new Matrix1e(*ref_->coeff()));
   cinv->inverse();
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv * *dmp2 ^ *cinv));
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv % *dmp2 * *cinv));
   Dipole dipole(geom_, dmp2ao);
   dipole.compute();
 
