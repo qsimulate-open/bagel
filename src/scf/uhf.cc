@@ -118,8 +118,10 @@ void UHF::compute() {
   print_S2("UHF");
 
   // by default we compute dipoles
-  Dipole mu(geom_, aodensity_);
-  mu.compute();
+  if (!geom_->external()) {
+    Dipole mu(geom_, aodensity_);
+    mu.compute();
+  }
 }
 
 

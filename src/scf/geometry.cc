@@ -167,6 +167,17 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
 
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
   }
+
+  // static external field
+  external_ = vector<double>(3);
+  external_[0] = read_input<double>(geominfo, "ex", 0.0); 
+  external_[1] = read_input<double>(geominfo, "ey", 0.0); 
+  external_[2] = read_input<double>(geominfo, "ez", 0.0); 
+  if (external())
+  cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
+                                                                         << setw(7) << external_[1] << ", " 
+                                                                         << setw(7) << external_[2] << ") a.u." << endl << endl; 
+
 }
 
 static vector<double> vec3(const double i, const double j, const double k) {
@@ -176,7 +187,7 @@ static vector<double> vec3(const double i, const double j, const double k) {
 Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_ptr<const InputData> inpt)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), nbasis_(o.nbasis_), nele_(o.nele_), nfrc_(o.nfrc_), naux_(o.naux_),
     lmax_(o.lmax_), aux_lmax_(o.aux_lmax_), offsets_(o.offsets_), aux_offsets_(o.aux_offsets_), level_(o.level_), basisfile_(o.basisfile_),
-    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) { 
+    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
   // first construct atoms using displacements
   auto disp = displ.begin();
@@ -207,6 +218,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
 Geometry::Geometry(const string s, const int levl)
   : spherical_(true), input_(s), lmax_(0), level_(levl) {
 
+throw logic_error("calling unsupported Geometry::Geometry");
   // open input file
   ifstream ifs;
   ifs.open(input_.c_str());

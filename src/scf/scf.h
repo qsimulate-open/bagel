@@ -136,8 +136,10 @@ class SCF : public SCF_base {
         aodensity_ = diis_density;
       }
       // by default we compute dipoles
-      Dipole mu(geom_, aodensity_);
-      mu.compute();
+      if (!geom_->external()) {
+        Dipole mu(geom_, aodensity_);
+        mu.compute();
+      }
     };
 
     std::shared_ptr<Reference> conv_to_ref() const {

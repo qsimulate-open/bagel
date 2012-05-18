@@ -27,6 +27,7 @@
 #include <src/scf/hcore.h>
 #include <src/grad/gnaibatch.h>
 #include <src/osint/kineticbatch.h>
+#include <src/osint/dipolebatch.h>
 #include <src/rysint/naibatch.h>
 #include <vector>
 #include <iostream>
@@ -56,17 +57,35 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis(); 
   const int dimb0 = input[1]->nbasis(); 
-  KineticBatch kinetic(input);
-  kinetic.compute();
-  const double* kdata = kinetic.data();
-  NAIBatch nai(input, geom_);
-  nai.compute();
-  const double* ndata = nai.data();
 
-  int cnt = 0;
-  for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-    for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[i * nbasis + j] = kdata[cnt] + ndata[cnt];
+  {
+    KineticBatch kinetic(input);
+    kinetic.compute();
+    const double* kdata = kinetic.data();
+    NAIBatch nai(input, geom_);
+    nai.compute();
+    const double* ndata = nai.data();
+
+    int cnt = 0;
+    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
+      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
+        data_[i*nbasis + j] = kdata[cnt] + ndata[cnt];
+      }
+    }
+  }
+
+  if (geom_->external()) {
+    DipoleBatch dipole(input, geom_->charge_center());
+    dipole.compute();
+    const size_t block = dipole.size_block();
+    const double* dip = dipole.data();
+    int cnt = 0;
+    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
+      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
+        data_[i*nbasis + j] += dip[cnt        ]*geom_->external(0);
+        data_[i*nbasis + j] += dip[cnt+block  ]*geom_->external(1);
+        data_[i*nbasis + j] += dip[cnt+block*2]*geom_->external(2);
+      }
     }
   }
 }

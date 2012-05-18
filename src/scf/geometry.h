@@ -78,6 +78,9 @@ class Geometry {
     // for DF calculations
     std::shared_ptr<DensityFit> df_;
 
+    // external field
+    std::vector<double> external_;
+
     // for R12 calculations
     double gamma_;
 
@@ -148,6 +151,10 @@ class Geometry {
     std::vector<double> xyz() const;
 
     std::vector<double> charge_center() const;
+
+    // external field
+    bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; };
+    double external(const int i) const { return external_[i]; };
 };
 
 #endif
