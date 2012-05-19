@@ -41,6 +41,7 @@ void MP2Grad::compute() {
   const long time = ::clock();
 
   // since this is only for closed shell
+  const size_t naux = geom_->naux();
   const size_t nocc = geom_->nele() / 2 - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons"); 
   const size_t nvirt = geom_->nbasis() - nocc - ncore_;
@@ -57,11 +58,13 @@ void MP2Grad::compute() {
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
   shared_ptr<DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<DF_Full> bv = full->apply_J();
+  shared_ptr<DF_Full> gia = bv->clone();
 
   cout << "    * 3-index integral transformation done" << endl;
 
   // assemble
-  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]);
+  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
   unique_ptr<double[]> buf2(new double[nocc*nvirt*nocc]);
   vector<double> eig_tm = ref_->eig();
   vector<double> eig(eig_tm.begin()+ncore_, eig_tm.end());
@@ -92,15 +95,27 @@ void MP2Grad::compute() {
     }
     sum += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
 
-    // D_ab = G_ac^ij T_bc^ij
-    // sorting to virt occ occ
-    SMITH::sort_indices<1,0,2,0,1,1,1>(buf, data, nocc, nvirt, nocc);
-    SMITH::sort_indices<1,0,2,0,1,1,1>(buf2, buf, nocc, nvirt, nocc);
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 1.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis); 
+    // form Gia : TODO distribute
+    // Gia(D|ic) = BV(D|ja) G_c(ja|i)
+    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux); 
 
-    // D_ij = - G_ab^jk T_ab^ik
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, 1.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, -1.0, optr, nbasis); 
+    // G(ja|ic) -> G_c(a,ij) 
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);
+    // T(jb|ic) -> T_c(b,ij) 
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf2, buf, nocc, nvirt, nocc);
+    // D_ab = G(ja|ic) T(jb|ic)
+    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 1.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis); 
+    // D_ij = - G(ja|kc) T(ia|kc)
+    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -1.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
   }
+
+  // L''aq = 2 Gia(D|ia) (D|iq)
+  unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
+
+  // Gip = Gia(D|ia) C+_ap
+  shared_ptr<DF_Half> gip = gia->back_transform(vcoeff);
+  // Liq = 2 Gip(D) * (D|pq)
+  unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
 
   const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << "    * assembly done" << endl << endl;

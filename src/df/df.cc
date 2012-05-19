@@ -251,6 +251,19 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DF_Full
 }
 
 
+void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DensityFit> o, const double a) const {
+  fill(target.get(), target.get()+nocc_*nbasis_, 0.0);
+  for (size_t i = 0; i != nbasis_; ++i)
+    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_.get()+i*naux_*nocc_, naux_, o->data_3index()+i*naux_*nbasis_, naux_,
+                                            1.0, target.get(), nocc_);
+}
+unique_ptr<double[]> DF_Half::form_2index(shared_ptr<const DensityFit> o, const double a) const {
+  unique_ptr<double[]> out(new double[nocc_*nbasis_]);
+  form_2index(out, o, a);
+  return move(out);
+}
+
+
 void DF_Half::form_4index(unique_ptr<double[]>& target) const {
   const int ndim = nbasis_ * nocc_;
   dgemm_("T", "N", ndim, ndim, naux_, 1.0, data_.get(), naux_, data_.get(), naux_, 0.0, target.get(), ndim); 
@@ -352,6 +365,26 @@ unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o)
   if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
   dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data(), naux_, o->data(), naux_, 0.0, out.get(), naux_); 
   return out;
+}
+
+
+void DF_Full::form_2index(unique_ptr<double[]>& target, const shared_ptr<const DF_Half> o, const double a) {
+  assert(nocc1() == o->nocc());
+  dgemm_("T", "N", nocc2_, o->nbasis(), nocc1_*naux_, a, data(), nocc1_*naux_, o->data(), nocc1_*naux_, 0.0, target.get(), nocc2_); 
+}
+
+
+unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Half> o, const double a) {
+  unique_ptr<double[]> out(new double[nocc2_*o->nbasis()]);
+  form_2index(out, o, a);
+  return out;
+}
+
+
+shared_ptr<DF_Full> DF_Full::clone() const {
+  unique_ptr<double[]> d(new double[size()]);
+  std::fill(d.get(), d.get()+size(), 0.0); 
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
 }
 
 

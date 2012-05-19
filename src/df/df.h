@@ -118,6 +118,9 @@ class DF_Half {
 
     ~DF_Half() {};
 
+    size_t nocc() const { return nocc_; };
+    size_t nbasis() const { return nbasis_; };
+
     double* const data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
@@ -132,6 +135,9 @@ class DF_Half {
 
     void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
+    // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
+    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
+    std::unique_ptr<double[]> form_2index(std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
 
     // form K operator
     std::unique_ptr<double[]> form_4index() const;
@@ -185,12 +191,17 @@ class DF_Full {
     void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DensityFit> o) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
 
+    // contract ii and form (D|E)
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
+
+    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double a = 0.0);
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a = 0.0);
 
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
 
+    std::shared_ptr<DF_Full> clone() const;
     std::shared_ptr<DF_Full> copy() const;
 
     // AO back transformation for gradient evaluations
