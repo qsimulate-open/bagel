@@ -121,11 +121,23 @@ void MP2Grad::compute() {
   unique_ptr<double[]> lia(new double[nocc*nvirt]);
   dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get(), nocc); 
 
+  // 4*J_al(d_rs)
+  shared_ptr<Matrix1e> dmp2ao_part(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
+  unique_ptr<double[]> jri(new double[nbasis*nocc]);
+  unique_ptr<double[]> jai(new double[nvirt*nocc]);
+  dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
+  dgemm_("T", "N", nvirt, nocc, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+  // -2*K_al(d_rs)
+  unique_ptr<double[]> kir = half->compute_Kop_1occ(dmp2ao_part->data());
+  unique_ptr<double[]> kia(new double[nvirt*nocc]);
+  dgemm_("N", "N", nocc, nvirt, nbasis, -1.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
+
   // printout right hand side
   cout << "  -- printing out the right hand side --" << endl;
   for (int a = 0; a != nvirt; ++a) {
     for (int i = 0; i != nocc; ++i) {
-      cout << setw(15) << setprecision(10) << lai[a+nvirt*i] - lia[i+nocc*a];
+      cout << setw(15) << setprecision(10) << lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a];
     }
     cout << endl;
   }
