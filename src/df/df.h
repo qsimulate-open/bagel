@@ -142,9 +142,12 @@ class DF_Half {
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
 
-    // form K operator
+    // form K^ij_rs operator
     std::unique_ptr<double[]> form_4index() const;
     void form_4index(std::unique_ptr<double[]>& target) const;
+
+    // compute a K operator with one occupied index K_rj(D_tu), given an AO density matrix.
+    std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
 
     // AO back transformation
     std::shared_ptr<DF_AO> back_transform(const double*) const;

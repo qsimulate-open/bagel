@@ -298,6 +298,18 @@ shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const siz
 }
 
 
+unique_ptr<double[]> DF_Half::compute_Kop_1occ(const double* den) const {
+  // J operator 
+  unique_ptr<double[]> buf(new double[naux_*nbasis_*nocc_]);
+  {
+    shared_ptr<DF_Half> jj = this->apply_J()->apply_J();
+    dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, jj->data(), naux_*nocc_, den, nbasis_, 0.0, buf.get(), naux_*nocc_);
+  }
+  shared_ptr<DF_Half> intermediate(new DF_Half(df_, nocc_, buf));
+  return intermediate->form_2index(df_);
+}
+
+
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
   if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
