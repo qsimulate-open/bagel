@@ -111,11 +111,25 @@ void MP2Grad::compute() {
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
+  unique_ptr<double[]> lai(new double[nocc*nvirt]);
+  dgemm_("N", "N", nvirt, nocc, nbasis, 1.0, laq.get(), nvirt, coeff, nbasis, 0.0, lai.get(), nvirt); 
 
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DF_Half> gip = gia->back_transform(vcoeff);
   // Liq = 2 Gip(D) * (D|pq)
   unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
+  unique_ptr<double[]> lia(new double[nocc*nvirt]);
+  dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get(), nocc); 
+
+  // printout right hand side
+  cout << "  -- printing out the right hand side --" << endl;
+  for (int a = 0; a != nvirt; ++a) {
+    for (int i = 0; i != nocc; ++i) {
+      cout << setw(15) << setprecision(10) << lai[a+nvirt*i] - lia[i+nocc*a];
+    }
+    cout << endl;
+  }
+  cout << "  --------------------------------------" << endl;
 
   const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << "    * assembly done" << endl << endl;
