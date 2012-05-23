@@ -104,9 +104,9 @@ void MP2Grad::compute() {
     // T(jb|ic) -> T_c(b,ij) 
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf2, buf, nocc, nvirt, nocc);
     // D_ab = G(ja|ic) T(jb|ic)
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 1.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis); 
+    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis); 
     // D_ij = - G(ja|kc) T(ia|kc)
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -1.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
+    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
   }
 
   // L''aq = 2 Gia(D|ia) (D|iq)
@@ -123,9 +123,7 @@ void MP2Grad::compute() {
                                                     << setw(10) << setprecision(2) << elapsed << endl << endl;
 
   // computes dipole mements
-  shared_ptr<Matrix1e> cinv(new Matrix1e(*ref_->coeff()));
-  cinv->inverse();
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv % *dmp2 * *cinv));
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   Dipole dipole(geom_, dmp2ao);
   dipole.compute();
 
