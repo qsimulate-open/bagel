@@ -81,6 +81,9 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
+    // compute a J operator, given density matrices in AO basis
+    std::unique_ptr<double[]> compute_Jop(const double* den) const;
+
 };
 
 

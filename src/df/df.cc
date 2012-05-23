@@ -207,6 +207,21 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
 
 }
 
+
+unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
+  unique_ptr<double[]> tmp0(new double[naux_]);
+  unique_ptr<double[]> tmp1(new double[naux_]);
+  unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
+  // first compute |E*) = d_rs (D|rs) J^{-1}_DE
+  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_.get(), naux_, den, 1, 0.0, tmp0.get(), 1); 
+  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp0, 1, 0.0, tmp1, 1); 
+  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp1, 1, 0.0, tmp0, 1); 
+  // then compute J operator J_{rs} = |E*) (E|rs)
+  dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_, naux_, tmp0, 1, 0.0, out, 1); 
+  return out;
+} 
+
+
 shared_ptr<DF_Half> DF_Half::clone() const {
   unique_ptr<double[]> dat(new double[size()]);
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
