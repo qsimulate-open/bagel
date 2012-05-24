@@ -1,7 +1,28 @@
 //
-// Author : Toru Shiozaki
-// Date   : May 2012
+// Newint - Parallel electron correlation program.
+// Filename: cphf.cc
+// Copyright (C) 2012 Toru Shiozaki
 //
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the Newint package (to be renamed).
+//
+// The Newint package is free software; you can redistribute it and\/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The Newint package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the Newint package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
 
 #include <src/grad/cphf.h>
 #include <cassert>
@@ -12,8 +33,8 @@
 using namespace std;
 
 CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
-           const shared_ptr<const Reference> r, const int n)
-: solver_(new Linear<Matrix1e>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()), ncore_(n) {
+           const shared_ptr<const Reference> r)
+: solver_(new Linear<Matrix1e>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
 }
 
@@ -21,25 +42,24 @@ CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, con
 shared_ptr<Matrix1e> CPHF::solve() const {
 
   const size_t naux = geom_->naux();
-  const size_t nocc = geom_->nele() / 2 - ncore_;
-  if (nocc < 1) throw runtime_error("no correlated electrons"); 
-  const size_t nvirt = geom_->nbasis() - nocc - ncore_;
-  if (nvirt < 1) throw runtime_error("no virtuals orbitals"); 
-  assert(geom_->nbasis() == ref_->coeff()->mdim());
+  const size_t nocca = ref_->nocc();
+  const size_t nvirt = geom_->nbasis() - nocca;
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const coeff = ref_->coeff()->data() + ncore_*nbasis;
-  const double* const vcoeff = coeff + nocc*nbasis;
+  const double* const ocoeff = ref_->coeff()->data();
+  const double* const vcoeff = ocoeff + nocca*nbasis;
 
   shared_ptr<Matrix1e> t(new Matrix1e(geom_));
-  for (int i = 0; i != nocc; ++i)
-    for (int a = nocc; a != nvirt+nocc; ++a)
+  for (int i = 0; i != nocca; ++i)
+    for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
 
-  unique_ptr<double[]> jri(new double[nbasis*nocc]);
-  unique_ptr<double[]> jai(new double[nvirt*nocc]);
-  unique_ptr<double[]> kia(new double[nvirt*nocc]);
+  unique_ptr<double[]> jri(new double[nbasis*nocca]);
+  unique_ptr<double[]> jai(new double[nvirt*nocca]);
+  unique_ptr<double[]> kia(new double[nvirt*nocca]);
+
+  cout << "  === CPHF iteration ===" << endl << endl;
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
@@ -47,38 +67,41 @@ shared_ptr<Matrix1e> CPHF::solve() const {
 
     shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
     // one electron part
-    sigma->zero();
-    for (int i = 0; i != nocc; ++i)
-      for (int a = nocc; a != nvirt+nocc; ++a)
+    for (int i = 0; i != nocca; ++i)
+      for (int a = nocca; a != nocca+nvirt; ++a)
         sigma->element(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
 
     // J part
     shared_ptr<Matrix1e> pbmao(new Matrix1e(geom_));
-    unique_ptr<double[]> pms(new double[nbasis*nocc]);
-    dgemm_("T", "T", nocc, nbasis, nvirt, 1.0, t->data()+nocc, nbasis, vcoeff, nbasis, 0.0, pms.get(), nocc);
-    dgemm_("N", "N", nbasis, nbasis, nocc, 1.0, coeff, nbasis, pms.get(), nocc, 0.0, pbmao->data(), nbasis);
+    unique_ptr<double[]> pms(new double[nbasis*nocca]);
+    dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff, nbasis, 0.0, pms.get(), nocca);
+    dgemm_("N", "N", nbasis, nbasis, nocca, 1.0, ocoeff, nbasis, pms.get(), nocca, 0.0, pbmao->data(), nbasis);
     pbmao->symmetrize();
 
     unique_ptr<double[]> jrs = geom_->df()->compute_Jop(pbmao->data());
-    dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
-    dgemm_("T", "N", nvirt, nocc, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+    dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
+    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
     // K part
     unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
-    dgemm_("N", "N", nocc, nvirt, nbasis, -2.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
-    for (int i = 0; i != nocc; ++i)
+    dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca); 
+    for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)
-        sigma->element(a+nocc,i) += jai[a+nvirt*i] + kia[i+nocc*a];
+        sigma->element(a+nocca,i) += jai[a+nvirt*i] + kia[i+nocca*a];
 
     t = solver_->compute_residual(t, sigma);
 
     // TODO to be controlled by the input
     if (t->norm() < CPHF_THRESH) break;
 
-    for (int i = 0; i != nocc; ++i)
-      for (int a = nocc; a != nvirt+nocc; ++a)
+    for (int i = 0; i != nocca; ++i)
+      for (int a = nocca; a != nvirt+nocca; ++a)
         t->element(a,i) /= (eig_[a]-eig_[i]);
 
+    cout << setw(6) << iter << setw(20) << setprecision(10) << t->norm() << endl;
+
   }
+
+  cout << endl;
   t = solver_->civec();
   t->fill_upper();
   return t;
