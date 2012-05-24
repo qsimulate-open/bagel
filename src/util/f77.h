@@ -81,6 +81,8 @@ extern "C" {
  void zgesdd_(const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
      std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*, int*);
 
+ // outer product
+ void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*); 
 };
 
 
@@ -122,5 +124,10 @@ static void dgesv_(const int n, const int nrhs, double* a, const int lda, int* i
              {dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info); };
 static void dgesv_(const int n, const int nrhs, std::unique_ptr<double[]>& a, const int lda, std::unique_ptr<int[]>& ipiv,
              std::unique_ptr<double[]>& b, const int ldb, int& info) {dgesv_(&n, &nrhs, a.get(), &lda, ipiv.get(), b.get(), &ldb, &info); };
+static void dger_(const int a, const int b, const double c, const double* d, const int e, const double* f, const int g, double* h, const int i)
+                 { dger_(&a, &b, &c, d, &e, f, &g, h, &i); };
+static void dger_(const int a, const int b, const double c, const std::unique_ptr<double[]>& d, const int e, const std::unique_ptr<double[]>& f,
+                  const int g, std::unique_ptr<double[]>& h, const int i)
+                 { dger_(&a, &b, &c, d.get(), &e, f.get(), &g, h.get(), &i); };
 
 #endif

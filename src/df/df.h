@@ -84,6 +84,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     // compute a J operator, given density matrices in AO basis
     std::unique_ptr<double[]> compute_Jop(const double* den) const;
 
+    std::unique_ptr<double[]> compute_cd(const double* den) const;
+
 };
 
 
@@ -96,10 +98,14 @@ class DF_AO : public DensityFit {
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
       data_ = std::move(dat); 
     };
+    // contructor for a seperable part of nuclear gradients
+    DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
 
     double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
     const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_.get()+i+naux_*(j+nbasis1_*k); };
+
+    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); }; 
 };
 
 
@@ -123,6 +129,8 @@ class DF_Half {
 
     size_t nocc() const { return nocc_; };
     size_t nbasis() const { return nbasis_; };
+    size_t naux() const { return naux_; };
+    const std::shared_ptr<const DensityFit> df() { return df_; };
 
     double* const data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
@@ -135,6 +143,7 @@ class DF_Half {
     std::shared_ptr<DF_Half> apply_JJ() const { return apply_JJ(df_); };
     std::shared_ptr<DF_Half> apply_J(std::shared_ptr<const DensityFit> d) const;
     std::shared_ptr<DF_Half> apply_JJ(std::shared_ptr<const DensityFit> d) const;
+    std::shared_ptr<DF_Half> apply_density(const double* d) const;
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
@@ -143,6 +152,8 @@ class DF_Half {
     // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
+
+    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Half> o) const;
 
     // form K^ij_rs operator
     std::unique_ptr<double[]> form_4index() const;
@@ -172,6 +183,8 @@ class DF_Full {
   public:
     DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::unique_ptr<double[]>& in)
       : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(std::move(in)), naux_(df->naux()) {};
+
+    DF_Full(std::shared_ptr<DF_Half> o) : df_(o->df()), nocc1_(o->nocc()), nocc2_(o->nbasis()), data_(o->move_data()), naux_(o->naux()) {};
 
     ~DF_Full() {};
 

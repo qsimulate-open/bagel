@@ -183,14 +183,53 @@ void MP2Grad::compute() {
   for (int i = 0; i != nocca; ++i) dtot->element(i,i) += 2.0;
 
   // computes dipole mements
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
-  Dipole dipole(geom_, dmp2ao);
+  shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
+  Dipole dipole(geom_, dtotao);
   dipole.compute();
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << endl;
   cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
   time = ::clock();
+
+  // one electron matrices
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  shared_ptr<Matrix1e> d0ao(new Matrix1e(*dtotao - *dmp2ao));
+  shared_ptr<Matrix1e> dbarao(new Matrix1e(*dtotao - *d0ao*0.5));
+
+  // size of naux
+  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data()); 
+  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao->data()); 
+
+
+  // three-index derivatives (seperable part)...
+  vector<const double*> cd; cd.push_back(cd0.get());      cd.push_back(cdbar.get());
+  vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data()); 
+  shared_ptr<DF_AO> sep3(new DF_AO(naux, nbasis, nbasis, cd, dd));
+
+  shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
+  {
+    shared_ptr<DF_AO> sep32 = sepd->back_transform(ref_->coeff()->data());
+    sep3->daxpy(-2.0, sep32);
+  }
+  
+
+  // two-index derivatives (seperable part)..
+  unique_ptr<double[]> sep2(new double[naux*naux]);
+  fill(sep2.get(), sep2.get()+naux*naux, 0.0);
+  dger_(naux, naux, 1.0, cd0, 1, cdbar, 1, sep2, naux); 
+
+  unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
+  daxpy_(naux*naux, -1.0, sep22, 1, sep2, 1);
+
+#if 1
+  for (int i = 0; i != 15; ++i) {
+    for (int j = 0; j != 15; ++j) {
+      cout << setw(10) << setprecision(6) << sep2[j+naux*i];
+    }
+    cout << endl;
+  } 
+#endif
 
 }
 

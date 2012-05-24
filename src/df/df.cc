@@ -209,17 +209,38 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
 
 
 unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
-  unique_ptr<double[]> tmp0(new double[naux_]);
-  unique_ptr<double[]> tmp1(new double[naux_]);
-  unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_.get(), naux_, den, 1, 0.0, tmp0.get(), 1); 
-  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp0, 1, 0.0, tmp1, 1); 
-  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp1, 1, 0.0, tmp0, 1); 
+  unique_ptr<double[]> tmp0 = compute_cd(den);
+  unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
   // then compute J operator J_{rs} = |E*) (E|rs)
   dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_, naux_, tmp0, 1, 0.0, out, 1); 
   return out;
 } 
+
+
+unique_ptr<double[]> DensityFit::compute_cd(const double* den) const {
+  unique_ptr<double[]> tmp0(new double[naux_]);
+  unique_ptr<double[]> tmp1(new double[naux_]);
+  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_.get(), naux_, den, 1, 0.0, tmp0.get(), 1); 
+  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp0, 1, 0.0, tmp1, 1); 
+  dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp1, 1, 0.0, tmp0, 1); 
+  return tmp0;
+}
+
+
+DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd)
+ : DensityFit(nbas0, nbas1, naux) {
+  assert(cd.size() == dd.size());
+
+  // initialize to zero
+  unique_ptr<double[]> buf(new double[naux_*nbasis0_*nbasis1_]); 
+  fill(buf.get(), buf.get()+size(), 0.0);
+
+  for (auto citer = cd.begin(), diter = dd.begin(); citer != cd.end(); ++citer, ++diter) {
+//  dger_(naux_, nbasis0_*nbasis1_, 1.0, *citer, 1, *diter, 1, buf.get(), naux_);
+  }
+  data_ = move(buf);
+}
 
 
 shared_ptr<DF_Half> DF_Half::clone() const {
@@ -310,12 +331,23 @@ shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const siz
 
 
 unique_ptr<double[]> DF_Half::compute_Kop_1occ(const double* den) const {
-  // J operator 
-  // this should have been multiplied by J^{-1}!
+  return apply_density(den)->form_2index(df_);
+}
+
+
+unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const {
+  unique_ptr<double[]> out(new double[naux_*naux_]);
+  if (nocc_*nbasis_ != o->nocc_*o->nbasis_) throw logic_error("wrong call to DF_Full::form_aux_2index");
+  dgemm_("N", "T", naux_, naux_, nocc_*nbasis_, 1.0, data(), naux_, o->data(), naux_, 0.0, out.get(), naux_); 
+  return out;
+}
+
+
+
+shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
   unique_ptr<double[]> buf(new double[naux_*nbasis_*nocc_]);
   dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, data(), naux_*nocc_, den, nbasis_, 0.0, buf.get(), naux_*nocc_);
-  shared_ptr<DF_Half> intermediate(new DF_Half(df_, nocc_, buf));
-  return intermediate->form_2index(df_);
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, buf));
 }
 
 
