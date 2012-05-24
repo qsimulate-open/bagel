@@ -66,6 +66,7 @@ class Matrix1e {
     const double& element(int i, int j) const { return *element_ptr(i, j); };
     const double* element_ptr(int i, int j) const { return data()+i+j*nbasis_; };
 
+    void fill_upper();
     void symmetrize();
     std::shared_ptr<Matrix1e> resize(std::shared_ptr<const Geometry>, const int) const;
     std::shared_ptr<Matrix1e> slice(const int, const int) const;

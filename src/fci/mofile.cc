@@ -74,7 +74,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore)
       core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
       dcopy_(nbasis*nbasis, fock0->data(), 1, core_fock_ptr(), 1);
     }
-    fock0->symmetrize();
+    fock0->fill_upper();
     dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff.get(),nbasis);
 
     unique_ptr<double[]> mo1e__(new double[nocc*nocc]);

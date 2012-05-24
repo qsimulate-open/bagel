@@ -41,7 +41,7 @@ SCF_base::SCF_base(multimap<string, string>& idat, const shared_ptr<const Geomet
 
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
   eig_ = move(eig);
-  hcore_->symmetrize();
+  hcore_->fill_upper();
 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);

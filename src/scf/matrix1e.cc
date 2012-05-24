@@ -158,12 +158,17 @@ shared_ptr<Matrix1e> Matrix1e::merge(const shared_ptr<const Matrix1e> o) const {
 }
 
 
+void Matrix1e::fill_upper() {
+  for (int i = 0; i != nbasis_; ++i)
+    for (int j = i+1; j != nbasis_; ++j)
+      data_[i+j*nbasis_] = data_[j+i*nbasis_];
+}
+
+
 void Matrix1e::symmetrize() {
-  for (int i = 0; i != nbasis_; ++i) {
-    for (int j = i + 1; j != nbasis_; ++j) {
-      data_[i + j * nbasis_] = data_[j + i * nbasis_]; 
-    }
-  } 
+  for (int i = 0; i != nbasis_; ++i)
+    for (int j = i+1; j != nbasis_; ++j)
+      data_[i+j*nbasis_] = data_[j+i*nbasis_] = 0.5*(data_[i+j*nbasis_]+data_[j+i*nbasis_]);
 }
 
 

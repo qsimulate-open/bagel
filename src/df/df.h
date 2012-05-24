@@ -132,7 +132,9 @@ class DF_Half {
     std::shared_ptr<DF_Half> copy() const;
 
     std::shared_ptr<DF_Half> apply_J() const { return apply_J(df_); };
+    std::shared_ptr<DF_Half> apply_JJ() const { return apply_JJ(df_); };
     std::shared_ptr<DF_Half> apply_J(std::shared_ptr<const DensityFit> d) const;
+    std::shared_ptr<DF_Half> apply_JJ(std::shared_ptr<const DensityFit> d) const;
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 

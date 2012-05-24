@@ -66,7 +66,7 @@ template<int DF>
 void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   
   // for debug <- what did I mean by this?? TODO
-  density_->symmetrize();
+  density_->fill_upper();
   if (den_ex && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
   if (!den_ex) den_ex = density_;
 
@@ -230,7 +230,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
       }
     }
     for (int i = 0; i != ndim_; ++i) data_[i*nbasis_ + i] *= 2.0;
-    symmetrize();
+    fill_upper();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {

@@ -134,6 +134,7 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
   }
 
   // printout right hand side
+#if 0
   cout << "  -- printing out the right hand side --" << endl;
   for (int a = 0; a != nvirt; ++a) {
     for (int i = 0; i != nocc; ++i) {
@@ -142,6 +143,7 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
     cout << endl;
   }
   cout << "  --------------------------------------" << endl;
+#endif
 
   // solve directly
   unique_ptr<double[]> left(new double[nocc*nocc*nvirt*nvirt]);
@@ -161,6 +163,19 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
   int info;
   dgesv_(nocc*nvirt, 1, left.get(), nocc*nvirt, ipiv.get(), lai.get(), nocc*nvirt, info); 
   if (info) throw logic_error("strange");
+
+#if 0
+  // printout right hand side
+  cout << "  -- printing out the right hand side --" << endl;
+  for (int a = 0; a != nvirt; ++a) {
+    for (int i = 0; i != nocc; ++i) {
+      cout << setw(15) << setprecision(10) << lai[i+nocc*a];
+    }
+    cout << endl;
+  }
+  cout << "  --------------------------------------" << endl;
+#endif
+
 
   for (int a = 0; a != nvirt; ++a) {
     for (int i = 0; i != nocc; ++i) {

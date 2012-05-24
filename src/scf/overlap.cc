@@ -39,7 +39,7 @@ using namespace std;
 Overlap::Overlap(const RefGeometry gm) : Matrix1e(gm) {
 
   init();
-  symmetrize();
+  fill_upper();
 
 }
 

@@ -30,6 +30,7 @@
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
+#include <src/util/linear.h>
 
 using namespace std;
 
@@ -38,7 +39,7 @@ MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<Geometry
 }
 
 void MP2Grad::compute() {
-  const long time = ::clock();
+  size_t time = ::clock();
 
   // since this is only for closed shell
   const size_t naux = geom_->naux();
@@ -55,13 +56,16 @@ void MP2Grad::compute() {
 
   // first compute half transformed integrals
   shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);  
+  shared_ptr<DF_Half> halfjj = half->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
   shared_ptr<DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
   shared_ptr<DF_Full> bv = full->apply_J();
   shared_ptr<DF_Full> gia = bv->clone();
 
-  cout << "    * 3-index integral transformation done" << endl;
+  double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  time = ::clock();
 
   // assemble
   unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
@@ -109,6 +113,11 @@ void MP2Grad::compute() {
     dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
   }
 
+  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum << endl << endl;
+  time = ::clock();
+
   // L''aq = 2 Gia(D|ia) (D|iq)
   unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
   unique_ptr<double[]> lai(new double[nocc*nvirt]);
@@ -129,29 +138,82 @@ void MP2Grad::compute() {
   dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
   dgemm_("T", "N", nvirt, nocc, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
   // -2*K_al(d_rs)
-  unique_ptr<double[]> kir = half->compute_Kop_1occ(dmp2ao_part->data());
+  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
   unique_ptr<double[]> kia(new double[nvirt*nocc]);
   dgemm_("N", "N", nocc, nvirt, nbasis, -1.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
 
-  // printout right hand side
-  cout << "  -- printing out the right hand side --" << endl;
+  shared_ptr<Matrix1e> grad(new Matrix1e(geom_));
+  shared_ptr<Matrix1e> t(new Matrix1e(geom_));
   for (int a = 0; a != nvirt; ++a) {
     for (int i = 0; i != nocc; ++i) {
-      cout << setw(15) << setprecision(10) << lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a];
+      // minus sign is due to the convention in the solvers which solve Ax+B=0..
+      grad->element(i,a) = - (lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a]);
+      t->element(i,a) = grad->element(i,a) / (eig[a+nocc]-eig[i]+0.001);
     }
-    cout << endl;
   }
-  cout << "  --------------------------------------" << endl;
 
-  const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << "    * assembly done" << endl << endl;
-  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
-                                                    << setw(10) << setprecision(2) << elapsed << endl << endl;
+  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  time = ::clock();
+
+  // solving CPHF
+  Linear<Matrix1e> solver(100, grad);
+
+
+  // TODO Max iter to be controlled by the input
+  for (int iter = 0; iter != 100; ++iter) {
+    solver.orthog(t);
+
+    shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
+    // one electron part
+    sigma->zero();
+    for (int a = 0; a != nvirt; ++a)
+      for (int i = 0; i != nocc; ++i)
+        sigma->element(i,a) = (eig[a+nocc]-eig[i]) * t->element(i,a);
+
+    // J part
+    shared_ptr<Matrix1e> pbmao(new Matrix1e(geom_));
+    unique_ptr<double[]> pms(new double[nbasis*nocc]);
+    dgemm_("N", "T", nocc, nbasis, nvirt, 1.0, t->data(), nbasis, vcoeff, nbasis, 0.0, pms.get(), nocc);
+    dgemm_("N", "N", nbasis, nbasis, nocc, 1.0, coeff, nbasis, pms.get(), nocc, 0.0, pbmao->data(), nbasis);
+    pbmao->symmetrize();
+
+    jrs = geom_->df()->compute_Jop(pbmao->data());
+    dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
+    dgemm_("T", "N", nvirt, nocc, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+    // K part
+    kir = halfjj->compute_Kop_1occ(pbmao->data());
+    dgemm_("N", "N", nocc, nvirt, nbasis, -2.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
+    for (int a = 0; a != nvirt; ++a)
+      for (int i = 0; i != nocc; ++i)
+        sigma->element(i,a) += jai[a+nvirt*i] + kia[i+nocc*a];
+
+    t = solver.compute_residual(t, sigma);
+
+    // TODO to be controlled by the input
+    if (t->norm() < 1.0e-8) break;
+
+    for (int a = 0; a != nvirt; ++a)
+      for (int i = 0; i != nocc; ++i)
+        t->element(i,a) /= (eig[a+nocc]-eig[i]);
+
+  }
+  t = solver.civec();
+
+  for (int a = 0; a != nvirt; ++a)
+    for (int i = 0; i != nocc; ++i)
+      dmp2->element(a+nocc,i) = dmp2->element(i,a+nocc) = t->element(i,a);
+
 
   // computes dipole mements
   shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   Dipole dipole(geom_, dmp2ao);
   dipole.compute();
+
+  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  cout << endl;
+  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  time = ::clock();
 
 }
 

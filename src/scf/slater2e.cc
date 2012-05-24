@@ -44,7 +44,7 @@ using namespace std;
 #if 0
 void Fock::slater_two_electron_part() {
   // for debug
-  density_->symmetrize();
+  density_->fill_upper();
 
   const vector<RefAtom> atoms = geom_->atoms(); 
   vector<RefShell> basis; 

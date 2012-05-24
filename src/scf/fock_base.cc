@@ -69,7 +69,7 @@ void Fock_base::fock_one_electron_part() {
   const double* previous_data = previous_->data();
   daxpy_(size, 1.0, previous_data, 1, data(), 1); 
 
-  symmetrize();
+  fill_upper();
 }
 
 
@@ -78,7 +78,7 @@ Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
 
   dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1); 
 
-  symmetrize();
+  fill_upper();
 }
 
 
@@ -88,7 +88,7 @@ Fock_base::Fock_base(const RefGeometry geom)
   Hcore hcore(geom);
   dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1); 
 
-  symmetrize();
+  fill_upper();
 }
 
 Fock_base::~Fock_base() {
