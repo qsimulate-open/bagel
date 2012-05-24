@@ -120,34 +120,42 @@ void MP2Grad::compute() {
   time = ::clock();
 
   // L''aq = 2 Gia(D|ia) (D|iq)
-  unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
   unique_ptr<double[]> lai(new double[nocc*nvirt]);
-  dgemm_("N", "N", nvirt, nocc, nbasis, 1.0, laq.get(), nvirt, coeff, nbasis, 0.0, lai.get(), nvirt); 
+  {
+    unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
+    dgemm_("N", "N", nvirt, nocc, nbasis, 1.0, laq.get(), nvirt, coeff, nbasis, 0.0, lai.get(), nvirt); 
+  }
 
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DF_Half> gip = gia->back_transform(vcoeff);
   // Liq = 2 Gip(D) * (D|pq)
-  unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
   unique_ptr<double[]> lia(new double[nocc*nvirt]);
-  dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get(), nocc); 
+  {
+    unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
+    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get(), nocc); 
+  }
 
   // 4*J_al(d_rs)
   shared_ptr<Matrix1e> dmp2ao_part(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
-  unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
-  unique_ptr<double[]> jri(new double[nbasis*nocc]);
   unique_ptr<double[]> jai(new double[nvirt*nocc]);
-  dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
-  dgemm_("T", "N", nvirt, nocc, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+  {
+    unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
+    unique_ptr<double[]> jri(new double[nbasis*nocc]);
+    dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
+    dgemm_("T", "N", nvirt, nocc, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+  }
   // -2*K_al(d_rs)
-  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
   unique_ptr<double[]> kia(new double[nvirt*nocc]);
-  dgemm_("N", "N", nocc, nvirt, nbasis, -1.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
+  {
+    unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
+    dgemm_("N", "N", nocc, nvirt, nbasis, -1.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
+  }
 
   shared_ptr<Matrix1e> grad(new Matrix1e(geom_));
   for (int a = 0; a != nvirt; ++a)
     for (int i = 0; i != nocc; ++i)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
-      grad->element(i,a) = - (lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a]);
+      grad->element(a+nocc,i) = - (lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a]);
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
@@ -156,10 +164,7 @@ void MP2Grad::compute() {
   // solving CPHF
   shared_ptr<CPHF> cphf(new CPHF(grad, eig, halfjj, ref_, ncore_));
   shared_ptr<Matrix1e> dia = cphf->solve();
-
-  for (int a = 0; a != nvirt; ++a)
-    for (int i = 0; i != nocc; ++i)
-      dmp2->element(a+nocc,i) = dmp2->element(i,a+nocc) = dia->element(i,a);
+  *dmp2 += *dia;
 
   // total density matrix
   shared_ptr<Matrix1e> dtot(new Matrix1e(*dmp2));

@@ -33,29 +33,29 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   const double* const vcoeff = coeff + nocc*nbasis;
 
   shared_ptr<Matrix1e> t(new Matrix1e(geom_));
-  for (int a = 0; a != nvirt; ++a)
-    for (int i = 0; i != nocc; ++i)
-      t->element(i,a) = grad_->element(i,a) / (eig_[a+nocc]-eig_[i]);
+  for (int i = 0; i != nocc; ++i)
+    for (int a = nocc; a != nvirt+nocc; ++a)
+      t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
 
   unique_ptr<double[]> jri(new double[nbasis*nocc]);
   unique_ptr<double[]> jai(new double[nvirt*nocc]);
   unique_ptr<double[]> kia(new double[nvirt*nocc]);
 
   // TODO Max iter to be controlled by the input
-  for (int iter = 0; iter != 100; ++iter) {
+  for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     solver_->orthog(t);
 
     shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
     // one electron part
     sigma->zero();
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        sigma->element(i,a) = (eig_[a+nocc]-eig_[i]) * t->element(i,a);
+    for (int i = 0; i != nocc; ++i)
+      for (int a = nocc; a != nvirt+nocc; ++a)
+        sigma->element(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
 
     // J part
     shared_ptr<Matrix1e> pbmao(new Matrix1e(geom_));
     unique_ptr<double[]> pms(new double[nbasis*nocc]);
-    dgemm_("N", "T", nocc, nbasis, nvirt, 1.0, t->data(), nbasis, vcoeff, nbasis, 0.0, pms.get(), nocc);
+    dgemm_("T", "T", nocc, nbasis, nvirt, 1.0, t->data()+nocc, nbasis, vcoeff, nbasis, 0.0, pms.get(), nocc);
     dgemm_("N", "N", nbasis, nbasis, nocc, 1.0, coeff, nbasis, pms.get(), nocc, 0.0, pbmao->data(), nbasis);
     pbmao->symmetrize();
 
@@ -65,22 +65,22 @@ shared_ptr<Matrix1e> CPHF::solve() const {
     // K part
     unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
     dgemm_("N", "N", nocc, nvirt, nbasis, -2.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        sigma->element(i,a) += jai[a+nvirt*i] + kia[i+nocc*a];
+    for (int i = 0; i != nocc; ++i)
+      for (int a = 0; a != nvirt; ++a)
+        sigma->element(a+nocc,i) += jai[a+nvirt*i] + kia[i+nocc*a];
 
     t = solver_->compute_residual(t, sigma);
 
     // TODO to be controlled by the input
     if (t->norm() < CPHF_THRESH) break;
 
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        t->element(i,a) /= (eig_[a+nocc]-eig_[i]);
+    for (int i = 0; i != nocc; ++i)
+      for (int a = nocc; a != nvirt+nocc; ++a)
+        t->element(a,i) /= (eig_[a]-eig_[i]);
 
   }
   t = solver_->civec();
-//t->fill_upper();
+  t->fill_upper();
   return t;
 
 }
