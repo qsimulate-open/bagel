@@ -61,6 +61,7 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
   const double* c = ref->coeff()->data();
   const double* cv = c + nocc*nbasis;
   shared_ptr<DF_Half> half = df->compute_half_transform(c, nocc)->apply_J();
+  shared_ptr<DF_Half> halfjj = df->compute_half_transform(c, nocc)->apply_J()->apply_J();
   shared_ptr<DF_Full> full = half->compute_second_transform(cv, nvirt);
   shared_ptr<DF_Full> fullo = half->compute_second_transform(c, nocc);
 
@@ -154,18 +155,6 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
     }
   }
 
-  // printout right hand side
-#if 0
-  cout << "  -- printing out the right hand side --" << endl;
-  for (int a = 0; a != nvirt; ++a) {
-    for (int i = 0; i != nocc; ++i) {
-      cout << setw(15) << setprecision(10) << lai[i+nocc*a];
-    }
-    cout << endl;
-  }
-  cout << "  --------------------------------------" << endl;
-#endif
-
   // solve directly
   unique_ptr<double[]> left(new double[nocc*nocc*nvirt*nvirt]);
   double* t = left.get();
@@ -185,18 +174,6 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
   dgesv_(nocc*nvirt, 1, left.get(), nocc*nvirt, ipiv.get(), lai.get(), nocc*nvirt, info); 
   if (info) throw logic_error("strange");
 
-#if 0
-  // printout right hand side
-  cout << "  -- printing out the right hand side --" << endl;
-  for (int a = 0; a != nvirt; ++a) {
-    for (int i = 0; i != nocc; ++i) {
-      cout << setw(15) << setprecision(10) << lai[i+nocc*a];
-    }
-    cout << endl;
-  }
-  cout << "  --------------------------------------" << endl;
-#endif
-
 
   for (int a = 0; a != nvirt; ++a) {
     for (int i = 0; i != nocc; ++i) {
@@ -213,9 +190,8 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
   Dipole dipole(geom, dmp2ao);
   dipole.compute();
 
-#if 0
   // Wij(I)
-  unique_ptr<double[]> wijI(new double[nocc*nocc]);
+  shared_ptr<Matrix1e> w(new Matrix1e(geom));
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j != nocc; ++j) {
       double tmp = 0.0;
@@ -226,10 +202,9 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
           }
         }
       }
-      wijI[j+nocc*i] = tmp;
+      w->element(j,i) += tmp - 0.5*dmp2->element(i,j)*(eig[i]+eig[j]);
     }
   }
-  unique_ptr<double[]> wabI(new double[nvirt*nvirt]);
   for (int a = 0; a != nvirt; ++a) {
     for (int b = 0; b != nvirt; ++b) {
       double tmp = 0.0;
@@ -240,9 +215,30 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
           }
         }
       }
-      wabI[b+nvirt*a] = tmp;
+      w->element(a+nocc, b+nocc) += tmp - 0.5*dmp2->element(a+nocc,b+nocc)*(eig[a+nocc]+eig[b+nocc]);
     }
   }
-#endif
+  for (int a = 0; a != nvirt; ++a) {
+    for (int i = 0; i != nocc; ++i) {
+      double tmp = 0.0;
+      for (int j = 0; j != nocc; ++j) {
+        for (int k = 0; k != nocc; ++k) {
+          for (int b = 0; b != nvirt; ++b) {
+            tmp += -2*tijab[m(j,a,k,b)]*kijkb[mo(i,j,k,b)] - 0.5*dmp2->element(a+nocc,i)*eig[i];
+          }
+        }
+      }
+      w->element(a+nocc, i) = w->element(i, a+nocc) = tmp;
+    }
+  }
+
+  unique_ptr<double[]> jri(new double[nbasis*nocc]);
+  unique_ptr<double[]> jrs = geom->df()->compute_Jop(dmp2ao->data());
+  dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, c, nbasis, 0.0, jri.get(), nbasis);
+  dgemm_("T", "N", nocc, nocc, nbasis, -2.0, c, nbasis, jri.get(), nbasis, 1.0, w->data(), nbasis); 
+  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
+  dgemm_("N", "N", nocc, nocc, nbasis, 1.0, kir.get(), nocc, c, nbasis, 1.0, w->data(), nbasis); 
+
+  w->print();
 
 };
