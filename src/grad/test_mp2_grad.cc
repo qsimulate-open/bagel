@@ -183,9 +183,12 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
     }
   } 
 
+  shared_ptr<Matrix1e> dtot(new Matrix1e(*dmp2));
+  for (int i = 0; i != nocc; ++i) dtot->element(i,i) += 2.0;
+
   // computes dipole mements
   shared_ptr<Matrix1e> cinv(new Matrix1e(*ref->coeff()));
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv * *dmp2 ^ *cinv));
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv * *dtot ^ *cinv));
   Dipole dipole(geom, dmp2ao);
   dipole.compute();
 

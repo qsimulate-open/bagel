@@ -25,6 +25,7 @@
 
 
 #include <src/mp2/mp2grad.h>
+#include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
@@ -143,70 +144,29 @@ void MP2Grad::compute() {
   dgemm_("N", "N", nocc, nvirt, nbasis, -1.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
 
   shared_ptr<Matrix1e> grad(new Matrix1e(geom_));
-  shared_ptr<Matrix1e> t(new Matrix1e(geom_));
-  for (int a = 0; a != nvirt; ++a) {
-    for (int i = 0; i != nocc; ++i) {
+  for (int a = 0; a != nvirt; ++a)
+    for (int i = 0; i != nocc; ++i)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(i,a) = - (lai[a+nvirt*i] - lia[i+nocc*a] - jai[a+nvirt*i] - kia[i+nocc*a]);
-      t->element(i,a) = grad->element(i,a) / (eig[a+nocc]-eig[i]+0.001);
-    }
-  }
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
   time = ::clock();
 
   // solving CPHF
-  Linear<Matrix1e> solver(100, grad);
-
-
-  // TODO Max iter to be controlled by the input
-  for (int iter = 0; iter != 100; ++iter) {
-    solver.orthog(t);
-
-    shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
-    // one electron part
-    sigma->zero();
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        sigma->element(i,a) = (eig[a+nocc]-eig[i]) * t->element(i,a);
-
-    // J part
-    shared_ptr<Matrix1e> pbmao(new Matrix1e(geom_));
-    unique_ptr<double[]> pms(new double[nbasis*nocc]);
-    dgemm_("N", "T", nocc, nbasis, nvirt, 1.0, t->data(), nbasis, vcoeff, nbasis, 0.0, pms.get(), nocc);
-    dgemm_("N", "N", nbasis, nbasis, nocc, 1.0, coeff, nbasis, pms.get(), nocc, 0.0, pbmao->data(), nbasis);
-    pbmao->symmetrize();
-
-    jrs = geom_->df()->compute_Jop(pbmao->data());
-    dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
-    dgemm_("T", "N", nvirt, nocc, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
-    // K part
-    kir = halfjj->compute_Kop_1occ(pbmao->data());
-    dgemm_("N", "N", nocc, nvirt, nbasis, -2.0, kir.get(), nocc, vcoeff, nbasis, 0.0, kia.get(), nocc); 
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        sigma->element(i,a) += jai[a+nvirt*i] + kia[i+nocc*a];
-
-    t = solver.compute_residual(t, sigma);
-
-    // TODO to be controlled by the input
-    if (t->norm() < 1.0e-8) break;
-
-    for (int a = 0; a != nvirt; ++a)
-      for (int i = 0; i != nocc; ++i)
-        t->element(i,a) /= (eig[a+nocc]-eig[i]);
-
-  }
-  t = solver.civec();
+  shared_ptr<CPHF> cphf(new CPHF(grad, eig, halfjj, ref_, ncore_));
+  shared_ptr<Matrix1e> dia = cphf->solve();
 
   for (int a = 0; a != nvirt; ++a)
     for (int i = 0; i != nocc; ++i)
-      dmp2->element(a+nocc,i) = dmp2->element(i,a+nocc) = t->element(i,a);
+      dmp2->element(a+nocc,i) = dmp2->element(i,a+nocc) = dia->element(i,a);
 
+  // total density matrix
+  shared_ptr<Matrix1e> dtot(new Matrix1e(*dmp2));
+  for (int i = 0; i != nocc; ++i) dtot->element(i,i) += 2.0;
 
   // computes dipole mements
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
   Dipole dipole(geom_, dmp2ao);
   dipole.compute();
 
