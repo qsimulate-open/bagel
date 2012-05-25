@@ -237,7 +237,7 @@ DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<cons
   fill(buf.get(), buf.get()+size(), 0.0);
 
   for (auto citer = cd.begin(), diter = dd.begin(); citer != cd.end(); ++citer, ++diter) {
-//  dger_(naux_, nbasis0_*nbasis1_, 1.0, *citer, 1, *diter, 1, buf.get(), naux_);
+    dger_(naux_, nbasis0_*nbasis1_, 1.0, *citer, 1, *diter, 1, buf.get(), naux_);
   }
   data_ = move(buf);
 }

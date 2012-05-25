@@ -195,7 +195,11 @@ void MP2Grad::compute() {
   // one electron matrices
   shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   shared_ptr<Matrix1e> d0ao(new Matrix1e(*dtotao - *dmp2ao));
+#ifndef DEBUG_SEP
   shared_ptr<Matrix1e> dbarao(new Matrix1e(*dtotao - *d0ao*0.5));
+#else
+  shared_ptr<Matrix1e> dbarao(new Matrix1e(*d0ao*0.5));
+#endif
 
   // size of naux
   unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data()); 
@@ -217,18 +221,34 @@ void MP2Grad::compute() {
   // two-index derivatives (seperable part)..
   unique_ptr<double[]> sep2(new double[naux*naux]);
   fill(sep2.get(), sep2.get()+naux*naux, 0.0);
-  dger_(naux, naux, 1.0, cd0, 1, cdbar, 1, sep2, naux); 
+  dger_(naux, naux, 2.0, cd0, 1, cdbar, 1, sep2, naux); 
 
-  unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
-  daxpy_(naux*naux, -1.0, sep22, 1, sep2, 1);
+  {
+    unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
+    daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
+  }
+#if 0
+  {
+    unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
+    daxpy_(naux*naux, -1.0, sep22, 1, sep2, 1);
+  }
+  // symmetrize..
+  for (int i = 0; i != naux; ++i)
+    for (int j = i+1; j != naux; ++j)
+      sep2[j+i*naux] = sep2[i+j*naux] = 0.5*(sep2[j+i*naux] + sep2[i+j*naux]); 
+#endif
 
-#if 1
+#if 0
   for (int i = 0; i != 15; ++i) {
     for (int j = 0; j != 15; ++j) {
       cout << setw(10) << setprecision(6) << sep2[j+naux*i];
     }
     cout << endl;
   } 
+  cout << "===" << endl;
+  for (int i = 0; i != 15; ++i) 
+    cout << setw(10) << setprecision(6) << sep3->data_3index()[i];
+  cout << endl;
 #endif
 
 }
