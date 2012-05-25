@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
     /////////////////////////////////////
     //test_solvers(geom);
     /////////////////////////////////////
-    test_mp2_grad(ref);
+    //test_mp2_grad(ref);
 
     delete stack;
 
