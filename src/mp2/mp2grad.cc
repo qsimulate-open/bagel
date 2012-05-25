@@ -125,8 +125,8 @@ void MP2Grad::compute() {
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   unique_ptr<double[]> lai(new double[nocca*nvirt]);
+  const unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
   {
-    unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
     dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq.get(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt); 
   }
 
@@ -136,8 +136,8 @@ void MP2Grad::compute() {
   unique_ptr<double[]> lia(new double[nocca*nvirt]);
   fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
   unique_ptr<double[]> lif(new double[nocc*max(ncore_,1)]);
+  const unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
   {
-    unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
     dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore_, nocca); 
     if (ncore_)
       dgemm_("N", "N", nocc, ncore_, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc); 
@@ -148,7 +148,7 @@ void MP2Grad::compute() {
     for (int j = ncore_; j != nocca; ++j)
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore_)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
-  // 4*J_al(d_rs)
+  // 2*J_al(d_rs)
   shared_ptr<Matrix1e> dmp2ao_part(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
   {
@@ -157,7 +157,7 @@ void MP2Grad::compute() {
     dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
     dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
   }
-  // -2*K_al(d_rs)
+  // -1*K_al(d_rs)
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
   {
     unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
@@ -188,6 +188,9 @@ void MP2Grad::compute() {
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 
+// dipole is correct
+////////////////////////////////////////////////////////////////////////////
+
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << endl;
   cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
@@ -196,11 +199,7 @@ void MP2Grad::compute() {
   // one electron matrices
   shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   shared_ptr<Matrix1e> d0ao(new Matrix1e(*dtotao - *dmp2ao));
-#ifndef DEBUG_SEP
   shared_ptr<Matrix1e> dbarao(new Matrix1e(*dtotao - *d0ao*0.5));
-#else
-  shared_ptr<Matrix1e> dbarao(new Matrix1e(*d0ao*0.5));
-#endif
 
   // size of naux
   unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data()); 
@@ -236,7 +235,6 @@ void MP2Grad::compute() {
   unique_ptr<double[]> sep2(new double[naux*naux]);
   fill(sep2.get(), sep2.get()+naux*naux, 0.0);
   dger_(naux, naux, 2.0, cd0, 1, cdbar, 1, sep2, naux); 
-
   {
     unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
@@ -245,16 +243,43 @@ void MP2Grad::compute() {
     unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
     dgemm_("N", "N", naux, naux, naux, -2.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
   }
+
   // symmetrize..
   for (int i = 0; i != naux; ++i)
     for (int j = i+1; j != naux; ++j)
       sep2[j+i*naux] = sep2[i+j*naux] = 0.5*(sep2[j+i*naux] + sep2[i+j*naux]); 
 
 
+  // energy weighted density
+  shared_ptr<Matrix1e> wd(new Matrix1e(geom_));
+  for (int i = 0; i != nocc; ++i)
+    for (int j = 0; j != nocc; ++j)
+      wd->element(j,i) += 0.5 * dtot->element(j,i) * (eig[j] + eig[i]); 
+  for (int i = 0; i != nvirt; ++i)
+    for (int j = 0; j != nvirt; ++j)
+      wd->element(j+nocc,i+nocc) += 0.5 * dtot->element(j+nocc,i+nocc) * (eig[j+nocc] + eig[i+nocc]); 
+  for (int i = 0; i != nocc; ++i)
+    for (int j = 0; j != nvirt; ++j)
+      wd->element(j+nocc,i) += 2.0*dtot->element(j+nocc,i) * eig[i];
+  // Liq + Laq
+  dgemm_("N", "N", nocc, nocc, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data(), nbasis); 
+  dgemm_("N", "N", nvirt, nocc, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocc, nbasis); 
+  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocc+nocc*nbasis, nbasis); 
+
+  unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao->data());
+  unique_ptr<double[]> jri(new double[nbasis*nocc]);
+  dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
+  dgemm_("T", "N", nocc, nocc, nbasis, 2.0, coeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis); 
+  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
+  dgemm_("N", "N", nocc, nocc, nbasis, -1.0, kir.get(), nocc, coeff, nbasis, 1.0, wd->data(), nbasis); 
+
+  wd->symmetrize();
+  wd->print();
+  shared_ptr<Matrix1e> wdao(new Matrix1e(*ref_->coeff() * *wd ^ *ref_->coeff()));
+
   // gradient evaluation
-  shared_ptr<Matrix1e> tmp(new Matrix1e(geom_));
   GradEval_base eval(geom_);
-  eval.contract_gradient(dtotao, tmp, sep3, sep2)->print(); 
+  eval.contract_gradient(dtotao, wdao, sep3, sep2)->print(); 
 
 }
 

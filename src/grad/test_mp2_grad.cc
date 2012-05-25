@@ -186,9 +186,10 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
 
   // computes dipole mements
   shared_ptr<Matrix1e> cinv(new Matrix1e(*ref->coeff()));
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv * *dtot ^ *cinv));
+  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*cinv * *dmp2 ^ *cinv));
   Dipole dipole(geom, dmp2ao);
   dipole.compute();
+dmp2 = dtot;
 
   // Wij(I)
   shared_ptr<Matrix1e> w(new Matrix1e(geom));
@@ -202,9 +203,12 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
           }
         }
       }
-      w->element(j,i) += tmp - 0.5*dmp2->element(i,j)*(eig[i]+eig[j]);
+      w->element(j,i) += tmp*0.5;
+      w->element(i,j) += tmp*0.5;
+      w->element(j,i) +=  - 0.5*dmp2->element(i,j)*(eig[i]+eig[j]);
     }
   }
+#if 1
   for (int a = 0; a != nvirt; ++a) {
     for (int b = 0; b != nvirt; ++b) {
       double tmp = 0.0;
@@ -215,7 +219,9 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
           }
         }
       }
-      w->element(a+nocc, b+nocc) += tmp - 0.5*dmp2->element(a+nocc,b+nocc)*(eig[a+nocc]+eig[b+nocc]);
+      w->element(a+nocc, b+nocc) += tmp*0.5;
+      w->element(b+nocc, a+nocc) += tmp*0.5;
+      w->element(a+nocc, b+nocc) += - 0.5*dmp2->element(a+nocc,b+nocc)*(eig[a+nocc]+eig[b+nocc]);
     }
   }
   for (int a = 0; a != nvirt; ++a) {
@@ -224,20 +230,26 @@ void test_mp2_grad(shared_ptr<Reference> ref) {
       for (int j = 0; j != nocc; ++j) {
         for (int k = 0; k != nocc; ++k) {
           for (int b = 0; b != nvirt; ++b) {
-            tmp += -2*tijab[m(j,a,k,b)]*kijkb[mo(i,j,k,b)] - 0.5*dmp2->element(a+nocc,i)*eig[i];
+            tmp += -2*tijab[m(j,a,k,b)]*kijkb[mo(i,j,k,b)];
           }
         }
       }
-      w->element(a+nocc, i) = w->element(i, a+nocc) = tmp;
+      w->element(a+nocc, i) += tmp;
+      w->element(i, a+nocc) += tmp;
+      w->element(a+nocc, i) += -0.5*dmp2->element(a+nocc,i)*eig[i];
+      w->element(i, a+nocc) += -0.5*dmp2->element(a+nocc,i)*eig[i]; 
     }
   }
+#endif
 
+#if 1
   unique_ptr<double[]> jri(new double[nbasis*nocc]);
   unique_ptr<double[]> jrs = geom->df()->compute_Jop(dmp2ao->data());
   dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, c, nbasis, 0.0, jri.get(), nbasis);
   dgemm_("T", "N", nocc, nocc, nbasis, -2.0, c, nbasis, jri.get(), nbasis, 1.0, w->data(), nbasis); 
   unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
   dgemm_("N", "N", nocc, nocc, nbasis, 1.0, kir.get(), nocc, c, nbasis, 1.0, w->data(), nbasis); 
+#endif
 
   w->print();
 
