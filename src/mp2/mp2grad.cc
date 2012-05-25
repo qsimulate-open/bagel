@@ -213,12 +213,12 @@ void MP2Grad::compute() {
 
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
   {
-    shared_ptr<DF_AO> sep32 = sepd->back_transform(ref_->coeff()->data());
+    shared_ptr<DF_AO> sep32 = sepd->back_transform(ocoeff);
     sep3->daxpy(-2.0, sep32);
   }
   /// mp2 two body part ----------------
   {
-    shared_ptr<DF_AO> sep32 = gip->back_transform(ref_->coeff()->data());
+    shared_ptr<DF_AO> sep32 = gip->back_transform(coeff);
     sep3->daxpy(4.0, sep32);
   }
   // symmetrize...
@@ -240,13 +240,8 @@ void MP2Grad::compute() {
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
   {
-#if 1
     unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
     dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
-#else
-    unique_ptr<double[]> sep22 = gip->form_aux_2index(halfjj); 
-    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
-#endif
   }
 
   // symmetrize..
@@ -257,26 +252,26 @@ void MP2Grad::compute() {
 
   // energy weighted density
   shared_ptr<Matrix1e> wd(new Matrix1e(geom_));
-  for (int i = 0; i != nocc; ++i)
-    for (int j = 0; j != nocc; ++j)
-      wd->element(j,i) += dtot->element(j,i) * eig[j];
+  for (int i = 0; i != nocca; ++i)
+    for (int j = 0; j != nocca; ++j)
+      wd->element(j,i) += dtot->element(j,i) * eig_tm[j];
   for (int i = 0; i != nvirt; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocc,i+nocc) += dmp2->element(j+nocc,i+nocc) * eig[j+nocc];
-  for (int i = 0; i != nocc; ++i)
+      wd->element(j+nocca,i+nocca) += dmp2->element(j+nocca,i+nocca) * eig_tm[j+nocca];
+  for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocc,i) += 2.0 * dmp2->element(j+nocc,i) * eig[i];
+      wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  dgemm_("N", "N", nocc, nocc, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data(), nbasis); 
-  dgemm_("N", "N", nvirt, nocc, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocc, nbasis); 
-  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocc+nocc*nbasis, nbasis); 
+  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore_, nbasis); 
+  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis); 
+  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis); 
 
   unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao->data());
-  unique_ptr<double[]> jri(new double[nbasis*nocc]);
-  dgemm_("N", "N", nbasis, nocc, nbasis, 1.0, jrs.get(), nbasis, coeff, nbasis, 0.0, jri.get(), nbasis);
-  dgemm_("T", "N", nocc, nocc, nbasis, 2.0, coeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis); 
+  unique_ptr<double[]> jri(new double[nbasis*nocca]);
+  dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
+  dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis); 
   unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
-  dgemm_("N", "N", nocc, nocc, nbasis, -1.0, kir.get(), nocc, coeff, nbasis, 1.0, wd->data(), nbasis); 
+  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis); 
 
   wd->symmetrize();
   wd->print();
