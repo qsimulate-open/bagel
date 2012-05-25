@@ -31,6 +31,7 @@
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
+#include <src/grad/gradeval_base.h>
 #include <src/util/linear.h>
 
 using namespace std;
@@ -209,14 +210,27 @@ void MP2Grad::compute() {
   // three-index derivatives (seperable part)...
   vector<const double*> cd; cd.push_back(cd0.get());      cd.push_back(cdbar.get());
   vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data()); 
-  shared_ptr<DF_AO> sep3(new DF_AO(naux, nbasis, nbasis, cd, dd));
+  shared_ptr<DF_AO> sep3(new DF_AO(nbasis, nbasis, naux, cd, dd));
 
+  // TODO perhaps we could merge back transformation...
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
   {
     shared_ptr<DF_AO> sep32 = sepd->back_transform(ref_->coeff()->data());
     sep3->daxpy(-2.0, sep32);
   }
-  
+  {
+    shared_ptr<DF_AO> sep32 = gip->back_transform(ref_->coeff()->data());
+    sep3->daxpy(1.0, sep32);
+  }
+  // symmetrize...
+  for (int i = 0; i != nbasis; ++i) {
+    for (int j = i+1; j != nbasis; ++j) {
+      for (int k = 0; k != naux; ++k) {
+        const double tmp = 0.5*(*sep3->ptr(k,j,i) + *sep3->ptr(k,i,j));
+        *sep3->ptr(k,j,i) = *sep3->ptr(k,i,j) = tmp;
+      }
+    }
+  }
 
   // two-index derivatives (seperable part)..
   unique_ptr<double[]> sep2(new double[naux*naux]);
@@ -227,29 +241,20 @@ void MP2Grad::compute() {
     unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
-#if 0
   {
     unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
-    daxpy_(naux*naux, -1.0, sep22, 1, sep2, 1);
+    dgemm_("N", "N", naux, naux, naux, -2.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
   }
   // symmetrize..
   for (int i = 0; i != naux; ++i)
     for (int j = i+1; j != naux; ++j)
       sep2[j+i*naux] = sep2[i+j*naux] = 0.5*(sep2[j+i*naux] + sep2[i+j*naux]); 
-#endif
 
-#if 0
-  for (int i = 0; i != 15; ++i) {
-    for (int j = 0; j != 15; ++j) {
-      cout << setw(10) << setprecision(6) << sep2[j+naux*i];
-    }
-    cout << endl;
-  } 
-  cout << "===" << endl;
-  for (int i = 0; i != 15; ++i) 
-    cout << setw(10) << setprecision(6) << sep3->data_3index()[i];
-  cout << endl;
-#endif
+
+  // gradient evaluation
+  shared_ptr<Matrix1e> tmp(new Matrix1e(geom_));
+  GradEval_base eval(geom_);
+  eval.contract_gradient(dtotao, tmp, sep3, sep2)->print(); 
 
 }
 
