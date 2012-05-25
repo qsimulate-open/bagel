@@ -211,15 +211,15 @@ void MP2Grad::compute() {
   vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data()); 
   shared_ptr<DF_AO> sep3(new DF_AO(nbasis, nbasis, naux, cd, dd));
 
-  // TODO perhaps we could merge back transformation...
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
   {
     shared_ptr<DF_AO> sep32 = sepd->back_transform(ref_->coeff()->data());
     sep3->daxpy(-2.0, sep32);
   }
+  /// mp2 two body part ----------------
   {
     shared_ptr<DF_AO> sep32 = gip->back_transform(ref_->coeff()->data());
-    sep3->daxpy(1.0, sep32);
+    sep3->daxpy(4.0, sep32);
   }
   // symmetrize...
   for (int i = 0; i != nbasis; ++i) {
@@ -240,8 +240,13 @@ void MP2Grad::compute() {
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
   {
+#if 1
     unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
-    dgemm_("N", "N", naux, naux, naux, -2.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
+    dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
+#else
+    unique_ptr<double[]> sep22 = gip->form_aux_2index(halfjj); 
+    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
+#endif
   }
 
   // symmetrize..
@@ -254,13 +259,13 @@ void MP2Grad::compute() {
   shared_ptr<Matrix1e> wd(new Matrix1e(geom_));
   for (int i = 0; i != nocc; ++i)
     for (int j = 0; j != nocc; ++j)
-      wd->element(j,i) += 0.5 * dtot->element(j,i) * (eig[j] + eig[i]); 
+      wd->element(j,i) += dtot->element(j,i) * eig[j];
   for (int i = 0; i != nvirt; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocc,i+nocc) += 0.5 * dtot->element(j+nocc,i+nocc) * (eig[j+nocc] + eig[i+nocc]); 
+      wd->element(j+nocc,i+nocc) += dmp2->element(j+nocc,i+nocc) * eig[j+nocc];
   for (int i = 0; i != nocc; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocc,i) += 2.0*dtot->element(j+nocc,i) * eig[i];
+      wd->element(j+nocc,i) += 2.0 * dmp2->element(j+nocc,i) * eig[i];
   // Liq + Laq
   dgemm_("N", "N", nocc, nocc, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data(), nbasis); 
   dgemm_("N", "N", nvirt, nocc, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocc, nbasis); 
