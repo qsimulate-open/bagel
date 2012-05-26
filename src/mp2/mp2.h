@@ -28,20 +28,20 @@
 #define __SRC_MP2_MP2_H
 
 #include <src/scf/geometry.h>
-#include <src/wfn/reference.h>
 #include <src/mp2/f12int.h>
+#include <src/wfn/reference.h>
 #include <string>
 #include <map>
 
 class MP2 {
   protected:
     const std::multimap<std::string, std::string> idata_;
-    const std::shared_ptr<Geometry> geom_; 
-    const std::shared_ptr<Reference> ref_;
+    const std::shared_ptr<const Geometry> geom_; 
+    std::shared_ptr<const Reference> ref_;
     int ncore_;
 
   public:
-    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
+    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>);
     ~MP2() {};
 
     virtual void compute();

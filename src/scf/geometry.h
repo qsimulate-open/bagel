@@ -119,6 +119,7 @@ class Geometry {
     void set_basis(const int i) { nbasis_ = i; };
     void set_ncore(const int i) { nfrc_ = i; };
     int num_count_ncore(); // also set nfrc_
+    int num_count_ncore_only() const; // also set nfrc_
     int num_count_full_valence_nocc();
 
     // The position of the specific funciton in the basis set.

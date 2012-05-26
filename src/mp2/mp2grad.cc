@@ -36,7 +36,7 @@
 
 using namespace std;
 
-MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<Geometry> g, shared_ptr<Reference> r) : MP2(input, g, r) {
+MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g) {
 
 }
 

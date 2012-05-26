@@ -30,17 +30,23 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
+#include <src/scf/scf.h>
 #include <src/smith/prim_op.h>
 #include <src/mp2/f12int4.h>
 
 using namespace std;
 
-MP2::MP2(const multimap<string, string> input, const shared_ptr<Geometry> g, shared_ptr<Reference> r) : idata_(input), geom_(g), ref_(r) {
+MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> g) : idata_(input), geom_(g) {
+
+  std::shared_ptr<SCF<1> > scf(new SCF<1>(input, g));
+  scf->compute();
+  ref_ = scf->conv_to_ref();
+
   cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
 
   // checks for frozen core
   const bool frozen = read_input<bool>(idata_, "frozen", false);
-  ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore()/2 : 0));
+  ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   if (!geom_->df()) throw logic_error("MP2 is only implemented in DF");

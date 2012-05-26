@@ -22,13 +22,13 @@
 // Reference implementation of an F12 theory
 class F12Ref {
   protected:
-    std::shared_ptr<Geometry> geom_;
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
     const int ncore_;
     const double gamma_;
   
   public:
-    F12Ref(std::shared_ptr<Geometry> g, std::shared_ptr<Reference> r, const int i, const double gamma)
+    F12Ref(std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r, const int i, const double gamma)
         : geom_(g), ref_(r), ncore_(i), gamma_(gamma) {};
     ~F12Ref() {};
 
@@ -100,7 +100,7 @@ class File4 {
 // unpacked AO integrals
 template<typename T> class AOInt {
   protected:
-    std::shared_ptr<Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
     const size_t dim_;
     const size_t dim0_;
     const size_t dim1_;
@@ -212,7 +212,7 @@ template<typename T> class AOInt {
       }
     };
   public:
-    AOInt(std::shared_ptr<Geometry> g, const double gamma = 0.0, const bool ykw = false, const bool aux0 = false, const bool aux1 = false)
+    AOInt(std::shared_ptr<const Geometry> g, const double gamma = 0.0, const bool ykw = false, const bool aux0 = false, const bool aux1 = false)
      : geom_(g), dim_(g->nbasis()), dim0_(aux0 ? g->naux() : g->nbasis()), dim1_(aux1 ? g->naux() : g->nbasis()), gamma_(gamma),
        aux0_(aux0), aux1_(aux1), yukawa_(ykw) {
       const size_t n = dim_;

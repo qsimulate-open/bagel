@@ -35,7 +35,7 @@ class MP2Grad : public MP2 {
   protected:
 
   public:
-    MP2Grad(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
+    MP2Grad(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>);
     ~MP2Grad() {};
 
     void compute();

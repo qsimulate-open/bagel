@@ -39,7 +39,7 @@
 
 class SCF_base {
   protected:
-    std::multimap<std::string, std::string> idata_;
+    const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<Overlap> overlap_;
     const std::shared_ptr<Hcore> hcore_;
@@ -63,7 +63,7 @@ class SCF_base {
     int noccB_;
 
   public:
-    SCF_base(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>);
+    SCF_base(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>);
     ~SCF_base() {};
 
     virtual void compute() = 0;

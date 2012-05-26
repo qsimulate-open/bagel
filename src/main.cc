@@ -174,15 +174,13 @@ int main(int argc, char** argv) {
         fci->compute();
 
       } else if (method == "mp2") {
-        if (!ref) throw std::runtime_error("MP2 needs a reference");
 
-        std::shared_ptr<MP2> mp2(new MP2(iter->second, geom, ref));
+        std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
         mp2->compute();
 
       } else if (method == "mp2-opt") {
-        if (!ref) throw std::runtime_error("MP2 needs a reference");
 
-        std::shared_ptr<MP2Grad> mp2(new MP2Grad(iter->second, geom, ref));
+        std::shared_ptr<MP2Grad> mp2(new MP2Grad(iter->second, geom));
         mp2->compute();
       }
     }

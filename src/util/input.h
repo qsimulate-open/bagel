@@ -62,7 +62,7 @@ class InputData {
 
 };
 
-template <typename T> T read_input(std::multimap<std::string, std::string> idat, const std::string key, const T defvalue) {
+template <typename T> T read_input(const std::multimap<std::string, std::string> idat, const std::string key, const T defvalue) {
   T out = defvalue;
   auto iter = idat.find(key);
   if (iter != idat.end()) out = boost::lexical_cast<T>(iter->second);

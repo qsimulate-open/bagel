@@ -457,14 +457,19 @@ void Geometry::print_atoms() const {
 
 
 int Geometry::num_count_ncore() {
+  nfrc_ = num_count_ncore_only();
+  return nfrc_;
+}
+
+int Geometry::num_count_ncore_only() const {
   int out = 0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     if ((*iter)->atom_number() >= 2 && (*iter)->atom_number() <= 10) out += 2; 
     if ((*iter)->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
   }
-  nfrc_ = out;
   return out;
 }
+
 
 int Geometry::num_count_full_valence_nocc() {
   int out = 0;
