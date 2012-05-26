@@ -105,6 +105,9 @@ class DF_AO : public DensityFit {
     double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
     const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_.get()+i+naux_*(j+nbasis1_*k); };
 
+    std::unique_ptr<double[]>& data_ptr() { return data_; };
+    const std::unique_ptr<double[]>& data_ptr() const { return data_; };
+
     void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); }; 
 };
 

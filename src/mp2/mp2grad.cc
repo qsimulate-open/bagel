@@ -223,21 +223,14 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
   {
     shared_ptr<DF_AO> sep32 = sepd->back_transform(ocoeff);
-    sep3->daxpy(-2.0, sep32);
+    sep3->daxpy(-1.0, sep32);
+    SMITH::sort_indices<0,2,1,1,1,-1,1>(sep32->data_ptr(), sep3->data_ptr(), naux, nbasis, nbasis);
   }
   /// mp2 two body part ----------------
   {
     shared_ptr<DF_AO> sep32 = gip->back_transform(coeff);
-    sep3->daxpy(4.0, sep32);
-  }
-  // symmetrize...
-  for (int i = 0; i != nbasis; ++i) {
-    for (int j = i+1; j != nbasis; ++j) {
-      for (int k = 0; k != naux; ++k) {
-        const double tmp = 0.5*(*sep3->ptr(k,j,i) + *sep3->ptr(k,i,j));
-        *sep3->ptr(k,j,i) = *sep3->ptr(k,i,j) = tmp;
-      }
-    }
+    sep3->daxpy(2.0, sep32);
+    SMITH::sort_indices<0,2,1,1,1,2,1>(sep32->data_ptr(), sep3->data_ptr(), naux, nbasis, nbasis);
   }
 
   // two-index derivatives (seperable part)..
