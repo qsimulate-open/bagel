@@ -202,7 +202,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << endl;
-  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl;
   time = ::clock();
 
   // one electron matrices
@@ -286,13 +286,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<Matrix1e> wdao(new Matrix1e(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << elapsed << endl;
   time = ::clock();
 
   // gradient evaluation
   shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
 
-  cout << setw(50) << left << "  * Gradient computed with " << setprecision(3) << right <<
+  cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right <<
           setw(10) << (::clock() - time)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 
   // set proper energy_
