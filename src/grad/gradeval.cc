@@ -29,7 +29,7 @@
 using namespace std;
 
 template<>
-shared_ptr<GradFile> GradEval<SCF<1> >::compute() const {
+shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   const size_t start = ::clock();
 
   //- One ELECTRON PART -//
@@ -55,7 +55,7 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<UHF>::compute() const {
+shared_ptr<GradFile> GradEval<UHF>::compute() {
   const size_t start = ::clock();
 
   //- One ELECTRON PART -//
@@ -81,7 +81,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<ROHF>::compute() const {
+shared_ptr<GradFile> GradEval<ROHF>::compute() {
   const size_t start = ::clock();
 
   //- One ELECTRON PART -//

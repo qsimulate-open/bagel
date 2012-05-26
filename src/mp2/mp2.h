@@ -29,6 +29,7 @@
 
 #include <src/scf/geometry.h>
 #include <src/mp2/f12int.h>
+#include <src/scf/scf.h>
 #include <src/wfn/reference.h>
 #include <string>
 #include <map>
@@ -37,7 +38,8 @@ class MP2 {
   protected:
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_; 
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<SCF<1> > scf_;
     int ncore_;
 
   public:

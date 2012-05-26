@@ -34,6 +34,7 @@
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
 #include <src/scf/rohf.h>
+#include <src/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
 
 // T should have
@@ -61,14 +62,15 @@ class GradEval : public GradEval_base {
     ~GradEval() {};
 
     // compute() computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute() const { throw std::logic_error("Nuclear gradient for this method has not been implemented"); };
+    std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); };
 
     double energy() const { return energy_; };
 }; 
 
 // specialization
-template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute() const;
-template<> std::shared_ptr<GradFile> GradEval<UHF>::compute() const;
-template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute() const;
+template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute();
+template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 
 #endif

@@ -28,6 +28,7 @@
 #define __SRC_MP2_MP2GRAD_H
 
 #include <src/mp2/mp2.h>
+#include <src/wfn/reference.h>
 #include <string>
 #include <map>
 
@@ -39,6 +40,8 @@ class MP2Grad : public MP2 {
     ~MP2Grad() {};
 
     void compute();
+
+    std::shared_ptr<Reference> conv_to_ref() const { return ref_; };
 };
 
 #endif

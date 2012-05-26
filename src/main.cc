@@ -180,8 +180,10 @@ int main(int argc, char** argv) {
 
       } else if (method == "mp2-opt") {
 
-        std::shared_ptr<MP2Grad> mp2(new MP2Grad(iter->second, geom));
-        mp2->compute();
+        std::shared_ptr<Opt<MP2Grad> > opt(new Opt<MP2Grad>(idata, iter->second, geom));
+        for (int i = 0; i != 100; ++i)
+          if (opt->next()) break;
+
       }
     }
     print_footer();

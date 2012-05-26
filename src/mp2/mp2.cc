@@ -38,9 +38,9 @@ using namespace std;
 
 MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> g) : idata_(input), geom_(g) {
 
-  std::shared_ptr<SCF<1> > scf(new SCF<1>(input, g));
-  scf->compute();
-  ref_ = scf->conv_to_ref();
+  scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(input, g));
+  scf_->compute();
+  ref_ = scf_->conv_to_ref();
 
   cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
 
@@ -48,6 +48,8 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> 
   const bool frozen = read_input<bool>(idata_, "frozen", false);
   ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
+
+  ref_->set_ncore(ncore_);
 
   if (!geom_->df()) throw logic_error("MP2 is only implemented in DF");
 

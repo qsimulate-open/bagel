@@ -46,6 +46,7 @@ class Reference {
     std::vector<double> schwarz_;
     std::vector<double> eig_;
 
+    int ncore_;
     const int nclosed_;
     const int nact_;
     const int nvirt_;
@@ -80,6 +81,8 @@ class Reference {
     int nact() const { return nact_; };
     int nvirt() const { return nvirt_; };
     int nocc() const { return nclosed_ + nact_; };
+    int ncore() const { return ncore_; };
+    void set_ncore(const int i) { ncore_ = i; };
 
     double energy() const { return energy_; };
 
