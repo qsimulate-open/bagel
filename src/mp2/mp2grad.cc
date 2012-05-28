@@ -223,14 +223,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
   {
     shared_ptr<DF_AO> sep32 = sepd->back_transform(ocoeff);
-    sep3->daxpy(-1.0, sep32);
-    SMITH::sort_indices<0,2,1,1,1,-1,1>(sep32->data_ptr(), sep3->data_ptr(), naux, nbasis, nbasis);
+    sep3->daxpy(-2.0, sep32);
   }
   /// mp2 two body part ----------------
   {
     shared_ptr<DF_AO> sep32 = gip->back_transform(coeff);
-    sep3->daxpy(2.0, sep32);
-    SMITH::sort_indices<0,2,1,1,1,2,1>(sep32->data_ptr(), sep3->data_ptr(), naux, nbasis, nbasis);
+    sep3->daxpy(4.0, sep32);
   }
 
   // two-index derivatives (seperable part)..
@@ -245,11 +243,6 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
     dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
   }
-
-  // symmetrize..
-  for (int i = 0; i != naux; ++i)
-    for (int j = i+1; j != naux; ++j)
-      sep2[j+i*naux] = sep2[i+j*naux] = 0.5*(sep2[j+i*naux] + sep2[i+j*naux]); 
 
 
   // energy weighted density

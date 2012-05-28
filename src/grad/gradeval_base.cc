@@ -225,11 +225,13 @@ vector<double> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) c
                 for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
                   for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1) {  
                     for (int j2 = offset2; j2 != offset2 + b2->nbasis(); ++j2, ++ppt) {  
+                      // first we need to have a scheme to receive blocks before accessing the elements
                       sum += *ppt * *o->ptr(j2, j1, j0);
+                      sum += *ppt * *o->ptr(j2, j0, j1);
                     }
                   }
                 }
-                grad[3*jatom[i/3]+i%3] += sum * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
+                grad[3*jatom[i/3]+i%3] += 0.5 * sum * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
               }
             }
           }
@@ -299,9 +301,11 @@ vector<double> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>&
             for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
               for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1, ++ppt) {  
                 sum += *ppt * o[j1+geom_->naux()*j0];
+                sum += *ppt * o[j0+geom_->naux()*j1];
               }
             }
-            grad[3*jatom[i/3]+i%3] -= sum * 0.5 * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
+            // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
+            grad[3*jatom[i/3]+i%3] -= 0.5 * sum * 0.5 * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
           }
         }
       }
