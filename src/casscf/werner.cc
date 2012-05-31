@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-//#define DEBUG4INDEX
-
 
 #include <src/casscf/werner.h>
 #include <src/casscf/jvec.h>

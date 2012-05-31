@@ -25,8 +25,11 @@
 
 
 #include <src/casscf/werner.h>
+#include <src/casscf/jkop.h>
 
 using namespace std;
+#define DEBUG4INDEX
+
 
 
 shared_ptr<Matrix1e> WernerKnowles::compute_sigma_R(const shared_ptr<const Jvec> jvec, const shared_ptr<const Matrix1e> dR,
@@ -39,7 +42,8 @@ shared_ptr<Matrix1e> WernerKnowles::compute_sigma_R(const shared_ptr<const Jvec>
   shared_ptr<Matrix1e> dRA(new Matrix1e(*C**dR+*dR**C));
 
   // update B
-#ifndef DEBUG4INDEX
+//#ifndef DEBUG4INDEX
+#if 1
   shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, ref_->coeff());
 #else
   shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
@@ -67,7 +71,7 @@ shared_ptr<const Matrix1e> WernerKnowles::compute_denom(const shared_ptr<const M
 #else
   JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
   unique_ptr<double[]> cdiag = C->diag();
-  denom = jk.denom(); 
+  shared_ptr<Matrix1e> denom = jk.denom(); 
   for (int i = 0; i != nocc_; ++i) {
     for (int j = nocc_; j != nbasis_; ++j) {
       denom->element(j, i) -= cdiag[i] + cdiag[j];

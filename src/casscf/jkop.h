@@ -43,7 +43,7 @@ class JKop {
     const size_t nbasis_;
 
   public:
-    JKop(const std::shared_ptr<const DensityFit> df, const std::shared_ptr<Coeff> c, const std::shared_ptr<Fock<1> > hcore,
+    JKop(const std::shared_ptr<const DensityFit> df, const std::shared_ptr<const Coeff> c, const std::shared_ptr<Fock<1> > hcore,
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
     : fci_(fci), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
 
