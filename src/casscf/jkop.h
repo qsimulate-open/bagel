@@ -38,6 +38,7 @@ class JKop {
     std::unique_ptr<double[]> jdata_;
     std::unique_ptr<double[]> data_;
     const std::shared_ptr<FCI> fci_;
+    const std::shared_ptr<const Coeff> coeff_;
     const size_t nocc_;
     const size_t nclosed_;
     const size_t nbasis_;
@@ -45,16 +46,16 @@ class JKop {
   public:
     JKop(const std::shared_ptr<const DensityFit> df, const std::shared_ptr<const Coeff> c, const std::shared_ptr<Fock<1> > hcore,
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
-    : fci_(fci), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
+    : fci_(fci), coeff_(c), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
 
       assert(nclosed+nact == nocc);
       assert(df->nbasis0() == df->nbasis1());
-      // K operator
-      std::shared_ptr<DF_Half> half = df->compute_half_transform(c->data(), nocc)->apply_J();
+      // K operator // (ai|ai)
+      std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff_->data(), nocc)->apply_J();
       data_ = std::move(half->form_4index());
 
-      // J operator
-      std::shared_ptr<DF_Full> full = half->compute_second_transform(c->data(), nocc);
+      // J operator // (aa|ii)
+      std::shared_ptr<DF_Full> full = half->compute_second_transform(coeff_->data(), nocc);
       jdata_ = std::move(full->form_4index(df));
 
       // contruct 2RDM
@@ -98,6 +99,7 @@ class JKop {
         }
       }
       // sort K 
+      // after here buf contains K as (aa|ii)
       std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis_*nbasis_]);
       for (int i = 0; i != nocc; ++i) { 
         for (int j = 0; j != nocc; ++j) { 
@@ -144,8 +146,20 @@ class JKop {
       const size_t nbasis = nbasis_; 
       const int nocc = nocc_;
       const int nclosed = nclosed_;
+      std::shared_ptr<Matrix1e> tmp(new Matrix1e(fci_->geom(), nbasis, nocc));
+      // TODO this is an awful code.
+      // first transform to MO
+      {
+        std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis*nbasis]);
+        dgemm_("T", "N", nbasis, nocc*nocc*nbasis, nbasis, 1.0, coeff_->data(), nbasis, data_.get(), nbasis, 0.0, buf.get(), nbasis);
+        for (int i = 0; i != nocc*nocc; ++i) {
+          dgemm_("N", "N", nbasis, nbasis, nbasis, 1.0, buf.get()+i*nbasis*nbasis, nbasis, coeff_->data(), nbasis,
+                                                   0.0, data_.get()+i*nbasis*nbasis, nbasis);
+        }
+      }
+    
       // virtual-occ part
-      out->fill(1.0e1);
+      out->fill(1.0e100);
       for (int i = 0; i != nocc; ++i) {
         for (int j = nocc; j != nbasis; ++j) {
           out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))];
