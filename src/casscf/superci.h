@@ -60,9 +60,6 @@ class SuperCI : public CASSCF {
     void sigma_ti_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
                       const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f, const std::shared_ptr<QFile> factp);
 
-    std::shared_ptr<RotFile> const_denom(const std::shared_ptr<QFile> gaa, const std::shared_ptr<QFile> factp,
-                                         const std::shared_ptr<Matrix1e> f) const;
-
     void update_orbitals(std::shared_ptr<RotFile> rot);
     std::shared_ptr<Matrix1e> tailor_rotation(const std::shared_ptr<Matrix1e> seed);
 

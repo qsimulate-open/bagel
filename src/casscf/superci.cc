@@ -32,6 +32,7 @@
 #include <src/scf/hcore.h>
 #include <src/scf/fock.h>
 #include <src/util/f77.h>
+#include <src/util/bfgs.h>
 #include <src/util/hpw_diis.h>
 
 using namespace std;
@@ -46,6 +47,9 @@ void SuperCI::compute() {
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC
   shared_ptr<HPW_DIIS<Matrix1e> > diis;
+
+  // BFGS: optional quasi-second-order MCSCF
+//shared_ptr<BFGS<RotFile> > bfgs;
 
   // ============================
   // macro iteration from here
@@ -85,6 +89,10 @@ void SuperCI::compute() {
     shared_ptr<QFile>    fact, factp, gaa;
     shared_ptr<RotFile> denom_;
     one_body_operators(f, fact, factp, gaa, denom_);
+
+    // BFGS initialization
+    shared_ptr<BFGS<RotFile> > mbfgs(new BFGS<RotFile>(denom_));
+//  if (iter == 0) bfgs = shared_ptr<BFGS<RotFile> >(new BFGS(denom_));
 
 
     // first, <proj|H|0> is computed
@@ -150,7 +158,7 @@ void SuperCI::compute() {
 
 
       // update cc_
-      for (double *i = residual->begin(), *j = denom_->begin(); i != residual->end(); ++i, ++j) { *i /= *j; }
+      residual = mbfgs->extrapolate(residual, davidson.civec().front());
       const double a = davidson.orthog(residual);
       cc_ = residual;
     }
@@ -234,36 +242,6 @@ void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<
   QFile buf(nbas,nact_);
   dgemm_("T", "N", nbas, nact_, common, 1.0, int1ext, common, rdm2->first(), common, 0.0, buf.data(), nbas);
   dgemm_("T", "N", nbasis_, nact_, nbas, 1.0, ref_->coeff()->data(), nbas, buf.data(), nbas, 0.0, qxr->data(), nbasis_);
-}
-
-
-// compute denominators
-shared_ptr<RotFile> SuperCI::const_denom(const shared_ptr<QFile> gaa, const shared_ptr<QFile> factp, const shared_ptr<Matrix1e> f) const {
-  shared_ptr<RotFile> denom(new RotFile(nclosed_, nact_, nvirt_));
-  fill(denom->data(), denom->data()+denom->size(), 1.0e100);
-
-  double* target = denom->ptr_va();
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt_; ++j, ++target) {
-      *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
-    }
-  }
-
-  target = denom->ptr_vc();
-  for (int i = 0; i != nclosed_; ++i) {
-    for (int j = 0; j != nvirt_; ++j, ++target) {
-      *target = f->element(j+nocc_, j+nocc_) - f->element(i, i);
-    }
-  }
-
-  target = denom->ptr_ca();
-  for (int i = 0; i != nact_; ++i) {
-    const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
-    for (int j = 0; j != nclosed_; ++j, ++target) {
-      *target = fac - f->element(j, j);
-    }
-  }
-  return denom;
 }
 
 

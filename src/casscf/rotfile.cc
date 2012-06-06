@@ -28,6 +28,30 @@
 
 using namespace std;
 
+shared_ptr<RotFile> RotFile::clone() const {
+  shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, superci_)); 
+  out->zero();
+  return out;
+}
+
+
+shared_ptr<RotFile> RotFile::copy() const {
+  shared_ptr<RotFile> out(new RotFile(*this));
+  return out;  
+}
+
+
+RotFile RotFile::operator+(const RotFile& o) const {
+  RotFile out(*this);
+  out.daxpy(1.0, o);
+  return out;
+}
+
+RotFile RotFile::operator-(const RotFile& o) const {
+  RotFile out(*this);
+  out.daxpy(-1.0, o);
+  return out;
+}
 
 shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
 

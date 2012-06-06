@@ -61,16 +61,25 @@ class RotFile {
 
     ~RotFile() {  };
 
+    std::shared_ptr<RotFile> clone() const;
+    std::shared_ptr<RotFile> copy() const;
+
+    // overloaded operators
+    RotFile operator+(const RotFile& o) const;
+    RotFile operator-(const RotFile& o) const;
+
     // size of the file
     const int size() const { return size_; };
     // zero out
     void zero() { std::fill(data(), data()+size_, 0.0); };
     // returns dot product
     double ddot(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); };
+    double ddot(const std::shared_ptr<const RotFile> o) const { return ddot(*o); }; 
     // returns norm of the vector
     double norm() const { return std::sqrt(ddot(*this)); };
     // daxpy added to self
     void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }; 
+    void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy_(size_, a, o->data(), 1, data(), 1); }; 
     // orthogonalize to the liset of RotFile's
     double orthog(std::list<std::shared_ptr<const RotFile> > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter)
@@ -83,6 +92,8 @@ class RotFile {
     // return data_
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
+    double& data(const size_t i) { return data_[i]; }; 
+    const double& data(const size_t i) const { return data_[i]; }; 
     // return data_
     double* begin() { return data(); };
     // return data_

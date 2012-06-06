@@ -52,7 +52,7 @@ class BFGS {
 
     std::shared_ptr<T> extrapolate(std::shared_ptr<T> _grad, std::shared_ptr<T> _value) {
       // to make sure, inputs are copied.
-      std::shared_ptr<T> grad(new T(*_grad));
+      std::shared_ptr<const T> grad(new T(*_grad));
       std::shared_ptr<T> value(new T(*_value));
 
       std::shared_ptr<T> out(new T(*grad));
@@ -61,7 +61,7 @@ class BFGS {
 
       if (prev_value) {
         // (3)
-        std::shared_ptr<T> yy = grad->clone(); 
+        std::shared_ptr<T> yy = grad->clone();
         {
           std::shared_ptr<T> DD(new T(*grad - *prev_grad));
           D.push_back(DD);
@@ -96,13 +96,13 @@ class BFGS {
         }
         { // (5)
           const double s1 = 1.0 / delta[n]->ddot(D[n]);
-          const double s2 = 1.0 /     D[n]->ddot(yy);
+          const double s2 = 1.0 /     D[n]->ddot(std::shared_ptr<const T>(yy));
           const double s3 = delta[n]->ddot(grad);
           const double s4 =       yy->ddot(grad);
           const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           const double t2 = s1 * s3;
           out->daxpy(t1, delta[n]);
-          out->daxpy(-t2, yy);
+          out->daxpy(-t2, std::shared_ptr<const T>(yy));
         }
         y.push_back(yy);
       }
