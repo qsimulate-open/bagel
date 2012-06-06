@@ -168,8 +168,9 @@ class JKop {
       // occ-occ part
       for (int i = 0; i != nclosed; ++i) {
         for (int j = nclosed; j != nocc; ++j) {
-          out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] + 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]
-                                                    - 4.0*data_[j+nbasis*(i+nbasis*(j+nocc*i))];
+//        out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] + 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]
+//                                                  - 4.0*data_[j+nbasis*(i+nbasis*(j+nocc*i))];
+          out->element(j, i) = out->element(i, j) = (2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] - 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]);
         }
       }
       return out;
