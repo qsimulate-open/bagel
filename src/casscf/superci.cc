@@ -43,7 +43,7 @@ static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void SuperCI::compute() {
 
-  // DIIS: will be turned on at iter = diis_start_ (>1), 
+  // DIIS: will be turned on at iter = diis_start_ (>1),
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC
   shared_ptr<HPW_DIIS<Matrix1e> > diis;
@@ -78,7 +78,7 @@ void SuperCI::compute() {
       throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
 
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
-    
+
     // Davidson utility. We diagonalize a super CI matrix every macro iteration
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
     shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_));
@@ -176,9 +176,9 @@ void SuperCI::compute() {
     rot->purify_unitary();
 
     if (!diis) {
-      shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff())); 
+      shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff()));
       *newcc *= *rot;
-      ref_->set_coeff(newcc); 
+      ref_->set_coeff(newcc);
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
@@ -212,7 +212,7 @@ void SuperCI::compute() {
 }
 
 
-// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock 
+// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
 shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
 
   shared_ptr<Matrix1e> out = seed->clone();
@@ -225,7 +225,7 @@ shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
   for (int i = 0; i != nvirt_; ++i)
     for (int j = 0; j != nvirt_; ++j)
       out->element(j+nocc_,i+nocc_) = seed->element(j+nocc_,i+nocc_);
-  out->inverse(); 
+  out->inverse();
   out->purify_unitary();
   *out = *seed * *out;
 
