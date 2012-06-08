@@ -36,6 +36,7 @@
 #define __NEWINT_UTIL_HPW_DIIS_H
 
 #include <src/util/diis.h>
+#include <src/util/bfgs.h>
 
 template<class T>
 class HPW_DIIS  {

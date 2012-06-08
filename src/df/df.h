@@ -198,6 +198,7 @@ class DF_Full {
     std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const;
 
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     std::shared_ptr<DF_Full> apply_closed_2RDM() const;
     std::shared_ptr<DF_Full> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
 

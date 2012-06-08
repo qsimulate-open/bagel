@@ -89,6 +89,8 @@ class Reference {
     std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }; 
     std::shared_ptr<Matrix1e> rdm1_mat(const int irdm = 0) const; 
 
+    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }; 
+
 };
 
 #endif

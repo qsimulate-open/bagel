@@ -81,10 +81,11 @@ class CASSCF {
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
     std::vector<double> form_natural_orbs();
 
-    double energy() const { throw std::logic_error("CASSCF::energy() not implemented yet"); return 0.0; };
+    // energy
+    double energy_;
 
   public:
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, std::shared_ptr<Reference> ref);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };
@@ -95,6 +96,8 @@ class CASSCF {
                                                    fci_->rdm1(), fci_->rdm2()));
       return out;
     };
+
+    double energy() const { return energy_; }; 
 
 };
 

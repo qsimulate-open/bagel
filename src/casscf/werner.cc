@@ -128,6 +128,11 @@ void WernerKnowles::compute() {
     resume_stdcout();
     print_iteration(iter, miter, tcount, energy, error, (::clock() - start)/cps);
     mute_stdcout();
+
+    // set energy_
+    // TODO change when there are several states (and do something for other states)
+    energy_ = energy[0];
+
     if (error < thresh_) break;
 
   }

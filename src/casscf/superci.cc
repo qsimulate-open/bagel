@@ -61,7 +61,7 @@ void SuperCI::compute() {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && !diis) {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*ref_->coeff()));
-      diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(5, tmp));
+      diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(10, tmp));
     }
 
     // first perform CASCI to obtain RDMs
@@ -195,6 +195,10 @@ void SuperCI::compute() {
     resume_stdcout();
     print_iteration(iter, 0, 0, energy, gradient, (end - start)/cps);
     mute_stdcout();
+
+    // set energy_
+    // TODO change when there are several states (and do something for other states)
+    energy_ = energy[0];
 
     if (gradient < thresh_) break;
     if (iter == max_iter_-1) {

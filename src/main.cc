@@ -100,7 +100,6 @@ int main(int argc, char** argv) {
     bool scf_done = false;
     bool casscf_done = false;
     std::shared_ptr<SCF_base> scf;
-    std::shared_ptr<CASSCF> casscf;
     std::shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
@@ -156,11 +155,11 @@ int main(int argc, char** argv) {
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
         if (algorithm == "superci" || algorithm == "") {
-          std::shared_ptr<CASSCF> casscf_(new SuperCI(iter->second, geom, ref)); casscf = casscf_;
+          std::shared_ptr<CASSCF> casscf(new SuperCI(iter->second, geom));
           casscf->compute();
           ref = casscf->conv_to_ref();
         } else if (algorithm == "werner" || algorithm == "knowles") {
-          std::shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom, ref));
+          std::shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom));
           werner->compute();
           ref = werner->conv_to_ref();
         } else {
