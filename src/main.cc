@@ -151,17 +151,30 @@ int main(int argc, char** argv) {
           if (opt->next()) break;
 
       } else if (method == "casscf") {
-        if (!ref) throw std::runtime_error("CASSCF needs a reference");
+
+        std::shared_ptr<CASSCF> casscf;
+        std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+        if (algorithm == "superci" || algorithm == "") {
+          casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom));
+        } else if (algorithm == "werner" || algorithm == "knowles") {
+          casscf = std::shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
+        } else {
+          throw std::runtime_error("unknown CASSCF algorithm specified.");
+        }
+        casscf->compute();
+        ref = casscf->conv_to_ref();
+
+      } else if (method == "casscf-opt") {
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
         if (algorithm == "superci" || algorithm == "") {
-          std::shared_ptr<CASSCF> casscf(new SuperCI(iter->second, geom));
-          casscf->compute();
-          ref = casscf->conv_to_ref();
+          std::shared_ptr<Opt<SuperCI> > opt(new Opt<SuperCI>(idata, iter->second, geom));
+          for (int i = 0; i != 100; ++i)
+            if (opt->next()) break;
         } else if (algorithm == "werner" || algorithm == "knowles") {
-          std::shared_ptr<CASSCF> werner(new WernerKnowles(iter->second, geom));
-          werner->compute();
-          ref = werner->conv_to_ref();
+          std::shared_ptr<Opt<WernerKnowles> > opt(new Opt<WernerKnowles>(idata, iter->second, geom));
+          for (int i = 0; i != 100; ++i)
+            if (opt->next()) break;
         } else {
           throw std::runtime_error("unknown CASSCF algorithm specified.");
         }

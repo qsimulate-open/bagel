@@ -35,7 +35,7 @@ using namespace std;
 
 static const Comb comb;
 
-FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom, shared_ptr<Reference> r)
+FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom, shared_ptr<Reference> r)
  : idata_(idat), ref_(r), geom_(geom) {
   common_init();
 }
@@ -45,15 +45,13 @@ void FCI::common_init() {
   print_header();
 
   const bool frozen = read_input<bool>(idata_, "frozen", false);
-  ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore()/2 : 0));
+  ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   nstate_ = read_input<int>(idata_, "nstate", 1);
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-20);
   thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
   norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
-
-  geom_->set_ncore(ncore_*2);
 
   // TODO those are still wrong!!
   nelea_ = geom_->nele()/2 - ncore_;

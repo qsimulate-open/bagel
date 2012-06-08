@@ -52,7 +52,7 @@ class FCI {
     // reference
     std::shared_ptr<Reference> ref_;
     // geometry file
-    const std::shared_ptr<Geometry> geom_;
+    const std::shared_ptr<const Geometry> geom_;
     // number of states
     int nstate_;
     // max #iteration
@@ -175,7 +175,7 @@ class FCI {
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
-    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<Geometry>, std::shared_ptr<Reference>);
+    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>, std::shared_ptr<Reference>);
     ~FCI();
     void compute();
 
@@ -197,7 +197,7 @@ class FCI {
     // move to natural orbitals
     std::pair<std::vector<double>, std::vector<double> > natorb_convert();
 
-    const std::shared_ptr<Geometry> geom() const { return geom_; };
+    const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     // returns integral files
     std::shared_ptr<MOFile> jop() { return jop_; };

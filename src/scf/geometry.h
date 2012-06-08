@@ -120,7 +120,7 @@ class Geometry {
     void set_ncore(const int i) { nfrc_ = i; };
     int num_count_ncore(); // also set nfrc_
     int num_count_ncore_only() const; // also set nfrc_
-    int num_count_full_valence_nocc();
+    int num_count_full_valence_nocc() const;
 
     // The position of the specific funciton in the basis set.
     const std::vector<std::vector<int> > offsets() const { return offsets_; };

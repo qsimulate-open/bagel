@@ -40,7 +40,7 @@ static string tostring(const T i) {
   return ss.str();
 };
 
-CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<Geometry> geom)
+CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom)
   : idata_(idat), geom_(geom), hcore_(new Fock<1>(geom)) {
 
   std::shared_ptr<SCF<1> > scf_;
@@ -71,6 +71,7 @@ void CASSCF::common_init() {
 
   // nocc from the input. If not present, full valence active space is generated.
   nocc_ = read_input<int>(idata_, "nocc", 0);
+  nocc_ = read_input<int>(idata_, "nocc_cas", nocc_);
   if (nocc_ < 0) {
     throw runtime_error("It appears that nocc < 0. Check nocc value.");
   } else if (nocc_ == 0) {
@@ -84,7 +85,7 @@ void CASSCF::common_init() {
     throw runtime_error("It appears that nclosed < 0. Check nocc value.");
   } else if (nclosed_ == -1) {
     cout << "    * full core space generated for nclosed." << endl;
-    nclosed_ = geom_->num_count_ncore() / 2;
+    nclosed_ = geom_->num_count_ncore_only() / 2;
   }
 
   nact_ = nocc_ - nclosed_;
@@ -187,7 +188,7 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
 
 
 void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact, shared_ptr<QFile>& factp, shared_ptr<QFile>& gaa,
-                                shared_ptr<RotFile>& d, const bool superci) {
+                                shared_ptr<RotFile>& d, const bool superci) const {
 
   shared_ptr<Matrix1e> finact;
   shared_ptr<const Coeff> coeff = ref_->coeff();
@@ -214,16 +215,14 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
       shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, ref_->schwarz()));
       f = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_ao * *coeff));
 
-      finact = hcore_;
+      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *hcore_ * *coeff));
     }
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
     fact = shared_ptr<QFile>(new QFile(*qxr));// nbasis_ runs first
-    if (nclosed_) {
-      for (int i = 0; i != nact_; ++i)
-        daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
-    }
+    for (int i = 0; i != nact_; ++i)
+      daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
@@ -303,3 +302,34 @@ vector<double> CASSCF::form_natural_orbs() {
     return natorb.first;
 }
 
+
+shared_ptr<Reference> CASSCF::conv_to_ref() const {
+  shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), energy(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_,
+                                          fci_->rdm1(), fci_->rdm2()));
+
+  // TODO
+  // compute one-boedy operators
+  shared_ptr<Matrix1e> f;
+  shared_ptr<QFile>    fact, factp, gaa;
+  shared_ptr<RotFile>  denom;
+  one_body_operators(f, fact, factp, gaa, denom);
+
+  *f *= 2.0;
+
+  for (int i = 0; i != nbasis_; ++i) {
+    for (int j = 0; j != nbasis_; ++j) {
+      if (i < nocc_ && j < nocc_) continue;
+      f->element(j,i) = 0.0;
+    }
+  }
+  for (int j = 0; j != nact_; ++j) {
+    for (int i = 0; i != nocc_; ++i) {
+      f->element(i,j+nclosed_) = fact->element(i,j);
+    }
+  }
+
+  shared_ptr<Matrix1e> erdm(new Matrix1e(*ref_->coeff() * *f ^ *ref_->coeff()));
+
+  out->set_erdm1(erdm);
+  return out;
+}

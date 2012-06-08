@@ -53,8 +53,8 @@ RotFile RotFile::operator-(const RotFile& o) const {
   return out;
 }
 
-RotFile& RotFile::operator+=(const RotFile& o) { daxpy(1.0, o); }
-RotFile& RotFile::operator-=(const RotFile& o) { daxpy(-1.0, o); }
+RotFile& RotFile::operator+=(const RotFile& o) { daxpy(1.0, o); return *this; }
+RotFile& RotFile::operator-=(const RotFile& o) { daxpy(-1.0, o); return *this; }
 
 shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
 

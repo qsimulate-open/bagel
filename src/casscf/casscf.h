@@ -45,7 +45,7 @@ class CASSCF {
   protected:
     // input
     std::multimap<std::string, std::string> idata_; 
-    const std::shared_ptr<Geometry> geom_;
+    const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
 
     // some internal information
@@ -76,7 +76,7 @@ class CASSCF {
 
     const std::shared_ptr<Fock<1> > hcore_;
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
-                            std::shared_ptr<RotFile>&, const bool superci=true);
+                            std::shared_ptr<RotFile>&, const bool superci=true) const;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
     std::vector<double> form_natural_orbs();
@@ -85,17 +85,13 @@ class CASSCF {
     double energy_;
 
   public:
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<Geometry> geom);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom);
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };
 
     std::shared_ptr<Reference> ref() { return ref_; };
-    std::shared_ptr<Reference> conv_to_ref() const {
-      std::shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), energy(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_,
-                                                   fci_->rdm1(), fci_->rdm2()));
-      return out;
-    };
+    std::shared_ptr<Reference> conv_to_ref() const;
 
     double energy() const { return energy_; }; 
 

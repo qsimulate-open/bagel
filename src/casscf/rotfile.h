@@ -69,7 +69,7 @@ class RotFile {
     RotFile& operator+=(const RotFile& o);
     RotFile operator-(const RotFile& o) const;
     RotFile& operator-=(const RotFile& o);
-    RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); };
+    RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; };
 
     // size of the file
     const int size() const { return size_; };

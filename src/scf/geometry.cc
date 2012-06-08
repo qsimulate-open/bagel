@@ -471,7 +471,7 @@ int Geometry::num_count_ncore_only() const {
 }
 
 
-int Geometry::num_count_full_valence_nocc() {
+int Geometry::num_count_full_valence_nocc() const {
   int out = 0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     if ((*iter)->atom_number() < 2) out += 1;

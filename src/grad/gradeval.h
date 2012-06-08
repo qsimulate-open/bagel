@@ -36,7 +36,8 @@
 #include <src/scf/rohf.h>
 #include <src/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
-#include <src/casscf/casscf.h>
+#include <src/casscf/werner.h>
+#include <src/casscf/superci.h>
 
 // T should have
 // o Constructor with the input and geometry
@@ -73,6 +74,7 @@ template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute();
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
+template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 
 #endif
