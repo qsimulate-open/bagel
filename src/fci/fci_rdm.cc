@@ -33,10 +33,10 @@ void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0]. 
   if (!rdm1_av_ && nstate_ > 1) {
-    shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_)); 
-    shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_)); 
-    rdm1_av_ = rdm1;
-    rdm2_av_ = rdm2;
+    rdm1_av_ = shared_ptr<RDM<1> >(new RDM<1>(norb_));
+    rdm2_av_ = shared_ptr<RDM<2> >(new RDM<2>(norb_));
+  }
+  if (nstate_ > 1) {
     rdm1_av_->zero();
     rdm2_av_->zero();
   }
