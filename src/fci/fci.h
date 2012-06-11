@@ -156,8 +156,7 @@ class FCI {
     unsigned int stringb(int i) const { return stringb_[i]; };
 
     // run-time functions
-    void form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<Dvec> sigma, std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e,
-                    const std::vector<int>& conv);
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, const std::vector<int>& conv);
     void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
     void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
     void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
@@ -208,6 +207,9 @@ class FCI {
     // static constants
     static const int Alpha = 0;
     static const int Beta = 1;
+
+    // string size
+    std::tuple<int, int> len_string() { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
 
     std::string print_bit(unsigned int bit) const {
       std::string out; 

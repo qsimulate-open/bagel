@@ -36,15 +36,6 @@ static const bool tprint = false;
 
 using namespace std;
 
-static const int unit = 1;
-static const double one = 1.0;
-static const double half = 0.5;
-static const double zero = 0.0; 
-static const string indent = "  ";
-static const string space3 = "   "; 
-
-static int address(int i, int j) { assert(i <= j); return i+((j*(j+1))>>1); };
-
 void FCI::compute() {
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
@@ -64,18 +55,13 @@ void FCI::compute() {
   const_denom();
 
   // some constants
-  const int la = stringa_.size();
-  const int lb = stringb_.size();
+  int la, lb;
+  tie(la, lb) = len_string();
   const int ij = norb_ * (norb_+1) /2;
-
-  // we need two vectors for intermediate quantities
-  shared_ptr<Dvec> d(new Dvec(lb, la, ij));
-  shared_ptr<Dvec> e(new Dvec(lb, la, ij));
 
   // Creating an initial CI vector
   shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, nstate_)); // B runs first
   cc_ = cc_tmp;
-  shared_ptr<Dvec> sigma(new Dvec(lb, la, nstate_));
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_); 
@@ -96,7 +82,7 @@ void FCI::compute() {
     int start = ::clock();
 
     // form a sigma vector given cc
-    form_sigma(cc_, sigma, d, e, conv);
+    shared_ptr<Dvec> sigma = form_sigma(cc_, conv);
 
     // constructing Dvec's for Davidson
     shared_ptr<const Dvec> ccn(new Dvec(cc_));
@@ -133,13 +119,12 @@ void FCI::compute() {
     }
 
     // printing out
-    int end = ::clock();
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
-      cout << indent << setw(5) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                                        << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << space3 
-                                        << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                                        << (end - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
+      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
+                              << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
+                              << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;
@@ -155,15 +140,21 @@ void FCI::compute() {
 
 
 
-void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
-                     shared_ptr<Dvec> d, shared_ptr<Dvec> e,
+shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,  
                      const vector<int>& conv) { // d and e are scratch area for D and E intermediates 
-  const int la = d->lena();  
-  const int lb = d->lenb();  
-  const int ij = d->ij();
-  sigmavec->zero();
+
+  int la, lb;
+  tie(la, lb) = len_string();
+  const int ij = norb_ * (norb_+1) /2;
 
   const int nstate = ccvec->ij();
+  shared_ptr<Dvec> sigmavec(new Dvec(lb, la, nstate));
+  sigmavec->zero();
+
+  // we need two vectors for intermediate quantities
+  shared_ptr<Dvec> d(new Dvec(lb, la, ij));
+  shared_ptr<Dvec> e(new Dvec(lb, la, ij));
+
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
@@ -210,6 +201,8 @@ void FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<Dvec> sigmavec,
         cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
     }
   }
+
+  return sigmavec;
 }
 
 
@@ -220,7 +213,7 @@ void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
     const double h = jop_->mo1e(ip);
     for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
       const double hc = h * get<1>(*iter);
-      daxpy_(&lb, &hc, cc->element_ptr(0, get<2>(*iter)), &unit, sigma->element_ptr(0, get<0>(*iter)), &unit); 
+      daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
     }
   }
 }
@@ -234,7 +227,7 @@ void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) {
     for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter));
       double* const target_array = target_base + get<2>(*iter)*lb;
-      daxpy_(&lb, &sign, source_base + get<0>(*iter)*lb, &unit, target_array, &unit);
+      daxpy_(lb, sign, source_base + get<0>(*iter)*lb, 1, target_array, 1);
     }
   }
 }
@@ -286,7 +279,7 @@ void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
     for (auto iter = phia_[ip].begin(); iter != phia_[ip].end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter)); 
       double* const target_array = sigma->element_ptr(0, get<0>(*iter));
-      daxpy_(&lb, &sign, source_base + lb*get<2>(*iter), &unit, target_array, &unit);
+      daxpy_(lb, sign, source_base + lb*get<2>(*iter), 1, target_array, 1);
     }
   }
 }
@@ -399,7 +392,7 @@ void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e) {
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  dgemm_("n", "n", &lenab, &ij, &ij, &half, d->first(), &lenab, jop_->mo2e_ptr(), &ij,
-                                     &zero, e->first(), &lenab);
+  dgemm_("n", "n", lenab, ij, ij, 0.5, d->first(), lenab, jop_->mo2e_ptr(), ij,
+                                  0.0, e->first(), lenab);
 }
 
