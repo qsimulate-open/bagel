@@ -70,9 +70,9 @@ class MOFile {
     double create_Jiiii(const int, const int);
 
     // this sets mo1e_, core_fock_ and returns a core energy
-    virtual double compute_mo1e(const int, const int);
+    virtual double compute_mo1e(const int, const int) = 0;
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int);
+    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int) = 0;
 
   public:
     MOFile(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference>, const int, const int);
@@ -98,6 +98,17 @@ class MOFile {
     const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
     void update_1ext_ints(const std::vector<double>& coeff);
 
+};
+
+class Jop : public MOFile {
+  protected:
+    double compute_mo1e(const int, const int);
+    std::unique_ptr<double[]> compute_mo2e(const int, const int);
+  public:
+    Jop(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Reference> b, const int c, const int d) : MOFile(a,b,c,d) {
+      core_energy_ = create_Jiiii(c, d);
+    };
+    ~Jop() {};
 };
 
 #endif

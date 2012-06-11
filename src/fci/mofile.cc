@@ -42,56 +42,9 @@ MOFile::MOFile(const shared_ptr<const Geometry> geom, const shared_ptr<const Ref
   do_df_ = geom->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 
-  core_energy_ = create_Jiiii(nstart, nfence);
 }
 
 MOFile::~MOFile() {
-}
-
-
-double MOFile::compute_mo1e(const int nstart, const int nfence) {
-
-  const int ncore = nstart;
-  double core_energy = 0.0;
-
-  unique_ptr<double[]> aobuff(new double[nbasis_*nbasis_]);
-  shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
-  const double* cdata = ref_->coeff()->data() + nstart*nbasis_;
-  // if core fock operator is not the same as hcore...
-  if (nstart != 0) {
-    shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
-    fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
-    core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
-    dcopy_(nbasis_*nbasis_, fock0->data(), 1, core_fock_ptr(), 1);
-  }
-  fock0->fill_upper();
-  dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.get(),nbasis_);
-
-  mo1e_ = unique_ptr<double[]>(new double[nocc_*nocc_]);
-  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.get(),nbasis_,0.0,mo1e_.get(),nocc_);
-
-  return core_energy;
-}
-
-
-unique_ptr<double[]> MOFile::compute_mo2e(const int nstart, const int nfence) {
-
-  const int nocc = nfence - nstart;
-  double* cdata = ref_->coeff()->data() + nstart*nbasis_;
-
-  // first half transformation
-  shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(cdata, nocc);
-
-  // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
-  shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
-
-  // we want to store half-transformed quantity for latter convenience
-  mo2e_1ext_size_ = nocc*geom_->df()->naux()*nbasis_;
-  mo2e_1ext_ = half;
-
-  // assembles (ii|ii) = (ii|D)(D|ii)
-  return buf->form_4index();
-
 }
 
 
@@ -150,3 +103,51 @@ void MOFile::update_1ext_ints(const vector<double>& coeff) {
   mo2e_1ext_ = buf;
 
 }
+
+
+double Jop::compute_mo1e(const int nstart, const int nfence) {
+
+  const int ncore = nstart;
+  double core_energy = 0.0;
+
+  unique_ptr<double[]> aobuff(new double[nbasis_*nbasis_]);
+  shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
+  const double* cdata = ref_->coeff()->data() + nstart*nbasis_;
+  // if core fock operator is not the same as hcore...
+  if (nstart != 0) {
+    shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
+    fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
+    core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
+    dcopy_(nbasis_*nbasis_, fock0->data(), 1, core_fock_ptr(), 1);
+  }
+  fock0->fill_upper();
+  dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.get(),nbasis_);
+
+  mo1e_ = unique_ptr<double[]>(new double[nocc_*nocc_]);
+  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.get(),nbasis_,0.0,mo1e_.get(),nocc_);
+
+  return core_energy;
+}
+
+
+unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
+
+  const int nocc = nfence - nstart;
+  double* cdata = ref_->coeff()->data() + nstart*nbasis_;
+
+  // first half transformation
+  shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(cdata, nocc);
+
+  // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
+  shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
+
+  // we want to store half-transformed quantity for latter convenience
+  mo2e_1ext_size_ = nocc*geom_->df()->naux()*nbasis_;
+  mo2e_1ext_ = half;
+
+  // assembles (ii|ii) = (ii|D)(D|ii)
+  return buf->form_4index();
+
+}
+
+

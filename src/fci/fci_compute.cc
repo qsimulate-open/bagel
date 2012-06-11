@@ -43,7 +43,7 @@ void FCI::compute() {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  jop_ = shared_ptr<MOFile>(new MOFile(geom_, ref_, ncore_, ncore_+norb_));
+  jop_ = shared_ptr<MOFile>(new Jop(geom_, ref_, ncore_, ncore_+norb_));
 
   // right now full basis is used. 
   int start_int = ::clock();
