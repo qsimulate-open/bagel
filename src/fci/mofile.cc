@@ -30,7 +30,6 @@
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/fci/mofile.h>
-#include <src/rysint/eribatch.h>
 #include <src/scf/scf.h>
 
 using namespace std;
@@ -77,8 +76,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore)
     fock0->fill_upper();
     dgemm_("n","n",nbasis,nocc,nbasis,1.0,fock0->data(),nbasis,cdata,nbasis,0.0,aobuff.get(),nbasis);
 
-    unique_ptr<double[]> mo1e__(new double[nocc*nocc]);
-    mo1e_ = move(mo1e__);
+    mo1e_ = unique_ptr<double[]>(new double[nocc*nocc]);
     dgemm_("t","n",nocc,nocc,nbasis,1.0,cdata,nbasis,aobuff.get(),nbasis,0.0,mo1e_ptr(),nocc);
   }
 
