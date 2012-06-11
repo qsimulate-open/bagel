@@ -43,11 +43,10 @@ void FCI::compute() {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  jop_ = shared_ptr<MOFile>(new MOFile(geom_, ref_));
+  jop_ = shared_ptr<MOFile>(new MOFile(geom_, ref_, ncore_, ncore_+norb_));
 
   // right now full basis is used. 
   int start_int = ::clock();
-  core_energy_ = jop_->create_Jiiii(ncore_, ncore_+norb_, ncore_);
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
           static_cast<double>(::clock() - start_int)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 
@@ -68,7 +67,7 @@ void FCI::compute() {
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
-  const double nuc_core = geom_->nuclear_repulsion() + core_energy();
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
   DavidsonDiag<Civec> davidson(nstate_, max_iter_);

@@ -67,7 +67,7 @@ class Reference {
     ~Reference() {};
 
     std::shared_ptr<const Geometry> geom() const { return geom_; };
-    std::vector<double> schwarz() { return schwarz_; };
+    const std::vector<double>& schwarz() const { return schwarz_; };
     std::shared_ptr<const Hcore> hcore() const { return hcore_; };
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<const Coeff> c) { coeff_ = c; };

@@ -44,9 +44,10 @@ class MOFile {
     int nbasis_;
 
     bool do_df_;
+    double core_energy_;
 
     const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<Reference> ref_;
+    const std::shared_ptr<const Reference> ref_;
     std::shared_ptr<std::fstream> file_;
     size_t sizeij_;
     long filesize_;
@@ -65,26 +66,33 @@ class MOFile {
       assert(i <= j);
       return i+((j*(j+1))>>1);
     };
+    // creates integral files and returns the core energy.
+    double create_Jiiii(const int, const int);
+
+    // this sets mo1e_, core_fock_ and returns a core energy
+    virtual double compute_mo1e(const int, const int);
+    // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
+    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int);
 
   public:
-    MOFile(const std::shared_ptr<const Geometry>, const std::shared_ptr<Reference>);
+    MOFile(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference>, const int, const int);
     ~MOFile();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
-    // creates integral files and returns the core energy.
-    double create_Jiiii(const int, const int, const int);
     const int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
     // strictly i <= j, k <= l
-    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }; 
-    double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }; 
+    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
+    double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
     double* core_fock_ptr() { return core_fock_.get(); };
     double* mo1e_ptr() { return mo1e_.get(); };
     double* mo2e_ptr() { return mo2e_.get(); };
     const double* mo1e_ptr() const { return mo1e_.get(); };
     const double* mo2e_ptr() const { return mo2e_.get(); };
+
+    double core_energy() const { return core_energy_; };
 
     std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
     const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
