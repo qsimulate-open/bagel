@@ -106,8 +106,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence, const int ncore)
 
   // mo2e is compressed
   sizeij_ = nocc*(nocc+1)/2;
-  unique_ptr<double[]> mo2e__(new double[sizeij_*sizeij_]);
-  mo2e_ = move(mo2e__);
+  mo2e_ = unique_ptr<double[]>(new double[sizeij_*sizeij_]);
 
   int ijkl = 0;
   for (int i = 0; i != nocc; ++i) {

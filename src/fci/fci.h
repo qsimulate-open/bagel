@@ -156,12 +156,12 @@ class FCI {
     unsigned int stringb(int i) const { return stringb_[i]; };
 
     // run-time functions
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, const std::vector<int>& conv);
-    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
-    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma);
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv);
+    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
+    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
     void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
     void sigma_2a2(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
-    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e);
+    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop);
     void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
     void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
 
@@ -180,6 +180,7 @@ class FCI {
 
     // returns members
     int norb() const { return norb_; };
+    int nij() const { return norb_*(norb_+1)/2; };
     int ncore() const { return ncore_; };
     double core_energy() const { return core_energy_; };
     // sets members

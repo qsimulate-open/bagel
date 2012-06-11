@@ -57,7 +57,7 @@ void FCI::compute() {
   // some constants
   int la, lb;
   tie(la, lb) = len_string();
-  const int ij = norb_ * (norb_+1) /2;
+  const int ij = nij(); 
 
   // Creating an initial CI vector
   shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, nstate_)); // B runs first
@@ -82,7 +82,7 @@ void FCI::compute() {
     int start = ::clock();
 
     // form a sigma vector given cc
-    shared_ptr<Dvec> sigma = form_sigma(cc_, conv);
+    shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
 
     // constructing Dvec's for Davidson
     shared_ptr<const Dvec> ccn(new Dvec(cc_));
@@ -140,12 +140,12 @@ void FCI::compute() {
 
 
 
-shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,  
+shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) { // d and e are scratch area for D and E intermediates 
 
   int la, lb;
   tie(la, lb) = len_string();
-  const int ij = norb_ * (norb_+1) /2;
+  const int ij = nij(); 
 
   const int nstate = ccvec->ij();
   shared_ptr<Dvec> sigmavec(new Dvec(lb, la, nstate));
@@ -165,7 +165,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,
     int start = ::clock();
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
-    sigma_1(cc, sigma);
+    sigma_1(cc, sigma, jop);
     if (tprint) print_timing_("task1", start, timing);
 
     // (task2) two electron contributions
@@ -180,7 +180,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,
     if (tprint) print_timing_("task2a-2", start, timing);
 
     // step (e) (task2b) E(Phib, Phia, ij) = D(Psib, Phia, ij) (ij|kl)
-    sigma_2b(d, e);
+    sigma_2b(d, e, jop);
     if (tprint) print_timing_("task2b", start, timing);
 
     // step (f) (task2c-1) sigma(Phib, Phia') += sign E(Psib, Phia, ij)
@@ -192,7 +192,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,
     if (tprint) print_timing_("task2c-2", start, timing);
 
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
-    sigma_3(cc, sigma);
+    sigma_3(cc, sigma, jop);
 
     if (tprint) {
       print_timing_("task3", start, timing);
@@ -206,11 +206,11 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec,
 }
 
 
-void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
-  const int ij = jop_->sizeij();
+void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) {
+  const int ij = nij(); 
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
-    const double h = jop_->mo1e(ip);
+    const double h = jop->mo1e(ip);
     for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
       const double hc = h * get<1>(*iter);
       daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
@@ -334,9 +334,9 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
 }
 
 
-void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
+void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) {
   const int la = cc->lena();
-  const int ij = jop_->sizeij();
+  const int ij = nij();
 
   for (int i = 0; i < la; i+=8) {
     if (i+7 < la) {
@@ -357,7 +357,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
       double* const source_array6 = cc->element_ptr(0, i+6);
       double* const source_array7 = cc->element_ptr(0, i+7);
       for (int ip = 0; ip != ij; ++ip) {
-        const double h = jop_->mo1e(ip);
+        const double h = jop->mo1e(ip);
         for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
           const double hc = h * get<1>(*iter);
           target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
@@ -375,7 +375,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
         double* const target_array0 = sigma->element_ptr(0, j);
         double* const source_array0 = cc->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
-          const double h = jop_->mo1e(ip);
+          const double h = jop->mo1e(ip);
           for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
             const double hc = h * get<1>(*iter);
             target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
@@ -387,12 +387,12 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma) {
 }
 
 
-void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e) {
+void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  dgemm_("n", "n", lenab, ij, ij, 0.5, d->first(), lenab, jop_->mo2e_ptr(), ij,
+  dgemm_("n", "n", lenab, ij, ij, 0.5, d->first(), lenab, jop->mo2e_ptr(), ij,
                                   0.0, e->first(), lenab);
 }
 

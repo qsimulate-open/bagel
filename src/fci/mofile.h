@@ -83,6 +83,8 @@ class MOFile {
     double* core_fock_ptr() { return core_fock_.get(); };
     double* mo1e_ptr() { return mo1e_.get(); };
     double* mo2e_ptr() { return mo2e_.get(); };
+    const double* mo1e_ptr() const { return mo1e_.get(); };
+    const double* mo2e_ptr() const { return mo2e_.get(); };
 
     std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
     const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
