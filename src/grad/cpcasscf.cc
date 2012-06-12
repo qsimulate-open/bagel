@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: cphf.cc
+// Filename: cpcasscf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,7 +24,7 @@
 //
 
 
-#include <src/grad/cphf.h>
+#include <src/grad/cpcasscf.h>
 #include <cassert>
 
 #define CPHF_MAX_ITER 100
@@ -32,14 +32,14 @@
 
 using namespace std;
 
-CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
-           const shared_ptr<const Reference> r)
-: solver_(new Linear<Matrix1e>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Civec> > grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
+                   const shared_ptr<const Reference> r)
+: solver_(new Linear<PairFile<Matrix1e, Civec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
 }
 
 
-shared_ptr<Matrix1e> CPHF::solve() const {
+shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
 
   const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
@@ -51,6 +51,8 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   const double* const vcoeff = ocoeff + nocca*nbasis;
 
   shared_ptr<Matrix1e> t(new Matrix1e(geom_));
+  shared_ptr<Civec> u(new Civec(1,1));
+#if 0
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
@@ -59,7 +61,7 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
 
-  cout << "  === CPHF iteration ===" << endl << endl;
+  cout << "  === CPCASSCF iteration ===" << endl << endl;
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
@@ -87,10 +89,11 @@ shared_ptr<Matrix1e> CPHF::solve() const {
 
     // K part
     {
-      // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
       unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
       dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca); 
     }
+
+    // Note that the alignment is different
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)
         sigma->element(a+nocca,i) += jai[a+nvirt*i] + kia[i+nocca*a];
@@ -111,6 +114,7 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   cout << endl;
   t = solver_->civec();
   t->fill_upper();
-  return t;
+#endif
+  return shared_ptr<PairFile<Matrix1e, Civec> >(new PairFile<Matrix1e, Civec>(t, u));
 
 }
