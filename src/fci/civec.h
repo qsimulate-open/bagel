@@ -101,10 +101,13 @@ class Civec {
     double norm() const {
       return std::sqrt(ddot_(lena_*lenb_, cc(), 1, cc(), 1));
     };
+    void scale(const double a) {
+      dscal_(lena_*lenb_, a, cc(), 1);
+    };
     double variance() const {
       const int lab = lena_ * lenb_;
       return ddot_(lab, cc(), 1, cc(), 1)/lab;
-    }
+    };
 
     // assumes that c is already orthogonal with each other.
     double orthog(std::list<std::shared_ptr<const Civec> > c) {
@@ -115,7 +118,7 @@ class Civec {
       const double scal = 1.0/this->norm();
       dscal_(lena_*lenb_, scal, cc(), 1);
       return 1.0/scal; 
-    }
+    };
 };
 
 

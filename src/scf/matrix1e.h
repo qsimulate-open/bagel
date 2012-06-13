@@ -107,6 +107,7 @@ class Matrix1e {
     const double trace() const;
     
     void dscal(const double a) { dscal_(size(), a, data(), 1); };
+    void scale(const double a) { dscal(a); };
 
     void add_diag(const double a, const int i, const int j)
       { for (int ii = i; ii != j; ++ii) element(ii,ii) += a; };

@@ -54,7 +54,18 @@ class PairFile {
     // lapack functions
     void daxpy(const double a, const std::shared_ptr<PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
     double ddot(const std::shared_ptr<PairFile<T, U> > o) { return first()->ddot(o->first()) + second()->ddot(o->second()); };
+    void scale(const double a) { first()->scale(a); second()->scale(a); };
 
+    // assumes that c is already orthogonal with each other.
+    double orthog(std::list<std::shared_ptr<const PairFile<T, U> > > c) {
+      for (auto iter = c.begin(); iter != c.end(); ++iter) {
+        const double scal = - this->ddot(**iter);
+        daxpy(scal, **iter);
+      }
+      const double scal = 1.0/this->norm();
+      scale(scal);
+      return 1.0/scal; 
+    };
 
 };
 

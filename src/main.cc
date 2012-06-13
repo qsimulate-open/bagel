@@ -47,7 +47,6 @@ StackMem* stack;
 extern void smith_test(std::shared_ptr<Reference>);
 extern void test_solvers(std::shared_ptr<Geometry>);
 extern void test_mp2f12();
-extern void test_mp2_grad(std::shared_ptr<Reference>);
 extern void test_grad(std::shared_ptr<Reference>);
 
 using std::cout;
@@ -204,8 +203,6 @@ int main(int argc, char** argv) {
     //smith_test(ref);
     /////////////////////////////////////
     //test_solvers(geom);
-    /////////////////////////////////////
-    //test_mp2_grad(ref);
 
     delete stack;
 

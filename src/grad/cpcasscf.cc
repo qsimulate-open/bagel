@@ -57,11 +57,11 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
   shared_ptr<Civec> t1(new Civec(lb, la));
   shared_ptr<PairFile<Matrix1e, Civec> > t(new PairFile<Matrix1e, Civec>(t0, t1));
 
+  shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
   shared_ptr<const Civec> d1 = fci_->denom();
-#if 0
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
-      t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
+      d0->element(a,i) = 1.0 / (eig_[a]-eig_[i]);
 
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
@@ -69,6 +69,7 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
+#if 0
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     solver_->orthog(t);
