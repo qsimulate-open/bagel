@@ -50,8 +50,14 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
   const double* const ocoeff = ref_->coeff()->data();
   const double* const vcoeff = ocoeff + nocca*nbasis;
 
-  shared_ptr<Matrix1e> t(new Matrix1e(geom_));
-  shared_ptr<Civec> u(new Civec(1,1));
+  int la, lb;
+  tie(la, lb) = fci_->len_string();
+
+  shared_ptr<Matrix1e> t0(new Matrix1e(geom_));
+  shared_ptr<Civec> t1(new Civec(lb, la));
+  shared_ptr<PairFile<Matrix1e, Civec> > t(new PairFile<Matrix1e, Civec>(t0, t1));
+
+  shared_ptr<const Civec> d1 = fci_->denom();
 #if 0
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
@@ -115,6 +121,6 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
   t = solver_->civec();
   t->fill_upper();
 #endif
-  return shared_ptr<PairFile<Matrix1e, Civec> >(new PairFile<Matrix1e, Civec>(t, u));
+  return t;
 
 }

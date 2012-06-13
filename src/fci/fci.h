@@ -192,15 +192,22 @@ class FCI {
     std::vector<std::shared_ptr<RDM<2> > > rdm2() { return rdm2_; };
     std::shared_ptr<RDM<1> > rdm1(const int i) { return rdm1_.at(i); };
     std::shared_ptr<RDM<2> > rdm2(const int i) { return rdm2_.at(i); };
+    std::shared_ptr<const RDM<1> > rdm1(const int i) const { return rdm1_.at(i); };
+    std::shared_ptr<const RDM<2> > rdm2(const int i) const { return rdm2_.at(i); };
     std::shared_ptr<RDM<1> > rdm1_av() { return rdm1_av_; };
     std::shared_ptr<RDM<2> > rdm2_av() { return rdm2_av_; };
+    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
+    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
     // move to natural orbitals
     std::pair<std::vector<double>, std::vector<double> > natorb_convert();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     // returns integral files
-    std::shared_ptr<MOFile> jop() { return jop_; };
+    std::shared_ptr<const MOFile> jop() const { return jop_; };
+
+    // returns a denominator
+    std::shared_ptr<const Civec> denom() const { return denom_; };
 
     // returns total energy
     std::vector<double> energy() const { return energy_; };
