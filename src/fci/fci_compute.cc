@@ -140,7 +140,7 @@ void FCI::compute() {
 
 
 shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile> jop,
-                     const vector<int>& conv) { // d and e are scratch area for D and E intermediates 
+                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
 
   int la, lb;
   tie(la, lb) = len_string();
@@ -205,7 +205,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile
 }
 
 
-void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) {
+void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int ij = nij(); 
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
@@ -217,7 +217,7 @@ void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
   }
 }
 
-void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) {
+void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
   const int lb = d->lenb();
   const int ij = d->ij();
   double* const source_base = cc->first();
@@ -231,7 +231,7 @@ void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) {
   }
 }
 
-void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) {
+void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
   const int la = d->lena();
   const int ij = d->ij();
   for (int i = 0; i < la; i+=4) {
@@ -270,7 +270,7 @@ void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) {
   }
 }
 
-void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
+void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   const int lb = e->lenb();
   const int ij = e->ij();
   for (int ip = 0; ip != ij; ++ip) { 
@@ -283,7 +283,7 @@ void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
   }
 }
 
-void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
+void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   const int la = e->lena();
   const int ij = e->ij();
   for (int i = 0; i < la; i+=8) {
@@ -333,7 +333,7 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) {
 }
 
 
-void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) {
+void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -386,7 +386,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
 }
 
 
-void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) {
+void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();

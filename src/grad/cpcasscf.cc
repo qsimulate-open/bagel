@@ -33,8 +33,8 @@
 using namespace std;
 
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Civec> > grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
-                   const shared_ptr<const Reference> r)
-: solver_(new Linear<PairFile<Matrix1e, Civec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
+                   const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
+: solver_(new Linear<PairFile<Matrix1e, Civec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()), fci_(f) {
 
 }
 

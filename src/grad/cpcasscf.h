@@ -32,6 +32,7 @@
 #include <src/util/linear.h>
 #include <src/wfn/reference.h>
 #include <src/fci/civec.h>
+#include <src/fci/fci.h>
 #include <src/util/pairfile.h>
 
 // CP-CASSCF Z vector equation. Note that in addition to orbital derivatives (as in CPHF),
@@ -45,10 +46,11 @@ class CPCASSCF {
     const std::shared_ptr<DF_Half> halfjj_;
     const std::shared_ptr<const Reference> ref_;
     const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const FCI> fci_;
 
   public:
     CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Civec> > grad, const std::vector<double>& eig,
-             const std::shared_ptr<DF_Half> half, const std::shared_ptr<const Reference> g);
+             const std::shared_ptr<DF_Half> half, const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
     ~CPCASSCF() {};
 
     std::shared_ptr<PairFile<Matrix1e, Civec> > solve() const;

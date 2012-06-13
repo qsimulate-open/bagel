@@ -156,14 +156,14 @@ class FCI {
     unsigned int stringb(int i) const { return stringb_[i]; };
 
     // run-time functions
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv);
-    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
-    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
-    void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
-    void sigma_2a2(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d);
-    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop);
-    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
-    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2a2(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
+    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
 
     // functions related to natural orbitals
     void update_rdms(const std::vector<double>& coeff); 
@@ -210,7 +210,7 @@ class FCI {
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
+    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
 
     std::string print_bit(unsigned int bit) const {
       std::string out; 
