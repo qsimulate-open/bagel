@@ -50,7 +50,7 @@ class FCI {
     // input
     std::multimap<std::string, std::string> idata_; 
     // reference
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
     // geometry file
     const std::shared_ptr<const Geometry> geom_;
     // number of states
@@ -174,7 +174,7 @@ class FCI {
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
-    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>, std::shared_ptr<Reference>);
+    FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
     ~FCI();
     void compute();
 

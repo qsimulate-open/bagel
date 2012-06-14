@@ -71,7 +71,8 @@ libcasscf_a_AR = $(AR) $(ARFLAGS)
 libcasscf_a_LIBADD =
 am_libcasscf_a_OBJECTS = casscf.$(OBJEXT) superci.$(OBJEXT) \
 	superci_sigma.$(OBJEXT) rotfile.$(OBJEXT) qvec.$(OBJEXT) \
-	werner.$(OBJEXT) werner_compute.$(OBJEXT) jvec.$(OBJEXT)
+	werner.$(OBJEXT) werner_compute.$(OBJEXT) jvec.$(OBJEXT) \
+	supercigrad.$(OBJEXT)
 libcasscf_a_OBJECTS = $(am_libcasscf_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -183,7 +184,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libcasscf.a
-libcasscf_a_SOURCES = casscf.cc superci.cc superci_sigma.cc rotfile.cc qvec.cc werner.cc werner_compute.cc jvec.cc 
+libcasscf_a_SOURCES = casscf.cc superci.cc superci_sigma.cc rotfile.cc qvec.cc werner.cc werner_compute.cc jvec.cc supercigrad.cc 
 AM_CXXFLAGS = -I$(top_srcdir)
 all: all-am
 
@@ -268,6 +269,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/superci.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/superci_sigma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/supercigrad.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/werner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/werner_compute.Po@am__quote@
 

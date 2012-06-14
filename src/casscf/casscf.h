@@ -91,7 +91,8 @@ class CASSCF {
     virtual void compute() { assert(false); };
 
     std::shared_ptr<Reference> ref() { return ref_; };
-    std::shared_ptr<Reference> conv_to_ref() const;
+    std::shared_ptr<const Reference> ref() const { return ref_; };
+    virtual std::shared_ptr<const Reference> conv_to_ref() const;
 
     double energy() const { return energy_; }; 
 

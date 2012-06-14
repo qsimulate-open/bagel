@@ -36,7 +36,6 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
   shared_ptr<const Matrix1e> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
-erdm1->print();
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
@@ -115,7 +114,6 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
   shared_ptr<const Matrix1e> erdm1 = ref_->erdm1(); 
-erdm1->print();
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());

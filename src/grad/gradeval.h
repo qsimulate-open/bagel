@@ -37,7 +37,7 @@
 #include <src/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/werner.h>
-#include <src/casscf/superci.h>
+#include <src/casscf/supercigrad.h>
 
 // T should have
 // o Constructor with the input and geometry
@@ -48,7 +48,7 @@ template<typename T>
 class GradEval : public GradEval_base {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
 
     double energy_;
 
@@ -76,5 +76,6 @@ template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
+template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
 
 #endif

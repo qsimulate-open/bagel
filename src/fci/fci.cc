@@ -35,7 +35,7 @@ using namespace std;
 
 static const Comb comb;
 
-FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom, shared_ptr<Reference> r)
+FCI::FCI(std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom, shared_ptr<const Reference> r)
  : idata_(idat), ref_(r), geom_(geom) {
   common_init();
 }

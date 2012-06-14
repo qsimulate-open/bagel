@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
     bool scf_done = false;
     bool casscf_done = false;
     std::shared_ptr<SCF_base> scf;
-    std::shared_ptr<Reference> ref;
+    std::shared_ptr<const Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
@@ -164,18 +164,31 @@ int main(int argc, char** argv) {
         ref = casscf->conv_to_ref();
 
       } else if (method == "casscf-opt") {
-
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
-        if (algorithm == "superci" || algorithm == "") {
-          std::shared_ptr<Opt<SuperCI> > opt(new Opt<SuperCI>(idata, iter->second, geom));
-          for (int i = 0; i != 100; ++i)
-            if (opt->next()) break;
-        } else if (algorithm == "werner" || algorithm == "knowles") {
-          std::shared_ptr<Opt<WernerKnowles> > opt(new Opt<WernerKnowles>(idata, iter->second, geom));
-          for (int i = 0; i != 100; ++i)
-            if (opt->next()) break;
+        // in case of SS-CASSCF
+        if (read_input<int>(iter->second, "nstate", 1) == 1) {
+          if (algorithm == "superci" || algorithm == "") {
+            std::shared_ptr<Opt<SuperCI> > opt(new Opt<SuperCI>(idata, iter->second, geom));
+            for (int i = 0; i != 100; ++i)
+              if (opt->next()) break;
+          } else if (algorithm == "werner" || algorithm == "knowles") {
+            std::shared_ptr<Opt<WernerKnowles> > opt(new Opt<WernerKnowles>(idata, iter->second, geom));
+            for (int i = 0; i != 100; ++i)
+              if (opt->next()) break;
+          } else {
+            throw std::runtime_error("unknown CASSCF algorithm specified.");
+          }
+        // in case of SA-CASSCF
         } else {
-          throw std::runtime_error("unknown CASSCF algorithm specified.");
+          if (algorithm == "superci" || algorithm == "") {
+            std::shared_ptr<Opt<SuperCIGrad> > opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
+            for (int i = 0; i != 100; ++i)
+              if (opt->next()) break;
+          } else {
+            throw std::runtime_error("unknown CASSCF algorithm specified.");
+          }
+
+
         }
 
       } else if (method == "fci") {
