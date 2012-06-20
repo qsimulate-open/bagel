@@ -177,6 +177,7 @@ class FCI {
     FCI(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
     ~FCI();
     void compute();
+    void update();
 
     // returns members
     int norb() const { return norb_; };

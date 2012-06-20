@@ -333,5 +333,6 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Matrix1e> erdm(new Matrix1e(*ref_->coeff() * *f ^ *ref_->coeff()));
 
   out->set_erdm1(erdm);
+  out->set_nstate(nstate_);
   return out;
 }

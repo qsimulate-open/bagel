@@ -81,6 +81,9 @@ void FCI::common_init() {
   cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
   cout << endl;
 
+  // forms MO integrals and denominators.
+  update();
+
 }
 
 FCI::~FCI() {
@@ -155,7 +158,7 @@ void FCI::print_civectors(vector<shared_ptr<Civec> > vec, const double thr) cons
   for (auto iter = vec.begin(); iter != vec.end(); ++iter, ++j) {
     cout << endl;
     cout << "     * ci vector, state " << setw(3) << j << endl; 
-    const double* i = (*iter)->first();
+    const double* i = (*iter)->data();
     multimap<double, tuple<double, int, int> > tmp;
     for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
       for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {

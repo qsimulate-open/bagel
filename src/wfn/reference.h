@@ -51,6 +51,8 @@ class Reference {
     const int nact_;
     const int nvirt_;
 
+    int nstate_;
+
     std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
 
@@ -83,6 +85,10 @@ class Reference {
     int nocc() const { return nclosed_ + nact_; };
     int ncore() const { return ncore_; };
     void set_ncore(const int i) { ncore_ = i; };
+
+    // used in SA-CASSCF
+    void set_nstate(const int i) { nstate_ = i; };
+    int nstate() const { return nstate_; };
 
     double energy() const { return energy_; };
 

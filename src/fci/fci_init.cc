@@ -94,7 +94,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       // scale to make the vector normalized
       const double factor = 1.0/sqrt(static_cast<double>(icnt));
       const int size = out->data(oindex)->size();
-      dscal_(&size, &factor, out->data(oindex)->first(), &unit);
+      dscal_(&size, &factor, out->data(oindex)->data(), &unit);
 
       cout << "     guess " << setw(3) << oindex << ":   closed " <<
             setw(20) << left << print_bit(common) << " open " << setw(20) << print_bit(open_bit) << right << endl;
@@ -120,7 +120,7 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
   multimap<double, pair<int,int> > tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(0,0)));
 
-  double* diter = denom_->first();
+  double* diter = denom_->data();
   for (auto aiter = stringa_.begin(); aiter != stringa_.end(); ++aiter) {
     for (auto biter = stringb_.begin(); biter != stringb_.end(); ++biter, ++diter) {
       const double din = -(*diter);
@@ -171,7 +171,7 @@ void FCI::const_denom() {
   const int nspin = numofbits(stringa_.front()) - numofbits(stringb_.front());
   const int nspin2 = nspin*nspin;
 
-  double* iter = denom_->first();
+  double* iter = denom_->data();
   for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
     for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++iter) {
       unsigned int iabit1 = *ia;

@@ -36,22 +36,26 @@ static const bool tprint = false;
 
 using namespace std;
 
-void FCI::compute() {
-
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
+void FCI::update() {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
+  int start_int = ::clock();
   jop_ = shared_ptr<MOFile>(new Jop(geom_, ref_, ncore_, ncore_+norb_));
 
   // right now full basis is used. 
-  int start_int = ::clock();
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
           static_cast<double>(::clock() - start_int)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
 
   // create denominator here. Stored in shared<Civec> denom_
   const_denom();
+
+}
+
+void FCI::compute() {
+
+  // at the moment I only care about C1 symmetry, with dynamics in mind
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
 
   // some constants
   int la, lb;
@@ -103,9 +107,9 @@ void FCI::compute() {
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         const int size = cc_->data(ist)->size();
-        double* target_array = cc_->data(ist)->first();
-        double* source_array = errvec[ist]->first();
-        double* denom_array = denom_->first();
+        double* target_array = cc_->data(ist)->data();
+        double* source_array = errvec[ist]->data();
+        double* denom_array = denom_->data();
         const double en = energies[ist];
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
@@ -220,9 +224,9 @@ void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
 void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
   const int lb = d->lenb();
   const int ij = d->ij();
-  double* const source_base = cc->first();
+  double* const source_base = cc->data();
   for (int ip = 0; ip != ij; ++ip) {
-    double* const target_base = d->data(ip)->first();
+    double* const target_base = d->data(ip)->data();
     for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter));
       double* const target_array = target_base + get<2>(*iter)*lb;
@@ -274,7 +278,7 @@ void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   const int lb = e->lenb();
   const int ij = e->ij();
   for (int ip = 0; ip != ij; ++ip) { 
-    double* const source_base = e->data(ip)->first();
+    double* const source_base = e->data(ip)->data();
     for (auto iter = phia_[ip].begin(); iter != phia_[ip].end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter)); 
       double* const target_array = sigma->element_ptr(0, get<0>(*iter));
@@ -391,7 +395,7 @@ void FCI::sigma_2b(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFi
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  dgemm_("n", "n", lenab, ij, ij, 0.5, d->first(), lenab, jop->mo2e_ptr(), ij,
-                                  0.0, e->first(), lenab);
+  dgemm_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr(), ij,
+                                  0.0, e->data(), lenab);
 }
 

@@ -54,20 +54,23 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // TODO this is redundant, though...
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc);
 
-  shared_ptr<const FCI> fci;
+  shared_ptr<FCI> fci;
   {
     multimap<string, string> fullci_data;
     fullci_data.insert(make_pair("ncore", tostring<int>(nclosed)));
     fullci_data.insert(make_pair("norb",  tostring<int>(nact)));
-    fci = shared_ptr<const FCI>(new FCI(fullci_data, ref_->geom(), ref_));
+    fci = shared_ptr<FCI>(new FCI(fullci_data, ref_->geom(), ref_));
   }
 
   int la, lb; tie(la, lb) = fci->len_string();
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
-  shared_ptr<Civec> g1(new Civec(lb, la));
-  shared_ptr<PairFile<Matrix1e, Civec> > grad(new PairFile<Matrix1e, Civec>(g0, g1));
+  shared_ptr<Dvec> g1(new Dvec(lb, la, ref_->nstate()));
+  shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
   shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, ref_, fci));
+
+  shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   std::shared_ptr<GradFile> out(new GradFile(3*geom_->natom()));
   return out;
 }
+

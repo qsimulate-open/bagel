@@ -75,8 +75,9 @@ class Civec {
 
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
     double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
-    double* first() { return cc(); };
-    const double* first() const { return cc(); };
+    double* data() { return cc(); };
+    const double* data() const { return cc(); };
+
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
@@ -84,7 +85,7 @@ class Civec {
 
     std::shared_ptr<Civec> transpose() {
       std::shared_ptr<Civec> ct(new Civec(lena_, lenb_));
-      double* cct = ct->first(); 
+      double* cct = ct->data(); 
       mytranspose_(cc(), &lenb_, &lena_, cct); 
       return ct;
     };
@@ -93,10 +94,10 @@ class Civec {
 
     // some functions for convenience
     double ddot(const Civec& other) const {
-      return ddot_(lena_*lenb_, cc(), 1, other.first(), 1);
+      return ddot_(lena_*lenb_, cc(), 1, other.data(), 1);
     };
     void daxpy(double a, const Civec& other) {
-      daxpy_(lena_*lenb_, a, other.first(), 1, cc(), 1);
+      daxpy_(lena_*lenb_, a, other.data(), 1, cc(), 1);
     };
     double norm() const {
       return std::sqrt(ddot_(lena_*lenb_, cc(), 1, cc(), 1));
@@ -129,14 +130,11 @@ class Dvec {
     size_t ij_;
     std::vector<std::shared_ptr<Civec> > dvec_;
     std::unique_ptr<double[]> data_;
-    double* data() { return data_.get(); };
-    const double* const data() const { return data_.get(); };
 
   public:
     Dvec(const size_t lb, const size_t la, const size_t ij) : lena_(la), lenb_(lb), ij_(ij) {
       // actually data should be in a consecutive area to call dgemm.
-      std::unique_ptr<double[]> data__(new double[lb*la*ij]);
-      data_ = std::move(data__);
+      data_ = std::unique_ptr<double[]>(new double[lb*la*ij]);
       double* tmp = data();
       for (int i = 0; i != ij; ++i, tmp+=lb*la) {
         std::shared_ptr<Civec> c(new Civec(lb, la, tmp)); 
@@ -144,14 +142,26 @@ class Dvec {
       }
     };
     Dvec(const Dvec& o) : lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      std::unique_ptr<double[]> data__(new double[lena_*lenb_*ij_]);
-      data_ = std::move(data__);
+      data_ = std::unique_ptr<double[]>(new double[lena_*lenb_*ij_]);
       double* tmp = data_.get();
       for (int i = 0; i != ij_; ++i, tmp+=lenb_*lena_) {
         std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
         dvec_.push_back(c);
       }
       std::copy(o.data(), o.data()+lena_*lenb_*ij_, data());
+    };
+    Dvec(std::shared_ptr<const Civec> e, const size_t ij) : lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
+      // actually data should be in a consecutive area to call dgemm.
+std::cout << "aaaa" << std::endl;
+std::cout << lena_ << " " << lenb_ << " " << ij << std::endl;
+      data_ = std::unique_ptr<double[]>(new double[lena_*lenb_*ij]);
+std::cout << lena_ << " " << lenb_ << " " << ij << std::endl;
+      double* tmp = data();
+      for (int i = 0; i != ij; ++i, tmp+=lenb_*lena_) {
+        std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
+//      dcopy_(lenb_*lena_, e->data(), 1, c->data(), 1);
+        dvec_.push_back(c);
+      }
     };
 
     // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
@@ -167,9 +177,12 @@ class Dvec {
     };
 
     ~Dvec() { };
+
+    double* data() { return data_.get(); };
+    const double* const data() const { return data_.get(); };
+
     std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); };
-    double* first() { return data(); };
 
     std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
     std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv) {
@@ -192,6 +205,25 @@ class Dvec {
     size_t lena() const { return lena_; };
     size_t lenb() const { return lenb_; };
     size_t ij() const { return ij_; };
+
+    // some functions for convenience
+    double ddot(const Dvec& other) const {
+      assert(ij() == other.ij());
+      double sum = 0.0;
+      for (auto i = dvec_.begin(), j = other.dvec_.begin(); i != dvec_.end(); ++i, ++j)
+        sum += ddot_(lena_*lenb_, (*i)->data(), 1, (*j)->data(), 1);
+      return sum;
+    };
+    void daxpy(double a, const Dvec& other) {
+      auto j = other.dvec_.begin();
+      for (auto i = dvec_.begin(); i != dvec_.end(); ++i, ++j)
+        daxpy_(lena_*lenb_, a, (*j)->data(), 1, (*i)->data(), 1);
+    };
+    double norm() const { return std::sqrt(ddot(*this)); };
+    void scale(const double a) {
+      for (auto i = dvec_.begin(); i != dvec_.end(); ++i)
+        dscal_(lena_*lenb_, a, (*i)->data(), 1);
+    };
 };
 
 

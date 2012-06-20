@@ -32,14 +32,14 @@
 
 using namespace std;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Civec> > grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
                    const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: solver_(new Linear<PairFile<Matrix1e, Civec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()), fci_(f) {
+: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()), fci_(f) {
 
 }
 
 
-shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
+shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
@@ -54,14 +54,20 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
   tie(la, lb) = fci_->len_string();
 
   shared_ptr<Matrix1e> t0(new Matrix1e(geom_));
-  shared_ptr<Civec> t1(new Civec(lb, la));
-  shared_ptr<PairFile<Matrix1e, Civec> > t(new PairFile<Matrix1e, Civec>(t0, t1));
+  shared_ptr<Dvec> t1(new Dvec(lb, la, ref_->nstate()));
+  shared_ptr<PairFile<Matrix1e, Dvec> > t(new PairFile<Matrix1e, Dvec>(t0, t1));
 
   shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
-  shared_ptr<const Civec> d1 = fci_->denom();
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       d0->element(a,i) = eig_[a]-eig_[i];
+
+  shared_ptr<const Civec> d1_each = fci_->denom();
+cout << "aaa+" << endl;
+cout << ref_->nstate() << endl;
+cout << d1_each->lena() << endl;
+cout << ref_->nstate() << d1_each->lena() << endl;
+  shared_ptr<const Dvec> d1(new Dvec(d1_each, ref_->nstate()));
 
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   unique_ptr<double[]> jai(new double[nvirt*nocca]);

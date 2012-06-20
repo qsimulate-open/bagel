@@ -65,10 +65,10 @@ void FCI::compute_rdm12(const int ist) {
 
   // 1RDM
   shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
-  dgemv_("T", len, ij, 1.0, d->data(0)->first(), len, cc->first(), 1, 0.0, rdm1->first(), 1);
+  dgemv_("T", len, ij, 1.0, d->data(0)->data(), len, cc->data(), 1, 0.0, rdm1->data(), 1);
   // 2RDM
   shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
-  dgemm_("T", "N", ij, ij, len, 1.0, d->data(0)->first(), len, d->data(0)->first(), len, 0.0, rdm2->first(), ij);
+  dgemm_("T", "N", ij, ij, len, 1.0, d->data(0)->data(), len, d->data(0)->data(), len, 0.0, rdm2->data(), ij);
 
   // sorting... a bit stupid but cheap anyway
   unique_ptr<double[]> buf(new double[norb_*norb_]);

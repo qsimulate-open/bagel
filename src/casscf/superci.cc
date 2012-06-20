@@ -65,6 +65,8 @@ void SuperCI::compute() {
     }
 
     // first perform CASCI to obtain RDMs
+    // TODO this should not rely on ref_->coeff()
+    if (iter) fci_->update();
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
