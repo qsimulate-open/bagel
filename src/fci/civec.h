@@ -152,14 +152,11 @@ class Dvec {
     };
     Dvec(std::shared_ptr<const Civec> e, const size_t ij) : lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
       // actually data should be in a consecutive area to call dgemm.
-std::cout << "aaaa" << std::endl;
-std::cout << lena_ << " " << lenb_ << " " << ij << std::endl;
       data_ = std::unique_ptr<double[]>(new double[lena_*lenb_*ij]);
-std::cout << lena_ << " " << lenb_ << " " << ij << std::endl;
       double* tmp = data();
       for (int i = 0; i != ij; ++i, tmp+=lenb_*lena_) {
         std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
-//      dcopy_(lenb_*lena_, e->data(), 1, c->data(), 1);
+        dcopy_(lenb_*lena_, e->data(), 1, c->data(), 1);
         dvec_.push_back(c);
       }
     };

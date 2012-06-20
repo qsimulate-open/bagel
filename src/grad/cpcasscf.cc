@@ -63,10 +63,6 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
       d0->element(a,i) = eig_[a]-eig_[i];
 
   shared_ptr<const Civec> d1_each = fci_->denom();
-cout << "aaa+" << endl;
-cout << ref_->nstate() << endl;
-cout << d1_each->lena() << endl;
-cout << ref_->nstate() << d1_each->lena() << endl;
   shared_ptr<const Dvec> d1(new Dvec(d1_each, ref_->nstate()));
 
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
