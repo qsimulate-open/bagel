@@ -61,7 +61,7 @@ shared_ptr<PairFile<Matrix1e, Civec> > CPCASSCF::solve() const {
   shared_ptr<const Civec> d1 = fci_->denom();
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
-      d0->element(a,i) = 1.0 / (eig_[a]-eig_[i]);
+      d0->element(a,i) = eig_[a]-eig_[i];
 
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
