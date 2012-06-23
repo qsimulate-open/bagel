@@ -70,6 +70,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
+  // compute dipole...
+  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(0);
+
+  // computes dipole mements
+  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<Matrix1e> dtotao(new Matrix1e(*coeff_occ * *dtot ^ *coeff_occ));
+  Dipole dipole(geom_, dtotao);
+  dipole.compute();
+
   std::shared_ptr<GradFile> out(new GradFile(3*geom_->natom()));
   return out;
 }
