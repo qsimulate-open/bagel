@@ -17,7 +17,7 @@ cd obj
 // "-lboost_regex -lblas -llapack"
 // Blame libstdc++ that does not have complete regex yet.
 
-// Use any options as you like.
+// Other than that, use any options as you like.
 // Note that -O3 optimization is fine, but it will take a lot till it compiles everything.
 
 ../configure 'CXXFLAGS=-std=c++11' 'LDFLAGS=-L/opt/local/lib'
@@ -35,4 +35,4 @@ make -j4
 // it often fails to link at the very end. Let me know if you see it with an error message.
 
 // run
-./PolyR12 ../../src/benzene_mp2_svp.in
+./PolyR12 ../../src/benzene_svp_mp2.in
