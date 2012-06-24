@@ -33,11 +33,6 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<Shell> RefShell;
-
-static const int unit = 1;
-
 //
 // generate initial vectors
 //   - bits: bit patterns of low-energy determinants
@@ -94,7 +89,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       // scale to make the vector normalized
       const double factor = 1.0/sqrt(static_cast<double>(icnt));
       const int size = out->data(oindex)->size();
-      dscal_(&size, &factor, out->data(oindex)->data(), &unit);
+      dscal_(size, factor, out->data(oindex)->data(), 1);
 
       cout << "     guess " << setw(3) << oindex << ":   closed " <<
             setw(20) << left << print_bit(common) << " open " << setw(20) << print_bit(open_bit) << right << endl;
