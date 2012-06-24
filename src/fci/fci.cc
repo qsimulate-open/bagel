@@ -28,7 +28,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <src/fci/fci.h>
-#include <src/fci/comb.h>
+#include <src/util/comb.h>
 #include <src/util/combination.hpp>
 
 using namespace std;
@@ -126,7 +126,7 @@ void FCI::const_string_lists_() {
 }
 
 void FCI::const_lexical_mapping_() {
-  // combination numbers up to 31 orbitals (fci/comb.h)
+  // combination numbers up to 31 orbitals (util/comb.h)
   zkl_.resize(nelea_ * norb_ + neleb_ * norb_); 
   fill(zkl_.begin(), zkl_.end(), 0u);
 

@@ -25,8 +25,8 @@
 
 //
 
-#ifndef __NEWINT_FCI_COMB_H
-#define __NEWINT_FCI_COMB_H
+#ifndef __NEWINT_UTIL_COMB_H
+#define __NEWINT_UTIL_COMB_H
 
 #include <algorithm>
 

@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <cmath>
 #include <src/util/f77.h>
-#include <src/fci/comb.h>
+#include <src/util/comb.h>
 
 using namespace std;
 

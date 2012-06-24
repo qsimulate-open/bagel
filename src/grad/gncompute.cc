@@ -26,7 +26,7 @@
 #include <src/stackmem.h>
 #include <src/grad/gnaibatch.h>
 #include <src/rysint/carsphlist.h>
-#include <src/fci/comb.h>
+#include <src/util/comb.h>
 
 using namespace std;
 
