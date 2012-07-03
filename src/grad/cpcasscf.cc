@@ -32,9 +32,10 @@
 
 using namespace std;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const vector<double>& eig, const shared_ptr<DF_Half> h,
-                   const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()), fci_(f) {
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
+                   const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
+: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), half_(h),
+  halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
 }
 
@@ -64,6 +65,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   shared_ptr<const Civec> d1_each = fci_->denom();
   shared_ptr<const Dvec> d1(new Dvec(d1_each, ref_->nstate()));
+  shared_ptr<Dvec> z1 = d1->clone();
 
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
@@ -71,9 +73,14 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
-#if 0
+
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
+
+    shared_ptr<Matrix1e> amat = compute_amat(z1);
+    amat->print();
+
+#if 0
     solver_->orthog(t);
 
     shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
@@ -117,13 +124,43 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
         t->element(a,i) /= (eig_[a]-eig_[i]);
 
     cout << setw(6) << iter << setw(20) << setprecision(10) << t->norm() << endl;
+#endif
 
   }
 
+#if 0
   cout << endl;
   t = solver_->civec();
   t->fill_upper();
 #endif
   return t;
 
+}
+
+
+shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
+  // TODO think about core orbitals
+  const size_t nbasis = geom_->nbasis();
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
+
+  // compute RDMs 
+  shared_ptr<const RDM<1> > rdm1 = ref_->rdm1_av();
+  shared_ptr<const RDM<2> > rdm2 = ref_->rdm2_av();
+
+  // A matrix
+  shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom())); 
+
+  // 1) one-electron contribution 
+  shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
+  shared_ptr<const Matrix1e> rdm1_mat = ref_->rdm1_mat(rdm1);
+  dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1_mat->data(), nbasis, 0.0, amat->data(), nbasis);
+  // 2) two-electron contribution
+  shared_ptr<DF_Full> full  = half_->compute_second_transform(ref_->coeff()->data(), nocc);
+  shared_ptr<DF_Full> fulld = full->apply_2rdm(rdm2->data(), rdm1->data(), nclosed, nact);
+  unique_ptr<double[]> buf = half_->form_2index(fulld);
+  dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, amat->data(), nbasis); 
+
+  return amat;
 }

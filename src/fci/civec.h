@@ -162,7 +162,7 @@ class Dvec {
     };
 
     // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
-    Dvec(std::shared_ptr<Dvec> o) : lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
+    Dvec(std::shared_ptr<const Dvec> o) : lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
       for (int i = 0; i != ij_; ++i) {
         std::shared_ptr<Civec> c(new Civec(*(o->data(i))));
         dvec_.push_back(c);
@@ -179,6 +179,7 @@ class Dvec {
     const double* const data() const { return data_.get(); };
 
     std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
+    std::shared_ptr<const Civec> data(const size_t i) const { return std::const_pointer_cast<Civec>(dvec_[i]); };
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); };
 
     std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
@@ -221,6 +222,9 @@ class Dvec {
       for (auto i = dvec_.begin(); i != dvec_.end(); ++i)
         dscal_(lena_*lenb_, a, (*i)->data(), 1);
     };
+
+    std::shared_ptr<Dvec> clone() const { return std::shared_ptr<Dvec>(new Dvec(lenb(), lena(), ij())); };
+    std::shared_ptr<Dvec> copy() const { return std::shared_ptr<Dvec>(new Dvec(*this)); };
 };
 
 

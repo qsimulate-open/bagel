@@ -80,7 +80,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
   unique_ptr<double[]> buf = half->form_2index(fulld);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
-//g0->print();
 
   // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(lb, la, ref_->nstate()));
@@ -88,7 +87,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
 
   // solve CP-CASSCF
-  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, ref_, fci));
+  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, halfjj, ref_, fci));
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // compute dipole...

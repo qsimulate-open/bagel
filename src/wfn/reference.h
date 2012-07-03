@@ -55,6 +55,8 @@ class Reference {
 
     std::vector<std::shared_ptr<RDM<1> > >  rdm1_;
     std::vector<std::shared_ptr<RDM<2> > >  rdm2_;
+    std::shared_ptr<const RDM<1> > rdm1_av_;
+    std::shared_ptr<const RDM<2> > rdm2_av_;
 
     // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
     std::shared_ptr<const Matrix1e> erdm1_;
@@ -63,8 +65,10 @@ class Reference {
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const double en, std::shared_ptr<const Hcore> h, const std::vector<double>& s,
               const int& nclo, const int& nact, const int& nvirt,
-              const std::vector<std::shared_ptr<RDM<1> > > rdm1 = std::vector<std::shared_ptr<RDM<1> > >(),
-              const std::vector<std::shared_ptr<RDM<2> > > rdm2 = std::vector<std::shared_ptr<RDM<2> > >());
+              const std::vector<std::shared_ptr<RDM<1> > >& rdm1 = std::vector<std::shared_ptr<RDM<1> > >(),
+              const std::vector<std::shared_ptr<RDM<2> > >& rdm2 = std::vector<std::shared_ptr<RDM<2> > >(),
+              std::shared_ptr<const RDM<1> > rdm1_av = std::shared_ptr<RDM<1> >(),
+              std::shared_ptr<const RDM<2> > rdm2_av = std::shared_ptr<RDM<2> >());
 
     ~Reference() {};
 
@@ -93,9 +97,15 @@ class Reference {
     double energy() const { return energy_; };
 
     std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }; 
-    std::shared_ptr<Matrix1e> rdm1_mat(const int irdm = 0) const; 
+    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; }; 
+
+    // returns an occ-occ sized 1RDM
+    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const; 
+    std::shared_ptr<Matrix1e> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
+    std::shared_ptr<Matrix1e> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
 
     std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }; 
+    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; }; 
 
 };
 
