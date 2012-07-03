@@ -122,7 +122,7 @@ class FCI {
       bits = (bits & 0x0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f); bits = (bits & 0x00ff00ff) + (bits >> 8 & 0x00ff00ff);
       return (bits & 0x0000ffff) + (bits >>16 & 0x0000ffff); // can be cheaper, but it is fine for the time being...
 #else
-      return _mm_popcnt_u32(bits); // not tested. i7 or later - good reason to buy a new laptop.
+      return _mm_popcnt_u32(bits); // i7 or later
 #endif
     };
 
