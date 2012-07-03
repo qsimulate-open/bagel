@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
       } else if (method == "fci") {
         if (!ref) throw std::runtime_error("FCI needs a reference");
 
-        std::shared_ptr<FCI> fci(new FCI(iter->second, geom, ref));
+        std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
         fci->compute();
 
       } else if (method == "mp2") {

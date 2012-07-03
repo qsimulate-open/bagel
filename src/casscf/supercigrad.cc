@@ -58,13 +58,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
   shared_ptr<DF_Half> halfjj = half->apply_J();
 
-  shared_ptr<FCI> fci;
-  {
-    multimap<string, string> fullci_data;
-    fullci_data.insert(make_pair("ncore", tostring<int>(nclosed)));
-    fullci_data.insert(make_pair("norb",  tostring<int>(nact)));
-    fci = shared_ptr<FCI>(new FCI(fullci_data, ref_->geom(), ref_));
-  }
+  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact));
 
   int la, lb; tie(la, lb) = fci->len_string();
   // orbital derivative is nonzero

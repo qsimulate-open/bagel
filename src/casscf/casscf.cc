@@ -110,16 +110,7 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  {
-    multimap<string, string> fullci_data = idata_;
-    for (auto iter = fullci_data.equal_range("ncore").first; iter != fullci_data.equal_range("ncore").second; ++iter)
-      fullci_data.erase(iter);
-    fullci_data.insert(make_pair("ncore", tostring<int>(nclosed_)));
-    for (auto iter = fullci_data.equal_range("norb").first; iter != fullci_data.equal_range("norb").second; ++iter)
-      fullci_data.erase(iter);
-    fullci_data.insert(make_pair("norb", tostring<int>(nact_)));
-    fci_ = shared_ptr<FCI>(new FCI(fullci_data, geom_, ref_));
-  }
+  fci_ = shared_ptr<FCI>(new FCI(idata_, ref_, nclosed_, nact_));
   resume_stdcout();
 
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
