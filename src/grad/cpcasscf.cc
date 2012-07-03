@@ -138,29 +138,37 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 }
 
 
+// computes A matrix (scaled by 2 here)
 shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
-  // TODO think about core orbitals
+  shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom())); 
+
   const size_t nbasis = geom_->nbasis();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
+
+  const double* const coeff = ref_->coeff()->data(); 
+  const double* const acoeff = coeff + nclosed*nbasis;
 
   // compute RDMs 
   shared_ptr<const RDM<1> > rdm1 = ref_->rdm1_av();
   shared_ptr<const RDM<2> > rdm2 = ref_->rdm2_av();
 
-  // A matrix
-  shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom())); 
+  // core Fock operator
+  shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();
+  unique_ptr<double[]> buf(new double[nbasis*nact]);
+  unique_ptr<double[]> buf2(new double[nbasis*nact]);
+  dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff, nbasis, 0.0, buf.get(), nbasis); 
+  dgemm_("N", "N", nbasis, nact, nact, 1.0, buf.get(), nbasis, rdm1->data(), nact, 0.0, buf2.get(), nbasis); 
+  dgemm_("T", "N", nbasis, nact, nbasis, 2.0, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis); 
 
-  // 1) one-electron contribution 
-  shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-  shared_ptr<const Matrix1e> rdm1_mat = ref_->rdm1_mat(rdm1);
-  dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1_mat->data(), nbasis, 0.0, amat->data(), nbasis);
-  // 2) two-electron contribution
-  shared_ptr<DF_Full> full  = half_->compute_second_transform(ref_->coeff()->data(), nocc);
-  shared_ptr<DF_Full> fulld = full->apply_2rdm(rdm2->data(), rdm1->data(), nclosed, nact);
-  unique_ptr<double[]> buf = half_->form_2index(fulld);
-  dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, amat->data(), nbasis); 
+amat->print();
+
+  // Half transformed DF vector
+  shared_ptr<const DF_Half> half = fci_->jop()->mo2e_1ext();
+  shared_ptr<const DF_Full> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
+  shared_ptr<const DF_Full> fulld = full->apply_2rdm(rdm2->data());
+  unique_ptr<double[]> jd = half->form_2index(fulld);
+  dgemm_("T", "N", nbasis, nact, nbasis, 2.0, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis); 
 
   return amat;
 }

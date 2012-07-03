@@ -366,6 +366,18 @@ shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
+
+shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
+  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
+  unique_ptr<double[]> jj(new double[naux_*naux_]);
+  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data_2index(), naux_, d->data_2index(), naux_, 0.0, jj.get(), naux_);
+
+  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj, naux_, data_, naux_, 0.0, out, naux_);
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+}
+
+
 shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm) const {
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
   dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_.get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_);

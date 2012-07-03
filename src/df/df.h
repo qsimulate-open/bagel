@@ -197,7 +197,9 @@ class DF_Full {
     const int nocc2() const { return nocc2_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
+    std::shared_ptr<DF_Full> apply_JJ() const { return apply_JJ(df_); };
     std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const;
+    std::shared_ptr<DF_Full> apply_JJ(std::shared_ptr<const DensityFit> d) const;
 
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) const;
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;

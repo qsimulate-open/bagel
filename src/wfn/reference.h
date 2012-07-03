@@ -34,6 +34,8 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/rdm.h>
 
+// all the info to construct wave functions
+
 class Reference {
 
   protected:

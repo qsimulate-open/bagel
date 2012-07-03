@@ -36,8 +36,7 @@ using namespace std;
 
 
 MOFile::MOFile(const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref,
-               const int nstart, const int nfence) : geom_(geom), ref_(ref),
-    core_fock_(new double[geom->nbasis()*geom->nbasis()]) {
+               const int nstart, const int nfence) : geom_(geom), ref_(ref), core_fock_(new Matrix1e(geom)) {
 
   do_df_ = geom->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -118,7 +117,7 @@ double Jop::compute_mo1e(const int nstart, const int nfence) {
     shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
     fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
-    dcopy_(nbasis_*nbasis_, fock0->data(), 1, core_fock_ptr(), 1);
+    *core_fock_ = *fock0;
   }
   fock0->fill_upper();
   dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.get(),nbasis_);
