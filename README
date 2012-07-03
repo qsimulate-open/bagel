@@ -22,6 +22,10 @@ cd obj
 
 ../configure 'CXXFLAGS=-std=c++11' 'LDFLAGS=-L/opt/local/lib'
 
+// ** important **
+// For developers: please make sure that your code can be compiled with
+../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g'
+
 // move to the directory where an executable is located
 cd src
 
