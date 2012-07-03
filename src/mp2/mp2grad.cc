@@ -197,8 +197,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 
-// dipole is correct
-////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
 
   elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
   cout << endl;

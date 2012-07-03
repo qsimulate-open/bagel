@@ -119,7 +119,7 @@ class RDM {
       }
     };
 
-    void print() {
+    void print() const {
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j)
@@ -135,6 +135,8 @@ class RDM {
                       << k << std::setw(3) << j << std::setw(3) << i
                       << std::setw(12) << std::setprecision(7) << element(l,k,j,i) << std::endl;
         } } } }
+      } else {
+        assert(false);
       }
     };
 };

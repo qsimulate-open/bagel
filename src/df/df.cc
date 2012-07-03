@@ -291,6 +291,14 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, const double a, const do
 }
 
 
+unique_ptr<double[]> DF_Half::form_2index(shared_ptr<const DF_Full> o, const double a, const double b) const {
+  assert(b == 0);
+  unique_ptr<double[]> tmp(new double[nbasis_*o->nocc2()]);
+  form_2index(tmp, o, a, b);
+  return tmp;
+}
+
+
 void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DF_Full> o, const double a, const double b) const {
   if (nocc_ != o->nocc1()) throw logic_error("nocc_ and o->nocc1() should be the same: in DF_Half::form_2index");
   const int common = nocc_ * naux_;

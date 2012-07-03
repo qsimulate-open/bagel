@@ -42,6 +42,9 @@ static string tostring(const T i) {
 template<>
 std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
+  // TODO
+  const int target = 0;
+
   // related to denominators
   const int nbasis = ref_->geom()->nbasis();
   // TODO TODO TODO temp... to have it compiled
@@ -51,8 +54,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  // TODO this is redundant, though...
-  shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc);
+  // TODO they are redundant, though...
+  shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
+  shared_ptr<DF_Half> halfjj = half->apply_J();
 
   shared_ptr<FCI> fci;
   {
@@ -63,15 +67,37 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   int la, lb; tie(la, lb) = fci->len_string();
+  // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
+  // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}
+  //          = hd_ri + 2 (kr|G)(G|jl) D(lj, ki)
+
+  // 1) one-electron contribution 
+  shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
+  shared_ptr<Matrix1e> rdm1 = ref_->rdm1_mat(target);
+  dgemm_("N", "N", nbasis, nocc, nocc, 1.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
+  // 2) two-electron contribution
+  shared_ptr<DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
+  shared_ptr<DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+  unique_ptr<double[]> buf = half->form_2index(fulld, 2.0);
+  g0->print();
+
+  dgemm_("T", "N", nbasis, nbasis, nocc, 1.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
+
+  g0->print();
+
+  // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(lb, la, ref_->nstate()));
+  // combine gradient file
   shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
+
+  // solve CP-CASSCF
   shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, ref_, fci));
 
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // compute dipole...
-  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(0);
+  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target);
 
   // computes dipole mements
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());

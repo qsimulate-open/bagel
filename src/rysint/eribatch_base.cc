@@ -26,6 +26,7 @@
 
 #include <src/rysint/inline.h>
 #include <src/rysint/eribatch_base.h>
+#include <src/rysint/naibatch_base.h>
 #include <src/rysint/f77.h>
 #include <src/stackmem.h>
 #include <algorithm>
@@ -79,8 +80,6 @@ void ERIBatch_base::root_weight(const int ps) {
     eriroot13_(T_, roots_, weights_, &ps); 
   }
 }
-
-#include <src/rysint/naibatch_base.h>
 
 void NAIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {

@@ -151,7 +151,9 @@ class DF_Half {
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
     void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
+    // form 2 index quantities
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
+    std::unique_ptr<double[]> form_2index(std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
     // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const DensityFit> o, const double a = 1.0) const;

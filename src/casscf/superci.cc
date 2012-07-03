@@ -239,15 +239,3 @@ shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
 }
 
 
-
-
-void SuperCI::compute_qxr(double* int1ext, shared_ptr<RDM<2> > rdm2, shared_ptr<QFile> qxr) {
-  // int1ext = (xu|st) = (ts|ux), rdm2 = D_ru,st = D_ur,ts = D_ts,ur
-  const int nbas = geom_->nbasis(); // caution :: this is AO and therefore not nbasis_
-  const int common = nact_*nact_*nact_;
-  QFile buf(nbas,nact_);
-  dgemm_("T", "N", nbas, nact_, common, 1.0, int1ext, common, rdm2->first(), common, 0.0, buf.data(), nbas);
-  dgemm_("T", "N", nbasis_, nact_, nbas, 1.0, ref_->coeff()->data(), nbas, buf.data(), nbas, 0.0, qxr->data(), nbasis_);
-}
-
-

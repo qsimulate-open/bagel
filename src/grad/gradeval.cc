@@ -138,6 +138,10 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
+#if 0
+  Dipole d(ref_->geom(), rdm1);
+  d.compute();
+#endif
   shared_ptr<const Matrix1e> erdm1 = ref_->erdm1(); 
 
   //- TWO ELECTRON PART -//

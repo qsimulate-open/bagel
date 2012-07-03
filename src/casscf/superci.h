@@ -50,8 +50,6 @@ class SuperCI : public CASSCF {
     void grad_va(const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
     void grad_ca(const std::shared_ptr<Matrix1e> fock, const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
 
-    void compute_qxr(double* int1ext, std::shared_ptr<RDM<2> > rdm2, std::shared_ptr<QFile> qxr);
-
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
                       const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f);
     void sigma_ai_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix1e> f);
