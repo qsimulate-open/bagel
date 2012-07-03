@@ -40,7 +40,7 @@ void FCI::compute_rdm12() {
     rdm1_av_->zero();
     rdm2_av_->zero();
   }
-  for (int i=0; i!=nstate_; ++i) compute_rdm12(i);
+  for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
 }
 
 void FCI::compute_rdm12(const int ist) {

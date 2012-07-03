@@ -71,20 +71,16 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
   // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + 2 (kr|G)(G|jl) D(lj, ki)
-
   // 1) one-electron contribution 
   shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
   shared_ptr<Matrix1e> rdm1 = ref_->rdm1_mat(target);
-  dgemm_("N", "N", nbasis, nocc, nocc, 1.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
+  dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
   // 2) two-electron contribution
   shared_ptr<DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
   shared_ptr<DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-  unique_ptr<double[]> buf = half->form_2index(fulld, 2.0);
-  g0->print();
-
-  dgemm_("T", "N", nbasis, nbasis, nocc, 1.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
-
-  g0->print();
+  unique_ptr<double[]> buf = half->form_2index(fulld);
+  dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
+//g0->print();
 
   // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(lb, la, ref_->nstate()));
@@ -93,7 +89,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // solve CP-CASSCF
   shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, ref_, fci));
-
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // compute dipole...
