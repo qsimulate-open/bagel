@@ -32,9 +32,6 @@
 
 #include <tuple>
 #include <src/scf/scf.h>
-#ifdef USE_SSE42_INTRINSICS
-#include <nmmintrin.h>
-#endif
 #include <cassert>
 #include <iostream>
 #include <memory>

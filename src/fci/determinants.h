@@ -35,6 +35,9 @@
 #include <iomanip>
 #include <vector>
 #include <map>
+#ifdef USE_SSE42_INTRINSICS
+#include <nmmintrin.h>
+#endif
 
 static int numofbits(unsigned int bits) {
 #ifndef USE_SSE42_INTRINSICS
