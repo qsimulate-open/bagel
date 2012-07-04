@@ -32,9 +32,13 @@
 #include <vector>
 #include <algorithm>
 #include <src/util/f77.h>
+#include <src/fci/determinants.h>
 
 class Civec {
   protected:
+    // The determinant space in which this Civec object is defined
+    std::shared_ptr<const Determinants> det_;
+
     int lena_;
     int lenb_;
 
@@ -51,26 +55,26 @@ class Civec {
     const double* const cc() const { return cc_ptr_; };
 
   public:
-    Civec(const size_t lb, const size_t la) : lena_(la), lenb_(lb) {
-      std::unique_ptr<double[]> cc__(new double[la*lb]);
-      cc_ = std::move(cc__);
+    Civec(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
+      cc_ = std::unique_ptr<double[]>(new double[lena_*lenb_]);
       cc_ptr_ = cc_.get();
-      std::fill(cc(), cc() + la*lb, 0.0);
+      std::fill(cc(), cc() + lena_*lenb_, 0.0);
     }
 
     // constructor that is called by Dvec.
-    Civec(const size_t lb, const size_t la, double* din_) : lena_(la), lenb_(lb) {
+    Civec(std::shared_ptr<const Determinants> det, double* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
+      cc_ = std::unique_ptr<double[]>(new double[lena_*lenb_]);
       cc_ptr_ = din_;
-      std::fill(cc(), cc() + la*lb, 0.0);
+      std::fill(cc(), cc() + lena_*lenb_, 0.0);
     }
 
     // copy constructor
-    Civec(const Civec& o) : lena_(o.lena()), lenb_(o.lenb()) {
-      std::unique_ptr<double[]> cc__(new double[lena_*lenb_]);
-      cc_ = std::move(cc__);
+    Civec(const Civec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
+      cc_ = std::unique_ptr<double[]>(new double[lena_*lenb_]);
       cc_ptr_ = cc_.get();
       std::copy(o.cc(), o.cc() + lena_*lenb_, cc());
     };
+
     ~Civec() { };
 
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
@@ -78,13 +82,14 @@ class Civec {
     double* data() { return cc(); };
     const double* data() const { return cc(); };
 
+    std::shared_ptr<const Determinants> det() const { return det_; };
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
     int size() const { return lena_*lenb_; };
 
     std::shared_ptr<Civec> transpose() {
-      std::shared_ptr<Civec> ct(new Civec(lena_, lenb_));
+      std::shared_ptr<Civec> ct(new Civec(det_));
       double* cct = ct->data(); 
       mytranspose_(cc(), &lenb_, &lena_, cct); 
       return ct;
@@ -123,53 +128,65 @@ class Civec {
 };
 
 
+// TODO The Dvec class is NOT yet flexible for Civectors with different Determinants objects.
+// This can be easily done by modifing what follows.
+
 class Dvec {
   protected:
+    // the determinant space where Dvec's are sitting
+    std::shared_ptr<const Determinants> det_;
+
     size_t lena_;
     size_t lenb_;
+    // the size of the vector<shared_ptr<Civec> >
     size_t ij_;
     std::vector<std::shared_ptr<Civec> > dvec_;
     std::unique_ptr<double[]> data_;
 
   public:
-    Dvec(const size_t lb, const size_t la, const size_t ij) : lena_(la), lenb_(lb), ij_(ij) {
+    Dvec(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
       // actually data should be in a consecutive area to call dgemm.
-      data_ = std::unique_ptr<double[]>(new double[lb*la*ij]);
-      double* tmp = data();
-      for (int i = 0; i != ij; ++i, tmp+=lb*la) {
-        std::shared_ptr<Civec> c(new Civec(lb, la, tmp)); 
+      data_ = std::unique_ptr<double[]>(new double[lenb_*lena_*ij_]);
+      double* tmp = data_.get();
+      for (int i = 0; i != ij_; ++i, tmp+=lenb_*lena_) {
+        std::shared_ptr<Civec> c(new Civec(det_, tmp)); 
         dvec_.push_back(c);
       }
     };
-    Dvec(const Dvec& o) : lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
+
+    Dvec(const Dvec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
       data_ = std::unique_ptr<double[]>(new double[lena_*lenb_*ij_]);
       double* tmp = data_.get();
       for (int i = 0; i != ij_; ++i, tmp+=lenb_*lena_) {
-        std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
+        std::shared_ptr<Civec> c(new Civec(det_, tmp)); 
         dvec_.push_back(c);
       }
       std::copy(o.data(), o.data()+lena_*lenb_*ij_, data());
     };
-    Dvec(std::shared_ptr<const Civec> e, const size_t ij) : lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
+
+    Dvec(std::shared_ptr<const Civec> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
       // actually data should be in a consecutive area to call dgemm.
       data_ = std::unique_ptr<double[]>(new double[lena_*lenb_*ij]);
       double* tmp = data();
       for (int i = 0; i != ij; ++i, tmp+=lenb_*lena_) {
-        std::shared_ptr<Civec> c(new Civec(lenb_, lena_, tmp)); 
+        std::shared_ptr<Civec> c(new Civec(det_, tmp)); 
+//TODO
         dcopy_(lenb_*lena_, e->data(), 1, c->data(), 1);
         dvec_.push_back(c);
       }
     };
 
     // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
-    Dvec(std::shared_ptr<const Dvec> o) : lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
+    Dvec(std::shared_ptr<const Dvec> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
       for (int i = 0; i != ij_; ++i) {
         std::shared_ptr<Civec> c(new Civec(*(o->data(i))));
         dvec_.push_back(c);
       }
     };
 
-    Dvec(std::vector<std::shared_ptr<Civec> > o) : lena_(o.front()->lena()), lenb_(o.front()->lenb()), ij_(o.size()) {
+    Dvec(std::vector<std::shared_ptr<Civec> > o) : det_(o.front()->det()), ij_(o.size()) {
+      lena_ = det_->lena();
+      lenb_ = det_->lenb();
       dvec_ = o;
     };
 
@@ -223,7 +240,7 @@ class Dvec {
         dscal_(lena_*lenb_, a, (*i)->data(), 1);
     };
 
-    std::shared_ptr<Dvec> clone() const { return std::shared_ptr<Dvec>(new Dvec(lenb(), lena(), ij())); };
+    std::shared_ptr<Dvec> clone() const { return std::shared_ptr<Dvec>(new Dvec(det_, ij_)); };
     std::shared_ptr<Dvec> copy() const { return std::shared_ptr<Dvec>(new Dvec(*this)); };
 };
 

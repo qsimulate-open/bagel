@@ -63,7 +63,7 @@ void FCI::compute() {
   const int ij = nij(); 
 
   // Creating an initial CI vector
-  shared_ptr<Dvec> cc_tmp(new Dvec(lb, la, nstate_)); // B runs first
+  shared_ptr<Dvec> cc_tmp(new Dvec(det_, nstate_)); // B runs first
   cc_ = cc_tmp;
 
   // find determinants that have small diagonal energies
@@ -151,12 +151,12 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile
   const int ij = nij(); 
 
   const int nstate = ccvec->ij();
-  shared_ptr<Dvec> sigmavec(new Dvec(lb, la, nstate));
+  shared_ptr<Dvec> sigmavec(new Dvec(det_, nstate));
   sigmavec->zero();
 
   // we need two vectors for intermediate quantities
-  shared_ptr<Dvec> d(new Dvec(lb, la, ij));
-  shared_ptr<Dvec> e(new Dvec(lb, la, ij));
+  shared_ptr<Dvec> d(new Dvec(det_, ij));
+  shared_ptr<Dvec> e(new Dvec(det_, ij));
 
 
   for (int istate = 0; istate != nstate; ++istate) {

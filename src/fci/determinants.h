@@ -118,6 +118,9 @@ class Determinants {
     // string size
     std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
 
+    size_t lena() const { return stringa_.size(); };
+    size_t lenb() const { return stringb_.size(); };
+
     std::string print_bit(unsigned int bit) const {
       std::string out; 
       for (int i = 0; i != norb_; ++i, bit >>=1) { if (bit&1) { out += "1"; } else { out += "."; } }

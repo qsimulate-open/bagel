@@ -56,7 +56,7 @@ void FCI::compute_rdm12(const int ist) {
   const int ij = norb_ * norb_;
 
   // creating new scratch dir.
-  shared_ptr<Dvec> d(new Dvec(lb, la, ij));
+  shared_ptr<Dvec> d(new Dvec(det_, ij));
   d->zero();
   sigma_2a1(cc, d);
   sigma_2a2(cc, d);

@@ -134,9 +134,7 @@ void FCI::const_denom() {
     }
   }
 
-  int la, lb;
-  tie(la, lb) = det()->len_string();
-  shared_ptr<Civec> tmp(new Civec(lb, la));
+  shared_ptr<Civec> tmp(new Civec(det()));
   denom_ = tmp;
   const int nspin = det()->nspin(); 
   const int nspin2 = nspin*nspin;

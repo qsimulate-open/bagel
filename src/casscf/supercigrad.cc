@@ -60,7 +60,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact));
 
-  int la, lb; tie(la, lb) = fci->det()->len_string();
   // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
   // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}
@@ -76,7 +75,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 
   // CI derivative is zero
-  shared_ptr<Dvec> g1(new Dvec(lb, la, ref_->nstate()));
+  shared_ptr<Dvec> g1(new Dvec(fci->det(), ref_->nstate()));
   // combine gradient file
   shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
 
