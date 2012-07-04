@@ -40,17 +40,15 @@ void FCI::compute_rdm12() {
     rdm1_av_->zero();
     rdm2_av_->zero();
   }
+  // we need expanded lists
+  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
+  swap(det_, detex);
   for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
+  swap(det_, detex);
 }
 
 void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);
-
-  // we need expanded lists
-  vector<vector<tuple<unsigned int, int, unsigned int> > > phia_bk = phia_;
-  vector<vector<tuple<unsigned int, int, unsigned int> > > phib_bk = phib_;
-  const_phis_<0>(stringa_, phia_, false);
-  const_phis_<1>(stringb_, phib_, false);
 
   const int la = cc->lena();
   const int lb = cc->lenb();
@@ -99,8 +97,6 @@ void FCI::compute_rdm12(const int ist) {
     rdm2_av_ = rdm2;
   }
 
-  phia_ = phia_bk;
-  phib_ = phib_bk;
 }
 
 

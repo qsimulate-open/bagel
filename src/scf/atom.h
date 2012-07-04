@@ -47,7 +47,7 @@ class Atom {
     AtomMap atommap_;
      
   public:
-    Atom(const bool, const std::string, const std::vector<double>&, const std::string);
+    Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);
     Atom(const Atom&, const std::vector<double>&);
     Atom(const Atom&, const double*);
     ~Atom();

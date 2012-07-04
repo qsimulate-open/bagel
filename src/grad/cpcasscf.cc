@@ -52,7 +52,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   const double* const vcoeff = ocoeff + nocca*nbasis;
 
   int la, lb;
-  tie(la, lb) = fci_->len_string();
+  tie(la, lb) = fci_->det()->len_string();
 
   shared_ptr<Matrix1e> t0(new Matrix1e(geom_));
   shared_ptr<Dvec> t1(new Dvec(lb, la, ref_->nstate()));

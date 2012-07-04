@@ -43,6 +43,7 @@
 #include <src/fci/mofile.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
+#include <src/fci/determinants.h>
 
 class FCI {
 
@@ -86,29 +87,15 @@ class FCI {
     // Below here, internal private members
     //
 
-    // Knowles & Handy lexical mapping
-    std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
-    // string lists
-    std::vector<unsigned int> stringa_;
-    std::vector<unsigned int> stringb_;
+    // Determinant space
+    std::shared_ptr<Determinants> det_;
+
     // denominator
     std::shared_ptr<Civec> denom_;
-
-    // configuration list
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
 
     // some init functions
     void common_init();
     void create_Jiiii();
-    // lexical maps (Zkl)
-    void const_lexical_mapping_();
-    // alpha and beta string lists
-    void const_string_lists_();
-    // single displacement vectors Phi's
-    template <int>
-    void const_phis_(const std::vector<unsigned int>& string,
-                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target, bool compress=true);
     // generate spin-adapted guess configurations
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
     // denominator
@@ -116,45 +103,7 @@ class FCI {
     // obtain determinants for guess generation
     std::vector<std::pair<int, int> > detseeds(const int ndet);
 
-    int numofbits(unsigned int bits) { //
-#ifndef USE_SSE42_INTRINSICS
-      bits = (bits & 0x55555555) + (bits >> 1 & 0x55555555); bits = (bits & 0x33333333) + (bits >> 2 & 0x33333333);
-      bits = (bits & 0x0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f); bits = (bits & 0x00ff00ff) + (bits >> 8 & 0x00ff00ff);
-      return (bits & 0x0000ffff) + (bits >>16 & 0x0000ffff); // can be cheaper, but it is fine for the time being...
-#else
-      return _mm_popcnt_u32(bits); // i7 or later
-#endif
-    };
-
-    int sign(unsigned int bit, int i, int j) {
-      // masking irrelevant bits
-      const unsigned int ii = ~((1 << (std::min(i,j)+1)) - 1);
-      const unsigned int jj = ((1 << (std::max(i,j))) - 1); 
-      bit = (bit & ii) & jj;
-      return 1 - ((numofbits(bit) & 1) << 1);
-    };
-
-    // maps bit to lexical numbers.
-    template <int spin> unsigned int lexical(int bit) {
-      unsigned int out = 0, k = 0;
-      for (int i = 0; i != norb_; ++i, bit >>= 1) 
-        if (bit & 1) { out += zkl(k,i, spin); ++k; }
-      return out;
-    };
-
-    // this is slow but robust implementation of bit to number converter.
-    std::vector<int> bit_to_numbers(unsigned int bit) {
-      std::vector<int> out;
-      for (int i = 0; bit != 0u; ++i, bit >>= 1) if (bit & 1) out.push_back(i); 
-      return out;
-    };
   
-    // some utility functions
-    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
-
-    unsigned int stringa(int i) const { return stringa_[i]; };
-    unsigned int stringb(int i) const { return stringb_[i]; };
-
     // run-time functions
     std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
     void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
@@ -205,6 +154,8 @@ class FCI {
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
+    std::shared_ptr<const Determinants> det() const { return det_; };
+
     // returns integral files
     std::shared_ptr<const MOFile> jop() const { return jop_; };
 
@@ -214,77 +165,6 @@ class FCI {
     // returns total energy
     std::vector<double> energy() const { return energy_; };
 
-    // static constants
-    static const int Alpha = 0;
-    static const int Beta = 1;
-
-    // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
-
-    std::string print_bit(unsigned int bit) const {
-      std::string out; 
-      for (int i = 0; i != norb_; ++i, bit >>=1) { if (bit&1) { out += "1"; } else { out += "."; } }
-      return out;
-    };
-    std::string print_bit(unsigned int bit1, unsigned int bit2) const {
-      std::string out; 
-      for (int i = 0; i != norb_; ++i, bit1 >>=1, bit2 >>=1) {
-        if (bit1&1 && bit2&1) { out += "2"; }
-        else if (bit1&1) { out += "a"; }
-        else if (bit2&1) { out += "b"; }
-        else { out += "."; }
-      }
-      return out;
-    };
-};
-
-
-// Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
-template <int spin>
-void FCI::const_phis_(const std::vector<unsigned int>& string,
-      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& phi, bool compress) {
-
-  phi.clear();
-  phi.resize(compress ? norb_*(norb_+1)/2 : norb_*norb_);
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    iter->reserve(string.size());
-  }
-
-  for (auto iter = string.begin(); iter != string.end(); ++iter) {
-    for (unsigned int i = 0; i != norb_; ++i) { // annihilation
-      const unsigned int ibit = (1 << i);
-      if (ibit & *iter && compress) {
-        const unsigned int source = lexical<spin>(*iter); 
-        const unsigned int nbit = (ibit^*iter); // annihilated.
-        for (unsigned int j = 0; j != norb_; ++j) { // creation
-          const unsigned int jbit = (1 << j); 
-          if (!(jbit & nbit)) {
-            const unsigned int mbit = jbit^nbit;
-            const int minij = std::min(i,j); 
-            const int maxij = std::max(i,j);
-            phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
-          }
-        }
-      } else if (ibit & *iter) {
-        const unsigned int source = lexical<spin>(*iter); 
-        const unsigned int nbit = (ibit^*iter); // annihilated.
-        for (unsigned int j = 0; j != norb_; ++j) { // creation
-          const unsigned int jbit = (1 << j); 
-          if (!(jbit & nbit)) {
-            const unsigned int mbit = jbit^nbit;
-            phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
-          }
-        }
-      }
-    }
-  }
-
-#if 0
-  // sort each vectors
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    std::sort(iter->begin(), iter->end());
-  }
-#endif
 };
 
 

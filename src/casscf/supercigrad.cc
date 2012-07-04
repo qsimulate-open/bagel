@@ -60,7 +60,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact));
 
-  int la, lb; tie(la, lb) = fci->len_string();
+  int la, lb; tie(la, lb) = fci->det()->len_string();
   // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
   // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}

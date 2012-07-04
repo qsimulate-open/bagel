@@ -48,6 +48,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
   start_over:
   vector<pair<int, int> > bits = detseeds(ndet);
 
+  // Spin adapt detseeds
   if (nspin == 0) {
     // in this case, easy. The singlet combinations are made for open-shell singlet bits
     int oindex = 0;
@@ -61,38 +62,13 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
       done.push_back(open_bit);
 
-      const int common = (alpha & beta);
-      const int nalpha = numofbits(alpha^common);
+      pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(0, alpha, beta);
+      const double fac = adapt.second;
+      for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter)
+        out->data(oindex)->element(get<0>(*iter), get<1>(*iter)) = get<2>(*iter)*fac;
 
-      assert(nspin == 0 && numofbits(beta^common) == nalpha);
-
-      vector<int> open = bit_to_numbers(open_bit);
-      int init_alpha = common;
-      for (int i=0; i!=nalpha; ++i) init_alpha &= (1<<open[i]);
-
-      // take a linear combination to make a vector singlet coupled.
-      int icnt = 0;
-      do {
-        int ialpha = common;
-        int ibeta = common;
-        for (int i=0; i!=nalpha; ++i) ialpha ^= (1<<open[i]);
-        for (int i=nalpha; i!=open.size(); ++i) ibeta  ^= (1<<open[i]);
-#if 0
-      cout << "     string" << setw(3) << oindex << ":   alpha " <<
-            print_bit(ialpha) << " beta " << print_bit(ibeta) << endl;
-#endif
-        const double sign = pow(-1.0, numofbits((init_alpha^ialpha)/2));
-        out->data(oindex)->element(lexical<1>(ibeta), lexical<0>(ialpha)) = sign;
-        ++icnt;
-      } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
-
-      // scale to make the vector normalized
-      const double factor = 1.0/sqrt(static_cast<double>(icnt));
-      const int size = out->data(oindex)->size();
-      dscal_(size, factor, out->data(oindex)->data(), 1);
-
-      cout << "     guess " << setw(3) << oindex << ":   closed " <<
-            setw(20) << left << print_bit(common) << " open " << setw(20) << print_bit(open_bit) << right << endl;
+//    cout << "     guess " << setw(3) << oindex << ":   closed " <<
+//          setw(20) << left << print_bit(common) << " open " << setw(20) << print_bit(open_bit) << right << endl;
 
       ++oindex;
       if (oindex == nstate) break;
@@ -116,8 +92,8 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(0,0)));
 
   double* diter = denom_->data();
-  for (auto aiter = stringa_.begin(); aiter != stringa_.end(); ++aiter) {
-    for (auto biter = stringb_.begin(); biter != stringb_.end(); ++biter, ++diter) {
+  for (auto aiter = det()->stringa().begin(); aiter != det()->stringa().end(); ++aiter) {
+    for (auto biter = det()->stringb().begin(); biter != det()->stringb().end(); ++biter, ++diter) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(*biter, *aiter)));
@@ -125,14 +101,10 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
       } 
     }
   }
-  assert(tmp.size() == ndet || ndet > stringa_.size()*stringb_.size());
+  assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
   vector<pair<int, int> > out;
-  for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter) {
+  for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
-#if 0
-    cout << print_bit(iter->second.first) << " " << print_bit(iter->second.second) << " " << setprecision(10) << iter->first << endl;
-#endif
-  }
   return out;
 }
 
@@ -161,14 +133,17 @@ void FCI::const_denom() {
       fk[i] += kop[i*norb_+j];
     }
   }
-  shared_ptr<Civec> tmp(new Civec(stringb_.size(), stringa_.size()));
+
+  int la, lb;
+  tie(la, lb) = det()->len_string();
+  shared_ptr<Civec> tmp(new Civec(lb, la));
   denom_ = tmp;
-  const int nspin = numofbits(stringa_.front()) - numofbits(stringb_.front());
+  const int nspin = det()->nspin(); 
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
-  for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
-    for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++iter) {
+  for (auto ia = det()->stringa().begin(); ia != det()->stringa().end(); ++ia) {
+    for (auto ib = det()->stringb().begin(); ib != det()->stringb().end(); ++ib, ++iter) {
       unsigned int iabit1 = *ia;
       unsigned int ibbit1 = *ib;
       const int nopen = numofbits(iabit1^ibbit1);

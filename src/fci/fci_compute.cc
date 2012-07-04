@@ -59,7 +59,7 @@ void FCI::compute() {
 
   // some constants
   int la, lb;
-  tie(la, lb) = len_string();
+  tie(la, lb) = det()->len_string();
   const int ij = nij(); 
 
   // Creating an initial CI vector
@@ -147,7 +147,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
 
   int la, lb;
-  tie(la, lb) = len_string();
+  tie(la, lb) = det()->len_string();
   const int ij = nij(); 
 
   const int nstate = ccvec->ij();
@@ -214,7 +214,7 @@ void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
-    for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
+    for (auto iter = det()->phia(ip).begin();  iter != det()->phia(ip).end(); ++iter) {
       const double hc = h * get<1>(*iter);
       daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
     }
@@ -227,7 +227,7 @@ void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
   double* const source_base = cc->data();
   for (int ip = 0; ip != ij; ++ip) {
     double* const target_base = d->data(ip)->data();
-    for (auto iter = phia_[ip].begin();  iter != phia_[ip].end(); ++iter) {
+    for (auto iter = det()->phia(ip).begin();  iter != det()->phia(ip).end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter));
       double* const target_array = target_base + get<2>(*iter)*lb;
       daxpy_(lb, sign, source_base + get<0>(*iter)*lb, 1, target_array, 1);
@@ -249,7 +249,7 @@ void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
         double* const target_array1 = d->data(ip)->element_ptr(0, i+1); 
         double* const target_array2 = d->data(ip)->element_ptr(0, i+2); 
         double* const target_array3 = d->data(ip)->element_ptr(0, i+3); 
-        for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+        for (auto iter = det()->phib(ip).begin(); iter != det()->phib(ip).end(); ++iter) {
           const double sign = static_cast<double>(get<1>(*iter));
           const int ia = get<2>(*iter);
           const int ib = get<0>(*iter);
@@ -264,7 +264,7 @@ void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
         double* const source_array0 = cc->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
           double* const target_array0 = d->data(ip)->element_ptr(0, j);
-          for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+          for (auto iter = det()->phib(ip).begin(); iter != det()->phib(ip).end(); ++iter) {
             const double sign = static_cast<double>(get<1>(*iter));
             target_array0[get<2>(*iter)] += sign * source_array0[get<0>(*iter)]; 
           }
@@ -279,7 +279,7 @@ void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   const int ij = e->ij();
   for (int ip = 0; ip != ij; ++ip) { 
     double* const source_base = e->data(ip)->data();
-    for (auto iter = phia_[ip].begin(); iter != phia_[ip].end(); ++iter) {
+    for (auto iter = det()->phia(ip).begin(); iter != det()->phia(ip).end(); ++iter) {
       const double sign = static_cast<double>(get<1>(*iter)); 
       double* const target_array = sigma->element_ptr(0, get<0>(*iter));
       daxpy_(lb, sign, source_base + lb*get<2>(*iter), 1, target_array, 1);
@@ -309,7 +309,7 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
         double* const source_array5 = e->data(ip)->element_ptr(0, i+5);
         double* const source_array6 = e->data(ip)->element_ptr(0, i+6);
         double* const source_array7 = e->data(ip)->element_ptr(0, i+7);
-        for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+        for (auto iter = det()->phib(ip).begin(); iter != det()->phib(ip).end(); ++iter) {
           const double sign = static_cast<double>(get<1>(*iter));
           target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
           target_array1[get<0>(*iter)] += sign * source_array1[get<2>(*iter)]; 
@@ -326,7 +326,7 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
         double* const target_array0 = sigma->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
           double* const source_array0 = e->data(ip)->element_ptr(0, j);
-          for (auto iter = phib_[ip].begin(); iter != phib_[ip].end(); ++iter) {
+          for (auto iter = det()->phib(ip).begin(); iter != det()->phib(ip).end(); ++iter) {
             const double sign = static_cast<double>(get<1>(*iter));
             target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
           }
@@ -361,7 +361,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
       double* const source_array7 = cc->element_ptr(0, i+7);
       for (int ip = 0; ip != ij; ++ip) {
         const double h = jop->mo1e(ip);
-        for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
+        for (auto iter = det()->phib(ip).begin();  iter != det()->phib(ip).end(); ++iter) {
           const double hc = h * get<1>(*iter);
           target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
           target_array1[get<0>(*iter)] += hc * source_array1[get<2>(*iter)];
@@ -379,7 +379,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
         double* const source_array0 = cc->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
           const double h = jop->mo1e(ip);
-          for (auto iter = phib_[ip].begin();  iter != phib_[ip].end(); ++iter) {
+          for (auto iter = det()->phib(ip).begin();  iter != det()->phib(ip).end(); ++iter) {
             const double hc = h * get<1>(*iter);
             target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
           }
