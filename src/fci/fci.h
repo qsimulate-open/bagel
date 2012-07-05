@@ -103,10 +103,10 @@ class FCI {
   
     // run-time functions
     std::shared_ptr<Dvec> form_sigma(std::shared_ptr<Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-    void sigma_1(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_3(std::shared_ptr<Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2a1(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d) const;
-    void sigma_2a2(std::shared_ptr<Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
     void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
     void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
@@ -115,6 +115,9 @@ class FCI {
     void update_rdms(const std::vector<double>& coeff); 
 
     // internal function for RDM1 and RDM2 computations 
+    std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
+      compute_rdm12(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
+
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 

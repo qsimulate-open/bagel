@@ -209,7 +209,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile
 }
 
 
-void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+void FCI::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int ij = nij(); 
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
@@ -221,10 +221,10 @@ void FCI::sigma_1(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
   }
 }
 
-void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
+void FCI::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int lb = d->lenb();
   const int ij = d->ij();
-  double* const source_base = cc->data();
+  const double* const source_base = cc->data();
   for (int ip = 0; ip != ij; ++ip) {
     double* const target_base = d->data(ip)->data();
     for (auto iter = det()->phia(ip).begin();  iter != det()->phia(ip).end(); ++iter) {
@@ -235,15 +235,15 @@ void FCI::sigma_2a1(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
   }
 }
 
-void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
+void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int la = d->lena();
   const int ij = d->ij();
   for (int i = 0; i < la; i+=4) {
     if (i+3 < la) {
-      double* const source_array0 = cc->element_ptr(0, i); 
-      double* const source_array1 = cc->element_ptr(0, i+1); 
-      double* const source_array2 = cc->element_ptr(0, i+2); 
-      double* const source_array3 = cc->element_ptr(0, i+3); 
+      const double* const source_array0 = cc->element_ptr(0, i); 
+      const double* const source_array1 = cc->element_ptr(0, i+1); 
+      const double* const source_array2 = cc->element_ptr(0, i+2); 
+      const double* const source_array3 = cc->element_ptr(0, i+3); 
       for (int ip = 0; ip != ij; ++ip) {
         double* const target_array0 = d->data(ip)->element_ptr(0, i); 
         double* const target_array1 = d->data(ip)->element_ptr(0, i+1); 
@@ -261,7 +261,7 @@ void FCI::sigma_2a2(shared_ptr<Civec> cc, shared_ptr<Dvec> d) const {
       } 
     } else {
       for (int j = i; j != la; ++j) {
-        double* const source_array0 = cc->element_ptr(0, j);
+        const double* const source_array0 = cc->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
           double* const target_array0 = d->data(ip)->element_ptr(0, j);
           for (auto iter = det()->phib(ip).begin(); iter != det()->phib(ip).end(); ++iter) {
@@ -337,7 +337,7 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+void FCI::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -351,14 +351,14 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
       double* const target_array5 = sigma->element_ptr(0, i+5);
       double* const target_array6 = sigma->element_ptr(0, i+6);
       double* const target_array7 = sigma->element_ptr(0, i+7);
-      double* const source_array0 = cc->element_ptr(0, i);
-      double* const source_array1 = cc->element_ptr(0, i+1);
-      double* const source_array2 = cc->element_ptr(0, i+2);
-      double* const source_array3 = cc->element_ptr(0, i+3);
-      double* const source_array4 = cc->element_ptr(0, i+4);
-      double* const source_array5 = cc->element_ptr(0, i+5);
-      double* const source_array6 = cc->element_ptr(0, i+6);
-      double* const source_array7 = cc->element_ptr(0, i+7);
+      const double* const source_array0 = cc->element_ptr(0, i);
+      const double* const source_array1 = cc->element_ptr(0, i+1);
+      const double* const source_array2 = cc->element_ptr(0, i+2);
+      const double* const source_array3 = cc->element_ptr(0, i+3);
+      const double* const source_array4 = cc->element_ptr(0, i+4);
+      const double* const source_array5 = cc->element_ptr(0, i+5);
+      const double* const source_array6 = cc->element_ptr(0, i+6);
+      const double* const source_array7 = cc->element_ptr(0, i+7);
       for (int ip = 0; ip != ij; ++ip) {
         const double h = jop->mo1e(ip);
         for (auto iter = det()->phib(ip).begin();  iter != det()->phib(ip).end(); ++iter) {
@@ -376,7 +376,7 @@ void FCI::sigma_3(shared_ptr<Civec> cc, shared_ptr<Civec> sigma, shared_ptr<cons
     } else {
       for (int j = i; j != la; ++j) {  
         double* const target_array0 = sigma->element_ptr(0, j);
-        double* const source_array0 = cc->element_ptr(0, j);
+        const double* const source_array0 = cc->element_ptr(0, j);
         for (int ip = 0; ip != ij; ++ip) {
           const double h = jop->mo1e(ip);
           for (auto iter = det()->phib(ip).begin();  iter != det()->phib(ip).end(); ++iter) {

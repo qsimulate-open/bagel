@@ -86,18 +86,36 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   return tie(rdm1, rdm2);
 }
 
+
+tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+  FCI::compute_rdm12(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
+
+  shared_ptr<Dvec> dbra(new Dvec(det_, norb_*norb_));
+  dbra->zero(); 
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  shared_ptr<Dvec> dket;
+  // if bra and ket vectors are different, we need to form Sigma for ket as well.
+  if (cbra != cket) {
+    dket = shared_ptr<Dvec>(new Dvec(det_, norb_*norb_));
+    dket->zero();
+    sigma_2a1(cket, dket);
+    sigma_2a2(cket, dket);
+  } else {
+    dket = dbra;
+  }
+
+  return compute_rdm12_last_step(dbra, dket, cbra);
+
+}
+
 void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);
 
-  // creating new scratch dir.
-  shared_ptr<Dvec> d(new Dvec(det_, norb_*norb_));
-  d->zero();
-  sigma_2a1(cc, d);
-  sigma_2a2(cc, d);
-
   shared_ptr<RDM<1> > rdm1;
   shared_ptr<RDM<2> > rdm2;
-  tie(rdm1, rdm2) = compute_rdm12_last_step(d, d, cc);
+  tie(rdm1, rdm2) = compute_rdm12(cc, cc);
 
   // setting to private members.
   rdm1_[ist] = rdm1;

@@ -79,6 +79,7 @@ class Civec {
 
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
     double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST 
     double* data() { return cc(); };
     const double* data() const { return cc(); };
 
