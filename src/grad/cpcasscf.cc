@@ -158,8 +158,6 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
   dgemm_("N", "N", nbasis, nact, nact, 1.0, buf.get(), nbasis, rdm1->data(), nact, 0.0, buf2.get(), nbasis); 
   dgemm_("T", "N", nbasis, nact, nbasis, 2.0, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis); 
 
-amat->print();
-
   // Half transformed DF vector
   shared_ptr<const DF_Half> half = fci_->jop()->mo2e_1ext();
   shared_ptr<const DF_Full> full = half->compute_second_transform(acoeff, nact)->apply_JJ();

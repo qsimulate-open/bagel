@@ -114,6 +114,10 @@ class FCI {
     // functions related to natural orbitals
     void update_rdms(const std::vector<double>& coeff); 
 
+    // internal function for RDM1 and RDM2 computations 
+    std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
+      compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
+
     // print functions
     void print_header() const;
     void print_civectors(const std::vector<std::shared_ptr<Civec> >, const double thr = 0.05) const;

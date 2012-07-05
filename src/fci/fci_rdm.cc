@@ -47,28 +47,27 @@ void FCI::compute_rdm12() {
   swap(det_, detex);
 }
 
-void FCI::compute_rdm12(const int ist) {
-  shared_ptr<Civec> cc = cc_->data(ist);
 
-  const int la = cc->lena();
-  const int lb = cc->lenb();
-  const int len = la * lb;
-  const int ij = norb_ * norb_;
+tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+  FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 
-  // creating new scratch dir.
-  shared_ptr<Dvec> d(new Dvec(det_, ij));
-  d->zero();
-  sigma_2a1(cc, d);
-  sigma_2a2(cc, d);
+  if (dbra->ij() != dket->ij())
+    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
+
+  const int nri = dbra->ij();
+  const int ij  = norb_*norb_;
 
   // 1RDM
+  // c^dagger <I|\hat{E}|0>
   shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
-  dgemv_("T", len, ij, 1.0, d->data(0)->data(), len, cc->data(), 1, 0.0, rdm1->data(), 1);
+  dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
   // 2RDM
+  // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
   shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
-  dgemm_("T", "N", ij, ij, len, 1.0, d->data(0)->data(), len, d->data(0)->data(), len, 0.0, rdm2->data(), ij);
+  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
   // sorting... a bit stupid but cheap anyway
+  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
   unique_ptr<double[]> buf(new double[norb_*norb_]);
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
@@ -77,14 +76,28 @@ void FCI::compute_rdm12(const int ist) {
     }
   }
 
-  // put int diagonal into 2RDM
-  for (int i = 0; i != norb_; ++i) {
-    for (int k = 0; k != norb_; ++k) {
-      for (int j = 0; j != norb_; ++j) {
+  // put in diagonal into 2RDM
+  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l} 
+  for (int i = 0; i != norb_; ++i)
+    for (int k = 0; k != norb_; ++k)
+      for (int j = 0; j != norb_; ++j)
         rdm2->element(j,k,k,i) -= rdm1->element(j,i); 
-      }
-    }
-  }
+
+  return tie(rdm1, rdm2);
+}
+
+void FCI::compute_rdm12(const int ist) {
+  shared_ptr<Civec> cc = cc_->data(ist);
+
+  // creating new scratch dir.
+  shared_ptr<Dvec> d(new Dvec(det_, norb_*norb_));
+  d->zero();
+  sigma_2a1(cc, d);
+  sigma_2a2(cc, d);
+
+  shared_ptr<RDM<1> > rdm1;
+  shared_ptr<RDM<2> > rdm2;
+  tie(rdm1, rdm2) = compute_rdm12_last_step(d, d, cc);
 
   // setting to private members.
   rdm1_[ist] = rdm1;
