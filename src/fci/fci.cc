@@ -49,6 +49,7 @@ void FCI::common_init() {
   if (ncore_ < 0) ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
 
+  // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = read_input<int>(idata_, "nspin", 0);
   if (geom_->nele() + nspin & 1) throw runtime_error("Invalid nspin specified");
   nelea_ = (geom_->nele()+nspin)/2 - ncore_;
@@ -63,6 +64,7 @@ void FCI::common_init() {
   rdm2_.resize(nstate_);
   energy_.resize(nstate_);
 
+  // construct a determinant space in which this FCI will be performed.
   det_ = shared_ptr<Determinants>(new Determinants(norb_, nelea_, neleb_));
 
   // forms MO integrals and denominators.
