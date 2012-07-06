@@ -237,37 +237,13 @@ void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   assert(d->det() == cc->det());
   const int la = d->lena();
   const int ij = d->ij();
-  for (int i = 0; i < la; i+=4) {
-    if (i+3 < la) {
-      const double* const source_array0 = cc->element_ptr(0, i); 
-      const double* const source_array1 = cc->element_ptr(0, i+1); 
-      const double* const source_array2 = cc->element_ptr(0, i+2); 
-      const double* const source_array3 = cc->element_ptr(0, i+3); 
-      for (int ip = 0; ip != ij; ++ip) {
-        double* const target_array0 = d->data(ip)->element_ptr(0, i); 
-        double* const target_array1 = d->data(ip)->element_ptr(0, i+1); 
-        double* const target_array2 = d->data(ip)->element_ptr(0, i+2); 
-        double* const target_array3 = d->data(ip)->element_ptr(0, i+3); 
-        for (auto iter = cc->det()->phib(ip).begin(); iter != cc->det()->phib(ip).end(); ++iter) {
-          const double sign = static_cast<double>(get<1>(*iter));
-          const int ia = get<2>(*iter);
-          const int ib = get<0>(*iter);
-          target_array0[ia] += sign * source_array0[ib]; 
-          target_array1[ia] += sign * source_array1[ib]; 
-          target_array2[ia] += sign * source_array2[ib]; 
-          target_array3[ia] += sign * source_array3[ib]; 
-        }
-      } 
-    } else {
-      for (int j = i; j != la; ++j) {
-        const double* const source_array0 = cc->element_ptr(0, j);
-        for (int ip = 0; ip != ij; ++ip) {
-          double* const target_array0 = d->data(ip)->element_ptr(0, j);
-          for (auto iter = cc->det()->phib(ip).begin(); iter != cc->det()->phib(ip).end(); ++iter) {
-            const double sign = static_cast<double>(get<1>(*iter));
-            target_array0[get<2>(*iter)] += sign * source_array0[get<0>(*iter)]; 
-          }
-        }
+  for (int i = 0; i < la; ++i) {
+    const double* const source_array0 = cc->element_ptr(0, i);
+    for (int ip = 0; ip != ij; ++ip) {
+      double* const target_array0 = d->data(ip)->element_ptr(0, i);
+      for (auto iter = cc->det()->phib(ip).begin(); iter != cc->det()->phib(ip).end(); ++iter) {
+        const double sign = static_cast<double>(get<1>(*iter));
+        target_array0[get<2>(*iter)] += sign * source_array0[get<0>(*iter)]; 
       }
     }
   }
@@ -289,47 +265,13 @@ void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) const {
 void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) const {
   const int la = e->lena();
   const int ij = e->ij();
-  for (int i = 0; i < la; i+=8) {
-    if (i+7 < la) {
-      double* const target_array0 = sigma->element_ptr(0, i);
-      double* const target_array1 = sigma->element_ptr(0, i+1);
-      double* const target_array2 = sigma->element_ptr(0, i+2);
-      double* const target_array3 = sigma->element_ptr(0, i+3);
-      double* const target_array4 = sigma->element_ptr(0, i+4);
-      double* const target_array5 = sigma->element_ptr(0, i+5);
-      double* const target_array6 = sigma->element_ptr(0, i+6);
-      double* const target_array7 = sigma->element_ptr(0, i+7);
-      for (int ip = 0; ip != ij; ++ip) {
-        const double* const source_array0 = e->data(ip)->element_ptr(0, i);
-        const double* const source_array1 = e->data(ip)->element_ptr(0, i+1);
-        const double* const source_array2 = e->data(ip)->element_ptr(0, i+2);
-        const double* const source_array3 = e->data(ip)->element_ptr(0, i+3);
-        const double* const source_array4 = e->data(ip)->element_ptr(0, i+4);
-        const double* const source_array5 = e->data(ip)->element_ptr(0, i+5);
-        const double* const source_array6 = e->data(ip)->element_ptr(0, i+6);
-        const double* const source_array7 = e->data(ip)->element_ptr(0, i+7);
-        for (auto iter = e->det()->phib(ip).begin(); iter != e->det()->phib(ip).end(); ++iter) {
-          const double sign = static_cast<double>(get<1>(*iter));
-          target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
-          target_array1[get<0>(*iter)] += sign * source_array1[get<2>(*iter)]; 
-          target_array2[get<0>(*iter)] += sign * source_array2[get<2>(*iter)]; 
-          target_array3[get<0>(*iter)] += sign * source_array3[get<2>(*iter)]; 
-          target_array4[get<0>(*iter)] += sign * source_array4[get<2>(*iter)]; 
-          target_array5[get<0>(*iter)] += sign * source_array5[get<2>(*iter)]; 
-          target_array6[get<0>(*iter)] += sign * source_array6[get<2>(*iter)]; 
-          target_array7[get<0>(*iter)] += sign * source_array7[get<2>(*iter)]; 
-        }
-      }
-    } else {
-      for (int j = i; j != la; ++j) {
-        double* const target_array0 = sigma->element_ptr(0, j);
-        for (int ip = 0; ip != ij; ++ip) {
-          const double* const source_array0 = e->data(ip)->element_ptr(0, j);
-          for (auto iter = e->det()->phib(ip).begin(); iter != e->det()->phib(ip).end(); ++iter) {
-            const double sign = static_cast<double>(get<1>(*iter));
-            target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
-          }
-        }
+  for (int i = 0; i < la; ++i) {
+    double* const target_array0 = sigma->element_ptr(0, i);
+    for (int ip = 0; ip != ij; ++ip) {
+      const double* const source_array0 = e->data(ip)->element_ptr(0, i);
+      for (auto iter = e->det()->phib(ip).begin(); iter != e->det()->phib(ip).end(); ++iter) {
+        const double sign = static_cast<double>(get<1>(*iter));
+        target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
       }
     }
   }
@@ -340,49 +282,14 @@ void FCI::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_pt
   const int la = cc->lena();
   const int ij = nij();
 
-  for (int i = 0; i < la; i+=8) {
-    if (i+7 < la) {
-      double* const target_array0 = sigma->element_ptr(0, i);
-      double* const target_array1 = sigma->element_ptr(0, i+1);
-      double* const target_array2 = sigma->element_ptr(0, i+2);
-      double* const target_array3 = sigma->element_ptr(0, i+3);
-      double* const target_array4 = sigma->element_ptr(0, i+4);
-      double* const target_array5 = sigma->element_ptr(0, i+5);
-      double* const target_array6 = sigma->element_ptr(0, i+6);
-      double* const target_array7 = sigma->element_ptr(0, i+7);
-      const double* const source_array0 = cc->element_ptr(0, i);
-      const double* const source_array1 = cc->element_ptr(0, i+1);
-      const double* const source_array2 = cc->element_ptr(0, i+2);
-      const double* const source_array3 = cc->element_ptr(0, i+3);
-      const double* const source_array4 = cc->element_ptr(0, i+4);
-      const double* const source_array5 = cc->element_ptr(0, i+5);
-      const double* const source_array6 = cc->element_ptr(0, i+6);
-      const double* const source_array7 = cc->element_ptr(0, i+7);
-      for (int ip = 0; ip != ij; ++ip) {
-        const double h = jop->mo1e(ip);
-        for (auto iter = cc->det()->phib(ip).begin();  iter != cc->det()->phib(ip).end(); ++iter) {
-          const double hc = h * get<1>(*iter);
-          target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
-          target_array1[get<0>(*iter)] += hc * source_array1[get<2>(*iter)];
-          target_array2[get<0>(*iter)] += hc * source_array2[get<2>(*iter)];
-          target_array3[get<0>(*iter)] += hc * source_array3[get<2>(*iter)];
-          target_array4[get<0>(*iter)] += hc * source_array4[get<2>(*iter)];
-          target_array5[get<0>(*iter)] += hc * source_array5[get<2>(*iter)];
-          target_array6[get<0>(*iter)] += hc * source_array6[get<2>(*iter)];
-          target_array7[get<0>(*iter)] += hc * source_array7[get<2>(*iter)];
-        }
-      }
-    } else {
-      for (int j = i; j != la; ++j) {  
-        double* const target_array0 = sigma->element_ptr(0, j);
-        const double* const source_array0 = cc->element_ptr(0, j);
-        for (int ip = 0; ip != ij; ++ip) {
-          const double h = jop->mo1e(ip);
-          for (auto iter = cc->det()->phib(ip).begin();  iter != cc->det()->phib(ip).end(); ++iter) {
-            const double hc = h * get<1>(*iter);
-            target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
-          }
-        }
+  for (int i = 0; i < la; ++i) {
+    double* const target_array0 = sigma->element_ptr(0, i);
+    const double* const source_array0 = cc->element_ptr(0, i);
+    for (int ip = 0; ip != ij; ++ip) {
+      const double h = jop->mo1e(ip);
+      for (auto iter = cc->det()->phib(ip).begin();  iter != cc->det()->phib(ip).end(); ++iter) {
+        const double hc = h * get<1>(*iter);
+        target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
       }
     }
   }
