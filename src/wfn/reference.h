@@ -32,11 +32,12 @@
 #include <src/scf/coeff.h>
 #include <src/scf/hcore.h>
 #include <src/scf/geometry.h>
+#include <src/fci/dvec.h>
 #include <src/wfn/rdm.h>
 
 // all the info to construct wave functions
 
-class Reference {
+class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
     std::shared_ptr<const Geometry> geom_; 
@@ -108,6 +109,9 @@ class Reference {
 
     std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }; 
     std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; }; 
+
+    // function to return a CI vectors from orbital info
+    std::shared_ptr<Dvec> compute_dvec() const;
 
 };
 

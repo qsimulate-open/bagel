@@ -73,13 +73,17 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
 
+  // CI vector
+  shared_ptr<Dvec> dvec = ref_->compute_dvec();
+  dvec->set_det(detex);
+
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
 
-    shared_ptr<Matrix1e> amat = compute_amat(z1);
+    shared_ptr<Matrix1e> amat = compute_amat(z1, dvec);
     amat->print();
 
 #if 0
@@ -141,7 +145,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
 
 // computes A matrix (scaled by 2 here)
-shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
+shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec) const {
   shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom())); 
 
   const size_t nbasis = geom_->nbasis();
@@ -154,8 +158,7 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
   // compute RDMs 
   shared_ptr<const RDM<1> > rdm1;
   shared_ptr<const RDM<2> > rdm2;
-throw logic_error("how can I get CI vector from wfn/reference.h ?");
-  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, zvec); 
+  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, dvec); 
 
   // core Fock operator
   shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();

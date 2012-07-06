@@ -51,8 +51,6 @@ class FCI {
     std::shared_ptr<const Reference> ref_;
     // geometry file
     const std::shared_ptr<const Geometry> geom_;
-    // number of states
-    int nstate_;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -63,6 +61,10 @@ class FCI {
     int neleb_;
     int ncore_;
     int norb_;
+
+    // number of states
+    int nstate_;
+
     // core
     double core_energy_; // <- usually initialized in create_iiii
     // total energy
@@ -124,8 +126,9 @@ class FCI {
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:
+    // this constructor is ugly... to be fixed some day...
     FCI(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
-        const int ncore = -1, const int nocc = -1);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1);
     ~FCI();
     void compute();
     void update();
@@ -173,6 +176,9 @@ class FCI {
 
     // returns total energy
     std::vector<double> energy() const { return energy_; };
+
+    // returns CI vectors
+    std::shared_ptr<Dvec> civectors() const { return cc_; };
 
 };
 

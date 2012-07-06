@@ -31,8 +31,8 @@
 
 using namespace std;
 
-FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb)
- : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb) {
+FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+ : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
 
@@ -41,11 +41,12 @@ void FCI::common_init() {
   print_header();
 
   const bool frozen = read_input<bool>(idata_, "frozen", false);
-  nstate_ = read_input<int>(idata_, "nstate", 1);
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-20);
   thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
+
+  if (nstate_ < 0) nstate_ = read_input<int>(idata_, "nstate", 1);
   if (ncore_ < 0) ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
 

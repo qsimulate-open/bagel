@@ -25,6 +25,7 @@
 
 
 #include <src/wfn/reference.h>
+#include <src/fci/fci.h>
 
 using namespace std;
 
@@ -57,3 +58,9 @@ shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const
   return out;
 }
 
+
+shared_ptr<Dvec> Reference::compute_dvec() const {
+  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
+  fci->compute();
+  return fci->civectors();
+}

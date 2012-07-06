@@ -49,7 +49,7 @@ class CPCASSCF {
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const FCI> fci_;
 
-    std::shared_ptr<Matrix1e> compute_amat(std::shared_ptr<const Dvec> z1) const;
+    std::shared_ptr<Matrix1e> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> o) const;
 
   public:
     CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const std::vector<double>& eig,
