@@ -29,7 +29,7 @@
 
 double scf_energy() {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("scf_energy.testout", std::ios::trunc));
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_svp_dfhf.testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...

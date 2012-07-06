@@ -30,17 +30,23 @@
 
 #include <fstream>
 #include <memory>
+#include <stdexcept>
 #include <src/stackmem.h>
 StackMem* stack;
 
 static double THRESH = 1.0e-8;
  
-bool compare(const double a, const double b) {
-  return fabs(a-b) < THRESH; 
+bool compare(const double a, const double b) { return fabs(a-b) < THRESH; };
+bool compare(const std::vector<double> a, const std::vector<double> b) {
+ if (a.size() != b.size()) throw std::logic_error("comparing vectors with different sizes");
+ bool out = true;
+ for (auto i = a.begin(), j = b.begin(); i != a.end(); ++i, ++j) out &= compare(*i, *j);
+ return out; 
 };
 
 #include <src/scf/test_scf.cc>
 
 #include <src/mp2/test_mp2.cc>
 
+#include <src/fci/test_fci.cc>
 

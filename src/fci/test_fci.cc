@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: test_mp2.cc
+// Filename: test_fci.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,37 +24,51 @@
 //
 
 
-#include <memory>
-#include <src/mp2/mp2.h>
+#include <src/fci/fci.h>
 
-double mp2_energy() {
+std::vector<double> fci_energy() {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("benzene_svp_mp2.testout", std::ios::trunc));
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_sto3g_fci2.testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/benzene_svp_mp2.in"));
+  std::shared_ptr<InputData> idata(new InputData("../../test/hf_sto3g_fci2.in"));
   stack = new StackMem(static_cast<size_t>(1000000LU));
   std::shared_ptr<Geometry> geom(new Geometry(idata));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
+  std::shared_ptr<Reference> ref;
+
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "mp2") {
-      std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
-      mp2->compute();
+    if (iter->first == "df-hf") {
+      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+      scf->compute();
+      ref = scf->conv_to_ref();
+
+    }
+    if (iter->first == "fci") {
+      std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
+      fci->compute();
 
       delete stack;
       std::cout.rdbuf(backup_stream);
-      return mp2->energy();
+      return fci->energy();
     }
   }
   assert(false);
 }
+
+std::vector<double> reference_value() {
+  std::vector<double> out(2);
+  out[0] = -98.56280393;
+  out[1] = -98.36567235;
+  return out;
+}
  
-BOOST_AUTO_TEST_SUITE(TEST_MP2)
+BOOST_AUTO_TEST_SUITE(TEST_FCI)
  
-BOOST_AUTO_TEST_CASE(MP2) {
-    BOOST_CHECK(compare(mp2_energy(), -231.31440958));
+BOOST_AUTO_TEST_CASE(FCI_2STATE) {
+    BOOST_CHECK(compare(fci_energy(), reference_value()));
 }
  
 BOOST_AUTO_TEST_SUITE_END()
