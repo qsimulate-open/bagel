@@ -42,9 +42,11 @@ void FCI::compute_rdm12() {
   }
   // we need expanded lists
   shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
-  swap(det_, detex);
+  cc_->set_det(detex);
+
   for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
-  swap(det_, detex);
+
+  cc_->set_det(det_);
 }
 
 
@@ -88,9 +90,10 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
 
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
-  FCI::compute_rdm12(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
+  FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
-  shared_ptr<Dvec> dbra(new Dvec(det_, norb_*norb_));
+  // since we consider here number conserving operators...
+  shared_ptr<Dvec> dbra(new Dvec(cbra->det(), norb_*norb_));
   dbra->zero(); 
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
@@ -98,7 +101,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   shared_ptr<Dvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
   if (cbra != cket) {
-    dket = shared_ptr<Dvec>(new Dvec(det_, norb_*norb_));
+    dket = shared_ptr<Dvec>(new Dvec(cket->det(), norb_*norb_));
     dket->zero();
     sigma_2a1(cket, dket);
     sigma_2a2(cket, dket);
@@ -115,7 +118,7 @@ void FCI::compute_rdm12(const int ist) {
 
   shared_ptr<RDM<1> > rdm1;
   shared_ptr<RDM<2> > rdm2;
-  tie(rdm1, rdm2) = compute_rdm12(cc, cc);
+  tie(rdm1, rdm2) = compute_rdm12_from_civec(cc, cc);
 
   // setting to private members.
   rdm1_[ist] = rdm1;

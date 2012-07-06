@@ -75,6 +75,13 @@ class Civec {
       std::copy(o.cc(), o.cc() + lena_*lenb_, cc());
     };
 
+    // this is not a copy constructor.
+    Civec(std::shared_ptr<Civec> o, std::shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
+      assert(lena_ == det->lena() && lenb_ == det->lenb());
+      cc_ = move(o->cc_);
+      cc_ptr_ = cc_.get();
+    };
+
     ~Civec() { };
 
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
@@ -84,6 +91,7 @@ class Civec {
     const double* data() const { return cc(); };
 
     std::shared_ptr<const Determinants> det() const { return det_; };
+    void set_det(std::shared_ptr<const Determinants> o) { det_ = o; };
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
@@ -193,6 +201,8 @@ class Dvec {
 
     ~Dvec() { };
 
+    std::shared_ptr<const Determinants> det() const { return det_; };
+
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
 
@@ -200,7 +210,8 @@ class Dvec {
     std::shared_ptr<const Civec> data(const size_t i) const { return std::const_pointer_cast<Civec>(dvec_[i]); };
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); };
 
-    std::vector<std::shared_ptr<Civec> > dvec() { return dvec_; };
+    std::vector<std::shared_ptr<Civec> >& dvec() { return dvec_; };
+    const std::vector<std::shared_ptr<Civec> >& dvec() const { return dvec_; };
     std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civec> > out;
       int i = 0;
@@ -221,6 +232,11 @@ class Dvec {
     size_t lena() const { return lena_; };
     size_t lenb() const { return lenb_; };
     size_t ij() const { return ij_; };
+
+    void set_det(std::shared_ptr<const Determinants> o) {
+      det_ = o;
+      for (auto i = dvec_.begin(); i != dvec_.end(); ++i) (*i)->set_det(o); 
+    };
 
     // some functions for convenience
     double ddot(const Dvec& other) const {
