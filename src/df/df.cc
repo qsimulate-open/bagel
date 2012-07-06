@@ -527,6 +527,19 @@ unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Half> o, con
 }
 
 
+void DF_Full::form_2index(unique_ptr<double[]>& target, const shared_ptr<const DF_Full> o, const double a) {
+  assert(nocc1_ == o->nocc1_);
+  dgemm_("T", "N", nocc2_, o->nocc2(), nocc1_*naux_, a, data(), nocc1_*naux_, o->data(), nocc1_*naux_, 0.0, target.get(), nocc2_); 
+}
+
+
+unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Full> o, const double a) {
+  unique_ptr<double[]> out(new double[nocc2_*o->nocc2()]);
+  form_2index(out, o, a);
+  return out;
+}
+
+
 shared_ptr<DF_Full> DF_Full::clone() const {
   unique_ptr<double[]> d(new double[size()]);
   std::fill(d.get(), d.get()+size(), 0.0); 
@@ -538,6 +551,25 @@ shared_ptr<DF_Full> DF_Full::copy() const {
   unique_ptr<double[]> d(new double[size()]);
   std::copy(data(), data()+size(), d.get()); 
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+}
+
+
+void DF_Full::daxpy(const double a, std::shared_ptr<const DF_Full> o) {
+  daxpy_(size(), a, o->data(), 1, data(), 1);
+}
+
+
+// TODO THIS FUNCTION IS STUPID
+void DF_Full::symmetrize() {
+  assert(nocc1_ == nocc2_);
+  const int n = nocc1_;
+  for (int i = 0; i != n; ++i) {
+    for (int j = i; j != n; ++j) {
+      for (int k = 0; k != naux_; ++k) {
+        data_[k+naux_*(j+n*i)] = data_[k+naux_*(i+n*j)] = (data_[k+naux_*(j+n*i)] + data_[k+naux_*(i+n*j)]);
+      }
+    }
+  } 
 }
 
 
@@ -612,4 +644,5 @@ shared_ptr<DF_AO> DF_Half::back_transform(const double* c) const{
     dgemm_("N", "T", naux_, nbas, nocc_, 1.0, data()+i*naux_*nocc_, naux_, c, nbas, 0.0, d.get()+i*naux_*nbas, naux_); 
   return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d)); 
 }
+
 

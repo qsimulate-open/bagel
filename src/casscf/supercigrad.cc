@@ -53,12 +53,13 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
+  const int nstate = ref_->nstate();
 
   // TODO they are redundant, though...
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
   shared_ptr<DF_Half> halfjj = half->apply_J();
 
-  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact));
+  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact, nstate));
 
   // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 

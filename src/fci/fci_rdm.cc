@@ -121,7 +121,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   rdm1->zero();
   rdm2->zero();
 
-  assert(dbra->ij() == dket->ij());
+  assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
 
   for (int i = 0; i != dbra->ij(); ++i) {
     shared_ptr<RDM<1> > r1; 

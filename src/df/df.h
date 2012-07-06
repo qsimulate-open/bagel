@@ -201,9 +201,12 @@ class DF_Full {
     std::shared_ptr<DF_Full> apply_J(std::shared_ptr<const DensityFit> d) const;
     std::shared_ptr<DF_Full> apply_JJ(std::shared_ptr<const DensityFit> d) const;
 
+    // compute Gamma(kl,ij) * (ij|D)
     std::shared_ptr<DF_Full> apply_2rdm(const double* rdm) const;
-    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DF_Full> apply_2rdm(const double* rdm2, const double* rdm1, const int nclosed, const int nact) const;
+    // special function for RHF
     std::shared_ptr<DF_Full> apply_closed_2RDM() const;
+    // special function for UHF
     std::shared_ptr<DF_Full> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
 
     // forming all internal 4-index MO integrals
@@ -223,8 +226,11 @@ class DF_Full {
     // contract ii and form (D|E)
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
 
-    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double a = 0.0);
-    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a = 0.0);
+    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double);
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);
+
+    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const double);
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a);
 
     double* data() { return data_.get(); };
     const double* const data() const { return data_.get(); };
@@ -232,6 +238,9 @@ class DF_Full {
 
     std::shared_ptr<DF_Full> clone() const;
     std::shared_ptr<DF_Full> copy() const;
+    void daxpy(const double a, std::shared_ptr<const DF_Full> o);
+
+    void symmetrize();
 
     // AO back transformation for gradient evaluations
     std::shared_ptr<DF_Half> back_transform(const double* c) const;
