@@ -59,7 +59,7 @@ shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const
 }
 
 
-shared_ptr<Dvec> Reference::compute_dvec() const {
+shared_ptr<Dvec> Reference::civectors() const {
   shared_ptr<FCI> fci(new FCI(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();
   return fci->civectors();

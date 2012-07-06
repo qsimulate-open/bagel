@@ -74,7 +74,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
 
   // CI vector
-  shared_ptr<Dvec> dvec = ref_->compute_dvec();
+  shared_ptr<Dvec> dvec = ref_->civectors();
   dvec->set_det(detex);
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
