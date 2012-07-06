@@ -49,9 +49,10 @@ void FCI::common_init() {
   if (ncore_ < 0) ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
 
-  // TODO those are still wrong!!
-  nelea_ = geom_->nele()/2 - ncore_;
-  neleb_ = geom_->nele()/2 - ncore_;
+  const int nspin = read_input<int>(idata_, "nspin", 0);
+  if (geom_->nele() + nspin & 1) throw runtime_error("Invalid nspin specified");
+  nelea_ = (geom_->nele()+nspin)/2 - ncore_;
+  neleb_ = (geom_->nele()-nspin)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
