@@ -110,8 +110,30 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   }
 
   return compute_rdm12_last_step(dbra, dket, cbra);
-
 }
+
+
+tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+  FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket) const {
+
+  shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
+  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
+  rdm1->zero();
+  rdm2->zero();
+
+  assert(dbra->ij() == dket->ij());
+
+  for (int i = 0; i != dbra->ij(); ++i) {
+    shared_ptr<RDM<1> > r1; 
+    shared_ptr<RDM<2> > r2; 
+    tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
+    rdm1->daxpy(weight_[i], r1);
+    rdm2->daxpy(weight_[i], r2);
+  }
+
+  return tie(rdm1, rdm2); 
+}
+
 
 void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);

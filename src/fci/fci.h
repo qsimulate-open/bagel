@@ -116,9 +116,6 @@ class FCI {
 
     // internal function for RDM1 and RDM2 computations 
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
-      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
-
-    std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 
     // print functions
@@ -135,6 +132,8 @@ class FCI {
 
     // returns members
     int norb() const { return norb_; };
+    int nelea() const { return nelea_; };
+    int neleb() const { return neleb_; };
     int nij() const { return norb_*(norb_+1)/2; };
     int ncore() const { return ncore_; };
     double core_energy() const { return core_energy_; };
@@ -143,6 +142,11 @@ class FCI {
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
+
+    std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
+      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
+    std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>) const;
 
     std::vector<std::shared_ptr<RDM<1> > > rdm1() { return rdm1_; };
     std::vector<std::shared_ptr<RDM<2> > > rdm2() { return rdm2_; };

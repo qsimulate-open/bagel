@@ -42,6 +42,10 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const
 
 shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
+  // RI determinant space
+  shared_ptr<Determinants> detex(new Determinants(fci_->norb(), fci_->nelea(), fci_->neleb(), false));
+  assert(fci_->norb() == ref_->nact());
+
   const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
   const size_t nvirt = geom_->nbasis() - nocca;
@@ -52,7 +56,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   const double* const vcoeff = ocoeff + nocca*nbasis;
 
   shared_ptr<Matrix1e> t0(new Matrix1e(geom_));
-  shared_ptr<Dvec> t1(new Dvec(fci_->det(), ref_->nstate()));
+  shared_ptr<Dvec> t1(new Dvec(detex, ref_->nstate()));
   shared_ptr<PairFile<Matrix1e, Dvec> > t(new PairFile<Matrix1e, Dvec>(t0, t1));
 
   shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
@@ -60,7 +64,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     for (int a = nocca; a != nvirt+nocca; ++a)
       d0->element(a,i) = eig_[a]-eig_[i];
 
-  shared_ptr<const Civec> d1_each = fci_->denom();
+  shared_ptr<Civec> denom(new Civec(*fci_->denom()));
+  shared_ptr<const Civec> d1_each(new Civec(denom, detex));
   shared_ptr<const Dvec> d1(new Dvec(d1_each, ref_->nstate()));
   shared_ptr<Dvec> z1 = d1->clone();
 
@@ -147,8 +152,10 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec) const {
   const double* const acoeff = coeff + nclosed*nbasis;
 
   // compute RDMs 
-  shared_ptr<const RDM<1> > rdm1 = ref_->rdm1_av();
-  shared_ptr<const RDM<2> > rdm2 = ref_->rdm2_av();
+  shared_ptr<const RDM<1> > rdm1;
+  shared_ptr<const RDM<2> > rdm2;
+throw logic_error("how can I get CI vector from wfn/reference.h ?");
+  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, zvec); 
 
   // core Fock operator
   shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();

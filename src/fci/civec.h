@@ -78,7 +78,7 @@ class Civec {
     // this is not a copy constructor.
     Civec(std::shared_ptr<Civec> o, std::shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
       assert(lena_ == det->lena() && lenb_ == det->lenb());
-      cc_ = move(o->cc_);
+      cc_ = std::move(o->cc_);
       cc_ptr_ = cc_.get();
     };
 
