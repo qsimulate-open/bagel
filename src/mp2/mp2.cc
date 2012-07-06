@@ -109,6 +109,9 @@ void MP2::compute() {
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
                                                     << setw(10) << setprecision(2) << elapsed << endl << endl;
 
+  energy_ = sum + ref_->energy();
+  cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+
   // check if F12 is requested.
   const bool do_f12 = read_input<bool>(idata_, "f12", false);
   if (do_f12) {

@@ -24,7 +24,6 @@ AC_PROG_FC
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
-
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/opt/Makefile

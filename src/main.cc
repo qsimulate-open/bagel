@@ -76,9 +76,6 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<InputData> idata(new InputData(input));
 
-    const bool fci_card = idata->exist("fci"); 
-    const bool casscf_card = idata->exist("casscf");
-
     { // stack
       std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
       double size = 1.0e6;

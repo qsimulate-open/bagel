@@ -1,9 +1,9 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: mp2.h
+// Filename: test_main.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the Newint package (to be renamed).
@@ -24,33 +24,23 @@
 //
 
 
-#ifndef __SRC_MP2_MP2_H
-#define __SRC_MP2_MP2_H
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE Suites
+#include <boost/test/unit_test.hpp>
 
-#include <src/scf/geometry.h>
-#include <src/mp2/f12int.h>
-#include <src/scf/scf.h>
-#include <src/wfn/reference.h>
-#include <string>
-#include <map>
+#include <fstream>
+#include <memory>
+#include <src/stackmem.h>
+StackMem* stack;
 
-class MP2 {
-  protected:
-    const std::multimap<std::string, std::string> idata_;
-    const std::shared_ptr<const Geometry> geom_; 
-    std::shared_ptr<Reference> ref_;
-    std::shared_ptr<SCF<1> > scf_;
-    int ncore_;
-
-    double energy_;
-
-  public:
-    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>);
-    ~MP2() {};
-
-    virtual void compute();
-
-    double energy() const { return energy_; };
+static double THRESH = 1.0e-8;
+ 
+bool compare(const double a, const double b) {
+  return fabs(a-b) < THRESH; 
 };
 
-#endif
+#include <src/scf/test_scf.cc>
+
+#include <src/mp2/test_mp2.cc>
+
+
