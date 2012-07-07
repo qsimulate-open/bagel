@@ -6,10 +6,10 @@ molecule {
   schwarz_thresh = 1.0e-12;
   stack = 100M;
   angstrom = false;
-  atom = ( F,     -0.000000,     -0.000000,      2.720616);
+  atom = ( F,     -0.000000,     -0.000000,      1.920616);
   atom = ( H,      0.000000,      0.000000,      0.305956);
 }
 
-df-hf {
+mp2-opt {
   thresh = 1.0e-10;
 }

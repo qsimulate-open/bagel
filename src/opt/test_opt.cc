@@ -53,8 +53,39 @@ std::vector<double> scf_opt() {
 }
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
-  out[2] = 2.416082;
-  out[5] = 0.610490;
+  out[2] = 1.864207;
+  out[5] = 0.162365;
+  return out;
+}
+
+std::vector<double> mp2_opt() {
+
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_svp_mp2_opt.testout", std::ios::trunc));
+  std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
+
+  // a bit ugly to hardwire an input file, but anyway...
+  std::shared_ptr<InputData> idata(new InputData("../../test/hf_svp_mp2_opt.in"));
+  stack = new StackMem(static_cast<size_t>(1000000LU));
+  std::shared_ptr<Geometry> geom(new Geometry(idata));
+  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+
+  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
+    if (iter->first == "mp2-opt") {
+      std::shared_ptr<Opt<MP2Grad> > opt(new Opt<MP2Grad>(idata, iter->second, geom));
+      for (int i = 0; i != 20; ++i)
+        if (opt->next()) break;
+
+      delete stack;
+      std::cout.rdbuf(backup_stream);
+      return opt->geometry()->xyz();
+    }
+  }
+  assert(false);
+}
+std::vector<double> reference_mp2_opt() {
+  std::vector<double> out(6);
+  out[2] = 1.981406;
+  out[5] = 0.245166;
   return out;
 }
  
@@ -62,6 +93,9 @@ BOOST_AUTO_TEST_SUITE(TEST_OPT)
  
 BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
     BOOST_CHECK(compare(scf_opt(), reference_scf_opt(), 1.0e-6));
+}
+BOOST_AUTO_TEST_CASE(MP2_Opt) {
+    BOOST_CHECK(compare(mp2_opt(), reference_mp2_opt(), 1.0e-6));
 }
  
 BOOST_AUTO_TEST_SUITE_END()
