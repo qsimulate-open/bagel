@@ -116,6 +116,8 @@ class Opt {
       delete ofs_;
     };
 
+    std::shared_ptr<const Geometry> geometry() const { return current_; };
+
 };
 
 #endif

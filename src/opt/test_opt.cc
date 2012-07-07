@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: test_fci.cc
+// Filename: test_opt.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,52 +23,45 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/opt/opt.h>
+#include <src/scf/scf.h>
+#include <src/wfn/reference.h>
 
-#include <src/fci/fci.h>
+std::vector<double> scf_opt() {
 
-std::vector<double> fci_energy() {
-
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_sto3g_fci2.testout", std::ios::trunc));
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_svp_dfhf_opt.testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/hf_sto3g_fci2.in"));
+  std::shared_ptr<InputData> idata(new InputData("../../test/hf_svp_dfhf_opt.in"));
   stack = new StackMem(static_cast<size_t>(1000000LU));
   std::shared_ptr<Geometry> geom(new Geometry(idata));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
-  std::shared_ptr<Reference> ref;
-
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf") {
-      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
-      scf->compute();
-      ref = scf->conv_to_ref();
-
-    }
-    if (iter->first == "fci") {
-      std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
-      fci->compute();
+    if (iter->first == "df-hf-opt") {
+      std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(idata, iter->second, geom));
+      for (int i = 0; i != 20; ++i)
+        if (opt->next()) break;
 
       delete stack;
       std::cout.rdbuf(backup_stream);
-      return fci->energy();
+      return opt->geometry()->xyz();
     }
   }
   assert(false);
 }
-
-std::vector<double> reference_fci_energy() {
-  std::vector<double> out(2);
-  out[0] = -98.56280393;
-  out[1] = -98.36567235;
+std::vector<double> reference_scf_opt() {
+  std::vector<double> out(6);
+  out[2] = 2.416082;
+  out[5] = 0.610490;
   return out;
 }
  
-BOOST_AUTO_TEST_SUITE(TEST_FCI)
+BOOST_AUTO_TEST_SUITE(TEST_OPT)
  
-BOOST_AUTO_TEST_CASE(FCI_2STATE) {
-    BOOST_CHECK(compare(fci_energy(), reference_fci_energy()));
+BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
+    BOOST_CHECK(compare(scf_opt(), reference_scf_opt(), 1.0e-6));
 }
  
 BOOST_AUTO_TEST_SUITE_END()

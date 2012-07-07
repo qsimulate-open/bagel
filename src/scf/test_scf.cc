@@ -23,17 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
+#include <sstream>
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
 
-double scf_energy() {
-
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_svp_dfhf.testout", std::ios::trunc));
+double scf_energy(std::string filename) {
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/hf_svp_dfhf.in"));
+  std::stringstream ss; ss << "../../test/" << filename << ".in";
+  std::shared_ptr<InputData> idata(new InputData(ss.str()));
   stack = new StackMem(static_cast<size_t>(1000000LU));
   std::shared_ptr<Geometry> geom(new Geometry(idata));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
@@ -51,11 +51,12 @@ double scf_energy() {
   }
   assert(false);
 }
- 
+
 BOOST_AUTO_TEST_SUITE(TEST_SCF)
  
 BOOST_AUTO_TEST_CASE(DF_HF) {
-    BOOST_CHECK(compare(scf_energy(), -98.49666065));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),     -98.49666065));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"), -98.49306775));
 }
  
 BOOST_AUTO_TEST_SUITE_END()
