@@ -62,8 +62,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   // some DF vectors
   shared_ptr<const DensityFit> df = ref_->geom()->df();
   shared_ptr<const DF_Half> half = df->compute_half_transform(ocoeff, nocca)->apply_J();
-  shared_ptr<const DF_Full> full = half->compute_second_transform(ocoeff, nocca)
-                                       ->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+  shared_ptr<const DF_Full> fullb = half->compute_second_transform(ocoeff, nocca);
+  shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
 
   shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
   for (int i = 0; i != nocca; ++i)
@@ -102,7 +102,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<DF_Half> tmp1_1 = df->compute_half_transform(cz0->data(), nocca);
     shared_ptr<const DF_Full> tmp1 = tmp1_1->compute_second_transform(ocoeff, nbasis)->apply_J();
     tmp0->daxpy(1.0, tmp1);
-    unique_ptr<double[]> term0 = tmp0->form_2index(full, 2.0);
+    unique_ptr<double[]> term0 = tmp0->form_2index(fulld, 2.0);
 
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
     shared_ptr<DF_Full> tmp2_1 = half->compute_second_transform(cz0->data(), nocca);
@@ -118,7 +118,55 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, term0.get(), nbasis); 
 
+    // internal core fock operator...
+    // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
+
+    // TODO this is a reference implementation
+    // first form 4 index
+    unique_ptr<double[]> buf = tmp2_1->form_4index(fullb);
+    for (int i = 0; i != nocca; ++i) { 
+      for (int j = 0; j != nocca; ++j) { 
+        for (int k = 0; k != nocca; ++k) { 
+          for (int l = 0; l != nocca; ++l) { 
+            if (j+nocca*i > l+nocca*k) continue;
+            buf[l+nocca*(k+nocca*(j+nocca*i))] = buf[j+nocca*(i+nocca*(l+nocca*k))]
+              = buf[l+nocca*(k+nocca*(j+nocca*i))] + buf[j+nocca*(i+nocca*(l+nocca*k))];
+          }
+        }
+      }
+    }
+    unique_ptr<double[]> Htilde2(new double[nact*nact*nact*nact]);
+    for (int i = nclosed; i != nocca; ++i)
+      for (int j = nclosed; j != nocca; ++j)
+        for (int k = nclosed; k != nocca; ++k)
+          for (int l = nclosed; l != nocca; ++l)
+            Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] = buf[l+nocca*(k+nocca*(j+nocca*i))]; 
+
+    unique_ptr<double[]> Htilde1(new double[nact*nact]);
+    for (int i = nclosed; i != nocca; ++i) {
+      for (int j = nclosed; j != nocca; ++j) {
+        Htilde1[j-nclosed+nact*(i-nclosed)] = htilde->element(j,i);
+
+        for (int k = 0; k != nocca; ++k) { 
+          Htilde1[j-nclosed+nact*(i-nclosed)] += 0.5*(2.0*buf[k+nocca*(k+nocca*(j+nocca*i))] - buf[k+nocca*(i+nocca*(j+nocca*k))]);
+        }
+        cout << setw(10) << setprecision(6) << Htilde1[j-nclosed+nact*(i-nclosed)];
+      }
+      cout << endl;
+    }
+throw logic_error("Htilde core fock operator seems wrong");
+
+#if 0
+    for (int i = nclosed; i != nocca; ++i)
+      for (int j = nclosed; j != nocca; ++j)
+        for (int k = nclosed; k != nocca; ++k)
+          for (int l = nclosed; l != nocca; ++l)
+            cout << i << j << k << l << " " << Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] << endl;
+#endif
+
   }
+
+(*ref_->coeff() % *fci_->jop()->core_fock() * *ref_->coeff()).print("core fock");
 
   return shared_ptr<PairFile<Matrix1e, Dvec> >();
 
