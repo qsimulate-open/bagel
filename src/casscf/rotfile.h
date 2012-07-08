@@ -84,13 +84,7 @@ class RotFile {
     void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }; 
     void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy_(size_, a, o->data(), 1, data(), 1); }; 
     // orthogonalize to the liset of RotFile's
-    double orthog(std::list<std::shared_ptr<const RotFile> > c) {
-      for (auto iter = c.begin(); iter != c.end(); ++iter)
-        this->daxpy(- this->ddot(**iter), **iter);
-      const double scal = 1.0/this->norm();
-      dscal_(size_, scal, data(), 1);
-      return 1.0/scal;
-    };
+    double orthog(std::list<std::shared_ptr<const RotFile> > c);
 
     // return data_
     double* data() { return data_.get(); };

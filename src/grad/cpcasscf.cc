@@ -33,7 +33,7 @@
 using namespace std;
 
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ, 
-                   const vector<double>& eig, const shared_ptr<const DF_Half> h,
+                   const shared_ptr<const Matrix1e> eig, const shared_ptr<const DF_Half> h,
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), civector_(civ), eig_(eig), half_(h),
   halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
@@ -67,22 +67,22 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
 
   // making denominator...
-  shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
-  for (int i = 0; i != nocca; ++i)
-    for (int a = nocca; a != nvirt+nocca; ++a)
-// TODO really?
-      d0->element(a,i) = eig_[a]-eig_[i];
-  shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
-  shared_ptr<Civec> d1_each(new Civec(d1_tmp, detex));
-  shared_ptr<Dvec>  d1(new Dvec(d1_each, ref_->nstate()));
-  const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
-  for (int i = 0; i != ref_->nstate(); ++i)
-    *d1->data(i) -= fci_->energy(i) - core_energy;
+  shared_ptr<PairFile<Matrix1e, Dvec> > denom;
+  {
+    shared_ptr<Matrix1e> d0(new Matrix1e(*eig_));
+    shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
+    shared_ptr<Civec> d1_each(new Civec(d1_tmp, detex));
+    shared_ptr<Dvec>  d1(new Dvec(d1_each, ref_->nstate()));
+    const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
+    for (int i = 0; i != ref_->nstate(); ++i)
+      *d1->data(i) -= fci_->energy(i) - core_energy;
+    denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
+  }
 
   shared_ptr<Matrix1e> z0(new Matrix1e(geom_));
-  shared_ptr<Dvec> z1 = d1->clone();
-  z1->zero();
+  shared_ptr<Dvec> z1(new Dvec(detex, ref_->nstate()));
   z0->unit();
+  z1->zero();
 
 
 
@@ -90,7 +90,6 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   civector_->set_det(detex);
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
-
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {

@@ -112,6 +112,15 @@ shared_ptr<Matrix1e> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const 
   return out;
 }
 
+
+double RotFile::orthog(list<shared_ptr<const RotFile> > c) {
+  for (auto iter = c.begin(); iter != c.end(); ++iter)
+    this->daxpy(- this->ddot(**iter), **iter);
+  const double scal = 1.0/this->norm();
+  dscal_(size_, scal, data(), 1);
+  return 1.0/scal;
+}
+
 void RotFile::print() const {
   if (nact_ && nclosed_) {
     cout << " printing closed-active block" << endl;

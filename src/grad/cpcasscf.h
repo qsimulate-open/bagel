@@ -43,7 +43,7 @@ class CPCASSCF {
     const std::shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver_;
     const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad_;
     const std::shared_ptr<const Dvec> civector_;
-    const std::vector<double> eig_;
+    const std::shared_ptr<const Matrix1e> eig_;
     const std::shared_ptr<const DF_Half> half_;
     const std::shared_ptr<const DF_Half> halfjj_;
     const std::shared_ptr<const Reference> ref_;
@@ -54,7 +54,7 @@ class CPCASSCF {
     std::shared_ptr<Matrix1e> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> o) const;
 
   public:
-    CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::vector<double>& eig,
+    CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix1e> eig,
              const std::shared_ptr<const DF_Half> half, const std::shared_ptr<const DF_Half> halfjj,
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
     ~CPCASSCF() {};

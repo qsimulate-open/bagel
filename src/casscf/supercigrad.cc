@@ -47,8 +47,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // related to denominators
   const int nbasis = ref_->geom()->nbasis();
-  // TODO TODO TODO temp... to have it compiled
-  vector<double> eig(nbasis*nbasis);
+  shared_ptr<Matrix1e> eig;
+  {
+    // compute one-boedy operators
+    shared_ptr<Matrix1e> f;
+    shared_ptr<QFile>    fact, factp, gaa;
+    shared_ptr<RotFile> denom;
+    task_->one_body_operators(f, fact, factp, gaa, denom);
+    eig = denom->unpack_sym(ref_->geom());
+  }
 
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -74,17 +81,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 
   // Recalculate CI vector (which can be avoided... TODO)
-  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact, nstate));
-  fci->compute();
-  shared_ptr<const Dvec> civ = fci->civectors();
+  shared_ptr<const Dvec> civ = task_->fci()->civectors();
 
   // CI derivative is zero
-  shared_ptr<Dvec> g1(new Dvec(fci->det(), ref_->nstate()));
+  shared_ptr<Dvec> g1(new Dvec(task_->fci()->det(), ref_->nstate()));
   // combine gradient file
   shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
 
   // solve CP-CASSCF
-  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, civ, eig, half, halfjj, ref_, fci));
+  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, civ, eig, half, halfjj, ref_, task_->fci()));
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // compute dipole...
