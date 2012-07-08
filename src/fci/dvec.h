@@ -43,7 +43,7 @@
 class Dvec {
   protected:
     // the determinant space where Dvec's are sitting
-    std::shared_ptr<const Determinants> det_;
+    mutable std::shared_ptr<const Determinants> det_;
 
     size_t lena_;
     size_t lenb_;
@@ -84,7 +84,7 @@ class Dvec {
     size_t lenb() const { return lenb_; };
     size_t ij() const { return ij_; };
 
-    void set_det(std::shared_ptr<const Determinants> o);
+    void set_det(std::shared_ptr<const Determinants> o) const;
 
     // some functions for convenience
     double ddot(const Dvec& other) const;

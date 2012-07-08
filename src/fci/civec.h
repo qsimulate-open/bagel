@@ -38,7 +38,7 @@
 class Civec {
   protected:
     // The determinant space in which this Civec object is defined
-    std::shared_ptr<const Determinants> det_;
+    mutable std::shared_ptr<const Determinants> det_;
 
     int lena_;
     int lenb_;
@@ -77,7 +77,7 @@ class Civec {
     const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST 
 
     std::shared_ptr<const Determinants> det() const { return det_; };
-    void set_det(std::shared_ptr<const Determinants> o) { det_ = o; };
+    void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; };
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
 
@@ -96,6 +96,8 @@ class Civec {
     void scale(const double a);
 
     Civec& operator*=(const double& a) { scale(a); return *this; };
+    Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }; // <- note I used a stride 0
+    Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; };
 
     // assumes that Civec's in c are already orthogonal with each other.
     // returns scaling factor (see implementation) 

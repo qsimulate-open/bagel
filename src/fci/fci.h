@@ -65,8 +65,6 @@ class FCI {
     // number of states
     int nstate_;
 
-    // core
-    double core_energy_; // <- usually initialized in create_iiii
     // total energy
     std::vector<double> energy_;
 
@@ -139,9 +137,7 @@ class FCI {
     int neleb() const { return neleb_; };
     int nij() const { return norb_*(norb_+1)/2; };
     int ncore() const { return ncore_; };
-    double core_energy() const { return core_energy_; };
-    // sets members
-    void set_core_energy(const double a) { core_energy_ = a; };
+    double core_energy() const { return jop_->core_energy(); };
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
@@ -176,6 +172,7 @@ class FCI {
 
     // returns total energy
     std::vector<double> energy() const { return energy_; };
+    double energy(const int i) const { return energy_.at(i); };
 
     // returns CI vectors
     std::shared_ptr<Dvec> civectors() const { return cc_; };

@@ -59,8 +59,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
   shared_ptr<DF_Half> halfjj = half->apply_J();
 
-  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact, nstate));
-
   // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
   // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}
@@ -75,13 +73,18 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   unique_ptr<double[]> buf = half->form_2index(fulld);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 
+  // Recalculate CI vector (which can be avoided... TODO)
+  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), ref_, nclosed, nact, nstate));
+  fci->compute();
+  shared_ptr<const Dvec> civ = fci->civectors();
+
   // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(fci->det(), ref_->nstate()));
   // combine gradient file
   shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
 
   // solve CP-CASSCF
-  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, eig, half, halfjj, ref_, fci));
+  shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, civ, eig, half, halfjj, ref_, fci));
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // compute dipole...

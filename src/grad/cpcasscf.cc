@@ -32,9 +32,10 @@
 
 using namespace std;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ, 
+                   const vector<double>& eig, const shared_ptr<const DF_Half> h,
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), half_(h),
+: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), civector_(civ), eig_(eig), half_(h),
   halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
 }
@@ -65,13 +66,18 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   shared_ptr<const DF_Full> fullb = half->compute_second_transform(ocoeff, nocca);
   shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
 
+  // making denominator...
   shared_ptr<Matrix1e> d0(new Matrix1e(geom_));
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
+// TODO really?
       d0->element(a,i) = eig_[a]-eig_[i];
   shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
-  shared_ptr<const Civec> d1_each(new Civec(d1_tmp, detex));
-  shared_ptr<const Dvec> d1(new Dvec(d1_each, ref_->nstate()));
+  shared_ptr<Civec> d1_each(new Civec(d1_tmp, detex));
+  shared_ptr<Dvec>  d1(new Dvec(d1_each, ref_->nstate()));
+  const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
+  for (int i = 0; i != ref_->nstate(); ++i)
+    *d1->data(i) -= fci_->energy(i) - core_energy;
 
   shared_ptr<Matrix1e> z0(new Matrix1e(geom_));
   shared_ptr<Dvec> z1 = d1->clone();
@@ -81,8 +87,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
 
   // CI vector
-  shared_ptr<Dvec> dvec = ref_->civectors();
-  dvec->set_det(detex);
+  civector_->set_det(detex);
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -91,7 +96,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
-    shared_ptr<Matrix1e> amat = compute_amat(z1, dvec);
+    shared_ptr<Matrix1e> amat = compute_amat(z1, civector_);
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
@@ -124,17 +129,22 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     // TODO this is a reference implementation
     // first form 4 index
     unique_ptr<double[]> buf = tmp2_1->form_4index(fullb);
-    for (int i = 0; i != nocca; ++i) { 
-      for (int j = 0; j != nocca; ++j) { 
-        for (int k = 0; k != nocca; ++k) { 
-          for (int l = 0; l != nocca; ++l) { 
-            if (j+nocca*i > l+nocca*k) continue;
-            buf[l+nocca*(k+nocca*(j+nocca*i))] = buf[j+nocca*(i+nocca*(l+nocca*k))]
-              = buf[l+nocca*(k+nocca*(j+nocca*i))] + buf[j+nocca*(i+nocca*(l+nocca*k))];
-          }
-        }
-      }
-    }
+    // TODO Awful code. To be updated. making the code that works in the quickest possible way
+    // index swap
+    unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
+    for (int i = 0; i != nocca; ++i)
+      for (int j = 0; j != nocca; ++j)
+        for (int k = 0; k != nocca; ++k)
+          for (int l = 0; l != nocca; ++l)
+            buf2[l+nocca*(k+nocca*(j+nocca*i))] = buf[l+nocca*(k+nocca*(i+nocca*j))];
+
+    // bra ket symmetrization
+    for (int i = 0; i != nocca; ++i)
+      for (int j = 0; j != nocca; ++j)
+        for (int k = 0; k != nocca; ++k)
+          for (int l = 0; l != nocca; ++l)
+            buf[l+nocca*(k+nocca*(j+nocca*i))] = buf2[l+nocca*(k+nocca*(j+nocca*i))] + buf2[j+nocca*(i+nocca*(l+nocca*k))];
+
     unique_ptr<double[]> Htilde2(new double[nact*nact*nact*nact]);
     for (int i = nclosed; i != nocca; ++i)
       for (int j = nclosed; j != nocca; ++j)
@@ -146,27 +156,15 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     for (int i = nclosed; i != nocca; ++i) {
       for (int j = nclosed; j != nocca; ++j) {
         Htilde1[j-nclosed+nact*(i-nclosed)] = htilde->element(j,i);
-
-        for (int k = 0; k != nocca; ++k) { 
-          Htilde1[j-nclosed+nact*(i-nclosed)] += 0.5*(2.0*buf[k+nocca*(k+nocca*(j+nocca*i))] - buf[k+nocca*(i+nocca*(j+nocca*k))]);
-        }
-        cout << setw(10) << setprecision(6) << Htilde1[j-nclosed+nact*(i-nclosed)];
+        for (int k = 0; k != nclosed; ++k)
+          Htilde1[j-nclosed+nact*(i-nclosed)] += 2.0*buf[k+nocca*(k+nocca*(j+nocca*i))] - buf[k+nocca*(i+nocca*(j+nocca*k))];
       }
-      cout << endl;
     }
-throw logic_error("Htilde core fock operator seems wrong");
-
-#if 0
-    for (int i = nclosed; i != nocca; ++i)
-      for (int j = nclosed; j != nocca; ++j)
-        for (int k = nclosed; k != nocca; ++k)
-          for (int l = nclosed; l != nocca; ++l)
-            cout << i << j << k << l << " " << Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] << endl;
-#endif
+    // factor of 2 in the equation
+    dscal_(nact*nact, 2.0, Htilde1.get(), 1);
+    dscal_(nact*nact*nact*nact, 2.0, Htilde2.get(), 1);
 
   }
-
-(*ref_->coeff() % *fci_->jop()->core_fock() * *ref_->coeff()).print("core fock");
 
   return shared_ptr<PairFile<Matrix1e, Dvec> >();
 

@@ -97,7 +97,7 @@ vector<shared_ptr<const Civec> > Dvec::dvec(const vector<int>& conv) const {
 }
 
 
-void Dvec::set_det(shared_ptr<const Determinants> o) {
+void Dvec::set_det(shared_ptr<const Determinants> o) const {
   det_ = o;
   for (auto i = dvec_.begin(); i != dvec_.end(); ++i) (*i)->set_det(o); 
 }
