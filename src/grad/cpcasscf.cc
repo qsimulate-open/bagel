@@ -163,6 +163,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     dscal_(nact*nact, 2.0, Htilde1.get(), 1);
     dscal_(nact*nact*nact*nact, 2.0, Htilde2.get(), 1);
 
+    shared_ptr<MOFile> top(new MOFile(Htilde1, Htilde2));
+    vector<int> tmp(z1->ij(), 0);
+    shared_ptr<Dvec> sigma = fci_->form_sigma(civector_, top, tmp);
+
   }
 
   return shared_ptr<PairFile<Matrix1e, Dvec> >();

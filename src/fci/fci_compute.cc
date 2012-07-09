@@ -141,7 +141,7 @@ void FCI::compute() {
 
 
 
-shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile> jop,
+shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
 
   const int ij = nij(); 
@@ -157,7 +157,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<Dvec> ccvec, shared_ptr<const MOFile
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
-    shared_ptr<Civec> cc = ccvec->data(istate);  
+    shared_ptr<const Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
     vector<pair<string, double> > timing;

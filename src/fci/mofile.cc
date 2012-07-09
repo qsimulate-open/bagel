@@ -43,6 +43,14 @@ MOFile::MOFile(const shared_ptr<const Geometry> geom, const shared_ptr<const Ref
 
 }
 
+
+MOFile::MOFile(unique_ptr<double[]>& h1, unique_ptr<double[]>& h2) { 
+  mo1e_ = move(h1);
+  mo2e_ = move(h2);
+
+}
+
+
 MOFile::~MOFile() {
 }
 
