@@ -138,6 +138,8 @@ class FCI {
     int ncore() const { return ncore_; };
     double core_energy() const { return jop_->core_energy(); };
 
+    double weight(const int i) const { return weight_[i]; };
+
     // application of Hamiltonian
     std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 

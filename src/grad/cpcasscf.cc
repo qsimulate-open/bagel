@@ -87,10 +87,19 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   // antisymmetrize
   source->first()->antisymmetrize();
   source->first()->print();
+  // divide by weight
+  for (int ij = 0; ij != source->second()->ij(); ++ij) {
+    source->second()->data(ij)->scale(1.0/fci_->weight(ij));
+  }
   shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
+
+//// DEBUG DEBUG DEBUG
+source->second()->zero();
 
   // initial guess
   shared_ptr<PairFile<Matrix1e, Dvec> > z(new PairFile<Matrix1e, Dvec>(*source));
+  z->second()->set_det(detex);
+//apply_denom(z, denom); 
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -100,9 +109,11 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
-
-    apply_denom(z, denom); 
     z->second()->set_det(detex);
+    const double norm = sqrt(z->ddot(*z));
+
+cout << setw(4) <<  iter << " " << norm << endl;
+
     shared_ptr<const Matrix1e> z0 = z->first();
     shared_ptr<const Dvec>     z1 = z->second();
 
@@ -117,16 +128,18 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0->data(), nbasis); 
     shared_ptr<DF_Half> tmp1_1 = df->compute_half_transform(cz0->data(), nocca);
     shared_ptr<const DF_Full> tmp1 = tmp1_1->compute_second_transform(ocoeff, nbasis)->apply_J();
-    tmp0->daxpy(1.0, tmp1);
+    *tmp0 += *tmp1;
     unique_ptr<double[]> term0 = tmp0->form_2index(fulld, 2.0);
 
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
     shared_ptr<DF_Full> tmp2_1 = half->compute_second_transform(cz0->data(), nocca);
-    tmp2_1->symmetrize();
-    shared_ptr<DF_Full> tmp2 = tmp2_1->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-    unique_ptr<double[]> term1 = half->form_2index(tmp2, 2.0);
-    // mo transformation of s
-    dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, term1.get(), nbasis, 1.0, term0.get(), nbasis); 
+    {
+      tmp2_1->symmetrize();
+      shared_ptr<DF_Full> tmp2 = tmp2_1->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+      unique_ptr<double[]> term1 = half->form_2index(tmp2, 2.0);
+      // mo transformation of s
+//    dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, term1.get(), nbasis, 1.0, term0.get(), nbasis); 
+    }
 
     // one electron part...
     shared_ptr<const Matrix1e> h(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
@@ -134,8 +147,12 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, term0.get(), nbasis); 
 
-    daxpy_(sigmaorb->size(), 1.0, term0.get(), 1, sigmaorb->data(), 1);
+    for (int i = 0; i != nocca; ++i)
+      for (int j = 0; j != nbasis; ++j)
+        sigmaorb->element(j,i) += term0[j+nbasis*i]; 
+
     sigmaorb->antisymmetrize();
+    sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
@@ -192,13 +209,13 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
         sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
 
 sigmaci->zero();
+
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
-z->first()->print();
-    const double norm = sqrt(z->ddot(*z));
-    z->scale(1.0/norm);
-cout << "residual :   " << norm << endl;
+    apply_denom(z, denom);
+
+if (sqrt(z->ddot(*z)) < 1.0e-8) break;
 
   }
 
@@ -214,11 +231,11 @@ void CPCASSCF::apply_denom(shared_ptr<PairFile<Matrix1e, Dvec> > o, shared_ptr<c
   shared_ptr<const Dvec> d1 = d->second();
 
   for (size_t i = 0lu; i != o0->size(); ++i) {
-    o0->data(i) /= max(0.01, d0->data(i));
+    o0->data(i) /= max(d0->data(i), 0.01);
   }
   for (size_t ij = 0lu; ij != o1->ij(); ++ij) {
     for (size_t k = 0lu; k != o1->lena()*o1->lenb(); ++k) {
-      o1->data(ij)->data(k) /= max(0.01, d1->data(ij)->data(k));
+      o1->data(ij)->data(k) /= d1->data(ij)->data(k);
     }
   }
 }

@@ -58,7 +58,6 @@ class PairFile {
 
     // lapack functions
     void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
-//  double ddot(const std::shared_ptr<PairFile<T, U> > o) const { return first()->ddot(o->first()) + second()->ddot(o->second()); };
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
 

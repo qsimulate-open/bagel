@@ -107,7 +107,7 @@ double Dvec::ddot(const Dvec& other) const {
   assert(ij() == other.ij());
   double sum = 0.0;
   for (auto i = dvec_.begin(), j = other.dvec_.begin(); i != dvec_.end(); ++i, ++j)
-    sum += ddot_(lena_*lenb_, (*i)->data(), 1, (*j)->data(), 1);
+    sum += (*i)->ddot(**j); 
   return sum;
 }
 
