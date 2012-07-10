@@ -68,6 +68,7 @@ class Matrix1e {
 
     void fill_upper();
     void symmetrize();
+    void antisymmetrize();
     std::shared_ptr<Matrix1e> resize(std::shared_ptr<const Geometry>, const int) const;
     std::shared_ptr<Matrix1e> slice(const int, const int) const;
     std::shared_ptr<Matrix1e> merge(const std::shared_ptr<const Matrix1e>) const;

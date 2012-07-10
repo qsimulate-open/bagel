@@ -37,13 +37,18 @@ class PairFile {
     std::shared_ptr<U> file1_;
 
   public:
+    // constructors by assignment
     PairFile(std::shared_ptr<T> a, std::shared_ptr<U> b) : file0_(a), file1_(b) {};
     PairFile(std::pair<std::shared_ptr<T>, std::shared_ptr<U> > o) : file0_(o.first), file1_(o.second) {};
     PairFile(std::tuple<std::shared_ptr<T>, std::shared_ptr<U> > o) : file0_(std::get<0>(o)), file1_(std::get<1>(o)) {};
+    // copy constructor (that requires T and U to have a copy constructor)
+    PairFile(const PairFile<T, U>& o) : file0_(new T(*o.file0_)), file1_(new U(*o.file1_)) {};
     ~PairFile() {};
 
     std::shared_ptr<T> first() { return file0_; };
     std::shared_ptr<U> second() { return file1_; };
+    std::shared_ptr<const T> first() const { return file0_; };
+    std::shared_ptr<const U> second() const { return file1_; };
 
     // operator overloads
     PairFile<T, U> operator+(const PairFile<T, U> o) const { return PairFile<T, U>(*first()+*o->first(), *second()+*o->second()); };
@@ -52,8 +57,9 @@ class PairFile {
     PairFile<T, U>& operator-=(const PairFile<T, U> o) { *first()-=*o->first(); *second()-=*o->second(); return *this; };
 
     // lapack functions
-    void daxpy(const double a, const std::shared_ptr<PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
-    double ddot(const std::shared_ptr<PairFile<T, U> > o) { return first()->ddot(o->first()) + second()->ddot(o->second()); };
+    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
+//  double ddot(const std::shared_ptr<PairFile<T, U> > o) const { return first()->ddot(o->first()) + second()->ddot(o->second()); };
+    double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
 
     // assumes that c is already orthogonal with each other.

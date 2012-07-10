@@ -422,6 +422,11 @@ shared_ptr<Matrix1e> Matrix1e::transpose() const {
   return out;
 }
 
+void Matrix1e::antisymmetrize() {
+  shared_ptr<Matrix1e> trans = transpose();
+  *this -= *trans;
+}
+
 
 void Matrix1e::purify_unitary() {
   assert(ndim_ == mdim_);

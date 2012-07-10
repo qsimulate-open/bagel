@@ -40,7 +40,6 @@
 
 class CPCASSCF {
   protected:
-    const std::shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver_;
     const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad_;
     const std::shared_ptr<const Dvec> civector_;
     const std::shared_ptr<const Matrix1e> eig_;
@@ -52,6 +51,7 @@ class CPCASSCF {
 
 
     std::shared_ptr<Matrix1e> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> o) const;
+    void apply_denom(std::shared_ptr<PairFile<Matrix1e, Dvec> >, std::shared_ptr<const PairFile<Matrix1e, Dvec> >) const;
 
   public:
     CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix1e> eig,

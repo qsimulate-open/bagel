@@ -26,6 +26,7 @@
 
 #include <src/grad/cpcasscf.h>
 #include <cassert>
+#include <src/util/f77.h>
 
 #define CPHF_MAX_ITER 10
 #define CPHF_THRESH 1.0e-8
@@ -35,8 +36,7 @@ using namespace std;
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ, 
                    const shared_ptr<const Matrix1e> eig, const shared_ptr<const DF_Half> h,
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: solver_(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, grad)), grad_(grad), civector_(civ), eig_(eig), half_(h),
-  halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
+: grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
 }
 
@@ -68,34 +68,46 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   // making denominator...
   shared_ptr<PairFile<Matrix1e, Dvec> > denom;
+  const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
   {
     shared_ptr<Matrix1e> d0(new Matrix1e(*eig_));
     shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
     shared_ptr<Civec> d1_each(new Civec(d1_tmp, detex));
     shared_ptr<Dvec>  d1(new Dvec(d1_each, ref_->nstate()));
-    const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
 
-  shared_ptr<Matrix1e> z0(new Matrix1e(geom_));
-  shared_ptr<Dvec> z1(new Dvec(detex, ref_->nstate()));
-  z0->unit();
-  z1->zero();
-
-
 
   // CI vector
   civector_->set_det(detex);
 
+  shared_ptr<PairFile<Matrix1e, Dvec> > source(new PairFile<Matrix1e, Dvec>(*grad_));
+  // antisymmetrize
+  source->first()->antisymmetrize();
+  source->first()->print();
+  shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
+
+  // initial guess
+  shared_ptr<PairFile<Matrix1e, Dvec> > z(new PairFile<Matrix1e, Dvec>(*source));
+
   cout << "  === CPCASSCF iteration ===" << endl << endl;
+
+  // during the iteration, we need to
+  //  (i) antisymmetrize Z, as well as
+  //  (ii) project out c from z
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
 
+    apply_denom(z, denom); 
+    z->second()->set_det(detex);
+    shared_ptr<const Matrix1e> z0 = z->first();
+    shared_ptr<const Dvec>     z1 = z->second();
+
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
-    shared_ptr<Matrix1e> amat = compute_amat(z1, civector_);
+    shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_);
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
@@ -121,6 +133,9 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<const Matrix1e> htilde(new Matrix1e(*z0 % *h + *h * *z0)); 
     shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, term0.get(), nbasis); 
+
+    daxpy_(sigmaorb->size(), 1.0, term0.get(), 1, sigmaorb->data(), 1);
+    sigmaorb->antisymmetrize();
 
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
@@ -165,12 +180,47 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
     shared_ptr<MOFile> top(new MOFile(Htilde1, Htilde2));
     vector<int> tmp(z1->ij(), 0);
-    shared_ptr<Dvec> sigma = fci_->form_sigma(civector_, top, tmp);
+    shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
+
+    // only here we need to have det_ instead of detex
+    z1->set_det(fci_->det());
+    *sigmaci += *fci_->form_sigma(z1, fci_->jop(), tmp);
+    z1->set_det(detex);
+
+    for (int i = 0; i != z1->ij(); ++i)
+      for (int j = 0; j != z1->data(i)->size(); ++j)
+        sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
+
+sigmaci->zero();
+    shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
+
+    z = solver->compute_residual(z, sigma);
+z->first()->print();
+    const double norm = sqrt(z->ddot(*z));
+    z->scale(1.0/norm);
+cout << "residual :   " << norm << endl;
 
   }
 
   return shared_ptr<PairFile<Matrix1e, Dvec> >();
 
+}
+
+
+void CPCASSCF::apply_denom(shared_ptr<PairFile<Matrix1e, Dvec> > o, shared_ptr<const PairFile<Matrix1e, Dvec> > d) const {
+  shared_ptr<Matrix1e> o0 = o->first();
+  shared_ptr<Dvec> o1 = o->second();
+  shared_ptr<const Matrix1e> d0 = d->first();
+  shared_ptr<const Dvec> d1 = d->second();
+
+  for (size_t i = 0lu; i != o0->size(); ++i) {
+    o0->data(i) /= max(0.01, d0->data(i));
+  }
+  for (size_t ij = 0lu; ij != o1->ij(); ++ij) {
+    for (size_t k = 0lu; k != o1->lena()*o1->lenb(); ++k) {
+      o1->data(ij)->data(k) /= max(0.01, d1->data(ij)->data(k));
+    }
+  }
 }
 
 
