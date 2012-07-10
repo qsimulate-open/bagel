@@ -554,8 +554,8 @@ shared_ptr<DF_Full> DF_Full::copy() const {
 }
 
 
-void DF_Full::daxpy(const double a, std::shared_ptr<const DF_Full> o) {
-  daxpy_(size(), a, o->data(), 1, data(), 1);
+void DF_Full::daxpy(const double a, const DF_Full& o) {
+  daxpy_(size(), a, o.data(), 1, data(), 1);
 }
 
 

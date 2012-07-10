@@ -238,7 +238,11 @@ class DF_Full {
 
     std::shared_ptr<DF_Full> clone() const;
     std::shared_ptr<DF_Full> copy() const;
-    void daxpy(const double a, std::shared_ptr<const DF_Full> o);
+    void daxpy(const double a, std::shared_ptr<const DF_Full> o) { daxpy(a, *o); };
+    void daxpy(const double a, const DF_Full& o);
+
+    DF_Full& operator+=(const DF_Full& o) { daxpy(1.0, o); return *this; };
+    DF_Full& operator-=(const DF_Full& o) { daxpy(-1.0, o); return *this; };
 
     void symmetrize();
 
