@@ -261,6 +261,7 @@ Matrix1e Matrix1e::operator/(const double& a) const {
   return out;
 }
 
+
 Matrix1e& Matrix1e::operator*=(const double& a) {
   dscal_(nbasis_*nbasis_, a, data_, 1);
   return *this;
@@ -304,6 +305,21 @@ Matrix1e Matrix1e::operator^(const Matrix1e& o) const {
   out.mdim_ = n;
 
   return out;
+}
+
+
+Matrix1e Matrix1e::operator/(const Matrix1e& o) const {
+  Matrix1e out(*this);
+  out /= o;
+  return out;
+}
+
+
+Matrix1e& Matrix1e::operator/=(const Matrix1e& o) {
+  for (int i = 0; i != size(); ++i) {
+    data(i) /= o.data(i);
+  }
+  return *this;
 }
 
 

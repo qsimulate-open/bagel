@@ -98,3 +98,16 @@ double Civec::orthog(list<shared_ptr<const Civec> > c) {
   dscal_(lena_*lenb_, scal, cc(), 1);
   return 1.0/scal; 
 }
+
+Civec& Civec::operator/=(const Civec& o) {
+  for (int i = 0; i != size(); ++i) {
+    data(i) /= o.data(i);
+  }
+  return *this;
+}
+
+Civec Civec::operator/(const Civec& o) const {
+  Civec out(*this);
+  out /= o;
+  return out;
+}

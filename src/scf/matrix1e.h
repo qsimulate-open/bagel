@@ -90,6 +90,9 @@ class Matrix1e {
     Matrix1e& operator=(const Matrix1e&);
     Matrix1e operator-(const Matrix1e&) const;
 
+    Matrix1e& operator/=(const Matrix1e&);
+    Matrix1e operator/(const Matrix1e&) const;
+
     std::shared_ptr<Matrix1e> clone() const { return std::shared_ptr<Matrix1e>(new Matrix1e(geom_, ndim_, mdim_)); };
 
     // returns exp(*this)

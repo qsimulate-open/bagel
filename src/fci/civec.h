@@ -102,6 +102,9 @@ class Civec {
     Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }; // <- note I used a stride 0
     Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; };
 
+    Civec& operator/=(const Civec& o);
+    Civec operator/(const Civec& o) const;
+
     // assumes that Civec's in c are already orthogonal with each other.
     // returns scaling factor (see implementation) 
     double orthog(std::list<std::shared_ptr<const Civec> > c);

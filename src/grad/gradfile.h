@@ -63,7 +63,9 @@ class GradFile {
       return out;
     };
 
-    GradFile& operator-=(const GradFile& o) { daxpy(-1.0, o); return *this; }; 
+    GradFile& operator-=(const GradFile& o) { daxpy(-1.0, o); return *this; };
+    GradFile& operator/=(const GradFile& o) { for (int i=0; i != size(); ++i) data(i)/=o.data(i); return *this; };
+    GradFile operator/(const GradFile& o) const { GradFile out(*this); out /= o; return out; };
 
     std::shared_ptr<GradFile> clone() const { return std::shared_ptr<GradFile>(new GradFile(data_.size())); };
 

@@ -57,7 +57,7 @@ class BFGS {
 
       std::shared_ptr<T> out(new T(*grad));
       // (1)
-      for (size_t i = 0; i != grad->size(); ++i) out->data(i) /= denom_->data(i);
+      *out /= *denom_;
 
       if (prev_value) {
         // (3)
@@ -66,7 +66,7 @@ class BFGS {
           std::shared_ptr<T> DD(new T(*grad - *prev_grad));
           D.push_back(DD);
 
-          for (size_t i = 0; i != grad->size(); ++i) yy->data(i) = DD->data(i) / denom_->data(i);
+          *yy = *DD / *denom_;
 
           std::shared_ptr<T> vv(new T(*value - *prev_value));
           delta.push_back(vv);

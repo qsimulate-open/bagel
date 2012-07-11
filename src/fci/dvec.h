@@ -93,6 +93,12 @@ class Dvec {
     Dvec& operator+=(const Dvec& o) { daxpy(1.0, o); return *this; };
     Dvec& operator-=(const Dvec& o) { daxpy(-1.0, o); return *this; };
 
+    Dvec operator+(const Dvec& o) const { Dvec out(*this); return out += o; };
+    Dvec operator-(const Dvec& o) const { Dvec out(*this); return out -= o; };
+
+    Dvec& operator/=(const Dvec& o);
+    Dvec operator/(const Dvec& o) const;
+
     double norm() const { return std::sqrt(ddot(*this)); };
     void scale(const double a);
     Dvec& operator*=(const double& a) { scale(a); return *this; };

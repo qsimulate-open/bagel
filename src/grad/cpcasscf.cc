@@ -27,8 +27,9 @@
 #include <src/grad/cpcasscf.h>
 #include <cassert>
 #include <src/util/f77.h>
+#include <src/util/bfgs.h>
 
-#define CPHF_MAX_ITER 10
+#define CPHF_MAX_ITER 40
 #define CPHF_THRESH 1.0e-8
 
 using namespace std;
@@ -79,6 +80,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
 
+  shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom));
+
 
   // CI vector
   civector_->set_det(detex);
@@ -93,13 +96,12 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   }
   shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
 
-//// DEBUG DEBUG DEBUG
-source->second()->zero();
-
   // initial guess
-  shared_ptr<PairFile<Matrix1e, Dvec> > z(new PairFile<Matrix1e, Dvec>(*source));
+  shared_ptr<PairFile<Matrix1e, Dvec> > z = source->clone();
+  z->zero();
+
+  z = bfgs->extrapolate(source, z);
   z->second()->set_det(detex);
-//apply_denom(z, denom); 
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -119,6 +121,7 @@ cout << setw(4) <<  iter << " " << norm << endl;
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
     shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_);
+sigmaorb->zero();
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
@@ -138,7 +141,7 @@ cout << setw(4) <<  iter << " " << norm << endl;
       shared_ptr<DF_Full> tmp2 = tmp2_1->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       unique_ptr<double[]> term1 = half->form_2index(tmp2, 2.0);
       // mo transformation of s
-//    dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, term1.get(), nbasis, 1.0, term0.get(), nbasis); 
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, term1.get(), nbasis, 1.0, term0.get(), nbasis); 
     }
 
     // one electron part...
@@ -213,11 +216,13 @@ sigmaci->zero();
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
-    apply_denom(z, denom);
+    z = bfgs->extrapolate(z, solver->civec());
 
 if (sqrt(z->ddot(*z)) < 1.0e-8) break;
 
   }
+
+solver->civec()->first()->print("result", 12);
 
   return shared_ptr<PairFile<Matrix1e, Dvec> >();
 

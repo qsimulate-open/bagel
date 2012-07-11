@@ -51,15 +51,35 @@ class PairFile {
     std::shared_ptr<const U> second() const { return file1_; };
 
     // operator overloads
-    PairFile<T, U> operator+(const PairFile<T, U> o) const { return PairFile<T, U>(*first()+*o->first(), *second()+*o->second()); };
-    PairFile<T, U> operator-(const PairFile<T, U> o) const { return PairFile<T, U>(*first()-*o->first(), *second()-*o->second()); };
-    PairFile<T, U>& operator+=(const PairFile<T, U> o) { *first()+=*o->first(); *second()+=*o->second(); return *this; };
-    PairFile<T, U>& operator-=(const PairFile<T, U> o) { *first()-=*o->first(); *second()-=*o->second(); return *this; };
+    PairFile<T, U> operator+(const PairFile<T, U>& o) const {
+      std::shared_ptr<T> a0(new T(*first())); *a0 += *o.first();
+      std::shared_ptr<U> a1(new U(*second())); *a1 += *o.second();
+      return PairFile(a0, a1); 
+    };
+    PairFile<T, U> operator-(const PairFile<T, U>& o) const {
+      std::shared_ptr<T> a0(new T(*first())); *a0 -= *o.first();
+      std::shared_ptr<U> a1(new U(*second())); *a1 -= *o.second();
+      return PairFile(a0, a1); 
+    };
+    PairFile<T, U>& operator+=(const PairFile<T, U>& o) { *first()+=*o.first(); *second()+=*o.second(); return *this; };
+    PairFile<T, U>& operator-=(const PairFile<T, U>& o) { *first()-=*o.first(); *second()-=*o.second(); return *this; };
+
+    PairFile<T, U> operator/(const PairFile<T, U>& o) const {
+      std::shared_ptr<T> a0(new T(*first())); *a0 /= *o.first();
+      std::shared_ptr<U> a1(new U(*second())); *a1 /= *o.second();
+      return PairFile(a0, a1);
+    };
+    PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; };
 
     // lapack functions
     void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
+    double ddot(const std::shared_ptr<const PairFile<T, U> > o) const { return ddot(*o); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
+
+    void zero() { first()->zero(); second()->zero(); };
+
+    std::shared_ptr<PairFile<T, U> > clone() const { return std::shared_ptr<PairFile<T, U> >(new PairFile<T, U>(file0_->clone(), file1_->clone())); };
 
     // assumes that c is already orthogonal with each other.
     double orthog(std::list<std::shared_ptr<const PairFile<T, U> > > c) {

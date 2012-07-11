@@ -123,3 +123,19 @@ void Dvec::scale(const double a) {
   for (auto i = dvec_.begin(); i != dvec_.end(); ++i)
     dscal_(lena_*lenb_, a, (*i)->data(), 1);
 }
+
+
+Dvec& Dvec::operator/=(const Dvec& o) {
+  assert(dvec().size() == o.dvec().size());
+  auto j = o.dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+    **i /= **j; 
+  return *this;
+}
+
+
+Dvec Dvec::operator/(const Dvec& o) const {
+  Dvec out(*this);
+  out /= o;
+  return out;
+}

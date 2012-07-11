@@ -70,6 +70,9 @@ class RotFile {
     RotFile operator-(const RotFile& o) const;
     RotFile& operator-=(const RotFile& o);
     RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; };
+    RotFile& operator/=(const RotFile& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; };
+    RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; }; 
+    RotFile operator=(const RotFile& o) { std::copy(o.data(), o.data()+size(), data());  return *this; }; 
 
     // size of the file
     const int size() const { return size_; };
