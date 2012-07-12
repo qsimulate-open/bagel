@@ -105,6 +105,10 @@ class Dvec {
 
     std::shared_ptr<Dvec> clone() const { return std::shared_ptr<Dvec>(new Dvec(det_, ij_)); };
     std::shared_ptr<Dvec> copy() const { return std::shared_ptr<Dvec>(new Dvec(*this)); };
+
+    void orthog(std::shared_ptr<const Dvec> o);
+
+    void print(const double thresh = 0.05) const;
 };
 
 

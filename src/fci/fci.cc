@@ -79,16 +79,6 @@ FCI::~FCI() {
 
 
 
-void FCI::print_civectors(vector<shared_ptr<Civec> > vec, const double thr) const {
-  int j = 0;
-  for (auto iter = vec.begin(); iter != vec.end(); ++iter, ++j) {
-    cout << endl;
-    cout << "     * ci vector, state " << setw(3) << j << endl; 
-    det()->print((*iter)->data(), thr);
-  }
-}
-
-
 void FCI::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
   timing.push_back(make_pair(label, (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC)));
   time = ::clock();

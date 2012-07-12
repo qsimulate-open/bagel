@@ -108,6 +108,9 @@ class Civec {
     // assumes that Civec's in c are already orthogonal with each other.
     // returns scaling factor (see implementation) 
     double orthog(std::list<std::shared_ptr<const Civec> > c);
+    double orthog(std::shared_ptr<const Civec> o);
+
+    void print(const double& thresh) const { det_->print(data(), thresh); };
 };
 
 

@@ -94,9 +94,15 @@ double Civec::orthog(list<shared_ptr<const Civec> > c) {
     const double scal = - this->ddot(**iter);
     this->daxpy(scal, **iter);
   }
-  const double scal = 1.0/this->norm();
+  const double norm = this->norm();
+  const double scal = (fabs(norm)<1.0e-30 ? 0.0 : 1.0/norm);
   dscal_(lena_*lenb_, scal, cc(), 1);
   return 1.0/scal; 
+}
+
+double Civec::orthog(shared_ptr<const Civec> o) {
+  list<shared_ptr<const Civec> > v; v.push_back(o);
+  return orthog(v);
 }
 
 Civec& Civec::operator/=(const Civec& o) {

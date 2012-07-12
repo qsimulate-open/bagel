@@ -132,8 +132,8 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  vector<shared_ptr<Civec> > s = davidson.civec();
-  print_civectors(s, 0.05);
+  shared_ptr<Dvec> s(new Dvec(davidson.civec()));
+  s->print();
   cc_ = shared_ptr<Dvec>(new Dvec(s));
 
 }

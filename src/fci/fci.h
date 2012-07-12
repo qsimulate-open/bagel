@@ -119,7 +119,6 @@ class FCI {
 
     // print functions
     void print_header() const;
-    void print_civectors(const std::vector<std::shared_ptr<Civec> >, const double thr = 0.05) const;
     void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
 
   public:

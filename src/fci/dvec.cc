@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <stdexcept>
 #include <src/fci/dvec.h>
 
 using namespace std;
@@ -138,4 +139,23 @@ Dvec Dvec::operator/(const Dvec& o) const {
   Dvec out(*this);
   out /= o;
   return out;
+}
+
+
+void Dvec::orthog(shared_ptr<const Dvec> o) {
+  if (o->ij() != ij()) throw logic_error("Dvec::orthog called inconsistently"); 
+  auto j = o->dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) {
+    (*i)->orthog(*j);
+  }
+}
+
+
+void Dvec::print(const double thresh) const {
+  int j = 0;
+  for (auto iter = dvec().begin(); iter != dvec().end(); ++iter, ++j) {
+    cout << endl;
+    cout << "     * ci vector, state " << setw(3) << j << endl; 
+    (*iter)->print(thresh);
+  }
 }
