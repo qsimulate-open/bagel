@@ -59,15 +59,24 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
-  nbasis_ = geom_->nbasis(); // size_t quantity :-)
+  nbasis_ = geom_->nbasis();
   const int nbasis = nbasis_;
 
   // one electron part
-  const double core_energy = compute_mo1e(nstart, nfence);
+  double core_energy;
+  unique_ptr<double[]> buf1e;
+  tie(buf1e, core_energy) = compute_mo1e(nstart, nfence);
 
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   unique_ptr<double[]> buf2e = compute_mo2e(nstart, nfence);
+
+  compress(buf1e, buf2e);
+  return core_energy;
+}
+
+
+void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) {
 
   // mo2e is compressed
   const int nocc = nocc_;
@@ -85,17 +94,15 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)
-  unique_ptr<double[]> buf3(new double[sizeij_]);
+  mo1e_ = unique_ptr<double[]>(new double[sizeij_]);
   int ij = 0;
   for (int i=0; i!=nocc; ++i) {
     for (int j=0; j<=i; ++j, ++ij) {
-      buf3[ij] = mo1e_[j+i*nocc];
+      mo1e_[ij] = buf1e[j+i*nocc];
       for (int k=0; k!=nocc; ++k)
-        buf3[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
+        mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
     }
   }
-  mo1e_ = move(buf3);
-  return core_energy;
 }
 
 
@@ -112,7 +119,7 @@ void MOFile::update_1ext_ints(const vector<double>& coeff) {
 }
 
 
-double Jop::compute_mo1e(const int nstart, const int nfence) {
+tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const int nfence) {
 
   const int ncore = nstart;
   double core_energy = 0.0;
@@ -130,10 +137,11 @@ double Jop::compute_mo1e(const int nstart, const int nfence) {
   fock0->fill_upper();
   dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.get(),nbasis_);
 
-  mo1e_ = unique_ptr<double[]>(new double[nocc_*nocc_]);
-  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.get(),nbasis_,0.0,mo1e_.get(),nocc_);
+  unique_ptr<double[]> buf(new double[nocc_*nocc_]);
+  unique_ptr<double[]> out(new double[nocc_*nocc_]);
+  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.get(),nbasis_,0.0,out.get(),nocc_);
 
-  return core_energy;
+  return make_tuple(move(out), core_energy);
 }
 
 

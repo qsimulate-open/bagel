@@ -145,9 +145,16 @@ Dvec Dvec::operator/(const Dvec& o) const {
 void Dvec::orthog(shared_ptr<const Dvec> o) {
   if (o->ij() != ij()) throw logic_error("Dvec::orthog called inconsistently"); 
   auto j = o->dvec().begin();
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) {
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
     (*i)->orthog(*j);
-  }
+}
+
+
+void Dvec::project_out(shared_ptr<const Dvec> o) {
+  if (o->ij() != ij()) throw logic_error("Dvec::orthog called inconsistently"); 
+  auto j = o->dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+    (*i)->project_out(*j);
 }
 
 

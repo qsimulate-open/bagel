@@ -90,12 +90,10 @@ double Civec::variance() const {
 
 
 double Civec::orthog(list<shared_ptr<const Civec> > c) {
-  for (auto iter = c.begin(); iter != c.end(); ++iter) {
-    const double scal = - this->ddot(**iter);
-    this->daxpy(scal, **iter);
-  }
+  for (auto iter = c.begin(); iter != c.end(); ++iter)
+    project_out(*iter);
   const double norm = this->norm();
-  const double scal = (fabs(norm)<1.0e-30 ? 0.0 : 1.0/norm);
+  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
   dscal_(lena_*lenb_, scal, cc(), 1);
   return 1.0/scal; 
 }
@@ -104,6 +102,7 @@ double Civec::orthog(shared_ptr<const Civec> o) {
   list<shared_ptr<const Civec> > v; v.push_back(o);
   return orthog(v);
 }
+
 
 Civec& Civec::operator/=(const Civec& o) {
   for (int i = 0; i != size(); ++i) {

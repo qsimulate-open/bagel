@@ -31,6 +31,7 @@
 #include <string>
 #include <memory>
 #include <cassert>
+#include <tuple>
 #include <src/wfn/reference.h>
 #include <src/util/filename.h>
 #include <src/scf/scf.h>
@@ -70,9 +71,14 @@ class MOFile {
     double create_Jiiii(const int, const int);
 
     // this sets mo1e_, core_fock_ and returns a core energy
-    virtual double compute_mo1e(const int, const int) { return double(); };
+    virtual std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) {
+      assert(false);
+      std::unique_ptr<double[]> a; double b = 0.0; return std::make_tuple(std::move(a),b);
+    };
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::unique_ptr<double[]>(); };
+
+    void compress(std::unique_ptr<double[]>& buf1e, std::unique_ptr<double[]>& buf2e);
 
   public:
     MOFile(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference>, const int, const int);
@@ -106,7 +112,7 @@ class MOFile {
 
 class Jop : public MOFile {
   protected:
-    double compute_mo1e(const int, const int);
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
     std::unique_ptr<double[]> compute_mo2e(const int, const int);
   public:
     Jop(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Reference> b, const int c, const int d) : MOFile(a,b,c,d) {
