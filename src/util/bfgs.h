@@ -46,8 +46,10 @@ class BFGS {
 
     const std::shared_ptr<const T> denom_;
 
+    const bool debug_;
+
   public:
-    BFGS(std::shared_ptr<const T> denom) : denom_(denom) {};
+    BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {};
     ~BFGS() {};
 
     std::shared_ptr<T> extrapolate(std::shared_ptr<T> _grad, std::shared_ptr<T> _value) {
@@ -59,7 +61,7 @@ class BFGS {
       // (1)
       *out /= *denom_;
 
-      if (prev_value) {
+      if (prev_value && !debug_) {
         // (3)
         std::shared_ptr<T> yy = grad->clone();
         {

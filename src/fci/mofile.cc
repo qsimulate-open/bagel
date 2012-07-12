@@ -35,18 +35,11 @@
 using namespace std;
 
 
-MOFile::MOFile(const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref,
-               const int nstart, const int nfence) : geom_(geom), ref_(ref), core_fock_(new Matrix1e(geom)) {
+MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence)
+: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)) {
 
-  do_df_ = geom->df().get();
+  do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
-
-}
-
-
-MOFile::MOFile(unique_ptr<double[]>& h1, unique_ptr<double[]>& h2) { 
-  mo1e_ = move(h1);
-  mo2e_ = move(h2);
 
 }
 
