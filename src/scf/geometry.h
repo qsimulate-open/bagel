@@ -87,6 +87,7 @@ class Geometry {
   public:
     Geometry(const std::string, const int level);
     Geometry(const std::shared_ptr<const InputData> inpt);
+    Geometry(const std::string moldenfile);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::shared_ptr<const InputData> inpt);
     ~Geometry();
 
