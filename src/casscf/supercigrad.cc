@@ -80,7 +80,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   unique_ptr<double[]> buf = half->form_2index(fulld);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 
-  // Recalculate CI vector (which can be avoided... TODO)
+  // Recalculate the CI vectors (which can be avoided... TODO)
   shared_ptr<const Dvec> civ = task_->fci()->civectors();
 
   // CI derivative is zero
@@ -93,9 +93,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
 
   // form Zd + dZ^+
-  shared_ptr<Matrix1e> dsa = ref_->rdm1_mat();
-  shared_ptr<Matrix1e> zslice = zvec->first()->slice(0, nocc);
-  shared_ptr<Matrix1e> dm = (*zslice * *dsa + (*dsa ^ *zslice)).expand();
+  shared_ptr<Matrix1e> dsa = ref_->rdm1_mat()->expand();
+  shared_ptr<Matrix1e> zslice = zvec->first();
+  shared_ptr<Matrix1e> dm(new Matrix1e(*zslice * *dsa + (*dsa ^ *zslice)));
 
   // compute dipole...
   shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();

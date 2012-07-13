@@ -559,6 +559,17 @@ void DF_Full::daxpy(const double a, const DF_Full& o) {
 }
 
 
+void DF_Full::daxpy(const double a, const DF_Half& o) {
+  if (o.size() != size()) throw logic_error("DF_Full::daxpy was called in a wrong way...");
+  daxpy_(size(), a, o.data(), 1, data(), 1);
+}
+
+
+void DF_Full::scale(const double a) {
+  dscal_(size(), a, data(), 1);
+}
+
+
 // TODO THIS FUNCTION IS STUPID
 void DF_Full::symmetrize() {
   assert(nocc1_ == nocc2_);

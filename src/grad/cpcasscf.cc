@@ -81,6 +81,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
 
+
+  // BFGS update of the denominator above
   shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom));
 
 
@@ -88,16 +90,13 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   shared_ptr<PairFile<Matrix1e, Dvec> > source(new PairFile<Matrix1e, Dvec>(*grad_));
   // antisymmetrize
   source->first()->antisymmetrize();
-  *source->first() *= 0.5;
 
-#if 0
   // divide by weight
   for (int ij = 0; ij != source->second()->ij(); ++ij) {
     source->second()->data(ij)->scale(1.0/fci_->weight(ij));
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
-#endif
   shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
 
   // initial guess
@@ -105,6 +104,19 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   z->zero();
 
   z = bfgs->extrapolate(source, z);
+
+  // inverse matrix of C
+  shared_ptr<Matrix1e> cinv(new Matrix1e(ref_->geom())); cinv->unit(); 
+  {
+    shared_ptr<Matrix1e> ctmp(new Matrix1e(*ref_->coeff()));
+    unique_ptr<int[]> ipiv(new int[nbasis]);
+    int info;
+    dgesv_(nbasis, nbasis, ctmp->data(), nbasis, ipiv.get(), cinv->data(), nbasis, info);
+    if (info) throw runtime_error("DGESV failed in CPCASSCF");
+  }
+
+  // State averaged density matrix
+  shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -136,39 +148,33 @@ shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
     shared_ptr<Matrix1e> cz0(new Matrix1e(*ref_->coeff() * *z0));
+    shared_ptr<Matrix1e> cz0cinv(new Matrix1e(*ref_->coeff() * *z0 * *cinv));
 
     // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
     // (D|jx) -> (D|jS)
-    shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0->data(), nbasis); 
-    // (D|xy) -> (D|Jy)
-    shared_ptr<DF_Half> tmp1 = df->compute_half_transform(cz0->data(), nocca);
-    // (D|Jy) -> (D|Js)
-    *tmp0 += *tmp1->compute_second_transform(ocoeff, nbasis)->apply_J();
-
-    unique_ptr<double[]> term0 = tmp0->form_2index(fulld, 2.0);
-
-    // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
-    shared_ptr<DF_Full> tmp2_1 = half->compute_second_transform(cz0->data(), nocca);
     {
-      tmp2_1->symmetrize();
-      shared_ptr<DF_Full> tmp2 = tmp2_1->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-      unique_ptr<double[]> term1 = half->form_2index(tmp2, 2.0);
+      shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0cinv->data(), nbasis); 
+      shared_ptr<const DF_Half> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
+      tmp0->daxpy(1.0, tmp1);
+      unique_ptr<double[]> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis); 
+    }
+    // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
+    shared_ptr<DF_Full> fullz = half->compute_second_transform(cz0->data(), nocca);
+    fullz->symmetrize();
+    {
+      shared_ptr<DF_Full> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+      unique_ptr<double[]> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, term1.get(), nbasis, 1.0, term0.get(), nbasis); 
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis); 
     }
 
     // one electron part...
-    shared_ptr<const Matrix1e> h(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-    shared_ptr<const Matrix1e> htilde = (*z0 % *h + *h * *z0).slice(0,nocca); 
-    shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
-    dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, term0.get(), nbasis); 
+    shared_ptr<Matrix1e> htilde(new Matrix1e(*cz0 % *ref_->hcore() * *ref_->coeff())); 
+    htilde->symmetrize();
+    dgemm_("N", "N", nbasis, nocca, nocca, 4.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis); 
 
-    for (int i = 0; i != nocca; ++i)
-      for (int j = 0; j != nbasis; ++j)
-        sigmaorb->element(j,i) += term0[j+nbasis*i]; 
-
-sigmaorb->antisymmetrize();
-*sigmaorb *= 0.5;
+    sigmaorb->antisymmetrize();
     sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     // internal core fock operator...

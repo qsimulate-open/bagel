@@ -122,8 +122,6 @@ class DF_Half {
     const size_t nbasis_;
     const size_t naux_;
 
-    size_t size() const { return naux_*nbasis_*nocc_; };
-
   public:
     DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
      : df_(df), nocc_(nocc), data_(std::move(in)), nbasis_(df->nbasis0()), naux_(df->naux()) {};
@@ -133,6 +131,7 @@ class DF_Half {
     size_t nocc() const { return nocc_; };
     size_t nbasis() const { return nbasis_; };
     size_t naux() const { return naux_; };
+    size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
     double* const data() { return data_.get(); };
@@ -183,8 +182,6 @@ class DF_Full {
     std::unique_ptr<double[]> data_;
     const size_t naux_;
 
-    size_t size() const { return nocc1_*nocc2_*naux_; };
-
   public:
     DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::unique_ptr<double[]>& in)
       : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(std::move(in)), naux_(df->naux()) {};
@@ -195,6 +192,7 @@ class DF_Full {
 
     const int nocc1() const { return nocc1_; };
     const int nocc2() const { return nocc2_; };
+    size_t size() const { return nocc1_*nocc2_*naux_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
     std::shared_ptr<DF_Full> apply_JJ() const { return apply_JJ(df_); };
@@ -240,9 +238,14 @@ class DF_Full {
     std::shared_ptr<DF_Full> copy() const;
     void daxpy(const double a, std::shared_ptr<const DF_Full> o) { daxpy(a, *o); };
     void daxpy(const double a, const DF_Full& o);
-
+    void daxpy(const double a, std::shared_ptr<const DF_Half> o) { daxpy(a, *o); };
+    void daxpy(const double a, const DF_Half& o);
     DF_Full& operator+=(const DF_Full& o) { daxpy(1.0, o); return *this; };
     DF_Full& operator-=(const DF_Full& o) { daxpy(-1.0, o); return *this; };
+
+    void scale(const double a);
+    DF_Full& operator*=(const double a) { scale(a); return *this; };
+    DF_Full& operator/=(const double a) { scale(1.0/a); return *this; };
 
     void symmetrize();
 

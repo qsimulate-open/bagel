@@ -449,6 +449,7 @@ shared_ptr<Matrix1e> Matrix1e::transpose() const {
 void Matrix1e::antisymmetrize() {
   shared_ptr<Matrix1e> trans = transpose();
   *this -= *trans;
+  *this *= 0.5;
 }
 
 
