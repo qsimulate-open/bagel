@@ -68,8 +68,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // orbital derivative is nonzero
   shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
-  // 1/2 Y_ri = hd_ri + 2 K^{kl}_{rj} D^{lk}_{ji}
-  //          = hd_ri + 2 (kr|G)(G|jl) D(lj, ki)
+  // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
+  //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution 
   shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
   shared_ptr<Matrix1e> rdm1 = ref_->rdm1_mat(target);
@@ -95,15 +95,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // form Zd + dZ^+
   shared_ptr<Matrix1e> dsa = ref_->rdm1_mat();
   shared_ptr<Matrix1e> zslice = zvec->first()->slice(0, nocc);
-  shared_ptr<Matrix1e> dm(new Matrix1e(*zslice * *dsa + (*dsa ^ *zslice)));  
+  shared_ptr<Matrix1e> dm = (*zslice * *dsa + (*dsa ^ *zslice)).expand();
 
   // compute dipole...
-  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target);
+  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
 
   dtot->daxpy(1.0, dm);
 
   // computes dipole mements
-  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff();
   shared_ptr<Matrix1e> dtotao(new Matrix1e(*coeff_occ * *dtot ^ *coeff_occ));
   Dipole dipole(geom_, dtotao);
   dipole.compute();

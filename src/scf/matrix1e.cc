@@ -145,6 +145,14 @@ shared_ptr<Matrix1e> Matrix1e::slice(const int start, const int fence) const {
   return out;
 }
 
+
+shared_ptr<Matrix1e> Matrix1e::expand() const {
+  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
+  copy(data_.get(), data_.get()+size(), out->data_.get());
+  return out;
+}
+
+
 shared_ptr<Matrix1e> Matrix1e::merge(const shared_ptr<const Matrix1e> o) const {
   shared_ptr<Matrix1e> out(new Matrix1e(*this));
   assert(nbasis_ == o->geom()->nbasis());

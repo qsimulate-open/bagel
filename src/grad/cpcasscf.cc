@@ -90,13 +90,14 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   source->first()->antisymmetrize();
   *source->first() *= 0.5;
 
-  source->first()->print();
+#if 0
   // divide by weight
   for (int ij = 0; ij != source->second()->ij(); ++ij) {
     source->second()->data(ij)->scale(1.0/fci_->weight(ij));
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
+#endif
   shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
 
   // initial guess
@@ -122,23 +123,28 @@ cout << setw(4) <<  iter << " " << norm << endl;
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
     // only here we need to have det_ instead of detex
+#if 0
     z1->set_det(detex);
     civector_->set_det(detex);
     shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_);
     z1->set_det(fci_->det());
     civector_->set_det(fci_->det());
+#else
+shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
+#endif
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
     shared_ptr<Matrix1e> cz0(new Matrix1e(*ref_->coeff() * *z0));
 
     // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
-    // (D|jS)
+    // (D|jx) -> (D|jS)
     shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0->data(), nbasis); 
-    // (D|Js)
-    shared_ptr<DF_Half> tmp1_1 = df->compute_half_transform(cz0->data(), nocca);
-    shared_ptr<const DF_Full> tmp1 = tmp1_1->compute_second_transform(ocoeff, nbasis)->apply_J();
-    *tmp0 += *tmp1;
+    // (D|xy) -> (D|Jy)
+    shared_ptr<DF_Half> tmp1 = df->compute_half_transform(cz0->data(), nocca);
+    // (D|Jy) -> (D|Js)
+    *tmp0 += *tmp1->compute_second_transform(ocoeff, nbasis)->apply_J();
+
     unique_ptr<double[]> term0 = tmp0->form_2index(fulld, 2.0);
 
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
@@ -153,7 +159,7 @@ cout << setw(4) <<  iter << " " << norm << endl;
 
     // one electron part...
     shared_ptr<const Matrix1e> h(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-    shared_ptr<const Matrix1e> htilde(new Matrix1e(*z0 % *h + *h * *z0)); 
+    shared_ptr<const Matrix1e> htilde = (*z0 % *h + *h * *z0).slice(0,nocca); 
     shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, term0.get(), nbasis); 
 
@@ -161,12 +167,14 @@ cout << setw(4) <<  iter << " " << norm << endl;
       for (int j = 0; j != nbasis; ++j)
         sigmaorb->element(j,i) += term0[j+nbasis*i]; 
 
-//  sigmaorb->antisymmetrize();
+sigmaorb->antisymmetrize();
+*sigmaorb *= 0.5;
     sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
 
+#if 0
     // TODO this is a reference implementation
     // first form 4 index
     unique_ptr<double[]> buf = tmp2_1->form_4index(fullb);
@@ -218,6 +226,9 @@ cout << setw(4) <<  iter << " " << norm << endl;
     sigmaci->project_out(civector_);
 
 sigmaci->zero();
+#else
+shared_ptr<Dvec> sigmaci = source->second()->clone(); sigmaci->zero();
+#endif
 
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
@@ -227,6 +238,7 @@ sigmaci->zero();
     z->first()->purify_redrotation(nclosed, nact, nvirt);
     z->second()->project_out(civector_);
 
+z->second()->zero();
 if (sqrt(z->ddot(*z)) < 1.0e-8) break;
 
   }

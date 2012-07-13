@@ -71,6 +71,7 @@ class Matrix1e {
     void antisymmetrize();
     std::shared_ptr<Matrix1e> resize(std::shared_ptr<const Geometry>, const int) const;
     std::shared_ptr<Matrix1e> slice(const int, const int) const;
+    std::shared_ptr<Matrix1e> expand() const;
     std::shared_ptr<Matrix1e> merge(const std::shared_ptr<const Matrix1e>) const;
     void diagonalize(double*);
     void svd(std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>);
