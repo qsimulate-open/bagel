@@ -185,7 +185,11 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, vector<tupl
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
   for (auto iter = in.begin(); iter != in.end(); ++iter) {
-    basis_info.push_back(make_tuple(get<0>(*iter), get<1>(*iter), vector<vector<double> >(1, get<2>(*iter))));
+    vector<double> tmp = get<2>(*iter);
+    vector<vector<double> > tmp2;
+    for (auto i = tmp.begin(); i != tmp.end(); ++i) tmp2.push_back(vector<double>(1, *i));
+
+    basis_info.push_back(make_tuple(get<0>(*iter), get<1>(*iter), tmp2));
   }
 
   construct_shells(basis_info);
