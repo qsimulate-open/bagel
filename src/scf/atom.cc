@@ -259,7 +259,6 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         assert(offset + zerostart <= offset + current.size() - zeroend);
       }
       const vector<double> exp = get<1>(*biter);
-// TODO we only increment when exponents are differnent from the previous one 
       if (biter+1 == in.end() || exp != get<1>(*(biter+1)) || atommap_.angular_number(get<0>(*(biter+1))) != i) {
         exponents.insert(exponents.end(), exp.begin(), exp.end()); 
         offset += exp.size(); 
