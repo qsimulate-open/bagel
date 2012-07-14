@@ -221,9 +221,6 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
     vector<pair<int, int> > contranges;
     vector<double> exponents;
 
-    // previous set of exponents... 
-    vector<double> previous_exp;
-    
     int offset = 0;
     for (auto biter = in.begin(); biter != in.end(); ++biter) {
 
@@ -263,10 +260,9 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
       }
       const vector<double> exp = get<1>(*biter);
 // TODO we only increment when exponents are differnent from the previous one 
-      if (true || exp != previous_exp) {
+      if (biter == in.end() || exp != get<1>(*(biter+1))) {
         exponents.insert(exponents.end(), exp.begin(), exp.end()); 
         offset += exp.size(); 
-        previous_exp = exp;
       }
     }
 
