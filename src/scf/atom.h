@@ -47,12 +47,13 @@ class Atom {
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients. 
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double> > > > in);
-    void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > > in);
 
     void common_init();
      
   public:
     Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);
+    Atom(const bool spherical, const std::string name, const std::vector<double>& position,
+         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > >);
     Atom(const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
     Atom(const Atom&, const std::vector<double>&);
     Atom(const Atom&, const double*);
