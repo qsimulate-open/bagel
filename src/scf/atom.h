@@ -53,10 +53,10 @@ class Atom {
      
   public:
     Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);
-    Atom(const bool spherical, const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
+    Atom(const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
     Atom(const Atom&, const std::vector<double>&);
     Atom(const Atom&, const double*);
-    ~Atom();
+    ~Atom() {};
 
     const std::string name() const { return name_; };
     const int atom_number() const { return atom_number_;};

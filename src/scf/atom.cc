@@ -77,23 +77,12 @@ Atom::Atom(const Atom& old, const double* displacement)
 }
 
 
-Atom::Atom(const bool sph, const string nm, vector<shared_ptr<Shell> > shell)
-: spherical_(sph), name_(nm), position_(shell.front()->position()), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
+Atom::Atom(const string nm, vector<shared_ptr<Shell> > shell)
+: name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
+  spherical_ = shells_.front()->spherical();
+  position_ = shells_.front()->position();
 
-}
-
-
-// counting the number of basis functions belonging to this atom
-void Atom::common_init() {
-  nbasis_ = 0;
-  for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
-    const int ang = (*siter)->angular_number();
-    if (spherical_) {
-      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1); 
-    } else {
-      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
-    }
-  }
+  common_init();
 }
 
 
@@ -193,8 +182,18 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 
 }
 
-Atom::~Atom() {
 
+// counting the number of basis functions belonging to this atom
+void Atom::common_init() {
+  nbasis_ = 0;
+  for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
+    const int ang = (*siter)->angular_number();
+    if (spherical_) {
+      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1); 
+    } else {
+      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
+    }
+  }
 }
 
 
