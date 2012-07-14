@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
-   int num_basis = 0;
+   int num_basis = 0, num_atoms = 0;
 
    /* Atom positions */
    vector< vector<double> > positions;
@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
    vector< string > names;
    /* Vector of atomic basis information vectors */
    vector<vector<tuple<string, vector<double>, vector<vector<double> > > > > basis_info;
+   /* atom order in the gto section */
+   vector<int> gto_order;
    /* Matrix of coefficients... not yet fully implemented */
    vector< vector<double> > mo_coefficients;
 
@@ -68,24 +70,28 @@ int main(int argc, char *argv[]) {
          while(!boost::regex_search(line, other_re)){
             if (ifs.eof()) { break; }
 
-            boost::regex_search(line.c_str(), matches, atoms_line);
+            if(boost::regex_search(line.c_str(), matches, atoms_line)) {
+               ++num_atoms;
 
-            string nm(matches[1].first, matches[1].second);
-            names.push_back(nm);
-            
-            string x_str(matches[2].first, matches[2].second);
-            string y_str(matches[3].first, matches[3].second);
-            string z_str(matches[4].first, matches[4].second);
+               string nm(matches[1].first, matches[1].second);
+               names.push_back(nm);
+               
+               string x_str(matches[2].first, matches[2].second);
+               string y_str(matches[3].first, matches[3].second);
+               string z_str(matches[4].first, matches[4].second);
 
-            vector<double> pos;
+               vector<double> pos;
 
-            pos.push_back(boost::lexical_cast<double>(x_str));
-            pos.push_back(boost::lexical_cast<double>(y_str));
-            pos.push_back(boost::lexical_cast<double>(z_str));
-            
-            positions.push_back(pos);
+               pos.push_back(boost::lexical_cast<double>(x_str));
+               pos.push_back(boost::lexical_cast<double>(y_str));
+               pos.push_back(boost::lexical_cast<double>(z_str));
+               
+               positions.push_back(pos);
 
-            getline(ifs,line);
+               getline(ifs,line);
+            }
+
+            else { getline(ifs,line); }
          }
 
          found_atoms = true;
@@ -116,6 +122,7 @@ int main(int argc, char *argv[]) {
             vector<tuple<string,vector<double>,vector<vector<double> > > > atom_basis_info;
 
             string atom_no(matches[1].first, matches[1].second);
+            gto_order.push_back(boost::lexical_cast<int>(atom_no.c_str()));
 
             string ang_l;
 
@@ -278,7 +285,14 @@ int main(int argc, char *argv[]) {
    cout << endl << endl;
 
    /* At this point, I hypothetically have a vector of vectors of all the info I need for the shells. Now to print. */
-   for(auto bviter = basis_info.begin(); bviter != basis_info.end(); ++bviter) {
+   /* This prints everything in atom order, i.e., gto order doesn't have to match atom order */
+   for(int i = 0; i < num_atoms; ++i){
+      auto bviter = basis_info.begin();
+      for(vector<int>::iterator oiter = gto_order.begin(); oiter != gto_order.end(); ++oiter) {
+         if( (i+1) == *oiter ) { break; }
+         else { ++bviter; }
+      }
+
       cout << "new atom line";
       for(auto aiter = bviter->begin(); aiter != bviter->end(); ++aiter) {
          const string current_name = get<0>(*aiter);
@@ -290,10 +304,8 @@ int main(int argc, char *argv[]) {
          int ii = 0;
 
          for(vector<double>::const_iterator eiter = current_exp.begin(); eiter != current_exp.end(); ++eiter) {
-            // print exp
             cout << *eiter;
 
-            // print all coeff
             for (vector<vector<double> >::const_iterator citer = current_coeff.begin(); citer != current_coeff.end(); ++citer) {
                if( ii < citer->size() ) {
                   cout << "   " << (*citer)[ii];
