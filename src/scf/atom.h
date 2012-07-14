@@ -45,6 +45,10 @@ class Atom {
     int lmax_;
 
     AtomMap atommap_;
+
+    // This function sets shell_ and lmax_
+    // in : a vector of an angular label, exponents, and coefficients. 
+    void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double> > > > in);
      
   public:
     Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);

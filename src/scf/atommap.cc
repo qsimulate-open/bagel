@@ -25,6 +25,7 @@
 
 
 #include <src/scf/atommap.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -57,4 +58,11 @@ AtomMap::AtomMap () {
 
 AtomMap::~AtomMap () {
 
+}
+
+
+const int AtomMap::angular_number(const string input) const {
+  auto miter = angmap.find(input);  
+  if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
+  return miter->second;
 }

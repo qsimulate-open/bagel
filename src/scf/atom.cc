@@ -102,6 +102,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
     nnm[0] = toupper(nnm[0]); 
     boost::regex atom_line("Atom:" + nnm +"\\s*$");
  
+    // Reading a file to the end of the file
     string buffer;
     while (!ifs.eof()) {
       getline(ifs, buffer);
@@ -121,6 +122,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 
           string::const_iterator start = buffer.begin();
           string::const_iterator end = buffer.end();
+
           if (regex_search(start, end, what, first_line)) {
             // if something is in temporary area, add to basis_info
             if (!exponents.empty()) {
@@ -164,74 +166,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
     }
     if (!basis_found) throw runtime_error("Basis was not found.");
 
-    // convert basis_info to vector<Shell> 
-    vector<tuple<string, vector<double>, vector<vector<double> > > >::const_iterator biter; 
-    for (int i = 0; i != 10; ++i) { 
-      vector<vector<double> > contractions;
-      vector<pair<int, int> > contranges;
-      vector<double> exponents;
-      
-      int offset = 0;
-      for (biter = basis_info.begin(); biter != basis_info.end(); ++biter) {
-        map<string, int> angmap = atommap_.angmap;
-        map<string, int>::iterator miter = angmap.find(get<0>(*biter));  
-        if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
-        const int angular = miter->second; 
-        if (angular != i) continue;
-        
-        const vector<vector<double> > conts = get<2>(*biter);
-        for (int j = 0; j != conts.front().size(); ++j) {
-          vector<double> current;
-          for (vector<vector<double> >::const_iterator citer = conts.begin(); citer != conts.end(); ++citer) 
-            current.push_back((*citer)[j]);
-          // checking zero's above and below in the segmented contractions
-          int zerostart = 0;
-          for (vector<double>::const_iterator iter = current.begin(); iter != current.end(); ++iter) {
-            if (*iter == 0.0) ++zerostart;
-            else break;
-          }
-          int zeroend = 0;
-          for (vector<double>::const_reverse_iterator iter = current.rbegin(); iter != current.rend(); ++iter) {
-            if (*iter == 0.0) ++zeroend;
-            else break;
-          }
-          vector<double> cont2(offset, 0.0); 
-          cont2.insert(cont2.end(), current.begin(), current.end());
-          contractions.push_back(cont2);
-          contranges.push_back(make_pair(offset + zerostart, offset + current.size() - zeroend));
-          assert(offset + zerostart <= offset + current.size() - zeroend);
-        }
-        const vector<double> exp = get<1>(*biter);
-        exponents.insert(exponents.end(), exp.begin(), exp.end()); 
-        offset += exp.size(); 
-      }
-      if (!exponents.empty()) { 
-//  normalizing
-        vector<pair<int, int> >::iterator citer = contranges.begin();
-        for (vector<vector<double> >::iterator iter = contractions.begin(); iter != contractions.end(); ++iter, ++citer) {
-          vector<double>::const_iterator eiter = exponents.begin();
-          double denom = 1.0;
-          for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
-          for (vector<double>::iterator diter = iter->begin(); diter != iter->end(); ++diter, ++eiter) {
-            *diter *= ::pow(2.0 * *eiter / PI, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
-          }
-  
-          vector<vector<double> > cont(1, *iter);
-          vector<pair<int, int> > cran(1, *citer);
-          RefShell current(new Shell(spherical_, position_, i, exponents, cont, cran));
-          vector<RefShell> cinp(2, current); 
-          OverlapBatch coverlap(cinp);
-          coverlap.compute();
-          const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
-          for (vector<double>::iterator diter = iter->begin(); diter != iter->end(); ++diter) *diter *= scal;
-        } 
-
-        RefShell currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
-        shells_.push_back(currentbatch);
-        lmax_ = i;
-      }
-
-    } // end of batch loop 
+    construct_shells(basis_info);
   }
 
   ifs.close();
@@ -255,8 +190,118 @@ Atom::~Atom() {
 }
 
 
+/* NOTE : Actually I realized that the code works with the following basis format as well
+
+Atom:Li
+s        1469.0000000              0.0007660       -0.0001200 
+          220.5000000              0.0058920       -0.0009230
+           50.2600000              0.0296710       -0.0046890
+           14.2400000              0.1091800       -0.0176820 
+            4.5810000              0.2827890       -0.0489020 
+            1.5800000              0.4531230       -0.0960090 
+            0.5640000              0.2747740       -0.1363800 
+            0.0734500              0.0097510        0.5751020
+s           0.0280500              1.0000000    
+p           1.5340000              0.0227840    
+            0.2749000              0.1391070    
+            0.0736200              0.5003750    
+p           0.0240300              1.0000000    
+d           0.1239000              1.0000000    
+
+which was the reason why the third argument was a vector of a vector.
+
+*/
+
+
+// convert basis_info to vector<Shell> 
+void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double> > > > in) {
+
+  for (int i = 0; i != 10; ++i) { 
+    vector<vector<double> > contractions;
+    vector<pair<int, int> > contranges;
+    vector<double> exponents;
+
+    // previous set of exponents... 
+    vector<double> previous_exp;
+    
+    int offset = 0;
+    for (auto biter = in.begin(); biter != in.end(); ++biter) {
+
+      // check the angular number
+      if (atommap_.angular_number(get<0>(*biter)) != i) continue;
+      
+      // contraction coefficient matrix
+      const vector<vector<double> > conts = get<2>(*biter);
+
+      // loop over contraction coefficients
+      for (int j = 0; j != conts.front().size(); ++j) {
+
+        // picking the current contraction coefficients (for the case there are multiple coefficients specified).
+        vector<double> current;
+        for (auto citer = conts.begin(); citer != conts.end(); ++citer) 
+          current.push_back((*citer)[j]);
+
+        // counting the number of zeros above and below in the segmented contractions
+        int zerostart = 0;
+        for (auto iter = current.begin(); iter != current.end(); ++iter) {
+          if (*iter == 0.0) ++zerostart;
+          else break;
+        }
+        int zeroend = 0;
+        for (auto iter = current.rbegin(); iter != current.rend(); ++iter) {
+          if (*iter == 0.0) ++zeroend;
+          else break;
+        }
+
+        // first make a vector with zero
+        vector<double> cont2(offset, 0.0); 
+        // and add the coefficients
+        cont2.insert(cont2.end(), current.begin(), current.end());
+        contractions.push_back(cont2);
+        contranges.push_back(make_pair(offset + zerostart, offset + current.size() - zeroend));
+        assert(offset + zerostart <= offset + current.size() - zeroend);
+      }
+      const vector<double> exp = get<1>(*biter);
+// TODO we only increment when exponents are differnent from the previous one 
+      if (true || exp != previous_exp) {
+        exponents.insert(exponents.end(), exp.begin(), exp.end()); 
+        offset += exp.size(); 
+        previous_exp = exp;
+      }
+    }
+
+    // this is to do with normalization
+    if (!exponents.empty()) { 
+      auto citer = contranges.begin();
+      for (auto iter = contractions.begin(); iter != contractions.end(); ++iter, ++citer) {
+        auto eiter = exponents.begin();
+        double denom = 1.0;
+        for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
+        for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
+          *diter *= ::pow(2.0 * *eiter / PI, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
+
+        vector<vector<double> > cont(1, *iter);
+        vector<pair<int, int> > cran(1, *citer);
+        RefShell current(new Shell(spherical_, position_, i, exponents, cont, cran));
+        vector<RefShell> cinp(2, current); 
+        OverlapBatch coverlap(cinp);
+        coverlap.compute();
+        const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
+        for (auto diter = iter->begin(); diter != iter->end(); ++diter) *diter *= scal;
+      } 
+
+      RefShell currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
+      shells_.push_back(currentbatch);
+      lmax_ = i;
+    }
+
+  } // end of batch loop 
+
+}
+
+
 void Atom::print_basis() const {
-  for(vector<RefShell>::const_iterator iter = shells_.begin(); iter != shells_.end(); ++iter)
+  for(auto iter = shells_.begin(); iter != shells_.end(); ++iter)
      cout << (*iter)->show() << endl; 
 }
 
