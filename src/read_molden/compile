@@ -1,0 +1,3 @@
+#!/bin/bash
+
+g++ read_molden.cc -o read_molden -lboost_regex -L/opt/local/lib -std=c++11
