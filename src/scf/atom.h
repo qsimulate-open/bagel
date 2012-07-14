@@ -62,7 +62,7 @@ class Atom {
     const int atom_number() const { return atom_number_;};
     const std::vector<double> position() const { return position_; };
     const double position(const unsigned int i) const { return position_[i]; };
-    const std::vector<std::shared_ptr<Shell> > shells() const { return shells_; };
+    const std::vector<std::shared_ptr<Shell> >& shells() const { return shells_; };
     const int nshell() const { return shells_.size(); };
 
     const int nbasis() const { return nbasis_; };

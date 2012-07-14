@@ -44,6 +44,13 @@ typedef std::shared_ptr<Atom> RefAtom;
 
 extern StackMem* stack;
 
+static AtomMap atommap_;
+
+static vector<double> vec3(const double i, const double j, const double k) {
+  vector<double> out(3); out[0] = i; out[1] = j; out[2] = k; return out; 
+};
+
+
 Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   : spherical_(true), input_(""), lmax_(0), level_(0) {
 
@@ -70,14 +77,8 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
 
   const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
-  AtomMap tmp;
-  map<string, int> amap = tmp.atommap;
-
-  // read geometry
-  nbasis_ = 0;
-  naux_ = 0;
-  nele_ = 0;
-  nfrc_ = 0;
+  // Misc
+  aux_merged_ = false;
 
   pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
   for (auto iter = bound.first; iter != bound.second; ++iter) { 
@@ -98,45 +99,10 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
 
       {
         RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
-
-        map<string, int>::const_iterator aiter = amap.find(aname);
-        assert(aiter != amap.end());
-        nele_ += aiter->second;
-
-        const vector<RefShell> tmp = catom->shells(); 
-        int cc = 0;
-        vector<int> coffsets;
-        for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-          coffsets.push_back(nbasis_ + cc);
-          const int ang = (*iter)->angular_number();
-          const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
-          cc += angsize * (*iter)->num_contracted();
-        }
-
-        lmax_ = max(lmax_, catom->lmax());
-        nbasis_ += catom->nbasis();
-        offsets_.push_back(coffsets);
         atoms_.push_back(catom); 
       }
       if (!auxfile_.empty()){
         RefAtom catom(new Atom(spherical_, aname, positions, auxfile_));
-
-        map<string, int>::const_iterator aiter = amap.find(aname);
-        assert(aiter != amap.end());
-
-        const vector<RefShell> tmp = catom->shells(); 
-        int cc = 0;
-        vector<int> coffsets;
-        for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-          coffsets.push_back(naux_ + cc);
-          const int ang = (*iter)->angular_number();
-          const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
-          cc += angsize * (*iter)->num_contracted();
-        }
-
-        aux_lmax_ = max(lmax_, catom->lmax());
-        naux_ += catom->nbasis();
-        aux_offsets_.push_back(coffsets);
         aux_atoms_.push_back(catom); 
       }
     } else {
@@ -144,29 +110,12 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
     } 
   }
 
+  common_init1();
+
+
   print_atoms();
-  nuclear_repulsion_ = compute_nuclear_repulsion();
 
-  // symmetry set-up
-  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
-  nirrep_ = plist_->nirrep();
-  // Misc
-  aux_merged_ = false;
-
-  cout << endl;
-  cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nele() << endl << endl;
-  if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
-
-  if (!auxfile_.empty()) {
-    cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
-    cout << "    o Being stored without compression. Storage requirement is "
-         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
-    const int t = ::clock();
-    df_ = form_fit<ERIFit>(thresh_overlap, true); // true means we construct J^-1/2
-
-    cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
-  }
+  common_init2(true, thresh_overlap);
 
   // static external field
   external_ = vector<double>(3);
@@ -177,16 +126,81 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", " 
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl; 
+}
+
+
+void Geometry::common_init1() {
+  lmax_ = 0;
+  aux_lmax_ = 0;
+  nbasis_ = 0;
+  naux_ = 0;
+  nele_ = 0;
+  nfrc_ = 0;
+
+  for (auto catom = atoms_.begin(); catom != atoms_.end(); ++catom) {
+    nele_ += atommap_.atom_number((*catom)->name());
+
+    int cc = 0;
+    vector<int> coffsets;
+    for (auto iter = (*catom)->shells().begin(); iter != (*catom)->shells().end(); ++iter) {
+      coffsets.push_back(nbasis_ + cc);
+      const int ang = (*iter)->angular_number();
+      const int angsize = spherical_ ? (2*ang+1) : (ang+1)*(ang+2)/2;
+      cc += angsize * (*iter)->num_contracted();
+    }
+    lmax_ = max(lmax_, (*catom)->lmax());
+    nbasis_ += (*catom)->nbasis();
+    offsets_.push_back(coffsets);
+  }
+
+  if (!auxfile_.empty()) {
+    for (auto catom = aux_atoms_.begin(); catom != aux_atoms_.end(); ++catom) {
+      int cc = 0;
+      vector<int> coffsets;
+      for (auto iter = (*catom)->shells().begin(); iter != (*catom)->shells().end(); ++iter) {
+        coffsets.push_back(naux_ + cc);
+        const int ang = (*iter)->angular_number();
+        const int angsize = spherical_ ? (2*ang+1) : (ang+1)*(ang+2)/2;
+        cc += angsize * (*iter)->num_contracted();
+      }
+      aux_lmax_ = max(lmax_, (*catom)->lmax());
+      naux_ += (*catom)->nbasis();
+      aux_offsets_.push_back(coffsets);
+    }
+  }
+}
+
+
+void Geometry::common_init2(const bool print, const double thresh) {
+  // symmetry set-up
+  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
+  nirrep_ = plist_->nirrep();
+
+  if (print) {
+    cout << endl;
+    cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
+    cout << "  Number of electrons      : " << setw(8) << nele() << endl << endl;
+  }
+
+  nuclear_repulsion_ = compute_nuclear_repulsion();
+
+  if (!auxfile_.empty()) {
+    if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
+    cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
+    cout << "    o Being stored without compression. Storage requirement is "
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
+    const int t = ::clock();
+    df_ = form_fit<ERIFit>(thresh, true); // true means we construct J^-1/2
+
+    cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
+  }
 
 }
 
-static vector<double> vec3(const double i, const double j, const double k) {
-  vector<double> out(3); out[0] = i; out[1] = j; out[2] = k; return out; 
-};
+
 
 Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_ptr<const InputData> inpt)
-  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), nbasis_(o.nbasis_), nele_(o.nele_), nfrc_(o.nfrc_), naux_(o.naux_),
-    lmax_(o.lmax_), aux_lmax_(o.aux_lmax_), offsets_(o.offsets_), aux_offsets_(o.aux_offsets_), level_(o.level_), basisfile_(o.basisfile_),
+  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
   // first construct atoms using displacements
@@ -197,227 +211,35 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
     aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
   }
 
-  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
-  nirrep_ = plist_->nirrep();
-  if (nirrep_ != o.nirrep_) throw logic_error("opt with symmetry is not tested well yet"); 
-  nuclear_repulsion_ = compute_nuclear_repulsion();
-
-  if (!auxfile_.empty()) {
-    const double thresh_overlap = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
-    cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
-    cout << "    o Being stored without compression. Storage requirement is "
-         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
-    const int t = ::clock();
-    df_ = form_fit<ERIFit>(thresh_overlap, true); // true means we construct J^-1/2
-
-    cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
-  }
+  common_init1();
+  const double thresh_overlap = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
+  common_init2(false, thresh_overlap);
 }
 
 
-Geometry::Geometry(const string s, const int levl)
-  : spherical_(true), input_(s), lmax_(0), level_(levl) {
 
-throw logic_error("calling unsupported Geometry::Geometry");
-  // open input file
-  ifstream ifs;
-  ifs.open(input_.c_str());
-  assert(ifs.is_open());
+Geometry::Geometry(const vector<shared_ptr<Atom> > atoms, const multimap<string, string> geominfo)
+  : spherical_(true), input_(""), lmax_(0), level_(0) {
 
-  boost::regex frozen_str("frozen"); 
-  bool frozen = false;
-  while(!ifs.eof()) {
-    string sline;
-    getline(ifs, sline);
-    if(sline.empty()) continue;
-    string::const_iterator start = sline.begin();
-    string::const_iterator end = sline.end();
-    boost::smatch what;
-    if (regex_search(start, end, what, frozen_str)) {
-      frozen = true; 
-      break;
-    }
-  }
-  ifs.clear(); 
-  ifs.seekg(0);
+  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
+  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
-  boost::regex gamma_str("gamma");
-  boost::regex gamma_num("[0-9\\.eE\\+-]+");
-  double gamma = 1.5;
-  while(!ifs.eof()) {
-    string sline;
-    getline(ifs, sline);
-    if(sline.empty()) continue;
-    string::const_iterator start = sline.begin();
-    string::const_iterator end = sline.end();
-    boost::smatch what;
-    if (regex_search(start, end, what, gamma_str)) {
-      start = what[0].second;
-      if (regex_search(start, end, what, gamma_num)) {
-        const string gamma_str(what[0].first, what[0].second);
-        gamma = boost::lexical_cast<double>(gamma_str);
-        break;
-      }
-    }
-  }
-  gamma_ = gamma;
-  ifs.clear();
-  ifs.seekg(0); 
-
-  // read basis file
-  // this will be read from the input
-  string basis_name("Basis");
-  for (int i = 0; i != level_; ++i) basis_name = "G" + basis_name;
-  basis_name = "\\b" + basis_name;
-  const boost::regex basis_reg(basis_name);
-
-  while(!ifs.eof()) {
-    string sline;
-    getline(ifs, sline);
-    if(sline.empty()) continue;
-    string::const_iterator start = sline.begin();
-    string::const_iterator end = sline.end();
-    boost::smatch what;
-    if (regex_search(start, end, what, basis_reg)) {
-      start = what[0].second;
-      boost::regex car_reg("cartesian");
-      if (regex_search(start, end, what, car_reg)) spherical_ = false; 
-      if (!spherical_) cout << "  Cartesian basis functions are used" << endl;
-      getline(ifs, sline);
-      if (sline.empty()) continue;
-      start = sline.begin();
-      end = sline.end();
-      const boost::regex reg("(\\S+)");
-      const bool found = boost::regex_search(start, end, what, reg);
-      const string tmpstr(what[1].first, what[1].second);
-      basisfile_ = tmpstr; 
-
-      start = what[0].second;
-      if(regex_search(start, end, what, reg)) {
-        const string auxstr(what[1].first, what[1].second);
-        auxfile_ = auxstr;
-      }
-      
-      break;
-    }
+  // cartesian or not.
+  const bool cart = read_input<bool>(geominfo, "cartesian", false);
+  if (cart) {
+    cout << "  Cartesian basis functions are used" << endl;
+    spherical_ = false;
   }
 
-  assert(!basisfile_.empty());
-  ifs.clear();
-  ifs.seekg(0);
+  // basis
+  basisfile_ = read_input<string>(geominfo, "basis", "");
+  if (basisfile_ == "") throw runtime_error("There is no basis specification");
+  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  // symmetry
+  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
-  AtomMap tmp;
-  map<string, int> amap = tmp.atommap;
+  const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
-  // read geometry
-  nbasis_ = 0;
-  naux_ = 0;
-  nele_ = 0;
-  nfrc_ = 0;
-
-  const boost::regex mole_reg("Molecule");
-  while(!ifs.eof()){
-    string sline;
-    getline(ifs, sline); 
-    if (sline.empty()) continue; 
-    string::const_iterator start = sline.begin();
-    string::const_iterator end = sline.end();
-    boost::smatch what;
-    if (regex_search(start, end, what, mole_reg)) {
-      start = what[0].second;
-      boost::regex sym_reg("[cdCD][1-2]?[vdshVDSHiI]?");
-      if (regex_search(start, end, what, sym_reg)) {
-        string symtmp(what[0].first, what[0].second);
-        transform(symtmp.begin(), symtmp.end(), symtmp.begin(),(int (*)(int))std::tolower);
-        symmetry_ = symtmp; 
-      } else {
-        string symtmp("c1");
-        symmetry_ = symtmp;
-      }
-      const boost::regex atom_reg("Atom\\s*\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
-      while (1) {
-        string atomline; 
-        getline(ifs, atomline); 
-        start = atomline.begin();
-        end = atomline.end();
-        if (regex_search(start, end, what, atom_reg)) {
-          const string aname(what[1].first, what[1].second);
-          const string x_str(what[2].first, what[2].second);
-          const string y_str(what[3].first, what[3].second);
-          const string z_str(what[4].first, what[4].second);
-          vector<double> positions;
-          positions.push_back(boost::lexical_cast<double>(x_str));
-          positions.push_back(boost::lexical_cast<double>(y_str));
-          positions.push_back(boost::lexical_cast<double>(z_str));
-
-          {
-            RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
-
-            map<string, int>::const_iterator aiter = amap.find(aname);
-            assert(aiter != amap.end());
-            nele_ += aiter->second;
-            if (aiter->second > 2 && frozen) nfrc_ += 2;
-
-            const vector<RefShell> tmp = catom->shells(); 
-            int cc = 0;
-            vector<int> coffsets;
-            for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-              coffsets.push_back(nbasis_ + cc);
-              const int ang = (*iter)->angular_number();
-              const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
-              cc += angsize * (*iter)->num_contracted();
-            }
-
-            lmax_ = max(lmax_, catom->lmax());
-            nbasis_ += catom->nbasis();
-            offsets_.push_back(coffsets);
-            atoms_.push_back(catom); 
-          }
-          if (!auxfile_.empty()){
-            RefAtom catom(new Atom(spherical_, aname, positions, auxfile_));
-
-            map<string, int>::const_iterator aiter = amap.find(aname);
-            assert(aiter != amap.end());
-
-            const vector<RefShell> tmp = catom->shells(); 
-            int cc = 0;
-            vector<int> coffsets;
-            for (vector<RefShell>::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
-              coffsets.push_back(naux_ + cc);
-              const int ang = (*iter)->angular_number();
-              const int angsize = spherical_ ? (2 * ang + 1) : (ang + 1) * (ang + 2) / 2;
-              cc += angsize * (*iter)->num_contracted();
-            }
-
-            aux_lmax_ = max(lmax_, catom->lmax());
-            naux_ += catom->nbasis();
-            aux_offsets_.push_back(coffsets);
-            aux_atoms_.push_back(catom); 
-          }
-        } else {
-          break; 
-        }
-      }
-      break;
-    } 
-  }
-  ifs.close();
-
-  if (level_ == 0) print_atoms();
-  nuclear_repulsion_ = compute_nuclear_repulsion();
-
-  // symmetry set-up
-  std::shared_ptr<Petite> tmpp(new Petite(atoms_, symmetry_));
-  plist_ = tmpp;
-  nirrep_ = plist_->nirrep();
-  // Misc
-  aux_merged_ = false;
-
-  cout << endl;
-  cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
-  cout << "  Number of electrons      : " << setw(8) << nele() << endl << endl;
-  if (!auxfile_.empty()) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
-  cout << endl;
 }
 
 
