@@ -179,6 +179,20 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 }
 
 
+Atom::Atom(const bool sph, const string nm, const vector<double>& p, vector<tuple<string, vector<double>, vector<double> > > in)
+ : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) { 
+
+  // tuple
+  vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
+  for (auto iter = in.begin(); iter != in.end(); ++iter) {
+    basis_info.push_back(make_tuple(get<0>(*iter), get<1>(*iter), vector<vector<double> >(1, get<2>(*iter))));
+  }
+
+  construct_shells(basis_info);
+  common_init();
+} 
+
+
 // counting the number of basis functions belonging to this atom
 void Atom::common_init() {
   nbasis_ = 0;
@@ -214,12 +228,6 @@ d           0.1239000              1.0000000
 which was the reason why the third argument was a vector of a vector.
 
 */
-
-void Atom::construct_shells(vector<tuple<string, vector<double>, vector<double> > > in) {
-  vector<tuple<string, vector<double>, vector<vector<double> > > > out;
-  for (auto i = in.begin(); i != in.end(); ++i) out.push_back(make_tuple(get<0>(*i), get<1>(*i), vector<vector<double> >(1,get<2>(*i))));
-  construct_shells(out);
-}
 
 
 // convert basis_info to vector<Shell> 
