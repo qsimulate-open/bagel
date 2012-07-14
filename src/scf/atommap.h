@@ -39,6 +39,7 @@ struct AtomMap {
     std::map<std::string, int> angmap;
 
     const int angular_number(const std::string) const;
+    const int atom_number(const std::string) const;
 };
 
 #endif

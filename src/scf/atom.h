@@ -30,11 +30,11 @@
 #include <vector>
 #include <string>
 #include <src/scf/shell.h>
-#include <src/scf/atommap.h>
 #include <memory>
 
 class Atom {
   protected:
+
     bool spherical_;
 
     std::string name_;
@@ -44,14 +44,16 @@ class Atom {
     int nbasis_;
     int lmax_;
 
-    AtomMap atommap_;
-
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients. 
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double> > > > in);
+    void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > > in);
+
+    void common_init();
      
   public:
     Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);
+    Atom(const bool spherical, const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
     Atom(const Atom&, const std::vector<double>&);
     Atom(const Atom&, const double*);
     ~Atom();

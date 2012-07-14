@@ -37,12 +37,15 @@
 #include <boost/lexical_cast.hpp>
 #include <tuple>
 #include <src/osint/overlapbatch.h>
+#include <src/scf/atommap.h>
 
 #define PI 3.1415926535897932
 
 using namespace std;
 
 typedef std::shared_ptr<Shell> RefShell;
+
+static const AtomMap atommap_;
 
 Atom::Atom(const Atom& old, const vector<double>& displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
@@ -74,8 +77,28 @@ Atom::Atom(const Atom& old, const double* displacement)
 }
 
 
+Atom::Atom(const bool sph, const string nm, vector<shared_ptr<Shell> > shell)
+: spherical_(sph), name_(nm), position_(shell.front()->position()), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
+
+}
+
+
+// counting the number of basis functions belonging to this atom
+void Atom::common_init() {
+  nbasis_ = 0;
+  for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
+    const int ang = (*siter)->angular_number();
+    if (spherical_) {
+      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1); 
+    } else {
+      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
+    }
+  }
+}
+
+
 Atom::Atom(const bool sph, const string nm, const vector<double>& p, const string basis_file)
-: spherical_(sph), name_(nm), position_(p) {
+: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   ifstream ifs;
   string bfile = basis_file;
@@ -84,12 +107,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
   bool basis_found = false;
   ifs.open(filename.c_str());
 
-  map<string, int> atommap = atommap_.atommap;
-  map<string, int>::iterator tmpiter = atommap.find(nm); 
-  if (tmpiter == atommap.end()) throw runtime_error("Unknown atom specified.");
-  atom_number_ = tmpiter->second; 
-
-  // this will be used in the construction of Basis_batch
+  // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
 
   if (!ifs.is_open()) {
@@ -171,18 +189,8 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 
   ifs.close();
 
-  // counting the number of basis functions belonging to this atom
-  nbasis_ = 0;
-  for (vector<RefShell>::iterator siter = shells_.begin(); siter != shells_.end(); ++siter) {
-    const int ang = (*siter)->angular_number();
-    if (spherical_) {
-      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1); 
-    } else {
-      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
-    }
-  }
+  common_init();
 
-//print_basis();
 }
 
 Atom::~Atom() {
@@ -211,6 +219,12 @@ d           0.1239000              1.0000000
 which was the reason why the third argument was a vector of a vector.
 
 */
+
+void Atom::construct_shells(vector<tuple<string, vector<double>, vector<double> > > in) {
+  vector<tuple<string, vector<double>, vector<vector<double> > > > out;
+  for (auto i = in.begin(); i != in.end(); ++i) out.push_back(make_tuple(get<0>(*i), get<1>(*i), vector<vector<double> >(1,get<2>(*i))));
+  construct_shells(out);
+}
 
 
 // convert basis_info to vector<Shell> 
