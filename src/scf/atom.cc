@@ -50,29 +50,25 @@ static const AtomMap atommap_;
 Atom::Atom(const Atom& old, const vector<double>& displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   assert(displacement.size() == 3 && old.position().size() == 3);
-  vector<double>::const_iterator diter, oiter;
   const vector<double> opos = old.position();
-  for (diter = displacement.begin(), oiter = opos.begin(); diter != displacement.end(); ++diter, ++oiter) {
+  for (auto diter = displacement.begin(), oiter = opos.begin(); diter != displacement.end(); ++diter, ++oiter) {
     position_.push_back(*diter + *oiter); 
   }
-
   const vector<RefShell> old_shells = old.shells();
-  for(vector<RefShell>::const_iterator siter = old_shells.begin(); siter != old_shells.end(); ++siter)
+  for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
 } 
 
 
 Atom::Atom(const Atom& old, const double* displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
-  vector<double>::const_iterator diter, oiter;
   const vector<double> opos = old.position();
   int i = 0;
-  for (oiter = opos.begin(); oiter != opos.end(); ++i, ++oiter) {
+  for (auto oiter = opos.begin(); oiter != opos.end(); ++i, ++oiter) {
     position_.push_back(displacement[i] + *oiter); 
   }
-
   const vector<RefShell> old_shells = old.shells();
-  for(vector<RefShell>::const_iterator siter = old_shells.begin(); siter != old_shells.end(); ++siter)
+  for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
 }
 
