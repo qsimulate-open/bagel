@@ -298,8 +298,6 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), energy(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_,
                                           fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av()));
 
-  fci_->compute();
-  fci_->compute_rdm12();
   // TODO
   // compute one-boedy operators
   shared_ptr<Matrix1e> f;

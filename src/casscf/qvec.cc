@@ -36,7 +36,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr
 
   shared_ptr<const DF_Half> half = fci->jop()->mo2e_1ext();
 
-  shared_ptr<const DF_Full> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_J()->apply_J(); 
+  shared_ptr<const DF_Full> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ(); 
 
   shared_ptr<const DF_Full> prdm = full->apply_2rdm(fci->rdm2_av()->data());
 

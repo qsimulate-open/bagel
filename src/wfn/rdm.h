@@ -80,6 +80,14 @@ class RDM {
       return out;
     };
 
+    // returns if this is natural orbitals - only for rank 1
+    bool natural_orbitals() const {
+      if (rank != 1) throw std::logic_error("RDM::natural_orbitals() is implemented only for rank 1");
+      const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
+      const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1); 
+      return ::fabs(a-b) < 1.0e-12;
+    };
+
     std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
       assert(rank == 1);
       std::vector<double> buf(dim_*dim_);
