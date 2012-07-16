@@ -28,7 +28,8 @@
 
 using namespace std;
 
-Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci)
+
+Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2> > rdm)
  : QFile(n,m) {
 
   const int nbasis = df->nbasis0();
@@ -38,7 +39,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr
 
   shared_ptr<const DF_Full> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ(); 
 
-  shared_ptr<const DF_Full> prdm = full->apply_2rdm(fci->rdm2_av()->data());
+  shared_ptr<const DF_Full> prdm = full->apply_2rdm(rdm->data());
 
   unique_ptr<double[]> tmp(new double[nbasis*m]);
   half->form_2index(tmp, prdm);

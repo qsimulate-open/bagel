@@ -39,6 +39,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
+grad->first()->print();
 }
 
 
@@ -73,11 +74,13 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   {
     shared_ptr<Matrix1e> d0(new Matrix1e(*eig_));
     for (int i = 0; i != d0->size(); ++i)
-      if (fabs(d0->data(i)) < 1.0e-15) d0->data(i) = 1.0e10;
+      if (::fabs(d0->data(i)) < 1.0e-10) d0->data(i) = 1.0;
     shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
     shared_ptr<Dvec>  d1(new Dvec(d1_tmp, ref_->nstate()));
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
+// TODO understand this factor of 2
+*d1 *= 2;
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
 
@@ -172,7 +175,6 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis); 
 
     sigmaorb->antisymmetrize();
-    sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
@@ -232,7 +234,6 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
     z = solver->compute_residual(z, sigma);
     z = bfgs->extrapolate(z, solver->civec());
 
-    z->first()->purify_redrotation(nclosed, nact, nvirt);
     z->second()->project_out(civector_);
 
 if (sqrt(z->ddot(*z)) < 1.0e-8) break;

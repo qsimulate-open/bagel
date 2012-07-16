@@ -91,8 +91,7 @@ void WernerKnowles::compute() {
       // initial dR value.
       shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
       shared_ptr<const Matrix1e> denom = compute_denom(C);
-      for (int i = 0; i != dR->size(); ++i)
-        dR->data(i) /=  denom->data(i);
+      *dR /= *denom;
 
       BFGS<Matrix1e> bfgs(denom);
 

@@ -186,7 +186,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), ref_->coeff(), nclosed_, fci_));
+  shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff, nclosed_, fci_, fci_->rdm2_av()));
 
   {
     // Fock operators
@@ -199,8 +199,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
       shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, ref_->schwarz()));
-      shared_ptr<Matrix1e> fact(new Matrix1e(*coeff % (*fact_ao-*hcore_) * *coeff));
-      f = shared_ptr<Matrix1e>(new Matrix1e(*finact+*fact));
+      f = shared_ptr<Matrix1e>(new Matrix1e(*finact + *coeff%(*fact_ao-*hcore_)**coeff));
     } else {
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, ref_->schwarz()));
@@ -235,37 +234,19 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   fill(denom->data(), denom->data()+denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
-  if (superci) {
-    for (int i = 0; i != nact_; ++i)
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = gaa->element(i,i) / occup_[i] + f->element(j+nocc_, j+nocc_);
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nvirt_; ++j, ++target)
+      *target = (-fact->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
 
-    target = denom->ptr_vc();
-    for (int i = 0; i != nclosed_; ++i)
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = f->element(j+nocc_, j+nocc_) - f->element(i, i);
+  target = denom->ptr_vc();
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nvirt_; ++j, ++target)
+      *target = (f->element(j+nocc_, j+nocc_) - f->element(i, i)) / (superci ? 2.0 : 1.0);
 
-    target = denom->ptr_ca();
-    for (int i = 0; i != nact_; ++i) {
-      const double fac = -((2.0 - 2.0*occup_[i]) * factp->element(i, i) - gaa->element(i, i)) / (2.0 - occup_[i]);
-      for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = fac - f->element(j, j);
-    }
-  } else {
-    for (int i = 0; i != nact_; ++i)
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = -fact->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_);
-
-    target = denom->ptr_vc();
-    for (int i = 0; i != nclosed_; ++i)
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = 2.0*f->element(j+nocc_, j+nocc_) - 2.0*f->element(i, i);
-
-    target = denom->ptr_ca();
-    for (int i = 0; i != nact_; ++i) {
-      for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = (f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i,i)) - f->element(j, j)*(2.0 - occup_[i]);
-    }
+  target = denom->ptr_ca();
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nclosed_; ++j, ++target)
+      *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i,i)) - f->element(j, j)*(2.0 - occup_[i])) / (superci ? 2.0 - occup_[i] : 1.0);
   }
   d = denom;
 }
