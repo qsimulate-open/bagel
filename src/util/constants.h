@@ -1,10 +1,10 @@
 //
 // Newint - Parallel electron correlation program.
 // Filename: cache.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2012 Shane Parker
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Maintainer: NU Theory Group
 //
 // This file is part of the Newint package (to be renamed).
 //
