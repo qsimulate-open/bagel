@@ -91,6 +91,7 @@ class Geometry {
     Geometry(const std::string, const int level);
     Geometry(const std::shared_ptr<const InputData> inpt);
     Geometry(const std::vector<std::shared_ptr<Atom> > atoms, const std::multimap<std::string, std::string> o);
+    Geometry(const std::string molden_file, std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::shared_ptr<const InputData> inpt);
     ~Geometry();
 
