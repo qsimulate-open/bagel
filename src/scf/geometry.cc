@@ -36,6 +36,7 @@
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
 #include <src/stackmem.h>
+#include <src/util/constants.h>
 
 using namespace std;
 
@@ -92,7 +93,8 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
       const string y_str(what[3].first, what[3].second);
       const string z_str(what[4].first, what[4].second);
       vector<double> positions;
-      const double prefac = angstrom ? 1.0/0.529177249 : 1.0 ;
+      // ang2bohr defined in constant.h
+      const double prefac = angstrom ? ang2bohr : 1.0 ;
       positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
       positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
       positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
