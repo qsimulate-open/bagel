@@ -72,8 +72,6 @@ class CASSCF {
     void mute_stdcout();
     void resume_stdcout();
 
-    std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
-
     const std::shared_ptr<Fock<1> > hcore_;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
@@ -95,11 +93,15 @@ class CASSCF {
     std::shared_ptr<FCI> fci() { return fci_; };
     std::shared_ptr<const FCI> fci() const { return fci_; };
 
+    void set_occup(const std::vector<double>& o) { occup_ = o; };
+
     double energy() const { return energy_; }; 
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
                             std::shared_ptr<RotFile>&, const bool superci=true) const;
+    std::shared_ptr<Matrix1e> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
+    const std::shared_ptr<Fock<1> > hcore() { return hcore_; };
 };
 
 #endif

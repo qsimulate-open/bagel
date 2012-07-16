@@ -27,6 +27,7 @@
 #include <src/grad/gradeval.h>
 #include <src/grad/cpcasscf.h>
 #include <src/casscf/supercigrad.h>
+#include <src/casscf/qvec.h>
 #include <src/util/pairfile.h>
 
 using namespace std;
@@ -42,25 +43,52 @@ static string tostring(const T i) {
 template<>
 std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
-  // TODO
+  shared_ptr<const Coeff> coeff = ref_->coeff();
+
   const int target = 0;
-
-  // related to denominators
-  const int nbasis = ref_->geom()->nbasis();
-  shared_ptr<Matrix1e> eig;
-  {
-    // compute one-boedy operators
-    shared_ptr<Matrix1e> f;
-    shared_ptr<QFile>    fact, factp, gaa;
-    shared_ptr<RotFile> denom;
-    task_->one_body_operators(f, fact, factp, gaa, denom);
-    eig = denom->unpack_sym(ref_->geom());
-  }
-
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
   const int nstate = ref_->nstate();
+  const int nvirt = ref_->nvirt();
+
+  // related to denominators
+  const int nbasis = ref_->geom()->nbasis();
+  shared_ptr<Matrix1e> eig(new Matrix1e(ref_->geom()));
+  {
+    vector<double> occup_ = task_->fci()->rdm1(target)->diag();
+
+    shared_ptr<Matrix1e> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
+    shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
+    dcopy_(nbasis*nbasis, task_->fci()->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
+    shared_ptr<Matrix1e> finact (new Matrix1e(*coeff % *f_inactao * *coeff));
+
+    shared_ptr<Matrix1e> denall = task_->ao_rdm1(task_->fci()->rdm1(target));
+    shared_ptr<Matrix1e> denact (new Matrix1e(*denall-*deninact));
+    shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, task_->hcore(), denact, ref_->schwarz()));
+    shared_ptr<Matrix1e> f      (new Matrix1e(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff));
+
+    shared_ptr<Qvec> fact(new Qvec(nbasis, nact, ref_->geom()->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target)));
+    for (int i = 0; i != nact; ++i)
+      daxpy_(nbasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nbasis, 1);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nvirt; ++j)
+        eig->element(j+nocc,i+nclosed) = eig->element(i+nclosed,j+nocc) = -fact->element(i,i) + occup_[i]*f->element(j+nocc, j+nocc);
+
+    for (int i = 0; i != nclosed; ++i)
+      for (int j = 0; j != nvirt; ++j)
+         eig->element(j+nocc,i) = eig->element(i,j+nocc) = 2.0*f->element(j+nocc, j+nocc) - 2.0*f->element(i, i);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nclosed; ++j)
+         eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
+                                   = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i+nclosed)) - f->element(j, j)*(2.0 - occup_[i]);
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nact; ++j)
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e100; 
+
+  }
 
   // TODO they are redundant, though...
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
