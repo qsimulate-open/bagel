@@ -128,22 +128,18 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     const double norm = sqrt(z->ddot(*z));
 
-cout << setw(4) <<  iter << " " << norm << endl;
+cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
 
     shared_ptr<const Matrix1e> z0 = z->first();
     shared_ptr<const Dvec>     z1 = z->second();
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
     // only here we need to have det_ instead of detex
-#if 0
     z1->set_det(detex);
     civector_->set_det(detex);
     shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_);
     z1->set_det(fci_->det());
     civector_->set_det(fci_->det());
-#else
-shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
-#endif
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
@@ -172,7 +168,8 @@ shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
     // one electron part...
     shared_ptr<Matrix1e> htilde(new Matrix1e(*cz0 % *ref_->hcore() * *ref_->coeff())); 
     htilde->symmetrize();
-    dgemm_("N", "N", nbasis, nocca, nocca, 4.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis); 
+    *htilde *= 2.0;
+    dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis); 
 
     sigmaorb->antisymmetrize();
     sigmaorb->purify_redrotation(nclosed, nact, nvirt);
@@ -180,10 +177,9 @@ shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
 
-#if 0
     // TODO this is a reference implementation
     // first form 4 index
-    unique_ptr<double[]> buf = tmp2_1->form_4index(fullb);
+    unique_ptr<double[]> buf = fullz->form_4index(fullb);
     // TODO Awful code. To be updated. making the code that works in the quickest possible way
     // index swap
     unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
@@ -231,11 +227,6 @@ shared_ptr<Matrix1e> sigmaorb = source->first()->clone(); sigmaorb->zero();
 
     sigmaci->project_out(civector_);
 
-sigmaci->zero();
-#else
-shared_ptr<Dvec> sigmaci = source->second()->clone(); sigmaci->zero();
-#endif
-
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
@@ -244,7 +235,6 @@ shared_ptr<Dvec> sigmaci = source->second()->clone(); sigmaci->zero();
     z->first()->purify_redrotation(nclosed, nact, nvirt);
     z->second()->project_out(civector_);
 
-z->second()->zero();
 if (sqrt(z->ddot(*z)) < 1.0e-8) break;
 
   }
