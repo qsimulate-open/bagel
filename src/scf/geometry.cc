@@ -58,16 +58,6 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
-  multimap<string,string>::iterator molden_info = geominfo.find("molden");
-  if(molden_info != geominfo.end()) {
-    Molden mf;
-    vector<shared_ptr<Atom> > all_atoms = mf.read_geo(molden_info->second);
-
-    Geometry( all_atoms, geominfo );
-
-    return;
-  }
-
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
