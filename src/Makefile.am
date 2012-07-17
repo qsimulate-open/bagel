@@ -1,6 +1,6 @@
-INTLIBS = scf/libscf.a opt/libopt.a grad/libgrad.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a fci/libfci.a casscf/libcasscf.a wfn/libwfn.a df/libdf.a smith/libsmith.a mp2/libmp2.a prop/libprop.a -L./slater -lslater 
+INTLIBS = scf/libscf.a opt/libopt.a grad/libgrad.a rysint/librysint.a osint/libosint.a slater/libslater.a pscf/libpscf.a pmp2/libpmp2.a util/libutil.a fci/libfci.a casscf/libcasscf.a wfn/libwfn.a df/libdf.a smith/libsmith.a mp2/libmp2.a prop/libprop.a molden/libmolden.a -L./slater -lslater 
 
-SUBDIRS = df opt grad mp2 wfn rysint osint scf slater pscf pmp2 util fci casscf smith prop
+SUBDIRS = df opt grad mp2 wfn rysint osint scf slater pscf pmp2 util fci casscf smith prop molden
 bin_PROGRAMS = PolyR12
 PolyR12_SOURCES = main.cc
 PolyR12_LDADD = $(INTLIBS) -lboost_regex -lblas -llapack $(FLIBS)

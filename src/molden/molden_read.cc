@@ -293,33 +293,32 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
       if (!found_gto)  { message += "GTO"; }
       throw runtime_error(message);
    }
-   else {
-      /************************************************************
-      *  Now all the information is collected, it just has to be  *
-      *  organized                                                *
-      ************************************************************/
-      vector<shared_ptr<Atom> > all_atoms;
 
-      /************************************************************
-      *  All the information is collected, now to organize it     *
-      *  into atoms                                               *
-      ************************************************************/
+   /************************************************************
+   *  Now all the information is collected, it just has to be  *
+   *  organized                                                *
+   ************************************************************/
+   vector<shared_ptr<Atom> > all_atoms;
 
-      /* Assuming the names and positions vectors are in the right order */
-      vector<string>::iterator niter = names.begin();
-      vector<vector<double> >::iterator piter = positions.begin();
-      for(int i = 0; i < num_atoms; ++i, ++niter, ++piter){
-         vector<tuple<string, vector<double>, vector<double> > > binfo = basis_info.find(i+1)->second;
-         if (i == num_atoms) {
-            throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
-         }
+   /************************************************************
+   *  All the information is collected, now to organize it     *
+   *  into atoms                                               *
+   ************************************************************/
 
-         /* For each atom, I need to make an atom object and stick it into a vector */
-         shared_ptr<Atom> this_atom(new Atom(is_spherical, *niter, *piter, binfo));
-
-         all_atoms.push_back(this_atom);
+   /* Assuming the names and positions vectors are in the right order */
+   vector<string>::iterator niter = names.begin();
+   vector<vector<double> >::iterator piter = positions.begin();
+   for(int i = 0; i < num_atoms; ++i, ++niter, ++piter){
+      vector<tuple<string, vector<double>, vector<double> > > binfo = basis_info.find(i+1)->second;
+      if (i == num_atoms) {
+         throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
       }
 
-      return all_atoms;
+      /* For each atom, I need to make an atom object and stick it into a vector */
+      shared_ptr<Atom> this_atom(new Atom(is_spherical, *niter, *piter, binfo));
+
+      all_atoms.push_back(this_atom);
    }
+
+   return all_atoms;
 }
