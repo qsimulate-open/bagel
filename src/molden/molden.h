@@ -26,17 +26,21 @@
 #ifndef __molden_molden_h
 #define __molden_molden_h
 
+#include <src/util/constants.h>
 #include <src/scf/atom.h>
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
-#include <src/util/constants.h>
+
+/*class Atom;
+class Geometry;
+class Reference;*/
 
 class Molden {
    protected:
       std::string filename;
 
    public:
-      Molden();
+      Molden() {};
       
       /* Read functions */
       std::vector<std::shared_ptr<Atom> > read_geo(std::string in_file);

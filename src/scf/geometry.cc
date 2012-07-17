@@ -35,6 +35,7 @@
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
+#include <src/molden/molden.h>
 #include <src/stackmem.h>
 #include <src/util/constants.h>
 
@@ -56,6 +57,16 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   : spherical_(true), input_(""), lmax_(0), level_(0) {
 
   multimap<string, string> geominfo = inpt->get_input("molecule");
+
+  multimap<string,string>::iterator molden_info = geominfo.find("molden");
+  if(molden_info != geominfo.end()) {
+    Molden mf;
+    vector<shared_ptr<Atom> > all_atoms = mf.read_geo(molden_info->second);
+
+    Geometry( all_atoms, geominfo );
+
+    return;
+  }
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -234,13 +245,9 @@ Geometry::Geometry(const vector<shared_ptr<Atom> > atoms, const multimap<string,
   }
 
   // basis
-  basisfile_ = read_input<string>(geominfo, "basis", "");
-  if (basisfile_ == "") throw runtime_error("There is no basis specification");
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
   // symmetry
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
-
-  const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
 }
 
