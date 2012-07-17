@@ -31,10 +31,6 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 
-/*class Atom;
-class Geometry;
-class Reference;*/
-
 class Molden {
    protected:
       std::string filename;
