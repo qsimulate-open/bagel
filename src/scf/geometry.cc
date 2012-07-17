@@ -221,8 +221,48 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
 
 
 
-Geometry::Geometry(const vector<shared_ptr<Atom> > atoms, const multimap<string, string> geominfo)
-  : spherical_(true), input_(""), lmax_(0), level_(0) {
+Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> geominfo)
+  : spherical_(true), input_(""), atoms_(atoms), lmax_(0), level_(0) {
+
+  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
+  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
+
+  // cartesian or not.
+  const bool cart = read_input<bool>(geominfo, "cartesian", false);
+  if (cart) {
+    cout << "  Cartesian basis functions are used" << endl;
+    spherical_ = false;
+  }
+
+  // basis
+  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  // symmetry
+  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+
+  common_init1();
+
+
+  print_atoms();
+
+  common_init2(true, thresh_overlap);
+
+  // static external field
+  external_ = vector<double>(3);
+  external_[0] = read_input<double>(geominfo, "ex", 0.0);
+  external_[1] = read_input<double>(geominfo, "ey", 0.0);
+  external_[2] = read_input<double>(geominfo, "ez", 0.0);
+  if (external())
+  cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
+                                                                         << setw(7) << external_[1] << ", "
+                                                                         << setw(7) << external_[2] << ") a.u." << endl << endl;
+}
+
+
+Geometry::~Geometry() {
+}
+
+
+void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const multimap<string, string> geominfo){
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -240,11 +280,6 @@ Geometry::Geometry(const vector<shared_ptr<Atom> > atoms, const multimap<string,
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
 }
-
-
-Geometry::~Geometry() {
-}
-
 
 const double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;

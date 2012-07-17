@@ -84,6 +84,8 @@ class Geometry {
     // for R12 calculations
     double gamma_;
 
+    // Constructor helpers
+    void construct_from_atoms(const std::vector<std::shared_ptr<Atom> > atoms, const std::multimap<std::string,std::string> o);
     void common_init1();
     void common_init2(const bool print, const double thresh);
 
@@ -91,7 +93,6 @@ class Geometry {
     Geometry(const std::string, const int level);
     Geometry(const std::shared_ptr<const InputData> inpt);
     Geometry(const std::vector<std::shared_ptr<Atom> > atoms, const std::multimap<std::string, std::string> o);
-    Geometry(const std::string molden_file, std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::shared_ptr<const InputData> inpt);
     ~Geometry();
 

@@ -31,6 +31,7 @@
 #include <memory>
 #include <src/scf/geometry.h>
 #include <src/scf/rohf.h>
+#include <src/molden/molden.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/casscf/superci.h>
@@ -206,6 +207,22 @@ int main(int argc, char** argv) {
           if (opt->next()) break;
 
       }
+      #if 0 // <---- I've probably messed something up so I'm just taking this out for now
+      else if (method == "molden") {
+
+        std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
+        std::string molden_file(idata->get_input("molden").find("molden")->second);
+
+        Molden mf;
+        std::shared_ptr<Geometry> molden_geometry(new Geometry( mf.read_geo(molden_file), iter->second) );
+
+        cout << molden_geometry->nuclear_repulsion() << endl;
+
+        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, molden_geometry));
+        scf->compute();
+       
+      }
+      #endif
     }
     print_footer();
 
