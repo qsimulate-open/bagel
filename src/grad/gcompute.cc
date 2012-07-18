@@ -33,6 +33,7 @@
 using namespace std;
 
 extern StackMem* stack;
+static CarSphList carsphlist;
 
 void GradBatch::compute() {
 
@@ -104,7 +105,6 @@ void GradBatch::compute() {
     source_now = cdata;
     // Cartesian to spherical 01 if necesarry
     // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
-    struct CarSphList carsphlist;
     const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
     if (spherical_ && need_sph01) {
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -151,10 +151,12 @@ void GradBatch::compute() {
       swapped = (swapped ^ true);
     }
 
-    a = asph;
-    b = bsph;
-    c = csph;
-    d = dsph;
+    if (spherical_) {
+      a = asph;
+      b = bsph;
+      c = csph;
+      d = dsph;
+    }
 
     target_now = swapped ? bkup_ : cdata;
     source_now = swapped ? cdata : bkup_;

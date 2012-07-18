@@ -38,16 +38,11 @@ NAIBatch_base::NAIBatch_base(const std::vector<std::shared_ptr<Shell> >& _info, 
   const double integral_thresh = PRIM_SCREEN_THRESH; 
 
   if (_info.size() != 2) throw logic_error("NAIBatch_base should be called with shell pairs");
-  shared_ptr<Shell> dum(new Shell(_info[0]->spherical()));
+  shared_ptr<Shell> dum(new Shell(spherical_));
   basisinfo_.push_back(dum); basisinfo_.push_back(dum);
 
   // natom_ 
   natom_ = geom_->natom() * (2 * L + 1);
-
-  // cartesian to spherical tranformation has not yet been implemented.
-  const bool spherical = false;
-  if (!_info[0]->spherical())
-    throw logic_error("cartesian to spherical tranformation has not yet been implemented."); 
 
   set_swap_info();
   set_ab_cd();

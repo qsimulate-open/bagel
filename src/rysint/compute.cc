@@ -38,6 +38,7 @@
 using namespace std;
 
 extern StackMem* stack;
+static CarSphList carsphlist;
 
 void ERIBatch::compute() {
   bool swapped = false;
@@ -108,7 +109,6 @@ void ERIBatch::compute() {
 
   // Cartesian to spherical 01 if necesarry
   // data will be stored in data_
-  struct CarSphList carsphlist;
   const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
   if (spherical_ && need_sph01) {
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -165,10 +165,12 @@ void ERIBatch::compute() {
       carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
     swapped = (swapped ^ true);
   }
-  a = asph;
-  b = bsph;
-  c = csph;
-  d = dsph;
+  if (spherical_) {
+    a = asph;
+    b = bsph;
+    c = csph;
+    d = dsph;
+  }
 
   // if swapped  bkup contains info 
   // if !swapped  data contains info 

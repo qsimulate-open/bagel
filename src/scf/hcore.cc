@@ -62,14 +62,21 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
     KineticBatch kinetic(input);
     kinetic.compute();
     const double* kdata = kinetic.data();
-    NAIBatch nai(input, geom_);
-    nai.compute();
-    const double* ndata = nai.data();
-
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis + j] = kdata[cnt] + ndata[cnt];
+        data_[i*nbasis + j] = kdata[cnt];
+      }
+    }
+  }
+  {
+    NAIBatch nai(input, geom_);
+    nai.compute();
+    const double* ndata = nai.data();
+    int cnt = 0;
+    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
+      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
+        data_[i*nbasis + j] += ndata[cnt];
       }
     }
   }
