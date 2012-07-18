@@ -27,13 +27,15 @@
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
 
-std::vector<double> scf_opt() {
+std::vector<double> scf_opt(std::string filename) {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_svp_dfhf_opt.testout", std::ios::trunc));
+  std::string outputname = filename + ".testout";
+  std::string inputname = "../../test/" + filename + ".in";
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream(outputname, std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/hf_svp_dfhf_opt.in"));
+  std::shared_ptr<InputData> idata(new InputData(inputname));
   stack = new StackMem(static_cast<size_t>(1000000LU));
   std::shared_ptr<Geometry> geom(new Geometry(idata));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
@@ -55,6 +57,12 @@ std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
   out[2] = 1.864207;
   out[5] = 0.162365;
+  return out;
+}
+std::vector<double> reference_scf_opt_cart() {
+  std::vector<double> out(6);
+  out[2] = 1.714514;
+  out[5] = 0.012058;
   return out;
 }
 
@@ -92,7 +100,8 @@ std::vector<double> reference_mp2_opt() {
 BOOST_AUTO_TEST_SUITE(TEST_OPT)
  
 BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
-    BOOST_CHECK(compare(scf_opt(), reference_scf_opt(), 1.0e-6));
+    BOOST_CHECK(compare(scf_opt("hf_svp_dfhf_opt"),       reference_scf_opt(), 1.0e-6));
+    BOOST_CHECK(compare(scf_opt("hf_svp_dfhf_opt_cart"),  reference_scf_opt_cart(), 1.0e-6));
 }
 BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare(mp2_opt(), reference_mp2_opt(), 1.0e-6));
