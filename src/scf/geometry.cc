@@ -59,7 +59,7 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   multimap<string, string> geominfo = inpt->get_input("molecule");
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
-  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
+  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
   // cartesian or not.
   const bool cart = read_input<bool>(geominfo, "cartesian", false); 
@@ -118,7 +118,7 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
 
   print_atoms();
 
-  common_init2(true, thresh_overlap);
+  common_init2(true, overlap_thresh_);
 
   // static external field
   external_ = vector<double>(3);
@@ -215,25 +215,109 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
   }
 
   common_init1();
-  const double thresh_overlap = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
-  common_init2(false, thresh_overlap);
+  overlap_thresh_ = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
+  common_init2(false, overlap_thresh_);
 }
 
+Geometry::Geometry(const Geometry& o, const tuple<double,double,double> displ)
+  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
+    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),
+    external_(o.external_), gamma_(o.gamma_) { 
+  
+  // first construct atoms using displacements
+  vector<double> cdispl;
+  cdispl.push_back(get<0>(displ));
+  cdispl.push_back(get<1>(displ));
+  cdispl.push_back(get<2>(displ));
 
+  for (auto i = o.atoms_.begin(); i != o.atoms_.end(); ++i) {
+    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
+  }
+
+  for (auto j = o.aux_atoms_.begin(); j != o.aux_atoms_.end(); ++j) {
+    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+  }
+
+  common_init1();
+  common_init2(false, overlap_thresh_);
+}
+
+/************************************************************
+*  Merge info from multiple geometries to make one          *
+*  supergeometry                                            *
+************************************************************/
+Geometry::Geometry(vector<shared_ptr<Geometry> > nmer) :
+   spherical_(nmer.front()->spherical_), symmetry_(nmer.front()->symmetry_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
+   overlap_thresh_(nmer.front()->overlap_thresh_), external_(nmer.front()->external_)
+{
+   /************************************************************
+   * Going down the list of protected variables, merge the     *
+   * data, pick the best ones, or make sure they all match     *
+   ************************************************************/
+   /* spherical_ should match across the vector*/
+   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
+      if (spherical_ != (*inmer)->spherical_) {
+         throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
+      }
+   }
+   /* symmetry_ should match across the vector*/
+   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
+      if (symmetry_ != (*inmer)->symmetry_) {
+         throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
+      }
+   }
+
+   /* external field would hopefully match, but for now, if it doesn't, just disable */
+   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
+      if(!(equal(external_.begin(), external_.end(), (*inmer)->external_.begin()))){
+         external_[0] = 0.0, external_[1] = 0.0, external_[2] = 0.0; break;
+      }
+   }
+
+   /* atoms_ and aux_atoms_ can be merged */
+   vector<shared_ptr<Atom> > new_atoms;
+   vector<shared_ptr<Atom> > new_aux_atoms;
+   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
+      auto iatoms = (*inmer)->atoms();
+      auto iaux = (*inmer)->aux_atoms();
+
+      new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
+      new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
+   }
+   atoms_ = new_atoms;
+   aux_atoms_ = new_aux_atoms;
+   
+   /* Use the strictest thresholds */
+   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
+      if ( (*inmer)->schwarz_thresh_ < schwarz_thresh_ ) {
+         schwarz_thresh_ = (*inmer)->schwarz_thresh_;
+      }
+
+      if ( (*inmer)->overlap_thresh_ < overlap_thresh_ ) {
+         overlap_thresh_ = (*inmer)->overlap_thresh_;
+      }
+   }
+   
+   /* Data is merged (crossed fingers), now finish */
+   common_init1();
+   print_atoms();
+   common_init2(true,overlap_thresh_);
+
+   // static external field
+   if (external())
+   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
+                                                                          << setw(7) << external_[1] << ", "
+                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+}
 
 Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> geominfo)
   : spherical_(true), input_(""), atoms_(atoms), lmax_(0), level_(0) {
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
-  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
+  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
-  // cartesian or not.
-  const bool cart = read_input<bool>(geominfo, "cartesian", false);
-  if (cart) {
-    cout << "  Cartesian basis functions are used" << endl;
-    spherical_ = false;
-  }
-
+  // cartesian or not. Look in the atoms info to find out
+  spherical_ = atoms.front()->spherical();
   // basis
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
   // symmetry
@@ -244,7 +328,7 @@ Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> g
 
   print_atoms();
 
-  common_init2(true, thresh_overlap);
+  common_init2(true, overlap_thresh_);
 
   // static external field
   external_ = vector<double>(3);
@@ -265,7 +349,7 @@ Geometry::~Geometry() {
 void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const multimap<string, string> geominfo){
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
-  const double thresh_overlap = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
+  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
   // cartesian or not.
   const bool cart = read_input<bool>(geominfo, "cartesian", false);

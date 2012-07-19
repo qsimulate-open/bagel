@@ -74,6 +74,7 @@ class Geometry {
 
     // integral screening
     double schwarz_thresh_;
+    double overlap_thresh_;
 
     // for DF calculations
     std::shared_ptr<DensityFit> df_;
@@ -94,6 +95,8 @@ class Geometry {
     Geometry(const std::shared_ptr<const InputData> inpt);
     Geometry(const std::vector<std::shared_ptr<Atom> > atoms, const std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::shared_ptr<const InputData> inpt);
+    Geometry(const Geometry& o, const std::tuple<double,double,double> disp);
+    Geometry(std::vector<std::shared_ptr<Geometry> >);
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
@@ -119,6 +122,7 @@ class Geometry {
     const std::string basisfile() const { return basisfile_; };
     const std::string auxfile() const { return auxfile_; };
     const double schwarz_thresh() const { return schwarz_thresh_; };
+    const double overlap_thresh() const { return overlap_thresh_; };
 
     // TODO for some reasons needed now in CASSCF
     void set_nele(const int i) { nele_ = i; };
