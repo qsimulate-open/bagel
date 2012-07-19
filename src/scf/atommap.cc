@@ -73,3 +73,10 @@ const int AtomMap::atom_number(const string input) const {
   if (miter == atommap.end()) throw runtime_error("Unknown Atom number in a basis set file.");
   return miter->second;
 }
+
+const string AtomMap::angular_string(const int input) {
+  for(auto miter = angmap.begin(); miter != angmap.end(); ++miter) {
+    if(miter->second == input) { return miter->first; }
+  }
+  return "X";
+}
