@@ -26,9 +26,10 @@ AC_PROG_FC
 # Checks for library functions.
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/molden/Makefile
+                 src/dimer/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
-                 src/molden/Makefile
                  src/grad/Makefile
                  src/rysint/Makefile
                  src/osint/Makefile
