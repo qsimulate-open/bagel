@@ -34,6 +34,7 @@
 
 #include <src/molden/molden.h>
 #include <src/scf/geometry.h>
+#include <src/scf/atommap.h>
 #include <src/scf/atom.h>
 #include <src/util/constants.h>
 
@@ -189,8 +190,6 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
                   /* Now it should be a new angular shell */
                   string ang_l(matches[1].first, matches[1].second);
 
-                  // TODO: figure out how to read and include [5D] keyword
-
                   string num_exp_string(matches[2].first, matches[2].second);
                   int num_exponents = boost::lexical_cast<int>(num_exp_string);
 
@@ -339,6 +338,10 @@ void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file)
    ofstream m_out;
    m_out.open(molden_file);
 
+   if (!m_out.is_open()) {
+      throw runtime_error("Could not open molden file for writing");
+   }
+
    m_out << "[Molden Format]" << endl;
 
    m_out << "[Atoms] Angs" << endl;
@@ -350,12 +353,64 @@ void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file)
       const int cur_number = cur_atom->atom_number();
       const vector<double> cur_pos = cur_atom->position();
 
-      m_out << setw(8) << cur_name << setw(8)  << i+1 
-                                  << setw(8)  << cur_number 
-                                  << setw(12) << setprecision(8) << cur_pos[0]/ang2bohr
-                                  << setw(12) << setprecision(8) << cur_pos[1]/ang2bohr
-                                  << setw(12) << setprecision(8) << cur_pos[2]/ang2bohr << endl;
+      m_out << setw(2) << cur_name << setw(8)  << i+1 
+                                   << setw(8)  << cur_number << setiosflags(ios_base::scientific)
+                                   << setw(20) << setprecision(8) << cur_pos[0]/ang2bohr
+                                   << setw(20) << setprecision(8) << cur_pos[1]/ang2bohr
+                                   << setw(20) << setprecision(8) << cur_pos[2]/ang2bohr << endl;
    }
 
    m_out.close();
+}
+
+/************************************************************************************
+*  write_mos( shared_ptr<Reference> ref, const string molden_file                   *
+*                                                                                   *
+*  Writes the GTO and MO sections of a molden file. write_mos does not check to     *
+*  see if the molden_file already exists. Only opens to append.                     *
+*                                                                                   *
+*  TODO: Check whether this actually works                                          *
+************************************************************************************/
+void Molden::write_mos(const shared_ptr<const Reference> ref, const string molden_file) {
+   ofstream ofs;
+   ofs.open(molden_file, ios::app);
+
+   if(!ofs.is_open()){
+      throw runtime_error("MOs could not be written to molden file: file couldn't be opened");
+   }
+
+   shared_ptr<const Geometry> geom = ref->geom();
+   vector<shared_ptr<Atom> > atoms = geom->atoms();
+
+   int num_atoms = geom->natom();
+
+   /************************************************************
+   *  Print GTO section                                        *
+   ************************************************************/
+   ofs << "[GTO]" << endl;
+   
+   auto iatom = atoms.begin();
+   for(int ii = 0; ii != num_atoms; ++iatom, ++ii) {
+      ofs << ii+1 << endl;
+
+      AtomMap am;
+
+      vector<shared_ptr<Shell> > shells = (*iatom)->shells();
+      for(auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
+         string ang_l = am.angular_string((*ishell)->angular_number());
+         vector<double> exponents = (*ishell)->exponents();
+
+         int num_contracted = (*ishell)->contractions().size();
+         for(int jj = 0; jj < num_contracted; ++jj) {
+            pair<int,int> range = (*ishell)->contraction_ranges(jj);
+            
+            ofs << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
+            for(int kk = range.first; kk < range.second; ++kk) {
+               ofs << setiosflags(ios_base::scientific) << setw(20) << setprecision(8) << exponents[kk]
+                                                        << setw(20) << setprecision(8) << (*ishell)->contractions(jj)[kk] << endl;
+            }
+         }
+      }
+      ofs << endl;
+   }
 }

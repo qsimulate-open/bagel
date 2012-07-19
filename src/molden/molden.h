@@ -33,7 +33,6 @@
 
 class Molden {
    protected:
-      std::string filename;
 
    public:
       Molden() {};
@@ -44,7 +43,7 @@ class Molden {
 
       /* Write functions, TODO */
       void write_geo(std::shared_ptr<Geometry>, std::string out_file);
-      void write_ref(std::shared_ptr<Reference>, std::string out_file);
+      void write_mos(std::shared_ptr<const Reference>, std::string out_file);
 };
 
 #endif
