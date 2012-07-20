@@ -326,6 +326,13 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 }
 
 /************************************************************************************
+*  read_mos                                                                         *
+*                                                                                   *
+*  Read the MO data and form a Coeff object... I think... for now...                *
+************************************************************************************/
+//read_mos goes here
+
+/************************************************************************************
 *  write_geo( shared_ptr<Geometry> geo, const string molden_file )                      *
 *                                                                                   *
 *  Writes a molden file. Just the geometry though (Atoms section)                   *
@@ -379,38 +386,71 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
       throw runtime_error("MOs could not be written to molden file: file couldn't be opened");
    }
 
-   shared_ptr<const Geometry> geom = ref->geom();
-   vector<shared_ptr<Atom> > atoms = geom->atoms();
+   {
+      shared_ptr<const Geometry> geom = ref->geom();
+      vector<shared_ptr<Atom> > atoms = geom->atoms();
 
-   int num_atoms = geom->natom();
+      int num_atoms = geom->natom();
 
-   /************************************************************
-   *  Print GTO section                                        *
-   ************************************************************/
-   ofs << "[GTO]" << endl;
-   
-   auto iatom = atoms.begin();
-   for(int ii = 0; ii != num_atoms; ++iatom, ++ii) {
-      ofs << ii+1 << endl;
+      /************************************************************
+      *  Print GTO section                                        *
+      ************************************************************/
+      ofs << "[GTO]" << endl;
+      
+      auto iatom = atoms.begin();
+      for(int ii = 0; ii != num_atoms; ++iatom, ++ii) {
+         ofs << ii+1 << endl;
 
-      AtomMap am;
+         AtomMap am;
 
-      vector<shared_ptr<Shell> > shells = (*iatom)->shells();
-      for(auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
-         string ang_l = am.angular_string((*ishell)->angular_number());
-         vector<double> exponents = (*ishell)->exponents();
+         vector<shared_ptr<Shell> > shells = (*iatom)->shells();
+         for(auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
+            string ang_l = am.angular_string((*ishell)->angular_number());
+            vector<double> exponents = (*ishell)->exponents();
 
-         int num_contracted = (*ishell)->contractions().size();
-         for(int jj = 0; jj < num_contracted; ++jj) {
-            pair<int,int> range = (*ishell)->contraction_ranges(jj);
-            
-            ofs << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
-            for(int kk = range.first; kk < range.second; ++kk) {
-               ofs << setiosflags(ios_base::scientific) << setw(20) << setprecision(8) << exponents[kk]
-                                                        << setw(20) << setprecision(8) << (*ishell)->contractions(jj)[kk] << endl;
+            int num_contracted = (*ishell)->contractions().size();
+            for(int jj = 0; jj < num_contracted; ++jj) {
+               pair<int,int> range = (*ishell)->contraction_ranges(jj);
+               
+               ofs << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
+               for(int kk = range.first; kk < range.second; ++kk) {
+                  ofs << setiosflags(ios_base::scientific) << setw(20) << setprecision(8) << exponents[kk]
+                                                           << setw(20) << setprecision(8) << (*ishell)->contractions(jj)[kk] << endl;
+               }
             }
          }
+         ofs << endl;
       }
       ofs << endl;
+      string cart_string = geom->spherical() ? "[5D]" : "";
+      ofs << cart_string << endl;
+   }
+
+   {
+      ofs << "[MO]" << endl;
+
+      shared_ptr<const Coeff> coeff = ref->coeff();
+      int nbasis = coeff->nbasis();
+      vector<double> eigvec = ref->eig();
+      double* modata = coeff->data();
+
+      int nocc = ref->nclosed();
+
+      auto ieig = eigvec.begin();
+      int num_mos = coeff->mdim();
+      for(int i = 0; i < num_mos; ++i, ++ieig){
+         ofs << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
+
+         /* At the moment only thinking about RHF, so assume spin is Alpha */
+         ofs << " Spin=" << "  Alpha" << endl;
+
+         /* At the moment, assuming occupation can be 2 or 0. Should be fine for RHF */
+         string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
+         ofs << " Occup=" << occ_string << endl;
+
+         for(int j = 0; j < nbasis; ++j, ++modata){
+           ofs << fixed << setw(4) << j+1 << setw(20) << setprecision(12) << *modata << endl;
+         }
+      }
    }
 }
