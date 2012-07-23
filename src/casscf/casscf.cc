@@ -113,6 +113,9 @@ void CASSCF::common_init() {
   fci_ = shared_ptr<FCI>(new FCI(idata_, ref_, nclosed_, nact_)); // nstate does not need to be specified as it is in idata_...
   resume_stdcout();
 
+
+  schwarz_ = geom_->schwarz();
+
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
 };
@@ -198,11 +201,11 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
-      shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, ref_->schwarz()));
+      shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
       f = shared_ptr<Matrix1e>(new Matrix1e(*finact + *coeff%(*fact_ao-*hcore_)**coeff));
     } else {
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, ref_->schwarz()));
+      shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
       f = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_ao * *coeff));
 
       finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *hcore_ * *coeff));
@@ -276,7 +279,7 @@ vector<double> CASSCF::form_natural_orbs() {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), energy(), ref_->hcore(), ref_->schwarz(), nclosed_, nact_, nvirt_,
+  shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), nclosed_, nact_, nvirt_, energy(),
                                           fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av()));
 
   // TODO

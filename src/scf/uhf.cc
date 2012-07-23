@@ -176,7 +176,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
   int nocc;
   vector<shared_ptr<RDM<1> > > rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  shared_ptr<Reference> out(new Reference(geom_, natorb, energy(), hcore(), schwarz(), 0, nocc, geom_->nbasis()-nocc, rdm1));
+  shared_ptr<Reference> out(new Reference(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1));
 
   // compute an energy weighted 1RDM and store
   vector<double> ea(eig_.get(), eig_.get()+nocc_);

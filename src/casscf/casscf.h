@@ -77,6 +77,8 @@ class CASSCF {
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
     std::vector<double> form_natural_orbs();
 
+    std::vector<double> schwarz_;
+
     // energy
     double energy_;
 

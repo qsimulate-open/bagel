@@ -143,7 +143,7 @@ class SCF : public SCF_base {
     };
 
     std::shared_ptr<Reference> conv_to_ref() const {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), energy(), hcore(), schwarz(), nocc(), 0, geom_->nbasis()-nocc()));
+      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;

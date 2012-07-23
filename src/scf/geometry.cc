@@ -486,3 +486,38 @@ vector<double> Geometry::charge_center() const {
   return out; 
 }
 
+
+vector<double> Geometry::schwarz() const {
+  vector<shared_ptr<Shell> > basis; 
+  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
+    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    basis.insert(basis.end(), tmp.begin(), tmp.end());  
+  }
+  const int size = basis.size();
+
+  vector<double> schwarz(size * size);
+  for (int i0 = 0; i0 != size; ++i0) {
+    const shared_ptr<Shell> b0 = basis[i0];
+    for (int i1 = i0; i1 != size; ++i1) {
+      const shared_ptr<Shell> b1 = basis[i1];
+
+      vector<shared_ptr<Shell> > input;
+      input.push_back(b1);
+      input.push_back(b0);
+      input.push_back(b1);
+      input.push_back(b0);
+      ERIBatch eribatch(input, 1.0);
+      eribatch.compute();
+      const double* eridata = eribatch.data();
+      const int datasize = eribatch.data_size();
+      double cmax = 0.0;
+      for (int xi = 0; xi != datasize; ++xi, ++eridata) {
+        const double absed = fabs(*eridata);
+        if (absed > cmax) cmax = absed; 
+      }
+      schwarz[i0 * size + i1] = cmax;
+      schwarz[i1 * size + i0] = cmax;
+    }
+  }
+  return schwarz;
+}

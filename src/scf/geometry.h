@@ -138,6 +138,9 @@ class Geometry {
     const std::vector<int> offset(const unsigned int i) const { return offsets_.at(i); };
     const std::vector<int> aux_offset(const unsigned int i) const { return aux_offsets_.at(i); };
 
+    // returns schwarz screening TODO not working for DF yet
+    std::vector<double> schwarz() const;
+
     // Printing out some info
     void print_atoms() const;
 
