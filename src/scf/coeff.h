@@ -34,9 +34,13 @@
 class Coeff : public Matrix1e {
   protected:
 
+  private:
+    std::shared_ptr<const Geometry> supergeom(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
+
   public:
     Coeff() : Matrix1e() {};
     Coeff(const Matrix1e&);
+    Coeff(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
     Coeff(std::shared_ptr<const Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
     ~Coeff();
 

@@ -246,7 +246,7 @@ Geometry::Geometry(const Geometry& o, const tuple<double,double,double> displ)
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
 ************************************************************/
-Geometry::Geometry(vector<shared_ptr<Geometry> > nmer) :
+Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    spherical_(nmer.front()->spherical_), symmetry_(nmer.front()->symmetry_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
    overlap_thresh_(nmer.front()->overlap_thresh_), external_(nmer.front()->external_)
 {

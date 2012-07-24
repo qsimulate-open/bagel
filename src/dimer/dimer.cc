@@ -37,11 +37,11 @@ using namespace std;
 *  Dimer::Dimer(shared_ptr<Geometry> A, vector<double> displacement)                *
 *                                                                                   *
 ************************************************************************************/
-Dimer::Dimer(shared_ptr<Geometry> A, tuple<double,double,double> displacement) {
+Dimer::Dimer(shared_ptr<const Geometry> A, tuple<double,double,double> displacement) {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
-   shared_ptr<Geometry> geomB(new Geometry((*A), displacement));
+   shared_ptr<const Geometry> geomB(new const Geometry((*A), displacement));
 
    geompair_ = make_pair(A, geomB);
 }
@@ -53,24 +53,14 @@ Dimer::Dimer(shared_ptr<const Reference> A, tuple<double,double,double> displace
    ************************************************************/
    coeffs_.push_back(A->coeff());
 
-   shared_ptr<Geometry> geomA(new Geometry(*(A->geom()), make_tuple(0.0,0.0,0.0))) ;
-   shared_ptr<Geometry> geomB(new Geometry((*geomA), displacement));
+   shared_ptr<const Geometry> geomA = A->geom();
+   shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
 
    geompair_ = make_pair(geomA, geomB);
 }
 
-shared_ptr<Geometry> Dimer::geometry() {
-   vector<shared_ptr<Geometry> > geo_vec;
-   geo_vec.push_back(geompair_.first);
-   geo_vec.push_back(geompair_.second);
-
-   shared_ptr<Geometry> geo_out(new Geometry(geo_vec));
-
-   return geo_out;
-}
-
-shared_ptr<const Geometry> Dimer::const_geometry() {
-   vector<shared_ptr<Geometry> > geo_vec;
+shared_ptr<const Geometry> Dimer::geometry() {
+   vector<shared_ptr<const Geometry> > geo_vec;
    geo_vec.push_back(geompair_.first);
    geo_vec.push_back(geompair_.second);
 
@@ -79,85 +69,48 @@ shared_ptr<const Geometry> Dimer::const_geometry() {
    return geo_out;
 }
 
-shared_ptr<Coeff> Dimer::coefficients() {
-   shared_ptr<const Geometry> cgeo = const_geometry();
+shared_ptr<const Coeff> Dimer::coefficients() {
+   shared_ptr<const Geometry> cgeo = geometry();
 
    return coefficients(cgeo);
 }
 
-shared_ptr<Coeff> Dimer::coefficients(shared_ptr<const Geometry> cgeo) {
-   assert( coeffs_.size() >= 0 && coeffs_.size() <= 2 );
+shared_ptr<const Coeff> Dimer::coefficients(shared_ptr<const Geometry> cgeo) {
+   assert( coeffs_.size() <= 2 );
 
-   shared_ptr<Coeff> supercoeff(new Coeff(cgeo));
-   int nbasis = coeffs_.front()->nbasis();
-
-   double* catdata =supercoeff->data();
+   vector<shared_ptr<const Coeff> > out_cvec;
 
    if( coeffs_.empty() ) {
       throw runtime_error("Attempting to concatenate coefficients on a Dimer with no defined coefficients");
    }
    else if (coeffs_.size() == 1) {
-      double* cdata0 = coeffs_.front()->data();
-
-      for(int i = 0; i < nbasis; ++i) {
-         for(int j = 0; j < nbasis; ++j, ++catdata, ++cdata0) {
-            *catdata = *cdata0;
-         }
-         for(int j = 0; j < nbasis; ++j, ++catdata) {
-            *catdata = 0.0;
-         }
-      }
-      cdata0 = coeffs_.front()->data();
-      for(int i = 0; i < nbasis; ++i) {
-         for(int j = 0; j< nbasis; ++j, ++catdata) {
-            *catdata = 0.0;
-         }
-         for(int j = 0; j< nbasis; ++j, ++catdata, ++cdata0) {
-            *catdata = *cdata0;
-         }
-      }
+      out_cvec.push_back(coeffs_.front());
+      out_cvec.push_back(coeffs_.front());
    }
    else {
-      double* cdata0 = coeffs_[0]->data();
-      double* cdata1 = coeffs_[1]->data();
-
-      for(int i = 0; i < nbasis; ++i) {
-         for(int j = 0; j < nbasis; ++j, ++catdata, ++cdata0) {
-            *catdata = *cdata0;
-         }
-         for(int j = 0; j < nbasis; ++j, ++catdata) {
-            *catdata = 0.0;
-         }
-      }
-      for(int i = 0; i< nbasis; ++i) {
-         for(int j = 0; j< nbasis; ++j, ++catdata) {
-            *catdata = 0.0;
-         }
-         for(int j = 0; j< nbasis; ++j, ++catdata, ++cdata1) {
-            *catdata = *cdata1;
-         }
-      }
-
+      out_cvec = coeffs_;
    }
 
-   return supercoeff;
+   shared_ptr<const Coeff> out(new const Coeff(out_cvec));
+
+   return out;
 }
 
-Matrix1e Dimer::overlap() {
+shared_ptr<const Coeff> Dimer::overlap() {
 /* What I need to do is use a supergeo to make a big overlap matrix
    and then transform it with supercoeffs into the MO basis */
 
    /* super geo */
-   shared_ptr<const Geometry> supergeo = const_geometry();
+   shared_ptr<const Geometry> supergeo = geometry();
 
    /* super coeff */
-   shared_ptr<Coeff> supercoeff = coefficients(supergeo);
+   shared_ptr<const Coeff> supercoeff = coefficients(supergeo);
 
    /* super overlap in AO basis */
    Overlap ovlp(supergeo);
 
    /* transform to MO basis with supercoeff */
-   Matrix1e novlp = (*supercoeff) % ovlp * (*supercoeff);
+   shared_ptr<const Coeff> novlp(new const Coeff( (*supercoeff) % ovlp * (*supercoeff) ));
 
    return novlp;
 }

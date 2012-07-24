@@ -40,11 +40,53 @@ Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 
 }
 
+Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix1e(supergeom(coeff_vec)) {
+  /* Force ndim_ = nbasis_ to avoid any unexpected behavior */
+  ndim_ = nbasis_; mdim_ = 0;
+  for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
+    mdim_ += (*icoeff)->mdim();
+  }
+  
+  double* cdata = data();
+  for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
+    double* cur_data = (*icoeff)->data();
+
+    int cur_nstart = 0;
+    for(auto iz0 = coeff_vec.begin(); iz0 != icoeff; ++iz0) { cur_nstart += (*iz0)->nbasis(); }
+
+    int cur_nbasis = (*icoeff)->nbasis();
+
+    int cur_nend = nbasis_ - (cur_nstart + cur_nbasis);
+
+    int cur_mdim = (*icoeff)->mdim();
+
+    /* The matrix is initialized to zero, so don't need to fill in zeros, just step past them. */
+    for(int mm = 0; mm != cur_mdim; ++mm) {
+      /* Step past first zeros */
+      cdata += cur_nstart;
+      /* Copy elements from current Coeff */
+      cdata = copy(cur_data, cur_data + cur_nbasis, cdata);
+      cur_data += cur_nbasis;
+      /* Step past empty elements at the end */
+      cdata += cur_nend;
+    }
+  }
+}
 
 Coeff::~Coeff() {
 
 }
 
+shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coeff_vec) {
+  vector<shared_ptr<const Geometry> > geovec;
+  for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
+    geovec.push_back((*icoeff)->geom());
+  }
+   
+  shared_ptr<const Geometry> out(new const Geometry(geovec));
+
+  return out;
+}
 
 shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) const {
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));

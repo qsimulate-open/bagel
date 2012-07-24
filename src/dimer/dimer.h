@@ -31,7 +31,7 @@
 #ifndef __dimer_dimer_h
 #define __dimer_dimer_h
 
-typedef std::shared_ptr<Geometry> RefGeometry;
+typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
 
@@ -66,10 +66,9 @@ class Dimer {
 
       /* Combine the two geometries into one */
       RefGeometry geometry();
-      std::shared_ptr<const Geometry> const_geometry();
-      std::shared_ptr<Coeff> coefficients();
-      std::shared_ptr<Coeff> coefficients(std::shared_ptr<const Geometry>);
-      Matrix1e overlap();
+      RefCoeff coefficients();
+      RefCoeff coefficients(std::shared_ptr<const Geometry>);
+      RefCoeff overlap();
 };
 
 #endif
