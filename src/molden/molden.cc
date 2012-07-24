@@ -40,6 +40,8 @@
 
 using namespace std;
 
+#define PI 3.1415926535897932
+
 /************************************************************************************
 *  read_geo( const string molden_file )                                             *
 *                                                                                   *
@@ -62,8 +64,6 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    map<int, vector<tuple<string, vector<double>, vector<double> > > > basis_info;
    /* spherical */
    bool is_spherical = false;
-   /* Matrix of coefficients... not yet fully implemented */
-   vector< vector<double> > mo_coefficients;
 
    /************************************************************
    *  Set up "global" regular expressions                      *
@@ -165,8 +165,8 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
          else if (boost::regex_search(line,gto_re)){
             getline(ifs, line);
 
-            boost::regex atom_line("(\\d+)\\s+\\d?");
-            boost::regex shell_line("([spd])\\s+(\\d+)\\s+\\S*");
+            boost::regex atom_line("(\\d+)\\s*\\S*");
+            boost::regex shell_line("([spd])\\s+(\\d+)\\s*\\S*");
             boost::regex exp_line("(\\S+)\\s+(\\S+)");
             boost::regex Dd("[Dd]");
 
@@ -228,54 +228,6 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 
             found_gto = true;
          }
-         #if 0
-         else if (boost::regex_search(line,mo_re)) {
-            break; // this section needs work
-            if(!found_gto) {
-               cout << "GTO section hasn't been found yet!" << endl; break;
-            }
-
-            boost::regex ene_re("Ene=\\s+(\\S+)");
-            boost::regex spin_re("Spin=\\s+(\\w+)");
-            boost::regex occup_re("Occup=\\s+(\\S+)");
-            boost::regex coeff_re("\\d+\\s+(\\S+)");
-
-            while(!boost::regex_search(line,other_re)) {
-               if (ifs.eof()) { break; }
-
-               vector<double> movec;
-
-               /* MO Energy */
-               getline(ifs,line);
-               if(!boost::regex_search(line.c_str(), matches, ene_re)) {
-                  cout << "Whoops, there's a problem in with the MO section" << endl;
-               }
-
-               /* Spin */
-               getline(ifs,line);
-               if(!boost::regex_search(line.c_str(), matches, spin_re)) {
-                  cout << "Whoops, there's a problem in with the MO section" << endl;
-               }
-               
-               /* Occupation */
-               getline(ifs,line);
-               if(!boost::regex_search(line.c_str(), matches, occup_re)) {
-                  cout << "Whoops, there's a problem in with the MO section" << endl;
-               }
-
-               /* Read in MO coefficients */
-               for (int i = 0; i < num_basis; ++i) {
-                  getline(ifs,line);
-                  boost::regex_search(line.c_str(), matches, coeff_re);
-                  string mo_string(matches[1].first, matches[1].second);
-                  double coeff = boost::lexical_cast<double>(mo_string);
-                  cout << i+1 << "   " << coeff << endl;
-                  movec.push_back(coeff);
-               }
-               mo_coefficients.push_back(movec);
-            }
-         }
-         #endif
          else {
             getline(ifs,line);
          }
@@ -298,13 +250,8 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    *  Now all the information is collected, it just has to be  *
    *  organized                                                *
    ************************************************************/
+
    vector<shared_ptr<Atom> > all_atoms;
-
-   /************************************************************
-   *  All the information is collected, now to organize it     *
-   *  into atoms                                               *
-   ************************************************************/
-
 
    /* Assuming the names and positions vectors are in the right order */
    vector<string>::iterator niter = names.begin();
@@ -315,7 +262,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
          throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
       }
 
-      std::transform(niter->begin(), niter->end(), niter->begin(), ::tolower);
+      transform(niter->begin(), niter->end(), niter->begin(), ::tolower);
       /* For each atom, I need to make an atom object and stick it into a vector */
       shared_ptr<Atom> this_atom(new Atom(is_spherical, *niter, *piter, binfo));
 
@@ -330,10 +277,170 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 *                                                                                   *
 *  Read the MO data and form a Coeff object... I think... for now...                *
 ************************************************************************************/
-//read_mos goes here
+shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string molden_file) {
+   Matrix1e read_mat(geom);
+   double* cdata = read_mat.data();
+   int num_basis = geom->nbasis();
+   vector<int> nbases;
+   for(auto iatom = geom->atoms().begin(); iatom != geom->atoms().end(); ++iatom){
+      nbases.push_back((*iatom)->nbasis());
+   }
+   int num_atoms = geom->natom();
+
+
+   /************************************************************
+   *  Set up offsets and order that I'm interested in here     *
+   ************************************************************/
+   vector<int> atom_offsets;
+   vector<vector<int> > offsets = geom->offsets();
+   for(vector<vector<int> >::const_iterator ioff = offsets.begin(); ioff != offsets.end(); ++ioff) {
+      atom_offsets.push_back(ioff->front());
+   }
+   vector<int> gto_order;
+   vector<vector<double> > mo_coefficients;
+
+   /************************************************************
+   *  Set up "global" regular expressions                      *
+   ************************************************************/
+   boost::regex mo_re("\\[MO\\]");
+   boost::regex gto_re("\\[GTO\\]");
+   boost::regex other_re("\\[\\w+\\]");
+
+   boost::cmatch matches;
+
+   /************************************************************
+   *  Booleans to check and make sure each important section   *
+   *  was found                                                *
+   ************************************************************/
+   bool found_gto = false;
+   bool found_mo = false;
+
+   string line; // Contains the current line of the file
+
+   /************************************************************
+   *  Open input stream                                        *
+   ************************************************************/
+
+   ifstream ifs;
+   ifs.open(molden_file.c_str());
+   if(!ifs.is_open()){
+      throw runtime_error("Molden input file not found");
+   }
+   else {
+      getline(ifs, line);
+
+      while (!ifs.eof()){
+         if (boost::regex_search(line,gto_re)){
+            getline(ifs, line);
+
+            boost::regex atom_line("(\\d+)\\s*\\d*");
+            boost::regex shell_line("([spd])\\s+(\\d+)\\s*\\S*");
+
+            while(!boost::regex_search(line,other_re)){
+               if (ifs.eof()) { break; }
+
+               /* This line should be a new atom */
+               if(!boost::regex_search(line.c_str(), matches, atom_line)) {
+                  getline(ifs,line); continue;
+               }
+               string atom_no_str(matches[1].first, matches[1].second);
+               int atom_no = boost::lexical_cast<int>(atom_no_str.c_str());
+               if(atom_no > num_atoms) {
+                  throw runtime_error("Atom # found is > num_atoms. Check molden file");
+               }
+               else {
+                  gto_order.push_back(atom_no);
+               }
+
+               getline(ifs, line);
+
+               while(boost::regex_search(line.c_str(), matches, shell_line)) {
+                  /* Now it should be a new angular shell */
+                  string ang_l(matches[1].first, matches[1].second);
+
+                  string num_exp_string(matches[2].first, matches[2].second);
+                  int num_exponents = boost::lexical_cast<int>(num_exp_string);
+
+                  for (int i = 0; i < num_exponents; ++i) {
+                     getline(ifs,line);
+                  }
+
+                  getline(ifs, line); 
+               }
+            }
+
+            found_gto = true;
+         }
+         else if (boost::regex_search(line,mo_re)) {
+            if(!found_gto) {
+               throw runtime_error("MO section found before GTO section. Check Molden file.");
+            }
+
+            /* Not used at the moment. Maybe later.
+            boost::regex sym_re("Sym=\\s+(\\S+)");
+            boost::regex ene_re("Ene=\\s+(\\S+)");
+            boost::regex spin_re("Spin=\\s+(\\w+)");
+            boost::regex occup_re("Occup=\\s+(\\S+)");
+            */
+            boost::regex coeff_re("\\d+\\s+(\\S+)");
+
+            getline(ifs,line);
+            while(!boost::regex_search(line,other_re)) {
+               if (ifs.eof()) { break; }
+
+               vector<double> movec;
+
+               getline(ifs,line);
+               while(!boost::regex_search(line.c_str(),coeff_re)) {
+                  /* For now, throwing away excess data until I get to MO coefficients */
+                  getline(ifs,line);
+               }
+
+               int num_aos = 0;
+               while(boost::regex_search(line.c_str(),matches,coeff_re)){
+                  string mo_string(matches[1].first, matches[1].second);
+                  double coeff = boost::lexical_cast<double>(mo_string);
+                  
+                  movec.push_back(coeff);
+                  getline(ifs,line);
+               }
+
+               mo_coefficients.push_back(movec);
+            }
+         }
+         else {
+            getline(ifs,line);
+         }
+      }
+   }
+   ifs.close();
+
+   /************************************************************
+   *  Now to organize all the info                             *
+   ************************************************************/
+   if(!(found_gto && found_mo)) {
+      throw runtime_error("GTO or MO section not found in molden file.");
+   }
+   else{
+      double *idata = cdata;
+      for(auto imo = mo_coefficients.begin(); imo != mo_coefficients.end(); ++imo) {
+         auto ibasis = imo->begin();
+         for(int i = 0; i != num_atoms; ++i) {
+            int off = atom_offsets[gto_order[i]-1];
+            int num_ao = nbases[gto_order[i]-1];
+            copy(ibasis, ibasis + num_ao, idata + off);
+            ibasis += num_ao;
+         }
+         idata += num_basis;
+      }
+   }
+
+   shared_ptr<const Coeff> out(new const Coeff(read_mat));
+   return out;
+}
 
 /************************************************************************************
-*  write_geo( shared_ptr<Geometry> geo, const string molden_file )                      *
+*  write_geo( shared_ptr<Geometry> geo, const string molden_file )                  *
 *                                                                                   *
 *  Writes a molden file. Just the geometry though (Atoms section)                   *
 *                                                                                   *
@@ -414,8 +521,10 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
                
                ofs << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
                for(int kk = range.first; kk < range.second; ++kk) {
-                  ofs << setiosflags(ios_base::scientific) << setw(20) << setprecision(8) << exponents[kk]
-                                                           << setw(20) << setprecision(8) << (*ishell)->contractions(jj)[kk] << endl;
+                  ofs << setiosflags(ios_base::scientific)
+                      << setw(20) << setprecision(8) << exponents[kk]
+                      << setw(20) << setprecision(8) 
+                      << (*ishell)->contractions(jj)[kk]*denormalize((*ishell)->angular_number(), exponents[kk]) << endl;
                }
             }
          }
@@ -436,7 +545,14 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
 
       int nocc = ref->nclosed();
 
-      auto ieig = eigvec.begin();
+      vector<double>::iterator ieig;
+      vector<double> tmp_eigvec(nbasis,0.0);
+      if(eigvec.empty()) {
+         ieig = tmp_eigvec.begin();
+      }
+      else{
+         ieig = eigvec.begin();
+      }
       int num_mos = coeff->mdim();
       for(int i = 0; i < num_mos; ++i, ++ieig){
          ofs << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
@@ -453,4 +569,12 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
          }
       }
    }
+}
+
+double Molden::denormalize(int l, double alpha) {
+   double denom = 1.0;
+   for (int ii = 2; ii <= l; ++ii) denom *= 2 * ii - 1;
+   double value = ::pow(2.0 * alpha / PI, 0.75) * ::pow(::sqrt(4.0 * alpha), static_cast<double>(l)) / ::sqrt(denom);
+
+   return (1.0 / value);
 }

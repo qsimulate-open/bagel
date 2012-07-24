@@ -26,7 +26,6 @@
 #ifndef __molden_molden_h
 #define __molden_molden_h
 
-#include <src/util/constants.h>
 #include <src/scf/atom.h>
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
@@ -34,14 +33,17 @@
 class Molden {
    protected:
 
+   private:
+      double denormalize(int l, double alpha);
+
    public:
       Molden() {};
       
       /* Read functions */
       std::vector<std::shared_ptr<Atom> > read_geo(std::string in_file);
-      std::shared_ptr<Reference> read_ref(std::string in_file); /* This is still to come */
+      std::shared_ptr<const Coeff> read_mos(std::shared_ptr<const Geometry>, std::string in_file);
 
-      /* Write functions, TODO */
+      /* Write functions */
       void write_geo(std::shared_ptr<Geometry>, std::string out_file);
       void write_mos(std::shared_ptr<const Reference>, std::string out_file);
 };
