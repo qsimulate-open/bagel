@@ -5,10 +5,11 @@ molecule {
   schwarz_thresh = 1.0e-12;
   stack = 100M;
   angstrom = false;
-  atom = ( F,     -0.000000,     -0.000000,      2.720616);
-  atom = ( H,      0.000000,      0.000000,      0.305956);
+  atom = ( C,     -0.000000,     -0.000000,      2.000000);
+  atom = ( H,      0.000000,      0.000000,      0.000000);
 }
 
-df-hf {
+df-rohf-opt {
+  nact = 1;
   thresh = 1.0e-10;
 }

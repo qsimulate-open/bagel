@@ -25,6 +25,7 @@
 
 #include <sstream>
 #include <src/scf/scf.h>
+#include <src/scf/rohf.h>
 #include <src/scf/uhf.h>
 #include <src/wfn/reference.h>
 
@@ -56,6 +57,14 @@ double scf_energy(std::string filename) {
       delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
+    } else if (iter->first == "df-rohf") {
+      std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
+      scf->compute();
+      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+
+      delete stack;
+      std::cout.rdbuf(backup_stream);
+      return ref->energy();
     }
   }
   assert(false);
@@ -68,6 +77,7 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),  -99.83765614));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"), -99.84911270));
     BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),       -75.28410147));
+    BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),      -38.16810629));
 }
  
 BOOST_AUTO_TEST_SUITE_END()
