@@ -34,8 +34,8 @@ using namespace std;
 
 Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 
-  const int ndim_ = inp.ndim();
-  const int mdim_ = inp.mdim();
+  ndim_ = inp.ndim();
+  mdim_ = inp.mdim();
   dcopy_(nbasis_*nbasis_, inp.data(), 1, data(), 1); 
 
 }

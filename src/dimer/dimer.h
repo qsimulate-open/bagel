@@ -68,7 +68,7 @@ class Dimer {
       RefGeometry geometry();
       RefCoeff coefficients();
       RefCoeff coefficients(std::shared_ptr<const Geometry>);
-      RefCoeff overlap();
+      RefCoeff overlap(int nele1 = -1, int nele2 = -1); // Until I think of a better way to do this, -1 means all
 };
 
 #endif

@@ -270,7 +270,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    /* external field would hopefully match, but for now, if it doesn't, just disable */
    for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
       if(!(equal(external_.begin(), external_.end(), (*inmer)->external_.begin()))){
-         external_[0] = 0.0, external_[1] = 0.0, external_[2] = 0.0; break;
+         external_.clear(); break;
       }
    }
 
@@ -289,13 +289,8 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    
    /* Use the strictest thresholds */
    for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      if ( (*inmer)->schwarz_thresh_ < schwarz_thresh_ ) {
-         schwarz_thresh_ = (*inmer)->schwarz_thresh_;
-      }
-
-      if ( (*inmer)->overlap_thresh_ < overlap_thresh_ ) {
-         overlap_thresh_ = (*inmer)->overlap_thresh_;
-      }
+      schwarz_thresh_ = min(schwarz_thresh_, (*inmer)->schwarz_thresh_);
+      overlap_thresh_ = min(overlap_thresh_, (*inmer)->overlap_thresh_);
    }
    
    /* Data is merged (crossed fingers), now finish */

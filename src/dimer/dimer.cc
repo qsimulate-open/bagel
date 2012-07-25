@@ -96,15 +96,31 @@ shared_ptr<const Coeff> Dimer::coefficients(shared_ptr<const Geometry> cgeo) {
    return out;
 }
 
-shared_ptr<const Coeff> Dimer::overlap() {
+shared_ptr<const Coeff> Dimer::overlap(int nocc1, int nocc2) {
 /* What I need to do is use a supergeo to make a big overlap matrix
    and then transform it with supercoeffs into the MO basis */
+   if( nocc1 == -1 ) { nocc1 = geompair_.first->nbasis(); }
+   if( nocc2 == -1 ) { nocc2 = geompair_.second->nbasis(); }
+
+   if(coeffs_.size() == 0) {
+      throw runtime_error("Attempting to compute overlaps in a Dimer without a coefficient matrix");
+   }
+
+   vector<shared_ptr<const Coeff> > coeff_vec;
+   shared_ptr<Matrix1e> leftslice_m = coeffs_.front()->slice(0,nocc1);
+   shared_ptr<const Coeff> leftslice_c(new const Coeff(*leftslice_m));
+   
+   coeff_vec.push_back(leftslice_c);
+
+   shared_ptr<Matrix1e> rightslice_m = coeffs_.back()->slice(0,nocc2);
+   shared_ptr<const Coeff> rightslice_c(new const Coeff(*rightslice_m));
+   coeff_vec.push_back(rightslice_c);
 
    /* super geo */
    shared_ptr<const Geometry> supergeo = geometry();
 
    /* super coeff */
-   shared_ptr<const Coeff> supercoeff = coefficients(supergeo);
+   shared_ptr<const Coeff> supercoeff(new const Coeff(coeff_vec));
 
    /* super overlap in AO basis */
    Overlap ovlp(supergeo);
