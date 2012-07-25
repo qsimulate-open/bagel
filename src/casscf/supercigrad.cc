@@ -56,6 +56,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nbasis = ref_->geom()->nbasis();
   shared_ptr<Matrix1e> eig(new Matrix1e(ref_->geom()));
   {
+    // as in Theor Chem Acc (1997) 97:88-95
     vector<double> occup_ = task_->fci()->rdm1(target)->diag();
 
     shared_ptr<Matrix1e> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
@@ -83,10 +84,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nclosed; ++j)
          eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
-                                   = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i+nclosed)) - f->element(j, j)*(2.0 - occup_[i]);
+                                   = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
+#if 0
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e100; 
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e2; 
+#endif
 
   }
 
