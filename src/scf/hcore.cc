@@ -42,6 +42,7 @@ typedef std::shared_ptr<Shell> RefShell;
 Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
 
   init();
+  fill_upper();
 
 }
 

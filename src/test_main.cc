@@ -48,6 +48,8 @@ bool compare(const std::vector<double> a, const std::vector<double> b, const dou
 
 #include <src/mp2/test_mp2.cc>
 
+#include <src/casscf/test_casscf.cc>
+
 #include <src/fci/test_fci.cc>
 
 #include <src/opt/test_opt.cc>
