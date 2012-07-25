@@ -5,11 +5,11 @@ molecule {
   schwarz_thresh = 1.0e-12;
   stack = 100M;
   angstrom = false;
-  atom = ( O,     -0.000000,     -0.000000,      1.500000);
+  atom = ( O,     -0.000000,     -0.000000,      1.800000);
   atom = ( H,      0.000000,      0.000000,      0.000000);
 }
 
-df-uhf {
+df-uhf-opt {
   nact = 1;
   thresh = 1.0e-10;
 }

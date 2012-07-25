@@ -73,6 +73,7 @@ class RDM {
     };
 
     void daxpy(const double a, const std::shared_ptr<RDM>& o) { this->daxpy(a, *o); };
+    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); };
 
     std::vector<double> diag() const {
       std::vector<double> out(dim_);
