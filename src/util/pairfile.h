@@ -45,8 +45,9 @@ class PairFile {
     PairFile(const PairFile<T, U>& o) : file0_(new T(*o.file0_)), file1_(new U(*o.file1_)) {};
     ~PairFile() {};
 
-    std::shared_ptr<T> first() { return file0_; };
-    std::shared_ptr<U> second() { return file1_; };
+    std::shared_ptr<T>& first() { return file0_; };
+    std::shared_ptr<U>& second() { return file1_; };
+
     std::shared_ptr<const T> first() const { return file0_; };
     std::shared_ptr<const U> second() const { return file1_; };
 
@@ -75,6 +76,7 @@ class PairFile {
     void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
     double ddot(const std::shared_ptr<const PairFile<T, U> > o) const { return ddot(*o); };
+    double norm() const { return std::sqrt(ddot(*this)); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
 
     void zero() { first()->zero(); second()->zero(); };
@@ -85,7 +87,7 @@ class PairFile {
     double orthog(std::list<std::shared_ptr<const PairFile<T, U> > > c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
         const double scal = - this->ddot(**iter);
-        daxpy(scal, **iter);
+        daxpy(scal, *iter);
       }
       const double scal = 1.0/this->norm();
       scale(scal);
