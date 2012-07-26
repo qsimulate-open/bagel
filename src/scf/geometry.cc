@@ -68,53 +68,63 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
     spherical_ = false;
   }
 
-  // basis
+  /* Set up atoms_ */
   basisfile_ = read_input<string>(geominfo, "basis", "");
   if (basisfile_ == "") throw runtime_error("There is no basis specification");
+  else if (basisfile_ == "molden") {
+    Molden molden(spherical_);
+    string molden_file = read_input<string>(geominfo, "molden_in", "");
+    if (molden_file == "") throw runtime_error("No molden_in file provided");
+    atoms_ = molden.read_geo(molden_file);
+  }
+  else {
+    const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
 
+    pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
+    for (auto iter = bound.first; iter != bound.second; ++iter) { 
+      boost::smatch what;
+      const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+      auto start = iter->second.begin();
+      auto end = iter->second.end();
+      if (regex_search(start, end, what, atom_reg)) {
+        const string aname(what[1].first, what[1].second);
+        const string x_str(what[2].first, what[2].second);
+        const string y_str(what[3].first, what[3].second);
+        const string z_str(what[4].first, what[4].second);
+        vector<double> positions;
+        // ang2bohr defined in constant.h
+        const double prefac = angstrom ? ang2bohr : 1.0 ;
+        positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
+        positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
+        positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
+
+        {
+          RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
+          atoms_.push_back(catom); 
+        }
+      } else {
+        throw runtime_error("One of the atom lines is corrupt");
+      } 
+    }
+  }
+  if(atoms_.empty()) throw runtime_error("No atoms specified at all");
+
+  /* Set up aux_atoms_ */
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  if (!auxfile_.empty()) {
+    for(auto iatom = atoms_.begin(); iatom != atoms_.end(); ++iatom) {
+      RefAtom catom(new Atom(spherical_, (*iatom)->name(), (*iatom)->position(), auxfile_));
+      aux_atoms_.push_back(catom);
+    }
+  }
 
   // symmetry
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
-  const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
-
   // Misc
   aux_merged_ = false;
 
-  pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
-  for (auto iter = bound.first; iter != bound.second; ++iter) { 
-    boost::smatch what;
-    const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
-    auto start = iter->second.begin();
-    auto end = iter->second.end();
-    if (regex_search(start, end, what, atom_reg)) {
-      const string aname(what[1].first, what[1].second);
-      const string x_str(what[2].first, what[2].second);
-      const string y_str(what[3].first, what[3].second);
-      const string z_str(what[4].first, what[4].second);
-      vector<double> positions;
-      // ang2bohr defined in constant.h
-      const double prefac = angstrom ? ang2bohr : 1.0 ;
-      positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
-      positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
-      positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
-
-      {
-        RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
-        atoms_.push_back(catom); 
-      }
-      if (!auxfile_.empty()){
-        RefAtom catom(new Atom(spherical_, aname, positions, auxfile_));
-        aux_atoms_.push_back(catom); 
-      }
-    } else {
-      throw runtime_error("One of the atom lines is corrupt");
-    } 
-  }
-
   common_init1();
-
 
   print_atoms();
 
