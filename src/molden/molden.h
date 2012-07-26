@@ -32,12 +32,14 @@
 
 class Molden {
    protected:
+      /* This parameter only affects returned values. The functions check the file itself for its formatting. */
+      bool is_spherical_;
 
    private:
       double denormalize(int l, double alpha);
 
    public:
-      Molden() {};
+      Molden(bool is_spherical = true) : is_spherical_(is_spherical) {};
       
       /* Read functions */
       std::vector<std::shared_ptr<Atom> > read_geo(std::string in_file);
@@ -46,6 +48,8 @@ class Molden {
       /* Write functions */
       void write_geo(std::shared_ptr<Geometry>, std::string out_file);
       void write_mos(std::shared_ptr<const Reference>, std::string out_file);
+
+      void set_spherical(bool is_spherical) { is_spherical_ = is_spherical; }
 };
 
 #endif

@@ -28,6 +28,7 @@
 #include <fstream>
 #include <iomanip>
 #include <tuple>
+#include <algorithm>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <map>
@@ -62,8 +63,6 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    vector< string > names;
    /* Map atom number to basis info */
    map<int, vector<tuple<string, vector<double>, vector<double> > > > basis_info;
-   /* spherical */
-   bool is_spherical = false;
 
    /************************************************************
    *  Set up "global" regular expressions                      *
@@ -92,26 +91,6 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    ************************************************************/
 
    string line; // Contains the current line of the file
-
-   ifstream sph_input;
-   sph_input.open(molden_file.c_str());
-   if(!sph_input.is_open()){
-      throw runtime_error("Molden input file not found");
-   }   
-   else {
-      boost::regex _5d_re("\\[5[Dd]\\]");
-      boost::regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
-      while (!sph_input.eof()) {
-         getline(sph_input, line);
-         if(boost::regex_search(line,_5d_re)){
-            is_spherical = true;
-         }
-         else if(boost::regex_search(line,_5d7f_re)) {
-            is_spherical = true;
-         }
-      }
-   }
-   sph_input.close();
 
    /************************************************************
    *  Open input stream                                        *
@@ -166,7 +145,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
             getline(ifs, line);
 
             boost::regex atom_line("(\\d+)\\s*\\S*");
-            boost::regex shell_line("([spd])\\s+(\\d+)\\s*\\S*");
+            boost::regex shell_line("([spdf])\\s+(\\d+)\\s*\\S*");
             boost::regex exp_line("(\\S+)\\s+(\\S+)");
             boost::regex Dd("[Dd]");
 
@@ -264,7 +243,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 
       transform(niter->begin(), niter->end(), niter->begin(), ::tolower);
       /* For each atom, I need to make an atom object and stick it into a vector */
-      shared_ptr<Atom> this_atom(new Atom(is_spherical, *niter, *piter, binfo));
+      shared_ptr<Atom> this_atom(new Atom(is_spherical_, *niter, *piter, binfo));
 
       all_atoms.push_back(this_atom);
    }
@@ -275,28 +254,56 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 /************************************************************************************
 *  read_mos                                                                         *
 *                                                                                   *
-*  Read the MO data and form a Coeff object... I think... for now...                *
+*  Read the MO data and form a Coeff object                                         *
 ************************************************************************************/
 shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string molden_file) {
-   Matrix1e read_mat(geom);
-   double* cdata = read_mat.data();
+   shared_ptr<const Coeff> out(new const Coeff(geom));
+   double* cdata = out->data();
    int num_basis = geom->nbasis();
    vector<int> nbases;
-   for(auto iatom = geom->atoms().begin(); iatom != geom->atoms().end(); ++iatom){
+   vector<shared_ptr<Atom> > atoms = geom->atoms();
+   for(auto iatom = atoms.begin(); iatom != atoms.end(); ++iatom){
       nbases.push_back((*iatom)->nbasis());
    }
    int num_atoms = geom->natom();
+   is_spherical_ = geom->spherical();
+   bool cartesian = true;
 
+   string line; // Contains current line of file
+
+   /* Check to see whether the file itself is cartesian */
+   ifstream sph_input;
+   sph_input.open(molden_file.c_str());
+   if(!sph_input.is_open()){
+      throw runtime_error("Molden input file not found");
+   }   
+   else {
+      boost::regex _5d_re("\\[5[Dd]\\]");
+      boost::regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
+      while (!sph_input.eof()) {
+         getline(sph_input, line);
+         if(boost::regex_search(line,_5d_re)){
+            cartesian = false;
+         }
+         else if(boost::regex_search(line,_5d7f_re)) {
+            cartesian = false;
+         }
+      }
+   }
+   sph_input.close();
 
    /************************************************************
    *  Set up offsets and order that I'm interested in here     *
    ************************************************************/
    vector<int> atom_offsets;
-   vector<vector<int> > offsets = geom->offsets();
-   for(vector<vector<int> >::const_iterator ioff = offsets.begin(); ioff != offsets.end(); ++ioff) {
-      atom_offsets.push_back(ioff->front());
+   {
+      vector<vector<int> > offsets = geom->offsets();
+      for(vector<vector<int> >::const_iterator ioff = offsets.begin(); ioff != offsets.end(); ++ioff) {
+         atom_offsets.push_back(ioff->front());
+      }
    }
    vector<int> gto_order;
+   vector<vector<int> > shell_orders;
    vector<vector<double> > mo_coefficients;
 
    /************************************************************
@@ -314,8 +321,6 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
    ************************************************************/
    bool found_gto = false;
    bool found_mo = false;
-
-   string line; // Contains the current line of the file
 
    /************************************************************
    *  Open input stream                                        *
@@ -352,11 +357,15 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
                   gto_order.push_back(atom_no);
                }
 
+               vector<int> atomic_shell_order;
+               AtomMap atommap;
+
                getline(ifs, line);
 
                while(boost::regex_search(line.c_str(), matches, shell_line)) {
                   /* Now it should be a new angular shell */
                   string ang_l(matches[1].first, matches[1].second);
+                  atomic_shell_order.push_back(atommap.angular_number(ang_l));
 
                   string num_exp_string(matches[2].first, matches[2].second);
                   int num_exponents = boost::lexical_cast<int>(num_exp_string);
@@ -367,6 +376,7 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
 
                   getline(ifs, line); 
                }
+               shell_orders.push_back(atomic_shell_order);
             }
 
             found_gto = true;
@@ -412,6 +422,7 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
             getline(ifs,line);
          }
       }
+   found_mo = true;
    }
    ifs.close();
 
@@ -425,17 +436,66 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
       double *idata = cdata;
       for(auto imo = mo_coefficients.begin(); imo != mo_coefficients.end(); ++imo) {
          auto ibasis = imo->begin();
-         for(int i = 0; i != num_atoms; ++i) {
-            int off = atom_offsets[gto_order[i]-1];
-            int num_ao = nbases[gto_order[i]-1];
-            copy(ibasis, ibasis + num_ao, idata + off);
-            ibasis += num_ao;
+         int ii = 0;
+         for(auto iatom = shell_orders.begin(); iatom != shell_orders.end(); ++iatom, ++ii) {
+            double* tmp_idata = idata + atom_offsets[gto_order[ii]-1];
+            for(auto ishell = iatom->begin(); ishell != iatom->end(); ++ishell) {
+               switch(*ishell) {
+                  case 0:
+                     tmp_idata = copy(ibasis, ibasis + 1, tmp_idata);
+                     ibasis += 1;
+                     break;
+                  case 1:
+                     tmp_idata = copy(ibasis, ibasis + 3, tmp_idata);
+                     ibasis += 3;
+                     break;
+                  case 2:
+                     if(cartesian) { 
+                        rotate(ibasis, ibasis + 3, ibasis + 5);
+                        rotate(ibasis + 2, ibasis + 3, ibasis + 5);
+                        tmp_idata = copy(ibasis, ibasis + 5, tmp_idata);
+                        ibasis += 5;
+                     }
+                     else {
+                        /* Molden --> xx, yy, zz, xy, xz, yz */
+                        rotate(ibasis+2,ibasis+3,ibasis+6);
+                        /*        --> xx, yy, xy, xz, yz, zz */
+                        iter_swap(ibasis+1, ibasis+2);
+                        /* Newint --> xx, xy, yy, xz, yz, zz */
+                        tmp_idata = copy(ibasis, ibasis + 6, tmp_idata);
+                        ibasis += 6;
+                     }
+                     break;
+                  case 3:
+                     if(cartesian) {
+                        rotate(ibasis,ibasis+5,ibasis+7);
+                        rotate(ibasis+2,ibasis+5,ibasis+7);
+                        rotate(ibasis+4,ibasis+5,ibasis+7);
+                        tmp_idata = copy(ibasis, ibasis + 7, tmp_idata);
+                        ibasis += 7;
+                     }
+                     else {
+                        /* Molden --> xxx, yyy, zzz, xyy, xxy, xxz, xzz, yzz, yyz, xyz */
+                        iter_swap(ibasis+1,ibasis+4);
+                        /*        --> xxx, xxy, zzz, xyy, yyy, xxz, xzz, yzz, yyz, xyz */
+                        rotate(ibasis+2,ibasis+3,ibasis+10);
+                        /*        --> xxx, xxy, xyy, yyy, xxz, xzz, yzz, yyz, xyz, zzz */
+                        reverse(ibasis+5,ibasis+9);
+                        /*        --> xxx, xxy, xyy, yyy, xxz, xyz, yyz, yzz, xzz, zzz */
+                        iter_swap(ibasis+7,ibasis+8);
+                        /* Newint --> xxx, xxy, xyy, yyy, xxz, xyz, yyz, xzz, yzz, zzz */
+                     }
+                     break;
+                  default:
+                     throw runtime_error("G functions from the Molden file? Really?!");
+                     break;
+               }
+            }
          }
          idata += num_basis;
       }
    }
 
-   shared_ptr<const Coeff> out(new const Coeff(read_mat));
    return out;
 }
 
@@ -537,6 +597,8 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
 
    {
       ofs << "[MO]" << endl;
+
+      //TODO set it up to reorder d and f functions according to how Molden wants to read them.
 
       shared_ptr<const Coeff> coeff = ref->coeff();
       int nbasis = coeff->nbasis();
