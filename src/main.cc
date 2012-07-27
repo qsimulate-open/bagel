@@ -206,6 +206,14 @@ int main(int argc, char** argv) {
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
+      } else if (method == "print") {
+        std::multimap<std::string, std::string> pdata = idata->get_input("print");
+        bool orbitals = read_input<bool>(pdata, "orbitals", false);
+        std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
+
+        Molden molden;
+        molden.write_geo(geom, out_file);
+        if (orbitals) molden.write_mos(ref, out_file);
       }
       #if 0 // <---- I've probably messed something up so I'm just taking this out for now
       else if (method == "molden") {
