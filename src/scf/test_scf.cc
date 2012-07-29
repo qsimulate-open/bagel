@@ -65,6 +65,14 @@ double scf_energy(std::string filename) {
       delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
+    } else if (iter->first == "hf") {
+      std::shared_ptr<SCF<0> > scf(new SCF<0>(iter->second, geom));
+      scf->compute();
+      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+
+      delete stack;
+      std::cout.rdbuf(backup_stream);
+      return ref->energy();
     }
   }
   assert(false);
