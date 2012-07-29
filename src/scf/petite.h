@@ -59,8 +59,8 @@ class Petite {
     std::vector<int> sym_shellmap(const int i) const { return sym_shellmap_[i]; }; 
     std::vector<int> sym_atommap(const int i) const { return sym_atommap_[i]; }; 
 
-    const int nirrep() const { return nirrep_; };
-    const int nsymop() const { return nsymop_; };
+    int nirrep() const { return nirrep_; };
+    int nsymop() const { return nsymop_; };
 
     bool in_p1(int i) const { return (nirrep_ == 1 || p1_[i]); }; 
     bool in_p2(int ij) const { return (nirrep_ == 1 || lambda_[ij]); }; 

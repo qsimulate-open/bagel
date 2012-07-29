@@ -59,7 +59,7 @@ class HPW_DIIS  {
       // prev = log(base)
       RefT expo = (*base_**rot).log();
       RefT prev_ = base_->log();
-      RefT err(new T(prev_ ? (*expo-*prev_) : (*expo)));
+      RefT err(new T(static_cast<bool>(prev_) ? (*expo-*prev_) : (*expo)));
 
       std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
       // this is important

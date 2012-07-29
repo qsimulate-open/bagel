@@ -86,7 +86,7 @@ class MOFile {
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
-    const int sizeij() const { return sizeij_; };
+    int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
     // strictly i <= j, k <= l
@@ -104,7 +104,7 @@ class MOFile {
 
     std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
     std::shared_ptr<const DF_Half> mo2e_1ext() const { return mo2e_1ext_; };
-    const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
+    const double* mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
     void update_1ext_ints(const std::vector<double>& coeff);
 
 };

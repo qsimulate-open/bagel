@@ -61,7 +61,7 @@ class BFGS {
       // (1)
       *out /= *denom_;
 
-      if (prev_value && !debug_) {
+      if (static_cast<bool>(prev_value) && !debug_) {
         // (3)
         std::shared_ptr<T> yy = grad->clone();
         {

@@ -50,7 +50,7 @@ static void print_footer() {
 }
 
 
-static const int count_string(const std::string inputfile, const std::string keyword) {
+static int count_string(const std::string inputfile, const std::string keyword) {
   try {
     std::ifstream ifs;
     ifs.open(inputfile.c_str());

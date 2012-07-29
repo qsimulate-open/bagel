@@ -65,7 +65,7 @@ void POverlap::computebatch(const vector<shared_ptr<Shell> >& input,
 }
 
 
-const int POverlap::calculate_thresh() const {
+int POverlap::calculate_thresh() const {
 
   cout << "  * Maximum overlap" << endl;
   int out = -1;

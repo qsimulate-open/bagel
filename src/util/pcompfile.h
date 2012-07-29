@@ -85,18 +85,18 @@ class PCompFile {
     void get_block(const long, const long, double*);
 
     // returns some misc infos
-    const double schwarz(int i) const { return schwarz_[i]; };
+    double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
     std::vector<std::shared_ptr<Shell> > basis() const { return basis_; };
     std::shared_ptr<Shell> basis(size_t i) const { return basis_[i]; };
-    const size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
-    const int basissize() const { return basis_.size(); };
+    size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
+    int basissize() const { return basis_.size(); };
 
     // calculate integrals here
     void init_schwarz();
     std::vector<size_t> num_int_each() const { return num_int_each_; };
-    const size_t num_int_each(const int i) const { return num_int_each_[i]; };
+    size_t num_int_each(const int i) const { return num_int_each_[i]; };
     // will be redefined in the derived classes
     virtual void calculate_num_int_each();
     virtual void store_integrals();
@@ -107,12 +107,12 @@ class PCompFile {
                                                             max_num_int_ = *std::max_element(nie.begin(), nie.end()); };
     void set_integrals(std::shared_ptr<std::fstream> inp) { file_ = inp; };
 
-    const size_t max_num_int() const { assert(max_num_int_ > 0lu); return max_num_int_; };
+    size_t max_num_int() const { assert(max_num_int_ > 0lu); return max_num_int_; };
 
-    const int K() const { return K_; };
-    const int L() const { return L_; };
-    const int S() const { return S_; };
-    const double A() const { return A_; };
+    int K() const { return K_; };
+    int L() const { return L_; };
+    int S() const { return S_; };
+    double A() const { return A_; };
 
     // AO-to-MO integral transformation...
     std::shared_ptr<PMOFile<std::complex<double> > > 

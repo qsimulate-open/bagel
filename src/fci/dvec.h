@@ -69,7 +69,7 @@ class Dvec {
     std::shared_ptr<const Determinants> det() const { return det_; };
 
     double* data() { return data_.get(); };
-    const double* const data() const { return data_.get(); };
+    const double* data() const { return data_.get(); };
 
     std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; };
     std::shared_ptr<const Civec> data(const size_t i) const { return dvec_[i]; };

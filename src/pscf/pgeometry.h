@@ -39,20 +39,20 @@ class PGeometry : public Geometry {
 
     // Computes the nuclear repulsion energy per unit cell.
     double pnuclear_repulsion_;
-    const double compute_pnuclear_repulsion();
+    double compute_pnuclear_repulsion() const;
 
   public:
     PGeometry(const std::string, const int);
     ~PGeometry() {};
 
     // Some constants for periodic calculations.
-    const int L() const { return L_; };
-    const int S() const { return S_; };
-    const int K() const { return K_; };
-    const double A() const { return A_; };
+    int L() const { return L_; };
+    int S() const { return S_; };
+    int K() const { return K_; };
+    double A() const { return A_; };
 
     // Returns nuclear repulsion energies.
-    const double nuclear_repulsion() const { return pnuclear_repulsion_; }; 
+    double nuclear_repulsion() const { return pnuclear_repulsion_; }; 
 };
 
 #endif

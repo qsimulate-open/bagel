@@ -85,7 +85,7 @@ class FCI {
     //
 
     // Determinant space
-    std::shared_ptr<Determinants> det_;
+    std::shared_ptr<const Determinants> det_;
 
     // denominator
     std::shared_ptr<Civec> denom_;

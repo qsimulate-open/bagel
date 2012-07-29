@@ -60,15 +60,15 @@ class Atom {
     ~Atom() {};
 
     const std::string name() const { return name_; };
-    const int atom_number() const { return atom_number_;};
+    int atom_number() const { return atom_number_;};
     const std::vector<double> position() const { return position_; };
-    const double position(const unsigned int i) const { return position_[i]; };
+    double position(const unsigned int i) const { return position_[i]; };
     const std::vector<std::shared_ptr<Shell> >& shells() const { return shells_; };
-    const int nshell() const { return shells_.size(); };
+    int nshell() const { return shells_.size(); };
 
-    const int nbasis() const { return nbasis_; };
-    const int lmax() const { return lmax_; };
-    const bool spherical() const { return spherical_; };
+    int nbasis() const { return nbasis_; };
+    int lmax() const { return lmax_; };
+    bool spherical() const { return spherical_; };
 
     void print_basis() const;
     void print() const;

@@ -102,12 +102,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution 
-  shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-  shared_ptr<Matrix1e> rdm1 = ref_->rdm1_mat(target);
+  shared_ptr<const Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
+  shared_ptr<const Matrix1e> rdm1 = ref_->rdm1_mat(target);
   dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
   // 2) two-electron contribution
-  shared_ptr<DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
-  shared_ptr<DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+  shared_ptr<const DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
+  shared_ptr<const DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
   unique_ptr<double[]> buf = half->form_2index(fulld);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 

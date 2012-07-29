@@ -125,7 +125,7 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil, levl) {
 }
 
 
-const double PGeometry::compute_pnuclear_repulsion() {
+double PGeometry::compute_pnuclear_repulsion() const {
   double out = 0.0;
   typedef std::shared_ptr<Atom> RefAtom;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {

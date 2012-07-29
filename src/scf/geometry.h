@@ -51,7 +51,7 @@ class Geometry {
     // Nuclear repulsion energy.
     double nuclear_repulsion_;
     // Computes the nuclear repulsion energy.
-    const double compute_nuclear_repulsion();
+    double compute_nuclear_repulsion();
 
     // Some shared info for basis sets.
     int nbasis_;
@@ -105,24 +105,24 @@ class Geometry {
     std::shared_ptr<Atom> atoms(const unsigned int i) const { return atoms_[i]; };
 
     // Returns a constant
-    const int natom() const { return atoms_.size(); };
-    const size_t nbasis() const { return nbasis_; };
-    const size_t nele() const { return nele_; };
-    const size_t nfrc() const { return nfrc_; };
-    const size_t naux() const { return naux_; };
-    const int lmax() const { return lmax_; };
-    const int aux_lmax() const { return aux_lmax_; };
-    const bool spherical() const { return spherical_; };
-    const int nirrep() const { return nirrep_; };
-    const double gamma() const {return gamma_; };
+    int natom() const { return atoms_.size(); };
+    size_t nbasis() const { return nbasis_; };
+    size_t nele() const { return nele_; };
+    size_t nfrc() const { return nfrc_; };
+    size_t naux() const { return naux_; };
+    int lmax() const { return lmax_; };
+    int aux_lmax() const { return aux_lmax_; };
+    bool spherical() const { return spherical_; };
+    int nirrep() const { return nirrep_; };
+    double gamma() const {return gamma_; };
     const std::string symmetry() const { return symmetry_; };
-    virtual const double nuclear_repulsion() const { return nuclear_repulsion_; };
+    virtual double nuclear_repulsion() const { return nuclear_repulsion_; };
     const std::vector<double> compute_grad_vnuc() const;
-    const int level() const { return level_; };
+    int level() const { return level_; };
     const std::string basisfile() const { return basisfile_; };
     const std::string auxfile() const { return auxfile_; };
-    const double schwarz_thresh() const { return schwarz_thresh_; };
-    const double overlap_thresh() const { return overlap_thresh_; };
+    double schwarz_thresh() const { return schwarz_thresh_; };
+    double overlap_thresh() const { return overlap_thresh_; };
 
     // TODO for some reasons needed now in CASSCF
     void set_nele(const int i) { nele_ = i; };

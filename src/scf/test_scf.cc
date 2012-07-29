@@ -68,6 +68,7 @@ double scf_energy(std::string filename) {
     }
   }
   assert(false);
+  return 0.0;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_SCF)

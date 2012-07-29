@@ -56,15 +56,15 @@ class Shell {
 
     ~Shell();
 
-    const bool dummy() const { return dummy_; };
-    const bool spherical() const { return spherical_; };
-    const int num_primitive() const { return exponents_.size(); };
-    const int num_contracted() const { return contractions_.size(); };
+    bool dummy() const { return dummy_; };
+    bool spherical() const { return spherical_; };
+    int num_primitive() const { return exponents_.size(); };
+    int num_contracted() const { return contractions_.size(); };
 
-    const double position(const int i) const { return position_[i]; };
+    double position(const int i) const { return position_[i]; };
     const std::vector<double> position() const { return position_; };
-    const int angular_number() const { return angular_number_; };
-    const double exponents(const int i) const { return exponents_[i]; }; 
+    int angular_number() const { return angular_number_; };
+    double exponents(const int i) const { return exponents_[i]; }; 
     const std::vector<double>& exponents() const { return exponents_; };
     const double* exponents_pointer() const { return &(exponents_[0]); };
     const std::vector<double> contractions(const int i) const { return contractions_[i]; };
@@ -76,7 +76,7 @@ class Shell {
     const std::vector<int>& contraction_lower() const { return contraction_lower_; }; 
 
     const std::string show() const;
-    const int nbasis() const { return nbasis_; }; 
+    int nbasis() const { return nbasis_; }; 
 
     std::shared_ptr<Shell> move_atom(const std::vector<double>&);
     std::shared_ptr<Shell> move_atom(const double*);

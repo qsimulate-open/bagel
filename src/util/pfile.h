@@ -56,7 +56,7 @@ class PFile {
     void reopen_with_inout();
 
     const std::string filename() const { return filename_; };
-    const int K() const { return K_; };
+    int K() const { return K_; };
 };
 
 

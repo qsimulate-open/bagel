@@ -557,7 +557,7 @@ const Complex PMatrix1e::zdotc(const shared_ptr<PMatrix1e> o) const {
 }
 
 
-const double PMatrix1e::rms() const {
+double PMatrix1e::rms() const {
   const int unit = 1;
   Complex zdot;
 #ifndef ZDOT_RETURN
@@ -569,7 +569,7 @@ const double PMatrix1e::rms() const {
 }
 
 
-const double PMatrix1e::trace() const {
+double PMatrix1e::trace() const {
   assert(ndim_ == mdim_);
   double out = 0.0;
   int scount = 0;

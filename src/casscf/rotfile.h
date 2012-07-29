@@ -75,7 +75,7 @@ class RotFile {
     RotFile operator=(const RotFile& o) { std::copy(o.data(), o.data()+size(), data());  return *this; }; 
 
     // size of the file
-    const int size() const { return size_; };
+    int size() const { return size_; };
     // zero out
     void zero() { std::fill(data(), data()+size_, 0.0); };
     // returns dot product

@@ -54,8 +54,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     double* data() { return data_.get(); };
     // returns two-index integrals ^-1/2
     double* data2() { return data2_.get(); };
-    const double* const data() const { return data_.get(); };
-    const double*  const data2() const { return data2_.get(); };
+    const double* data() const { return data_.get(); };
+    const double* data2() const { return data2_.get(); };
 
     void common_init(const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
                      const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
@@ -71,8 +71,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-    const double* const data_3index() const { return data(); };
-    const double* const data_2index() const { return data2(); };
+    const double* data_3index() const { return data(); };
+    const double* data_2index() const { return data2(); };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
@@ -134,8 +134,8 @@ class DF_Half {
     size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
-    double* const data() { return data_.get(); };
-    const double* const data() const { return data_.get(); };
+    double* data() { return data_.get(); };
+    const double* data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
 
     std::shared_ptr<DF_Half> clone() const;
@@ -190,8 +190,8 @@ class DF_Full {
 
     ~DF_Full() {};
 
-    const int nocc1() const { return nocc1_; };
-    const int nocc2() const { return nocc2_; };
+    int nocc1() const { return nocc1_; };
+    int nocc2() const { return nocc2_; };
     size_t size() const { return nocc1_*nocc2_*naux_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
@@ -231,7 +231,7 @@ class DF_Full {
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a);
 
     double* data() { return data_.get(); };
-    const double* const data() const { return data_.get(); };
+    const double* data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
 
     std::shared_ptr<DF_Full> clone() const;

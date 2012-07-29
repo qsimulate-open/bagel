@@ -56,7 +56,7 @@ class PFock : public PMatrix1e {
     PFock(const std::shared_ptr<PGeometry>, const std::shared_ptr<PHcore>);
     ~PFock();
 
-    const bool direct() const { return direct_; };
+    bool direct() const { return direct_; };
 
 };
 

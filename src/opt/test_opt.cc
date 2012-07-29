@@ -68,6 +68,7 @@ std::vector<double> scf_opt(std::string filename) {
     }
   }
   assert(false);
+  return std::vector<double>();
 }
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
@@ -117,6 +118,7 @@ std::vector<double> mp2_opt() {
     }
   }
   assert(false);
+  return std::vector<double>();
 }
 std::vector<double> reference_mp2_opt() {
   std::vector<double> out(6);

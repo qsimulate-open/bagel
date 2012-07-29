@@ -59,7 +59,7 @@ void SuperCI::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
-    if (iter >= diis_start_ && gradient < 1.0e-4 && !diis) {
+    if (iter >= diis_start_ && gradient < 1.0e-4 && !static_cast<double>(diis)) {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*ref_->coeff()));
       diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(10, tmp));
     }
@@ -177,7 +177,7 @@ void SuperCI::compute() {
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
-    if (!diis) {
+    if (!static_cast<bool>(diis)) {
       shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff()));
       *newcc *= *rot;
       ref_->set_coeff(newcc);

@@ -370,7 +370,7 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const
 
 }
 
-const double Geometry::compute_nuclear_repulsion() {
+double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const vector<double> tmp = (*iter)->position();

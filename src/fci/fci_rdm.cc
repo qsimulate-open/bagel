@@ -32,7 +32,7 @@ using namespace std;
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0]. 
-  if (!rdm1_av_ && nstate_ > 1) {
+  if (!static_cast<bool>(rdm1_av_) && nstate_ > 1) {
     rdm1_av_ = shared_ptr<RDM<1> >(new RDM<1>(norb_));
     rdm2_av_ = shared_ptr<RDM<2> >(new RDM<2>(norb_));
   }
@@ -158,7 +158,7 @@ void FCI::compute_rdm12(const int ist) {
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF). 
 pair<vector<double>, vector<double> > FCI::natorb_convert() {
-  assert(rdm1_av_);
+  assert(static_cast<bool>(rdm1_av_));
   pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals(); 
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);

@@ -66,7 +66,7 @@ void FCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = shared_ptr<Determinants>(new Determinants(norb_, nelea_, neleb_));
+  det_ = shared_ptr<const Determinants>(new Determinants(norb_, nelea_, neleb_));
 
   // forms MO integrals and denominators.
   update();

@@ -76,7 +76,7 @@ class GradEval_base {
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
                                                 const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2) const;
-    virtual std::shared_ptr<GradFile> compute() const { assert(false); };
+    virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };
 

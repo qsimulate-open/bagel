@@ -68,13 +68,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const double* const vcoeff = coeff + nocc*nbasis;
 
   // first compute half transformed integrals
-  shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);  
+  shared_ptr<const DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);  
   // TODO this is a waste...
-  shared_ptr<DF_Half> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
+  shared_ptr<const DF_Half> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
-  shared_ptr<DF_Full> bv = full->apply_J();
+  shared_ptr<const DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<const DF_Full> bv = full->apply_J();
   shared_ptr<DF_Full> gia = bv->clone();
 
   double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 

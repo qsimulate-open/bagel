@@ -89,16 +89,16 @@ class PMatrix1e {
     const std::complex<double>* bp(const int k) const { return data_->pointer((k + geom_->K()) * blocksize_); };
     std::complex<double>* bpw(const int k) { return data_->pointer((k + geom_->K()) * blocksize_); };
 
-    const int nbasis() const { return nbasis_; };
-    const int K() const { return geom_->K(); };
-    const int L() const { return geom_->L(); };
-    const int S() const { return geom_->S(); };
-    const double A() const { return geom_->A(); };
+    int nbasis() const { return nbasis_; };
+    int K() const { return geom_->K(); };
+    int L() const { return geom_->L(); };
+    int S() const { return geom_->S(); };
+    double A() const { return geom_->A(); };
     std::shared_ptr<PData> data() const { return data_; };
-    const int ndim() const { return ndim_; };
-    const int mdim() const { return mdim_; };
-    const int blocksize() const { return blocksize_; };
-    const int totalsize() const { return totalsize_; };
+    int ndim() const { return ndim_; };
+    int mdim() const { return mdim_; };
+    int blocksize() const { return blocksize_; };
+    int totalsize() const { return totalsize_; };
 
     const std::shared_ptr<PGeometry> geom() const { return geom_; };
     void diagonalize(double*);
@@ -113,8 +113,8 @@ class PMatrix1e {
     const std::complex<double> zdotc(const PMatrix1e&) const;
     const std::complex<double> zdotc(const std::shared_ptr<PMatrix1e>) const;
    
-    const double rms() const;
-    const double trace() const;
+    double rms() const;
+    double trace() const;
 
     std::pair<std::shared_ptr<PMatrix1e>, std::shared_ptr<PMatrix1e> >
       split(const int nrow1, const int nrow2) const;

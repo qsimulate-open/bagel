@@ -374,22 +374,22 @@ void Matrix1e::daxpy(const double a, const std::shared_ptr<const Matrix1e> o) {
 }
 
 
-const double Matrix1e::ddot(const Matrix1e& o) const {
+double Matrix1e::ddot(const Matrix1e& o) const {
   return ddot_(nbasis_*nbasis_, data(), 1, o.data(), 1);
 }
 
 
-const double Matrix1e::ddot(const std::shared_ptr<const Matrix1e> o) const {
+double Matrix1e::ddot(const std::shared_ptr<const Matrix1e> o) const {
   return ddot_(nbasis_*nbasis_, data(), 1, o->data(), 1);
 }
 
 
-const double Matrix1e::rms() const {
+double Matrix1e::rms() const {
   return ::sqrt(ddot(*this) / (ndim_ * mdim_));
 }
 
 
-const double Matrix1e::trace() const {
+double Matrix1e::trace() const {
   double out = 0.0;
   for (int i = 0; i != ndim_; ++i) out += data_[i * nbasis_ + i];
   return out;

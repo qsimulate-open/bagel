@@ -75,7 +75,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<Matrix1e> d0(new Matrix1e(*eig_));
     for (int i = 0; i != d0->size(); ++i)
       if (::fabs(d0->data(i)) < 1.0e-10) d0->data(i) = 1.0;
-    shared_ptr<Civec> d1_tmp(new Civec(*fci_->denom()));
+    shared_ptr<const Civec> d1_tmp(new Civec(*fci_->denom()));
     shared_ptr<Dvec>  d1(new Dvec(d1_tmp, ref_->nstate()));
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
@@ -162,7 +162,7 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
     shared_ptr<DF_Full> fullz = half->compute_second_transform(cz0->data(), nocca);
     fullz->symmetrize();
     {
-      shared_ptr<DF_Full> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+      shared_ptr<const DF_Full> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       unique_ptr<double[]> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
       dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis); 
@@ -228,16 +228,25 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
         sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
 
     sigmaci->project_out(civector_);
+sigmaci->zero();
+
+sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
+z->first()->purify_redrotation(nclosed, nact, nvirt);
+z->second()->zero();
+//z->first()->print();
     z = bfgs->extrapolate(z, solver->civec());
 
     z->second()->project_out(civector_);
+z->second()->zero();
+z->first()->purify_redrotation(nclosed, nact, nvirt);
 
-if (sqrt(z->ddot(*z)) < 1.0e-8) break;
+if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
 
+if (iter+1 == CPHF_MAX_ITER) z->first()->print();
   }
 
 solver->civec()->first()->print("result", 12);

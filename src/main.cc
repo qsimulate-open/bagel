@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
 
-      if (method.substr(0,3) == "df-" && !geom->df())
+      if (method.substr(0,3) == "df-" && !static_cast<bool>(geom->df()))
         throw std::runtime_error("It seems that DF basis was not specified in Geometry");
 
       if (method == "hf") {
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
         }
 
       } else if (method == "fci") {
-        if (!ref) throw std::runtime_error("FCI needs a reference");
+        if (!static_cast<bool>(ref)) throw std::runtime_error("FCI needs a reference");
 
         std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
         fci->compute();
