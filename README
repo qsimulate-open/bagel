@@ -14,17 +14,22 @@ cd obj
 // most likely very old compilers won't work).
 
 // Also, we need to and an appropriate flag to link
-// "-lboost_regex -lblas -llapack"
+// "-lboost_regex"
 // Blame libstdc++ that does not have complete regex yet.
+
+// BLAS and LAPACK are required (see below)
 
 // Other than that, use any options as you like.
 // Note that -O3 optimization is fine, but it will take a lot till it compiles everything.
 
-../configure 'CXXFLAGS=-std=c++11' 'LDFLAGS=-L/opt/local/lib'
+../configure 'CXXFLAGS=-std=c++11' 'LDFLAGS=-L/opt/local/lib -lblas -llapack'
 
 // ** important **
 // For developers: please make sure that your code can be compiled with
-../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g'
+../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib -lblas -llapack'
+             'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g'
+../configure 'CXX=icpc' 'CXXFLAGS=-std=c++0x -O0 -gcc-name=gcc-mp-4.5 -Werror -I/opt/local/include'
+             'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FFLAGS=-O0' 'FCFLAGS=-O0' 
 
 // make
 make -j4
