@@ -29,12 +29,12 @@
 
 #include <src/scf/matrix1e.h>
 #include <memory>
-#include <src/util/linear.h>
+#include <src/util/linearRM.h>
 #include <src/wfn/reference.h>
 
 class CPHF {
   protected:
-    const std::shared_ptr<Linear<Matrix1e> > solver_;
+    const std::shared_ptr<LinearRM<Matrix1e> > solver_;
     const std::shared_ptr<const Matrix1e> grad_;
     const std::vector<double> eig_;
     const std::shared_ptr<const DF_Half> halfjj_;
