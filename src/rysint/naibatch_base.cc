@@ -25,8 +25,7 @@
 
 
 #include <src/rysint/naibatch_base.h>
-#define PI 3.1415926535897932
-#define SQRTPI2 0.886226925452758013649083741671
+#include <src/util/constants.h>
 
 using namespace std;
 
@@ -70,8 +69,8 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
   int index = 0;
   vector<shared_ptr<Atom> > atoms = geom_->atoms();
 
-  const double onepi2 = 1.0 / (PI * PI);
-  const double sqrtpi = ::sqrt(PI);
+  const double onepi2 = 1.0 / (pi__ * pi__);
+  const double sqrtpi = ::sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) { 
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
@@ -84,7 +83,7 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
         p_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         p_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = ::exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        coeff_[index] = - 2 * Z * PI * cxp_inv * Eab; 
+        coeff_[index] = - 2 * Z * pi__ * cxp_inv * Eab; 
         const double PCx = p_[index * 3    ] - (*aiter)->position(0);
         const double PCy = p_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = p_[index * 3 + 2] - (*aiter)->position(2);

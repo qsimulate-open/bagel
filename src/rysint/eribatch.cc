@@ -23,10 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#define PITWOHALF 17.493418327624862
-#define PIMHALF 0.564189583547756
-#define SQRTPI2 0.886226925452758013649083741671
-
 #include <cmath>
 #include <cassert>
 #include <cstring>

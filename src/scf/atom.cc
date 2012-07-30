@@ -38,8 +38,7 @@
 #include <tuple>
 #include <src/osint/overlapbatch.h>
 #include <src/scf/atommap.h>
-
-#define PI 3.1415926535897932
+#include <src/util/constants.h>
 
 using namespace std;
 
@@ -237,7 +236,7 @@ which was the reason why the third argument was a vector of a vector.
 // convert basis_info to vector<Shell> 
 void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double> > > > in) {
 
-  for (int i = 0; i != 10; ++i) { 
+  for (int i = 0; i != atommap_.max_angular_number(); ++i) { 
     vector<vector<double> > contractions;
     vector<pair<int, int> > contranges;
     vector<double> exponents;
@@ -294,7 +293,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         double denom = 1.0;
         for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
-          *diter *= ::pow(2.0 * *eiter / PI, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
+          *diter *= ::pow(2.0 * *eiter / pi__, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
 
         vector<vector<double> > cont(1, *iter);
         vector<pair<int, int> > cran(1, *citer);

@@ -27,8 +27,6 @@
 #ifndef __src_util_pmatrix1e_h
 #define __src_util_pmatrix1e_h
 
-#define DPI 3.14159265358979323846 
-
 #include <vector>
 #include <complex>
 #include <cassert>

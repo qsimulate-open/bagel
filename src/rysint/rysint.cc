@@ -33,9 +33,6 @@
 #include <stdexcept>
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
-#define SQRTPI2 0.886226925452758013649083741671
-#define PITWOHALF 17.493418327624862
-#define PIMHALF 0.564189583547756
 
 using namespace std;
 

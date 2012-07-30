@@ -31,6 +31,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <complex>
+#include <src/util/constants.h>
 #include <src/util/pmatrix1e.h>
 #include <src/util/f77.h>
 #include <src/macros.h>
@@ -184,7 +185,7 @@ PMatrix1e PMatrix1e::ft() const {
 
   const int unit = 1;
   for (int k = -K(); k < max(K(), 1); ++k) {
-    const Complex kq(0.0, K() != 0 ? (DPI * k) / K() : 0.0);
+    const Complex kq(0.0, K() != 0 ? (pi__ * k) / K() : 0.0);
     const int boffset = (k + K()) * blocksize_;
     for (int m = -S(), mcount = 0; m <= S(); ++m, ++mcount) {
       const int moffset = mcount * blocksize_;
@@ -205,7 +206,7 @@ PMatrix1e PMatrix1e::bft() const {
       const int mcount = m + K();
       const int moffset = mcount * blocksize_;
       for (int k = -K(), kcount = 0; k != K(); ++k, ++kcount) {
-        const Complex kq(0.0, (DPI * k) / K());
+        const Complex kq(0.0, (pi__ * k) / K());
         const int koffset = kcount * blocksize_;
         Complex factor = exp(kq * static_cast<double>(m)) / (2.0 * K());
         zaxpy_(&blocksize_, &factor, data_->front() + koffset, &unit, out.data_->front() + moffset, &unit);
