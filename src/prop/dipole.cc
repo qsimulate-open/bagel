@@ -40,7 +40,7 @@ Dipole::~Dipole() {
 }
 
 
-void Dipole::compute() const {
+vector<double> Dipole::compute() const {
   vector<double> out(3, 0.0);
 
   // charge center (length 3)
@@ -98,4 +98,6 @@ void Dipole::compute() const {
 
   cout << "    * Permanent dipole moment: (" << setw(12) << setprecision(6) << out[0] << ", "
                                              << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl;
+
+  return out;
 }
