@@ -25,21 +25,22 @@
 
 
 #include <src/grad/cpcasscf.h>
+#include <src/util/linearRM.h>
 #include <cassert>
 #include <src/util/f77.h>
 #include <src/util/bfgs.h>
 
-#define CPHF_MAX_ITER 40
+#define CPHF_MAX_ITER 100
 #define CPHF_THRESH 1.0e-8
 
 using namespace std;
+
 
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ, 
                    const shared_ptr<const Matrix1e> eig, const shared_ptr<const DF_Half> h,
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
-grad->first()->print();
 }
 
 
@@ -79,11 +80,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<Dvec>  d1(new Dvec(d1_tmp, ref_->nstate()));
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
-// TODO understand this factor of 2
-*d1 *= 2;
+    // TODO understand this factor of 2
+    *d1 *= 2;
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
-
 
   // BFGS update of the denominator above
   shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom));
@@ -100,7 +100,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
-  shared_ptr<Linear<PairFile<Matrix1e, Dvec> > > solver(new Linear<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
+  shared_ptr<LinearRM<PairFile<Matrix1e, Dvec> > > solver(new LinearRM<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
 
   // initial guess
   shared_ptr<PairFile<Matrix1e, Dvec> > z = source->clone();
@@ -109,14 +109,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   z = bfgs->extrapolate(source, z);
 
   // inverse matrix of C
-  shared_ptr<Matrix1e> cinv(new Matrix1e(ref_->geom())); cinv->unit(); 
-  {
-    shared_ptr<Matrix1e> ctmp(new Matrix1e(*ref_->coeff()));
-    unique_ptr<int[]> ipiv(new int[nbasis]);
-    int info;
-    dgesv_(nbasis, nbasis, ctmp->data(), nbasis, ipiv.get(), cinv->data(), nbasis, info);
-    if (info) throw runtime_error("DGESV failed in CPCASSCF");
-  }
+  shared_ptr<Matrix1e> cinv(new Matrix1e(*ref_->coeff())); cinv->inverse(); 
 
   // State averaged density matrix
   shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
@@ -130,8 +123,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     const double norm = sqrt(z->ddot(*z));
-
-cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
+    const double onorm = solver->orthog(z);
+cout << setw(4) <<  iter << " " << setprecision(14) << norm <<  " " << onorm << " " << endl;
 
     shared_ptr<const Matrix1e> z0 = z->first();
     shared_ptr<const Dvec>     z1 = z->second();
@@ -169,7 +162,7 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
     }
 
     // one electron part...
-    shared_ptr<Matrix1e> htilde(new Matrix1e(*cz0 % *ref_->hcore() * *ref_->coeff())); 
+    shared_ptr<Matrix1e> htilde(new Matrix1e(*cz0 % *ref_->hcore() * *ref_->coeff()));
     htilde->symmetrize();
     *htilde *= 2.0;
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis); 
@@ -228,25 +221,17 @@ cout << setw(4) <<  iter << " " << setprecision(10) << norm << endl;
         sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
 
     sigmaci->project_out(civector_);
-sigmaci->zero();
-
-sigmaorb->purify_redrotation(nclosed, nact, nvirt);
 
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
-z->first()->purify_redrotation(nclosed, nact, nvirt);
-z->second()->zero();
-//z->first()->print();
     z = bfgs->extrapolate(z, solver->civec());
 
     z->second()->project_out(civector_);
-z->second()->zero();
-z->first()->purify_redrotation(nclosed, nact, nvirt);
 
 if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
 
-if (iter+1 == CPHF_MAX_ITER) z->first()->print();
+if ((iter%10) == 9) z->first()->print("residual", 12);
   }
 
 solver->civec()->first()->print("result", 12);

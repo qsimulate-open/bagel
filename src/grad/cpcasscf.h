@@ -29,7 +29,6 @@
 
 #include <src/scf/matrix1e.h>
 #include <memory>
-#include <src/util/linear.h>
 #include <src/wfn/reference.h>
 #include <src/fci/civec.h>
 #include <src/fci/fci.h>
