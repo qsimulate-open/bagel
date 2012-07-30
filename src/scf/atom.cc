@@ -236,7 +236,7 @@ which was the reason why the third argument was a vector of a vector.
 // convert basis_info to vector<Shell> 
 void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double> > > > in) {
 
-  for (int i = 0; i != atommap_.max_angular_number(); ++i) { 
+  for (int i = 0; i <= atommap_.max_angular_number(); ++i) { 
     vector<vector<double> > contractions;
     vector<pair<int, int> > contranges;
     vector<double> exponents;
