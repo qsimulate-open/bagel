@@ -1,5 +1,5 @@
 molecule {
-  symmetry = C1;
+  symmetry = C2v;
   basis = svp;
   schwarz_thresh = 1.0e-12;
   stack = 100M;
