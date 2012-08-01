@@ -570,7 +570,8 @@ void DF_Full::scale(const double a) {
 }
 
 
-// TODO THIS FUNCTION IS STUPID
+// TODO THIS FUNCTION IS VERY INEFFICIENT
+// note that this function symmetrizes but not divides by 2
 void DF_Full::symmetrize() {
   assert(nocc1_ == nocc2_);
   const int n = nocc1_;

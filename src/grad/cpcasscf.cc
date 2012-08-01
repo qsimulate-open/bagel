@@ -41,6 +41,9 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
+  cout << "   CI vectors:" << endl;
+  civector_->print(0.00001);
+
 }
 
 
@@ -123,19 +126,14 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     const double norm = sqrt(z->ddot(*z));
-    const double onorm = solver->orthog(z);
-cout << setw(4) <<  iter << " " << setprecision(14) << norm <<  " " << onorm << " " << endl;
+    cout << setw(4) <<  iter << " " << setprecision(14) << norm << endl;
 
     shared_ptr<const Matrix1e> z0 = z->first();
     shared_ptr<const Dvec>     z1 = z->second();
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
     // only here we need to have det_ instead of detex
-    z1->set_det(detex);
-    civector_->set_det(detex);
-    shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_);
-    z1->set_det(fci_->det());
-    civector_->set_det(fci_->det());
+    shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_, detex);
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
@@ -178,36 +176,31 @@ cout << setw(4) <<  iter << " " << setprecision(14) << norm <<  " " << onorm << 
     // TODO Awful code. To be updated. making the code that works in the quickest possible way
     // index swap
     unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
-    for (int i = 0; i != nocca; ++i)
-      for (int j = 0; j != nocca; ++j)
-        for (int k = 0; k != nocca; ++k)
-          for (int l = 0; l != nocca; ++l)
-            buf2[l+nocca*(k+nocca*(j+nocca*i))] = buf[l+nocca*(k+nocca*(i+nocca*j))];
 
     // bra ket symmetrization
     for (int i = 0; i != nocca; ++i)
       for (int j = 0; j != nocca; ++j)
         for (int k = 0; k != nocca; ++k)
           for (int l = 0; l != nocca; ++l)
-            buf[l+nocca*(k+nocca*(j+nocca*i))] = buf2[l+nocca*(k+nocca*(j+nocca*i))] + buf2[j+nocca*(i+nocca*(l+nocca*k))];
+            buf2[l+nocca*(k+nocca*(j+nocca*i))] = buf[l+nocca*(k+nocca*(j+nocca*i))] + buf[j+nocca*(i+nocca*(l+nocca*k))];
 
     unique_ptr<double[]> Htilde2(new double[nact*nact*nact*nact]);
     for (int i = nclosed; i != nocca; ++i)
       for (int j = nclosed; j != nocca; ++j)
         for (int k = nclosed; k != nocca; ++k)
           for (int l = nclosed; l != nocca; ++l)
-            Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] = buf[l+nocca*(k+nocca*(j+nocca*i))]; 
+            Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] = buf2[l+nocca*(k+nocca*(j+nocca*i))]; 
 
     unique_ptr<double[]> Htilde1(new double[nact*nact]);
     for (int i = nclosed; i != nocca; ++i) {
       for (int j = nclosed; j != nocca; ++j) {
         Htilde1[j-nclosed+nact*(i-nclosed)] = htilde->element(j,i);
         for (int k = 0; k != nclosed; ++k)
-          Htilde1[j-nclosed+nact*(i-nclosed)] += 2.0*buf[k+nocca*(k+nocca*(j+nocca*i))] - buf[k+nocca*(i+nocca*(j+nocca*k))];
+          Htilde1[j-nclosed+nact*(i-nclosed)] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
       }
     }
     // factor of 2 in the equation
-    dscal_(nact*nact, 2.0, Htilde1.get(), 1);
+    dscal_(nact*nact,           2.0, Htilde1.get(), 1);
     dscal_(nact*nact*nact*nact, 2.0, Htilde2.get(), 1);
 
     shared_ptr<MOFile> top(new Htilde(ref_, nclosed, nocca, move(Htilde1), move(Htilde2)));
@@ -229,13 +222,9 @@ cout << setw(4) <<  iter << " " << setprecision(14) << norm <<  " " << onorm << 
 
     z->second()->project_out(civector_);
 
-if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
+    if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
 
-if ((iter%10) == 9) z->first()->print("residual", 12);
   }
-
-solver->civec()->first()->print("result", 12);
-solver->civec()->second()->print(0);
 
   return solver->civec();
 
@@ -243,7 +232,7 @@ solver->civec()->second()->print(0);
 
 
 // computes A matrix (scaled by 2 here)
-shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec) const {
+shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec, shared_ptr<const Determinants> o) const {
   shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom())); 
 
   const size_t nbasis = geom_->nbasis();
@@ -256,7 +245,7 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_
   // compute RDMs 
   shared_ptr<const RDM<1> > rdm1;
   shared_ptr<const RDM<2> > rdm2;
-  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, dvec); 
+  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, dvec, o); 
 
   // core Fock operator
   shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();

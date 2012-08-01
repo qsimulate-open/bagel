@@ -133,9 +133,18 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   dtot->daxpy(1.0, dm);
 
+  // form zdensity 
+  shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
+  shared_ptr<RDM<1> > zrdm1;
+  shared_ptr<RDM<2> > zrdm2;
+  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec->second(), civ, detex);
+
+  shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand(); 
+  zrdm1_mat->symmetrize();
+  dtot->daxpy(1.0, zrdm1_mat);
+
   // computes dipole mements
-  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff();
-  shared_ptr<Matrix1e> dtotao(new Matrix1e(*coeff_occ * *dtot ^ *coeff_occ));
+  shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 

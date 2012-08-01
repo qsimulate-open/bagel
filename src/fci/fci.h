@@ -149,7 +149,8 @@ class FCI {
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>) const;
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>,
+                                 std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
 
     std::vector<std::shared_ptr<RDM<1> > > rdm1() { return rdm1_; };
     std::vector<std::shared_ptr<RDM<2> > > rdm2() { return rdm2_; };
