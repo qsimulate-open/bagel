@@ -89,6 +89,18 @@ class RDM {
       return ::fabs(a-b) < 1.0e-12;
     };
 
+
+    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
+      assert(rank == 1);
+      std::shared_ptr<Matrix1e> out(new Matrix1e(g, nclosed+norb_, nclosed+norb_));
+      if (all)
+        for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0; 
+      for (int i = 0; i != norb_; ++i)
+        for (int j = 0; j != norb_; ++j)
+          out->element(j+nclosed, i+nclosed) = element(j,i); 
+      return out;
+    };
+
     std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
       assert(rank == 1);
       std::vector<double> buf(dim_*dim_);
