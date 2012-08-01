@@ -44,7 +44,13 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 
 
 shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const {
-  return active->rdm1_mat(geom_, nclosed_);
+  if (nact_)
+    return active->rdm1_mat(geom_, nclosed_);
+  else {
+    shared_ptr<Matrix1e> out(new Matrix1e(geom_, nocc(), nocc()));
+    for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
+    return out;
+  }
 }
 
 
