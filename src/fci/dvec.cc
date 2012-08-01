@@ -152,9 +152,9 @@ void Dvec::orthog(shared_ptr<const Dvec> o) {
 
 void Dvec::project_out(shared_ptr<const Dvec> o) {
   if (o->ij() != ij()) throw logic_error("Dvec::orthog called inconsistently"); 
-  for (auto i = dvec().begin(); i != dvec().end(); ++i)
-    for (auto j = o->dvec().begin(); j != o->dvec().end(); ++j)
-      (*i)->project_out(*j);
+  auto j = o->dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+    (*i)->project_out(*j);
 }
 
 
