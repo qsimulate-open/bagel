@@ -108,6 +108,7 @@ void Determinants::const_lexical_mapping_() {
 
 void Determinants::print(const double* const civec, const double thr) const {
   const double* i = civec;
+  // multimap sorts elements so that they will be shown in the descending order in magnitude
   multimap<double, tuple<double, int, int> > tmp;
   for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
     for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {

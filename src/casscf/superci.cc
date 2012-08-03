@@ -213,6 +213,10 @@ void SuperCI::compute() {
   // ============================
   // macro iteration to here
   // ============================
+  fci_->update();
+  fci_->compute();
+  fci_->compute_rdm12();
+  form_natural_orbs();
   resume_stdcout();
 
 }

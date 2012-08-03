@@ -54,6 +54,10 @@ class RDM {
     };
     ~RDM() {  };
 
+    std::shared_ptr<RDM<rank> > clone() const { 
+      return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_));
+    };
+
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
     double* first() { return data(); };

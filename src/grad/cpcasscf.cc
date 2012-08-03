@@ -42,7 +42,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
   cout << "   CI vectors:" << endl;
-  civector_->print(0.00001);
+  civector_->print(-1);
 
 }
 
@@ -70,7 +70,6 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   shared_ptr<const DensityFit> df = ref_->geom()->df();
   shared_ptr<const DF_Half> half = df->compute_half_transform(ocoeff, nocca)->apply_J();
   shared_ptr<const DF_Full> fullb = half->compute_second_transform(ocoeff, nocca);
-  shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
 
   // making denominator...
   shared_ptr<PairFile<Matrix1e, Dvec> > denom;
@@ -83,8 +82,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<Dvec>  d1(new Dvec(d1_tmp, ref_->nstate()));
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
+#if 1
     // TODO understand this factor of 2
     *d1 *= 2;
+#endif
     denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1)); 
   }
 
@@ -110,6 +111,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   z->zero();
 
   z = bfgs->extrapolate(source, z);
+// not needed as z->xecond() is zero
+//z->second()->project_out(civector_);
 
   // inverse matrix of C
   shared_ptr<Matrix1e> cinv(new Matrix1e(*ref_->coeff())); cinv->inverse(); 
@@ -146,6 +149,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
       shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0cinv->data(), nbasis); 
       shared_ptr<const DF_Half> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
       tmp0->daxpy(1.0, tmp1);
+      shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       unique_ptr<double[]> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
       dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis); 
     }
@@ -167,6 +171,11 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
     sigmaorb->antisymmetrize();
 
+    // At this point
+    // htilde = Zh + hZ^dagger
+    // fullb  = (D|ij)
+    // fullz  = (D|ir)Z_rj + (D|rj)Z_ri 
+
     // internal core fock operator...
     // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
 
@@ -178,25 +187,23 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
 
     // bra ket symmetrization
-    for (int i = 0; i != nocca; ++i)
-      for (int j = 0; j != nocca; ++j)
-        for (int k = 0; k != nocca; ++k)
-          for (int l = 0; l != nocca; ++l)
-            buf2[l+nocca*(k+nocca*(j+nocca*i))] = buf[l+nocca*(k+nocca*(j+nocca*i))] + buf[j+nocca*(i+nocca*(l+nocca*k))];
+    for (int i = 0; i != nocca*nocca; ++i)
+      for (int j = 0; j != nocca*nocca; ++j)
+        buf2[j+nocca*nocca*i] = buf[j+nocca*nocca*i] + buf[i+nocca*nocca*j];
 
     unique_ptr<double[]> Htilde2(new double[nact*nact*nact*nact]);
-    for (int i = nclosed; i != nocca; ++i)
-      for (int j = nclosed; j != nocca; ++j)
-        for (int k = nclosed; k != nocca; ++k)
-          for (int l = nclosed; l != nocca; ++l)
-            Htilde2[l-nclosed+nact*(k-nclosed+nact*(j-nclosed+nact*(i-nclosed)))] = buf2[l+nocca*(k+nocca*(j+nocca*i))]; 
+    for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii)
+      for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
+        for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
+          for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
+            Htilde2[ll+nact*(kk+nact*(jj+nact*ii))] = buf2[l+nocca*(k+nocca*(j+nocca*i))]; 
 
     unique_ptr<double[]> Htilde1(new double[nact*nact]);
-    for (int i = nclosed; i != nocca; ++i) {
-      for (int j = nclosed; j != nocca; ++j) {
-        Htilde1[j-nclosed+nact*(i-nclosed)] = htilde->element(j,i);
+    for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
+      for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
+        Htilde1[jj+nact*ii] = htilde->element(j,i);
         for (int k = 0; k != nclosed; ++k)
-          Htilde1[j-nclosed+nact*(i-nclosed)] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
+          Htilde1[jj+nact*ii] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
       }
     }
     // factor of 2 in the equation
@@ -218,8 +225,8 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
-    z = bfgs->extrapolate(z, solver->civec());
 
+    z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
     if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
@@ -243,9 +250,27 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_
   const double* const acoeff = coeff + nclosed*nbasis;
 
   // compute RDMs 
-  shared_ptr<const RDM<1> > rdm1;
-  shared_ptr<const RDM<2> > rdm2;
-  tie(rdm1, rdm2) = fci_->compute_rdm12_av_from_dvec(zvec, dvec, o); 
+  shared_ptr<const RDM<1> > rdm1t;
+  shared_ptr<const RDM<2> > rdm2t;
+  tie(rdm1t, rdm2t) = fci_->compute_rdm12_av_from_dvec(zvec, dvec, o); 
+
+  // symmetrize
+  shared_ptr<RDM<1> > rdm1 = rdm1t->clone();
+  shared_ptr<RDM<2> > rdm2 = rdm2t->clone();
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      rdm1->element(j,i) = 0.5*(rdm1t->element(j,i)+rdm1t->element(i,j));
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        for (int l = 0; l != nact; ++l)
+          rdm2->element(l,k,j,i) = 0.125*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j)
+                                        + rdm2t->element(j,i,l,k)+rdm2t->element(j,i,k,l)+rdm2t->element(i,j,l,k)+rdm2t->element(i,j,k,l));
+//        rdm2->element(l,k,j,i) = 0.25*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j));
+//        rdm2->element(l,k,j,i) = 0.5*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i));
+
+  // prefactor
+  const double prefactor = 2.0;
 
   // core Fock operator
   shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();
@@ -253,14 +278,18 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_
   unique_ptr<double[]> buf2(new double[nbasis*nact]);
   dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff, nbasis, 0.0, buf.get(), nbasis); 
   dgemm_("N", "N", nbasis, nact, nact, 1.0, buf.get(), nbasis, rdm1->data(), nact, 0.0, buf2.get(), nbasis); 
-  dgemm_("T", "N", nbasis, nact, nbasis, 2.0, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis); 
+  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis); 
 
   // Half transformed DF vector
+#if 0
   shared_ptr<const DF_Half> half = fci_->jop()->mo2e_1ext();
+#else
+  shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(acoeff, nact); 
+#endif
   shared_ptr<const DF_Full> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
   shared_ptr<const DF_Full> fulld = full->apply_2rdm(rdm2->data());
   unique_ptr<double[]> jd = half->form_2index(fulld);
-  dgemm_("T", "N", nbasis, nact, nbasis, 2.0, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis); 
+  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis); 
 
   return amat;
 }
