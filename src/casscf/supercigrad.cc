@@ -85,10 +85,10 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
       for (int j = 0; j != nclosed; ++j)
          eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
                                    = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
-#if 0
+#if 1
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e2; 
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e1; 
 #endif
 
   }
@@ -140,6 +140,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
   shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand(); 
+dtot->print("dtot");
+zrdm1_mat->print("z contrib");
   zrdm1_mat->symmetrize();
   dtot->daxpy(1.0, zrdm1_mat);
 

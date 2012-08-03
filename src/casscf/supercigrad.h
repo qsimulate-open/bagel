@@ -43,7 +43,21 @@ class SuperCIGrad : public SuperCI {
       : SuperCI(idat, geom) { };
     ~SuperCIGrad() {};
 
-    void compute() { SuperCI::compute(); };
+    void compute() {
+      SuperCI::compute();
+      fci_->update();
+      fci_->compute();
+      fci_->compute_rdm12();
+      form_natural_orbs();
+      fci_->update();
+      fci_->compute();
+      fci_->compute_rdm12();
+      form_natural_orbs();
+      fci_->update();
+      fci_->compute();
+      fci_->compute_rdm12();
+      form_natural_orbs();
+    };
 
 };
 
