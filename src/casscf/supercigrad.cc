@@ -44,6 +44,7 @@ template<>
 std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<const Coeff> coeff = ref_->coeff();
+  assert(task_->coeff() == coeff);
 
   const int target = 0;
   const int nclosed = ref_->nclosed();
@@ -131,7 +132,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // compute dipole...
   shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
 
+#if 1
   dtot->daxpy(1.0, dm);
+#endif
 
   // form zdensity 
   shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
@@ -143,7 +146,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 dtot->print("dtot");
 zrdm1_mat->print("z contrib");
   zrdm1_mat->symmetrize();
+#if 1
   dtot->daxpy(1.0, zrdm1_mat);
+#endif
 
   // computes dipole mements
   shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));

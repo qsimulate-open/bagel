@@ -40,8 +40,8 @@
 class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
-    std::shared_ptr<const Geometry> geom_; 
-    std::shared_ptr<const Coeff> coeff_;
+    const std::shared_ptr<const Geometry> geom_; 
+    const std::shared_ptr<const Coeff> coeff_;
 
     const double energy_;
 
@@ -78,7 +78,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     const std::vector<double> schwarz() const { return geom_->schwarz(); };
     std::shared_ptr<const Hcore> hcore() const { return hcore_; };
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
-    void set_coeff(const std::shared_ptr<const Coeff> c) { coeff_ = c; };
+    //void set_coeff(const std::shared_ptr<const Coeff> c) { coeff_ = c; };
 
     void set_eig(const std::vector<double>& eig) { eig_ = eig; };
     std::vector<double> eig() const { return eig_; };

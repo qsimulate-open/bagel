@@ -69,7 +69,7 @@ void FCI::common_init() {
   det_ = shared_ptr<const Determinants>(new Determinants(norb_, nelea_, neleb_));
 
   // forms MO integrals and denominators.
-  update();
+  update(ref_->coeff());
 
 }
 

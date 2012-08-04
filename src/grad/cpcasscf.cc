@@ -31,7 +31,7 @@
 #include <src/util/bfgs.h>
 
 #define CPHF_MAX_ITER 100
-#define CPHF_THRESH 1.0e-9
+#define CPHF_THRESH 1.0e-12
 
 using namespace std;
 
@@ -233,6 +233,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
   }
 
+solver->civec()->second()->print(-1);
   return solver->civec();
 
 }

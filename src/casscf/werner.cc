@@ -49,6 +49,7 @@ void WernerKnowles::compute() {
   for (int iter = 0, start = ::clock(); iter != max_iter_; ++iter, start = ::clock()) {
 
     // performs FCI, which also computes one-index transformed integrals
+    fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
@@ -56,7 +57,7 @@ void WernerKnowles::compute() {
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
     form_natural_orbs();
-    shared_ptr<Jvec> jvec(new Jvec(fci_, ref_->coeff(), nclosed_, nact_, nvirt_));
+    shared_ptr<Jvec> jvec(new Jvec(fci_, coeff_, nclosed_, nact_, nvirt_));
 
     // denominator
 
@@ -70,7 +71,7 @@ void WernerKnowles::compute() {
     for (miter = 0; miter != max_micro_iter_; ++miter) {
 
       // compute initial B (Eq. 19)
-      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, ref_->coeff());
+      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, coeff_);
 
       // compute gradient
       shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
@@ -121,8 +122,8 @@ void WernerKnowles::compute() {
     }
 
     U->purify_unitary();
-    shared_ptr<const Coeff> newcc(new Coeff(*ref_->coeff() * *U));
-    ref_->set_coeff(newcc);
+    shared_ptr<const Coeff> newcc(new Coeff(*coeff_ * *U));
+    coeff_ = newcc;
 
     resume_stdcout();
     print_iteration(iter, miter, tcount, energy, error, (::clock() - start)/cps);

@@ -45,15 +45,11 @@ class SuperCIGrad : public SuperCI {
 
     void compute() {
       SuperCI::compute();
-      fci_->update();
+      fci_->update(coeff_);
       fci_->compute();
       fci_->compute_rdm12();
       form_natural_orbs();
-      fci_->update();
-      fci_->compute();
-      fci_->compute_rdm12();
-      form_natural_orbs();
-      fci_->update();
+      fci_->update(coeff_);
       fci_->compute();
       fci_->compute_rdm12();
       form_natural_orbs();

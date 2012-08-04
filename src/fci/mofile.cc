@@ -36,7 +36,16 @@ using namespace std;
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence)
-: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)) {
+: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(ref_->coeff()) {
+
+  do_df_ = geom_->df().get();
+  if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
+
+}
+
+
+MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c)
+: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -119,10 +128,10 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
 
   unique_ptr<double[]> aobuff(new double[nbasis_*nbasis_]);
   shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
-  const double* cdata = ref_->coeff()->data() + nstart*nbasis_;
+  const double* cdata = coeff_->data() + nstart*nbasis_;
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
-    shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ncore);
+    shared_ptr<Matrix1e> den = coeff_->form_density_rhf(ncore);
     fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
     *core_fock_ = *fock0;
@@ -141,7 +150,7 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
 unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
-  double* cdata = ref_->coeff()->data() + nstart*nbasis_;
+  double* cdata = coeff_->data() + nstart*nbasis_;
 
   // first half transformation
   shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(cdata, nocc);

@@ -127,7 +127,7 @@ class FCI {
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
     ~FCI();
     void compute();
-    void update();
+    void update(std::shared_ptr<const Coeff> );
 
     // returns members
     int norb() const { return norb_; };
