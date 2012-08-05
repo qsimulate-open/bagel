@@ -53,11 +53,11 @@ void FCI::compute_rdm12() {
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 
-  if (dbra->ij() != dket->ij())
-    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
-
-  const int nri = dbra->ij();
+  const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb_*norb_;
+
+  if (nri != dket->lena()*dket->lenb())
+    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
 
   // 1RDM
   // c^dagger <I|\hat{E}|0>

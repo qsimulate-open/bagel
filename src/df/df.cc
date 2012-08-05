@@ -25,6 +25,7 @@
 
 
 #include <memory>
+#include <src/util/constants.h>
 #include <src/util/f77.h>
 #include <src/df/df.h>
 #include <src/rysint/eribatch.h>
@@ -392,7 +393,7 @@ shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm, const double* rdm1, c
     const double a = ddot_(nact*nact, rdm1, 1, rdm1, 1);
     double sum = 0.0;
     for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
-    if (fabs(a-sum) > 1.0e-15) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
+    if (fabs(a-sum) > numerical_zero__) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
   }
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
   fill(out.get(), out.get()+nocc1_*nocc2_*naux_, 0.0);
