@@ -182,11 +182,18 @@ void SuperCI::compute() {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
-                                                                       tmp->element_ptr(nclosed_, 0), nbasis_);
+                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix1e> tmp2(new Matrix1e(*tailor_rotation(tmp)));
       shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp2);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
     }
+
+#ifndef NDEBUG
+    // checking orthonormaligy of orbitals.
+    shared_ptr<Overlap> o(new Overlap(geom_));
+    shared_ptr<Matrix1e> m(new Matrix1e(*coeff_ % *o * *coeff_));
+    assert(fabs(m->trace() - m->ddot(m)) < 1.0e-10);
+#endif
 
     // print out...
     int end = ::clock();

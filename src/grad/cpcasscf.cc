@@ -31,7 +31,7 @@
 #include <src/util/bfgs.h>
 
 #define CPHF_MAX_ITER 100
-#define CPHF_THRESH 1.0e-12
+#define CPHF_THRESH 1.0e-10
 
 using namespace std;
 
@@ -90,7 +90,11 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   }
 
   // BFGS update of the denominator above
+#if 0
+  shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom, false));
+#else
   shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom));
+#endif
 
 
   // CI vector

@@ -89,7 +89,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 #if 1
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e1; 
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e0; 
 #endif
 
   }
@@ -131,10 +131,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // compute dipole...
   shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
-
-#if 1
   dtot->daxpy(1.0, dm);
-#endif
 
   // form zdensity 
   shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
@@ -143,12 +140,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
   shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand(); 
-dtot->print("dtot");
-zrdm1_mat->print("z contrib");
   zrdm1_mat->symmetrize();
-#if 1
   dtot->daxpy(1.0, zrdm1_mat);
-#endif
 
   // computes dipole mements
   shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));

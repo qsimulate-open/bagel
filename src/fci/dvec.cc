@@ -152,10 +152,16 @@ void Dvec::orthog(shared_ptr<const Dvec> o) {
 
 void Dvec::project_out(shared_ptr<const Dvec> o) {
   if (o->ij() != ij()) throw logic_error("Dvec::project_out called inconsistently"); 
+#if 1
   auto j = o->dvec().begin();
   // simply project out each CI vector
   for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
     (*i)->project_out(*j);
+#else
+  for (auto i = dvec().begin(); i != dvec().end(); ++i)
+    for (auto j = o->dvec().begin(); j != o->dvec().end(); ++j)
+      (*i)->project_out(*j);
+#endif
 }
 
 
