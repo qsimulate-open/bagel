@@ -27,7 +27,7 @@
 #ifndef __src_rysint_inline_h
 #define __src_rysint_inline_h
 
-inline const double inline_erf(const double inpt) { 
+inline double inline_erf(const double inpt) { 
   static const double a[65] = {
     0.00000000005958930743, -0.00000000113739022964, 0.00000001466005199839, -0.00000016350354461960, 
     0.00000164610044809620, -0.00001492559551950604, 0.00012055331122299265, -0.00085483269811296660, 

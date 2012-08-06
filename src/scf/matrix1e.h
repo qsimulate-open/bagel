@@ -54,10 +54,10 @@ class Matrix1e {
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
-    const int nbasis() const { return nbasis_; };
-    const int size() const { return nbasis_*nbasis_; };
-    const int ndim() const { return ndim_; }; 
-    const int mdim() const { return mdim_; }; 
+    int nbasis() const { return nbasis_; };
+    int size() const { return nbasis_*nbasis_; };
+    int ndim() const { return ndim_; }; 
+    int mdim() const { return mdim_; }; 
     double* data() const { return data_.get(); };
     double& data(const size_t i) { return *(data_.get()+i); };
     const double& data(const size_t i) const { return *(data_.get()+i); };
@@ -105,11 +105,11 @@ class Matrix1e {
 
     void daxpy(const double, const Matrix1e&);
     void daxpy(const double, const std::shared_ptr<const Matrix1e>);
-    const double ddot(const Matrix1e&) const;
-    const double norm() const { return std::sqrt(ddot(*this)); };
-    const double ddot(const std::shared_ptr<const Matrix1e>) const;
-    const double rms() const;
-    const double trace() const;
+    double ddot(const Matrix1e&) const;
+    double norm() const { return std::sqrt(ddot(*this)); };
+    double ddot(const std::shared_ptr<const Matrix1e>) const;
+    double rms() const;
+    double trace() const;
     
     void dscal(const double a) { dscal_(size(), a, data(), 1); };
     void scale(const double a) { dscal(a); };

@@ -27,10 +27,11 @@
 #ifndef __src_util_constants_h
 #define __src_util_constants_h
 
-// TODO perhaps we should somehow make it clear that these variables are defined here.
-// "_ang2bohr" ? "ANG2BOHR" ? "ang2bohr__" ??? 
+#include <cmath>
 
-static const double ang2bohr = 1.889725989;
+static const double ang2bohr__ = 1.889725989;
+static const double pi__ = std::atan(1.0)*4.0; 
+static const double numerical_zero__ = 1.0e-15;
 
 #endif
 

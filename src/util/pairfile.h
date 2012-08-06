@@ -30,6 +30,8 @@
 #include <tuple>
 #include <memory>
 
+#define DEBUG_ORBITAL
+
 template<class T, class U>
 class PairFile {
   protected:
@@ -74,7 +76,11 @@ class PairFile {
 
     // lapack functions
     void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
+#ifndef DEBUG_ORBITAL
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
+#else
+    double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()); };
+#endif
     double ddot(const std::shared_ptr<const PairFile<T, U> > o) const { return ddot(*o); };
     double norm() const { return std::sqrt(ddot(*this)); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };

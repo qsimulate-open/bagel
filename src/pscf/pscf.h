@@ -56,7 +56,7 @@ class PSCF {
     void print_eig(const double*) const;
     std::shared_ptr<PCompFile<ERIBatch> > ao_eri_;
 
-    const double obtain_energy(const PMatrix1e&, const PMatrix1e&, const PMatrix1e&);
+    double obtain_energy(const PMatrix1e&, const PMatrix1e&, const PMatrix1e&);
 
   public:
     PSCF(const std::shared_ptr<PGeometry>);

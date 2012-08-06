@@ -53,7 +53,7 @@ class Civec {
     double& cc(int i) { return *(cc_ptr_+i); };
     const double& cc(int i) const { return *(cc_ptr_+i); };
     double* cc() { return cc_ptr_; };
-    const double* const cc() const { return cc_ptr_; };
+    const double* cc() const { return cc_ptr_; };
 
   public:
     Civec(std::shared_ptr<const Determinants> det);

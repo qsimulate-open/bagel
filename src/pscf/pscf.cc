@@ -244,7 +244,7 @@ void PSCF::print_eig(const double* eig) const {
 }
 
 
-const double PSCF::obtain_energy(const PMatrix1e& hcore, const PMatrix1e& fock, const PMatrix1e& density) {
+double PSCF::obtain_energy(const PMatrix1e& hcore, const PMatrix1e& fock, const PMatrix1e& density) {
 
   const complex<double>* dat0 = hcore.data()->front();
   const complex<double>* dat1 = fock.data()->front();

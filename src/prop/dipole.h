@@ -39,7 +39,7 @@ class Dipole {
     Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix1e>);
     ~Dipole();
 
-    void compute() const;
+    std::vector<double> compute() const;
 };
 
 #endif

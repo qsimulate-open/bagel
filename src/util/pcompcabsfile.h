@@ -90,12 +90,12 @@ class PCompCABSFile : public PCompFile<T> {
     int nbasis_a() const { return nbasis_a_; };
     int nbasis_b() const { return nbasis_b_; };
 
-    const double schwarz_ia(const size_t i) const { return schwarz_ia_[i]; };
-    const double schwarz_jb(const size_t i) const { return schwarz_jb_[i]; };
+    double schwarz_ia(const size_t i) const { return schwarz_ia_[i]; };
+    double schwarz_jb(const size_t i) const { return schwarz_jb_[i]; };
 
     std::vector<int> aux_offset() const { return aux_offset_; };
     int aux_offset(size_t i) const { return aux_offset_[i]; };
-    const size_t cabs_nbasis(size_t i) const { return cabs_basis_[i]->nbasis(); };
+    size_t cabs_nbasis(size_t i) const { return cabs_basis_[i]->nbasis(); };
 
     // virtual functions
     void calculate_num_int_each();

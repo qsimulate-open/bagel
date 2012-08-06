@@ -44,19 +44,13 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 
 
 shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const {
-  shared_ptr<Matrix1e> out(new Matrix1e(geom_, nocc(), nocc()));
-
-  // first fill in diagonal elements for closed orbitals
-  for (int i = 0; i != nclosed_; ++i) {
-    out->element(i,i) = 2.0;
+  if (nact_)
+    return active->rdm1_mat(geom_, nclosed_);
+  else {
+    shared_ptr<Matrix1e> out(new Matrix1e(geom_, nocc(), nocc()));
+    for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
+    return out;
   }
-
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nact_; ++j) {
-      out->element(j+nclosed_, i+nclosed_) = active->element(j,i);
-    }
-  }
-  return out;
 }
 
 

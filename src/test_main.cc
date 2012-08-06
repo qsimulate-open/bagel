@@ -45,6 +45,7 @@ bool compare(const std::vector<double> a, const std::vector<double> b, const dou
 };
 
 #include <src/scf/test_scf.cc>
+#include <src/prop/test_prop.cc>
 
 #include <src/mp2/test_mp2.cc>
 

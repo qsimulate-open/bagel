@@ -51,7 +51,7 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> 
 
   ref_->set_ncore(ncore_);
 
-  if (!geom_->df()) throw logic_error("MP2 is only implemented in DF");
+  if (!static_cast<bool>(geom_->df())) throw logic_error("MP2 is only implemented in DF");
 
 }
 

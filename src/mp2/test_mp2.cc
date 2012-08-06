@@ -49,6 +49,7 @@ double mp2_energy() {
     }
   }
   assert(false);
+  return 0.0;
 }
  
 BOOST_AUTO_TEST_SUITE(TEST_MP2)

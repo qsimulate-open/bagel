@@ -58,6 +58,9 @@ void CASSCF::common_init() {
   if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment.");
   print_header();
 
+  // first set coefficient
+  coeff_ = ref_->coeff();
+
   // get maxiter from the input
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   // get maxiter from the input
@@ -93,7 +96,7 @@ void CASSCF::common_init() {
 #if 0
   nbasis_ = geom_->nbasis();
 #else
-  nbasis_ = ref_->coeff()->mdim();
+  nbasis_ = coeff_->mdim();
 #endif
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
@@ -137,7 +140,7 @@ void CASSCF::print_iteration(int iter, int miter, int tcount, const vector<doubl
   int i = 0;
   for (auto eiter = energy.begin(); eiter != energy.end(); ++eiter, ++i)
   cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-               << setw(15) << fixed << setprecision(8) << *eiter << "   "
+               << setw(20) << fixed << setprecision(12) << *eiter << "   "
                << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
 }
@@ -174,9 +177,7 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
     }
   }
   // transform into AO basis
-  const shared_ptr<const Coeff> coeff = ref_->coeff();
-  // TODO make sure when overlap is truncated
-  return shared_ptr<Matrix1e>(new Matrix1e(*coeff * *mo_rdm1 ^ *coeff));
+  return shared_ptr<Matrix1e>(new Matrix1e(*coeff_ * *mo_rdm1 ^ *coeff_));
 }
 
 
@@ -185,11 +186,10 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
                                 shared_ptr<RotFile>& d, const bool superci) const {
 
   shared_ptr<Matrix1e> finact;
-  shared_ptr<const Coeff> coeff = ref_->coeff();
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff, nclosed_, fci_, fci_->rdm2_av()));
+  shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
 
   {
     // Fock operators
@@ -197,18 +197,18 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
       shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
       shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
       dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
-      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_inactao * *coeff));
+      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *f_inactao * *coeff_));
 
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
       shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
-      f = shared_ptr<Matrix1e>(new Matrix1e(*finact + *coeff%(*fact_ao-*hcore_)**coeff));
+      f = shared_ptr<Matrix1e>(new Matrix1e(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_));
     } else {
       shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
-      f = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *f_ao * *coeff));
+      f = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *f_ao * *coeff_));
 
-      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff % *hcore_ * *coeff));
+      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *hcore_ * *coeff_));
     }
   }
   {
@@ -270,8 +270,8 @@ vector<double> CASSCF::form_natural_orbs() {
     // this effectively updates 1,2RDM and integrals
     const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
     // new coefficients
-    shared_ptr<const Coeff> new_coeff = update_coeff(ref_->coeff(), natorb.first);
-    ref_->set_coeff(new_coeff);
+    shared_ptr<const Coeff> new_coeff = update_coeff(coeff_, natorb.first);
+    coeff_ = new_coeff;
     // occupation number of the natural orbitals
     occup_ = natorb.second;
     return natorb.first;
@@ -279,7 +279,7 @@ vector<double> CASSCF::form_natural_orbs() {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  shared_ptr<Reference> out(new Reference(geom_, ref_->coeff(), nclosed_, nact_, nvirt_, energy(),
+  shared_ptr<Reference> out(new Reference(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
                                           fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av()));
 
   // TODO
@@ -303,7 +303,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     }
   }
 
-  shared_ptr<Matrix1e> erdm(new Matrix1e(*ref_->coeff() * *f ^ *ref_->coeff()));
+  shared_ptr<Matrix1e> erdm(new Matrix1e(*coeff_ * *f ^ *coeff_));
 
   out->set_erdm1(erdm);
   out->set_nstate(nstate_);

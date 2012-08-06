@@ -44,11 +44,11 @@ shared_ptr<Matrix1e> WernerKnowles::compute_sigma_R(const shared_ptr<const Jvec>
   // update B
 //#ifndef DEBUG4INDEX
 #if 1
-  shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, ref_->coeff());
+  shared_ptr<Matrix1e> new_bvec = compute_bvec(jvec, UdR, UdR, coeff_);
 #else
-  shared_ptr<Matrix1e> gg(new Matrix1e(*ref_->coeff() * *UdR));
+  shared_ptr<Matrix1e> gg(new Matrix1e(*coeff_ * *UdR));
   shared_ptr<Matrix1e> tmp = jk.contract(gg);
-  shared_ptr<Matrix1e> new_bvec(new Matrix1e(*ref_->coeff() % *tmp));
+  shared_ptr<Matrix1e> new_bvec(new Matrix1e(*coeff_ % *tmp));
 #endif
 
   // compute U^dagger B - B^dagger U
@@ -69,7 +69,7 @@ shared_ptr<const Matrix1e> WernerKnowles::compute_denom(const shared_ptr<const M
   one_body_operators(f, fact, factp, gaa, denom_, false);
   shared_ptr<Matrix1e> denom = denom_->unpack_sym(geom_, 1.0e1);
 #else
-  JKop jk(geom_->df(), ref_->coeff(), hcore_, fci_, nocc_, nclosed_, nact_);
+  JKop jk(geom_->df(), coeff_, hcore_, fci_, nocc_, nclosed_, nact_);
   unique_ptr<double[]> cdiag = C->diag();
   shared_ptr<Matrix1e> denom = jk.denom(); 
   for (int i = 0; i != nocc_; ++i) {

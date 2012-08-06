@@ -56,6 +56,7 @@ std::vector<double> fci_energy() {
     }
   }
   assert(false);
+  return std::vector<double>();
 }
 
 std::vector<double> reference_fci_energy() {

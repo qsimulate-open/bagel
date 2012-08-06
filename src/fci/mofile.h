@@ -80,13 +80,16 @@ class MOFile {
 
     void compress(std::unique_ptr<double[]>& buf1e, std::unique_ptr<double[]>& buf2e);
 
+    std::shared_ptr<const Coeff> coeff_;
+
   public:
     MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence);
+    MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>);
     ~MOFile();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
-    const int sizeij() const { return sizeij_; };
+    int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
     // strictly i <= j, k <= l
@@ -104,7 +107,7 @@ class MOFile {
 
     std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
     std::shared_ptr<const DF_Half> mo2e_1ext() const { return mo2e_1ext_; };
-    const double* const mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
+    const double* mo2e_1ext_ptr() const { return mo2e_1ext_->data(); };
     void update_1ext_ints(const std::vector<double>& coeff);
 
 };
@@ -114,9 +117,8 @@ class Jop : public MOFile {
     std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
     std::unique_ptr<double[]> compute_mo2e(const int, const int);
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d) : MOFile(b,c,d) {
-      core_energy_ = create_Jiiii(c, d);
-    };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d) : MOFile(b,c,d) { core_energy_ = create_Jiiii(c, d); };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e) : MOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); };
     ~Jop() {};
 };
 

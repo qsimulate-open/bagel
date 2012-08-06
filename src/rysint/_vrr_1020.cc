@@ -29,11 +29,11 @@
 // returns double array of length 12
 void VRRList::_vrr_1020(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 #ifdef __GNUC__
-  const double C00_[2]__attribute__((aligned(16))) = {C00[0], C00[1]};
-  const double D00_[2]__attribute__((aligned(16))) = {D00[0], D00[1]};
-  const double B00_[2]__attribute__((aligned(16))) = {B00[0], B00[1]};
-  const double B01_[2]__attribute__((aligned(16))) = {B01[0], B01[1]};
-  const double B10_[2]__attribute__((aligned(16))) = {B10[0], B10[1]};
+  const double C00_[2]__attribute__((aligned(32))) = {C00[0], C00[1]};
+  const double D00_[2]__attribute__((aligned(32))) = {D00[0], D00[1]};
+  const double B00_[2]__attribute__((aligned(32))) = {B00[0], B00[1]};
+  const double B01_[2]__attribute__((aligned(32))) = {B01[0], B01[1]};
+  const double B10_[2]__attribute__((aligned(32))) = {B10[0], B10[1]};
 #else
   const double* C00_ = C00;
   const double* D00_ = D00;

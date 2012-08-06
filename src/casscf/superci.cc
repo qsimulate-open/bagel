@@ -59,14 +59,13 @@ void SuperCI::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     int start = ::clock();
 
-    if (iter >= diis_start_ && gradient < 1.0e-4 && !diis) {
-      shared_ptr<Matrix1e> tmp(new Matrix1e(*ref_->coeff()));
+    if (iter >= diis_start_ && gradient < 1.0e-4 && !static_cast<bool>(diis)) {
+      shared_ptr<Matrix1e> tmp(new Matrix1e(*coeff_));
       diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(10, tmp));
     }
 
     // first perform CASCI to obtain RDMs
-    // TODO this should not rely on ref_->coeff()
-    if (iter) fci_->update();
+    if (iter) fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
@@ -173,24 +172,28 @@ void SuperCI::compute() {
     cc_ = davidson.civec().front();
     dscal_(cc_->size()-1, 1.0/cc_->ele_ref(), cc_->data(), 1);
     // unitary matrix
-    shared_ptr<Matrix1e> rot = cc_->unpack(ref_->coeff()->geom())->exp();
+    shared_ptr<Matrix1e> rot = cc_->unpack(coeff_->geom())->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
-    if (!diis) {
-      shared_ptr<Coeff> newcc(new Coeff(*ref_->coeff()));
-      *newcc *= *rot;
-      ref_->set_coeff(newcc);
+    if (!static_cast<bool>(diis)) {
+      coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *rot));
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
-                                                                       tmp->element_ptr(nclosed_, 0), nbasis_);
+                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix1e> tmp2(new Matrix1e(*tailor_rotation(tmp)));
       shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp2);
-      shared_ptr<const Coeff> newcc(new Coeff(*mcc));
-      ref_->set_coeff(newcc);
+      coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
     }
+
+#ifndef NDEBUG
+    // checking orthonormaligy of orbitals.
+    shared_ptr<Overlap> o(new Overlap(geom_));
+    shared_ptr<Matrix1e> m(new Matrix1e(*coeff_ % *o * *coeff_));
+    assert(fabs(m->trace() - m->ddot(m)) < 1.0e-10);
+#endif
 
     // print out...
     int end = ::clock();

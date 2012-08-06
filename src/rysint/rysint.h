@@ -115,8 +115,8 @@ class RysInt {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    const double* const data() const { return data_; };
-    const double* const data2() const { return data2_; };
+    const double* data() const { return data_; };
+    const double* data2() const { return data2_; };
     bool data2_exists() const { return data2_ != NULL; };
     unsigned int data_size() const { return size_final_; };
 

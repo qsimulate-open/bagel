@@ -29,11 +29,11 @@
 // returns double array of length 4
 void GVRRList::_gvrr_1010(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 #ifdef __GNUC__
-  const double C00_[1]__attribute__((aligned(16))) = {C00[0]};
-  const double D00_[1]__attribute__((aligned(16))) = {D00[0]};
-  const double B00_[1]__attribute__((aligned(16))) = {B00[0]};
-  const double B01_[1]__attribute__((aligned(16))) = {B01[0]};
-  const double B10_[1]__attribute__((aligned(16))) = {B10[0]};
+  const double C00_[1]__attribute__((aligned(32))) = {C00[0]};
+  const double D00_[1]__attribute__((aligned(32))) = {D00[0]};
+  const double B00_[1]__attribute__((aligned(32))) = {B00[0]};
+  const double B01_[1]__attribute__((aligned(32))) = {B01[0]};
+  const double B10_[1]__attribute__((aligned(32))) = {B10[0]};
 #else
   const double* C00_ = C00;
   const double* D00_ = D00;

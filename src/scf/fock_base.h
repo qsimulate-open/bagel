@@ -35,7 +35,7 @@
 
 class Fock_base : public Matrix1e {
   protected:
-    const std::shared_ptr<Fock_base> previous_;
+    const std::shared_ptr<const Fock_base> previous_;
     const std::shared_ptr<Matrix1e> density_;
     void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
 
@@ -50,7 +50,7 @@ class Fock_base : public Matrix1e {
     double schwarz_thresh_;
 
   public:
-    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<Fock_base>, const std::shared_ptr<Matrix1e>, const std::vector<double>&);
+    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Fock_base>, const std::shared_ptr<Matrix1e>, const std::vector<double>&);
     Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Hcore>);
     Fock_base(const std::shared_ptr<const Geometry>);
 

@@ -85,7 +85,7 @@ class FCI {
     //
 
     // Determinant space
-    std::shared_ptr<Determinants> det_;
+    std::shared_ptr<const Determinants> det_;
 
     // denominator
     std::shared_ptr<Civec> denom_;
@@ -127,7 +127,7 @@ class FCI {
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
     ~FCI();
     void compute();
-    void update();
+    void update(std::shared_ptr<const Coeff> );
 
     // returns members
     int norb() const { return norb_; };
@@ -149,7 +149,8 @@ class FCI {
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>) const;
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>,
+                                 std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
 
     std::vector<std::shared_ptr<RDM<1> > > rdm1() { return rdm1_; };
     std::vector<std::shared_ptr<RDM<2> > > rdm2() { return rdm2_; };

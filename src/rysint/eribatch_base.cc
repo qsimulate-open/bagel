@@ -28,17 +28,18 @@
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
 #include <src/rysint/f77.h>
+#include <src/util/constants.h>
 #include <src/stackmem.h>
 #include <algorithm>
 #include <cmath>
-#define SQRTPI2 0.886226925452758013649083741671
-#define PITWOHALF 17.493418327624862
-#define PIMHALF 0.564189583547756
 
 // same function for NAI below.
 using namespace std;
 
 extern StackMem* stack;
+
+static const double pitwohalf__ = pow(pi__, 2.5); 
+static const double pimhalf__ = 1.0/sqrt(pi__);
 
 void ERIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
@@ -49,7 +50,7 @@ void ERIBatch_base::root_weight(const int ps) {
       } else {
         const double sqrtt = ::sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * SQRTPI2 / sqrtt;
+        weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else if (rank_ == 1) {
@@ -90,7 +91,7 @@ void NAIBatch_base::root_weight(const int ps) {
       } else {
         const double sqrtt = ::sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * SQRTPI2 / sqrtt;
+        weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else if (rank_ == 1) {
@@ -204,7 +205,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
           const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
           const double tsqrt = ::sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
-                              * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : PIMHALF);
+                              * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
           if (ssss > integral_thresh) {
             tuple_field[tuple_length*2  ] = *expi2;
             tuple_field[tuple_length*2+1] = *expi3;
@@ -236,7 +237,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
       const double ab = rnd(*expi0) * rnd(*expi1);
       const double cxp_inv = 1.0 / cxp;
       const double Eab = ::exp(-r01_sq * (abp * cxp_inv) );
-      const double coeff_half = 2 * Eab * PITWOHALF;
+      const double coeff_half = 2 * Eab * pitwohalf__;
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
       const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
@@ -249,7 +250,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
         const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
         const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
         const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
-                          * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : PIMHALF);
+                          * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
         if (ssss < integral_thresh) continue;
       }
 

@@ -39,7 +39,7 @@ class POverlap : public PMatrix1e {
     POverlap(const std::shared_ptr<PGeometry>);
     ~POverlap();
 
-    const int calculate_thresh() const;
+    int calculate_thresh() const;
 
 };
 

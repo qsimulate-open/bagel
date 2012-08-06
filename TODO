@@ -16,14 +16,8 @@ o FCI can be faster if one uses Olsen's algorithm
 
 o Quasi Newton updte for CASSCF
 
-o For some reasons, cartesian basis is broken
-
 o int size
-
-o Orbital print out.
 
 o perhaps the problem of WK CASSCF is the lack of orb-CI couplings. But then how can I do that?
 
 o when input areas are empty, methods are not called 
-
-o Implement apply J^-1

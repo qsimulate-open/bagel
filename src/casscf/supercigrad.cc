@@ -44,6 +44,7 @@ template<>
 std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<const Coeff> coeff = ref_->coeff();
+  assert(task_->coeff() == coeff);
 
   const int target = 0;
   const int nclosed = ref_->nclosed();
@@ -85,10 +86,10 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
       for (int j = 0; j != nclosed; ++j)
          eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
                                    = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
-#if 0
+#if 1
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e2; 
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e0; 
 #endif
 
   }
@@ -102,12 +103,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution 
-  shared_ptr<Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-  shared_ptr<Matrix1e> rdm1 = ref_->rdm1_mat(target);
+  shared_ptr<const Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
+  shared_ptr<const Matrix1e> rdm1 = ref_->rdm1_mat(target);
   dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
   // 2) two-electron contribution
-  shared_ptr<DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
-  shared_ptr<DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+  shared_ptr<const DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
+  shared_ptr<const DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
   unique_ptr<double[]> buf = half->form_2index(fulld);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
 
@@ -130,12 +131,20 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // compute dipole...
   shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
-
   dtot->daxpy(1.0, dm);
 
+  // form zdensity 
+  shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
+  shared_ptr<const RDM<1> > zrdm1;
+  shared_ptr<const RDM<2> > zrdm2;
+  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
+
+  shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand(); 
+  zrdm1_mat->symmetrize();
+  dtot->daxpy(1.0, zrdm1_mat);
+
   // computes dipole mements
-  shared_ptr<const Matrix1e> coeff_occ = ref_->coeff();
-  shared_ptr<Matrix1e> dtotao(new Matrix1e(*coeff_occ * *dtot ^ *coeff_occ));
+  shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 

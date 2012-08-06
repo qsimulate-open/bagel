@@ -24,19 +24,20 @@
 //
 
 
-#include <src/osint/osint.h>
 #include <cmath>
 #include <cassert>
 #include <iostream>
 #include <src/stackmem.h>
+#include <src/osint/osint.h>
 #include <src/grad/goverlapbatch.h>
-#define DPISQRT 1.7724538509055160
+#include <src/util/constants.h>
 
 using namespace std;
 
 extern StackMem* stack;
 
 static double* stack_save;
+static const double pisqrt__ = ::sqrt(pi__);
 
 OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
@@ -90,7 +91,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
       p_.push_back(px);
       p_.push_back(py);
       p_.push_back(pz);
-      const double tmp = DPISQRT * ::sqrt(cxp_inv); 
+      const double tmp = pisqrt__ * ::sqrt(cxp_inv); 
       coeffsx_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0])));
       coeffsy_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1])));
       coeffsz_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2])));

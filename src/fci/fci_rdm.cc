@@ -31,8 +31,8 @@ using namespace std;
 
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
-  // For nstate_ == 1, rdm1_av_ = rdm1_[0]. 
-  if (!rdm1_av_ && nstate_ > 1) {
+  // For nstate_ == 1, rdm1_av_ = rdm1_[0].
+  if (!static_cast<bool>(rdm1_av_) && nstate_ > 1) {
     rdm1_av_ = shared_ptr<RDM<1> >(new RDM<1>(norb_));
     rdm2_av_ = shared_ptr<RDM<2> >(new RDM<2>(norb_));
   }
@@ -53,11 +53,11 @@ void FCI::compute_rdm12() {
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 
-  if (dbra->ij() != dket->ij())
-    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
-
-  const int nri = dbra->ij();
+  const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb_*norb_;
+
+  if (nri != dket->lena()*dket->lenb())
+    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
 
   // 1RDM
   // c^dagger <I|\hat{E}|0>
@@ -79,11 +79,11 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   }
 
   // put in diagonal into 2RDM
-  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l} 
+  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
   for (int i = 0; i != norb_; ++i)
     for (int k = 0; k != norb_; ++k)
       for (int j = 0; j != norb_; ++j)
-        rdm2->element(j,k,k,i) -= rdm1->element(j,i); 
+        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
 
   return tie(rdm1, rdm2);
 }
@@ -94,7 +94,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
   // since we consider here number conserving operators...
   shared_ptr<Dvec> dbra(new Dvec(cbra->det(), norb_*norb_));
-  dbra->zero(); 
+  dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
@@ -114,7 +114,12 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
 
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
-  FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket) const {
+  FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
+
+  if (static_cast<bool>(o)) {
+    dbra->set_det(o);
+    dket->set_det(o);
+  }
 
   shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
   shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
@@ -124,14 +129,19 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
 
   for (int i = 0; i != dbra->ij(); ++i) {
-    shared_ptr<RDM<1> > r1; 
-    shared_ptr<RDM<2> > r2; 
+    shared_ptr<RDM<1> > r1;
+    shared_ptr<RDM<2> > r2;
     tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
     rdm1->daxpy(weight_[i], r1);
     rdm2->daxpy(weight_[i], r2);
   }
 
-  return tie(rdm1, rdm2); 
+  if (static_cast<bool>(o)) {
+    dbra->set_det(det_);
+    dket->set_det(det_);
+  }
+
+  return tie(rdm1, rdm2);
 }
 
 
@@ -156,10 +166,10 @@ void FCI::compute_rdm12(const int ist) {
 }
 
 
-// note that this does not transform internal integrals (since it is not needed in CASSCF). 
+// note that this does not transform internal integrals (since it is not needed in CASSCF).
 pair<vector<double>, vector<double> > FCI::natorb_convert() {
-  assert(rdm1_av_);
-  pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals(); 
+  assert(static_cast<bool>(rdm1_av_));
+  pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   return natorb;

@@ -49,23 +49,23 @@ const string VRR::dump(const string filename) const {
   contents << "void GVRRList::" << filename
            << "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n"; 
   contents << "#ifdef __GNUC__" << endl;
-  contents << "  const double C00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double C00_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "C00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  const double D00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double D00_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "D00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  const double B00_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B00_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B00[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  const double B01_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B01_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B01[" << i << "]"; 
   contents << "};" << endl;
-  contents << "  const double B10_[" << rank_ << "]__attribute__((aligned(16))) = {";
+  contents << "  const double B10_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i) 
       contents << (i == 0 ? "" : ", ") << "B10[" << i << "]"; 
   contents << "};" << endl;

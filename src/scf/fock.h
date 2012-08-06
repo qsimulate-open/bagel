@@ -43,13 +43,13 @@ class Fock : public Fock_base {
     void fock_two_electron_part(std::shared_ptr<const Matrix1e> den = std::shared_ptr<Matrix1e>());
 
   public:
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Fock<DF> > b, const std::shared_ptr<Matrix1e> c, const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part();
       fock_one_electron_part();
     };
     // Fock operator with a different density matrix for exchange
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<Fock<DF> > b, const std::shared_ptr<Matrix1e> c, std::shared_ptr<const Matrix1e> ex,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Fock<DF> > b, const std::shared_ptr<Matrix1e> c, std::shared_ptr<const Matrix1e> ex,
          const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part(ex);
@@ -67,8 +67,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   
   // for debug <- what did I mean by this?? TODO
   density_->fill_upper();
-  if (den_ex && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
-  if (!den_ex) den_ex = density_;
+  if (static_cast<bool>(den_ex) && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
+  if (!static_cast<bool>(den_ex)) den_ex = density_;
 
   const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
   std::vector<std::shared_ptr<Shell> > basis; 

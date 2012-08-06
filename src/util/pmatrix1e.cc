@@ -31,6 +31,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <complex>
+#include <src/util/constants.h>
 #include <src/util/pmatrix1e.h>
 #include <src/util/f77.h>
 #include <src/macros.h>
@@ -184,7 +185,7 @@ PMatrix1e PMatrix1e::ft() const {
 
   const int unit = 1;
   for (int k = -K(); k < max(K(), 1); ++k) {
-    const Complex kq(0.0, K() != 0 ? (DPI * k) / K() : 0.0);
+    const Complex kq(0.0, K() != 0 ? (pi__ * k) / K() : 0.0);
     const int boffset = (k + K()) * blocksize_;
     for (int m = -S(), mcount = 0; m <= S(); ++m, ++mcount) {
       const int moffset = mcount * blocksize_;
@@ -205,7 +206,7 @@ PMatrix1e PMatrix1e::bft() const {
       const int mcount = m + K();
       const int moffset = mcount * blocksize_;
       for (int k = -K(), kcount = 0; k != K(); ++k, ++kcount) {
-        const Complex kq(0.0, (DPI * k) / K());
+        const Complex kq(0.0, (pi__ * k) / K());
         const int koffset = kcount * blocksize_;
         Complex factor = exp(kq * static_cast<double>(m)) / (2.0 * K());
         zaxpy_(&blocksize_, &factor, data_->front() + koffset, &unit, out.data_->front() + moffset, &unit);
@@ -557,7 +558,7 @@ const Complex PMatrix1e::zdotc(const shared_ptr<PMatrix1e> o) const {
 }
 
 
-const double PMatrix1e::rms() const {
+double PMatrix1e::rms() const {
   const int unit = 1;
   Complex zdot;
 #ifndef ZDOT_RETURN
@@ -569,7 +570,7 @@ const double PMatrix1e::rms() const {
 }
 
 
-const double PMatrix1e::trace() const {
+double PMatrix1e::trace() const {
   assert(ndim_ == mdim_);
   double out = 0.0;
   int scount = 0;

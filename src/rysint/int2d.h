@@ -57,7 +57,7 @@ class Int2D {
     ~Int2D();
 
     const double* data() const { return data_; };
-    const int datasize() const { return datasize_; };
+    int datasize() const { return datasize_; };
 
     void scale_data(const double* a, const double c) {
       scale_.scalefunc[rank_](data_, a, c, data_, datasize_);

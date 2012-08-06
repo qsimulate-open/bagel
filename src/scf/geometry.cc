@@ -92,8 +92,7 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
         const string y_str(what[3].first, what[3].second);
         const string z_str(what[4].first, what[4].second);
         vector<double> positions;
-        // ang2bohr defined in constant.h
-        const double prefac = angstrom ? ang2bohr : 1.0 ;
+        const double prefac = angstrom ? ang2bohr__ : 1.0 ;
         positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
         positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
         positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
@@ -370,7 +369,7 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const
 
 }
 
-const double Geometry::compute_nuclear_repulsion() {
+double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const vector<double> tmp = (*iter)->position();

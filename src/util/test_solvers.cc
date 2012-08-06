@@ -26,6 +26,7 @@
 
 #include <src/scf/matrix1e.h>
 #include <src/util/linear.h>
+#include <src/util/linearRM.h>
 #include <src/util/aughess.h>
 #include <src/util/davidson.h>
 #include <src/util/bfgs.h>
@@ -94,6 +95,31 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     cout << "  testing Linear class" << endl;
     shared_ptr<Matrix1e> tmp(new Matrix1e(*target));
     Linear<Matrix1e> linear(n*n, tmp);
+
+    // start with target/denom
+    shared_ptr<Matrix1e> prev(new Matrix1e(geom_));
+    prev->element(0,0) = 1.0;
+
+    for (int i = 0; i != n; ++i) {
+      linear.orthog(prev);
+      shared_ptr<Matrix1e> res = prev->clone();
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1); 
+
+      shared_ptr<Matrix1e> residual = linear.compute_residual(prev, res);
+      cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
+      if (::pow(residual->norm(),2.0) < tiny) break;
+
+      for (int i = 0; i != diag->size(); ++i) residual->data(i) /= diag->data(i);
+      prev = residual;
+    }
+    linear.civec()->print();
+  }
+
+  // testing Linear2
+  {
+    cout << "  testing Linear2 class" << endl;
+    shared_ptr<Matrix1e> tmp(new Matrix1e(*target));
+    LinearRM<Matrix1e> linear(n*n, tmp);
 
     // start with target/denom
     shared_ptr<Matrix1e> prev(new Matrix1e(geom_));

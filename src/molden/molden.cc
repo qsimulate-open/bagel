@@ -17,7 +17,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
-
+//
 // You should have received a copy of the GNU Library General Public License
 // along with the Newint package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -162,7 +162,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
             boost::regex ang_re("Angs");
             boost::regex atoms_line("(\\w{1,2})\\s+\\d+\\s+\\d+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
 
-            scale = boost::regex_search(line, ang_re) ? ang2bohr : 1.0;
+            scale = boost::regex_search(line, ang_re) ? ang2bohr__ : 1.0;
 
             getline(ifs, line);
             while(!boost::regex_search(line, other_re)){
@@ -557,9 +557,9 @@ void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file)
 
       m_out << setw(2) << cur_name << setw(8)  << i+1 
                                    << setw(8)  << cur_number << setiosflags(ios_base::scientific)
-                                   << setw(20) << setprecision(8) << cur_pos[0]/ang2bohr
-                                   << setw(20) << setprecision(8) << cur_pos[1]/ang2bohr
-                                   << setw(20) << setprecision(8) << cur_pos[2]/ang2bohr << endl;
+                                   << setw(20) << setprecision(8) << cur_pos[0]/ang2bohr__
+                                   << setw(20) << setprecision(8) << cur_pos[1]/ang2bohr__
+                                   << setw(20) << setprecision(8) << cur_pos[2]/ang2bohr__ << endl;
    }
 
    m_out.close();
