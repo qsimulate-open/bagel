@@ -17,7 +17,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
-//
+
 // You should have received a copy of the GNU Library General Public License
 // along with the Newint package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -41,7 +41,60 @@
 
 using namespace std;
 
-#define PI 3.1415926535897932
+Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
+   /************************************************************
+   * Unfortunately Molden seems to order things in a really    *
+   * silly way, so I have no choice but to hardcode the        *
+   * conversions                                               *
+   ************************************************************/
+   /************************************************************
+   * Build maps from Molden ordering to Newint ordering.       *
+   ************************************************************/
+   {
+      vector<int> cart_s_order = { 0 };
+      vector<int> cart_p_order = { 0, 1, 2 };
+      vector<int> cart_d_order = { 0, 3, 1, 4, 5, 2 };
+      vector<int> cart_f_order = { 0, 4, 3, 1, 5, 9, 8, 6, 7, 2 };
+
+      vector<vector<int> > m2n_cart = {cart_s_order, cart_p_order, cart_d_order, cart_f_order};
+      m2n_cart_.insert(m2n_cart_.end(), m2n_cart.begin(), m2n_cart.end());
+
+      vector<int> sph_s_order = { 0 };
+      vector<int> sph_p_order = { 0, 1, 2 };
+      vector<int> sph_d_order = { 3, 4, 1, 2, 0 };
+      vector<int> sph_f_order = { 5, 6, 3, 4, 1, 2, 0 };
+
+      vector<vector<int> > m2n_sph = {sph_s_order, sph_p_order, sph_d_order, sph_f_order};
+      m2n_sph_.insert(m2n_sph_.end(), m2n_sph.begin(), m2n_sph.end());
+   }
+
+   /************************************************************
+   * Build maps from Newint ordering to Molden ordering.       *
+   ************************************************************/
+   {
+      vector<int> cart_s_order = { 0 };
+      vector<int> cart_p_order = { 0, 1, 2 };
+      vector<int> cart_d_order = { 0, 2, 5, 1, 3, 4 };
+      vector<int> cart_f_order = { 0, 3, 9, 2, 1, 4, 7, 8, 6, 5 };
+
+      vector<vector<int> > n2m_cart = {cart_s_order, cart_p_order, cart_d_order, cart_f_order};
+      n2m_cart_.insert(n2m_cart_.end(), n2m_cart.begin(), n2m_cart.end());
+
+      vector<int> sph_s_order = { 0 };
+      vector<int> sph_p_order = { 0, 1, 2 };
+      vector<int> sph_d_order = { 4, 2, 3, 0, 1 };
+      vector<int> sph_f_order = { 6, 4, 5, 2, 3, 0, 1 };
+
+      vector<vector<int> > n2m_sph = {sph_s_order, sph_p_order, sph_d_order, sph_f_order};
+      n2m_sph_.insert(n2m_sph_.end(), n2m_sph.begin(), n2m_sph.end());
+   }
+
+   /************************************************************
+   * Build transformations from cartesian to sphericals        *
+   ************************************************************/
+   compute_transforms();
+}
+
 
 /************************************************************************************
 *  read_geo( const string molden_file )                                             *
@@ -260,11 +313,6 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
    shared_ptr<const Coeff> out(new const Coeff(geom));
    double* cdata = out->data();
    int num_basis = geom->nbasis();
-   vector<int> nbases;
-   vector<shared_ptr<Atom> > atoms = geom->atoms();
-   for(auto iatom = atoms.begin(); iatom != atoms.end(); ++iatom){
-      nbases.push_back((*iatom)->nbasis());
-   }
    int num_atoms = geom->natom();
    is_spherical_ = geom->spherical();
    bool cartesian = true;
@@ -406,7 +454,6 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
                   getline(ifs,line);
                }
 
-               int num_aos = 0;
                while(boost::regex_search(line.c_str(),matches,coeff_re)){
                   string mo_string(matches[1].first, matches[1].second);
                   double coeff = boost::lexical_cast<double>(mo_string);
@@ -435,60 +482,42 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
    else{
       double *idata = cdata;
       for(auto imo = mo_coefficients.begin(); imo != mo_coefficients.end(); ++imo) {
-         auto ibasis = imo->begin();
+         auto icoeff = imo->begin();
          int ii = 0;
          for(auto iatom = shell_orders.begin(); iatom != shell_orders.end(); ++iatom, ++ii) {
             double* tmp_idata = idata + atom_offsets[gto_order[ii]-1];
             for(auto ishell = iatom->begin(); ishell != iatom->end(); ++ishell) {
-               switch(*ishell) {
-                  case 0:
-                     tmp_idata = copy(ibasis, ibasis + 1, tmp_idata);
-                     ibasis += 1;
-                     break;
-                  case 1:
-                     tmp_idata = copy(ibasis, ibasis + 3, tmp_idata);
-                     ibasis += 3;
-                     break;
-                  case 2:
-                     if(cartesian) { 
-                        rotate(ibasis, ibasis + 3, ibasis + 5);
-                        rotate(ibasis + 2, ibasis + 3, ibasis + 5);
-                        tmp_idata = copy(ibasis, ibasis + 5, tmp_idata);
-                        ibasis += 5;
+               if (cartesian) {
+                  if (is_spherical_) {
+                     vector<int> corder = m2n_cart_.at(*ishell);
+                     vector<double> in;
+                     for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
+                        in.push_back(*(icoeff + *iorder));
                      }
-                     else {
-                        /* Molden --> xx, yy, zz, xy, xz, yz */
-                        rotate(ibasis+2,ibasis+3,ibasis+6);
-                        /*        --> xx, yy, xy, xz, yz, zz */
-                        iter_swap(ibasis+1, ibasis+2);
-                        /* Newint --> xx, xy, yy, xz, yz, zz */
-                        tmp_idata = copy(ibasis, ibasis + 6, tmp_idata);
-                        ibasis += 6;
+                     icoeff += corder.size();
+                     vector<double> new_in = transform_cart(in, *ishell);
+                     tmp_idata = copy(new_in.begin(), new_in.end(), tmp_idata);
+                  }
+                  
+                  else {
+                     vector<int> corder = m2n_cart_.at(*ishell);
+                     for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
+                        *tmp_idata++ = *(icoeff + *iorder);
+                        #if 0 // This is for temporary "debugging" purposes
+                        if(*ishell == 2) {
+                           cout << setprecision(6) << *(tmp_idata-1) << endl;
+                        }
+                        #endif
                      }
-                     break;
-                  case 3:
-                     if(cartesian) {
-                        rotate(ibasis,ibasis+5,ibasis+7);
-                        rotate(ibasis+2,ibasis+5,ibasis+7);
-                        rotate(ibasis+4,ibasis+5,ibasis+7);
-                        tmp_idata = copy(ibasis, ibasis + 7, tmp_idata);
-                        ibasis += 7;
-                     }
-                     else {
-                        /* Molden --> xxx, yyy, zzz, xyy, xxy, xxz, xzz, yzz, yyz, xyz */
-                        iter_swap(ibasis+1,ibasis+4);
-                        /*        --> xxx, xxy, zzz, xyy, yyy, xxz, xzz, yzz, yyz, xyz */
-                        rotate(ibasis+2,ibasis+3,ibasis+10);
-                        /*        --> xxx, xxy, xyy, yyy, xxz, xzz, yzz, yyz, xyz, zzz */
-                        reverse(ibasis+5,ibasis+9);
-                        /*        --> xxx, xxy, xyy, yyy, xxz, xyz, yyz, yzz, xzz, zzz */
-                        iter_swap(ibasis+7,ibasis+8);
-                        /* Newint --> xxx, xxy, xyy, yyy, xxz, xyz, yyz, xzz, yzz, zzz */
-                     }
-                     break;
-                  default:
-                     throw runtime_error("G functions from the Molden file? Really?!");
-                     break;
+                     icoeff += corder.size();
+                  }
+               }
+               else {
+                  vector<int> corder = m2n_sph_.at(*ishell);
+                  for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
+                     *(tmp_idata + *iorder) = *icoeff++;
+                  }
+                  tmp_idata += corder.size();
                }
             }
          }
@@ -504,7 +533,6 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
 *                                                                                   *
 *  Writes a molden file. Just the geometry though (Atoms section)                   *
 *                                                                                   *
-*  TODO: Check whether this actually works                                          *
 ************************************************************************************/
 void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file) {
    const int num_atoms = geo->natom();
@@ -538,10 +566,13 @@ void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file)
 }
 
 /************************************************************************************
-*  write_mos( shared_ptr<Reference> ref, const string molden_file                   *
+*  write_mos( shared_ptr<Reference> ref, const string molden_file )                 *
 *                                                                                   *
 *  Writes the GTO and MO sections of a molden file. write_mos does not check to     *
 *  see if the molden_file already exists. Only opens to append.                     *
+*                                                                                   *
+*  These basis functions are being written as they already are, cartesian or not.   *
+*  There will be no transforming from spherical to cartesian just to print!         *
 *                                                                                   *
 *  TODO: Check whether this actually works                                          *
 ************************************************************************************/
@@ -553,10 +584,12 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
       throw runtime_error("MOs could not be written to molden file: file couldn't be opened");
    }
 
-   {
-      shared_ptr<const Geometry> geom = ref->geom();
-      vector<shared_ptr<Atom> > atoms = geom->atoms();
+   shared_ptr<const Geometry> geom = ref->geom();
+   vector<shared_ptr<Atom> > atoms = geom->atoms();
 
+   is_spherical_ = geom->spherical();
+
+   {
       int num_atoms = geom->natom();
 
       /************************************************************
@@ -598,8 +631,6 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
    {
       ofs << "[MO]" << endl;
 
-      //TODO set it up to reorder d and f functions according to how Molden wants to read them.
-
       shared_ptr<const Coeff> coeff = ref->coeff();
       int nbasis = coeff->nbasis();
       vector<double> eigvec = ref->eig();
@@ -626,8 +657,19 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
          string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
          ofs << " Occup=" << occ_string << endl;
 
-         for(int j = 0; j < nbasis; ++j, ++modata){
-           ofs << fixed << setw(4) << j+1 << setw(20) << setprecision(12) << *modata << endl;
+         int j = 1;
+
+         for (auto iatom = atoms.begin(); iatom != atoms.end(); ++iatom) {
+            vector<shared_ptr<Shell> > shells = (*iatom)->shells();
+            for (auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
+               for (int icont = 0; icont != (*ishell)->num_contracted(); ++icont) {
+                  vector<int> corder = (is_spherical_ ? n2m_sph_.at((*ishell)->angular_number()) : n2m_cart_.at((*ishell)->angular_number()));
+                  for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
+                     ofs << fixed << setw(4) << j++ << setw(20) << setprecision(12) << modata[*iorder] << endl;
+                  }
+                  modata += corder.size();
+               }
+            }
          }
       }
    }
@@ -636,7 +678,24 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
 double Molden::denormalize(int l, double alpha) {
    double denom = 1.0;
    for (int ii = 2; ii <= l; ++ii) denom *= 2 * ii - 1;
-   double value = ::pow(2.0 * alpha / PI, 0.75) * ::pow(::sqrt(4.0 * alpha), static_cast<double>(l)) / ::sqrt(denom);
+   double value = ::pow(2.0 * alpha / pi__, 0.75) * ::pow(::sqrt(4.0 * alpha), static_cast<double>(l)) / ::sqrt(denom);
 
    return (1.0 / value);
+}
+
+vector<double> Molden::transform_cart(vector<double> carts, int ang_l) {
+   vector<vector<pair<int,double> > > mtuv = lmtuv_.at(ang_l);
+
+   vector<double> out;
+   for( auto im = mtuv.begin(); im != mtuv.end(); ++im ) {
+      double value = 0.0;
+
+      for ( auto ituv = im->begin(); ituv != im->end(); ++ituv ) {
+         value += (ituv->second) * carts.at(ituv->first);
+      }
+
+      out.push_back(value);
+   }
+
+   return out;
 }

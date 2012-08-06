@@ -24,12 +24,17 @@
 //
 
 #include <vector>
+#include <tuple> 
 #include <iostream>
 #include <iomanip>
 #include <cassert>
 #include <stdexcept>
 #include <memory>
+
+#include <src/scf/overlap.h>
+#include <src/scf/coeff.h>
 #include <src/scf/geometry.h>
+#include <src/dimer/dimer.h>
 #include <src/scf/rohf.h>
 #include <src/molden/molden.h>
 #include <src/wfn/reference.h>
@@ -211,24 +216,53 @@ int main(int argc, char** argv) {
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
         std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
 
-        Molden molden;
+        Molden molden(geom->spherical());
         molden.write_geo(geom, out_file);
         if (orbitals) molden.write_mos(ref, out_file);
       }
-      #if 0 // <---- I've probably messed something up so I'm just taking this out for now
-      else if (method == "molden") {
+      #if 0 // <---- Testing environment
+      else if (method == "testing") {
 
-        std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
-        std::string molden_file(idata->get_input("molden").find("molden")->second);
+        #if 0 // Dimer overlap testing
+        std::tuple<double,double,double> disp = std::make_tuple(0.0,2.0,0.0);
 
-        Molden mf;
-        std::shared_ptr<Geometry> molden_geometry(new Geometry( mf.read_geo(molden_file), iter->second) );
-
-        cout << molden_geometry->nuclear_repulsion() << endl;
-
-        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, molden_geometry));
+        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
         scf->compute();
-       
+        ref = scf->conv_to_ref();
+    
+        std::shared_ptr<Dimer> hf_dimer(new Dimer(ref, disp));
+
+        Matrix1e novlp = hf_dimer->overlap();
+
+        novlp.print("", 38);
+        #endif
+
+        #if 0 // Fock matrix testing for methane
+        // For Fock_base I need geom, Hcore, density matrix, and schwarz vector (kind of)
+        std::shared_ptr<Fock<0> > hcore(new Fock<0>(geom));
+
+         // Turn on one of the following two "if 0" statements
+          #if 0 // get test coeff from molden file
+          Molden mf(geom->spherical());
+          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,"methane_cart.molden");
+          #endif
+        
+          #if 0 // Get test coeff from SCF
+          scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
+          scf->compute();
+          ref = scf->conv_to_ref();
+          std::shared_ptr<const Coeff> coeff = ref->coeff();
+          #endif
+
+        std::shared_ptr<Fock<0> > fock(new Fock<0>(geom, hcore, coeff->form_density_rhf(5), geom->schwarz()));
+
+        //mf.write_mos(ref, "methane.out");
+
+        fock->print("fockao", 10);
+        Matrix1e fockmo = *coeff % *fock * *coeff;
+        fockmo.print("fockmo",10);
+
+        #endif
       }
       #endif
     }

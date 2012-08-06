@@ -29,17 +29,26 @@
 #include <src/scf/atom.h>
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
+#include <vector>
+
 
 class Molden {
    protected:
       /* This parameter only affects returned values. The functions check the file itself for its formatting. */
       bool is_spherical_;
+      std::vector<std::vector<std::vector<std::pair<int, double> > > > lmtuv_;
+      std::vector<std::vector<int> > m2n_cart_;
+      std::vector<std::vector<int> > m2n_sph_;
+      std::vector<std::vector<int> > n2m_cart_;
+      std::vector<std::vector<int> > n2m_sph_;
 
    private:
       double denormalize(int l, double alpha);
+      void compute_transforms();
+      std::vector<double> transform_cart(std::vector<double> in, int ang_l);
 
    public:
-      Molden(bool is_spherical = true) : is_spherical_(is_spherical) {};
+      Molden(bool is_spherical = true);
       
       /* Read functions */
       std::vector<std::shared_ptr<Atom> > read_geo(std::string in_file);
