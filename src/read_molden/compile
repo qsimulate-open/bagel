@@ -1,8 +1,0 @@
-#!/bin/bash
-#############################################################
-# Compiles read_molden as a standalone executable
-#  This should only be temporarily necessary...
-#  Just until I get it working with the rest of the package
-#############################################################
-
-g++ read_molden.cc -o read_molden -lboost_regex -L/opt/local/lib -std=c++11
