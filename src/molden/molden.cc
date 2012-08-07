@@ -43,6 +43,30 @@ using namespace std;
 
 Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
    /************************************************************
+   * These are temporary fixes to account for different        *
+   *  normalizations of the mixed d functions. I stress        *
+   *  temporary. As written, this should be applied after      *
+   *  everything is in Newint order                            *
+   ************************************************************/
+   {
+      double s_scale_array[] = { 1.0 };
+      double p_scale_array[] = { 1.0, 1.0, 1.0 };
+      double d_scale_array[] = { 1.0, ::sqrt(3.0), 1.0, ::sqrt(3.0), ::sqrt(3.0), 1.0 };
+      // The f functions are definitely not right, but I'll get to that later
+      double f_scale_array[] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+
+      vector<double> s_scale(s_scale_array, s_scale_array+sizeof(s_scale_array)/sizeof(double));
+      vector<double> p_scale(p_scale_array, p_scale_array+sizeof(p_scale_array)/sizeof(double));
+      vector<double> d_scale(d_scale_array, d_scale_array+sizeof(d_scale_array)/sizeof(double));
+      vector<double> f_scale(f_scale_array, f_scale_array+sizeof(f_scale_array)/sizeof(double));
+
+      scaling_.push_back(s_scale);
+      scaling_.push_back(p_scale);
+      scaling_.push_back(d_scale);
+      scaling_.push_back(f_scale);
+   }
+
+   /************************************************************
    * Unfortunately Molden seems to order things in a really    *
    * silly way, so I have no choice but to hardcode the        *
    * conversions                                               *
@@ -67,6 +91,7 @@ Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
       vector<vector<int> > m2n_sph = {sph_s_order, sph_p_order, sph_d_order, sph_f_order};
       m2n_sph_.insert(m2n_sph_.end(), m2n_sph.begin(), m2n_sph.end());
    }
+
 
    /************************************************************
    * Build maps from Newint ordering to Molden ordering.       *
@@ -488,34 +513,28 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
             double* tmp_idata = idata + atom_offsets[gto_order[ii]-1];
             for(auto ishell = iatom->begin(); ishell != iatom->end(); ++ishell) {
                if (cartesian) {
+                  vector<int> corder = m2n_cart_.at(*ishell);
+                  vector<double> scales = scaling_.at(*ishell);
+                     int jj = 0;
                   if (is_spherical_) {
-                     vector<int> corder = m2n_cart_.at(*ishell);
                      vector<double> in;
                      for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                        in.push_back(*(icoeff + *iorder));
+                        in.push_back(*(icoeff + *iorder) * scales.at(jj++));
                      }
-                     icoeff += corder.size();
                      vector<double> new_in = transform_cart(in, *ishell);
                      tmp_idata = copy(new_in.begin(), new_in.end(), tmp_idata);
                   }
-                  
                   else {
-                     vector<int> corder = m2n_cart_.at(*ishell);
                      for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                        *tmp_idata++ = *(icoeff + *iorder);
-                        #if 0 // This is for temporary "debugging" purposes
-                        if(*ishell == 2) {
-                           cout << setprecision(6) << *(tmp_idata-1) << endl;
-                        }
-                        #endif
+                        *tmp_idata++ = *(icoeff + *iorder) * scales.at(jj++);
                      }
-                     icoeff += corder.size();
                   }
+                  icoeff += corder.size();
                }
                else {
                   vector<int> corder = m2n_sph_.at(*ishell);
                   for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                     *(tmp_idata + *iorder) = *icoeff++;
+                     *tmp_idata++ = *(icoeff + *iorder);
                   }
                   tmp_idata += corder.size();
                }
@@ -557,9 +576,9 @@ void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file)
 
       m_out << setw(2) << cur_name << setw(8)  << i+1 
                                    << setw(8)  << cur_number << setiosflags(ios_base::scientific)
-                                   << setw(20) << setprecision(8) << cur_pos[0]/ang2bohr__
-                                   << setw(20) << setprecision(8) << cur_pos[1]/ang2bohr__
-                                   << setw(20) << setprecision(8) << cur_pos[2]/ang2bohr__ << endl;
+                                   << setw(20) << setprecision(12) << cur_pos[0]/ang2bohr__
+                                   << setw(20) << setprecision(12) << cur_pos[1]/ang2bohr__
+                                   << setw(20) << setprecision(12) << cur_pos[2]/ang2bohr__ << endl;
    }
 
    m_out.close();
@@ -664,8 +683,10 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
             for (auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
                for (int icont = 0; icont != (*ishell)->num_contracted(); ++icont) {
                   vector<int> corder = (is_spherical_ ? n2m_sph_.at((*ishell)->angular_number()) : n2m_cart_.at((*ishell)->angular_number()));
+                  /* This below is probably temporary... I may need to scale the spherical components */
+                  vector<double> scales = (is_spherical_ ? vector<double>(corder.size(), 1.0) : scaling_.at((*ishell)->angular_number())) ;
                   for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                     ofs << fixed << setw(4) << j++ << setw(20) << setprecision(12) << modata[*iorder] << endl;
+                     ofs << fixed << setw(4) << j++ << setw(22) << setprecision(16) << modata[*iorder] / scales.at(*iorder) << endl;
                   }
                   modata += corder.size();
                }

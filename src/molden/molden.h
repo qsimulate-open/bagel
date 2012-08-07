@@ -41,6 +41,7 @@ class Molden {
       std::vector<std::vector<int> > m2n_sph_;
       std::vector<std::vector<int> > n2m_cart_;
       std::vector<std::vector<int> > n2m_sph_;
+      std::vector<std::vector<double> > scaling_;
 
    private:
       double denormalize(int l, double alpha);

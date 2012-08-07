@@ -95,8 +95,20 @@ void Molden::compute_transforms() {
           }
         }
       }
+      /* I have no idea if this will work for the general case, but it works up to d */
+      double scale = 0.0;
+      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
+        scale += ituv->second*ituv->second;
+      }
+
+      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
+        ituv->second /= scale;
+      }
+
       mtuv.push_back(tuv);
     }
+
+
     lmtuv_.push_back(mtuv);
   }
 }
