@@ -33,7 +33,7 @@ struct Data {
       }
     };
     ~Data(){};
-    const double comb(const int i, const int j) const {
+    double comb(const int i, const int j) const {
       return factorial[i] / factorial[j] / factorial[i - j];
     }; 
 };
