@@ -244,7 +244,8 @@ int main(int argc, char** argv) {
          // Turn on one of the following two "if 0" statements
           #if 0 // get test coeff from molden file
           Molden mf(geom->spherical());
-          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,"methane_cart.molden");
+          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "methane_cart.molden");
+          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
           #endif
         
           #if 0 // Get test coeff from SCF
