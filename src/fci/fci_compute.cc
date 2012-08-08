@@ -41,7 +41,7 @@ void FCI::update(shared_ptr<const Coeff> c) {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  auto tp1 = chrono::high_resolution_clock::now();
+  auto tp1 = high_resolution_clock::now();
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c));
 
   // right now full basis is used. 
@@ -82,7 +82,7 @@ void FCI::compute() {
   vector<int> conv(nstate_,0);
 
   for (int iter = 0; iter != max_iter_; ++iter) { 
-    auto tp1 = chrono::high_resolution_clock::now();
+    auto tp1 = high_resolution_clock::now();
 
     // form a sigma vector given cc
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
@@ -122,8 +122,8 @@ void FCI::compute() {
     }
 
     // printing out
-    auto tp2 = chrono::high_resolution_clock::now();
-    auto dr = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
+    auto tp2 = high_resolution_clock::now();
+    auto dr = duration_cast<milliseconds>(tp2-tp1);
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
