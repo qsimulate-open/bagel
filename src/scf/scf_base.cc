@@ -30,7 +30,6 @@
 #include <iostream>
 #include <cmath>
 #include <iomanip>
-#include <ctime>
 #include <algorithm>
 
 using namespace std;
