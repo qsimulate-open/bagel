@@ -31,6 +31,7 @@
 #include <memory>
 #include <string>
 #include <fstream>
+#include <chrono>
 #include <src/util/bfgs.h>
 #include <src/scf/geometry.h>
 #include <src/grad/gradfile.h>
@@ -65,7 +66,7 @@ class Opt {
 
     bool next() {
       if (iter_ > 0) mute_stdcout(); 
-      const size_t start = ::clock();
+      auto tp1 = std::chrono::high_resolution_clock::now();
       GradEval<T> eval(input_, current_);
       if (iter_ == 0) {
         print_header();
@@ -84,7 +85,8 @@ class Opt {
       }
 
       resume_stdcout(); 
-      print_iteration(eval.energy(), gradnorm, disnorm, start, ::clock());
+      auto tp2 = std::chrono::high_resolution_clock::now();
+      print_iteration(eval.energy(), gradnorm, disnorm, tp1, tp2);
       
       ++iter_;
       if (converged) { print_footer(); current_->print_atoms(); }
@@ -98,12 +100,14 @@ class Opt {
         << std::endl << std::endl;
     };
      
-    void print_iteration(const double energy, const double residual, const double step, const size_t start, const size_t end) const {
-      const double time = static_cast<double>(end - start) / CLOCKS_PER_SEC; 
+    void print_iteration(const double energy, const double residual, const double step,
+                         const std::chrono::high_resolution_clock::time_point tp1,
+                         const std::chrono::high_resolution_clock::time_point tp2) const {
+      auto dr = std::chrono::duration_cast<std::chrono::milliseconds>(tp2-tp1);
       std::cout << std::setw(8) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
                                          << std::setw(20) << std::setprecision(8) << std::fixed << residual  
                                          << std::setw(15) << std::setprecision(8) << std::fixed << step  
-                                         << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
+                                         << std::setw(12) << std::setprecision(2) << std::fixed << dr.count()*0.001 << std::endl;
     };
 
     void mute_stdcout() {

@@ -31,6 +31,7 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
+#include <chrono>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
@@ -201,10 +202,12 @@ void Geometry::common_init2(const bool print, const double thresh) {
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
-    const int t = ::clock();
+    auto tp1 = chrono::high_resolution_clock::now();
     df_ = form_fit<ERIFit>(thresh, true); // true means we construct J^-1/2
 
-    cout << "        elapsed time:  " << setw(10) << setprecision(2) << (::clock() - t)/static_cast<double>(CLOCKS_PER_SEC) << " sec." << endl << endl; 
+    auto tp2 = chrono::high_resolution_clock::now();
+    cout << "        elapsed time:  " << setw(10) << setprecision(2) << chrono::duration_cast<chrono::milliseconds>(tp2-tp1).count()*0.001 <<
+            " sec." << endl << endl; 
   }
 
 }

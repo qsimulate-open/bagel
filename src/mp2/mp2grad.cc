@@ -28,6 +28,7 @@
 #include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
@@ -48,7 +49,7 @@ void MP2Grad::compute() { }
 
 template<> 
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
-  size_t time = ::clock();
+  auto tp1 = chrono::high_resolution_clock::now();
 
   const size_t ncore = ref_->ncore();
 
@@ -77,9 +78,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const DF_Full> bv = full->apply_J();
   shared_ptr<DF_Full> gia = bv->clone();
 
-  double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
-  time = ::clock();
+  auto tp2 = chrono::high_resolution_clock::now();
+  auto dr1 = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
+  cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << dr1.count()*0.001 << endl << endl;
 
   // assemble
   unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
@@ -127,10 +128,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
   }
 
-  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
+  auto tp3 = chrono::high_resolution_clock::now();
+  auto dr2 = chrono::duration_cast<chrono::milliseconds>(tp3-tp2);
+  cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << dr2.count()*0.001 << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
-  time = ::clock();
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   unique_ptr<double[]> lai(new double[nocca*nvirt]);
@@ -179,9 +180,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
 
-  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << elapsed << endl << endl;
-  time = ::clock();
+  auto tp4 = chrono::high_resolution_clock::now();
+  auto dr3 = chrono::duration_cast<chrono::milliseconds>(tp4-tp3);
+  cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << dr3.count()*0.001 << endl << endl;
 
   // solving CPHF
   shared_ptr<CPHF> cphf(new CPHF(grad, ref_->eig(), halfjj, ref_));
@@ -199,10 +200,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << endl;
-  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << elapsed << endl;
-  time = ::clock();
+  auto tp5 = chrono::high_resolution_clock::now();
+  auto dr4 = chrono::duration_cast<chrono::milliseconds>(tp5-tp4);
+  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << dr4.count()*0.001 << endl;
 
   // one electron matrices
   shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
@@ -270,15 +270,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->symmetrize();
   shared_ptr<Matrix1e> wdao(new Matrix1e(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
-  elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
-  cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << elapsed << endl;
-  time = ::clock();
+  auto tp6 = chrono::high_resolution_clock::now();
+  auto dr5 = chrono::duration_cast<chrono::milliseconds>(tp6-tp5);
+  cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << dr5.count()*0.001 << endl;
 
   // gradient evaluation
   shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
 
-  cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right <<
-          setw(10) << (::clock() - time)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
+  auto tp7 = chrono::high_resolution_clock::now();
+  auto dr6 = chrono::duration_cast<chrono::milliseconds>(tp7-tp6);
+  cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right << setw(10) << dr6.count()*0.001 << endl << endl;
 
   // set proper energy_
   energy_ = ref_->energy() + ecorr; 

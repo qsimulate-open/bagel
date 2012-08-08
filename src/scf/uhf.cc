@@ -23,11 +23,12 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
+#include <chrono>
 #include <src/scf/uhf.h>
 #include <src/prop/dipole.h>
 
 using namespace std;
+using namespace std::chrono;
 
 void UHF::compute() {
 
@@ -56,7 +57,7 @@ void UHF::compute() {
   DIIS<Matrix1e> diis(5);
   DIIS<Matrix1e> diisB(5);
   for (int iter = 0; iter != max_iter_; ++iter) {
-    int start = ::clock();
+    auto tp1 = high_resolution_clock::now();
 
     shared_ptr<Fock<1> > fockA(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityA_, schwarz_));
     shared_ptr<Fock<1> > fockB(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityB_, schwarz_));
@@ -82,10 +83,10 @@ void UHF::compute() {
     for (int i = 0; i != this->nocc(); ++i)  energy_ += eig_[i]  * 0.5;
     for (int i = 0; i != this->noccB(); ++i) energy_ += eigB_[i] * 0.5;
 
-    int end = ::clock();
+    auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2)
-                                      << (end - start) / static_cast<double>(CLOCKS_PER_SEC) << endl; 
+                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl; 
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

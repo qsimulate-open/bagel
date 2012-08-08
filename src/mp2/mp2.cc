@@ -29,6 +29,7 @@
 #include <src/mp2/mp2.h>
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 #include <src/util/f77.h>
 #include <src/scf/scf.h>
 #include <src/smith/prim_op.h>
@@ -68,7 +69,7 @@ void MP2::compute() {
   const double* const coeff = ref_->coeff()->data() + ncore_*nbasis;
   const double* const vcoeff = coeff + nocc*nbasis;
 
-  const long time = ::clock();
+  auto tp1 = chrono::high_resolution_clock::now(); 
 
   // first compute half transformed integrals
   shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);  
@@ -104,10 +105,10 @@ void MP2::compute() {
     sum += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
   }
 
-  const double elapsed = (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC); 
+  auto tp2 = chrono::high_resolution_clock::now(); 
   cout << "    * assembly done" << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
-                                                    << setw(10) << setprecision(2) << elapsed << endl << endl;
+                      << setw(10) << setprecision(2) << chrono::duration_cast<chrono::milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
 
   energy_ = sum + ref_->energy();
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;

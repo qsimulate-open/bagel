@@ -35,17 +35,19 @@
 static const bool tprint = false;
 
 using namespace std;
+using namespace std::chrono;
 
 void FCI::update(shared_ptr<const Coeff> c) {
 
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  int start_int = ::clock();
+  auto tp1 = chrono::high_resolution_clock::now();
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c));
 
   // right now full basis is used. 
+  auto tp2 = high_resolution_clock::now();
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
-          static_cast<double>(::clock() - start_int)/static_cast<double>(CLOCKS_PER_SEC) << endl << endl;
+          duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
 
   // create denominator here. Stored in shared<Civec> denom_
   const_denom();
@@ -80,7 +82,7 @@ void FCI::compute() {
   vector<int> conv(nstate_,0);
 
   for (int iter = 0; iter != max_iter_; ++iter) { 
-    int start = ::clock();
+    auto tp1 = chrono::high_resolution_clock::now();
 
     // form a sigma vector given cc
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
@@ -120,12 +122,14 @@ void FCI::compute() {
     }
 
     // printing out
+    auto tp2 = chrono::high_resolution_clock::now();
+    auto dr = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << (::clock() - start)/static_cast<double>(CLOCKS_PER_SEC) << endl; 
+                              << dr.count()*0.001 << endl; 
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;
