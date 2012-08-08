@@ -44,7 +44,6 @@ class ERIBatch : public ERIBatch_base {
     void perform_VRR11();
     void perform_VRR12();
     void perform_VRR13();
-    void perform_VRR();
 
   public:
     

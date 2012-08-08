@@ -30,7 +30,7 @@
 
 using namespace std;
 
-Int2D::Int2D(const double* dparam, const double* roots, const int rank, const int datasize, double* data_pointer,
+Int2D::Int2D(const array<double,11>& dparam, const double* roots, const int rank, const int datasize, double* data_pointer,
    void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*))
  : rank_(rank), data_(data_pointer), datasize_(datasize) {
 

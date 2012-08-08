@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <map>
+#include <array>
 #include <src/rysint/scalelist.h>
 #include <src/rysint/macros.h>
 
@@ -51,7 +52,7 @@ class Int2D {
 
   public:
 
-    Int2D(const double*, const double*, const int, const int, double*, 
+    Int2D(const std::array<double, 11>&, const double*, const int, const int, double*, 
           void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*));
     Int2D() {};
     ~Int2D();
