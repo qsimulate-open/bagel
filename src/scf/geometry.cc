@@ -298,6 +298,12 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    }
    atoms_ = new_atoms;
    aux_atoms_ = new_aux_atoms;
+
+   basisfile_ = nmer.front()->basisfile_;
+   auxfile_ = nmer.front()->auxfile();
+   aux_merged_ = nmer.front()->aux_merged_;
+   level_ = nmer.front()->level();
+   gamma_ = nmer.front()->gamma();
    
    /* Use the strictest thresholds */
    for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {

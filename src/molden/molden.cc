@@ -553,7 +553,7 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
 *  Writes a molden file. Just the geometry though (Atoms section)                   *
 *                                                                                   *
 ************************************************************************************/
-void Molden::write_geo(const shared_ptr<Geometry> geo, const string molden_file) {
+void Molden::write_geo(const shared_ptr<const Geometry> geo, const string molden_file) {
    const int num_atoms = geo->natom();
 
    ofstream m_out;

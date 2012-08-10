@@ -56,7 +56,7 @@ class Molden {
       std::shared_ptr<const Coeff> read_mos(std::shared_ptr<const Geometry>, std::string in_file);
 
       /* Write functions */
-      void write_geo(std::shared_ptr<Geometry>, std::string out_file);
+      void write_geo(std::shared_ptr<const Geometry>, std::string out_file);
       void write_mos(std::shared_ptr<const Reference>, std::string out_file);
 
       void set_spherical(bool is_spherical) { is_spherical_ = is_spherical; }

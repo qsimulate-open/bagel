@@ -36,22 +36,20 @@ typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
 
 /************************************************************************************
-*  This class describes a homodimer. Since it is a homodimer, there is only one     *
-*  important coeff_ matrix. I'll figure out how to generalize the rest of the class *
-*  later on, but for now it will just be a way to construct a geometry. The rest    *
-*  will come eventually.                                                            *
+*  This class describes a homodimer.                                                *
 *************************************************************************************
 *  TODO: Extra functionality that would be nice later on:                           *
 *     - compute overlap from separate molecules                                     *
-*     - output geometry of pair as one object                                       *
-*     - output reference of pair as one object                                      *
-*     - RDM stuff? No idea if I'll need this or not...                              *
 ************************************************************************************/
 
 class Dimer {
    protected:
       std::pair<RefGeometry,RefGeometry> geompair_;
       std::vector<RefCoeff> coeffs_; // There should only be one or two in this.
+      std::shared_ptr<Geometry> supergeometry_;
+      std::shared_ptr<Reference> superreference_;
+      std::shared_ptr<Coeff> supercoeff_;
+      int nbasis_; // Basis size of both together
       
    public:
       Dimer(RefGeometry a, RefGeometry b);
@@ -62,13 +60,21 @@ class Dimer {
       RefGeometry get_B() { return geompair_.second; } ;
       std::vector<RefCoeff> coeffs() { return coeffs_; }
 
-      int coeffsize() { return coeffs_.size(); }
+      std::shared_ptr<Geometry> supergeom() { return supergeometry_; }
+      std::shared_ptr<Reference> superref() { return superreference_; }
+      std::shared_ptr<Coeff> supercoeff() { return supercoeff_; }
 
-      /* Combine the two geometries into one */
-      RefGeometry geometry();
-      RefCoeff coefficients();
-      RefCoeff coefficients(std::shared_ptr<const Geometry>);
-      RefCoeff overlap(int nele1 = -1, int nele2 = -1); // Until I think of a better way to do this, -1 means all
+      int coeffsize() { return coeffs_.size(); }
+      int nbasis() {return nbasis_; }
+
+      std::shared_ptr<Coeff> overlap(); 
+      void orthonormalize();
+
+      double energy(); // A rather naive, probably temporary, function for computing the energy
+
+   private:
+      void construct_geometry();
+      void construct_coeff();
 };
 
 #endif

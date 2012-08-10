@@ -41,6 +41,7 @@ class Coeff : public Matrix1e {
     Coeff() : Matrix1e() {};
     Coeff(const Matrix1e&);
     Coeff(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
+    Coeff(const std::shared_ptr<const Geometry> g) : Matrix1e(g) {};
     Coeff(std::shared_ptr<const Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
     ~Coeff();
 

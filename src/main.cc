@@ -47,6 +47,8 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 
+#include <src/util/constants.h>
+
 StackMem* stack;
 
 // debugging
@@ -222,19 +224,39 @@ int main(int argc, char** argv) {
       }
       #if 0 // <---- Testing environment
       else if (method == "testing") {
+        std::multimap<std::string, std::string> testdata = idata->get_input("testing");
+        std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
         #if 0 // Dimer overlap testing
-        std::tuple<double,double,double> disp = std::make_tuple(0.0,2.0,0.0);
+        double dx = read_input<double>(testdata, "dx", 0.0) * ang2bohr__;
+        double dy = read_input<double>(testdata, "dy", 0.0) * ang2bohr__;
+        double dz = read_input<double>(testdata, "dz", 0.0) * ang2bohr__;
+        std::tuple<double,double,double> disp = std::make_tuple(dx,dy,dz);
 
-        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
-        scf->compute();
-        ref = scf->conv_to_ref();
-    
-        std::shared_ptr<Dimer> hf_dimer(new Dimer(ref, disp));
+         #if 0
+          Molden mf(geom->spherical());
+          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
+          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
+          ref = shared_ptr<const Reference>(new Reference(geom, coeff, geom->nele()/2,0,geom->nbasis() - (geom->nele()/2) ));
+         #endif
 
-        Matrix1e novlp = hf_dimer->overlap();
+        std::shared_ptr<Dimer> methane_dimer(new Dimer(ref, disp));
+        std::vector<std::shared_ptr<const Geometry> > tmp_geom(1, methane_dimer->supergeom());
+        //geom = std::shared_ptr<Geometry>(new Geometry(tmp_geom));
+        geom = methane_dimer->supergeom();
+        Molden mf(methane_dimer->supergeom()->spherical());
 
-        novlp.print("", 38);
+        methane_dimer->overlap()->print(); // <--- print non-orthogonal MOs
+        mf.write_geo(methane_dimer->supergeom(), "nonortho.molden");
+        mf.write_mos(methane_dimer->superref(), "nonortho.molden");
+
+        methane_dimer->orthonormalize();
+        methane_dimer->overlap()->print(); // <--- print orthogonal MOs
+        mf.write_geo(methane_dimer->supergeom(), "ortho.molden");
+        mf.write_mos(methane_dimer->superref(), "ortho.molden");
+
+        double energy = methane_dimer->energy();
+        cout << "Dimer Energy is " << std::setprecision(16) << std::setw(22) << energy << endl;
         #endif
 
         #if 0 // Fock matrix testing for methane
@@ -244,7 +266,7 @@ int main(int argc, char** argv) {
          // Turn on one of the following two "if 0" statements
           #if 0 // get test coeff from molden file
           Molden mf(geom->spherical());
-          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "methane_cart.molden");
+          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
           std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
           #endif
         
