@@ -38,7 +38,7 @@ using namespace std;
 *  Dimer::Dimer(shared_ptr<Geometry> A, vector<double> displacement)                *
 *                                                                                   *
 ************************************************************************************/
-Dimer::Dimer(shared_ptr<const Geometry> A, tuple<double,double,double> displacement) : nbasis_(2*A->nbasis()) {
+Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : nbasis_(2*A->nbasis()) {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
@@ -50,7 +50,7 @@ Dimer::Dimer(shared_ptr<const Geometry> A, tuple<double,double,double> displacem
    construct_geometry();
 }
 
-Dimer::Dimer(shared_ptr<const Reference> A, tuple<double,double,double> displacement) : nbasis_(2*A->geom()->nbasis())
+Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : nbasis_(2*A->geom()->nbasis())
 {
    /************************************************************
    *  Set up variables that will contain the organized info    *

@@ -30,6 +30,7 @@
 using namespace std;
 
 AtomMap::AtomMap () {
+  atommap.insert(make_pair("q" ,  0)); // dummy atom
   atommap.insert(make_pair("h" ,  1));
   atommap.insert(make_pair("he",  2));
   atommap.insert(make_pair("li",  3));

@@ -23,13 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __dimer_dimer_h
+#define __dimer_dimer_h
+
+#include <array>
 #include <src/scf/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
-
-#ifndef __dimer_dimer_h
-#define __dimer_dimer_h
 
 typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<const Reference> RefReference;
@@ -53,8 +54,8 @@ class Dimer {
       
    public:
       Dimer(RefGeometry a, RefGeometry b);
-      Dimer(RefGeometry a, std::tuple<double,double,double> displacement);
-      Dimer(RefReference a, std::tuple<double,double,double> displacement);
+      Dimer(RefGeometry a, std::array<double,3> displacement);
+      Dimer(RefReference a, std::array<double,3> displacement);
 
       RefGeometry get_A() { return geompair_.first; } ;
       RefGeometry get_B() { return geompair_.second; } ;

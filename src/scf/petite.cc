@@ -25,6 +25,7 @@
 
 
 #include <src/scf/petite.h>
+#include <array>
 #include <memory>
 #include <iostream>
 #include <cassert>
@@ -38,21 +39,15 @@ typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Symmetry> RefSymmetry;
 
-static inline vector<double> matmul33(const vector<double>& a, const vector<double>& b) {
+static inline array<double,3> matmul33(const vector<double>& a, const array<double,3>& b) {
   assert(a.size() == 9 && b.size() == 3); 
   // note that the array is writen in C style (not in fortran style)!!!
-  vector<double> out(3);
+  array<double,3> out;
   out[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; 
   out[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2]; 
   out[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2]; 
   return out;
 }; 
-
-static inline bool equal3(const vector<double>& a, const vector<double>& b) {
-  assert(a.size() == 3 && b.size() == 3); 
-  return (::fabs(a[0] - b[0]) < 1.0e-6 && ::fabs(a[1] - b[1]) < 1.0e-6 && ::fabs(a[2] - b[2]) < 1.0e-6);
-};
-
 
 Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
   const string c1("c1");
@@ -115,15 +110,15 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
 
     // making map for atoms
     for (int iatom = 0; iatom != natom_; ++iatom) {
-      const vector<double> position = atoms[iatom]->position();
+      const array<double,3> position = atoms[iatom]->position();
       vector<int> tmp(nsymop_);
 
       for (int iop = 0; iop != nsymop_; ++iop) {
-        const vector<double> target = matmul33(symop_[iop], position); 
+        const array<double,3> target = matmul33(symop_[iop], position); 
         bool found = false;
         for (int jatom = 0; jatom != natom_; ++jatom) {
-          const vector<double> current = atoms[jatom]->position();
-          if (equal3(current, target)) {
+          const array<double,3> current = atoms[jatom]->position();
+          if (current == target) {
             found = true;
             tmp[iop] = jatom;
             break;

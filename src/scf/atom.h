@@ -27,6 +27,7 @@
 #ifndef __scf_atom_h
 #define __scf_atom_h
 
+#include <array>
 #include <vector>
 #include <string>
 #include <src/scf/shell.h>
@@ -38,9 +39,10 @@ class Atom {
     bool spherical_;
 
     std::string name_;
-    std::vector<double> position_;
+    std::array<double,3> position_;
     std::vector<std::shared_ptr<Shell> > shells_; 
     int atom_number_;
+    double atom_charge_;
     int nbasis_;
     int lmax_;
 
@@ -51,17 +53,17 @@ class Atom {
     void common_init();
      
   public:
-    Atom(const bool spherical, const std::string name, const std::vector<double>& position, const std::string basisfile);
-    Atom(const bool spherical, const std::string name, const std::vector<double>& position,
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string basisfile);
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > >);
     Atom(const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
-    Atom(const Atom&, const std::vector<double>&);
+    Atom(const Atom&, const std::array<double,3>&);
     Atom(const Atom&, const double*);
     ~Atom() {};
 
     const std::string name() const { return name_; };
     int atom_number() const { return atom_number_;};
-    const std::vector<double> position() const { return position_; };
+    const std::array<double,3> position() const { return position_; };
     double position(const unsigned int i) const { return position_[i]; };
     const std::vector<std::shared_ptr<Shell> >& shells() const { return shells_; };
     int nshell() const { return shells_.size(); };

@@ -49,11 +49,6 @@ extern StackMem* stack;
 
 static AtomMap atommap_;
 
-static vector<double> vec3(const double i, const double j, const double k) {
-  vector<double> out(3); out[0] = i; out[1] = j; out[2] = k; return out; 
-};
-
-
 Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   : spherical_(true), input_(""), lmax_(0), level_(0) {
 
@@ -92,12 +87,9 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
         const string x_str(what[2].first, what[2].second);
         const string y_str(what[3].first, what[3].second);
         const string z_str(what[4].first, what[4].second);
-        vector<double> positions;
         const double prefac = angstrom ? ang2bohr__ : 1.0 ;
-        positions.push_back(boost::lexical_cast<double>(x_str)*prefac);
-        positions.push_back(boost::lexical_cast<double>(y_str)*prefac);
-        positions.push_back(boost::lexical_cast<double>(z_str)*prefac);
-
+        array<double,3> positions
+          = {{boost::lexical_cast<double>(x_str)*prefac, boost::lexical_cast<double>(y_str)*prefac, boost::lexical_cast<double>(z_str)*prefac}};
         {
           RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
           atoms_.push_back(catom); 
@@ -221,7 +213,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
   // first construct atoms using displacements
   auto disp = displ.begin();
   for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, disp += 3) {
-    vector<double> cdispl = vec3(*disp, *(disp+1), *(disp+2));
+    array<double,3> cdispl = {{*disp, *(disp+1), *(disp+2)}};
     atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
     aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
   }
@@ -231,23 +223,19 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
   common_init2(false, overlap_thresh_);
 }
 
-Geometry::Geometry(const Geometry& o, const tuple<double,double,double> displ)
+Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),
     external_(o.external_), gamma_(o.gamma_) { 
   
   // first construct atoms using displacements
-  vector<double> cdispl;
-  cdispl.push_back(get<0>(displ));
-  cdispl.push_back(get<1>(displ));
-  cdispl.push_back(get<2>(displ));
 
   for (auto i = o.atoms_.begin(); i != o.atoms_.end(); ++i) {
-    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
+    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, displ)));
   }
 
   for (auto j = o.aux_atoms_.begin(); j != o.aux_atoms_.end(); ++j) {
-    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, displ)));
   }
 
   common_init1();
@@ -381,7 +369,7 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const
 double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    const vector<double> tmp = (*iter)->position();
+    const array<double,3> tmp = (*iter)->position();
     const double c = static_cast<double>((*iter)->atom_number());
     for (vector<RefAtom>::const_iterator titer = iter + 1; titer != atoms_.end(); ++titer) {
       const RefAtom target = *titer;   
@@ -464,8 +452,8 @@ const vector<double> Geometry::compute_grad_vnuc() const {
 void Geometry::merge_obs_aux() {
   aux_merged_ = true;
   atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
-  for (std::vector<std::vector<int> >::iterator iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
-    for (std::vector<int>::iterator citer = iter->begin(); citer != iter->end(); ++citer) {
+  for (auto iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
+    for (auto citer = iter->begin(); citer != iter->end(); ++citer) {
       *citer += nbasis_;
     }
   }

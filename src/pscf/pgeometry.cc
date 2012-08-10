@@ -129,7 +129,7 @@ double PGeometry::compute_pnuclear_repulsion() const {
   double out = 0.0;
   typedef std::shared_ptr<Atom> RefAtom;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    const vector<double> tmp = (*iter)->position();
+    const array<double,3> tmp = (*iter)->position();
     const double c = static_cast<double>((*iter)->atom_number());
     for (vector<RefAtom>::const_iterator titer = atoms_.begin(); titer != atoms_.end(); ++titer) {
       const RefAtom target = *titer;   

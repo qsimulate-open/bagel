@@ -30,7 +30,7 @@
 
 using namespace std;
 
-Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> _expo, 
+Shell::Shell(const bool sph, array<double,3> _position, int _ang, vector<double> _expo, 
                        vector<vector<double> > _contr,  vector<pair<int, int> > _range)
  : spherical_(sph), position_(_position), angular_number_(_ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false) {
@@ -48,7 +48,7 @@ Shell::Shell(const bool sph, vector<double> _position, int _ang, vector<double> 
 }
 
 
-Shell::Shell(const bool sph) : spherical_(sph), position_(3,0.0), angular_number_(0), exponents_(1,0.0), contraction_ranges_(1,make_pair(0,1)),
+Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_(1,0.0), contraction_ranges_(1,make_pair(0,1)),
         dummy_(true) {
   contractions_.push_back(vector<double>(1,1.0));
   contraction_lower_.push_back(0);
@@ -61,7 +61,7 @@ Shell::~Shell() {
 }
 
 
-std::shared_ptr<Shell> Shell::move_atom(const vector<double>& displacement) {
+std::shared_ptr<Shell> Shell::move_atom(const array<double,3>& displacement) {
   std::shared_ptr<Shell> out(new Shell(*this));
   out->position_[0] += displacement[0]; 
   out->position_[1] += displacement[1]; 

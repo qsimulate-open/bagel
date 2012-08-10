@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <array>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -136,7 +137,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    int num_atoms = 0;
 
    /* Atom positions */
-   vector< vector<double> > positions;
+   vector< array<double,3> > positions;
    /* Atom names */
    vector< string > names;
    /* Map atom number to basis info */
@@ -203,11 +204,11 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
                   string y_str(matches[3].first, matches[3].second);
                   string z_str(matches[4].first, matches[4].second);
 
-                  vector<double> pos;
+                  array<double,3> pos;
 
-                  pos.push_back(boost::lexical_cast<double>(x_str)*scale);
-                  pos.push_back(boost::lexical_cast<double>(y_str)*scale);
-                  pos.push_back(boost::lexical_cast<double>(z_str)*scale);
+                  pos[0] = boost::lexical_cast<double>(x_str)*scale;
+                  pos[1] = boost::lexical_cast<double>(y_str)*scale;
+                  pos[2] = boost::lexical_cast<double>(z_str)*scale;
                   
                   positions.push_back(pos);
 
@@ -312,7 +313,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 
    /* Assuming the names and positions vectors are in the right order */
    vector<string>::iterator niter = names.begin();
-   vector<vector<double> >::iterator piter = positions.begin();
+   vector<array<double,3> >::iterator piter = positions.begin();
    for(int i = 0; i < num_atoms; ++i, ++niter, ++piter){
       vector<tuple<string, vector<double>, vector<double> > > binfo = basis_info.find(i+1)->second;
       if (i == num_atoms) {
@@ -572,7 +573,7 @@ void Molden::write_geo(const shared_ptr<const Geometry> geo, const string molden
       
       const string cur_name = cur_atom->name();
       const int cur_number = cur_atom->atom_number();
-      const vector<double> cur_pos = cur_atom->position();
+      const array<double,3> cur_pos = cur_atom->position();
 
       m_out << setw(2) << cur_name << setw(8)  << i+1 
                                    << setw(8)  << cur_number << setiosflags(ios_base::scientific)

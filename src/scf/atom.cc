@@ -46,13 +46,12 @@ typedef std::shared_ptr<Shell> RefShell;
 
 static const AtomMap atommap_;
 
-Atom::Atom(const Atom& old, const vector<double>& displacement) 
+Atom::Atom(const Atom& old, const array<double, 3>& displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   assert(displacement.size() == 3 && old.position().size() == 3);
-  const vector<double> opos = old.position();
-  for (auto diter = displacement.begin(), oiter = opos.begin(); diter != displacement.end(); ++diter, ++oiter) {
-    position_.push_back(*diter + *oiter); 
-  }
+  const array<double,3> opos = old.position();
+  position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
+
   const vector<RefShell> old_shells = old.shells();
   for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
@@ -61,11 +60,9 @@ Atom::Atom(const Atom& old, const vector<double>& displacement)
 
 Atom::Atom(const Atom& old, const double* displacement) 
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
-  const vector<double> opos = old.position();
-  int i = 0;
-  for (auto oiter = opos.begin(); oiter != opos.end(); ++i, ++oiter) {
-    position_.push_back(displacement[i] + *oiter); 
-  }
+  const array<double,3> opos = old.position();
+  position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
+
   const vector<RefShell> old_shells = old.shells();
   for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
@@ -81,7 +78,7 @@ Atom::Atom(const string nm, vector<shared_ptr<Shell> > shell)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const vector<double>& p, const string basis_file)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string basis_file)
 : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   ifstream ifs;
@@ -178,7 +175,7 @@ Atom::Atom(const bool sph, const string nm, const vector<double>& p, const strin
 }
 
 
-Atom::Atom(const bool sph, const string nm, const vector<double>& p, vector<tuple<string, vector<double>, vector<double> > > in)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double> > > in)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) { 
 
   // tuple

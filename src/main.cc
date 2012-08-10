@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
         double dx = read_input<double>(testdata, "dx", 0.0) * ang2bohr__;
         double dy = read_input<double>(testdata, "dy", 0.0) * ang2bohr__;
         double dz = read_input<double>(testdata, "dz", 0.0) * ang2bohr__;
-        std::tuple<double,double,double> disp = std::make_tuple(dx,dy,dz);
+        std::array<double,3> disp = {{dx,dy,dz}};
 
          #if 0
           Molden mf(geom->spherical());

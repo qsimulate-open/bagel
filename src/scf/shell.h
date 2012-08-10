@@ -27,6 +27,7 @@
 #ifndef __newint_scf_shell_h
 #define __newint_scf_shell_h
 
+#include <array>
 #include <vector>
 #include <string>
 #include <memory>
@@ -36,7 +37,7 @@ class Shell {
   protected:
     bool spherical_;
 
-    std::vector<double> position_;
+    std::array<double,3> position_;
     int angular_number_;
     std::vector<double> exponents_;     // length of primitive basis function
     std::vector<std::vector<double> > contractions_;  // length of contracted basis function
@@ -49,7 +50,7 @@ class Shell {
     int nbasis_;
 
   public:
-    Shell(const bool, std::vector<double>, int, std::vector<double>,
+    Shell(const bool, std::array<double,3>, int, std::vector<double>,
         std::vector<std::vector<double> >, std::vector<std::pair<int, int> >);
     // default constructor for adding null basis
     Shell(const bool sph);
@@ -62,7 +63,7 @@ class Shell {
     int num_contracted() const { return contractions_.size(); };
 
     double position(const int i) const { return position_[i]; };
-    const std::vector<double> position() const { return position_; };
+    const std::array<double,3> position() const { return position_; };
     int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; }; 
     const std::vector<double>& exponents() const { return exponents_; };
@@ -78,7 +79,7 @@ class Shell {
     const std::string show() const;
     int nbasis() const { return nbasis_; }; 
 
-    std::shared_ptr<Shell> move_atom(const std::vector<double>&);
+    std::shared_ptr<Shell> move_atom(const std::array<double,3>&);
     std::shared_ptr<Shell> move_atom(const double*);
 
 };
