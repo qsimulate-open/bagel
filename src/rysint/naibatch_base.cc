@@ -74,7 +74,7 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) { 
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
-        double Z = static_cast<double>((*aiter)->atom_number()); 
+        double Z = (*aiter)->atom_charge(); 
         const double cxp = *expi0 + *expi1;
         xp_[index] = cxp;
         const double ab = *expi0 * *expi1; 

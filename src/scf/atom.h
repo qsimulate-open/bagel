@@ -54,6 +54,7 @@ class Atom {
      
   public:
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string basisfile);
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > >);
     Atom(const std::string name, const std::vector<std::shared_ptr<Shell> > shell);
@@ -63,10 +64,13 @@ class Atom {
 
     const std::string name() const { return name_; };
     int atom_number() const { return atom_number_;};
+    double atom_charge() const { return atom_charge_;};
     const std::array<double,3> position() const { return position_; };
     double position(const unsigned int i) const { return position_[i]; };
     const std::vector<std::shared_ptr<Shell> >& shells() const { return shells_; };
     int nshell() const { return shells_.size(); };
+
+    bool dummy() const { return atom_number_ == 0; };
 
     int nbasis() const { return nbasis_; };
     int lmax() const { return lmax_; };

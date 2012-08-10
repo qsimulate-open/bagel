@@ -47,7 +47,7 @@ typedef std::shared_ptr<Shell> RefShell;
 static const AtomMap atommap_;
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement) 
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
+: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
@@ -59,7 +59,7 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 
 
 Atom::Atom(const Atom& old, const double* displacement) 
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
+: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
@@ -76,7 +76,6 @@ Atom::Atom(const string nm, vector<shared_ptr<Shell> > shell)
 
   common_init();
 }
-
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string basis_file)
 : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
@@ -193,8 +192,14 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 } 
 
 
-// counting the number of basis functions belonging to this atom
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
+: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0) {
+}
+
+
+
 void Atom::common_init() {
+  // counting the number of basis functions belonging to this atom
   nbasis_ = 0;
   for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
     const int ang = (*siter)->angular_number();
@@ -204,6 +209,7 @@ void Atom::common_init() {
       nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
     }
   }
+  atom_charge_ = static_cast<double>(atom_number_);
 }
 
 

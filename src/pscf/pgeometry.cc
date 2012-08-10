@@ -128,12 +128,12 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil, levl) {
 double PGeometry::compute_pnuclear_repulsion() const {
   double out = 0.0;
   typedef std::shared_ptr<Atom> RefAtom;
-  for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
+  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const array<double,3> tmp = (*iter)->position();
-    const double c = static_cast<double>((*iter)->atom_number());
-    for (vector<RefAtom>::const_iterator titer = atoms_.begin(); titer != atoms_.end(); ++titer) {
+    const double c = (*iter)->atom_charge();
+    for (auto titer = atoms_.begin(); titer != atoms_.end(); ++titer) {
       const RefAtom target = *titer;   
-      const double charge = c * static_cast<double>(target->atom_number()); 
+      const double charge = c * target->atom_charge(); 
       for (int el = -L(); el <= L(); ++el) {
         if (el == 0 && titer == iter) continue;
         const double disp = el * A();

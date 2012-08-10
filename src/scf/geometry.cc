@@ -57,6 +57,9 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
 
+  // symmetry
+  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+
   // cartesian or not.
   const bool cart = read_input<bool>(geominfo, "cartesian", false); 
   if (cart) {
@@ -79,7 +82,7 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
     pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
     for (auto iter = bound.first; iter != bound.second; ++iter) { 
       boost::smatch what;
-      const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*\\)");
+      const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*");
       auto start = iter->second.begin();
       auto end = iter->second.end();
       if (regex_search(start, end, what, atom_reg)) {
@@ -90,9 +93,28 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
         const double prefac = angstrom ? ang2bohr__ : 1.0 ;
         array<double,3> positions
           = {{boost::lexical_cast<double>(x_str)*prefac, boost::lexical_cast<double>(y_str)*prefac, boost::lexical_cast<double>(z_str)*prefac}};
-        {
+        if (aname != "q") {
+          // standard atom construction
+          auto next = what[0].second;
+          const boost::regex end_reg("\\)");
+          if (!regex_search(next, end, what, end_reg)) 
+            throw runtime_error("One of the atom lines is corrupt");
           RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
           atoms_.push_back(catom); 
+        } else {
+          // dummy atom construction
+          if (symmetry_ != "c1")
+            throw runtime_error("External point charges are only allowed in C1 calculations.");
+          auto next = what[0].second;
+          const boost::regex charge_reg("([0-9\\.-]+)\\s*\\)");
+          if (regex_search(next, end, what, charge_reg)) {
+            const string charge_str(what[1].first, what[1].second);
+            const double charge = boost::lexical_cast<double>(charge_str);
+            RefAtom catom(new Atom(spherical_, aname, positions, charge)); 
+            atoms_.push_back(catom);
+          } else {
+            throw runtime_error("No charge specified for dummy atom(s)"); 
+          }
         }
       } else {
         throw runtime_error("One of the atom lines is corrupt");
@@ -105,13 +127,14 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
   if (!auxfile_.empty()) {
     for(auto iatom = atoms_.begin(); iatom != atoms_.end(); ++iatom) {
-      RefAtom catom(new Atom(spherical_, (*iatom)->name(), (*iatom)->position(), auxfile_));
-      aux_atoms_.push_back(catom);
+      if (!(*iatom)->dummy()) { 
+        RefAtom catom(new Atom(spherical_, (*iatom)->name(), (*iatom)->position(), auxfile_));
+        aux_atoms_.push_back(catom);
+      } else { 
+        // do I need to do something?
+      }
     }
   }
-
-  // symmetry
-  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
   // Misc
   aux_merged_ = false;
@@ -370,14 +393,14 @@ double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
   for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const array<double,3> tmp = (*iter)->position();
-    const double c = static_cast<double>((*iter)->atom_number());
+    const double c = (*iter)->atom_charge();
     for (vector<RefAtom>::const_iterator titer = iter + 1; titer != atoms_.end(); ++titer) {
       const RefAtom target = *titer;   
       const double x = target->position(0) - tmp[0];
       const double y = target->position(1) - tmp[1];
       const double z = target->position(2) - tmp[2];
       const double dist = ::sqrt(x * x + y * y + z * z);
-      const double charge = c * static_cast<double>(target->atom_number()); 
+      const double charge = c * target->atom_charge(); 
       out += charge / dist;
     }
   }
@@ -432,13 +455,13 @@ const vector<double> Geometry::compute_grad_vnuc() const {
     const double ax = (*aiter)->position(0);
     const double ay = (*aiter)->position(1);
     const double az = (*aiter)->position(2);
-    const double ac = (*aiter)->atom_number();
+    const double ac = (*aiter)->atom_charge();
     for (auto biter = atoms_.begin(); biter != atoms_.end(); ++biter) {
       if (aiter == biter) continue;
       const double bx = (*biter)->position(0);
       const double by = (*biter)->position(1);
       const double bz = (*biter)->position(2);
-      const double c = (*biter)->atom_number() * ac;
+      const double c = (*biter)->atom_charge() * ac;
       const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
       *(giter+0) += c*(bx-ax)/(dist*dist*dist);
       *(giter+1) += c*(by-ay)/(dist*dist*dist);
@@ -476,10 +499,10 @@ vector<double> Geometry::charge_center() const {
   vector<double> out(3, 0.0);
   double sum = 0.0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
-    out[0] += (*i)->atom_number() * (*i)->position(0);
-    out[1] += (*i)->atom_number() * (*i)->position(1);
-    out[2] += (*i)->atom_number() * (*i)->position(2);
-    sum += (*i)->atom_number();
+    out[0] += (*i)->atom_charge() * (*i)->position(0);
+    out[1] += (*i)->atom_charge() * (*i)->position(1);
+    out[2] += (*i)->atom_charge() * (*i)->position(2);
+    sum += (*i)->atom_charge();
   }
   out[0] /= sum;
   out[1] /= sum;
