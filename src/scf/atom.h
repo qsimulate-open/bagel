@@ -78,6 +78,8 @@ class Atom {
 
     void print_basis() const;
     void print() const;
+
+    bool operator==(const Atom&) const;
 };
 
 #endif

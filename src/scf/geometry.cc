@@ -551,10 +551,9 @@ bool Geometry::operator==(const Geometry& o) const {
   out &= spherical_ == o.spherical_;
   out &= atoms_.size() == o.atoms_.size();
   out &= aux_atoms_.size() == o.aux_atoms_.size();
-#if 0
+
   for (auto i = atoms_.begin(), j = o.atoms_.begin(); i != atoms_.end(); ++i, ++j) out &= **i == **j; 
   for (auto i = aux_atoms_.begin(), j = o.aux_atoms_.begin(); i != aux_atoms_.end(); ++i, ++j) out &= **i == **j; 
-#endif
 
   out &= aux_merged_ == o.aux_merged_;
   out &= nbasis_ == o.nbasis_;
