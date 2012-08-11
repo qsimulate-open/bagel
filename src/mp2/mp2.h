@@ -45,7 +45,8 @@ class MP2 {
     double energy_;
 
   public:
-    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>);
+    MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>,
+        const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     ~MP2() {};
 
     virtual void compute();

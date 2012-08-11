@@ -33,16 +33,15 @@ using namespace std::chrono;
 void UHF::compute() {
 
   string indent = "  ";
-  shared_ptr<Fock<1> > hcore_fock;
-  {
-    hcore_fock = shared_ptr<Fock<1> >(new Fock<1>(geom_, hcore_));
-   
+  shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
+
+  if (!static_cast<bool>(coeff_) && !static_cast<bool>(coeffB_)) {
     Matrix1e intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
-    tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
   }
+  tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
@@ -178,6 +177,9 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
   vector<shared_ptr<RDM<1> > > rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
   shared_ptr<Reference> out(new Reference(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1));
+
+  // set alpha and beta coeffs
+  out->set_coeff_AB(coeff_, coeffB_);
 
   // compute an energy weighted 1RDM and store
   vector<double> ea(eig_.get(), eig_.get()+nocc_);

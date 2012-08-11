@@ -27,6 +27,7 @@
 #ifndef _NEWINT_WFN_REFERENCE_H
 #define _NEWINT_WFN_REFERENCE_H
 
+#include <cassert>
 #include <memory>
 #include <vector>
 #include <src/scf/coeff.h>
@@ -40,8 +41,13 @@
 class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
+    // Geometry which this wave function is beloinging to
     const std::shared_ptr<const Geometry> geom_; 
+    // MO coefficients
     const std::shared_ptr<const Coeff> coeff_;
+    // in case of spin-broken wave functions (UHF)
+    std::shared_ptr<const Coeff> coeffA_;
+    std::shared_ptr<const Coeff> coeffB_;
 
     const double energy_;
 
@@ -78,7 +84,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     const std::vector<double> schwarz() const { return geom_->schwarz(); };
     std::shared_ptr<const Hcore> hcore() const { return hcore_; };
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
-    //void set_coeff(const std::shared_ptr<const Coeff> c) { coeff_ = c; };
 
     void set_eig(const std::vector<double>& eig) { eig_ = eig; };
     std::vector<double> eig() const { return eig_; };
@@ -95,6 +100,11 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // used in SA-CASSCF
     void set_nstate(const int i) { nstate_ = i; };
     int nstate() const { return nstate_; };
+
+    // used in UHF
+    void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b) { coeffA_ = a; coeffB_ = b; };
+    const std::shared_ptr<const Coeff> coeffA() const { return coeffA_; };
+    const std::shared_ptr<const Coeff> coeffB() const { return coeffB_; };
 
     double energy() const { return energy_; };
 

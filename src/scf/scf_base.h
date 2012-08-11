@@ -45,7 +45,7 @@ class SCF_base {
     const std::shared_ptr<Hcore> hcore_;
     std::shared_ptr<TildeX> tildex_;
     std::shared_ptr<Matrix1e> aodensity_;
-    std::shared_ptr<Coeff> coeff_;
+    std::shared_ptr<const Coeff> coeff_;
 
     int max_iter_;
     int diis_start_;
@@ -63,7 +63,8 @@ class SCF_base {
     int noccB_;
 
   public:
-    SCF_base(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>);
+    SCF_base(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>,
+             const std::shared_ptr<const Reference>);
     ~SCF_base() {};
 
     virtual void compute() = 0;
@@ -71,7 +72,6 @@ class SCF_base {
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
     const std::shared_ptr<Matrix1e> aodensity() { return aodensity_; };
 
-    const std::shared_ptr<Coeff> coeff() { return coeff_; };
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
 

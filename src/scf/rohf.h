@@ -36,7 +36,8 @@ class ROHF : public UHF {
   protected:
 
   public:
-    ROHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom) : UHF(idata_, geom) { };
+    ROHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata_, geom, re) { };
 
     ~ROHF() {};
 

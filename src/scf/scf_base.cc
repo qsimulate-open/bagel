@@ -35,7 +35,7 @@
 using namespace std;
 
 
-SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom)
+SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
 
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
@@ -67,6 +67,11 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   tildex_ = shared_ptr<TildeX>(new TildeX(overlap_, thresh_overlap_));
 
   init_schwarz();
+
+  // if ref is passed to this
+  if (static_cast<bool>(re)) {
+    SCF_base::coeff_ = re->coeff();
+  }
 }
 
 

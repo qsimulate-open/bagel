@@ -30,6 +30,7 @@
 #include <src/scf/scf_base.h>
 #include <src/util/diis.h>
 #include <src/prop/dipole.h>
+#include <src/wfn/reference.h>
 #include <iostream>
 #include <chrono>
 #include <iomanip>
@@ -38,16 +39,17 @@ template<int DF>
 class SCF : public SCF_base {
 
   public:
-    SCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom)
-      : SCF_base(idata_, geom) {
+    SCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+      : SCF_base(idata_, geom, re) {
+
+
       if (DF == 1) {
         // TODO init schwarz for auxiliary basis
       }
     };
 
     ~SCF() {};
-
-    std::shared_ptr<Matrix1e> form_density_rhf() const { return coeff_->form_density_rhf(nocc_); };
 
     void compute() {
       const bool highest_level = geom_->level() == 0;
@@ -60,12 +62,14 @@ class SCF : public SCF_base {
       {
         previous_fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_));
         if (DF) hcore_fock = previous_fock;
+      }
 
+      if (!static_cast<bool>(SCF_base::coeff_)) {
         Matrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
-        aodensity_ = form_density_rhf();
       }
+      aodensity_ = coeff_->form_density_rhf(nocc_);
 
       if (highest_level) {
         std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
@@ -99,7 +103,7 @@ class SCF : public SCF_base {
 
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
-        std::shared_ptr<Matrix1e> new_density = form_density_rhf();
+        std::shared_ptr<Matrix1e> new_density = coeff_->form_density_rhf(nocc_);
 
         std::shared_ptr<Matrix1e> error_vector(new Matrix1e(
           density_change_ ? (*new_density - *aodensity_) : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)

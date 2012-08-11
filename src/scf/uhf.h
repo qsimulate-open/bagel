@@ -37,7 +37,7 @@ class UHF : public SCF_base {
   protected:
     std::shared_ptr<Matrix1e> aodensityA_;
     std::shared_ptr<Matrix1e> aodensityB_;
-    std::shared_ptr<Coeff> coeffB_;
+    std::shared_ptr<const Coeff> coeffB_;
 
     std::unique_ptr<double[]> eigB_;
     double* eigB() { return eigB_.get(); };
@@ -45,9 +45,15 @@ class UHF : public SCF_base {
     void print_S2(const std::string) const;
 
   public:
-    UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom)
-      : SCF_base(idata_, geom) {
+    UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+      : SCF_base(idata_, geom, re) {
       // TODO init schwarz for auxiliary basis
+
+      if (static_cast<bool>(re)) {
+        coeff_  = re->coeffA();
+        coeffB_ = re->coeffB();
+      }
     };
 
     ~UHF() {};
