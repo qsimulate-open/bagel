@@ -262,6 +262,10 @@ int main(int argc, char** argv) {
         mf.write_geo(methane_dimer->supergeom(), "ortho.molden");
         mf.write_mos(methane_dimer->superref(), "ortho.molden");
 
+#if 1
+        ref = methane_dimer->superref();
+#endif
+
         double energy = methane_dimer->energy();
         cout << "Dimer Energy is " << std::setprecision(16) << std::setw(22) << energy << endl;
         #endif
