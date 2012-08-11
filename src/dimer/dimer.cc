@@ -129,8 +129,8 @@ void Dimer::orthonormalize() {
    shared_ptr<Coeff> ovlp = overlap();
    Matrix1e S = *ovlp;
 
-   double *eig = new double[nbasis_];
-   S.diagonalize(eig);
+   unique_ptr<double[]> eig(new double[nbasis_]);
+   S.diagonalize(eig.get());
 
    Matrix1e S_1_2(S);
    double *S12_data = S_1_2.data();
