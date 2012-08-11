@@ -35,7 +35,7 @@ void UHF::compute() {
   string indent = "  ";
   shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
-  if (!static_cast<bool>(coeff_) && !static_cast<bool>(coeffB_)) {
+  if (!static_cast<bool>(coeff_) || !static_cast<bool>(coeffB_)) {
     Matrix1e intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));

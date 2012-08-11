@@ -50,7 +50,7 @@ extern StackMem* stack;
 static AtomMap atommap_;
 
 Geometry::Geometry(const multimap<string, string> geominfo)
-  : spherical_(true), input_(""), lmax_(0), level_(0) {
+  : spherical_(true), input_(""), lmax_(0) {
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -228,7 +228,7 @@ void Geometry::common_init2(const bool print, const double thresh) {
 
 
 Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo)
-  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
+  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
   // first construct atoms using displacements
@@ -245,7 +245,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
 }
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
+  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),
     external_(o.external_), gamma_(o.gamma_) { 
   
@@ -311,7 +311,6 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    basisfile_ = nmer.front()->basisfile_;
    auxfile_ = nmer.front()->auxfile();
    aux_merged_ = nmer.front()->aux_merged_;
-   level_ = nmer.front()->level();
    gamma_ = nmer.front()->gamma();
    
    /* Use the strictest thresholds */
@@ -333,7 +332,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
 }
 
 Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> geominfo)
-  : spherical_(true), input_(""), atoms_(atoms), lmax_(0), level_(0) {
+  : spherical_(true), input_(""), atoms_(atoms), lmax_(0) {
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -544,4 +543,25 @@ vector<double> Geometry::schwarz() const {
     }
   }
   return schwarz;
+}
+
+
+bool Geometry::operator==(const Geometry& o) const {
+  bool out = true;
+  out &= spherical_ == o.spherical_;
+  out &= atoms_.size() == o.atoms_.size();
+  out &= aux_atoms_.size() == o.aux_atoms_.size();
+#if 0
+  for (auto i = atoms_.begin(), j = o.atoms_.begin(); i != atoms_.end(); ++i, ++j) out &= **i == **j; 
+  for (auto i = aux_atoms_.begin(), j = o.aux_atoms_.begin(); i != aux_atoms_.end(); ++i, ++j) out &= **i == **j; 
+#endif
+
+  out &= aux_merged_ == o.aux_merged_;
+  out &= nbasis_ == o.nbasis_;
+  out &= nele_ == o.nele_; 
+  out &= naux_ == o.naux_; 
+  out &= lmax_ == o.lmax_;
+  out &= aux_lmax_ == o.aux_lmax_; 
+
+  return out;
 }

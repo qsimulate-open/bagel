@@ -37,7 +37,7 @@
 
 using namespace std;
 
-PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil, levl) {
+PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
   ifstream ifs;
   ifs.open(fil.c_str());
   if(!ifs.is_open()) throw runtime_error("input file could not be opened.");

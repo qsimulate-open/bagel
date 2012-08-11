@@ -59,3 +59,14 @@ shared_ptr<Dvec> Reference::civectors() const {
   fci->compute();
   return fci->civectors();
 }
+
+
+shared_ptr<const Coeff> Reference::project_coeff(shared_ptr<const Geometry> geom) const {
+  shared_ptr<const Coeff> out;
+
+  if (*geom_ == *geom) {
+    out = coeff_;
+  }
+
+  return out; 
+}

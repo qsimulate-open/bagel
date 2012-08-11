@@ -122,6 +122,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // function to return a CI vectors from orbital info
     std::shared_ptr<Dvec> civectors() const;
 
+    // basis-set projection based on SVD
+    std::shared_ptr<const Coeff> project_coeff(const std::shared_ptr<const Geometry>) const;
+
 };
 
 #endif

@@ -52,11 +52,7 @@ class SCF : public SCF_base {
     ~SCF() {};
 
     void compute() {
-      const bool highest_level = geom_->level() == 0;
       std::string indent = "  ";
-      for (int i = 0; i != geom_->level(); ++i) indent += "|";
-      if (!highest_level) indent += "  ";
-
       std::shared_ptr<Fock<DF> > previous_fock;
       std::shared_ptr<Fock<DF> > hcore_fock;
       {
@@ -71,11 +67,8 @@ class SCF : public SCF_base {
       }
       aodensity_ = coeff_->form_density_rhf(nocc_);
 
-      if (highest_level) {
-        std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
-        std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl;
-        std::cout << std::endl;
-      }
+      std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
+      std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl << std::endl;
       std::cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
                 << std::endl << std::endl;
       std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << std::endl << indent << std::endl;

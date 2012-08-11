@@ -60,10 +60,11 @@ class Geometry {
     int naux_;
     int lmax_;
     int aux_lmax_;
+
+    // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int> > offsets_;
     std::vector<std::vector<int> > aux_offsets_;
 
-    int level_;
     std::string basisfile_;
     std::string auxfile_;
 
@@ -91,7 +92,7 @@ class Geometry {
     void common_init2(const bool print, const double thresh);
 
   public:
-    Geometry(const std::string, const int level);
+    Geometry(const std::string);
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<Atom> > atoms, const std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo);
@@ -118,11 +119,12 @@ class Geometry {
     const std::string symmetry() const { return symmetry_; };
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; };
     const std::vector<double> compute_grad_vnuc() const;
-    int level() const { return level_; };
     const std::string basisfile() const { return basisfile_; };
     const std::string auxfile() const { return auxfile_; };
     double schwarz_thresh() const { return schwarz_thresh_; };
     double overlap_thresh() const { return overlap_thresh_; };
+
+    bool operator==(const Geometry& o) const;
 
     // TODO for some reasons needed now in CASSCF
     void set_nele(const int i) { nele_ = i; };
