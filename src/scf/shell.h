@@ -27,6 +27,7 @@
 #ifndef __newint_scf_shell_h
 #define __newint_scf_shell_h
 
+#include <cassert>
 #include <array>
 #include <vector>
 #include <string>
@@ -82,6 +83,7 @@ class Shell {
     std::shared_ptr<Shell> move_atom(const std::array<double,3>&);
     std::shared_ptr<Shell> move_atom(const double*);
 
+    bool operator==(const Shell& o) const { assert(false); return false; };
 };
 
 #endif

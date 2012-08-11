@@ -347,7 +347,7 @@ bool Atom::operator==(const Atom& o) const {
   out &= fabs(position_[2]-o.position_[2]) < numerical_zero__;
   out &= shells_.size() == o.shells_.size();
 
-  for (auto i = shells_.begin(), j = o.shells_.begin(); i != shells_.end(); ++i, ++j) out &= **i == **j; 
+  for (auto i = shells_.begin(), j = o.shells_.begin(); i != shells_.end(); ++i, ++j) out &= (**i) == (**j); 
 
   out &= atom_number_ == o.atom_number_;
   out &= fabs(atom_charge_ - o.atom_charge_) < numerical_zero__;
