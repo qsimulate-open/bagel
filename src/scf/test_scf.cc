@@ -82,12 +82,13 @@ double scf_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_SCF)
  
 BOOST_AUTO_TEST_CASE(DF_HF) {
-    BOOST_CHECK(compare(scf_energy("hf_svp_hf"),        -99.84779026));
-    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),      -99.84772354));
-    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),  -99.83765614));
-    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"), -99.84911270));
-    BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),       -75.28410147));
-    BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),      -38.16810629));
+    BOOST_CHECK(compare(scf_energy("hf_svp_hf"),          -99.84779026));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),        -99.84772354));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),    -99.83765614));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"),   -99.84911270));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_charge"), -99.77381455));
+    BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),         -75.28410147));
+    BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
 }
  
 BOOST_AUTO_TEST_SUITE_END()

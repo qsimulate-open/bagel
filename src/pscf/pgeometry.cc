@@ -141,7 +141,8 @@ double PGeometry::compute_pnuclear_repulsion() const {
         const double y = target->position(1) - tmp[1];
         const double z = target->position(2) - tmp[2] + disp;
         const double dist = sqrt(x * x + y * y + z * z);
-        out += charge / dist * 0.5;
+        if (!(*iter)->dummy() || !(*titer)->dummy())
+          out += charge / dist * 0.5;
       }
     }
   }

@@ -104,9 +104,9 @@ Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
         } else {
           // dummy atom construction
           if (symmetry_ != "c1")
-            throw runtime_error("External point charges are only allowed in C1 calculations.");
+            throw runtime_error("External point charges are only allowed in C1 calculations so far.");
           auto next = what[0].second;
-          const boost::regex charge_reg("([0-9\\.-]+)\\s*\\)");
+          const boost::regex charge_reg(",\\s*([0-9\\.-]+)\\s*\\)");
           if (regex_search(next, end, what, charge_reg)) {
             const string charge_str(what[1].first, what[1].second);
             const double charge = boost::lexical_cast<double>(charge_str);
@@ -391,17 +391,19 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const
 
 double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
-  for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
+  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const array<double,3> tmp = (*iter)->position();
     const double c = (*iter)->atom_charge();
-    for (vector<RefAtom>::const_iterator titer = iter + 1; titer != atoms_.end(); ++titer) {
+    for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
       const RefAtom target = *titer;   
       const double x = target->position(0) - tmp[0];
       const double y = target->position(1) - tmp[1];
       const double z = target->position(2) - tmp[2];
       const double dist = ::sqrt(x * x + y * y + z * z);
       const double charge = c * target->atom_charge(); 
-      out += charge / dist;
+      // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
+      if (!(*iter)->dummy() || !(*titer)->dummy())
+        out += charge / dist;
     }
   }
   return out;
