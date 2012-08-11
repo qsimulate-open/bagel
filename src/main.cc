@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<InputData> idata(new InputData(input));
 
-    { // stack
+    { // stack - TODO now read from the first molecule block
       std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
       double size = 1.0e6;
       auto iter = geominfo.find("stack");
@@ -98,16 +98,23 @@ int main(int argc, char** argv) {
       stack = new StackMem(static_cast<size_t>(size));
       cout << "  Stack memory of " << std::setprecision(2) << std::fixed << size*8.0e-6 << " MB allocated" << endl << endl; 
     }
-    std::shared_ptr<Geometry> geom(new Geometry(idata));
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
     bool scf_done = false;
     bool casscf_done = false;
+    std::shared_ptr<Geometry> geom;
     std::shared_ptr<SCF_base> scf;
     std::shared_ptr<const Reference> ref;
 
+    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
+
+      if (method == "molecule") {
+        geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      } else {
+        if (!static_cast<bool>(geom)) throw std::runtime_error("molecule block is missing");
+      }
 
       if (method.substr(0,3) == "df-" && !static_cast<bool>(geom->df()))
         throw std::runtime_error("It seems that DF basis was not specified in Geometry");

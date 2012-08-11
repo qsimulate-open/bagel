@@ -24,11 +24,11 @@
 //
 
 
-#include <src/casscf/casscf.h>
 #include <stdexcept>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <src/casscf/casscf.h>
 #include <src/casscf/qvec.h>
 
 using namespace std;
@@ -40,11 +40,11 @@ static string tostring(const T i) {
   return ss.str();
 };
 
-CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom)
+CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : idata_(idat), geom_(geom), hcore_(new Fock<1>(geom)) {
 
   std::shared_ptr<SCF<1> > scf_;
-  scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(idat, geom));
+  scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(idat, geom, re));
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 

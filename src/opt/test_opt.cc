@@ -37,7 +37,7 @@ std::vector<double> scf_opt(std::string filename) {
   // a bit ugly to hardwire an input file, but anyway...
   std::shared_ptr<InputData> idata(new InputData(inputname));
   stack = new StackMem(static_cast<size_t>(1000000LU));
-  std::shared_ptr<Geometry> geom(new Geometry(idata));
+  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
@@ -103,7 +103,7 @@ std::vector<double> mp2_opt() {
   // a bit ugly to hardwire an input file, but anyway...
   std::shared_ptr<InputData> idata(new InputData("../../test/hf_svp_mp2_opt.in"));
   stack = new StackMem(static_cast<size_t>(1000000LU));
-  std::shared_ptr<Geometry> geom(new Geometry(idata));
+  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {

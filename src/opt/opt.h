@@ -80,7 +80,7 @@ class Opt {
       const bool converged = gradnorm < thresh_ && disnorm < thresh_;
       if (!converged) {
         displ->scale(-1.0);
-        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), idata_));
+        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), input_));
         current_->print_atoms();
       }
 

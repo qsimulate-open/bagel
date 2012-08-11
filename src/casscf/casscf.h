@@ -83,7 +83,8 @@ class CASSCF {
     double energy_;
 
   public:
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom);
+    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom,
+           const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     virtual ~CASSCF();
 
     virtual void compute() { assert(false); };

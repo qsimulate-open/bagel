@@ -37,7 +37,7 @@ double scf_energy(std::string filename) {
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
   stack = new StackMem(static_cast<size_t>(1000000LU));
-  std::shared_ptr<Geometry> geom(new Geometry(idata));
+  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {

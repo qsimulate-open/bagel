@@ -49,10 +49,8 @@ extern StackMem* stack;
 
 static AtomMap atommap_;
 
-Geometry::Geometry(const std::shared_ptr<const InputData> inpt)
+Geometry::Geometry(const multimap<string, string> geominfo)
   : spherical_(true), input_(""), lmax_(0), level_(0) {
-
-  multimap<string, string> geominfo = inpt->get_input("molecule");
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -229,7 +227,7 @@ void Geometry::common_init2(const bool print, const double thresh) {
 
 
 
-Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_ptr<const InputData> inpt)
+Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), level_(o.level_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
@@ -242,7 +240,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const shared_p
   }
 
   common_init1();
-  overlap_thresh_ = read_input<double>(inpt->get_input("molecule"), "thresh_overlap", 1.0e-8); 
+  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
   common_init2(false, overlap_thresh_);
 }
 
