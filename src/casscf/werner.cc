@@ -67,7 +67,7 @@ void WernerKnowles::compute() {
 
 
     int miter, tcount = 0;
-    double error;
+    double error = 0.0;
     for (miter = 0; miter != max_micro_iter_; ++miter) {
 
       // compute initial B (Eq. 19)
