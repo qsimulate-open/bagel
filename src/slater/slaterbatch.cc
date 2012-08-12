@@ -46,12 +46,10 @@ using namespace std;
 
 static const double pitwohalf__ = ::pow(pi__, 2.5); 
 
-typedef std::shared_ptr<Shell> RefShell;
-
 // This object lives in main.cc
 extern StackMem* stack;
 
-SlaterBatch::SlaterBatch(const vector<RefShell> _info, const double max_density, const double gmm, const bool yukawa)
+SlaterBatch::SlaterBatch(const vector<shared_ptr<const Shell> >& _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;

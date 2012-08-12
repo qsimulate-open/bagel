@@ -42,8 +42,6 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Shell> RefShell;
-
 static const AtomMap atommap_;
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement) 
@@ -52,7 +50,7 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
-  const vector<RefShell> old_shells = old.shells();
+  const vector<shared_ptr<const Shell> > old_shells = old.shells();
   for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
 } 
@@ -63,13 +61,13 @@ Atom::Atom(const Atom& old, const double* displacement)
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
-  const vector<RefShell> old_shells = old.shells();
+  const vector<shared_ptr<const Shell> > old_shells = old.shells();
   for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
 }
 
 
-Atom::Atom(const string nm, vector<shared_ptr<Shell> > shell)
+Atom::Atom(const string nm, vector<shared_ptr<const Shell> > shell)
 : name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
@@ -300,15 +298,15 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
         vector<vector<double> > cont(1, *iter);
         vector<pair<int, int> > cran(1, *citer);
-        RefShell current(new Shell(spherical_, position_, i, exponents, cont, cran));
-        vector<RefShell> cinp(2, current); 
+        shared_ptr<const Shell> current(new Shell(spherical_, position_, i, exponents, cont, cran));
+        vector<shared_ptr<const Shell> > cinp(2, current); 
         OverlapBatch coverlap(cinp);
         coverlap.compute();
         const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
         for (auto diter = iter->begin(); diter != iter->end(); ++diter) *diter *= scal;
       } 
 
-      RefShell currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
+      shared_ptr<const Shell> currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
       shells_.push_back(currentbatch);
       lmax_ = i;
     }

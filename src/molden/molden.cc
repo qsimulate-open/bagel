@@ -623,7 +623,7 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
 
          AtomMap am;
 
-         vector<shared_ptr<Shell> > shells = (*iatom)->shells();
+         vector<shared_ptr<const Shell> > shells = (*iatom)->shells();
          for(auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
             string ang_l = am.angular_string((*ishell)->angular_number());
             vector<double> exponents = (*ishell)->exponents();
@@ -680,7 +680,7 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
          int j = 1;
 
          for (auto iatom = atoms.begin(); iatom != atoms.end(); ++iatom) {
-            vector<shared_ptr<Shell> > shells = (*iatom)->shells();
+            vector<shared_ptr<const Shell> > shells = (*iatom)->shells();
             for (auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
                for (int icont = 0; icont != (*ishell)->num_contracted(); ++icont) {
                   vector<int> corder = (is_spherical_ ? n2m_sph_.at((*ishell)->angular_number()) : n2m_cart_.at((*ishell)->angular_number()));

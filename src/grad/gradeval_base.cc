@@ -63,23 +63,21 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
     const shared_ptr<Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
-    const vector<shared_ptr<Shell> > shell0 = catom0->shells();
+    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int iatom1 = 0; iatom1 != natom; ++iatom1) {
       const shared_ptr<Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
-      const vector<shared_ptr<Shell> > shell1 = catom1->shells();
+      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
 
       for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
         const int offset0 = coffset0[ibatch0]; 
-        shared_ptr<Shell> b0 = shell0[ibatch0];
+        shared_ptr<const Shell> b0 = shell0[ibatch0];
         for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1]; 
-          shared_ptr<Shell> b1 = shell1[ibatch1];
-          vector<shared_ptr<Shell> > input;
-          input.push_back(b1);
-          input.push_back(b0);
+          shared_ptr<const Shell> b1 = shell1[ibatch1];
+          vector<shared_ptr<const Shell> > input = {{b1, b0}};
 
           const int dimb1 = input[0]->nbasis(); 
           const int dimb0 = input[1]->nbasis(); 
@@ -169,41 +167,37 @@ vector<double> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) c
     const shared_ptr<Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
-    const vector<shared_ptr<Shell> > shell0 = catom0->shells();
+    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
       const shared_ptr<Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
-      const vector<shared_ptr<Shell> > shell1 = catom1->shells();
+      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
 
       for (int iatom2 = 0; iatom2 != geom_->natom(); ++iatom2) {
         const shared_ptr<Atom> catom2 = aux_atoms[iatom2];
         const int numshell2 = catom2->shells().size();
         const vector<int> coffset2 = aux_offsets[iatom2];
-        const vector<shared_ptr<Shell> > shell2 = catom2->shells();
+        const vector<shared_ptr<const Shell> > shell2 = catom2->shells();
 
 
         // dummy shell
-        const shared_ptr<Shell> b3(new Shell(shell2.front()->spherical()));
+        const shared_ptr<const Shell> b3(new Shell(shell2.front()->spherical()));
 
         for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
           const int offset0 = coffset0[ibatch0]; 
-          shared_ptr<Shell> b0 = shell0[ibatch0];
+          shared_ptr<const Shell> b0 = shell0[ibatch0];
 
           for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1]; 
-            shared_ptr<Shell> b1 = shell1[ibatch1];
+            shared_ptr<const Shell> b1 = shell1[ibatch1];
 
             for (int ibatch2 = 0; ibatch2 != numshell2; ++ibatch2) {
               const int offset2 = coffset2[ibatch2]; 
-              shared_ptr<Shell> b2 = shell2[ibatch2];
+              shared_ptr<const Shell> b2 = shell2[ibatch2];
 
-              vector<shared_ptr<Shell> > input;
-              input.push_back(b3);
-              input.push_back(b2);
-              input.push_back(b1);
-              input.push_back(b0);
+              vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
 
               // pointer to stack
               GradBatch gradbatch(input, 0.0);
@@ -259,27 +253,23 @@ vector<double> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>&
     const shared_ptr<Atom> catom0 = aux_atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = aux_offsets[iatom0];
-    const vector<shared_ptr<Shell> > shell0 = catom0->shells();
+    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
     for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
       const shared_ptr<Atom> catom1 = aux_atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = aux_offsets[iatom1];
-      const vector<shared_ptr<Shell> > shell1 = catom1->shells();
+      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
       // dummy shell
-      const shared_ptr<Shell> b3(new Shell(shell1.front()->spherical()));
+      const shared_ptr<const Shell> b3(new Shell(shell1.front()->spherical()));
       for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
         const int offset0 = coffset0[ibatch0]; 
-        shared_ptr<Shell> b0 = shell0[ibatch0];
+        shared_ptr<const Shell> b0 = shell0[ibatch0];
 
         for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1]; 
-          shared_ptr<Shell> b1 = shell1[ibatch1];
+          shared_ptr<const Shell> b1 = shell1[ibatch1];
 
-          vector<shared_ptr<Shell> > input;
-          input.push_back(b1);
-          input.push_back(b3);
-          input.push_back(b0);
-          input.push_back(b3);
+          vector<shared_ptr<const Shell> > input = {{b1, b3, b0, b3}};
 
           // pointer to stack
           GradBatch gradbatch(input, 0.0);

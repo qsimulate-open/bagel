@@ -221,7 +221,7 @@ PMatrix1e PMatrix1e::bft() const {
 
 void PMatrix1e::init() {
   typedef shared_ptr<Atom> RefAtom;
-  typedef shared_ptr<Shell> RefShell;
+  typedef shared_ptr<const Shell> RefShell;
 
   const std::vector<RefAtom> atoms = geom_->atoms();
 
@@ -246,10 +246,10 @@ void PMatrix1e::init() {
   
         for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
           const int offset0 = coffset0[ibatch0]; 
-          RefShell b0 = shell0[ibatch0];
+          const shared_ptr<const Shell> b0 = shell0[ibatch0];
           for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1];
-            RefShell b1 = shell1[ibatch1];
+            const shared_ptr<const Shell> b1 = shell1[ibatch1];
             std::vector<RefShell> input;
             input.push_back(b1);
             input.push_back(b0);

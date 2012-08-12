@@ -39,7 +39,7 @@ extern StackMem* stack;
 static double* stack_save;
 static const double pisqrt__ = ::sqrt(pi__);
 
-OSInt::OSInt(const std::vector<std::shared_ptr<Shell> >& basis, const int deriv)
+OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int deriv)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
 
   stack_save = stack->get(0);

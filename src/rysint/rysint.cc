@@ -38,7 +38,7 @@ using namespace std;
 
 extern StackMem* stack;
 
-RysInt::RysInt(const vector<std::shared_ptr<Shell> >& info)
+RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
    hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
 

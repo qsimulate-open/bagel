@@ -37,13 +37,11 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Shell> RefShell;
-
 // This object lives in main.cc
 extern StackMem* stack;
 
 
-ERIBatch::ERIBatch(const vector<RefShell> _info, const double max_density, const double dummy, const bool dum)
+ERIBatch::ERIBatch(const vector<shared_ptr<const Shell> >& _info, const double max_density, const double dummy, const bool dum)
 :  ERIBatch_base(_info, max_density, 0) {
   vrr_ = shared_ptr<VRRListBase>(new VRRList());
 

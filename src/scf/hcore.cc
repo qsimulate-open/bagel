@@ -37,7 +37,7 @@
 using namespace std;
 
 typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<const Shell> RefShell;
 
 Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
 

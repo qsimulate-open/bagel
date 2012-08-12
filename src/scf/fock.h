@@ -71,11 +71,11 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   if (!static_cast<bool>(den_ex)) den_ex = density_;
 
   const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
-  std::vector<std::shared_ptr<Shell> > basis; 
+  std::vector<std::shared_ptr<const Shell> > basis; 
   std::vector<int> offset;
   int cnt = 0;
   for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-    const std::vector<std::shared_ptr<Shell> > tmp = (*aiter)->shells();
+    const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());  
     const std::vector<int> tmpoff = geom_->offset(cnt); 
     offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
@@ -120,21 +120,21 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
     for (int i0 = 0; i0 != size; ++i0) {
       if (!plist->in_p1(i0)) continue;
 
-      const std::shared_ptr<Shell>  b0 = basis[i0];
+      const std::shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = offset[i0]; 
       const int b0size = b0->nbasis();
       for (int i1 = i0; i1 != size; ++i1) {
         const unsigned int i01 = i0 *size + i1;
         if (!plist->in_p2(i01)) continue;
 
-        const std::shared_ptr<Shell>  b1 = basis[i1];
+        const std::shared_ptr<const Shell>  b1 = basis[i1];
         const int b1offset = offset[i1]; 
         const int b1size = b1->nbasis();
 
         const double density_change_01 = max_density_change[i01] * 4.0; 
 
         for (int i2 = i0; i2 != size; ++i2) {
-          const std::shared_ptr<Shell>  b2 = basis[i2];
+          const std::shared_ptr<const Shell>  b2 = basis[i2];
           const int b2offset = offset[i2]; 
           const int b2size = b2->nbasis();
 
@@ -153,7 +153,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
 
             const bool eqli01i23 = (i01 == i23);
 
-            const std::shared_ptr<Shell>  b3 = basis[i3];
+            const std::shared_ptr<const Shell>  b3 = basis[i3];
             const int b3offset = offset[i3]; 
             const int b3size = b3->nbasis();
 
@@ -164,11 +164,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
             const bool skip_schwarz = integral_bound < schwarz_thresh_;
             if (skip_schwarz) continue;
 
-            std::vector<std::shared_ptr<Shell> > input;
-            input.push_back(b3);
-            input.push_back(b2);
-            input.push_back(b1);
-            input.push_back(b0);
+            std::vector<std::shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
 
             ERIBatch eribatch(input, mulfactor);
             eribatch.compute();

@@ -60,7 +60,7 @@ class PCompFile {
 
     std::vector<size_t> num_int_each_;
 
-    std::vector<std::shared_ptr<Shell> > basis_;
+    std::vector<std::shared_ptr<const Shell> > basis_;
     std::vector<int> offset_;
     size_t max_num_int_;
 
@@ -88,8 +88,8 @@ class PCompFile {
     double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
-    std::vector<std::shared_ptr<Shell> > basis() const { return basis_; };
-    std::shared_ptr<Shell> basis(size_t i) const { return basis_[i]; };
+    std::vector<std::shared_ptr<const Shell> > basis() const { return basis_; };
+    std::shared_ptr<const Shell> basis(size_t i) const { return basis_[i]; };
     size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
     int basissize() const { return basis_.size(); };
 
@@ -141,7 +141,7 @@ PCompFile<T>::PCompFile(std::shared_ptr<PGeometry> gm, const double gam, const b
 
   { // prepare offset and basis
     typedef std::shared_ptr<Atom> RefAtom;
-    typedef std::shared_ptr<Shell> RefShell;
+    typedef std::shared_ptr<const Shell> RefShell;
 
     const std::vector<RefAtom> atoms = geom_->atoms();
     int cnt = 0;
@@ -259,7 +259,7 @@ void PCompFile<T>::reopen_with_inout() {
 template<class T>
 void PCompFile<T>::calculate_num_int_each() {
 
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
 
   unsigned long data_written = 0ul;
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
@@ -326,7 +326,7 @@ void PCompFile<T>::calculate_num_int_each() {
 template<class T>
 void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
 
   const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
   const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
@@ -415,7 +415,7 @@ void PCompFile<T>::store_integrals() {
 
 template<class T>
 void PCompFile<T>::init_schwarz() {
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
   typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = basis_.size(); // the number of shells per unit cell

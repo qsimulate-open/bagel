@@ -35,7 +35,7 @@
 class OSInt {
   protected:
 
-    std::vector<std::shared_ptr<Shell> > basisinfo_;
+    std::vector<std::shared_ptr<const Shell> > basisinfo_;
     bool spherical_;
 
     double* data_;
@@ -64,7 +64,7 @@ class OSInt {
 
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::vector<std::shared_ptr<Shell> >&, const int deriv = 0);
+    OSInt(const std::vector<std::shared_ptr<const Shell> >&, const int deriv = 0);
     ~OSInt();
 
     virtual void compute() = 0; 

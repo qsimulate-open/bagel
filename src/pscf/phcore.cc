@@ -44,7 +44,7 @@ PHcore::~PHcore() {
 
 }
 
-void PHcore::computebatch(const vector<shared_ptr<Shell> >& input,
+void PHcore::computebatch(const vector<shared_ptr<const Shell> >& input,
     const int offsetb0, const int offsetb1,
     const int nbasis, const int blockoffset) {
 

@@ -47,11 +47,11 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
 
   // info for basis 0
-  vector<shared_ptr<Shell> > basis0;
+  vector<shared_ptr<const Shell> > basis0;
   vector<int> offset0;
   int cnt = 0;
   for (auto aiter = atoms0.begin(); aiter != atoms0.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
     basis0.insert(basis0.end(), tmp.begin(), tmp.end());  
     const vector<int> tmpoff = offsets0[cnt]; 
     offset0.insert(offset0.end(), tmpoff.begin(), tmpoff.end());
@@ -59,11 +59,11 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   const int size0 = basis0.size();
 
   // info for basis 1
-  vector<shared_ptr<Shell> > basis1;
+  vector<shared_ptr<const Shell> > basis1;
   vector<int> offset1;
   cnt = 0;
   for (auto aiter = atoms1.begin(); aiter != atoms1.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
     basis1.insert(basis1.end(), tmp.begin(), tmp.end());  
     const vector<int> tmpoff = offsets1[cnt]; 
     offset1.insert(offset1.end(), tmpoff.begin(), tmpoff.end());
@@ -71,11 +71,11 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   const int size1 = basis1.size();
 
   // some info for auxiliary (i.e., DF) basis set
-  vector<shared_ptr<Shell> > aux_basis; 
+  vector<shared_ptr<const Shell> > aux_basis; 
   vector<int> aux_offset;
   cnt = 0;
   for (auto aiter = aux_atoms.begin(); aiter != aux_atoms.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
+    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
     aux_basis.insert(aux_basis.end(), tmp.begin(), tmp.end());  
     const vector<int> tmpoff = aux_offsets[cnt]; 
     aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
@@ -83,28 +83,24 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   const int aux_size = aux_basis.size();
 
   if (basis0.front()->spherical() ^ basis1.front()->spherical()) throw runtime_error("do not mix spherical to cartesian...");
-  const shared_ptr<Shell> b3(new Shell(basis0.front()->spherical()));
+  const shared_ptr<const Shell> b3(new Shell(basis0.front()->spherical()));
 
   if (basis0 == basis1) {
     assert(nbasis0_ == nbasis1_);
     for (int i0 = 0; i0 != size0; ++i0) {
-      const shared_ptr<Shell>  b0 = basis0[i0];
+      const shared_ptr<const Shell>  b0 = basis0[i0];
       const int b0offset = offset0[i0]; 
       const int b0size = b0->nbasis();
       for (int i1 = i0; i1 != size1; ++i1) {
-        const shared_ptr<Shell>  b1 = basis1[i1];
+        const shared_ptr<const Shell>  b1 = basis1[i1];
         const int b1offset = offset1[i1]; 
         const int b1size = b1->nbasis();
         for (int i2 = 0; i2 != aux_size; ++i2) {
-          const shared_ptr<Shell>  b2 = aux_basis[i2];
+          const shared_ptr<const Shell>  b2 = aux_basis[i2];
           const int b2offset = aux_offset[i2]; 
           const int b2size = b2->nbasis();
   
-          vector<shared_ptr<Shell> > input;
-          input.push_back(b3);
-          input.push_back(b2);
-          input.push_back(b1);
-          input.push_back(b0);
+          vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
   
           // pointer to stack
           const double* ppt = compute_batch(input);
@@ -123,23 +119,19 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   } else {
     assert(nbasis0_ == nbasis1_);
     for (int i0 = 0; i0 != size0; ++i0) {
-      const shared_ptr<Shell>  b0 = basis0[i0];
+      const shared_ptr<const Shell>  b0 = basis0[i0];
       const int b0offset = offset0[i0]; 
       const int b0size = b0->nbasis();
       for (int i1 = 0; i1 != size1; ++i1) {
-        const shared_ptr<Shell>  b1 = basis1[i1];
+        const shared_ptr<const Shell>  b1 = basis1[i1];
         const int b1offset = offset1[i1]; 
         const int b1size = b1->nbasis();
         for (int i2 = 0; i2 != aux_size; ++i2) {
-          const shared_ptr<Shell>  b2 = aux_basis[i2];
+          const shared_ptr<const Shell>  b2 = aux_basis[i2];
           const int b2offset = aux_offset[i2]; 
           const int b2size = b2->nbasis();
   
-          vector<shared_ptr<Shell> > input;
-          input.push_back(b3);
-          input.push_back(b2);
-          input.push_back(b1);
-          input.push_back(b0);
+          vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
   
           // pointer to stack
           const double* ppt = compute_batch(input);
@@ -162,19 +154,15 @@ void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vec
   fill(data2(), data2()+naux_*naux_, 0.0);
 
   for (int i0 = 0; i0 != aux_size; ++i0) {
-    const shared_ptr<Shell>  b0 = aux_basis[i0];
+    const shared_ptr<const Shell>  b0 = aux_basis[i0];
     const int b0offset = aux_offset[i0]; 
     const int b0size = b0->nbasis();
     for (int i1 = i0; i1 != aux_size; ++i1) {
-      const shared_ptr<Shell>  b1 = aux_basis[i1];
+      const shared_ptr<const Shell>  b1 = aux_basis[i1];
       const int b1offset = aux_offset[i1]; 
       const int b1size = b1->nbasis();
 
-      vector<shared_ptr<Shell> > input;
-      input.push_back(b1);
-      input.push_back(b3);
-      input.push_back(b0);
-      input.push_back(b3);
+      vector<shared_ptr<const Shell> > input = {{b1, b3, b0, b3}};
 
       // pointer to stack
       const double* ppt = compute_batch(input);

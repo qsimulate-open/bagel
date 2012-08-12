@@ -32,7 +32,7 @@
 #include <cassert>
 
 typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<const Shell> RefShell;
 
 using namespace std;
 

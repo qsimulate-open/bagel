@@ -29,7 +29,7 @@
 
 using namespace std;
 
-NAIBatch_base::NAIBatch_base(const std::vector<std::shared_ptr<Shell> >& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
+NAIBatch_base::NAIBatch_base(const std::vector<std::shared_ptr<const Shell> >& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
                              const int L, const double A)
  : RysInt(_info), geom_(gm), L_(L), A_(A) {
 

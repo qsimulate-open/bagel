@@ -42,7 +42,6 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<Atom> RefAtom;
 
 extern StackMem* stack;
@@ -511,24 +510,20 @@ vector<double> Geometry::charge_center() const {
 
 
 vector<double> Geometry::schwarz() const {
-  vector<shared_ptr<Shell> > basis; 
+  vector<shared_ptr<const Shell> > basis; 
   for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
-    const vector<shared_ptr<Shell> > tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());  
+    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
+    basis.insert(basis.end(), tmp.begin(), tmp.end());
   }
   const int size = basis.size();
 
   vector<double> schwarz(size * size);
   for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<Shell> b0 = basis[i0];
+    const shared_ptr<const Shell> b0 = basis[i0];
     for (int i1 = i0; i1 != size; ++i1) {
-      const shared_ptr<Shell> b1 = basis[i1];
+      const shared_ptr<const Shell> b1 = basis[i1];
 
-      vector<shared_ptr<Shell> > input;
-      input.push_back(b1);
-      input.push_back(b0);
-      input.push_back(b1);
-      input.push_back(b0);
+      vector<shared_ptr<const Shell> > input = {{b1, b0, b1, b0}};
       ERIBatch eribatch(input, 1.0);
       eribatch.compute();
       const double* eridata = eribatch.data();

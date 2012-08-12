@@ -61,7 +61,7 @@ Shell::~Shell() {
 }
 
 
-std::shared_ptr<Shell> Shell::move_atom(const array<double,3>& displacement) {
+std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   std::shared_ptr<Shell> out(new Shell(*this));
   out->position_[0] += displacement[0]; 
   out->position_[1] += displacement[1]; 
@@ -70,7 +70,7 @@ std::shared_ptr<Shell> Shell::move_atom(const array<double,3>& displacement) {
 }
 
 
-std::shared_ptr<Shell> Shell::move_atom(const double* displacement) {
+std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
   std::shared_ptr<Shell> out(new Shell(*this));
   out->position_[0] += displacement[0]; 
   out->position_[1] += displacement[1]; 
@@ -98,3 +98,18 @@ const string Shell::show() const {
   return ss.str();
 }
 
+
+bool Shell::operator==(const Shell& o) const {
+  bool out = true;
+  out &= spherical_ == o.spherical_;
+  out &= position_ == o.position_; 
+  out &= angular_number_ == o.angular_number_;
+  out &= exponents_ == o.exponents_; 
+  out &= contractions_ == o.contractions_; 
+  out &= contraction_ranges_ == o.contraction_ranges_; 
+  out &= dummy_ == o.dummy_; 
+  out &= contraction_upper_ == o.contraction_upper_; 
+  out &= contraction_lower_ == o.contraction_lower_; 
+  out &= nbasis_ == o.nbasis_;
+  return out;
+}

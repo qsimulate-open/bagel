@@ -135,24 +135,24 @@ template<typename T> class AOInt {
 
     void init() {
       // initializing shell info
-      std::vector<std::shared_ptr<Shell> > basis; 
+      std::vector<std::shared_ptr<const Shell> > basis; 
       std::vector<int> offset;
       const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
       int cnt = 0;
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-        const std::vector<std::shared_ptr<Shell> > tmp = (*aiter)->shells();
+        const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());  
         const std::vector<int> tmpoff = geom_->offset(cnt); 
         offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
       }
       // initializing shell info
-      std::vector<std::shared_ptr<Shell> > basis0; 
+      std::vector<std::shared_ptr<const Shell> > basis0; 
       std::vector<int> offset0;
       if (aux0_) {
         const std::vector<std::shared_ptr<Atom> > atoms = geom_->aux_atoms(); 
         cnt = 0;
         for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-          const std::vector<std::shared_ptr<Shell> > tmp = (*aiter)->shells();
+          const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
           basis0.insert(basis0.end(), tmp.begin(), tmp.end());  
           const std::vector<int> tmpoff = geom_->aux_offset(cnt);
           offset0.insert(offset0.end(), tmpoff.begin(), tmpoff.end());
@@ -162,13 +162,13 @@ template<typename T> class AOInt {
         offset0 = offset; 
       }
       // initializing shell info
-      std::vector<std::shared_ptr<Shell> > basis1;
+      std::vector<std::shared_ptr<const Shell> > basis1;
       std::vector<int> offset1;
       if (aux1_) {
         const std::vector<std::shared_ptr<Atom> > atoms = geom_->aux_atoms(); 
         cnt = 0;
         for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-          const std::vector<std::shared_ptr<Shell> > tmp = (*aiter)->shells();
+          const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
           basis1.insert(basis1.end(), tmp.begin(), tmp.end());  
           const std::vector<int> tmpoff = geom_->aux_offset(cnt); 
           offset1.insert(offset1.end(), tmpoff.begin(), tmpoff.end());
@@ -181,27 +181,23 @@ template<typename T> class AOInt {
       // we will compute redundant integrals as well.
       const size_t size = basis.size();
       for (int i0 = 0; i0 != size; ++i0) {
-        const std::shared_ptr<Shell>  b0 = basis[i0];
+        const std::shared_ptr<const Shell>  b0 = basis[i0];
         const int b0offset = offset[i0]; 
         const int b0size = b0->nbasis();
         for (int i1 = 0; i1 != basis1.size(); ++i1) {
-          const std::shared_ptr<Shell>  b1 = basis1[i1];
+          const std::shared_ptr<const Shell>  b1 = basis1[i1];
           const int b1offset = offset1[i1]; 
           const int b1size = b1->nbasis();
           for (int i2 = 0; i2 != size; ++i2) {
-            const std::shared_ptr<Shell>  b2 = basis[i2];
+            const std::shared_ptr<const Shell>  b2 = basis[i2];
             const int b2offset = offset[i2]; 
             const int b2size = b2->nbasis();
             for (int i3 = 0; i3 != basis0.size(); ++i3) {
-              const std::shared_ptr<Shell>  b3 = basis0[i3];
+              const std::shared_ptr<const Shell>  b3 = basis0[i3];
               const int b3offset = offset0[i3]; 
               const int b3size = b3->nbasis();
   
-              std::vector<std::shared_ptr<Shell> > input;
-              input.push_back(b3);
-              input.push_back(b2);
-              input.push_back(b1);
-              input.push_back(b0);
+              std::vector<std::shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
   
               T batch(input, 0.0, gamma_, yukawa_);
               batch.compute();

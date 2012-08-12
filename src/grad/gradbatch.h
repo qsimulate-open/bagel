@@ -59,7 +59,7 @@ class GradBatch : public ERIBatch_base {
     size_t m(const int, const int, const int, const int, const int);
 
   public:
-    GradBatch(const std::vector<std::shared_ptr<Shell> > shells, const double max_density, const double dummy = 0.0, const bool dum = true);
+    GradBatch(const std::vector<std::shared_ptr<const Shell> >& shells, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~GradBatch();
 
     void compute();

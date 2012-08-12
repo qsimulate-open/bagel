@@ -42,7 +42,7 @@ class Matrix1e {
     int ndim_;
     int mdim_;
 
-    virtual void computebatch(const std::vector<std::shared_ptr<Shell> >&, const int, const int, const int);
+    virtual void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int, const int);
     virtual void init();
 
   public:

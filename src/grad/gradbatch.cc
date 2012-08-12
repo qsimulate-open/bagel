@@ -39,13 +39,13 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Shell> RefShell;
+typedef std::shared_ptr<const Shell> RefShell;
 
 // This object lives in main.cc
 extern StackMem* stack;
 
 
-GradBatch::GradBatch(const vector<RefShell> shells, const double max_density, const double dummy, const bool dum)
+GradBatch::GradBatch(const vector<RefShell>& shells, const double max_density, const double dummy, const bool dum)
  : ERIBatch_base(shells, max_density, 1) { 
 
   centers_ = 4;  

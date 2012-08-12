@@ -34,7 +34,7 @@
 class ERIFit : public DensityFit {
   protected:
     // TODO if I turn on primitive screening, it is broken.
-    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
+    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) {
       ERIBatch eribatch(input, 0.0);
       eribatch.compute();
       return eribatch.data();
@@ -58,7 +58,7 @@ class YukawaFit : public DensityFit {
   protected:
     const double gamma_;
 
-    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
+    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) {
       SlaterBatch slaterbatch(input, 0.0, gamma_, true); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
       slaterbatch.compute();
       return slaterbatch.data2();
@@ -80,7 +80,7 @@ class SlaterFit : public DensityFit {
   protected:
     const double gamma_;
 
-    const double* compute_batch(std::vector<std::shared_ptr<Shell> >& input) {
+    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) {
       SlaterBatch slaterbatch(input, 0.0, gamma_, false);
       slaterbatch.compute();
       return slaterbatch.data();

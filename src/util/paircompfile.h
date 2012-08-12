@@ -80,7 +80,7 @@ PairCompFile<T>::~PairCompFile() {
 
 template<class T>
 void PairCompFile<T>::init_schwarz() {
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
   typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = files_.first->basissize(); // the number of shells per unit cell
@@ -133,7 +133,7 @@ void PairCompFile<T>::init_schwarz() {
 template<class T>
 void PairCompFile<T>::calculate_num_int_each() {
 
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
 
   const int K = files_.first->K();
   const int S = files_.first->S();
@@ -234,7 +234,7 @@ void PairCompFile<T>::calculate_num_int_each() {
 template<class T>
 void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2, int m3) {
 
-  typedef std::shared_ptr<Shell> RefShell;
+  typedef std::shared_ptr<const Shell> RefShell;
 
   std::shared_ptr<PCompFile<T> > first = files_.first;
   std::shared_ptr<PCompFile<T> > second = files_.second;

@@ -80,10 +80,10 @@ class Shell {
     const std::string show() const;
     int nbasis() const { return nbasis_; }; 
 
-    std::shared_ptr<Shell> move_atom(const std::array<double,3>&);
-    std::shared_ptr<Shell> move_atom(const double*);
+    std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
+    std::shared_ptr<const Shell> move_atom(const double*) const;
 
-    bool operator==(const Shell& o) const { assert(false); return false; };
+    bool operator==(const Shell& o) const;
 };
 
 #endif

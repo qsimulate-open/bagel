@@ -34,17 +34,14 @@
 
 using namespace std;
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<Shell> RefShell;
 
-Matrix1e::Matrix1e(const RefGeometry geom) : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {
+Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom) : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {
   mdim_ = ndim_ = nbasis_;
   zero();
 }
 
 
-Matrix1e::Matrix1e(const RefGeometry geom, const int n, const int m)
+Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom, const int n, const int m)
  : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {
   ndim_ = n;
   mdim_ = m;
@@ -60,47 +57,43 @@ Matrix1e::Matrix1e(const Matrix1e& o)
 
 void Matrix1e::init() {
 
-  const vector<RefAtom> atoms = geom_->atoms();
+  const vector<shared_ptr<Atom> > atoms = geom_->atoms();
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
 
   // only lower half will be stored
   for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
     // iatom1 = iatom1;
-    const RefAtom catom0 = atoms[iatom0];
+    const shared_ptr<const Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
-    const vector<RefShell> shell0 = catom0->shells();
+    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
       const int offset0 = coffset0[ibatch0];
-      RefShell b0 = shell0[ibatch0];
+      const shared_ptr<const Shell> b0 = shell0[ibatch0];
       for (int ibatch1 = ibatch0; ibatch1 != numshell0; ++ibatch1) {
         const int offset1 = coffset0[ibatch1];
-        RefShell b1 = shell0[ibatch1];
-        vector<RefShell> input;
-        input.push_back(b1);
-        input.push_back(b0);
+        const shared_ptr<const Shell> b1 = shell0[ibatch1];
+        vector<shared_ptr<const Shell> > input = {b1, b0};
 
         computebatch(input, offset0, offset1, nbasis);
       }
     }
 
     for (int iatom1 = iatom0 + 1; iatom1 != geom_->natom(); ++iatom1) {
-      const RefAtom catom1 = atoms[iatom1];
+      const shared_ptr<const Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
-      const vector<RefShell> shell1 = catom1->shells();
+      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
 
       for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
         const int offset0 = coffset0[ibatch0];
-        RefShell b0 = shell0[ibatch0];
+        shared_ptr<const Shell> b0 = shell0[ibatch0];
         for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1];
-          RefShell b1 = shell1[ibatch1];
-          vector<RefShell> input;
-          input.push_back(b1);
-          input.push_back(b0);
+          shared_ptr<const Shell> b1 = shell1[ibatch1];
+          vector<shared_ptr<const Shell> > input = {b1, b0};
 
           computebatch(input, offset0, offset1, nbasis);
 
@@ -116,7 +109,7 @@ Matrix1e::~Matrix1e() {
 }
 
 
-void Matrix1e::computebatch(const std::vector<RefShell>&, const int, const int, const int) {
+void Matrix1e::computebatch(const std::vector<shared_ptr<const Shell> >&, const int, const int, const int) {
   assert(false);
 }
 

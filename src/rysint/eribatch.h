@@ -48,7 +48,7 @@ class ERIBatch : public ERIBatch_base {
   public:
     
     // dummy will never used.
-    ERIBatch(const std::vector<std::shared_ptr<Shell> >, const double max_density, const double dummy = 0.0, const bool dum = true);
+    ERIBatch(const std::vector<std::shared_ptr<const Shell> >&, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~ERIBatch();
 
     /// compute a batch of integrals
