@@ -112,6 +112,7 @@ int main(int argc, char** argv) {
 
       if (method == "molecule") {
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+if (static_cast<bool>(ref)) ref->project_coeff(geom); 
       } else {
         if (!static_cast<bool>(geom)) throw std::runtime_error("molecule block is missing");
       }

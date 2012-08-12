@@ -93,7 +93,7 @@ void Matrix1e::init() {
         for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
           const int offset1 = coffset1[ibatch1];
           shared_ptr<const Shell> b1 = shell1[ibatch1];
-          vector<shared_ptr<const Shell> > input = {b1, b0};
+          vector<shared_ptr<const Shell> > input = {{b1, b0}};
 
           computebatch(input, offset0, offset1, nbasis);
 

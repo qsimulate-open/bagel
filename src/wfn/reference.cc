@@ -26,6 +26,8 @@
 
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
+#include <src/osint/overlapbatch.h>
+#include <src/util/mixedbasis.h>
 
 using namespace std;
 
@@ -61,11 +63,17 @@ shared_ptr<Dvec> Reference::civectors() const {
 }
 
 
-shared_ptr<const Coeff> Reference::project_coeff(shared_ptr<const Geometry> geom) const {
+shared_ptr<const Coeff> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<const Coeff> out;
 
-  if (*geom_ == *geom) {
+  if (*geom_ == *geomin) {
     out = coeff_;
+  } else {
+    // in this case we first form overlap matrices
+    shared_ptr<Overlap> snew(new Overlap(geomin));
+    shared_ptr<Overlap> sold(new Overlap(geom_));
+    shared_ptr<MixedBasis<OverlapBatch> > mixed(new MixedBasis<OverlapBatch>(geomin, geom_));
+mixed->print("mixed", 24);
   }
 
   return out; 
