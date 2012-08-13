@@ -109,4 +109,7 @@ class CASSCF {
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
 };
 
+static const double occup_thresh = 1.0e-10;
+
+
 #endif

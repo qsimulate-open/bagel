@@ -75,8 +75,6 @@ void SuperCI::compute() {
 
     // here make a natural orbitals and update the coefficients
     vector<double> natorb = form_natural_orbs();
-    if (std::abs(occup_.front()-2.0) < 1.0e-16 || std::abs(occup_.back()) < 1.0e-16)
-      throw runtime_error("CASSCF does not work so far if occupied orbitals are strictly doubly occupied or empty.");
 
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
 

@@ -210,12 +210,17 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
     for (int i = 0; i != nact_; ++i)
       daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
+
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = shared_ptr<QFile>(new QFile(nact_, nact_));
     for (int i = 0; i != nact_; ++i)
-      for (int j = 0; j != nact_; ++j)
-        factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
+      for (int j = 0; j != nact_; ++j) {
+        if (occup_[i]+occup_[j] > occup_thresh)
+          factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
+        else
+          factp->element(j,i) = 0.0;
+      }
   }
 
   // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
@@ -230,9 +235,15 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   fill(denom->data(), denom->data()+denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nvirt_; ++j, ++target)
-      *target = (-fact->element(i+nclosed_,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
+  for (int i = 0; i != nact_; ++i) {
+    if (occup_[i] > occup_thresh) {
+      for (int j = 0; j != nvirt_; ++j, ++target)
+        *target = (-fact->element(i+nclosed_,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
+    } else {
+      for (int j = 0; j != nvirt_; ++j, ++target)
+        *target = 1.0/occup_thresh;
+    }
+  }
 
   target = denom->ptr_vc();
   for (int i = 0; i != nclosed_; ++i)
@@ -241,8 +252,13 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j, ++target)
-      *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0 - occup_[i])) / (superci ? 2.0 - occup_[i] : 1.0);
+    if (2.0-occup_[i] > occup_thresh) {
+      for (int j = 0; j != nclosed_; ++j, ++target)
+        *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_[i])) / (superci ? 2.0-occup_[i] : 1.0);
+    } else {
+      for (int j = 0; j != nclosed_; ++j, ++target)
+        *target = 1.0/occup_thresh;
+    }
   }
   d = denom;
 }

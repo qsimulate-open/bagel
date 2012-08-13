@@ -48,7 +48,8 @@ void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 1.0/std::sqrt(occup_[i]), fact->element_ptr(nocc_, i), 1, target, 1);
+    const double fac = (occup_[i]>occup_thresh) ? 1.0/std::sqrt(occup_[i]) : 0.0; 
+    daxpy_(nvirt_, fac, fact->element_ptr(nocc_, i), 1, target, 1);
   }
 }
 
@@ -58,8 +59,9 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shar
   if (!nclosed_ || !nact_) return;
   double* target = sigma->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    daxpy_(nclosed_, 2.0/std::sqrt(2.0-occup_[i]), f->element_ptr(0,nclosed_+i), 1, target, 1);
-    daxpy_(nclosed_, -1.0/std::sqrt(2.0-occup_[i]), fact->element_ptr(0,i), 1, target, 1);
+    const double fac = (2.0-occup_[i] > occup_thresh) ? 1.0/std::sqrt(2.0-occup_[i]) : 0.0; 
+    daxpy_(nclosed_, 2.0*fac, f->element_ptr(0,nclosed_+i), 1, target, 1);
+    daxpy_(nclosed_, -fac, fact->element_ptr(0,i), 1, target, 1);
   }
 }
 
@@ -74,9 +76,12 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shar
 void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) {
   if (!nact_ || !nvirt_) return;
   shared_ptr<QFile> gtup(new QFile(*gaa));
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nact_; ++j)
-      gtup->element(j,i) /= std::sqrt(occup_[i]*occup_[j]);
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nact_; ++j) {
+      const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
+      gtup->element(j,i) *= fac;
+    }
+  }
   dgemm_("N", "N", nvirt_, nact_, nact_, 1.0, cc->ptr_va(), nvirt_, gtup->data(), nact_, 1.0, sigma->ptr_va(), nvirt_);
   dgemm_("N", "N", nvirt_, nact_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_va(), nvirt_, 1.0, sigma->ptr_va(), nvirt_);
 }
@@ -126,8 +131,8 @@ void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   QFile tmp(nact_, nact_);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
-      tmp.element(j,i) = -((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i))
-                         / std::sqrt((2.0 - occup_[i]) * (2.0 - occup_[j]));
+      const double fac = ((2.0-occup_[i])*(2.0-occup_[j]) > occup_thresh) ? 1.0/std::sqrt((2.0-occup_[i])*(2.0-occup_[j])) : 0.0;
+      tmp.element(j,i) = -((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i)) * fac;
     }
   }
   dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_); 

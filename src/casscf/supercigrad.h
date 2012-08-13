@@ -44,7 +44,18 @@ class SuperCIGrad : public SuperCI {
     ~SuperCIGrad() {};
 
     void compute() {
+      // compute CASSCF fist
       SuperCI::compute();
+
+      // then make sure that the orbitals are natural orbitals
+      // in the worst case, coeff and RDMs are not consistent and coeff is not natural orbital...
+      fci_->update(coeff_);
+      fci_->compute();
+      fci_->compute_rdm12();
+// TODO form_naturla_orbs might have a bug...
+      form_natural_orbs();
+      fci_->update(coeff_);
+      fci_->compute();
       fci_->compute_rdm12();
       form_natural_orbs();
       fci_->update(coeff_);
