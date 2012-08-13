@@ -123,7 +123,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> civectors() const;
 
     // basis-set projection based on SVD
-    std::shared_ptr<const Coeff> project_coeff(const std::shared_ptr<const Geometry>) const;
+    std::shared_ptr<const Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
 
 };
 

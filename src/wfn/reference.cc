@@ -24,6 +24,7 @@
 //
 
 
+#include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
 #include <src/osint/overlapbatch.h>
@@ -63,18 +64,37 @@ shared_ptr<Dvec> Reference::civectors() const {
 }
 
 
-shared_ptr<const Coeff> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
-  shared_ptr<const Coeff> out;
+shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+  shared_ptr<const Reference> out;
 
   if (*geom_ == *geomin) {
-    out = coeff_;
+    out = shared_from_this();
   } else {
     // in this case we first form overlap matrices
     shared_ptr<Overlap> snew(new Overlap(geomin));
-    shared_ptr<Overlap> sold(new Overlap(geom_));
-    shared_ptr<MixedBasis<OverlapBatch> > mixed(new MixedBasis<OverlapBatch>(geomin, geom_));
-mixed->print("mixed", 24);
+    shared_ptr<Overlap> snew2(new Overlap(*snew));
+    shared_ptr<MixedBasis<OverlapBatch> > mixed(new MixedBasis<OverlapBatch>(geom_, geomin));
+    const int nnew = geomin->nbasis();
+    const int nold = geom_->nbasis();
+
+    unique_ptr<int[]> ipiv(new int[nnew+1]);
+    dgesv_(nnew, nold, snew->data(), nnew, ipiv.get(), mixed->data(), nnew, ipiv[nnew]); 
+    if (ipiv[nnew]) throw runtime_error("DGESV failed in Reference::project_coeff");
+
+    shared_ptr<Coeff> c(new Coeff(geomin));
+    dgemm_("N", "N", nnew, nold, nold, 1.0, mixed->data(), nnew, coeff_->data(), nold, 0.0, c->data(), nnew);
+
+#if 1
+    unique_ptr<double[]> diag(new double[nnew]);
+    Matrix1e m = *c % *snew2 * *c; 
+    for (int i = nold; i < nnew; ++i) m.element(i,i) = 1.0;
+    m.diagonalize(diag.get());
+    for (int i = 0; i != nnew; ++i) dscal_(nnew, 1.0/sqrt(sqrt(diag[i])), m.data()+i*nnew, 1);
+    *c *= (m ^ m);
+#endif
+
+    out = shared_ptr<const Reference>(new Reference(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_));
   }
 
-  return out; 
+  return out;
 }

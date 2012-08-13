@@ -100,6 +100,7 @@ class MixedBasis {
     ~MixedBasis() {};
 
     const double* data() const { return data_.get(); };
+    double* data() { return data_.get(); };
 
     void print(const std::string in = "", const size_t size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
