@@ -73,14 +73,8 @@ void CASSCF::common_init() {
   thresh_micro_ = read_input<double>(idata_, "thresh_micro", thresh_);
 
   // nocc from the input. If not present, full valence active space is generated.
-  nocc_ = read_input<int>(idata_, "nocc", 0);
-  nocc_ = read_input<int>(idata_, "nocc_cas", nocc_);
-  if (nocc_ < 0) {
-    throw runtime_error("It appears that nocc < 0. Check nocc value.");
-  } else if (nocc_ == 0) {
-    cout << "    * full valence occupied space generated for nocc." << endl;
-    nocc_ = geom_->num_count_full_valence_nocc();
-  }
+  nact_ = read_input<int>(idata_, "nact", 0);
+  nact_ = read_input<int>(idata_, "nact_cas", nocc_);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = read_input<int>(idata_, "nclosed", -1);
@@ -90,9 +84,8 @@ void CASSCF::common_init() {
     cout << "    * full core space generated for nclosed." << endl;
     nclosed_ = geom_->num_count_ncore_only() / 2;
   }
+  nocc_ = nclosed_ + nact_;
 
-  nact_ = nocc_ - nclosed_;
-  if (nact_ <= 0) throw runtime_error("It appears that nact <= 0. Check the nocc and nclosed values");
 #if 0
   nbasis_ = geom_->nbasis();
 #else

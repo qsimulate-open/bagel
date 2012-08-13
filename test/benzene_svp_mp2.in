@@ -1,6 +1,5 @@
 molecule {
   symmetry = C1; // RI-HF is only for C1 symmetry.
-  nspin = 0;
   basis = svp;
   df_basis = svp-jkfit;
   schwarz_thresh = 1.0e-12;
