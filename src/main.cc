@@ -111,8 +111,10 @@ int main(int argc, char** argv) {
       const std::string method = iter->first;
 
       if (method == "molecule") {
+        geom = std::shared_ptr<Geometry>(); // kill the previous one first
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
-if (static_cast<bool>(ref)) ref->project_coeff(geom); 
+        if (read_input<bool>(iter->second, "restart", false)) ref = std::shared_ptr<const Reference>();
+        if (static_cast<bool>(ref)) ref = ref->project_coeff(geom);
       } else {
         if (!static_cast<bool>(geom)) throw std::runtime_error("molecule block is missing");
       }
