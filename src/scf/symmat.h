@@ -36,7 +36,7 @@ class SymMat : public Matrix1e {
   protected:
     std::shared_ptr<SymRotAbel> symrot_; 
     std::shared_ptr<Petite> petite_; 
-    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int, const int) {};
+    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int, const int) override {};
 
   public:
     SymMat(const std::shared_ptr<const Geometry>, const int);
