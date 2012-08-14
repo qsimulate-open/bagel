@@ -167,6 +167,7 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       const unsigned int ibit = (1 << i);
+      // compress_ means that we store info only for i <= j
       if (ibit & *iter && compress_) {
         const unsigned int source = lexical<spin>(*iter); 
         const unsigned int nbit = (ibit^*iter); // annihilated.

@@ -182,15 +182,15 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const 
     sigma_2a2(cc, d);
     if (tprint) print_timing_("task2a-2", start, timing);
 
-    // step (e) (task2b) E(Phib, Phia, ij) = D(Psib, Phia, ij) (ij|kl)
+    // step (e) (task2b) E(Phib, Phia, kl) = D(Psib, Phia, ij) (ij|kl)
     sigma_2b(d, e, jop);
     if (tprint) print_timing_("task2b", start, timing);
 
-    // step (f) (task2c-1) sigma(Phib, Phia') += sign E(Psib, Phia, ij)
+    // step (f) (task2c-1) sigma(Phib, Phia') += sign E(Psib, Phia, kl)
     sigma_2c1(sigma, e);
     if (tprint) print_timing_("task2c-1", start, timing);
 
-    // step (g) (task2c-2) sigma(Phib', Phia) += sign E(Psib, Phia, ij)
+    // step (g) (task2c-2) sigma(Phib', Phia) += sign E(Psib, Phia, kl)
     sigma_2c2(sigma, e);
     if (tprint) print_timing_("task2c-2", start, timing);
 
