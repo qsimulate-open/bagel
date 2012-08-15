@@ -33,7 +33,7 @@ static HRRList hrr;
 
 using namespace std;
 
-DipoleBatch::DipoleBatch(const vector<std::shared_ptr<const Shell> >& _basis, const vector<double>& c)
+DipoleBatch::DipoleBatch(const vector<std::shared_ptr<const Shell> >& _basis, const array<double,3>& c)
  : OSInt(_basis, -1), center_(c) {
 
 }  

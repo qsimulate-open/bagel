@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: dipolebatch.h
+// Filename: momentum.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,24 +24,22 @@
 //
 
 
-#ifndef __SRC_OSINT_DIPOLEBATCH_H
-#define __SRC_OSINT_DIPOLEBATCH_H
+#ifndef __SRC_PROP_MOMENTUM_H
+#define __SRC_PROP_MOMENTUM_H
 
-#include <array>
-#include <vector>
-#include <src/osint/osint.h>
 #include <memory>
+#include <array>
+#include <src/scf/matrix1e.h>
 
-class DipoleBatch : public OSInt {
+class Momentum {
   protected:
-    const std::array<double,3> center_;
-    void perform_VRR(double*);
+    std::shared_ptr<const Geometry> geom_;
 
-  public: 
-    DipoleBatch(const std::vector<std::shared_ptr<const Shell> >&, const std::array<double,3>& c);
-    ~DipoleBatch();
+  public:
+    Momentum(std::shared_ptr<const Geometry>);
+    ~Momentum();
 
-    void compute();
+    std::array<std::shared_ptr<Matrix1e>,3> compute() const;
 };
 
 #endif

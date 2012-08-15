@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: dipole.cc
+// Filename: momentum.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,33 +24,32 @@
 //
 
 
-#include <src/prop/dipole.h>
-#include <src/osint/dipolebatch.h>
+#include <src/prop/momentum.h>
+#include <src/osint/momentbatch.h>
 #include <iomanip>
-#include <array>
 
 using namespace std;
 
-Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix1e> d) : geom_(g), den_(d) {
+Momentum::Momentum(shared_ptr<const Geometry> g) : geom_(g) {
 
 }
 
 
-Dipole::~Dipole() {
+Momentum::~Momentum() {
 
 }
 
 
-vector<double> Dipole::compute() const {
-  vector<double> out(3, 0.0);
-
-  array<double,3> center = geom_->charge_center();
-
+array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
   const int natom = geom_->natom();
 
   const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
+
+  const shared_ptr<Matrix1e> mat0(new Matrix1e(geom_));
+  const shared_ptr<Matrix1e> mat1(new Matrix1e(geom_));
+  const shared_ptr<Matrix1e> mat2(new Matrix1e(geom_));
 
   // TODO perhaps we could reduce operation by a factor of 2
   for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
@@ -73,19 +72,19 @@ vector<double> Dipole::compute() const {
           shared_ptr<const Shell> b1 = shell1[ibatch1];
 
           vector<shared_ptr<const Shell> > input = {{b1, b0}};
-          DipoleBatch dipole(input, center);
-          dipole.compute();
+          MomentBatch mom(input);
+          mom.compute();
 
           const int dimb1 = input[0]->nbasis(); 
           const int dimb0 = input[1]->nbasis(); 
-          const double* dat0 = dipole.data();
-          const double* dat1 = dipole.data() + dipole.size_block();
-          const double* dat2 = dipole.data() + dipole.size_block()*2;
+          const double* dat0 = mom.data();
+          const double* dat1 = mom.data() + mom.size_block();
+          const double* dat2 = mom.data() + mom.size_block()*2;
           for (int i = offset0; i != dimb0 + offset0; ++i) {
             for (int j = offset1; j != dimb1 + offset1; ++j, ++dat0, ++dat1, ++dat2) {
-              out[0] += *dat0 * den_->element(j,i);
-              out[1] += *dat1 * den_->element(j,i);
-              out[2] += *dat2 * den_->element(j,i);
+              mat0->element(j,i) = *dat0;
+              mat1->element(j,i) = *dat1;
+              mat2->element(j,i) = *dat2;
             }
           }
 
@@ -94,8 +93,5 @@ vector<double> Dipole::compute() const {
     }
   }
 
-  cout << "    * Permanent dipole moment: (" << setw(12) << setprecision(6) << out[0] << ", "
-                                             << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl;
-
-  return out;
+  return array<shared_ptr<Matrix1e>,3>{{mat0, mat1, mat2}};
 }

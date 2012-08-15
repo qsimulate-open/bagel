@@ -1,7 +1,7 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: dipolebatch.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: momentbatch.h
+// Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,22 +24,20 @@
 //
 
 
-#ifndef __SRC_OSINT_DIPOLEBATCH_H
-#define __SRC_OSINT_DIPOLEBATCH_H
+#ifndef __src_osint_momentbatch_h
+#define __src_osint_momentbatch_h
 
-#include <array>
 #include <vector>
 #include <src/osint/osint.h>
 #include <memory>
 
-class DipoleBatch : public OSInt {
+class MomentBatch : public OSInt {
   protected:
-    const std::array<double,3> center_;
     void perform_VRR(double*);
 
   public: 
-    DipoleBatch(const std::vector<std::shared_ptr<const Shell> >&, const std::array<double,3>& c);
-    ~DipoleBatch();
+    MomentBatch(const std::vector<std::shared_ptr<const Shell> >&);
+    ~MomentBatch();
 
     void compute();
 };

@@ -493,8 +493,8 @@ vector<double> Geometry::xyz() const {
   return out; 
 }
 
-vector<double> Geometry::charge_center() const {
-  vector<double> out(3, 0.0);
+array<double,3> Geometry::charge_center() const {
+  array<double,3> out{{0.0, 0.0, 0.0}};
   double sum = 0.0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
     out[0] += (*i)->atom_charge() * (*i)->position(0);
