@@ -51,14 +51,15 @@ MomentBatch::~MomentBatch() {
 void MomentBatch::compute() {
   double* stack_save = stack->get(0);
 
-  double* intermediate_p = stack->get(prim0_ * prim1_ * asize_intermediate_);
+  double* intermediate_p = stack->get(prim0_*prim1_*asize_intermediate_*3);
   perform_VRR(intermediate_p);
 
   for (int i = 0; i != 3; ++i) {
     double* cdata = data_ + i*size_block_;
+    const double* csource = intermediate_p + i*prim0_*prim1_*asize_intermediate_;
     double* intermediate_c = stack->get(cont0_ * cont1_ * asize_intermediate_);
     fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
-    perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c, 
+    perform_contraction(asize_intermediate_, csource, prim0_, prim1_, intermediate_c, 
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
@@ -79,7 +80,7 @@ void MomentBatch::compute() {
 
     stack->release(cont0_ * cont1_ * asize_intermediate_);
   }
-  stack->release(prim0_ * prim1_ * asize_intermediate_);
+  stack->release(prim0_*prim1_*asize_intermediate_*3);
   assert(stack->get(0) == stack_save);
 
   if (swap01_) dscal_(size_alloc_, -1.0, data_, 1); 
@@ -115,6 +116,7 @@ void MomentBatch::perform_VRR(double* intermediate) {
     worktx[0] = 2*ca*cxpa*worksx[0];
     workty[0] = 2*ca*cypa*worksy[0];
     worktz[0] = 2*ca*czpa*worksz[0];
+
     if (ang0_ + ang1_ > 0) {
       worksx[1] = cxpa * worksx[0];
       worksy[1] = cypa * worksy[0];
@@ -138,14 +140,7 @@ void MomentBatch::perform_VRR(double* intermediate) {
     // peform HRR to obtain S(1, j)
     if (ang1_ > 0) {
       for (int j = 1; j <= ang1_; ++j) { 
-        worksx[j * amax1_] = AB_[0] * worksx[(j-1) * amax1_] + worksx[(j-1) * amax1_ + 1];
-        worksy[j * amax1_] = AB_[1] * worksy[(j-1) * amax1_] + worksy[(j-1) * amax1_ + 1];
-        worksz[j * amax1_] = AB_[2] * worksz[(j-1) * amax1_] + worksz[(j-1) * amax1_ + 1];
-
-        worktx[j * amax1_] = AB_[0] * worktx[(j-1) * amax1_] + worktx[(j-1) * amax1_ + 1] + pabop * worksx[(j-1) * amax1_];
-        workty[j * amax1_] = AB_[1] * workty[(j-1) * amax1_] + workty[(j-1) * amax1_ + 1] + pabop * worksy[(j-1) * amax1_];
-        worktz[j * amax1_] = AB_[2] * worktz[(j-1) * amax1_] + worktz[(j-1) * amax1_ + 1] + pabop * worksz[(j-1) * amax1_];
-        for (int i = 1; i != amax1_ - j; ++i) {
+        for (int i = 0; i != amax1_ - j; ++i) {
           worksx[j * amax1_ + i] = AB_[0] * worksx[(j-1) * amax1_ + i] + worksx[(j-1) * amax1_ + i + 1];
           worksy[j * amax1_ + i] = AB_[1] * worksy[(j-1) * amax1_ + i] + worksy[(j-1) * amax1_ + i + 1];
           worksz[j * amax1_ + i] = AB_[2] * worksz[(j-1) * amax1_ + i] + worksz[(j-1) * amax1_ + i + 1];
