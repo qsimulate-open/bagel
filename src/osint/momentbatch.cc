@@ -28,6 +28,7 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <src/util/f77.h>
 #include <src/stackmem.h>
 #include <src/osint/momentbatch.h>
 #include <src/rysint/macros.h>
@@ -53,29 +54,36 @@ void MomentBatch::compute() {
   double* intermediate_p = stack->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 
-  double* intermediate_c = stack->get(cont0_ * cont1_ * asize_intermediate_);
-  fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
-  perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c, 
-                      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
-                      basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
+  for (int i = 0; i != 3; ++i) {
+    double* cdata = data_ + i*size_block_;
+    double* intermediate_c = stack->get(cont0_ * cont1_ * asize_intermediate_);
+    fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
+    perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c, 
+                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
+                        basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-  if (spherical_) {
-    struct CarSphList carsphlist;
-    double* intermediate_i = stack->get(cont0_ * cont1_ * asize_final_);
-    const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-    const int nloops = cont0_ * cont1_;
-    carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i); 
+    if (spherical_) {
+      struct CarSphList carsphlist;
+      double* intermediate_i = stack->get(cont0_ * cont1_ * asize_final_);
+      const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
+      const int nloops = cont0_ * cont1_;
+      carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i); 
 
-    const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
-    stack->release(cont0_ * cont1_ * asize_final_);
-  } else {
-    const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_c, cont1_, cont0_, 1, swap01_);
+      const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
+      sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
+      stack->release(cont0_ * cont1_ * asize_final_);
+    } else {
+      const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
+      sort_.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
+    }
+
+    stack->release(cont0_ * cont1_ * asize_intermediate_);
   }
-
-  stack->release(prim0_ * prim1_ * asize_intermediate_ + cont0_ * cont1_ * asize_intermediate_);
+  stack->release(prim0_ * prim1_ * asize_intermediate_);
   assert(stack->get(0) == stack_save);
+
+  if (swap01_) dscal_(size_alloc_, -1.0, data_, 1); 
+
 }
 
 
