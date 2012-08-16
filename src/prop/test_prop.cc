@@ -29,7 +29,7 @@
 #include <src/scf/uhf.h>
 #include <src/wfn/reference.h>
 
-std::vector<double> dipole(std::string filename) {
+std::array<double,3> dipole(std::string filename) {
   std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + "_dipole.testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
@@ -47,26 +47,24 @@ std::vector<double> dipole(std::string filename) {
       std::shared_ptr<const Matrix1e> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 
       Dipole dipole(geom, dtot);
-      std::vector<double> d = dipole.compute();
+      std::array<double,3> d = dipole.compute();
       delete stack;
       std::cout.rdbuf(backup_stream);
       return d;
     }
   }
   assert(false);
-  return std::vector<double>();
+  return std::array<double,3>();
 }
 
-static std::vector<double> hf_svp_dfhf_dipole_ref() {
-  std::vector<double> out(3);
-  out[0] = 0.0; out[1] = 0.0; out[2] = 1.055510;  
-  return out;
+static std::array<double,3> hf_svp_dfhf_dipole_ref() {
+  return std::array<double,3>{{0.0, 0.0, 1.055510}};
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_PROP)
  
 BOOST_AUTO_TEST_CASE(DIPOLE) {
-    BOOST_CHECK(compare(dipole("hf_svp_dfhf"),        hf_svp_dfhf_dipole_ref(), 1.0e-6));
+    BOOST_CHECK(compare<std::array<double,3> >(dipole("hf_svp_dfhf"),        hf_svp_dfhf_dipole_ref(), 1.0e-6));
 }
  
 BOOST_AUTO_TEST_SUITE_END()

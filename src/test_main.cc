@@ -28,6 +28,7 @@
 #define BOOST_TEST_MODULE Suites
 #include <boost/test/unit_test.hpp>
 
+#include <array>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
@@ -37,15 +38,16 @@ StackMem* stack;
 static double THRESH = 1.0e-8;
  
 bool compare(const double a, const double b, const double thr = THRESH) { return fabs(a-b) < thr; };
-bool compare(const std::vector<double> a, const std::vector<double> b, const double thr = THRESH) {
+
+template<class T>
+bool compare(const T a, const T b, const double thr = THRESH) {
  if (a.size() != b.size()) throw std::logic_error("comparing vectors with different sizes");
  bool out = true;
  for (auto i = a.begin(), j = b.begin(); i != a.end(); ++i, ++j) out &= compare(*i, *j, thr);
- return out; 
+ return out;
 };
 
 #include <src/scf/test_scf.cc>
-#include <src/prop/test_prop.cc>
 
 #include <src/mp2/test_mp2.cc>
 
@@ -55,3 +57,4 @@ bool compare(const std::vector<double> a, const std::vector<double> b, const dou
 
 #include <src/opt/test_opt.cc>
 
+//#include <src/prop/test_prop.cc>
