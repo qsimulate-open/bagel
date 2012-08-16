@@ -148,7 +148,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 
-  std::shared_ptr<GradFile> out(new GradFile(3*geom_->natom()));
+  std::shared_ptr<GradFile> out(new GradFile(geom_->natom()));
   return out;
 }
 

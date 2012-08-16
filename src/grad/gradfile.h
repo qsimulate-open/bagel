@@ -39,12 +39,13 @@
 
 class GradFile {
   protected:
+    // TODO is vector<array<double,3> > guaranteed to be contiguous by the C++ standard?
     std::vector<double> data_;
 
   public:
-    GradFile(const size_t i, const double a = 0.0) : data_(i, a) {};
-    GradFile(std::vector<double> a) : data_(a.begin(), a.end()) { assert(data_.size()%3 == 0); };
-    GradFile(const GradFile& o) : data_(o.data_.begin(), o.data_.end()) {};
+    GradFile(const size_t natom, const double a = 0.0) : data_(natom*3, a) {};
+    GradFile(std::vector<double> a) : data_(a) { assert(data_.size()%3 == 0); };
+    GradFile(const GradFile& o) : data_(o.data_) {};
     ~GradFile() {};
 
     double ddot(const GradFile& o) const { return ddot_(size(), data(), 1, o.data(), 1); };

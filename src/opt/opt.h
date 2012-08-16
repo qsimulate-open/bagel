@@ -59,7 +59,7 @@ class Opt {
   public:
     Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
       : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(NULL), thresh_(1.0e-6) {
-      std::shared_ptr<GradFile> denom(new GradFile(geom->natom()*3, 1.0));
+      std::shared_ptr<GradFile> denom(new GradFile(geom->natom(), 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
     };
     ~Opt() {};
