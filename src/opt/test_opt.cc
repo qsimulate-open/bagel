@@ -130,13 +130,13 @@ std::vector<double> reference_mp2_opt() {
 BOOST_AUTO_TEST_SUITE(TEST_OPT)
  
 BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
-    BOOST_CHECK(compare(scf_opt("hf_svp_dfhf_opt"),       reference_scf_opt(),      1.0e-6));
-    BOOST_CHECK(compare(scf_opt("hf_svp_dfhf_opt_cart"),  reference_scf_opt_cart(), 1.0e-6));
-    BOOST_CHECK(compare(scf_opt("oh_svp_uhf_opt"),        reference_uhf_opt(),      1.0e-6));
-    BOOST_CHECK(compare(scf_opt("hc_svp_rohf_opt"),       reference_rohf_opt(),     1.0e-6));
+    BOOST_CHECK(compare<std::vector<double> >(scf_opt("hf_svp_dfhf_opt"),       reference_scf_opt(),      1.0e-6));
+    BOOST_CHECK(compare<std::vector<double> >(scf_opt("hf_svp_dfhf_opt_cart"),  reference_scf_opt_cart(), 1.0e-6));
+    BOOST_CHECK(compare<std::vector<double> >(scf_opt("oh_svp_uhf_opt"),        reference_uhf_opt(),      1.0e-6));
+    BOOST_CHECK(compare<std::vector<double> >(scf_opt("hc_svp_rohf_opt"),       reference_rohf_opt(),     1.0e-6));
 }
 BOOST_AUTO_TEST_CASE(MP2_Opt) {
-    BOOST_CHECK(compare(mp2_opt(), reference_mp2_opt(), 1.0e-6));
+    BOOST_CHECK(compare<std::vector<double> >(mp2_opt(), reference_mp2_opt(), 1.0e-6));
 }
  
 BOOST_AUTO_TEST_SUITE_END()

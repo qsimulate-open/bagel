@@ -30,6 +30,7 @@
 #include <vector>
 #include <src/scf/shell.h>
 #include <src/rysint/sortlist.h>
+#include <array>
 #include <memory>
 
 class OSInt {

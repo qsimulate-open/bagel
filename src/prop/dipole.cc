@@ -41,8 +41,8 @@ Dipole::~Dipole() {
 }
 
 
-vector<double> Dipole::compute() const {
-  vector<double> out(3, 0.0);
+array<double,3> Dipole::compute() const {
+  array<double,3> out{{0.0, 0.0, 0.0}};
 
   array<double,3> center = geom_->charge_center();
 
