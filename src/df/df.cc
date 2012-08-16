@@ -87,28 +87,19 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   if (basis0 == basis1) {
     assert(nbasis0_ == nbasis1_);
-    for (int i0 = 0; i0 != size0; ++i0) {
-      const shared_ptr<const Shell>  b0 = basis0[i0];
-      const int b0offset = offset0[i0]; 
-      const int b0size = b0->nbasis();
-      for (int i1 = i0; i1 != size1; ++i1) {
-        const shared_ptr<const Shell>  b1 = basis1[i1];
-        const int b1offset = offset1[i1]; 
-        const int b1size = b1->nbasis();
-        for (int i2 = 0; i2 != aux_size; ++i2) {
-          const shared_ptr<const Shell>  b2 = aux_basis[i2];
-          const int b2offset = aux_offset[i2]; 
-          const int b2size = b2->nbasis();
-  
-          vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
-  
-          // pointer to stack
+    auto o0 = offset0.begin();
+    for (auto b0 = basis0.begin(); b0 != basis0.end(); ++b0, ++o0) {
+      auto o1 = o0;
+      for (auto b1 = b0; b1 != basis0.end(); ++b1, ++o1) {
+        auto o2 = aux_offset.begin();
+        for (auto b2 = aux_basis.begin(); b2 != aux_basis.end(); ++b2, ++o2) {
+          vector<shared_ptr<const Shell> > input = {{b3, *b2, *b1, *b0}};
           const double* ppt = compute_batch(input);
   
           // all slot in
-          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
-            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
+          for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0) {  
+            for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1) {  
+              for (int j2 = *o2; j2 != *o2 + (*b2)->nbasis(); ++j2, ++ppt) {  
                 data_[j2+naux_*(j1+nbasis1_*j0)] = data_[j2+naux_*(j0+nbasis1_*j1)] = *ppt;
               }
             }
@@ -117,29 +108,19 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       }
     }
   } else {
-    assert(nbasis0_ == nbasis1_);
-    for (int i0 = 0; i0 != size0; ++i0) {
-      const shared_ptr<const Shell>  b0 = basis0[i0];
-      const int b0offset = offset0[i0]; 
-      const int b0size = b0->nbasis();
-      for (int i1 = 0; i1 != size1; ++i1) {
-        const shared_ptr<const Shell>  b1 = basis1[i1];
-        const int b1offset = offset1[i1]; 
-        const int b1size = b1->nbasis();
-        for (int i2 = 0; i2 != aux_size; ++i2) {
-          const shared_ptr<const Shell>  b2 = aux_basis[i2];
-          const int b2offset = aux_offset[i2]; 
-          const int b2size = b2->nbasis();
-  
-          vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
-  
-          // pointer to stack
+    auto o0 = offset0.begin();
+    for (auto b0 = basis0.begin(); b0 != basis0.end(); ++b0, ++o0) {
+      auto o1 = offset1.begin();
+      for (auto b1 = basis1.begin(); b1 != basis1.end(); ++b1, ++o1) {
+        auto o2 = aux_offset.begin();
+        for (auto b2 = aux_basis.begin(); b2 != aux_basis.end(); ++b2, ++o2) {
+          vector<shared_ptr<const Shell> > input = {{b3, *b2, *b1, *b0}};
           const double* ppt = compute_batch(input);
   
           // all slot in
-          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
-            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {  
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++ppt) {  
+          for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0) {  
+            for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1) {  
+              for (int j2 = *o2; j2 != *o2 + (*b2)->nbasis(); ++j2, ++ppt) {  
                 data_[j2+naux_*(j1+nbasis1_*j0)] = *ppt;
               }
             }
@@ -153,21 +134,16 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
   fill(data2(), data2()+naux_*naux_, 0.0);
 
-  for (int i0 = 0; i0 != aux_size; ++i0) {
-    const shared_ptr<const Shell>  b0 = aux_basis[i0];
-    const int b0offset = aux_offset[i0]; 
-    const int b0size = b0->nbasis();
-    for (int i1 = i0; i1 != aux_size; ++i1) {
-      const shared_ptr<const Shell>  b1 = aux_basis[i1];
-      const int b1offset = aux_offset[i1]; 
-      const int b1size = b1->nbasis();
-
-      vector<shared_ptr<const Shell> > input = {{b1, b3, b0, b3}};
+  auto o0 = aux_offset.begin();
+  for (auto b0 = aux_basis.begin(); b0 != aux_basis.end(); ++b0, ++o0) {
+    auto o1 = o0;
+    for (auto b1 = b0; b1 != aux_basis.end(); ++b1, ++o1) {
+      vector<shared_ptr<const Shell> > input = {{*b1, b3, *b0, b3}};
 
       // pointer to stack
       const double* ppt = compute_batch(input);
-      for (int j0 = b0offset; j0 != b0offset+b0size; ++j0)
-        for (int j1 = b1offset; j1 != b1offset+b1size; ++j1, ++ppt)
+      for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0)
+        for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1, ++ppt)
           data2_[j1+j0*naux_] = data2_[j0+j1*naux_] = *ppt;
 
     }

@@ -41,47 +41,31 @@ Momentum::~Momentum() {
 
 
 array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
-  const int natom = geom_->natom();
-
-  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
-  const vector<vector<int> > offsets = geom_->offsets();
-  const int nbasis = geom_->nbasis();
 
   const shared_ptr<Matrix1e> mat0(new Matrix1e(geom_));
   const shared_ptr<Matrix1e> mat1(new Matrix1e(geom_));
   const shared_ptr<Matrix1e> mat2(new Matrix1e(geom_));
 
   // TODO perhaps we could reduce operation by a factor of 2
-  for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
-    const shared_ptr<const Atom> catom0 = atoms[iatom0];
-    const int numshell0 = catom0->shells().size();
-    const vector<int> coffset0 = offsets[iatom0];
-    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
+  auto o0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
+    auto o1 = geom_->offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++o1) {
 
-    for (int iatom1 = 0; iatom1 != natom; ++iatom1) {
-      const shared_ptr<const Atom> catom1 = atoms[iatom1];
-      const int numshell1 = catom1->shells().size();
-      const vector<int> coffset1 = offsets[iatom1];
-      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
+      auto offset0 = o0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
+        auto offset1 = o1->begin();
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
 
-      for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
-        const int offset0 = coffset0[ibatch0]; 
-        shared_ptr<const Shell> b0 = shell0[ibatch0];
-        for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
-          const int offset1 = coffset1[ibatch1]; 
-          shared_ptr<const Shell> b1 = shell1[ibatch1];
-
-          vector<shared_ptr<const Shell> > input = {{b1, b0}};
+          vector<shared_ptr<const Shell> > input = {{*b1, *b0}};
           MomentBatch mom(input);
           mom.compute();
 
-          const int dimb1 = input[0]->nbasis(); 
-          const int dimb0 = input[1]->nbasis(); 
           const double* dat0 = mom.data();
           const double* dat1 = mom.data() + mom.size_block();
           const double* dat2 = mom.data() + mom.size_block()*2;
-          for (int i = offset0; i != dimb0 + offset0; ++i) {
-            for (int j = offset1; j != dimb1 + offset1; ++j, ++dat0, ++dat1, ++dat2) {
+          for (int i = *offset0; i != *offset0 + (*b0)->nbasis(); ++i) {
+            for (int j = *offset1; j != *offset1 + (*b1)->nbasis(); ++j, ++dat0, ++dat1, ++dat2) {
               mat0->element(j,i) = *dat0;
               mat1->element(j,i) = *dat1;
               mat2->element(j,i) = *dat2;
