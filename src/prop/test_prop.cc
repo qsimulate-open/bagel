@@ -61,10 +61,12 @@ static std::array<double,3> hf_svp_dfhf_dipole_ref() {
   return std::array<double,3>{{0.0, 0.0, 1.055510}};
 }
 
+typedef std::array<double,3> ARRAY;
+
 BOOST_AUTO_TEST_SUITE(TEST_PROP)
  
 BOOST_AUTO_TEST_CASE(DIPOLE) {
-    BOOST_CHECK(compare<std::array<double,3> >(dipole("hf_svp_dfhf"),        hf_svp_dfhf_dipole_ref(), 1.0e-6));
+    BOOST_CHECK(compare<ARRAY>(dipole("hf_svp_dfhf"),        hf_svp_dfhf_dipole_ref(), 1.0e-6));
 }
  
 BOOST_AUTO_TEST_SUITE_END()

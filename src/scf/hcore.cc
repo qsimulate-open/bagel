@@ -52,7 +52,7 @@ Hcore::~Hcore() {
 }
 
 
-void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1, const int nbasis) {
+void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -66,10 +66,11 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis + j] = kdata[cnt];
+        data_[i*nbasis_ + j] = kdata[cnt];
       }
     }
   }
+#if 1
   {
     NAIBatch nai(input, geom_);
     nai.compute();
@@ -77,7 +78,7 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis + j] += ndata[cnt];
+        data_[i*nbasis_ + j] += ndata[cnt];
       }
     }
   }
@@ -90,12 +91,13 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis + j] += dip[cnt        ]*geom_->external(0);
-        data_[i*nbasis + j] += dip[cnt+block  ]*geom_->external(1);
-        data_[i*nbasis + j] += dip[cnt+block*2]*geom_->external(2);
+        data_[i*nbasis_ + j] += dip[cnt        ]*geom_->external(0);
+        data_[i*nbasis_ + j] += dip[cnt+block  ]*geom_->external(1);
+        data_[i*nbasis_ + j] += dip[cnt+block*2]*geom_->external(2);
       }
     }
   }
+#endif
 }
 
 

@@ -37,9 +37,9 @@
 using namespace std;
 
 
-void DensityFit::common_init(const vector<shared_ptr<Atom> >& atoms0,  const vector<vector<int> >& offsets0,
-                             const vector<shared_ptr<Atom> >& atoms1,  const vector<vector<int> >& offsets1,
-                             const vector<shared_ptr<Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap, 
+void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  const vector<vector<int> >& offsets0,
+                             const vector<shared_ptr<const Atom> >& atoms1,  const vector<vector<int> >& offsets1,
+                             const vector<shared_ptr<const Atom> >& aux_atoms,  const vector<vector<int> >& aux_offsets, const double throverlap, 
                              const bool compute_inverse) {
 
   // this will be distributed in the future.

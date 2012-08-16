@@ -51,7 +51,7 @@ class Petite {
 
 
   public:
-    Petite(const std::vector<std::shared_ptr<Atom> >&, const std::string);
+    Petite(const std::vector<std::shared_ptr<const Atom> >&, const std::string);
     ~Petite();
 
     std::vector<double> symop(const int i) const { return symop_[i]; };

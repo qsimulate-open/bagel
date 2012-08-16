@@ -137,7 +137,7 @@ template<typename T> class AOInt {
       // initializing shell info
       std::vector<std::shared_ptr<const Shell> > basis; 
       std::vector<int> offset;
-      const std::vector<std::shared_ptr<Atom> > atoms = geom_->atoms(); 
+      const std::vector<std::shared_ptr<const Atom> > atoms = geom_->atoms(); 
       int cnt = 0;
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
         const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
@@ -149,7 +149,7 @@ template<typename T> class AOInt {
       std::vector<std::shared_ptr<const Shell> > basis0; 
       std::vector<int> offset0;
       if (aux0_) {
-        const std::vector<std::shared_ptr<Atom> > atoms = geom_->aux_atoms(); 
+        const std::vector<std::shared_ptr<const Atom> > atoms = geom_->aux_atoms(); 
         cnt = 0;
         for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
           const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
@@ -165,7 +165,7 @@ template<typename T> class AOInt {
       std::vector<std::shared_ptr<const Shell> > basis1;
       std::vector<int> offset1;
       if (aux1_) {
-        const std::vector<std::shared_ptr<Atom> > atoms = geom_->aux_atoms(); 
+        const std::vector<std::shared_ptr<const Atom> > atoms = geom_->aux_atoms(); 
         cnt = 0;
         for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
           const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();

@@ -220,7 +220,7 @@ PMatrix1e PMatrix1e::bft() const {
 
 
 void PMatrix1e::init() {
-  typedef shared_ptr<Atom> RefAtom;
+  typedef shared_ptr<const Atom> RefAtom;
   typedef shared_ptr<const Shell> RefShell;
 
   const std::vector<RefAtom> atoms = geom_->atoms();

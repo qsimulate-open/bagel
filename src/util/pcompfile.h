@@ -140,7 +140,7 @@ PCompFile<T>::PCompFile(std::shared_ptr<PGeometry> gm, const double gam, const b
   file_ = tmp;
 
   { // prepare offset and basis
-    typedef std::shared_ptr<Atom> RefAtom;
+    typedef std::shared_ptr<const Atom> RefAtom;
     typedef std::shared_ptr<const Shell> RefShell;
 
     const std::vector<RefAtom> atoms = geom_->atoms();
@@ -416,7 +416,7 @@ void PCompFile<T>::store_integrals() {
 template<class T>
 void PCompFile<T>::init_schwarz() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<const Atom> RefAtom;
 
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));

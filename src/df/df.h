@@ -57,9 +57,9 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     const double* data() const { return data_.get(); };
     const double* data2() const { return data2_.get(); };
 
-    void common_init(const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
+    void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
 
     // returns a pointer to a stack memory area
     virtual const double* compute_batch(std::vector<std::shared_ptr<const Shell> >&) = 0;

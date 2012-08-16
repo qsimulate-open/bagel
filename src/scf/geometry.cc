@@ -42,7 +42,7 @@
 
 using namespace std;
 
-typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<const Atom> RefAtom;
 
 extern StackMem* stack;
 
@@ -295,8 +295,8 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    }
 
    /* atoms_ and aux_atoms_ can be merged */
-   vector<shared_ptr<Atom> > new_atoms;
-   vector<shared_ptr<Atom> > new_aux_atoms;
+   vector<shared_ptr<const Atom> > new_atoms;
+   vector<shared_ptr<const Atom> > new_aux_atoms;
    for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
       auto iatoms = (*inmer)->atoms();
       auto iaux = (*inmer)->aux_atoms();
@@ -366,7 +366,7 @@ Geometry::~Geometry() {
 }
 
 
-void Geometry::construct_from_atoms(const vector<shared_ptr<Atom> > atoms, const multimap<string, string> geominfo){
+void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom> > atoms, const multimap<string, string> geominfo){
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12); 
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -411,17 +411,18 @@ void Geometry::print_atoms() const {
   cout << "  Symmetry: " << symmetry() << endl;
   cout << endl;
 
-  for (vector<RefAtom>::const_iterator iter = atoms_.begin(); iter != atoms_.end(); ++iter)
-    (*iter)->print();
+  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) (*iter)->print();
   cout << endl;
 
 }
 
 
+#if 0
 int Geometry::num_count_ncore() {
   nfrc_ = num_count_ncore_only();
   return nfrc_;
 }
+#endif
 
 int Geometry::num_count_ncore_only() const {
   int out = 0;

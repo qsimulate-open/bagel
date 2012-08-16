@@ -33,7 +33,7 @@
 
 class Overlap : public Matrix1e {
   protected:
-    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int, const int) override;
+    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int) override;
 
   public:
     Overlap(const std::shared_ptr<const Geometry>);

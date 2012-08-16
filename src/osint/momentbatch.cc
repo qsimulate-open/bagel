@@ -89,7 +89,8 @@ void MomentBatch::compute() {
 
 
 void MomentBatch::perform_VRR(double* intermediate) {
-  const int worksize = amax1_;
+  const int dim = amax1_+1;
+  const int worksize = dim;
   double* worktx = stack->get(worksize * worksize);
   double* workty = stack->get(worksize * worksize);
   double* worktz = stack->get(worksize * worksize);
@@ -113,44 +114,28 @@ void MomentBatch::perform_VRR(double* intermediate) {
     worksy[0] = coeffsy_[ii];
     worksz[0] = coeffsz_[ii];
 
-    worktx[0] = 2*ca*cxpa*worksx[0];
-    workty[0] = 2*ca*cypa*worksy[0];
-    worktz[0] = 2*ca*czpa*worksz[0];
-
-    if (ang0_ + ang1_ > 0) {
-      worksx[1] = cxpa * worksx[0];
-      worksy[1] = cypa * worksy[0];
-      worksz[1] = czpa * worksz[0];
-
-      worktx[1] = cxpa * worktx[0] + mbop * worksx[0];
-      workty[1] = cypa * workty[0] + mbop * worksy[0];
-      worktz[1] = czpa * worktz[0] + mbop * worksz[0];
-
-      for (int i = 2; i != amax1_; ++i) {
-        worksx[i] = cxpa * worksx[i-1] + 0.5 * (i-1) * cop * worksx[i-2];
-        worksy[i] = cypa * worksy[i-1] + 0.5 * (i-1) * cop * worksy[i-2];
-        worksz[i] = czpa * worksz[i-1] + 0.5 * (i-1) * cop * worksz[i-2];
-
-        worktx[i] = cxpa * worktx[i-1] + 0.5 * (i-1) * cop * worktx[i-2] + mbop * worksx[i-1];
-        workty[i] = cypa * workty[i-1] + 0.5 * (i-1) * cop * workty[i-2] + mbop * worksy[i-1];
-        worktz[i] = czpa * worktz[i-1] + 0.5 * (i-1) * cop * worktz[i-2] + mbop * worksz[i-1];
-      }
+    for (int i = 1; i != dim; ++i) {
+      worksx[i] = cxpa * worksx[i-1] + 0.5 * (i-1) * cop * worksx[i-2];
+      worksy[i] = cypa * worksy[i-1] + 0.5 * (i-1) * cop * worksy[i-2];
+      worksz[i] = czpa * worksz[i-1] + 0.5 * (i-1) * cop * worksz[i-2];
     }
 
     // peform HRR to obtain S(1, j)
-    if (ang1_ > 0) {
-      for (int j = 1; j <= ang1_; ++j) { 
-        for (int i = 0; i != amax1_ - j; ++i) {
-          worksx[j * amax1_ + i] = AB_[0] * worksx[(j-1) * amax1_ + i] + worksx[(j-1) * amax1_ + i + 1];
-          worksy[j * amax1_ + i] = AB_[1] * worksy[(j-1) * amax1_ + i] + worksy[(j-1) * amax1_ + i + 1];
-          worksz[j * amax1_ + i] = AB_[2] * worksz[(j-1) * amax1_ + i] + worksz[(j-1) * amax1_ + i + 1];
- 
-          worktx[j * amax1_ + i] = AB_[0] * worktx[(j-1) * amax1_ + i] + worktx[(j-1) * amax1_ + i + 1] + pabop * worksx[(j-1) * amax1_ + i]; 
-          workty[j * amax1_ + i] = AB_[1] * workty[(j-1) * amax1_ + i] + workty[(j-1) * amax1_ + i + 1] + pabop * worksy[(j-1) * amax1_ + i];
-          worktz[j * amax1_ + i] = AB_[2] * worktz[(j-1) * amax1_ + i] + worktz[(j-1) * amax1_ + i + 1] + pabop * worksz[(j-1) * amax1_ + i];
-        }
+    for (int j = 1; j <= ang1_; ++j) { 
+      for (int i = 0; i != dim - j; ++i) {
+        worksx[j * dim + i] = AB_[0] * worksx[(j-1) * dim + i] + worksx[(j-1) * dim + i + 1];
+        worksy[j * dim + i] = AB_[1] * worksy[(j-1) * dim + i] + worksy[(j-1) * dim + i + 1];
+        worksz[j * dim + i] = AB_[2] * worksz[(j-1) * dim + i] + worksz[(j-1) * dim + i + 1];
       }
-    } 
+    }
+
+    for (int j = 0; j <= ang1_; ++j) {
+      for (int i = 0; i <= ang0_; ++i) {
+        worktx[j * dim + i] = 2.0 * ca * worksx[j * dim + i+1] - i * worksx[j * dim + i-1];
+        workty[j * dim + i] = 2.0 * ca * worksy[j * dim + i+1] - i * worksy[j * dim + i-1];
+        worktz[j * dim + i] = 2.0 * ca * worksz[j * dim + i+1] - i * worksz[j * dim + i-1];
+      }
+    }
 
     // now we obtain the output
     const int isize = (ang0_ + 1) * (ang0_ + 2) / 2;
@@ -166,9 +151,14 @@ void MomentBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_ - jz; ++jy) {
               const int jx = ang1_ - jy - jz;
               if (jx >= 0) {
-                current_data[cnt              ] = worktx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worksz[iz + amax1_ * jz]; 
-                current_data[cnt+size_block_  ] = worksx[ix + amax1_ * jx] * workty[iy + amax1_ * jy] * worksz[iz + amax1_ * jz]; 
-                current_data[cnt+size_block_*2] = worksx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worktz[iz + amax1_ * jz]; 
+#if 1
+                current_data[cnt              ] = worktx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz]; 
+                current_data[cnt+size_block_  ] = worksx[ix + dim * jx] * workty[iy + dim * jy] * worksz[iz + dim * jz]; 
+                current_data[cnt+size_block_*2] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worktz[iz + dim * jz]; 
+#else
+                current_data[cnt              ] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz]; 
+                current_data[cnt+size_block_  ] = current_data[cnt+size_block_*2] = 0.0;
+#endif
                 ++cnt;
               }
             }

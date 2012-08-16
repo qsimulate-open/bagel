@@ -54,19 +54,19 @@ void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_p
 
   const int natom = geom_->natom();
 
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
+  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
 
   // TODO perhaps we could reduce operation by a factor of 2
   for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
-    const shared_ptr<Atom> catom0 = atoms[iatom0];
+    const shared_ptr<const Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
     const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int iatom1 = 0; iatom1 != natom; ++iatom1) {
-      const shared_ptr<Atom> catom1 = atoms[iatom1];
+      const shared_ptr<const Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
       const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
@@ -158,25 +158,25 @@ vector<double> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) c
   vector<double> grad(geom_->natom()*3, 0.0);
 
   // loop over atoms (using symmetry b0 <-> b1)
-  vector<shared_ptr<Atom> > aux_atoms = geom_->aux_atoms();
+  vector<shared_ptr<const Atom> > aux_atoms = geom_->aux_atoms();
   vector<vector<int> > aux_offsets = geom_->aux_offsets();
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
+  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
   for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
-    const shared_ptr<Atom> catom0 = atoms[iatom0];
+    const shared_ptr<const Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
     const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
-      const shared_ptr<Atom> catom1 = atoms[iatom1];
+      const shared_ptr<const Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
       const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
 
       for (int iatom2 = 0; iatom2 != geom_->natom(); ++iatom2) {
-        const shared_ptr<Atom> catom2 = aux_atoms[iatom2];
+        const shared_ptr<const Atom> catom2 = aux_atoms[iatom2];
         const int numshell2 = catom2->shells().size();
         const vector<int> coffset2 = aux_offsets[iatom2];
         const vector<shared_ptr<const Shell> > shell2 = catom2->shells();
@@ -244,18 +244,18 @@ vector<double> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>&
   vector<double> grad(geom_->natom()*3, 0.0);
 
   // using symmetry (b0 <-> b1)
-  vector<shared_ptr<Atom> > aux_atoms = geom_->aux_atoms();
+  vector<shared_ptr<const Atom> > aux_atoms = geom_->aux_atoms();
   vector<vector<int> > aux_offsets = geom_->aux_offsets();
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
+  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
   const vector<vector<int> > offsets = geom_->offsets();
 
   for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
-    const shared_ptr<Atom> catom0 = aux_atoms[iatom0];
+    const shared_ptr<const Atom> catom0 = aux_atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = aux_offsets[iatom0];
     const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
     for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
-      const shared_ptr<Atom> catom1 = aux_atoms[iatom1];
+      const shared_ptr<const Atom> catom1 = aux_atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = aux_offsets[iatom1];
       const vector<shared_ptr<const Shell> > shell1 = catom1->shells();

@@ -130,7 +130,7 @@ Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
 *  TODO: Lots of clean up. There are some unused things in here that may be used    *
 *     in future functions.                                                          *
 ************************************************************************************/
-vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
+vector<shared_ptr<const Atom> > Molden::read_geo(const string molden_file) {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
@@ -309,7 +309,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
    *  organized                                                *
    ************************************************************/
 
-   vector<shared_ptr<Atom> > all_atoms;
+   vector<shared_ptr<const Atom> > all_atoms;
 
    /* Assuming the names and positions vectors are in the right order */
    vector<string>::iterator niter = names.begin();
@@ -322,7 +322,7 @@ vector<shared_ptr<Atom> > Molden::read_geo(const string molden_file) {
 
       transform(niter->begin(), niter->end(), niter->begin(), ::tolower);
       /* For each atom, I need to make an atom object and stick it into a vector */
-      shared_ptr<Atom> this_atom(new Atom(is_spherical_, *niter, *piter, binfo));
+      shared_ptr<const Atom> this_atom(new Atom(is_spherical_, *niter, *piter, binfo));
 
       all_atoms.push_back(this_atom);
    }
@@ -569,7 +569,7 @@ void Molden::write_geo(const shared_ptr<const Geometry> geo, const string molden
    m_out << "[Atoms] Angs" << endl;
 
    for(int i = 0; i < num_atoms; ++i) {
-      shared_ptr<Atom> cur_atom = geo->atoms(i);
+      shared_ptr<const Atom> cur_atom = geo->atoms(i);
       
       const string cur_name = cur_atom->name();
       const int cur_number = cur_atom->atom_number();
@@ -605,7 +605,7 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
    }
 
    shared_ptr<const Geometry> geom = ref->geom();
-   vector<shared_ptr<Atom> > atoms = geom->atoms();
+   vector<shared_ptr<const Atom> > atoms = geom->atoms();
 
    is_spherical_ = geom->spherical();
 

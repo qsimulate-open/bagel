@@ -63,8 +63,8 @@ class MixedBasis {
   public:
     MixedBasis(const std::shared_ptr<const Geometry> g0, const std::shared_ptr<const Geometry> g1)
      : nbasis0_(g0->nbasis()), nbasis1_(g1->nbasis()), data_(new double[g0->nbasis()*g1->nbasis()]) {
-      const std::vector<std::shared_ptr<Atom> > atoms0 = g0->atoms();
-      const std::vector<std::shared_ptr<Atom> > atoms1 = g1->atoms();
+      const std::vector<std::shared_ptr<const Atom> > atoms0 = g0->atoms();
+      const std::vector<std::shared_ptr<const Atom> > atoms1 = g1->atoms();
       const std::vector<std::vector<int> > offsets0 = g0->offsets();
       const std::vector<std::vector<int> > offsets1 = g1->offsets();
 

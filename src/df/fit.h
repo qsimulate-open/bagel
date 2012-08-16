@@ -41,8 +41,8 @@ class ERIFit : public DensityFit {
     };
   public:
     ERIFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
+       const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
+       const std::vector<std::shared_ptr<const Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
        const bool inverse, const double gam = 0.0) // gam is dummy
      : DensityFit(nbas, naux) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
@@ -65,8 +65,8 @@ class YukawaFit : public DensityFit {
     };
   public:
     YukawaFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
+       const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
+       const std::vector<std::shared_ptr<const Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
        const bool inverse, const double gam)
      : DensityFit(nbas, naux), gamma_(gam) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
@@ -87,8 +87,8 @@ class SlaterFit : public DensityFit {
     };
   public:
     SlaterFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
-       const std::vector<std::shared_ptr<Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
+       const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
+       const std::vector<std::shared_ptr<const Atom> >& aux_atoms,  const std::vector<std::vector<int> >& aux_offsets, const double thr,
        const bool inverse, const double gam)
      : DensityFit(nbas, naux), gamma_(gam) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);

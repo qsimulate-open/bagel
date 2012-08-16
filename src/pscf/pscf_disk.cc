@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <cstring>
 
-typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<const Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
 typedef std::shared_ptr<PGeometry> RefPGeometry;
 typedef std::shared_ptr<PFock> RefPFock;

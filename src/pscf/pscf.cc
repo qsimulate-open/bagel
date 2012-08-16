@@ -36,7 +36,7 @@
 #define MAX_ITER_SCF 200
 #define SCF_THRESH 1.0e-8
 
-typedef std::shared_ptr<Atom> RefAtom;
+typedef std::shared_ptr<const Atom> RefAtom;
 typedef std::shared_ptr<const Shell> RefShell;
 typedef std::shared_ptr<PGeometry> RefPGeometry;
 typedef std::shared_ptr<PFock> RefPFock;

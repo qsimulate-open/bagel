@@ -96,7 +96,7 @@ Fock_base::~Fock_base() {
 }
 
 
-void Fock_base::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1, const int ndim) {
+void Fock_base::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -105,7 +105,7 @@ void Fock_base::computebatch(const vector<RefShell>& input, const int offsetb0, 
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i * ndim + j] = 0.0; 
+      data_[i * nbasis_ + j] = 0.0; 
     }
   }
 }

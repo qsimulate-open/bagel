@@ -52,7 +52,7 @@ class Molden {
       Molden(bool is_spherical = true);
       
       /* Read functions */
-      std::vector<std::shared_ptr<Atom> > read_geo(std::string in_file);
+      std::vector<std::shared_ptr<const Atom> > read_geo(std::string in_file);
       std::shared_ptr<const Coeff> read_mos(std::shared_ptr<const Geometry>, std::string in_file);
 
       /* Write functions */

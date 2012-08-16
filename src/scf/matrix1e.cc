@@ -57,7 +57,7 @@ Matrix1e::Matrix1e(const Matrix1e& o)
 
 void Matrix1e::init() {
 
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms();
+  const vector<shared_ptr<const Atom> > atoms = geom_->atoms();
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
 
@@ -77,7 +77,7 @@ void Matrix1e::init() {
         const shared_ptr<const Shell> b1 = shell0[ibatch1];
         vector<shared_ptr<const Shell> > input = {b1, b0};
 
-        computebatch(input, offset0, offset1, nbasis);
+        computebatch(input, offset0, offset1);
       }
     }
 
@@ -95,7 +95,7 @@ void Matrix1e::init() {
           shared_ptr<const Shell> b1 = shell1[ibatch1];
           vector<shared_ptr<const Shell> > input = {{b1, b0}};
 
-          computebatch(input, offset0, offset1, nbasis);
+          computebatch(input, offset0, offset1);
 
         }
       }
@@ -109,7 +109,7 @@ Matrix1e::~Matrix1e() {
 }
 
 
-void Matrix1e::computebatch(const std::vector<shared_ptr<const Shell> >&, const int, const int, const int) {
+void Matrix1e::computebatch(const std::vector<shared_ptr<const Shell> >&, const int, const int) {
   assert(false);
 }
 

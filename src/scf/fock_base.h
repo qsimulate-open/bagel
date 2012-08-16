@@ -37,7 +37,7 @@ class Fock_base : public Matrix1e {
   protected:
     const std::shared_ptr<const Fock_base> previous_;
     const std::shared_ptr<Matrix1e> density_;
-    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int, const int) override;
+    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int) override;
 
     // virtual function that is to be defined in the derived class
     virtual void fock_two_electron_part(std::shared_ptr<const Matrix1e>) = 0;

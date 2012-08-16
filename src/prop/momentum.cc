@@ -43,7 +43,7 @@ Momentum::~Momentum() {
 array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
   const int natom = geom_->natom();
 
-  const vector<shared_ptr<Atom> > atoms = geom_->atoms(); 
+  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
   const vector<vector<int> > offsets = geom_->offsets();
   const int nbasis = geom_->nbasis();
 
@@ -53,13 +53,13 @@ array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
 
   // TODO perhaps we could reduce operation by a factor of 2
   for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
-    const shared_ptr<Atom> catom0 = atoms[iatom0];
+    const shared_ptr<const Atom> catom0 = atoms[iatom0];
     const int numshell0 = catom0->shells().size();
     const vector<int> coffset0 = offsets[iatom0];
     const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
 
     for (int iatom1 = 0; iatom1 != natom; ++iatom1) {
-      const shared_ptr<Atom> catom1 = atoms[iatom1];
+      const shared_ptr<const Atom> catom1 = atoms[iatom1];
       const int numshell1 = catom1->shells().size();
       const vector<int> coffset1 = offsets[iatom1];
       const vector<shared_ptr<const Shell> > shell1 = catom1->shells();

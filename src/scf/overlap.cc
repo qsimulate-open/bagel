@@ -49,7 +49,7 @@ Overlap::~Overlap() {
 }
 
 
-void Overlap::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1, const int ndim) {
+void Overlap::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -62,7 +62,7 @@ void Overlap::computebatch(const vector<RefShell>& input, const int offsetb0, co
   int cnt = 0;
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[i * ndim + j] = odata[cnt];
+      data_[i * nbasis_ + j] = odata[cnt];
     }
   }
 }

@@ -124,7 +124,7 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
  : PCompFile<T>(pg, gam, true, jobname), i_is_cabs_(i_c), j_is_cabs_(j_c), a_is_cabs_(a_c), b_is_cabs_(b_c) {
 
   { // prepare offset and basis
-    typedef std::shared_ptr<Atom> RefAtom;
+    typedef std::shared_ptr<const Atom> RefAtom;
     typedef std::shared_ptr<const Shell> RefShell;
 
     const std::vector<RefAtom> atoms = pg->aux_atoms();
@@ -178,7 +178,7 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
 template<class T>
 void PCompCABSFile<T>::init_schwarz_jb() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<const Atom> RefAtom;
 
   const int size = this->basis_.size(); // the number of shells per unit cell
 
@@ -216,7 +216,7 @@ void PCompCABSFile<T>::init_schwarz_jb() {
 template<class T>
 void PCompCABSFile<T>::init_schwarz_ia() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<const Atom> RefAtom;
 
   schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
 

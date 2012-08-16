@@ -26,13 +26,13 @@
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE Suites
-#include <boost/test/unit_test.hpp>
 
 #include <array>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <src/stackmem.h>
+#include <boost/test/unit_test.hpp>
 StackMem* stack;
 
 static double THRESH = 1.0e-8;
@@ -49,6 +49,8 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/scf/test_scf.cc>
 
+#include <src/prop/test_prop.cc>
+
 #include <src/mp2/test_mp2.cc>
 
 #include <src/casscf/test_casscf.cc>
@@ -56,5 +58,3 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 #include <src/fci/test_fci.cc>
 
 #include <src/opt/test_opt.cc>
-
-//#include <src/prop/test_prop.cc>

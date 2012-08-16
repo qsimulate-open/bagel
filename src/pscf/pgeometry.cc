@@ -127,7 +127,7 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
 
 double PGeometry::compute_pnuclear_repulsion() const {
   double out = 0.0;
-  typedef std::shared_ptr<Atom> RefAtom;
+  typedef std::shared_ptr<const Atom> RefAtom;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const array<double,3> tmp = (*iter)->position();
     const double c = (*iter)->atom_charge();
