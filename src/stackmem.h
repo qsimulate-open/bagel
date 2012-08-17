@@ -30,6 +30,7 @@
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 
 #include <cassert>
+#include <boost/pool/pool.hpp>
 
 class StackMem {
   protected:
@@ -58,6 +59,18 @@ class StackMem {
       pointer_ -= size; 
     };
     
+};
+
+
+class StackMem2 {
+  protected:
+    boost::pool<> data_;
+  public:
+    StackMem2() : data_(sizeof(double)) {};
+
+    double* get(const size_t size) { return (double*)(data_.ordered_malloc(size)); }
+    void release(const size_t size, double* p) { data_.ordered_free(p, size); }
+
 };
 
 

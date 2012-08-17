@@ -34,7 +34,7 @@
 
 using namespace std;
 
-extern StackMem* stack;
+extern StackMem2* stack__;
 
 static const double pisqrt__ = ::sqrt(pi__);
 
@@ -128,7 +128,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
   } else {
     throw logic_error("high-order multipoles and derivatives not implemented yet");
   }
-  stack_save_ = stack->get(size_alloc_);
+  stack_save_ = stack__->get(size_alloc_);
   data_ = stack_save_;
 
   amapping_.resize(amax1_ * amax1_ * amax1_);
@@ -147,6 +147,6 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
 }
 
 OSInt::~OSInt() {
-  stack->release(size_alloc_, stack_save_);
+  stack__->release(size_alloc_, stack_save_);
 }
 
