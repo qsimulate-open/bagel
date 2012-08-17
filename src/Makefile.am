@@ -4,10 +4,10 @@ INTLIBS = scf/libscf.a grad/libgrad.a rysint/librysint.a osint/libosint.a slater
 SUBDIRS = df opt grad mp2 wfn rysint osint scf slater pscf pmp2 util fci casscf smith prop molden dimer
 bin_PROGRAMS = PolyR12
 PolyR12_SOURCES = main.cc
-PolyR12_LDADD = $(INTLIBS) -lboost_regex -lboost_system $(FLIBS)
+PolyR12_LDADD = $(INTLIBS) -lboost_regex $(FLIBS)
 AM_CXXFLAGS=-I$(top_srcdir)
 
 
 check_PROGRAMS = TestSuite
 TestSuite_SOURCES = test_main.cc
-TestSuite_LDADD = $(INTLIBS) -lboost_unit_test_framework -lboost_regex -lboost_system $(FLIBS) 
+TestSuite_LDADD = $(INTLIBS) -lboost_unit_test_framework -lboost_regex $(FLIBS) 
