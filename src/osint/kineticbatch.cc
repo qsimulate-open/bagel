@@ -35,7 +35,7 @@
 
 using namespace std;
 
-extern StackMem* stack;
+extern StackMem2* stack__;
 
 KineticBatch::KineticBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
  : OSInt(_basis) {
@@ -49,10 +49,10 @@ KineticBatch::~KineticBatch() {
 
 void KineticBatch::compute() {
 
-  double* const intermediate_p = stack->get(prim0_ * prim1_ * asize_intermediate_);
+  double* const intermediate_p = stack__->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 
-  double* const intermediate_c = stack->get(cont0_ * cont1_ * asize_intermediate_);
+  double* const intermediate_c = stack__->get(cont0_ * cont1_ * asize_intermediate_);
   fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
   perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c, 
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
@@ -60,32 +60,32 @@ void KineticBatch::compute() {
 
   if (spherical_) {
     struct CarSphList carsphlist;
-    double* const intermediate_i = stack->get(cont0_ * cont1_ * asize_final_);
+    double* const intermediate_i = stack__->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i); 
 
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
-    stack->release(cont0_ * cont1_ * asize_final_, intermediate_i);
+    stack__->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_c, cont1_, cont0_, 1, swap01_);
   }
 
-  stack->release(prim0_*prim1_*asize_intermediate_, intermediate_p);
-  stack->release(cont0_*cont1_*asize_intermediate_, intermediate_c);
+  stack__->release(prim0_*prim1_*asize_intermediate_, intermediate_p);
+  stack__->release(cont0_*cont1_*asize_intermediate_, intermediate_c);
 }
 
 
 void KineticBatch::perform_VRR(double* intermediate) {
   const int worksize = amax1_;
-  double* worktx = stack->get(worksize * worksize);
-  double* workty = stack->get(worksize * worksize);
-  double* worktz = stack->get(worksize * worksize);
-  double* worksx = stack->get(worksize * worksize);
-  double* worksy = stack->get(worksize * worksize);
-  double* worksz = stack->get(worksize * worksize);
+  double* worktx = stack__->get(worksize * worksize);
+  double* workty = stack__->get(worksize * worksize);
+  double* worktz = stack__->get(worksize * worksize);
+  double* worksx = stack__->get(worksize * worksize);
+  double* worksy = stack__->get(worksize * worksize);
+  double* worksz = stack__->get(worksize * worksize);
 
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     // Perform VRR
@@ -211,10 +211,10 @@ void KineticBatch::perform_VRR(double* intermediate) {
 
   } // end of prim exponent loop
 
-  stack->release(worksize * worksize, worktx);
-  stack->release(worksize * worksize, workty);
-  stack->release(worksize * worksize, worktz);
-  stack->release(worksize * worksize, worksx);
-  stack->release(worksize * worksize, worksy);
-  stack->release(worksize * worksize, worksz);
+  stack__->release(worksize * worksize, worktx);
+  stack__->release(worksize * worksize, workty);
+  stack__->release(worksize * worksize, worktz);
+  stack__->release(worksize * worksize, worksx);
+  stack__->release(worksize * worksize, worksy);
+  stack__->release(worksize * worksize, worksz);
 }

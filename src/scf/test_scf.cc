@@ -36,7 +36,6 @@ double scf_energy(std::string filename) {
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  stack = new StackMem();
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
@@ -46,7 +45,6 @@ double scf_energy(std::string filename) {
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (iter->first == "df-uhf") {
@@ -54,7 +52,6 @@ double scf_energy(std::string filename) {
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (iter->first == "df-rohf") {
@@ -62,7 +59,6 @@ double scf_energy(std::string filename) {
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (iter->first == "hf") {
@@ -70,7 +66,6 @@ double scf_energy(std::string filename) {
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     }

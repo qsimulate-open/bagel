@@ -31,6 +31,7 @@
 
 #include <cassert>
 #include <boost/pool/pool.hpp>
+#include <boost/pool/pool_alloc.hpp>
 
 class StackMem {
   protected:
@@ -62,16 +63,21 @@ class StackMem {
 };
 
 
+#if 0
 class StackMem2 {
   protected:
+    static const size_t block = 10;
     boost::pool<> data_;
   public:
-    StackMem2() : data_(sizeof(double)) {};
+    StackMem2() : data_(sizeof(double)*(1LU << block)) {};
 
-    double* get(const size_t size) { return (double*)(data_.ordered_malloc(size)); }
-    void release(const size_t size, double* p) { data_.ordered_free(p, size); }
+    double* get(const size_t size) { return (double*)(data_.ordered_malloc(1 + (size >> block))); }
+    void release(const size_t size, double* p) { data_.ordered_free(p); }
 
 };
+#else
+typedef StackMem StackMem2;
+#endif
 
 
 #endif

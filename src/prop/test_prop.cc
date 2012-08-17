@@ -36,7 +36,6 @@ std::array<double,3> dipole(std::string filename) {
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  stack = new StackMem();
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
@@ -48,7 +47,6 @@ std::array<double,3> dipole(std::string filename) {
 
       Dipole dipole(geom, dtot);
       std::array<double,3> d = dipole.compute();
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return d;
     }

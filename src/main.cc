@@ -49,7 +49,11 @@
 
 #include <src/util/constants.h>
 
-StackMem* stack;
+static StackMem a;
+static StackMem2 b;
+
+StackMem* stack = &a;;
+StackMem2* stack__ = &b;;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);
