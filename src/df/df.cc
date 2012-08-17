@@ -33,8 +33,46 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+#include <list>
 
 using namespace std;
+
+class DFIntTask {
+  protected:
+    vector<shared_ptr<const Shell> > shell_;
+    vector<int> offset_;
+
+  public:
+    DFIntTask(vector<shared_ptr<const Shell> > a, vector<int> b) : shell_(a), offset_(b) {};    
+
+    void compute(DensityFit* df) {
+      const double* ppt = df->compute_batch(shell_);
+
+      const size_t nbasis1 = df->nbasis1();
+      const size_t naux = df->naux();
+      // all slot in
+      if (offset_.size() == 3) {
+        double* data = df->data();
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
+            for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
+              data[j2+naux*(j1+nbasis1*j0)] = data[j2+naux*(j0+nbasis1*j1)] = *ppt;
+            }
+          }
+        }
+      } else if (offset_.size() == 2) {
+        double* data = df->data2();
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
+            data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
+          }
+        }
+      } else {
+        assert(false);
+      }
+    };
+
+};
 
 
 void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  const vector<vector<int> >& offsets0,
@@ -85,66 +123,63 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   if (basis0.front()->spherical() ^ basis1.front()->spherical()) throw runtime_error("do not mix spherical to cartesian...");
   const shared_ptr<const Shell> b3(new Shell(basis0.front()->spherical()));
 
-  if (basis0 == basis1) {
-    assert(nbasis0_ == nbasis1_);
-    auto o0 = offset0.begin();
-    for (auto b0 = basis0.begin(); b0 != basis0.end(); ++b0, ++o0) {
-      auto o1 = o0;
-      for (auto b1 = b0; b1 != basis0.end(); ++b1, ++o1) {
-        auto o2 = aux_offset.begin();
-        for (auto b2 = aux_basis.begin(); b2 != aux_basis.end(); ++b2, ++o2) {
-          vector<shared_ptr<const Shell> > input = {{b3, *b2, *b1, *b0}};
-          const double* ppt = compute_batch(input);
-  
-          // all slot in
-          for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0) {  
-            for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1) {  
-              for (int j2 = *o2; j2 != *o2 + (*b2)->nbasis(); ++j2, ++ppt) {  
-                data_[j2+naux_*(j1+nbasis1_*j0)] = data_[j2+naux_*(j0+nbasis1_*j1)] = *ppt;
+  if (atoms0 == atoms1) {
+    // these atom loops will be distributed across nodes
+    // TODO align so that heavy atoms come first
+
+    auto oa0 = offsets0.begin();
+    for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0, ++oa0) {
+      auto oa1 = oa0;
+      for (auto a1 = a0; a1 != atoms0.end(); ++a1, ++oa1) {
+        auto oa2 = aux_offsets.begin(); 
+        for (auto a2 = aux_atoms.begin(); a2 != aux_atoms.end(); ++a2, ++oa2) {
+
+          // make a list of input and offsets
+          list<DFIntTask> tasks;
+          auto o0 = oa0->begin();
+          for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+            auto o1 = a0!=a1 ? oa1->begin() : o0;
+            for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+              auto o2 = oa2->begin();
+              for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
+                tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}));
               }
             }
           }
+                
+          // these shell loops will be distributed across threads 
+          for (auto itask = tasks.begin(); itask != tasks.end(); ++itask)
+            itask->compute(this); 
         }
       }
     }
   } else {
-    auto o0 = offset0.begin();
-    for (auto b0 = basis0.begin(); b0 != basis0.end(); ++b0, ++o0) {
-      auto o1 = offset1.begin();
-      for (auto b1 = basis1.begin(); b1 != basis1.end(); ++b1, ++o1) {
-        auto o2 = aux_offset.begin();
-        for (auto b2 = aux_basis.begin(); b2 != aux_basis.end(); ++b2, ++o2) {
-          vector<shared_ptr<const Shell> > input = {{b3, *b2, *b1, *b0}};
-          const double* ppt = compute_batch(input);
-  
-          // all slot in
-          for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0) {  
-            for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1) {  
-              for (int j2 = *o2; j2 != *o2 + (*b2)->nbasis(); ++j2, ++ppt) {  
-                data_[j2+naux_*(j1+nbasis1_*j0)] = *ppt;
-              }
-            }
-          }
-        }
-      }
-    }
+    throw logic_error("Dual basis DF builder has not been implemented yet. See src/df/df.cc");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
   fill(data2(), data2()+naux_*naux_, 0.0);
 
-  auto o0 = aux_offset.begin();
-  for (auto b0 = aux_basis.begin(); b0 != aux_basis.end(); ++b0, ++o0) {
-    auto o1 = o0;
-    for (auto b1 = b0; b1 != aux_basis.end(); ++b1, ++o1) {
-      vector<shared_ptr<const Shell> > input = {{*b1, b3, *b0, b3}};
+  // will be distributed across nodes
+  auto oa0 = aux_offsets.begin();
+  for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0, ++oa0) {
+    auto oa1 = oa0;
+    for (auto a1 = a0; a1 != aux_atoms.end(); ++a1, ++oa1) {
 
-      // pointer to stack
-      const double* ppt = compute_batch(input);
-      for (int j0 = *o0; j0 != *o0 + (*b0)->nbasis(); ++j0)
-        for (int j1 = *o1; j1 != *o1 + (*b1)->nbasis(); ++j1, ++ppt)
-          data2_[j1+j0*naux_] = data2_[j0+j1*naux_] = *ppt;
+      // make a list of input and offsets
+      list<DFIntTask> tasks;
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = a0!=a1 ? oa1->begin() : o0;
+        for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+          tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}));
+        }
+      }
+
+      // these shell loops will be distributed across threads 
+      for (auto itask = tasks.begin(); itask != tasks.end(); ++itask)
+        itask->compute(this); 
 
     }
   }

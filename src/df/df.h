@@ -39,6 +39,7 @@ class DF_Full;
 
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
+  friend class DFIntTask;
   protected:
     // #orbital basis
     const size_t nbasis0_; // outer
