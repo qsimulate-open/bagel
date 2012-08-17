@@ -152,10 +152,10 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   const int nexp2 = basisinfo_[2]->num_primitive();
   const int nexp3 = basisinfo_[3]->num_primitive();
 
-  double* Ecd_save = stack->get(prim2size_ * prim3size_); 
-  double* qx_save = stack->get(prim2size_ * prim3size_);
-  double* qy_save = stack->get(prim2size_ * prim3size_);
-  double* qz_save = stack->get(prim2size_ * prim3size_);
+  double* const Ecd_save = stack->get(prim2size_ * prim3size_); 
+  double* const qx_save = stack->get(prim2size_ * prim3size_);
+  double* const qy_save = stack->get(prim2size_ * prim3size_);
+  double* const qz_save = stack->get(prim2size_ * prim3size_);
 
   const double minexp0 = *min_element(exp0, exp0+nexp0);
   const double minexp1 = *min_element(exp1, exp1+nexp1);
@@ -179,7 +179,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
   unsigned int tuple_length = 0u;
-  double* tuple_field = stack->get(nexp2*nexp3*3);
+  double* const tuple_field = stack->get(nexp2*nexp3*3);
   int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
   {
     const double cxp_min = minexp0 + minexp1; 
@@ -285,9 +285,11 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
       }
     }
   }
-  stack->release(nexp2*nexp3*3);
-  stack->release(prim2size_*prim3size_*4);
+  stack->release(nexp2*nexp3*3, tuple_field);
+  stack->release(prim2size_*prim3size_, Ecd_save);
+  stack->release(prim2size_*prim3size_, qx_save);
+  stack->release(prim2size_*prim3size_, qy_save);
+  stack->release(prim2size_*prim3size_, qz_save);
 
 }
-
 

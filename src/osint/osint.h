@@ -58,6 +58,8 @@ class OSInt {
     size_t size_alloc_;
     size_t size_block_;
 
+    double* stack_save_;
+
     virtual void perform_VRR(double*) {};
     void perform_contraction(const int, const double*, const int, const int, double*, 
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int, 

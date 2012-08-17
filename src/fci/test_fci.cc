@@ -33,7 +33,7 @@ std::vector<double> fci_energy() {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::shared_ptr<InputData> idata(new InputData("../../test/hf_sto3g_fci2.in"));
-  stack = new StackMem(static_cast<size_t>(1000000LU));
+  stack = new StackMem();
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 

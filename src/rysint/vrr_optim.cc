@@ -1526,7 +1526,9 @@ void ERIBatch::perform_VRR3() {
 
     }
 
-    stack->release(worksize*3);
+    stack->release(worksize, workx);
+    stack->release(worksize, worky);
+    stack->release(worksize, workz);
   }
 }
 

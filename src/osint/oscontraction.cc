@@ -40,7 +40,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
                                        const vector<vector<double> >& coeff1, const vector<pair<int, int> >& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
-  double* work = stack->get(worksize);
+  double* const work = stack->get(worksize);
   fill(cont, cont+asize*pdim0*pdim1, 0.0);
 
   for (int i = 0; i != cdim0; ++i) {
@@ -58,7 +58,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
       }
     }
   }
-  stack->release(worksize);
+  stack->release(worksize, work);
 }
 
 

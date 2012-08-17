@@ -41,7 +41,8 @@ static CarSphList carsphlist;
 void ERIBatch::compute() {
   bool swapped = false;
 
-  bkup_ = stack->get(size_alloc_);
+  double* const stack_save = stack->get(size_alloc_);
+  bkup_ = stack_save;
   fill(data_, data_ + size_alloc_, 0.0);
 
   // perform VRR
@@ -211,7 +212,7 @@ void ERIBatch::compute() {
   
   if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
 
-  stack->release(size_alloc_);
+  stack->release(size_alloc_, stack_save);
 }
 
 

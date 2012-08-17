@@ -281,8 +281,8 @@ void SlaterBatch::compute() {
       dcopy_(&size, bkup2_, &unit, data2_, &unit); 
   }
 
-  stack->release(size_alloc_);
-  if (yukawa_) stack->release(size_alloc_);
+  stack->release(size_alloc_, bkup_);
+  if (yukawa_) stack->release(size_alloc_, bkup2_);
 }
 
 

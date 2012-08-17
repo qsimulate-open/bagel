@@ -41,7 +41,7 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int worksize = nsize * pdim1; 
-  double* work = stack->get(worksize);
+  double* const work = stack->get(worksize);
   double* current_cont = cont;
 
   for (int i = 0; i != cdim0; ++i) {
@@ -60,7 +60,7 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
     }
   }
 
-  stack->release(worksize);
+  stack->release(worksize, work);
 }
 
 
@@ -68,7 +68,7 @@ void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 
                        const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int worksize = pdim1 * ac;
-  double* work = stack->get(worksize);
+  double* const work = stack->get(worksize);
   double* current_cont = cont;
 
   for (int n = 0; n != nsize; ++n) { // loop of cdim * cdim
@@ -92,7 +92,7 @@ void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const 
       }
     }
   } 
-  stack->release(worksize);
+  stack->release(worksize, work);
 }
 
 
@@ -101,7 +101,7 @@ void RysInt::perform_contraction(const int asize, const double* prim, const int 
                                  const vector<vector<double> >& coeff1, const vector<pair<int, int> >& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
-  double* work = stack->get(worksize);
+  double* const work = stack->get(worksize);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
@@ -119,7 +119,7 @@ void RysInt::perform_contraction(const int asize, const double* prim, const int 
       }
     }
   }
-  stack->release(worksize);
+  stack->release(worksize, work);
 }
 
 

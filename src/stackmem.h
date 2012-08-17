@@ -38,8 +38,8 @@ class StackMem {
     size_t total_;
 
   public:
-    StackMem(const size_t size) : total_(size) {
-      stack_area_ = new double[size];
+    StackMem() : total_(10000000LU) {
+      stack_area_ = new double[total_];
       pointer_ = 0lu;
     };
 
@@ -54,7 +54,7 @@ class StackMem {
       return out;
     };
 
-    void release(const size_t size) {
+    void release(const size_t size, double* p) {
       pointer_ -= size; 
     };
     

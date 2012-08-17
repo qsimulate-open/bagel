@@ -75,6 +75,8 @@ void OverlapBatch::perform_VRR(double* intermediate) {
 
   } // end of primsize loop
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 

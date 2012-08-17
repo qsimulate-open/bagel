@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   #endif
 
 #if 0
-  stack = new StackMem(static_cast<size_t>(100000000));
+  stack = new StackMem();
   test_mp2f12();
   abort();
 #endif
@@ -84,20 +84,7 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<InputData> idata(new InputData(input));
 
-    { // stack - TODO now read from the first molecule block
-      std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
-      double size = 1.0e6;
-      auto iter = geominfo.find("stack");
-      if (iter != geominfo.end()) {
-        std::string p = iter->second;
-        if (p.find("m") != std::string::npos)
-          size = 1.0e6*boost::lexical_cast<int>(p.erase(p.size()-1));
-        else if (p.find("g") != std::string::npos)
-          size = 1.0e9*boost::lexical_cast<int>(p.erase(p.size()-1));
-      }
-      stack = new StackMem(static_cast<size_t>(size));
-      cout << "  Stack memory of " << std::setprecision(2) << std::fixed << size*8.0e-6 << " MB allocated" << endl << endl; 
-    }
+    stack = new StackMem();
 
     bool scf_done = false;
     bool casscf_done = false;

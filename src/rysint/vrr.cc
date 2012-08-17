@@ -8,7 +8,7 @@
 //
 // This file is part of the Newint package (to be renamed).
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The Newint package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -22,7 +22,6 @@
 // along with the Newint package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-
 
 #include <src/rysint/eribatch.h>
 #include <src/rysint/int2d.h>
@@ -43,9 +42,9 @@ void ERIBatch::perform_VRR4() {
   const int worksize = 4 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[4];
 
   const int acsize = asize_ * csize_;
@@ -62,7 +61,7 @@ void ERIBatch::perform_VRR4() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -116,7 +115,10 @@ void ERIBatch::perform_VRR4() {
     }
 
   }
-  stack->release(worksize*3);
+
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -125,9 +127,9 @@ void ERIBatch::perform_VRR5() {
   const int worksize = 5 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[5];
 
   const int acsize = asize_ * csize_;
@@ -144,7 +146,7 @@ void ERIBatch::perform_VRR5() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -201,7 +203,9 @@ void ERIBatch::perform_VRR5() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -210,9 +214,9 @@ void ERIBatch::perform_VRR6() {
   const int worksize = 6 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[6];
 
   const int acsize = asize_ * csize_;
@@ -229,7 +233,7 @@ void ERIBatch::perform_VRR6() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -288,7 +292,9 @@ void ERIBatch::perform_VRR6() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -297,9 +303,9 @@ void ERIBatch::perform_VRR7() {
   const int worksize = 7 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[7];
 
   const int acsize = asize_ * csize_;
@@ -316,7 +322,7 @@ void ERIBatch::perform_VRR7() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -377,7 +383,9 @@ void ERIBatch::perform_VRR7() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -386,9 +394,9 @@ void ERIBatch::perform_VRR8() {
   const int worksize = 8 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[8];
 
   const int acsize = asize_ * csize_;
@@ -405,7 +413,7 @@ void ERIBatch::perform_VRR8() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -468,7 +476,9 @@ void ERIBatch::perform_VRR8() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -477,9 +487,9 @@ void ERIBatch::perform_VRR9() {
   const int worksize = 9 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[9];
 
   const int acsize = asize_ * csize_;
@@ -496,7 +506,7 @@ void ERIBatch::perform_VRR9() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -561,7 +571,9 @@ void ERIBatch::perform_VRR9() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -570,9 +582,9 @@ void ERIBatch::perform_VRR10() {
   const int worksize = 10 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[10];
 
   const int acsize = asize_ * csize_;
@@ -589,7 +601,7 @@ void ERIBatch::perform_VRR10() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -656,7 +668,9 @@ void ERIBatch::perform_VRR10() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -665,9 +679,9 @@ void ERIBatch::perform_VRR11() {
   const int worksize = 11 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[11];
 
   const int acsize = asize_ * csize_;
@@ -684,7 +698,7 @@ void ERIBatch::perform_VRR11() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -753,7 +767,9 @@ void ERIBatch::perform_VRR11() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -762,9 +778,9 @@ void ERIBatch::perform_VRR12() {
   const int worksize = 12 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[12];
 
   const int acsize = asize_ * csize_;
@@ -781,7 +797,7 @@ void ERIBatch::perform_VRR12() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -852,7 +868,9 @@ void ERIBatch::perform_VRR12() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 
@@ -861,9 +879,9 @@ void ERIBatch::perform_VRR13() {
   const int worksize = 13 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* workx = stack->get(worksize*3);
-  double* worky = workx + worksize; 
-  double* workz = worky + worksize; 
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[13];
 
   const int acsize = asize_ * csize_;
@@ -880,7 +898,7 @@ void ERIBatch::perform_VRR13() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
+    int ii = screening_[j];
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
 
@@ -953,7 +971,9 @@ void ERIBatch::perform_VRR13() {
 
   }
 
-  stack->release(worksize*3);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 

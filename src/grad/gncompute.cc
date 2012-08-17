@@ -35,7 +35,6 @@ static Comb comb;
 
 void GNAIBatch::compute() {
 
-  double* const stack_save = stack->get(0);
   fill(data_, data_ + size_alloc_, 0.0);
 
   // temp are for VRR
@@ -61,9 +60,9 @@ void GNAIBatch::compute() {
   const int b2 = b+2;
   assert(a+b+1 == amax_); 
 
-  double* transx = stack->get((amax_+1)*a2*b2);
-  double* transy = stack->get((amax_+1)*a2*b2);
-  double* transz = stack->get((amax_+1)*a2*b2);
+  double* const transx = stack->get((amax_+1)*a2*b2);
+  double* const transy = stack->get((amax_+1)*a2*b2);
+  double* const transz = stack->get((amax_+1)*a2*b2);
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
@@ -77,18 +76,18 @@ void GNAIBatch::compute() {
       }
     }
   }
-  double* bufx = stack->get(rank_*a2*b2);
-  double* bufy = stack->get(rank_*a2*b2);
-  double* bufz = stack->get(rank_*a2*b2);
-  double* bufx_a = stack->get(rank_*a2*b2);
-  double* bufx_b = stack->get(rank_*a2*b2);
-  double* bufx_c = stack->get(rank_*a2*b2);
-  double* bufy_a = stack->get(rank_*a2*b2);
-  double* bufy_b = stack->get(rank_*a2*b2);
-  double* bufy_c = stack->get(rank_*a2*b2);
-  double* bufz_a = stack->get(rank_*a2*b2);
-  double* bufz_b = stack->get(rank_*a2*b2);
-  double* bufz_c = stack->get(rank_*a2*b2);
+  double* const bufx = stack->get(rank_*a2*b2);
+  double* const bufy = stack->get(rank_*a2*b2);
+  double* const bufz = stack->get(rank_*a2*b2);
+  double* const bufx_a = stack->get(rank_*a2*b2);
+  double* const bufx_b = stack->get(rank_*a2*b2);
+  double* const bufx_c = stack->get(rank_*a2*b2);
+  double* const bufy_a = stack->get(rank_*a2*b2);
+  double* const bufy_b = stack->get(rank_*a2*b2);
+  double* const bufy_c = stack->get(rank_*a2*b2);
+  double* const bufz_a = stack->get(rank_*a2*b2);
+  double* const bufz_b = stack->get(rank_*a2*b2);
+  double* const bufz_c = stack->get(rank_*a2*b2);
 
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   assert(acsize*primsize_ == size_block_);
@@ -221,7 +220,29 @@ void GNAIBatch::compute() {
     }
   }
 
-  bkup_ = stack->get(size_block_);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
+
+  stack->release(rank_*a2*b2, bufx);
+  stack->release(rank_*a2*b2, bufy);
+  stack->release(rank_*a2*b2, bufz);
+  stack->release(rank_*a2*b2, bufx_a);
+  stack->release(rank_*a2*b2, bufx_b);
+  stack->release(rank_*a2*b2, bufx_c);
+  stack->release(rank_*a2*b2, bufy_a);
+  stack->release(rank_*a2*b2, bufy_b);
+  stack->release(rank_*a2*b2, bufy_c);
+  stack->release(rank_*a2*b2, bufz_a);
+  stack->release(rank_*a2*b2, bufz_b);
+  stack->release(rank_*a2*b2, bufz_c);
+
+  stack->release((amax_+1)*a2*b2, transx);
+  stack->release((amax_+1)*a2*b2, transy);
+  stack->release((amax_+1)*a2*b2, transz);
+
+  double* const buf = stack->get(size_block_);
+  bkup_ = buf;
   double* cdata = data_;
   for (int i = 0; i != natom_*3; ++i, cdata += size_block_) {
     double* target = bkup_;
@@ -260,11 +281,8 @@ void GNAIBatch::compute() {
     }
   }
 
-  stack->release((amax_+1)*a2*b2*3);
-  stack->release(rank_*a2*b2*12);
-  stack->release(size_block_ + worksize*3);
+  stack->release(size_block_, buf);
 
-  if (stack->get(0) != stack_save) throw logic_error("memory is not completely deallocated in GNAIBatch::vrr()");
 }
 
 

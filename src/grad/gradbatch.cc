@@ -36,7 +36,6 @@
 #include <src/rysint/macros.h>
 #include <src/stackmem.h>
 
-
 using namespace std;
 
 typedef std::shared_ptr<const Shell> RefShell;

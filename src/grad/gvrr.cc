@@ -48,7 +48,6 @@ inline size_t GradBatch::m(int i, int a, int b, int c, int d) {
 }
 
 void GradBatch::perform_VRR() {
-  double* const start = stack->get(0);
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
@@ -80,12 +79,12 @@ void GradBatch::perform_VRR() {
   double* const workx = stack->get(worksize*3);
   double* const worky = workx + worksize; 
   double* const workz = worky + worksize; 
-  double* transx = stack->get((amax_+1)*a2*b2);
-  double* transy = stack->get((amax_+1)*a2*b2);
-  double* transz = stack->get((amax_+1)*a2*b2);
-  double* trans2x = stack->get((cmax_+1)*c2*d2);
-  double* trans2y = stack->get((cmax_+1)*c2*d2);
-  double* trans2z = stack->get((cmax_+1)*c2*d2);
+  double* const transx = stack->get((amax_+1)*a2*b2);
+  double* const transy = stack->get((amax_+1)*a2*b2);
+  double* const transz = stack->get((amax_+1)*a2*b2);
+  double* const trans2x = stack->get((cmax_+1)*c2*d2);
+  double* const trans2y = stack->get((cmax_+1)*c2*d2);
+  double* const trans2z = stack->get((cmax_+1)*c2*d2);
   fill(transx,  transx +(amax_+1)*a2*b2, 0.0);
   fill(transy,  transy +(amax_+1)*a2*b2, 0.0);
   fill(transz,  transz +(amax_+1)*a2*b2, 0.0);
@@ -120,15 +119,15 @@ void GradBatch::perform_VRR() {
   double* const final_xa = stack->get(b2*a2*c2*d2*rank_);
   double* const final_xb = stack->get(b2*a2*c2*d2*rank_);
   double* const final_xc = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_xd = stack->get(b2*a2*c2*d2*rank_);
+//double* const final_xd = stack->get(b2*a2*c2*d2*rank_);
   double* const final_ya = stack->get(b2*a2*c2*d2*rank_);
   double* const final_yb = stack->get(b2*a2*c2*d2*rank_);
   double* const final_yc = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_yd = stack->get(b2*a2*c2*d2*rank_);
+//double* const final_yd = stack->get(b2*a2*c2*d2*rank_);
   double* const final_za = stack->get(b2*a2*c2*d2*rank_);
   double* const final_zb = stack->get(b2*a2*c2*d2*rank_);
   double* const final_zc = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_zd = stack->get(b2*a2*c2*d2*rank_);
+//double* const final_zd = stack->get(b2*a2*c2*d2*rank_);
 
   const int acsize = size_block_ / primsize_;
   assert(acsize == (a+1)*(b+1)*(c+1)*(d+1)*a2*b2*c2*d2/16 && size_block_*12 == size_alloc_);
@@ -260,11 +259,30 @@ void GradBatch::perform_VRR() {
 
   }
 
-  stack->release(a2*b2*c2*d2*rank_ * 15);
-  stack->release(a2*b2*(cmax_+1)*rank_);
-  stack->release((cmax_+1)*c2*d2*3);
-  stack->release((amax_+1)*b2*a2*3);
-  stack->release(worksize*3);
-  // checking memory leaks
-  assert(start == stack->get(0));
+  stack->release((amax_+1)*a2*b2, transx);
+  stack->release((amax_+1)*a2*b2, transy);
+  stack->release((amax_+1)*a2*b2, transz);
+
+  stack->release((cmax_+1)*c2*d2, trans2x);
+  stack->release((cmax_+1)*c2*d2, trans2y);
+  stack->release((cmax_+1)*c2*d2, trans2z);
+
+  stack->release(b2*a2*(cmax_+1)*rank_, intermediate);
+  stack->release(b2*a2*c2*d2*rank_, final_x);
+  stack->release(b2*a2*c2*d2*rank_, final_y);
+  stack->release(b2*a2*c2*d2*rank_, final_z);
+  stack->release(b2*a2*c2*d2*rank_, final_xa);
+  stack->release(b2*a2*c2*d2*rank_, final_xb);
+  stack->release(b2*a2*c2*d2*rank_, final_xc);
+//stack->release(b2*a2*c2*d2*rank_, final_xd);
+  stack->release(b2*a2*c2*d2*rank_, final_ya);
+  stack->release(b2*a2*c2*d2*rank_, final_yb);
+  stack->release(b2*a2*c2*d2*rank_, final_yc);
+//stack->release(b2*a2*c2*d2*rank_, final_yd);
+  stack->release(b2*a2*c2*d2*rank_, final_za);
+  stack->release(b2*a2*c2*d2*rank_, final_zb);
+  stack->release(b2*a2*c2*d2*rank_, final_zc);
+//stack->release(b2*a2*c2*d2*rank_, final_zd);
+
+  stack->release(worksize*3, workx);
 }

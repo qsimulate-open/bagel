@@ -95,6 +95,10 @@ class RysInt {
     void allocate_data(const int, const int, const int, const int);
     size_t size_allocated_;
 
+    // for deallocation
+    double* stack_save_;
+    double* stack_save2_;
+
 
     // contraction
     void perform_contraction_new_outer(const int, const double*, const int, const int, double*,

@@ -37,14 +37,11 @@
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
 #include <src/molden/molden.h>
-#include <src/stackmem.h>
 #include <src/util/constants.h>
 
 using namespace std;
 
 typedef std::shared_ptr<const Atom> RefAtom;
-
-extern StackMem* stack;
 
 static AtomMap atommap_;
 

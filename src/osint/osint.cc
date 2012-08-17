@@ -36,13 +36,11 @@ using namespace std;
 
 extern StackMem* stack;
 
-static double* stack_save;
 static const double pisqrt__ = ::sqrt(pi__);
 
 OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int deriv)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
 
-  stack_save = stack->get(0);
   assert(basis.size() == 2);
 
   ang0_ = basisinfo_[0]->angular_number();
@@ -130,7 +128,8 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
   } else {
     throw logic_error("high-order multipoles and derivatives not implemented yet");
   }
-  data_ = stack->get(size_alloc_);
+  stack_save_ = stack->get(size_alloc_);
+  data_ = stack_save_;
 
   amapping_.resize(amax1_ * amax1_ * amax1_);
   int cnt = 0;
@@ -148,7 +147,6 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
 }
 
 OSInt::~OSInt() {
-  stack->release(size_alloc_);
-  assert(stack->get(0) == stack_save);
+  stack->release(size_alloc_, stack_save_);
 }
 

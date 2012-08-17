@@ -46,13 +46,14 @@ void NAIBatch::compute() {
   const int zeroint = 0;
   const int unit = 1;
 
-  bkup_ = stack->get(size_alloc_);
+  double* const stack_save = stack->get(size_alloc_);
+  bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
   
-  double* workx = stack->get(worksize);
-  double* worky = stack->get(worksize);
-  double* workz = stack->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -161,7 +162,10 @@ void NAIBatch::compute() {
     copy(bkup_, bkup_+size_final_, data_);
   }
 
-  stack->release(size_alloc_ + rank_ * amax1_ * 3);
+  stack->release(size_alloc_, stack_save);
+  stack->release(worksize, workx);
+  stack->release(worksize, worky);
+  stack->release(worksize, workz);
 }
 
 

@@ -48,7 +48,10 @@ RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
 RysInt::~RysInt() {
   // TODO this is a little inconsistent
   // stack should be allocated in the constructor of this class
-  stack->release(size_allocated_ + size_alloc_*(tenno_+1));
+
+  stack->release(size_allocated_, buff_); 
+  stack->release(size_alloc_, stack_save_);
+  if (tenno_) stack->release(size_alloc_, stack_save2_);
 }
 
 
@@ -202,10 +205,11 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_block_ = size_alloc_;
-    data_ = stack->get(size_alloc_);
+    stack_save_ = stack->get(size_alloc_);
     data2_ = NULL;
-    if (tenno_)
-      data2_ = stack->get(size_alloc_);
+    if (tenno_) {
+      stack_save2_ = stack->get(size_alloc_);
+    }
 
   // derivative integrals
   } else if (deriv_rank_ == 1) {
@@ -221,8 +225,11 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     } else {
       throw logic_error("something is strange in RysInt::allocate_data");
     }
-    data_ = stack->get(size_alloc_);
+    stack_save_ = stack->get(size_alloc_);
+    stack_save2_ = NULL;
   }
+  data_ = stack_save_;
+  data2_ = stack_save2_; 
 }
 
 
