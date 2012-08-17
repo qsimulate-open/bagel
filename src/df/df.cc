@@ -25,6 +25,7 @@
 
 
 #include <memory>
+#include <src/util/taskqueue.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
 #include <src/df/df.h>
@@ -37,6 +38,7 @@
 
 using namespace std;
 
+
 class DFIntTask {
   protected:
     vector<shared_ptr<const Shell> > shell_;
@@ -44,6 +46,7 @@ class DFIntTask {
 
   public:
     DFIntTask(vector<shared_ptr<const Shell> > a, vector<int> b) : shell_(a), offset_(b) {};    
+    DFIntTask() {};
 
     void compute(DensityFit* df) {
       const double* ppt = df->compute_batch(shell_);
@@ -71,7 +74,6 @@ class DFIntTask {
         assert(false);
       }
     };
-
 };
 
 
@@ -84,44 +86,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   data_ = unique_ptr<double[]>(new double[nbasis0_*nbasis1_*naux_]);
   fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
 
-  // info for basis 0
-  vector<shared_ptr<const Shell> > basis0;
-  vector<int> offset0;
-  int cnt = 0;
-  for (auto aiter = atoms0.begin(); aiter != atoms0.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
-    basis0.insert(basis0.end(), tmp.begin(), tmp.end());  
-    const vector<int> tmpoff = offsets0[cnt]; 
-    offset0.insert(offset0.end(), tmpoff.begin(), tmpoff.end());
-  }
-  const int size0 = basis0.size();
-
-  // info for basis 1
-  vector<shared_ptr<const Shell> > basis1;
-  vector<int> offset1;
-  cnt = 0;
-  for (auto aiter = atoms1.begin(); aiter != atoms1.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
-    basis1.insert(basis1.end(), tmp.begin(), tmp.end());  
-    const vector<int> tmpoff = offsets1[cnt]; 
-    offset1.insert(offset1.end(), tmpoff.begin(), tmpoff.end());
-  }
-  const int size1 = basis1.size();
-
-  // some info for auxiliary (i.e., DF) basis set
-  vector<shared_ptr<const Shell> > aux_basis; 
-  vector<int> aux_offset;
-  cnt = 0;
-  for (auto aiter = aux_atoms.begin(); aiter != aux_atoms.end(); ++aiter, ++cnt) {
-    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
-    aux_basis.insert(aux_basis.end(), tmp.begin(), tmp.end());  
-    const vector<int> tmpoff = aux_offsets[cnt]; 
-    aux_offset.insert(aux_offset.end(), tmpoff.begin(), tmpoff.end());
-  }
-  const int aux_size = aux_basis.size();
-
-  if (basis0.front()->spherical() ^ basis1.front()->spherical()) throw runtime_error("do not mix spherical to cartesian...");
-  const shared_ptr<const Shell> b3(new Shell(basis0.front()->spherical()));
+  const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
 
   if (atoms0 == atoms1) {
     // these atom loops will be distributed across nodes
@@ -148,8 +113,12 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
           }
                 
           // these shell loops will be distributed across threads 
-          for (auto itask = tasks.begin(); itask != tasks.end(); ++itask)
-            itask->compute(this); 
+          TaskQueue<DFIntTask> tq(tasks);
+          while (1) {
+            pair<DFIntTask, bool> ct = tq.next();
+            if (!ct.second) break;
+            ct.first.compute(this);
+          }
         }
       }
     }
