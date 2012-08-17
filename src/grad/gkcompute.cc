@@ -182,18 +182,24 @@ void GKineticBatch::compute() {
 
   } // end of primsize loop
 
-  stack->release((amax_+1)*a2*b2, transx);
-  stack->release((amax_+1)*a2*b2, transy);
-  stack->release((amax_+1)*a2*b2, transz);
-  stack->release(a2*b2, bufx);
-  stack->release(a2*b2, bufy);
-  stack->release(a2*b2, bufz);
-  stack->release(a2*b2*deriv_rank_, bufx_a);
-  stack->release(a2*b2*deriv_rank_, bufx_b);
-  stack->release(a2*b2*deriv_rank_, bufy_a);
-  stack->release(a2*b2*deriv_rank_, bufy_b);
-  stack->release(a2*b2*deriv_rank_, bufz_a);
   stack->release(a2*b2*deriv_rank_, bufz_b);
+  stack->release(a2*b2*deriv_rank_, bufz_a);
+  stack->release(a2*b2*deriv_rank_, bufy_b);
+  stack->release(a2*b2*deriv_rank_, bufy_a);
+  stack->release(a2*b2*deriv_rank_, bufx_b);
+  stack->release(a2*b2*deriv_rank_, bufx_a);
+
+  stack->release(a2*b2, bufz);
+  stack->release(a2*b2, bufy);
+  stack->release(a2*b2, bufx);
+
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
+
+  stack->release((amax_+1)*a2*b2, transz);
+  stack->release((amax_+1)*a2*b2, transy);
+  stack->release((amax_+1)*a2*b2, transx);
 
   double* const bkup = stack->get(acpsize);
   double* cdata = data_;

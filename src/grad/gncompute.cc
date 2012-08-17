@@ -220,26 +220,26 @@ void GNAIBatch::compute() {
     }
   }
 
-  stack->release(worksize, workx);
-  stack->release(worksize, worky);
-  stack->release(worksize, workz);
-
-  stack->release(rank_*a2*b2, bufx);
-  stack->release(rank_*a2*b2, bufy);
-  stack->release(rank_*a2*b2, bufz);
-  stack->release(rank_*a2*b2, bufx_a);
-  stack->release(rank_*a2*b2, bufx_b);
-  stack->release(rank_*a2*b2, bufx_c);
-  stack->release(rank_*a2*b2, bufy_a);
-  stack->release(rank_*a2*b2, bufy_b);
-  stack->release(rank_*a2*b2, bufy_c);
-  stack->release(rank_*a2*b2, bufz_a);
-  stack->release(rank_*a2*b2, bufz_b);
   stack->release(rank_*a2*b2, bufz_c);
+  stack->release(rank_*a2*b2, bufz_b);
+  stack->release(rank_*a2*b2, bufz_a);
+  stack->release(rank_*a2*b2, bufy_c);
+  stack->release(rank_*a2*b2, bufy_b);
+  stack->release(rank_*a2*b2, bufy_a);
+  stack->release(rank_*a2*b2, bufx_c);
+  stack->release(rank_*a2*b2, bufx_b);
+  stack->release(rank_*a2*b2, bufx_a);
+  stack->release(rank_*a2*b2, bufz);
+  stack->release(rank_*a2*b2, bufy);
+  stack->release(rank_*a2*b2, bufx);
 
-  stack->release((amax_+1)*a2*b2, transx);
-  stack->release((amax_+1)*a2*b2, transy);
   stack->release((amax_+1)*a2*b2, transz);
+  stack->release((amax_+1)*a2*b2, transy);
+  stack->release((amax_+1)*a2*b2, transx);
+
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 
   double* const buf = stack->get(size_block_);
   bkup_ = buf;

@@ -259,30 +259,31 @@ void GradBatch::perform_VRR() {
 
   }
 
-  stack->release((amax_+1)*a2*b2, transx);
-  stack->release((amax_+1)*a2*b2, transy);
-  stack->release((amax_+1)*a2*b2, transz);
-
-  stack->release((cmax_+1)*c2*d2, trans2x);
-  stack->release((cmax_+1)*c2*d2, trans2y);
-  stack->release((cmax_+1)*c2*d2, trans2z);
+//stack->release(b2*a2*c2*d2*rank_, final_zd);
+  stack->release(b2*a2*c2*d2*rank_, final_zc);
+  stack->release(b2*a2*c2*d2*rank_, final_zb);
+  stack->release(b2*a2*c2*d2*rank_, final_za);
+//stack->release(b2*a2*c2*d2*rank_, final_yd);
+  stack->release(b2*a2*c2*d2*rank_, final_yc);
+  stack->release(b2*a2*c2*d2*rank_, final_yb);
+  stack->release(b2*a2*c2*d2*rank_, final_ya);
+//stack->release(b2*a2*c2*d2*rank_, final_xd);
+  stack->release(b2*a2*c2*d2*rank_, final_xc);
+  stack->release(b2*a2*c2*d2*rank_, final_xb);
+  stack->release(b2*a2*c2*d2*rank_, final_xa);
+  stack->release(b2*a2*c2*d2*rank_, final_z);
+  stack->release(b2*a2*c2*d2*rank_, final_y);
+  stack->release(b2*a2*c2*d2*rank_, final_x);
 
   stack->release(b2*a2*(cmax_+1)*rank_, intermediate);
-  stack->release(b2*a2*c2*d2*rank_, final_x);
-  stack->release(b2*a2*c2*d2*rank_, final_y);
-  stack->release(b2*a2*c2*d2*rank_, final_z);
-  stack->release(b2*a2*c2*d2*rank_, final_xa);
-  stack->release(b2*a2*c2*d2*rank_, final_xb);
-  stack->release(b2*a2*c2*d2*rank_, final_xc);
-//stack->release(b2*a2*c2*d2*rank_, final_xd);
-  stack->release(b2*a2*c2*d2*rank_, final_ya);
-  stack->release(b2*a2*c2*d2*rank_, final_yb);
-  stack->release(b2*a2*c2*d2*rank_, final_yc);
-//stack->release(b2*a2*c2*d2*rank_, final_yd);
-  stack->release(b2*a2*c2*d2*rank_, final_za);
-  stack->release(b2*a2*c2*d2*rank_, final_zb);
-  stack->release(b2*a2*c2*d2*rank_, final_zc);
-//stack->release(b2*a2*c2*d2*rank_, final_zd);
+
+  stack->release((cmax_+1)*c2*d2, trans2z);
+  stack->release((cmax_+1)*c2*d2, trans2y);
+  stack->release((cmax_+1)*c2*d2, trans2x);
+
+  stack->release((amax_+1)*a2*b2, transz);
+  stack->release((amax_+1)*a2*b2, transy);
+  stack->release((amax_+1)*a2*b2, transx);
 
   stack->release(worksize*3, workx);
 }
