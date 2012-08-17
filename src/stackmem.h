@@ -30,54 +30,32 @@
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 
 #include <cassert>
-#include <boost/pool/pool.hpp>
-#include <boost/pool/pool_alloc.hpp>
+#include <memory>
 
 class StackMem {
   protected:
-    double* stack_area_;
+    std::unique_ptr<double[]> stack_area_;
     size_t pointer_;
-    size_t total_;
+    const size_t total_;
 
   public:
-    StackMem() : total_(10000000LU) {
-      stack_area_ = new double[total_];
-      pointer_ = 0lu;
+    StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
+      stack_area_ = std::unique_ptr<double[]>(new double[total_]);
     };
-
-    ~StackMem() {
-      delete[] stack_area_;
-    }
 
     double* get(const size_t size) {
       assert(pointer_+size < total_);
-      double* out = stack_area_ + pointer_;
-      pointer_ += size; 
+      double* out = stack_area_.get() + pointer_;
+      pointer_ += size;
       return out;
     };
 
     void release(const size_t size, double* p) {
       pointer_ -= size; 
+      assert(p == stack_area_.get()+pointer_);
     };
     
 };
-
-
-#if 0
-class StackMem2 {
-  protected:
-    static const size_t block = 10;
-    boost::pool<> data_;
-  public:
-    StackMem2() : data_(sizeof(double)*(1LU << block)) {};
-
-    double* get(const size_t size) { return (double*)(data_.ordered_malloc(1 + (size >> block))); }
-    void release(const size_t size, double* p) { data_.ordered_free(p); }
-
-};
-#else
-typedef StackMem StackMem2;
-#endif
 
 
 #endif

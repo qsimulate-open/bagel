@@ -36,7 +36,7 @@
 
 using namespace std;
 
-extern StackMem2* stack__;
+extern StackMem* stack;
 
 RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
@@ -47,11 +47,11 @@ RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
 
 RysInt::~RysInt() {
   // TODO this is a little inconsistent
-  // stack__ should be allocated in the constructor of this class
+  // stack should be allocated in the constructor of this class
 
-  stack__->release(size_allocated_, buff_); 
-  stack__->release(size_alloc_, stack_save_);
-  if (tenno_) stack__->release(size_alloc_, stack_save2_);
+  stack->release(size_allocated_, buff_); 
+  if (tenno_) stack->release(size_alloc_, stack_save2_);
+  stack->release(size_alloc_, stack_save_);
 }
 
 
@@ -178,7 +178,7 @@ void RysInt::set_ab_cd() {
 void RysInt::allocate_arrays(const size_t ps) {
   size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
-  buff_ = stack__->get(size_allocated_);  // stack__->get(size_alloc_) stack__->get((rank_ * 2 + 10) * ps)
+  buff_ = stack->get(size_allocated_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * ps)
   double* pointer = buff_; 
   screening_ = (int*)pointer;
                     pointer += ps;
@@ -205,10 +205,10 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_block_ = size_alloc_;
-    stack_save_ = stack__->get(size_alloc_);
+    stack_save_ = stack->get(size_alloc_);
     data2_ = NULL;
     if (tenno_) {
-      stack_save2_ = stack__->get(size_alloc_);
+      stack_save2_ = stack->get(size_alloc_);
     }
 
   // derivative integrals
@@ -225,7 +225,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     } else {
       throw logic_error("something is strange in RysInt::allocate_data");
     }
-    stack_save_ = stack__->get(size_alloc_);
+    stack_save_ = stack->get(size_alloc_);
     stack_save2_ = NULL;
   }
   data_ = stack_save_;

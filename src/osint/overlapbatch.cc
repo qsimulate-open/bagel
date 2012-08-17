@@ -84,9 +84,9 @@ void OverlapBatch::compute() {
     sort_.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack->release(prim0_*prim1_*asize_, intermediate_p);
-  stack->release(cont0_*cont1_*asize_, intermediate_c);
   stack->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+  stack->release(cont0_*cont1_*asize_, intermediate_c);
+  stack->release(prim0_*prim1_*asize_, intermediate_p);
 
 }
 

@@ -33,14 +33,14 @@
 
 using namespace std;
 
-extern StackMem2* stack__;
+extern StackMem* stack;
 
 void OSInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                                        const vector<vector<double> >& coeff0, const vector<pair<int, int> >& ranges0, const int cdim0, 
                                        const vector<vector<double> >& coeff1, const vector<pair<int, int> >& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
-  double* const work = stack__->get(worksize);
+  double* const work = stack->get(worksize);
   fill(cont, cont+asize*pdim0*pdim1, 0.0);
 
   for (int i = 0; i != cdim0; ++i) {
@@ -58,7 +58,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
       }
     }
   }
-  stack__->release(worksize, work);
+  stack->release(worksize, work);
 }
 
 

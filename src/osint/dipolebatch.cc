@@ -149,12 +149,12 @@ void DipoleBatch::perform_VRR(double* intermediate) {
 
   } // end of primsize loop
 
-  stack->release(worksize, workx);
-  stack->release(worksize, worky);
-  stack->release(worksize, workz);
-  stack->release(worksize, workxd);
-  stack->release(worksize, workyd);
   stack->release(worksize, workzd);
+  stack->release(worksize, workyd);
+  stack->release(worksize, workxd);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 

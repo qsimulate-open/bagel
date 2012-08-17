@@ -49,11 +49,9 @@
 
 #include <src/util/constants.h>
 
-static StackMem a;
-static StackMem2 b;
 
-StackMem* stack = &a;;
-StackMem2* stack__ = &b;;
+StackMem a;
+StackMem* stack = &a;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);
@@ -87,8 +85,6 @@ int main(int argc, char** argv) {
     const std::string input = argv[1];
 
     std::shared_ptr<InputData> idata(new InputData(input));
-
-    stack = new StackMem();
 
     bool scf_done = false;
     bool casscf_done = false;
@@ -300,8 +296,6 @@ int main(int argc, char** argv) {
     //smith_test(ref);
     /////////////////////////////////////
     //test_solvers(geom);
-
-    delete stack;
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

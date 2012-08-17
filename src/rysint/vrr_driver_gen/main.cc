@@ -149,9 +149,9 @@ out +="\
 \n\
   }\n\
 \n\
-  stack->release(worksize, workx);\n\
-  stack->release(worksize, worky);\n\
   stack->release(worksize, workz);\n\
+  stack->release(worksize, worky);\n\
+  stack->release(worksize, workx);\n\
 }\n\n";
 
 ofs << out << endl;

@@ -35,16 +35,16 @@
 
 using namespace std;
 
-extern StackMem2* stack__;
+extern StackMem* stack;
 
 void ERIBatch::perform_VRR4() {
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = 4 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[4];
 
   const int acsize = asize_ * csize_;
@@ -116,9 +116,9 @@ void ERIBatch::perform_VRR4() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -127,9 +127,9 @@ void ERIBatch::perform_VRR5() {
   const int worksize = 5 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[5];
 
   const int acsize = asize_ * csize_;
@@ -203,9 +203,9 @@ void ERIBatch::perform_VRR5() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -214,9 +214,9 @@ void ERIBatch::perform_VRR6() {
   const int worksize = 6 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[6];
 
   const int acsize = asize_ * csize_;
@@ -292,9 +292,9 @@ void ERIBatch::perform_VRR6() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -303,9 +303,9 @@ void ERIBatch::perform_VRR7() {
   const int worksize = 7 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[7];
 
   const int acsize = asize_ * csize_;
@@ -383,9 +383,9 @@ void ERIBatch::perform_VRR7() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -394,9 +394,9 @@ void ERIBatch::perform_VRR8() {
   const int worksize = 8 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[8];
 
   const int acsize = asize_ * csize_;
@@ -476,9 +476,9 @@ void ERIBatch::perform_VRR8() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -487,9 +487,9 @@ void ERIBatch::perform_VRR9() {
   const int worksize = 9 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[9];
 
   const int acsize = asize_ * csize_;
@@ -571,9 +571,9 @@ void ERIBatch::perform_VRR9() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -582,9 +582,9 @@ void ERIBatch::perform_VRR10() {
   const int worksize = 10 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[10];
 
   const int acsize = asize_ * csize_;
@@ -668,9 +668,9 @@ void ERIBatch::perform_VRR10() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -679,9 +679,9 @@ void ERIBatch::perform_VRR11() {
   const int worksize = 11 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[11];
 
   const int acsize = asize_ * csize_;
@@ -767,9 +767,9 @@ void ERIBatch::perform_VRR11() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -778,9 +778,9 @@ void ERIBatch::perform_VRR12() {
   const int worksize = 12 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[12];
 
   const int acsize = asize_ * csize_;
@@ -868,9 +868,9 @@ void ERIBatch::perform_VRR12() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 
@@ -879,9 +879,9 @@ void ERIBatch::perform_VRR13() {
   const int worksize = 13 * isize;
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;
 
-  double* const workx = stack__->get(worksize);
-  double* const worky = stack__->get(worksize);
-  double* const workz = stack__->get(worksize);
+  double* const workx = stack->get(worksize);
+  double* const worky = stack->get(worksize);
+  double* const workz = stack->get(worksize);
   double iyiz[13];
 
   const int acsize = asize_ * csize_;
@@ -971,9 +971,9 @@ void ERIBatch::perform_VRR13() {
 
   }
 
-  stack__->release(worksize, workx);
-  stack__->release(worksize, worky);
-  stack__->release(worksize, workz);
+  stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
 }
 
 

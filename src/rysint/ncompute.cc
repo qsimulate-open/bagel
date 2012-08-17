@@ -162,10 +162,10 @@ void NAIBatch::compute() {
     copy(bkup_, bkup_+size_final_, data_);
   }
 
-  stack->release(size_alloc_, stack_save);
-  stack->release(worksize, workx);
-  stack->release(worksize, worky);
   stack->release(worksize, workz);
+  stack->release(worksize, worky);
+  stack->release(worksize, workx);
+  stack->release(size_alloc_, stack_save);
 }
 
 

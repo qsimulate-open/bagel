@@ -286,10 +286,10 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
     }
   }
   stack->release(nexp2*nexp3*3, tuple_field);
-  stack->release(prim2size_*prim3size_, Ecd_save);
-  stack->release(prim2size_*prim3size_, qx_save);
-  stack->release(prim2size_*prim3size_, qy_save);
   stack->release(prim2size_*prim3size_, qz_save);
+  stack->release(prim2size_*prim3size_, qy_save);
+  stack->release(prim2size_*prim3size_, qx_save);
+  stack->release(prim2size_*prim3size_, Ecd_save);
 
 }
 
