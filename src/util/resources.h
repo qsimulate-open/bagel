@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <atomic>
+#include <vector>
 
 class StackMem {
   protected:
