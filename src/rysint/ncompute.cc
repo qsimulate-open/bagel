@@ -33,11 +33,9 @@
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
-#include <src/stackmem.h>
 
 using namespace std;
 
-extern StackMem* stack;
 
 typedef std::shared_ptr<Atom> RefAtom;
 
@@ -46,14 +44,14 @@ void NAIBatch::compute() {
   const int zeroint = 0;
   const int unit = 1;
 
-  double* const stack_save = stack->get(size_alloc_);
+  double* const stack_save = stack_->get(size_alloc_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
   
-  double* const workx = stack->get(worksize);
-  double* const worky = stack->get(worksize);
-  double* const workz = stack->get(worksize);
+  double* const workx = stack_->get(worksize);
+  double* const worky = stack_->get(worksize);
+  double* const workz = stack_->get(worksize);
 
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
@@ -162,10 +160,10 @@ void NAIBatch::compute() {
     copy(bkup_, bkup_+size_final_, data_);
   }
 
-  stack->release(worksize, workz);
-  stack->release(worksize, worky);
-  stack->release(worksize, workx);
-  stack->release(size_alloc_, stack_save);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
+  stack_->release(size_alloc_, stack_save);
 }
 
 

@@ -27,19 +27,17 @@
 #include <src/osint/overlapbatch.h>
 #include <iostream>
 #include <iomanip>
-#include <src/stackmem.h>
 
 using namespace std;
 
-extern StackMem* stack;
 
 // private functions
 void OverlapBatch::perform_VRR(double* intermediate) {
 
   const int worksize = amax1_;
-  double* workx = stack->get(worksize);
-  double* worky = stack->get(worksize);
-  double* workz = stack->get(worksize);
+  double* workx = stack_->get(worksize);
+  double* worky = stack_->get(worksize);
+  double* workz = stack_->get(worksize);
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
@@ -75,8 +73,8 @@ void OverlapBatch::perform_VRR(double* intermediate) {
 
   } // end of primsize loop
 
-  stack->release(worksize, workz);
-  stack->release(worksize, worky);
-  stack->release(worksize, workx);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
 }
 

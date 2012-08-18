@@ -26,12 +26,10 @@
 
 #include <src/grad/goverlapbatch.h>
 #include <src/rysint/carsphlist.h>
-#include <src/stackmem.h>
 #include <src/util/comb.h>
 
 using namespace std;
 
-extern StackMem* stack;
 static Comb comb;
 
 void GOverlapBatch::compute() {
@@ -47,9 +45,9 @@ void GOverlapBatch::compute() {
   const size_t acpsize = acsize*prim0_*prim1_;
   assert(size_alloc_ == acpsize*6);
 
-  double* const transx = stack->get((amax_+1)*a2*b2);
-  double* const transy = stack->get((amax_+1)*a2*b2);
-  double* const transz = stack->get((amax_+1)*a2*b2);
+  double* const transx = stack_->get((amax_+1)*a2*b2);
+  double* const transy = stack_->get((amax_+1)*a2*b2);
+  double* const transz = stack_->get((amax_+1)*a2*b2);
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
@@ -64,19 +62,19 @@ void GOverlapBatch::compute() {
     }
   }
   const int worksize = amax_+1;
-  double* const workx = stack->get(worksize);
-  double* const worky = stack->get(worksize);
-  double* const workz = stack->get(worksize);
+  double* const workx = stack_->get(worksize);
+  double* const worky = stack_->get(worksize);
+  double* const workz = stack_->get(worksize);
 
-  double* const bufx = stack->get(a2*b2);
-  double* const bufy = stack->get(a2*b2);
-  double* const bufz = stack->get(a2*b2);
-  double* const bufx_a = stack->get(a2*b2);
-  double* const bufx_b = stack->get(a2*b2);
-  double* const bufy_a = stack->get(a2*b2);
-  double* const bufy_b = stack->get(a2*b2);
-  double* const bufz_a = stack->get(a2*b2);
-  double* const bufz_b = stack->get(a2*b2);
+  double* const bufx = stack_->get(a2*b2);
+  double* const bufy = stack_->get(a2*b2);
+  double* const bufz = stack_->get(a2*b2);
+  double* const bufx_a = stack_->get(a2*b2);
+  double* const bufx_b = stack_->get(a2*b2);
+  double* const bufy_a = stack_->get(a2*b2);
+  double* const bufy_b = stack_->get(a2*b2);
+  double* const bufz_a = stack_->get(a2*b2);
+  double* const bufz_b = stack_->get(a2*b2);
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
@@ -146,25 +144,25 @@ void GOverlapBatch::compute() {
 
   } // end of primsize loop
 
-  stack->release(a2*b2, bufz_b);
-  stack->release(a2*b2, bufz_a);
-  stack->release(a2*b2, bufy_b);
-  stack->release(a2*b2, bufy_a);
-  stack->release(a2*b2, bufx_b);
-  stack->release(a2*b2, bufx_a);
-  stack->release(a2*b2, bufz);
-  stack->release(a2*b2, bufy);
-  stack->release(a2*b2, bufx);
+  stack_->release(a2*b2, bufz_b);
+  stack_->release(a2*b2, bufz_a);
+  stack_->release(a2*b2, bufy_b);
+  stack_->release(a2*b2, bufy_a);
+  stack_->release(a2*b2, bufx_b);
+  stack_->release(a2*b2, bufx_a);
+  stack_->release(a2*b2, bufz);
+  stack_->release(a2*b2, bufy);
+  stack_->release(a2*b2, bufx);
 
-  stack->release(worksize, workz);
-  stack->release(worksize, worky);
-  stack->release(worksize, workx);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
 
-  stack->release((amax_+1)*a2*b2, transz);
-  stack->release((amax_+1)*a2*b2, transy);
-  stack->release((amax_+1)*a2*b2, transx);
+  stack_->release((amax_+1)*a2*b2, transz);
+  stack_->release((amax_+1)*a2*b2, transy);
+  stack_->release((amax_+1)*a2*b2, transx);
 
-  double* const bkup = stack->get(acpsize);
+  double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
   for (int i = 0; i != 6; ++i, cdata += acpsize) {
     // first, contraction.
@@ -195,7 +193,7 @@ void GOverlapBatch::compute() {
     }
   }
 
-  stack->release(acpsize, bkup);
+  stack_->release(acpsize, bkup);
 
 }
 

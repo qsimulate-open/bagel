@@ -28,11 +28,9 @@
 #include <src/rysint/int2d.h>
 #include <iostream>
 #include <iomanip>
-#include <src/stackmem.h>
 
 using namespace std;
 
-extern StackMem* stack;
 
 void ERIBatch::perform_VRR3() {
 
@@ -1467,9 +1465,9 @@ void ERIBatch::perform_VRR3() {
     }
 
   } else {
-    double* workx = stack->get(worksize);
-    double* worky = stack->get(worksize);
-    double* workz = stack->get(worksize);
+    double* workx = stack_->get(worksize);
+    double* worky = stack_->get(worksize);
+    double* workz = stack_->get(worksize);
     double iyiz[3];
 
     for (int j = 0; j != screening_size_; ++j) {
@@ -1526,9 +1524,9 @@ void ERIBatch::perform_VRR3() {
 
     }
 
-    stack->release(worksize, workz);
-    stack->release(worksize, worky);
-    stack->release(worksize, workx);
+    stack_->release(worksize, workz);
+    stack_->release(worksize, worky);
+    stack_->release(worksize, workx);
   }
 }
 

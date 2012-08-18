@@ -29,14 +29,12 @@
 #include <src/rysint/naibatch_base.h>
 #include <src/rysint/f77.h>
 #include <src/util/constants.h>
-#include <src/stackmem.h>
 #include <algorithm>
 #include <cmath>
 
 // same function for NAI below.
 using namespace std;
 
-extern StackMem* stack;
 
 static const double pitwohalf__ = pow(pi__, 2.5); 
 static const double pimhalf__ = 1.0/sqrt(pi__);
@@ -152,10 +150,10 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   const int nexp2 = basisinfo_[2]->num_primitive();
   const int nexp3 = basisinfo_[3]->num_primitive();
 
-  double* const Ecd_save = stack->get(prim2size_ * prim3size_); 
-  double* const qx_save = stack->get(prim2size_ * prim3size_);
-  double* const qy_save = stack->get(prim2size_ * prim3size_);
-  double* const qz_save = stack->get(prim2size_ * prim3size_);
+  double* const Ecd_save = stack_->get(prim2size_ * prim3size_); 
+  double* const qx_save = stack_->get(prim2size_ * prim3size_);
+  double* const qy_save = stack_->get(prim2size_ * prim3size_);
+  double* const qz_save = stack_->get(prim2size_ * prim3size_);
 
   const double minexp0 = *min_element(exp0, exp0+nexp0);
   const double minexp1 = *min_element(exp1, exp1+nexp1);
@@ -179,7 +177,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
   unsigned int tuple_length = 0u;
-  double* const tuple_field = stack->get(nexp2*nexp3*3);
+  double* const tuple_field = stack_->get(nexp2*nexp3*3);
   int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
   {
     const double cxp_min = minexp0 + minexp1; 
@@ -285,11 +283,11 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
       }
     }
   }
-  stack->release(nexp2*nexp3*3, tuple_field);
-  stack->release(prim2size_*prim3size_, qz_save);
-  stack->release(prim2size_*prim3size_, qy_save);
-  stack->release(prim2size_*prim3size_, qx_save);
-  stack->release(prim2size_*prim3size_, Ecd_save);
+  stack_->release(nexp2*nexp3*3, tuple_field);
+  stack_->release(prim2size_*prim3size_, qz_save);
+  stack_->release(prim2size_*prim3size_, qy_save);
+  stack_->release(prim2size_*prim3size_, qx_save);
+  stack_->release(prim2size_*prim3size_, Ecd_save);
 
 }
 

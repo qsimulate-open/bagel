@@ -43,19 +43,20 @@ class DFIntTask {
   protected:
     vector<shared_ptr<const Shell> > shell_;
     vector<int> offset_;
+    DensityFit* df_;
 
   public:
-    DFIntTask(vector<shared_ptr<const Shell> > a, vector<int> b) : shell_(a), offset_(b) {};    
+    DFIntTask(vector<shared_ptr<const Shell> > a, vector<int> b, DensityFit* df) : shell_(a), offset_(b), df_(df) {};    
     DFIntTask() {};
 
-    void compute(DensityFit* df) {
-      const double* ppt = df->compute_batch(shell_);
+    void compute() {
+      const double* ppt = df_->compute_batch(shell_);
 
-      const size_t nbasis1 = df->nbasis1();
-      const size_t naux = df->naux();
+      const size_t nbasis1 = df_->nbasis1();
+      const size_t naux = df_->naux();
       // all slot in
       if (offset_.size() == 3) {
-        double* data = df->data();
+        double* data = df_->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
             for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
@@ -64,7 +65,7 @@ class DFIntTask {
           }
         }
       } else if (offset_.size() == 2) {
-        double* data = df->data2();
+        double* data = df_->data2();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
             data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
@@ -107,18 +108,15 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
             for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
               auto o2 = oa2->begin();
               for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
-                tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}));
+                tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}, this));
               }
             }
           }
                 
           // these shell loops will be distributed across threads 
+          const int num_threads = 2;
           TaskQueue<DFIntTask> tq(tasks);
-          while (1) {
-            pair<DFIntTask, bool> ct = tq.next();
-            if (!ct.second) break;
-            ct.first.compute(this);
-          }
+          tq.compute(num_threads);
         }
       }
     }
@@ -142,13 +140,13 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = a0!=a1 ? oa1->begin() : o0;
         for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-          tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}));
+          tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}, this));
         }
       }
 
       // these shell loops will be distributed across threads 
       for (auto itask = tasks.begin(); itask != tasks.end(); ++itask)
-        itask->compute(this); 
+        itask->compute(); 
 
     }
   }

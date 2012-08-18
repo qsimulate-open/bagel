@@ -23,14 +23,12 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/stackmem.h>
 #include <src/grad/gnaibatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/util/comb.h>
 
 using namespace std;
 
-extern StackMem* stack;
 static Comb comb;
 
 void GNAIBatch::compute() {
@@ -39,9 +37,9 @@ void GNAIBatch::compute() {
 
   // temp are for VRR
   const int worksize = rank_ * amax1_;
-  double* workx = stack->get(worksize);
-  double* worky = stack->get(worksize);
-  double* workz = stack->get(worksize);
+  double* workx = stack_->get(worksize);
+  double* worky = stack_->get(worksize);
+  double* workz = stack_->get(worksize);
   double r1x[RYS_MAX];
   double r1y[RYS_MAX];
   double r1z[RYS_MAX];
@@ -60,9 +58,9 @@ void GNAIBatch::compute() {
   const int b2 = b+2;
   assert(a+b+1 == amax_); 
 
-  double* const transx = stack->get((amax_+1)*a2*b2);
-  double* const transy = stack->get((amax_+1)*a2*b2);
-  double* const transz = stack->get((amax_+1)*a2*b2);
+  double* const transx = stack_->get((amax_+1)*a2*b2);
+  double* const transy = stack_->get((amax_+1)*a2*b2);
+  double* const transz = stack_->get((amax_+1)*a2*b2);
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
@@ -76,18 +74,18 @@ void GNAIBatch::compute() {
       }
     }
   }
-  double* const bufx = stack->get(rank_*a2*b2);
-  double* const bufy = stack->get(rank_*a2*b2);
-  double* const bufz = stack->get(rank_*a2*b2);
-  double* const bufx_a = stack->get(rank_*a2*b2);
-  double* const bufx_b = stack->get(rank_*a2*b2);
-  double* const bufx_c = stack->get(rank_*a2*b2);
-  double* const bufy_a = stack->get(rank_*a2*b2);
-  double* const bufy_b = stack->get(rank_*a2*b2);
-  double* const bufy_c = stack->get(rank_*a2*b2);
-  double* const bufz_a = stack->get(rank_*a2*b2);
-  double* const bufz_b = stack->get(rank_*a2*b2);
-  double* const bufz_c = stack->get(rank_*a2*b2);
+  double* const bufx = stack_->get(rank_*a2*b2);
+  double* const bufy = stack_->get(rank_*a2*b2);
+  double* const bufz = stack_->get(rank_*a2*b2);
+  double* const bufx_a = stack_->get(rank_*a2*b2);
+  double* const bufx_b = stack_->get(rank_*a2*b2);
+  double* const bufx_c = stack_->get(rank_*a2*b2);
+  double* const bufy_a = stack_->get(rank_*a2*b2);
+  double* const bufy_b = stack_->get(rank_*a2*b2);
+  double* const bufy_c = stack_->get(rank_*a2*b2);
+  double* const bufz_a = stack_->get(rank_*a2*b2);
+  double* const bufz_b = stack_->get(rank_*a2*b2);
+  double* const bufz_c = stack_->get(rank_*a2*b2);
 
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   assert(acsize*primsize_ == size_block_);
@@ -220,28 +218,28 @@ void GNAIBatch::compute() {
     }
   }
 
-  stack->release(rank_*a2*b2, bufz_c);
-  stack->release(rank_*a2*b2, bufz_b);
-  stack->release(rank_*a2*b2, bufz_a);
-  stack->release(rank_*a2*b2, bufy_c);
-  stack->release(rank_*a2*b2, bufy_b);
-  stack->release(rank_*a2*b2, bufy_a);
-  stack->release(rank_*a2*b2, bufx_c);
-  stack->release(rank_*a2*b2, bufx_b);
-  stack->release(rank_*a2*b2, bufx_a);
-  stack->release(rank_*a2*b2, bufz);
-  stack->release(rank_*a2*b2, bufy);
-  stack->release(rank_*a2*b2, bufx);
+  stack_->release(rank_*a2*b2, bufz_c);
+  stack_->release(rank_*a2*b2, bufz_b);
+  stack_->release(rank_*a2*b2, bufz_a);
+  stack_->release(rank_*a2*b2, bufy_c);
+  stack_->release(rank_*a2*b2, bufy_b);
+  stack_->release(rank_*a2*b2, bufy_a);
+  stack_->release(rank_*a2*b2, bufx_c);
+  stack_->release(rank_*a2*b2, bufx_b);
+  stack_->release(rank_*a2*b2, bufx_a);
+  stack_->release(rank_*a2*b2, bufz);
+  stack_->release(rank_*a2*b2, bufy);
+  stack_->release(rank_*a2*b2, bufx);
 
-  stack->release((amax_+1)*a2*b2, transz);
-  stack->release((amax_+1)*a2*b2, transy);
-  stack->release((amax_+1)*a2*b2, transx);
+  stack_->release((amax_+1)*a2*b2, transz);
+  stack_->release((amax_+1)*a2*b2, transy);
+  stack_->release((amax_+1)*a2*b2, transx);
 
-  stack->release(worksize, workz);
-  stack->release(worksize, worky);
-  stack->release(worksize, workx);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
 
-  double* const buf = stack->get(size_block_);
+  double* const buf = stack_->get(size_block_);
   bkup_ = buf;
   double* cdata = data_;
   for (int i = 0; i != natom_*3; ++i, cdata += size_block_) {
@@ -281,7 +279,7 @@ void GNAIBatch::compute() {
     }
   }
 
-  stack->release(size_block_, buf);
+  stack_->release(size_block_, buf);
 
 }
 

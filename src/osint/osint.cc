@@ -27,19 +27,17 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
-#include <src/stackmem.h>
 #include <src/osint/osint.h>
 #include <src/grad/goverlapbatch.h>
 #include <src/util/constants.h>
 
 using namespace std;
 
-extern StackMem* stack;
 
 static const double pisqrt__ = ::sqrt(pi__);
 
 OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int deriv)
- : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
+ : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv), stack_(resources__->get()) {
 
   assert(basis.size() == 2);
 
@@ -128,7 +126,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
   } else {
     throw logic_error("high-order multipoles and derivatives not implemented yet");
   }
-  stack_save_ = stack->get(size_alloc_);
+  stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;
 
   amapping_.resize(amax1_ * amax1_ * amax1_);
@@ -147,6 +145,7 @@ OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int 
 }
 
 OSInt::~OSInt() {
-  stack->release(size_alloc_, stack_save_);
+  stack_->release(size_alloc_, stack_save_);
+  resources__->release(stack_);
 }
 

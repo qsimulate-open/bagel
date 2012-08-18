@@ -34,9 +34,8 @@
 #include <src/stackmem.h>
 #include <boost/test/unit_test.hpp>
 
-static StackMem a;
-
-StackMem* stack = &a;
+Resources b(8);
+Resources* resources__ = &b;
 
 static double THRESH = 1.0e-8;
  

@@ -26,7 +26,6 @@
 
 #include <cassert>
 #include <iostream>
-#include <src/stackmem.h>
 #include <src/osint/overlapbatch.h>
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/carsphlist.h>
@@ -36,7 +35,6 @@
 using namespace std;
 
 static HRRList hrr;
-extern StackMem* stack;
 
 OverlapBatch::OverlapBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
  : OSInt(_basis) {
@@ -50,16 +48,16 @@ OverlapBatch::~OverlapBatch() {
 
 void OverlapBatch::compute() {
 
-  double* const intermediate_p = stack->get(prim0_ * prim1_ * asize_);
+  double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
 
-  double* const intermediate_c = stack->get(cont0_ * cont1_ * asize_);
+  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
   fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_, 0.0);
   perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c, 
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-  double* const intermediate_fi = stack->get(cont0_ * cont1_ * asize_intermediate_);
+  double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
 
   if (basisinfo_[1]->angular_number() != 0) { 
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -71,22 +69,22 @@ void OverlapBatch::compute() {
 
   if (spherical_) {
     struct CarSphList carsphlist;
-    double* const intermediate_i = stack->get(cont0_ * cont1_ * asize_final_);
+    double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i); 
 
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
-    stack->release(cont0_ * cont1_ * asize_final_, intermediate_i);
+    stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
-  stack->release(cont0_*cont1_*asize_, intermediate_c);
-  stack->release(prim0_*prim1_*asize_, intermediate_p);
+  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+  stack_->release(cont0_*cont1_*asize_, intermediate_c);
+  stack_->release(prim0_*prim1_*asize_, intermediate_p);
 
 }
 

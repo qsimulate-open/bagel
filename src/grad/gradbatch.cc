@@ -34,14 +34,10 @@
 #include <src/grad/gvrrlist.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/macros.h>
-#include <src/stackmem.h>
 
 using namespace std;
 
 typedef std::shared_ptr<const Shell> RefShell;
-
-// This object lives in main.cc
-extern StackMem* stack;
 
 
 GradBatch::GradBatch(const vector<RefShell>& shells, const double max_density, const double dummy, const bool dum)

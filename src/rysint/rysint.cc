@@ -29,18 +29,16 @@
 #include <cmath>
 #include <algorithm>
 #include <cassert>
-#include <src/stackmem.h>
 #include <stdexcept>
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
 
 using namespace std;
 
-extern StackMem* stack;
-
 RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
-   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
+   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())),
+   stack_(resources__->get()) {
 
 }
 
@@ -49,9 +47,11 @@ RysInt::~RysInt() {
   // TODO this is a little inconsistent
   // stack should be allocated in the constructor of this class
 
-  stack->release(size_allocated_, buff_); 
-  if (tenno_) stack->release(size_alloc_, stack_save2_);
-  stack->release(size_alloc_, stack_save_);
+  stack_->release(size_allocated_, buff_); 
+  if (tenno_) stack_->release(size_alloc_, stack_save2_);
+  stack_->release(size_alloc_, stack_save_);
+
+  resources__->release(stack_);
 }
 
 
@@ -178,7 +178,7 @@ void RysInt::set_ab_cd() {
 void RysInt::allocate_arrays(const size_t ps) {
   size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
-  buff_ = stack->get(size_allocated_);  // stack->get(size_alloc_) stack->get((rank_ * 2 + 10) * ps)
+  buff_ = stack_->get(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
   double* pointer = buff_; 
   screening_ = (int*)pointer;
                     pointer += ps;
@@ -205,10 +205,10 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_block_ = size_alloc_;
-    stack_save_ = stack->get(size_alloc_);
+    stack_save_ = stack_->get(size_alloc_);
     data2_ = NULL;
     if (tenno_) {
-      stack_save2_ = stack->get(size_alloc_);
+      stack_save2_ = stack_->get(size_alloc_);
     }
 
   // derivative integrals
@@ -225,7 +225,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     } else {
       throw logic_error("something is strange in RysInt::allocate_data");
     }
-    stack_save_ = stack->get(size_alloc_);
+    stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = NULL;
   }
   data_ = stack_save_;

@@ -50,8 +50,8 @@
 #include <src/util/constants.h>
 
 
-StackMem a;
-StackMem* stack = &a;
+Resources b(8);
+Resources* resources__ = &b;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);

@@ -32,12 +32,11 @@
 
 using namespace std;
 
-extern StackMem* stack;
 static CarSphList carsphlist;
 
 void GradBatch::compute() {
 
-  double* stack_sav = stack->get(size_block_);
+  double* stack_sav = stack_->get(size_block_);
   bkup_ = stack_sav;
   fill(data_, data_ + size_alloc_, 0.0);
   assert(size_block_*12 == size_alloc_);
@@ -203,6 +202,6 @@ void GradBatch::compute() {
   daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
   daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
 
-  stack->release(size_block_, stack_sav);
+  stack_->release(size_block_, stack_sav);
 }
 

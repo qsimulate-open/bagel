@@ -23,12 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/stackmem.h>
 #include <src/osint/dipolebatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/hrrlist.h>
 
-extern StackMem* stack;
 static HRRList hrr;
 
 using namespace std;
@@ -45,7 +43,7 @@ DipoleBatch::~DipoleBatch() {
 
 void DipoleBatch::compute() {
 
-  double* const intermediate_p = stack->get(prim0_*prim1_*asize_*3);
+  double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*3);
   perform_VRR(intermediate_p);
 
   double* cdata = data_;
@@ -53,13 +51,13 @@ void DipoleBatch::compute() {
   for (int iblock = 0; iblock != 3; ++iblock,
                                     cdata += size_block_, csource += prim0_*prim1_*asize_) {
 
-    double* const intermediate_c = stack->get(cont0_*cont1_*asize_);
+    double* const intermediate_c = stack_->get(cont0_*cont1_*asize_);
     fill(intermediate_c, intermediate_c + cont0_*cont1_*asize_, 0.0);
     perform_contraction(asize_, csource, prim0_, prim1_, intermediate_c, 
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-    double* const intermediate_fi = stack->get(cont0_*cont1_*asize_intermediate_);
+    double* const intermediate_fi = stack_->get(cont0_*cont1_*asize_intermediate_);
 
     if (basisinfo_[1]->angular_number() != 0) { 
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -71,35 +69,35 @@ void DipoleBatch::compute() {
 
     if (spherical_) {
       struct CarSphList carsphlist;
-      double* const intermediate_i = stack->get(cont0_*cont1_*asize_final_);
+      double* const intermediate_i = stack_->get(cont0_*cont1_*asize_final_);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;
       carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i); 
 
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
-      stack->release(cont0_*cont1_*asize_final_, intermediate_i);
+      stack_->release(cont0_*cont1_*asize_final_, intermediate_i);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort_.sortfunc_call(sort_index, cdata, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
 
-    stack->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
-    stack->release(cont0_*cont1_*asize_, intermediate_c);
+    stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+    stack_->release(cont0_*cont1_*asize_, intermediate_c);
   }
 
-  stack->release(prim0_*prim1_*asize_*3, intermediate_p);
+  stack_->release(prim0_*prim1_*asize_*3, intermediate_p);
 }
 
 
 void DipoleBatch::perform_VRR(double* intermediate) {
   const int worksize = amax1_+1;
-  double* const workx = stack->get(worksize);
-  double* const worky = stack->get(worksize);
-  double* const workz = stack->get(worksize);
-  double* const workxd = stack->get(worksize);
-  double* const workyd = stack->get(worksize);
-  double* const workzd = stack->get(worksize);
+  double* const workx = stack_->get(worksize);
+  double* const worky = stack_->get(worksize);
+  double* const workz = stack_->get(worksize);
+  double* const workxd = stack_->get(worksize);
+  double* const workyd = stack_->get(worksize);
+  double* const workzd = stack_->get(worksize);
 
   const double acx = basisinfo_[0]->position(0) - center_[0];
   const double acy = basisinfo_[0]->position(1) - center_[1];
@@ -149,12 +147,12 @@ void DipoleBatch::perform_VRR(double* intermediate) {
 
   } // end of primsize loop
 
-  stack->release(worksize, workzd);
-  stack->release(worksize, workyd);
-  stack->release(worksize, workxd);
-  stack->release(worksize, workz);
-  stack->release(worksize, worky);
-  stack->release(worksize, workx);
+  stack_->release(worksize, workzd);
+  stack_->release(worksize, workyd);
+  stack_->release(worksize, workxd);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
 }
 
 

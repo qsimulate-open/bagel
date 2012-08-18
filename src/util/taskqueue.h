@@ -1,7 +1,28 @@
 //
-// Author : Toru Shiozaki
-// Date   : August 2012
+// Newint - Parallel electron correlation program.
+// Filename: taskqueue.h
+// Copyright (C) 2012 Toru Shiozaki
 //
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the Newint package (to be renamed).
+//
+// The Newint package is free software; you can redistribute it and\/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The Newint package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the Newint package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
 
 #ifndef __SRC_UTIL_TASKQUEUE_H
 #define __SRC_UTIL_TASKQUEUE_H
@@ -26,11 +47,24 @@ class TaskQueue {
       }
     }
 
-    std::pair<T, bool> next() {
+    void compute(const int num_threads = 1) {
+#if 0
+      for (int i = 0; i != num_threads; ++i) {
+        boost::thread thr(boost::bind(&TaskQueue<T>::compute_one_thread, this));
+        thr.join();
+      }
+#else
+      compute_one_thread();
+#endif
+    } 
+
+    void compute_one_thread() {
       auto j = task_.begin();
-      for (auto i = flag_.begin(); i != flag_.end(); ++i, ++j)
-        if (!(*i)->test_and_set()) return std::make_pair(*j, true);
-      return std::make_pair(T(), false);
+      for (auto i = flag_.begin(); i != flag_.end(); ++i, ++j) {
+        if (!(*i)->test_and_set()) {
+          j->compute();
+        }
+      }
     }
 };
 

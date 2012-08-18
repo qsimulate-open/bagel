@@ -33,12 +33,8 @@
 #include <src/rysint/eribatch.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/macros.h>
-#include <src/stackmem.h>
 
 using namespace std;
-
-// This object lives in main.cc
-extern StackMem* stack;
 
 
 ERIBatch::ERIBatch(const vector<shared_ptr<const Shell> >& _info, const double max_density, const double dummy, const bool dum)

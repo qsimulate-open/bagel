@@ -26,7 +26,6 @@
 
 #include <src/grad/gradbatch.h>
 #include <src/rysint/int2d.h>
-#include <src/stackmem.h>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -34,8 +33,6 @@
 #include <src/util/comb.h>
 
 using namespace std;
-
-extern StackMem* stack;
 
 static const Comb comb;
 
@@ -76,15 +73,15 @@ void GradBatch::perform_VRR() {
   const int c2 = c+2;
   const int d2 = d+2;
 
-  double* const workx = stack->get(worksize*3);
+  double* const workx = stack_->get(worksize*3);
   double* const worky = workx + worksize; 
   double* const workz = worky + worksize; 
-  double* const transx = stack->get((amax_+1)*a2*b2);
-  double* const transy = stack->get((amax_+1)*a2*b2);
-  double* const transz = stack->get((amax_+1)*a2*b2);
-  double* const trans2x = stack->get((cmax_+1)*c2*d2);
-  double* const trans2y = stack->get((cmax_+1)*c2*d2);
-  double* const trans2z = stack->get((cmax_+1)*c2*d2);
+  double* const transx = stack_->get((amax_+1)*a2*b2);
+  double* const transy = stack_->get((amax_+1)*a2*b2);
+  double* const transz = stack_->get((amax_+1)*a2*b2);
+  double* const trans2x = stack_->get((cmax_+1)*c2*d2);
+  double* const trans2y = stack_->get((cmax_+1)*c2*d2);
+  double* const trans2z = stack_->get((cmax_+1)*c2*d2);
   fill(transx,  transx +(amax_+1)*a2*b2, 0.0);
   fill(transy,  transy +(amax_+1)*a2*b2, 0.0);
   fill(transz,  transz +(amax_+1)*a2*b2, 0.0);
@@ -112,22 +109,22 @@ void GradBatch::perform_VRR() {
       }
     }
   }
-  double* const intermediate = stack->get(b2*a2*(cmax_+1)*rank_);
-  double* const final_x  = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_y  = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_z  = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_xa = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_xb = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_xc = stack->get(b2*a2*c2*d2*rank_);
-//double* const final_xd = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_ya = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_yb = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_yc = stack->get(b2*a2*c2*d2*rank_);
-//double* const final_yd = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_za = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_zb = stack->get(b2*a2*c2*d2*rank_);
-  double* const final_zc = stack->get(b2*a2*c2*d2*rank_);
-//double* const final_zd = stack->get(b2*a2*c2*d2*rank_);
+  double* const intermediate = stack_->get(b2*a2*(cmax_+1)*rank_);
+  double* const final_x  = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_y  = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_z  = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_xa = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_xb = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_xc = stack_->get(b2*a2*c2*d2*rank_);
+//double* const final_xd = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_ya = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_yb = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_yc = stack_->get(b2*a2*c2*d2*rank_);
+//double* const final_yd = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_za = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_zb = stack_->get(b2*a2*c2*d2*rank_);
+  double* const final_zc = stack_->get(b2*a2*c2*d2*rank_);
+//double* const final_zd = stack_->get(b2*a2*c2*d2*rank_);
 
   const int acsize = size_block_ / primsize_;
   assert(acsize == (a+1)*(b+1)*(c+1)*(d+1)*a2*b2*c2*d2/16 && size_block_*12 == size_alloc_);
@@ -259,31 +256,31 @@ void GradBatch::perform_VRR() {
 
   }
 
-//stack->release(b2*a2*c2*d2*rank_, final_zd);
-  stack->release(b2*a2*c2*d2*rank_, final_zc);
-  stack->release(b2*a2*c2*d2*rank_, final_zb);
-  stack->release(b2*a2*c2*d2*rank_, final_za);
-//stack->release(b2*a2*c2*d2*rank_, final_yd);
-  stack->release(b2*a2*c2*d2*rank_, final_yc);
-  stack->release(b2*a2*c2*d2*rank_, final_yb);
-  stack->release(b2*a2*c2*d2*rank_, final_ya);
-//stack->release(b2*a2*c2*d2*rank_, final_xd);
-  stack->release(b2*a2*c2*d2*rank_, final_xc);
-  stack->release(b2*a2*c2*d2*rank_, final_xb);
-  stack->release(b2*a2*c2*d2*rank_, final_xa);
-  stack->release(b2*a2*c2*d2*rank_, final_z);
-  stack->release(b2*a2*c2*d2*rank_, final_y);
-  stack->release(b2*a2*c2*d2*rank_, final_x);
+//stack_->release(b2*a2*c2*d2*rank_, final_zd);
+  stack_->release(b2*a2*c2*d2*rank_, final_zc);
+  stack_->release(b2*a2*c2*d2*rank_, final_zb);
+  stack_->release(b2*a2*c2*d2*rank_, final_za);
+//stack_->release(b2*a2*c2*d2*rank_, final_yd);
+  stack_->release(b2*a2*c2*d2*rank_, final_yc);
+  stack_->release(b2*a2*c2*d2*rank_, final_yb);
+  stack_->release(b2*a2*c2*d2*rank_, final_ya);
+//stack_->release(b2*a2*c2*d2*rank_, final_xd);
+  stack_->release(b2*a2*c2*d2*rank_, final_xc);
+  stack_->release(b2*a2*c2*d2*rank_, final_xb);
+  stack_->release(b2*a2*c2*d2*rank_, final_xa);
+  stack_->release(b2*a2*c2*d2*rank_, final_z);
+  stack_->release(b2*a2*c2*d2*rank_, final_y);
+  stack_->release(b2*a2*c2*d2*rank_, final_x);
 
-  stack->release(b2*a2*(cmax_+1)*rank_, intermediate);
+  stack_->release(b2*a2*(cmax_+1)*rank_, intermediate);
 
-  stack->release((cmax_+1)*c2*d2, trans2z);
-  stack->release((cmax_+1)*c2*d2, trans2y);
-  stack->release((cmax_+1)*c2*d2, trans2x);
+  stack_->release((cmax_+1)*c2*d2, trans2z);
+  stack_->release((cmax_+1)*c2*d2, trans2y);
+  stack_->release((cmax_+1)*c2*d2, trans2x);
 
-  stack->release((amax_+1)*a2*b2, transz);
-  stack->release((amax_+1)*a2*b2, transy);
-  stack->release((amax_+1)*a2*b2, transx);
+  stack_->release((amax_+1)*a2*b2, transz);
+  stack_->release((amax_+1)*a2*b2, transy);
+  stack_->release((amax_+1)*a2*b2, transx);
 
-  stack->release(worksize*3, workx);
+  stack_->release(worksize*3, workx);
 }

@@ -29,6 +29,7 @@
 
 // compute analytic nuclear gradients
 #include <memory>
+#include <src/stackmem.h>
 #include <src/rysint/eribatch_base.h>
 
 class GradBatch : public ERIBatch_base {

@@ -31,6 +31,10 @@
 
 #include <cassert>
 #include <memory>
+#include <atomic>
+#include <stdexcept>
+#include <vector>
+#include <iostream>
 
 class StackMem {
   protected:
@@ -54,8 +58,49 @@ class StackMem {
       pointer_ -= size; 
       assert(p == stack_area_.get()+pointer_);
     };
+
+    void clear() { pointer_ = 0LU; };
     
 };
 
+
+class Resources {
+  private:
+    std::vector<std::shared_ptr<StackMem> > stackmem_;
+    std::vector<std::shared_ptr<std::atomic_flag> > flag_;
+    size_t n_;
+
+  public:
+    Resources(const int n) : n_(n) {
+      for (int i = 0; i != n_; ++i) {
+        flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
+        stackmem_.push_back(std::shared_ptr<StackMem>(new StackMem()));
+      }
+    }; 
+    ~Resources() {};
+
+    std::shared_ptr<StackMem> get() {
+      for (int i = 0; i != n_; ++i) {
+        bool used = flag_[i]->test_and_set();
+        if (!used) {
+          return stackmem_[i];
+        }
+      }
+      throw std::runtime_error("Stack Memory exhausted");
+      return stackmem_.front();
+    };
+
+    void release(std::shared_ptr<StackMem> o) {
+      for (int i = 0; i != n_; ++i) {
+        if (stackmem_[i] == o) {
+          o->clear();
+          flag_[i]->clear(); 
+          break;
+        }
+      }
+    }
+};
+
+extern Resources* resources__;
 
 #endif

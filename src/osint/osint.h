@@ -32,6 +32,7 @@
 #include <src/rysint/sortlist.h>
 #include <array>
 #include <memory>
+#include <src/stackmem.h>
 
 class OSInt {
   protected:
@@ -64,6 +65,8 @@ class OSInt {
     void perform_contraction(const int, const double*, const int, const int, double*, 
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int, 
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
+
+    std::shared_ptr<StackMem> stack_;
 
   public:
     // deriv rank negative means multipole integrals

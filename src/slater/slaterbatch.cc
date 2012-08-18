@@ -46,8 +46,6 @@ using namespace std;
 
 static const double pitwohalf__ = ::pow(pi__, 2.5); 
 
-// This object lives in main.cc
-extern StackMem* stack;
 
 SlaterBatch::SlaterBatch(const vector<shared_ptr<const Shell> >& _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
@@ -287,7 +285,7 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   fill(coeffy_, coeffy_ + primsize_, 0.0);
   fill(T_, T_ + primsize_, -1.0);
   fill(U_, U_ + primsize_, 1.0e-100);
-  screening_ = (int*)stack->get(primsize_);
+  screening_ = (int*)stack_->get(primsize_);
   screening_size_ = 0;
 
   const double twogamma = 2.0 / gamma_;

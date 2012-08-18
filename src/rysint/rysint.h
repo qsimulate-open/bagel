@@ -33,6 +33,7 @@
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
+#include <src/stackmem.h>
 #include <tuple>
 #include <vector>
 #include <memory>
@@ -111,6 +112,8 @@ class RysInt {
     void perform_contraction(const int, const double*, const int, const int, double*,
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
+
+    std::shared_ptr<StackMem> stack_;
 
   public:
     RysInt(const std::vector<std::shared_ptr<const Shell> >&);

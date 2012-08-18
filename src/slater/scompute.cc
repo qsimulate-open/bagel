@@ -34,11 +34,9 @@
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
-#include <src/stackmem.h>
 
 using namespace std;
 
-extern StackMem* stack;
 
 void SlaterBatch::compute() {
   bool swapped = false;
@@ -46,9 +44,9 @@ void SlaterBatch::compute() {
   const int zeroint = 0;
   const int unit = 1;
 
-  bkup_ = stack->get(size_alloc_);
+  bkup_ = stack_->get(size_alloc_);
   if (yukawa_) 
-    bkup2_ = stack->get(size_alloc_);
+    bkup2_ = stack_->get(size_alloc_);
   
   const int size = size_alloc_;
   dcopy_(&size, &zero, &zeroint, data_, &unit);
@@ -281,8 +279,8 @@ void SlaterBatch::compute() {
       dcopy_(&size, bkup2_, &unit, data2_, &unit); 
   }
 
-  stack->release(size_alloc_, bkup_);
-  if (yukawa_) stack->release(size_alloc_, bkup2_);
+  stack_->release(size_alloc_, bkup_);
+  if (yukawa_) stack_->release(size_alloc_, bkup2_);
 }
 
 
