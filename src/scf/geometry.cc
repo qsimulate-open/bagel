@@ -43,7 +43,7 @@ using namespace std;
 
 typedef std::shared_ptr<const Atom> RefAtom;
 
-static AtomMap atommap_;
+const static AtomMap atommap_;
 
 Geometry::Geometry(const multimap<string, string> geominfo)
   : spherical_(true), input_(""), lmax_(0) {

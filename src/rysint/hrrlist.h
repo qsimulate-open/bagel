@@ -59,7 +59,7 @@ struct HRRList {
   static void perform_HRR_b0_65(const int, const double*, const double*, double*);
   static void perform_HRR_c0_66(const int, const double*, const double*, double*);
 
-  void hrrfunc_call(const unsigned int i, const int a0, const double* a1, const double* a2, double* a3) {
+  void hrrfunc_call(const unsigned int i, const int a0, const double* a1, const double* a2, double* a3) const {
     return (hrrfunc[i])(a0, a1, a2, a3);
   };
 

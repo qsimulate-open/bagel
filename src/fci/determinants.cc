@@ -30,7 +30,7 @@
 
 using namespace std;
 
-static Comb comb;
+const static Comb comb;
 
 Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress)
   : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress) {

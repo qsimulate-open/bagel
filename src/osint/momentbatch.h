@@ -39,7 +39,7 @@ class MomentBatch : public OSInt {
     MomentBatch(const std::vector<std::shared_ptr<const Shell> >&);
     ~MomentBatch();
 
-    void compute();
+    void compute() override;
 };
 
 #endif

@@ -62,7 +62,7 @@ struct CarSphList {
   static void carsph_65(const int, const double*, double*);
   static void carsph_66(const int, const double*, double*);
 
-  void carsphfunc_call(const unsigned int i, const int a0, const double* a1, double* a2) {
+  void carsphfunc_call(const unsigned int i, const int a0, const double* a1, double* a2) const {
     return (carsphfunc[i])(a0, a1, a2);
   };
 

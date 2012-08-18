@@ -34,7 +34,7 @@
 
 using namespace std;
 
-static HRRList hrr;
+const static HRRList hrr;
 
 OverlapBatch::OverlapBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
  : OSInt(_basis) {

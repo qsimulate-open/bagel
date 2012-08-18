@@ -29,7 +29,7 @@
 
 using namespace std;
 
-static Comb comb;
+const static Comb comb;
 
 void GNAIBatch::compute() {
 

@@ -39,7 +39,7 @@ class OverlapBatch : public OSInt {
     OverlapBatch(const std::vector<std::shared_ptr<const Shell> >&);
     ~OverlapBatch();
 
-    void compute();
+    void compute() override;
 };
 
 #endif

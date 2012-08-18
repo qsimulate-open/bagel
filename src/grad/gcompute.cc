@@ -31,7 +31,7 @@
 
 using namespace std;
 
-static CarSphList carsphlist;
+const static CarSphList carsphlist;
 
 void GradBatch::compute() {
 

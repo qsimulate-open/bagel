@@ -39,7 +39,7 @@ class KineticBatch : public OSInt {
     KineticBatch(const std::vector<std::shared_ptr<const Shell> >&);
     ~KineticBatch();
 
-    void compute();
+    void compute() override;
 };
 
 #endif

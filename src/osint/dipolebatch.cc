@@ -27,7 +27,7 @@
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/hrrlist.h>
 
-static HRRList hrr;
+const static HRRList hrr;
 
 using namespace std;
 
