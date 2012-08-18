@@ -34,9 +34,12 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <iomanip>
 #include <list>
 
 using namespace std;
+using namespace std::chrono;
 
 
 class DFIntTask {
@@ -50,7 +53,8 @@ class DFIntTask {
     DFIntTask() {};
 
     void compute() {
-      const double* ppt = df_->compute_batch(shell_).first;
+      pair<const double*, shared_ptr<RysInt> > p = df_->compute_batch(shell_);
+      const double* ppt = p.first;
 
       const size_t nbasis1 = df_->nbasis1();
       const size_t naux = df_->naux();
@@ -84,10 +88,14 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
                              const bool compute_inverse) {
 
   // this will be distributed in the future.
+  auto tp0 = high_resolution_clock::now();
   data_ = unique_ptr<double[]>(new double[nbasis0_*nbasis1_*naux_]);
-  fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
+//fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
 
   const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
+
+  // generates a task of integral evaluations
+  vector<DFIntTask> tasks;
 
   if (atoms0 == atoms1) {
     // these atom loops will be distributed across nodes
@@ -97,8 +105,6 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
     for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0, ++oa0) {
       auto oa1 = oa0;
       for (auto a1 = a0; a1 != atoms0.end(); ++a1, ++oa1) {
-        // make a list of input and offsets
-        list<DFIntTask> tasks;
 
         auto oa2 = aux_offsets.begin(); 
         for (auto a2 = aux_atoms.begin(); a2 != aux_atoms.end(); ++a2, ++oa2) {
@@ -113,12 +119,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
               }
             }
           }
-                
         }
-        // these shell loops will be distributed across threads 
-        const int num_threads = 2;
-        TaskQueue<DFIntTask> tq(tasks);
-        tq.compute(num_threads);
       }
     }
   } else {
@@ -127,16 +128,13 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
-  fill(data2(), data2()+naux_*naux_, 0.0);
+//fill(data2(), data2()+naux_*naux_, 0.0);
 
   // will be distributed across nodes
   auto oa0 = aux_offsets.begin();
   for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0, ++oa0) {
     auto oa1 = oa0;
     for (auto a1 = a0; a1 != aux_atoms.end(); ++a1, ++oa1) {
-
-      // make a list of input and offsets
-      list<DFIntTask> tasks;
       auto o0 = oa0->begin();
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = a0!=a1 ? oa1->begin() : o0;
@@ -144,13 +142,13 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
           tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}, this));
         }
       }
-
-      // these shell loops will be distributed across threads 
-      for (auto itask = tasks.begin(); itask != tasks.end(); ++itask)
-        itask->compute(); 
-
     }
   }
+  // these shell loops will be distributed across threads 
+  TaskQueue<DFIntTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
+  auto tp1 = high_resolution_clock::now();
+  cout << "       - time spent for integral evaluation  " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl;
 
   if (compute_inverse) {
     const size_t lwork = 5*naux_;
@@ -172,6 +170,9 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
     dgemm_("N", "T", naux_, naux_, naux_, 1.0, data2_, naux_, data2_, naux_, 0.0, work, naux_); 
     copy(work.get(), work.get()+naux_*naux_, data2());
   }
+
+  auto tp2 = high_resolution_clock::now();
+  cout << "       - time spent for computing inverse    " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
 
 }
 

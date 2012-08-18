@@ -52,8 +52,8 @@ void StackMem::release(const size_t size, double* p) {
 
 
 
-Resources::Resources(const int n) : n_(n) {
-  for (int i = 0; i != n_; ++i) {
+Resources::Resources(const int n) : max_num_threads_(n) {
+  for (int i = 0; i != max_num_threads_; ++i) {
     flag_.push_back(shared_ptr<atomic_flag>(new atomic_flag(ATOMIC_FLAG_INIT)));
     stackmem_.push_back(shared_ptr<StackMem>(new StackMem()));
   }
@@ -61,7 +61,7 @@ Resources::Resources(const int n) : n_(n) {
 
 
 shared_ptr<StackMem> Resources::get() {
-  for (int i = 0; i != n_; ++i) {
+  for (int i = 0; i != max_num_threads_; ++i) {
     bool used = flag_[i]->test_and_set();
     if (!used) {
       return stackmem_[i];
@@ -74,7 +74,7 @@ shared_ptr<StackMem> Resources::get() {
 
 void Resources::release(shared_ptr<StackMem> o) {
   bool found = false;
-  for (int i = 0; i != n_; ++i) {
+  for (int i = 0; i != max_num_threads_; ++i) {
     if (stackmem_[i] == o) {
       o->clear();
       flag_[i]->clear(); 

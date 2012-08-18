@@ -53,14 +53,16 @@ class Resources {
   private:
     std::vector<std::shared_ptr<StackMem> > stackmem_;
     std::vector<std::shared_ptr<std::atomic_flag> > flag_;
-    size_t n_;
+    size_t max_num_threads_;
 
   public:
-    Resources(const int n);
+    Resources(const int max);
     ~Resources() {};
 
     std::shared_ptr<StackMem> get();
     void release(std::shared_ptr<StackMem> o);
+
+    size_t max_num_threads() const { return max_num_threads_; };
 };
 
 extern Resources* resources__;

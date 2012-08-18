@@ -51,7 +51,7 @@
 
 
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources b(8);
+Resources b(4);
 Resources* resources__ = &b;
 
 // debugging

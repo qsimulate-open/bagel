@@ -30,48 +30,48 @@
 #include <list>
 #include <atomic>
 #include <memory>
+#include <stdexcept>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-
 
 template<typename T>
 class TaskQueue {
   protected:
-    std::list<T> task_;
+    std::vector<T> task_;
     std::list<std::shared_ptr<std::atomic_flag> > flag_;
+    static const int chunck_ = 12;
 
   public:
-    TaskQueue(std::list<T>& t) : task_(t) {
-      for (int i = 0; i != task_.size(); ++i) {
+    TaskQueue(std::vector<T>& t) : task_(t) {}
+
+    void compute(const int num_threads) {
+#if 1
+      for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-      }
-    }
 
-    void compute(const int num_threads = 1) {
-#if 0
       std::list<std::shared_ptr<boost::thread> > threads;
-      for (int i = 0; i != 2; ++i)
-//    for (int i = 0; i != num_threads; ++i)
+      for (int i = 0; i != num_threads; ++i)
         threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(boost::bind(&TaskQueue<T>::compute_one_thread, this))));
-
-      for (auto i = threads.begin(); i != threads.end(); ++i) (*i)->join();
+      for (auto i = threads.begin(); i != threads.end(); ++i)
+        (*i)->join();
 #else
-      for (int i = 0; i < task_.size(); ++i) {
-        auto a = task_.begin();
-        for (int j = 0; j != i; ++j) ++a;
-        a->compute();
-      }
+#ifndef _OPENMP
+throw std::logic_error("please compile with -fopenmp (GCC) or -openmp (ICC)");
+#endif
+      const size_t n = task_.size();
+      #pragma omp parallel for schedule(dynamic,chunck_)
+      for (size_t i = 0; i < n; ++i)
+        task_[i].compute();
 #endif
     } 
 
     void compute_one_thread() {
-      auto j = task_.begin();
-      for (auto i = flag_.begin(); i != flag_.end(); ++i, ++j) {
-        const bool used = (*i)->test_and_set();
-        if (!used) {
-          j->compute();
+      int j = 0;
+      for (auto i = flag_.begin(); i != flag_.end(); ++i, j += chunck_)
+        if (!(*i)->test_and_set()) {
+          task_[j].compute();
+          for (int k = 1; k < chunck_; ++k) 
+            if (j+k < task_.size()) task_[j+k].compute();
         }
-      }
     }
 };
 
