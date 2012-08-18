@@ -44,19 +44,15 @@ class TaskQueue {
     TaskQueue(std::vector<T>& t) : task_(t) {}
 
     void compute(const int num_threads) {
-#if 1
+#ifndef _OPENMP
       for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-
       std::list<std::shared_ptr<boost::thread> > threads;
       for (int i = 0; i != num_threads; ++i)
         threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(boost::bind(&TaskQueue<T>::compute_one_thread, this))));
       for (auto i = threads.begin(); i != threads.end(); ++i)
         (*i)->join();
 #else
-#ifndef _OPENMP
-throw std::logic_error("please compile with -fopenmp (GCC) or -openmp (ICC)");
-#endif
       const size_t n = task_.size();
       #pragma omp parallel for schedule(dynamic,chunck_)
       for (size_t i = 0; i < n; ++i)

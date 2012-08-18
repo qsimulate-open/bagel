@@ -46,13 +46,14 @@
 #include <src/util/resources.h>
 #include <src/opt/opt.h>
 #include <src/util/input.h>
-
 #include <src/util/constants.h>
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources b(4);
-Resources* resources__ = &b;
+Resources* resources__;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);
@@ -73,6 +74,16 @@ int main(int argc, char** argv) {
 
   try {
     print_header();
+
+    {
+      // TODO will be interfaced to input
+      int num_threads = 8;
+#ifdef _OPENMP
+      omp_set_num_threads(num_threads);
+#endif
+      resources__ = new Resources(num_threads);
+      cout << std::endl << "  " <<  num_threads << " thread" << (num_threads == 1 ? "" : "s") << " will be used" << std::endl << std::endl;
+    }
 
     const bool input_provided = argc == 2;
     if (!input_provided) {
@@ -292,6 +303,8 @@ int main(int argc, char** argv) {
     //smith_test(ref);
     /////////////////////////////////////
     //test_solvers(geom);
+
+    delete resources__; 
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
