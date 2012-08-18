@@ -206,7 +206,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_block_ = size_alloc_;
     stack_save_ = stack_->get(size_alloc_);
-    data2_ = NULL;
+    stack_save2_ = NULL;
     if (tenno_) {
       stack_save2_ = stack_->get(size_alloc_);
     }

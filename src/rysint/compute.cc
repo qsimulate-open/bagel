@@ -34,7 +34,7 @@
 
 using namespace std;
 
-static CarSphList carsphlist;
+static const CarSphList carsphlist;
 
 void ERIBatch::compute() {
   bool swapped = false;

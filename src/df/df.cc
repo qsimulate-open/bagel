@@ -50,7 +50,7 @@ class DFIntTask {
     DFIntTask() {};
 
     void compute() {
-      const double* ppt = df_->compute_batch(shell_);
+      const double* ppt = df_->compute_batch(shell_).first;
 
       const size_t nbasis1 = df_->nbasis1();
       const size_t naux = df_->naux();

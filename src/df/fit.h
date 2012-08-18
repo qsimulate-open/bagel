@@ -34,10 +34,10 @@
 class ERIFit : public DensityFit {
   protected:
     // TODO if I turn on primitive screening, it is broken.
-    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      ERIBatch eribatch(input, 0.0);
-      eribatch.compute();
-      return eribatch.data();
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
+      std::shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 0.0));
+      eribatch->compute();
+      return std::make_pair(eribatch->data(), eribatch);
     };
   public:
     ERIFit(const int nbas, const int naux,
@@ -58,10 +58,10 @@ class YukawaFit : public DensityFit {
   protected:
     const double gamma_;
 
-    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      SlaterBatch slaterbatch(input, 0.0, gamma_, true); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
-      slaterbatch.compute();
-      return slaterbatch.data2();
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
+      std::shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, true)); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
+      slaterbatch->compute();
+      return make_pair(slaterbatch->data2(), slaterbatch);
     };
   public:
     YukawaFit(const int nbas, const int naux,
@@ -80,10 +80,10 @@ class SlaterFit : public DensityFit {
   protected:
     const double gamma_;
 
-    const double* compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      SlaterBatch slaterbatch(input, 0.0, gamma_, false);
-      slaterbatch.compute();
-      return slaterbatch.data();
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
+      std::shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, false));
+      slaterbatch->compute();
+      return std::make_pair(slaterbatch->data(), slaterbatch);
     };
   public:
     SlaterFit(const int nbas, const int naux,
