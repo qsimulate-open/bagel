@@ -33,7 +33,7 @@
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
-#include <src/stackmem.h>
+#include <src/util/resources.h>
 #include <tuple>
 #include <vector>
 #include <memory>

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __STACKMEM_H
-#define __STACKMEM_H
+#ifndef __SRC_UTIL_RESOURCES_H
+#define __SRC_UTIL_RESOURCES_H
 
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 

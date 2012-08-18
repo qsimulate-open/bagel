@@ -43,7 +43,7 @@
 #include <src/casscf/werner.h>
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
-#include <src/stackmem.h>
+#include <src/util/resources.h>
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 

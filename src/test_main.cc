@@ -31,7 +31,7 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
-#include <src/stackmem.h>
+#include <src/util/resources.h>
 #include <boost/test/unit_test.hpp>
 
 Resources b(8);

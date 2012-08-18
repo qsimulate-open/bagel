@@ -36,7 +36,6 @@
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
 #include <src/slater/sinline.h>
-#include <src/stackmem.h>
 
 using namespace std;
 

@@ -32,7 +32,7 @@
 #include <src/rysint/sortlist.h>
 #include <array>
 #include <memory>
-#include <src/stackmem.h>
+#include <src/util/resources.h>
 
 class OSInt {
   protected:
