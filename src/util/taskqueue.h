@@ -41,7 +41,7 @@ class TaskQueue {
     std::list<std::shared_ptr<std::atomic_flag> > flag_;
 
   public:
-    TaskQueue(std::list<T> t) : task_(t) {
+    TaskQueue(std::list<T>& t) : task_(t) {
       for (int i = 0; i != task_.size(); ++i) {
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
       }
@@ -49,19 +49,26 @@ class TaskQueue {
 
     void compute(const int num_threads = 1) {
 #if 0
-      for (int i = 0; i != num_threads; ++i) {
-        boost::thread thr(boost::bind(&TaskQueue<T>::compute_one_thread, this));
-        thr.join();
-      }
+      std::list<std::shared_ptr<boost::thread> > threads;
+      for (int i = 0; i != 2; ++i)
+//    for (int i = 0; i != num_threads; ++i)
+        threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(boost::bind(&TaskQueue<T>::compute_one_thread, this))));
+
+      for (auto i = threads.begin(); i != threads.end(); ++i) (*i)->join();
 #else
-      compute_one_thread();
+      for (int i = 0; i < task_.size(); ++i) {
+        auto a = task_.begin();
+        for (int j = 0; j != i; ++j) ++a;
+        a->compute();
+      }
 #endif
     } 
 
     void compute_one_thread() {
       auto j = task_.begin();
       for (auto i = flag_.begin(); i != flag_.end(); ++i, ++j) {
-        if (!(*i)->test_and_set()) {
+        const bool used = (*i)->test_and_set();
+        if (!used) {
           j->compute();
         }
       }

@@ -50,6 +50,7 @@
 #include <src/util/constants.h>
 
 
+// TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
 Resources b(8);
 Resources* resources__ = &b;
 
@@ -63,11 +64,6 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char** argv) {
-  // openmp is broken now due to the use of stack.
-  // What we need is a proper thread model.
-  #ifdef _OPENMP
-  assert(false); // trap
-  #endif
 
 #if 0
   stack = new StackMem();

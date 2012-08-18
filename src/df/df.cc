@@ -56,7 +56,7 @@ class DFIntTask {
       const size_t naux = df_->naux();
       // all slot in
       if (offset_.size() == 3) {
-        double* data = df_->data();
+        double* const data = df_->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
             for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
@@ -65,7 +65,7 @@ class DFIntTask {
           }
         }
       } else if (offset_.size() == 2) {
-        double* data = df_->data2();
+        double* const data = df_->data2();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
             data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
@@ -97,11 +97,12 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
     for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0, ++oa0) {
       auto oa1 = oa0;
       for (auto a1 = a0; a1 != atoms0.end(); ++a1, ++oa1) {
+        // make a list of input and offsets
+        list<DFIntTask> tasks;
+
         auto oa2 = aux_offsets.begin(); 
         for (auto a2 = aux_atoms.begin(); a2 != aux_atoms.end(); ++a2, ++oa2) {
 
-          // make a list of input and offsets
-          list<DFIntTask> tasks;
           auto o0 = oa0->begin();
           for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
             auto o1 = a0!=a1 ? oa1->begin() : o0;
@@ -113,11 +114,11 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
             }
           }
                 
-          // these shell loops will be distributed across threads 
-          const int num_threads = 2;
-          TaskQueue<DFIntTask> tq(tasks);
-          tq.compute(num_threads);
         }
+        // these shell loops will be distributed across threads 
+        const int num_threads = 2;
+        TaskQueue<DFIntTask> tq(tasks);
+        tq.compute(num_threads);
       }
     }
   } else {

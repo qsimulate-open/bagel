@@ -29,12 +29,8 @@
 
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 
-#include <cassert>
 #include <memory>
 #include <atomic>
-#include <stdexcept>
-#include <vector>
-#include <iostream>
 
 class StackMem {
   protected:
@@ -43,24 +39,12 @@ class StackMem {
     const size_t total_;
 
   public:
-    StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
-      stack_area_ = std::unique_ptr<double[]>(new double[total_]);
-    };
+    StackMem();
 
-    double* get(const size_t size) {
-      assert(pointer_+size < total_);
-      double* out = stack_area_.get() + pointer_;
-      pointer_ += size;
-      return out;
-    };
-
-    void release(const size_t size, double* p) {
-      pointer_ -= size; 
-      assert(p == stack_area_.get()+pointer_);
-    };
+    double* get(const size_t size);
+    void release(const size_t size, double* p);
 
     void clear() { pointer_ = 0LU; };
-    
 };
 
 
@@ -71,34 +55,11 @@ class Resources {
     size_t n_;
 
   public:
-    Resources(const int n) : n_(n) {
-      for (int i = 0; i != n_; ++i) {
-        flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-        stackmem_.push_back(std::shared_ptr<StackMem>(new StackMem()));
-      }
-    }; 
+    Resources(const int n);
     ~Resources() {};
 
-    std::shared_ptr<StackMem> get() {
-      for (int i = 0; i != n_; ++i) {
-        bool used = flag_[i]->test_and_set();
-        if (!used) {
-          return stackmem_[i];
-        }
-      }
-      throw std::runtime_error("Stack Memory exhausted");
-      return stackmem_.front();
-    };
-
-    void release(std::shared_ptr<StackMem> o) {
-      for (int i = 0; i != n_; ++i) {
-        if (stackmem_[i] == o) {
-          o->clear();
-          flag_[i]->clear(); 
-          break;
-        }
-      }
-    }
+    std::shared_ptr<StackMem> get();
+    void release(std::shared_ptr<StackMem> o);
 };
 
 extern Resources* resources__;

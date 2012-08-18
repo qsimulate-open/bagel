@@ -51,7 +51,7 @@ string header = "\
 #include <cassert>\n\
 #include <algorithm>\n\
 #include <cstring>\n\
-#include <src/stackmem.h>\n\
+#include <src/util/resources.h>\n\
 \n\
 using namespace std;\n\
 \n\
