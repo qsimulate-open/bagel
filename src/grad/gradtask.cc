@@ -42,23 +42,24 @@ void GradTask::compute() {
     if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
     if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
-    for (int i = 0; i != 12; ++i) {
-      // if this is a dummy atom
-      if (jatom[i/3] < 0) continue;
-
-      const double* ppt = gradbatch.data() + i*block;
-      double sum = 0.0;
-      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
-        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
-          for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
-            // first we need to have a scheme to receive blocks before accessing the elements
-            sum += *ppt * *den_->ptr(j2, j1, j0);
-            sum += *ppt * *den_->ptr(j2, j0, j1);
+    for (int iatom = 0; iatom != 4; ++iatom) {
+      if (jatom[iatom] < 0) continue;
+      array<double,3> sum = {{0.0, 0.0, 0.0}};
+      for (int icart = 0; icart != 3; ++icart) {
+        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
+            for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
+              // first we need to have a scheme to receive blocks before accessing the elements
+              sum[icart] += *ppt * *den_->ptr(j2, j1, j0);
+              sum[icart] += *ppt * *den_->ptr(j2, j0, j1);
+            }
           }
         }
       }
-      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[i/3]]);
-      ge_->grad_->data(jatom[i/3], i%3) += 0.5 * sum * (shell_[2] == shell_[3] ? 1.0 : 2.0);
+      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[iatom]]);
+      for (int icart = 0; icart != 3; ++icart)
+        ge_->grad_->data(jatom[iatom], icart) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
   } else if (atomindex_.size() == 2) {
     // pointer to stack
@@ -72,21 +73,22 @@ void GradTask::compute() {
     if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
     if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
-    for (int i = 0; i != 12; ++i) {
-      // if this is a dummy atom
-      if (jatom[i/3] < 0) continue;
-
-      const double* ppt = gradbatch.data() + i*block;
-      double sum = 0.0;
-      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
-        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
-          sum += *ppt * den2_->element(j1,j0);
-          sum += *ppt * den2_->element(j0,j1);
+    for (int iatom = 0; iatom != 4; ++iatom) {
+      if (jatom[iatom] < 0) continue;
+      array<double,3> sum = {{0.0, 0.0, 0.0}};
+      for (int icart = 0; icart != 3; ++icart) {
+        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
+            sum[icart] += *ppt * den2_->element(j1,j0);
+            sum[icart] += *ppt * den2_->element(j0,j1);
+          }
         }
       }
+      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[iatom]]);
       // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
-      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[i/3]]);
-      ge_->grad_->data(jatom[i/3],i%3) -= 0.5 * sum * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
+      for (int icart = 0; icart != 3; ++icart)
+        ge_->grad_->data(jatom[iatom],icart) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
     }
   } else {
     throw logic_error("calling GradTask::compute() with illegal setups");
