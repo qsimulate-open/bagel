@@ -26,11 +26,74 @@
 
 #include <array>
 #include <src/grad/gradeval_base.h>
+#include <src/grad/gradfile.h>
+#include <src/grad/gnaibatch.h>
+#include <src/grad/goverlapbatch.h>
+#include <src/grad/gkineticbatch.h>
 
 using namespace std;
 
 void GradTask::compute() {
-  if (atomindex_.size() == 3) {
+  if (shell_.size() == 2) {
+    const int iatom0 = atomindex_[0];
+    const int iatom1 = atomindex_[1];
+    const int nbasis = ge_->geom_->nbasis();
+    shared_ptr<GradFile> grad_local(new GradFile(ge_->geom_->natom()));
+    const int dimb1 = shell_[0]->nbasis(); 
+    const int dimb0 = shell_[1]->nbasis(); 
+    {
+      GNAIBatch batch2(shell_, ge_->geom_, tie(iatom1, iatom0));
+      batch2.compute();
+      const double* ndata = batch2.data();
+      const size_t s = batch2.size_block();
+      for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
+        for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+          for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+            grad_local->data(ia) += ndata[cnt+s*ia] * den2_->data(i*nbasis+j);
+          }
+        }
+      }
+    }
+    {
+      GKineticBatch batch(shell_, ge_->geom_);
+      const double* kdata = batch.data();
+      batch.compute();
+      const size_t s = batch.size_block();
+      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+          int jatom0 = batch.swap01() ? iatom1 : iatom0;
+          int jatom1 = batch.swap01() ? iatom0 : iatom1;
+          for (int k = 0; k != 3; ++k) {
+            grad_local->data(3*jatom1+k) += kdata[cnt+s*k    ] * den2_->data(i*nbasis+j);
+            grad_local->data(3*jatom0+k) += kdata[cnt+s*(k+3)] * den2_->data(i*nbasis+j);
+          }
+        }
+      }
+    }
+    {
+      GOverlapBatch batch(shell_, ge_->geom_);
+      const double* odata = batch.data();
+      batch.compute();
+      const size_t s = batch.size_block();
+      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+          int jatom0 = batch.swap01() ? iatom1 : iatom0;
+          int jatom1 = batch.swap01() ? iatom0 : iatom1;
+          for (int k = 0; k != 3; ++k) {
+            grad_local->data(3*jatom1+k) -= odata[cnt+s*k    ] * eden_->data(i*nbasis+j);
+            grad_local->data(3*jatom0+k) -= odata[cnt+s*(k+3)] * eden_->data(i*nbasis+j);
+          }
+        }
+      }
+    }
+    for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+      boost::lock_guard<boost::mutex> lock(ge_->mutex_[iatom]);
+      ge_->grad_->data(3*iatom+0) += grad_local->data(3*iatom+0);
+      ge_->grad_->data(3*iatom+1) += grad_local->data(3*iatom+1);
+      ge_->grad_->data(3*iatom+2) += grad_local->data(3*iatom+2);
+    }
+
+  } else if (atomindex_.size() == 3) {
     // pointer to stack
     GradBatch gradbatch(shell_, 0.0);
     gradbatch.compute();

@@ -25,9 +25,6 @@
 
 
 #include <src/grad/gradeval_base.h>
-#include <src/grad/gnaibatch.h>
-#include <src/grad/goverlapbatch.h>
-#include <src/grad/gkineticbatch.h>
 #include <src/util/taskqueue.h>
 #include <src/util/resources.h>
 #include <array>
@@ -38,126 +35,49 @@ using namespace std;
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
                                                       const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {
 
-  shared_ptr<Grad1eFile> g1(new Grad1eFile(geom_));
-  shared_ptr<Grad1eFile> go(new Grad1eFile(geom_));
-  compute_grad1e_integrals(g1, go);
+  vector<GradTask> task  = contract_grad1e(d, w); 
+  vector<GradTask> task2 = contract_grad2e(o);
+  vector<GradTask> task3 = contract_grad2e_2index(o2);
+  task.insert(task.end(), task2.begin(), task2.end());
+  task.insert(task.end(), task3.begin(), task3.end());
 
-  vector<double> grad = contract_grad1e(d, w, g1, go); 
-  vector<GradTask> tasks = contract_grad2e(o);
-  vector<GradTask> tmp = contract_grad2e_2index(o2);
-  tasks.insert(tasks.end(), tmp.begin(), tmp.end());
-
-  TaskQueue<GradTask> tq(tasks);
+  TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
 
-  shared_ptr<GradFile> g0(new GradFile(grad));
-  return shared_ptr<GradFile>(new GradFile(*g0+*grad_));
+  vector<double> gnuc = geom_->compute_grad_vnuc();
+  GradFile nuc(gnuc);
+  return shared_ptr<GradFile>(new GradFile(*grad_+nuc));
 }
 
 
-void GradEval_base::compute_grad1e_integrals(shared_ptr<Grad1eFile> g1, shared_ptr<Grad1eFile> go) const {
-
-  const int natom = geom_->natom();
-
-  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
-  const vector<vector<int> > offsets = geom_->offsets();
-  const int nbasis = geom_->nbasis();
+vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w) {
+  vector<GradTask> out;
 
   // TODO perhaps we could reduce operation by a factor of 2
-  for (int iatom0 = 0; iatom0 != natom; ++iatom0) {
-    const shared_ptr<const Atom> catom0 = atoms[iatom0];
-    const int numshell0 = catom0->shells().size();
-    const vector<int> coffset0 = offsets[iatom0];
-    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
+  int iatom0 = 0;
+  auto oa0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = 0;
+    auto oa1 = geom_->offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
 
-    for (int iatom1 = 0; iatom1 != natom; ++iatom1) {
-      const shared_ptr<const Atom> catom1 = atoms[iatom1];
-      const int numshell1 = catom1->shells().size();
-      const vector<int> coffset1 = offsets[iatom1];
-      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = oa1->begin();
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
 
-      for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
-        const int offset0 = coffset0[ibatch0]; 
-        shared_ptr<const Shell> b0 = shell0[ibatch0];
-        for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
-          const int offset1 = coffset1[ibatch1]; 
-          shared_ptr<const Shell> b1 = shell1[ibatch1];
-          vector<shared_ptr<const Shell> > input = {{b1, b0}};
+          vector<shared_ptr<const Shell> > input = {{*b1, *b0}};
+          vector<int> atom = {{iatom0, iatom1}}; 
+          vector<int> offset_ = {{*o0, *o1}};
 
-          const int dimb1 = input[0]->nbasis(); 
-          const int dimb0 = input[1]->nbasis(); 
-
-          {
-            GNAIBatch batch2(input, geom_, tie(iatom1, iatom0));
-            batch2.compute();
-            const double* ndata = batch2.data();
-            const size_t s = batch2.size_block();
-            for (int ia = 0; ia != natom*3; ++ia) {
-              for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
-                for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-                  g1->data(ia)->data(i*nbasis+j) += ndata[cnt+s*(ia)];
-                }
-              }
-            }
-          }
-          {
-            GKineticBatch batch(input, geom_);
-            const double* kdata = batch.data();
-            batch.compute();
-            const size_t s = batch.size_block();
-            for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
-              for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-                int jatom0 = batch.swap01() ? iatom1 : iatom0;
-                int jatom1 = batch.swap01() ? iatom0 : iatom1;
-                g1->data(3*jatom1+0)->data(i*nbasis+j) += kdata[cnt];
-                g1->data(3*jatom1+1)->data(i*nbasis+j) += kdata[cnt+s];
-                g1->data(3*jatom1+2)->data(i*nbasis+j) += kdata[cnt+s*2];
-                g1->data(3*jatom0+0)->data(i*nbasis+j) += kdata[cnt+s*3];
-                g1->data(3*jatom0+1)->data(i*nbasis+j) += kdata[cnt+s*4];
-                g1->data(3*jatom0+2)->data(i*nbasis+j) += kdata[cnt+s*5];
-              }
-            }
-          }
-          {
-            GOverlapBatch batch(input, geom_);
-            const double* odata = batch.data();
-            batch.compute();
-            const size_t s = batch.size_block();
-            for (int i = offset0, cnt = 0; i != dimb0 + offset0; ++i) {
-              for (int j = offset1; j != dimb1 + offset1; ++j, ++cnt) {
-                int jatom0 = batch.swap01() ? iatom1 : iatom0;
-                int jatom1 = batch.swap01() ? iatom0 : iatom1;
-                go->data(3*jatom1+0)->data(i*nbasis+j) += odata[cnt];
-                go->data(3*jatom1+1)->data(i*nbasis+j) += odata[cnt+s];
-                go->data(3*jatom1+2)->data(i*nbasis+j) += odata[cnt+s*2];
-                go->data(3*jatom0+0)->data(i*nbasis+j) += odata[cnt+s*3];
-                go->data(3*jatom0+1)->data(i*nbasis+j) += odata[cnt+s*4];
-                go->data(3*jatom0+2)->data(i*nbasis+j) += odata[cnt+s*5];
-              }
-            }
-          }
-
+          GradTask task(input, atom, offset_, d, w, this); 
+          out.push_back(task);
         }
       } 
     }
   }
+  return out;
 }
-
-vector<double> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
-                                              const shared_ptr<const Grad1eFile> g1, const shared_ptr<const Grad1eFile> go) const {
-
-  // first Vnuc derivative
-  vector<double> grad = geom_->compute_grad_vnuc();
-  assert(grad.size() == geom_->natom()*3);
-
-  int i = 0;
-  for (auto g = grad.begin(); g != grad.end(); ++g, ++i)
-    *g += g1->data(i)->ddot(d) - go->data(i)->ddot(w);
-
-  return grad;
-}
-
-
 
 
 vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) {

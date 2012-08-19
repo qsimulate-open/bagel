@@ -34,24 +34,6 @@
 #include <src/scf/matrix1e.h>
 #include <boost/thread/mutex.hpp>
 
-class Grad1eFile {
-  protected:
-    const std::shared_ptr<const Geometry> geom_;
-    std::vector<std::shared_ptr<Matrix1e> > data_;
-
-  public:
-    Grad1eFile(const std::shared_ptr<const Geometry> g) : geom_(g) {
-      for (int i = 0; i != g->natom()*3; ++i)
-        data_.push_back(std::shared_ptr<Matrix1e>(new Matrix1e(geom_)));
-    };
-    ~Grad1eFile() {};
-
-    std::shared_ptr<Matrix1e> data(const int i) { return data_[i]; };
-    std::shared_ptr<const Matrix1e> data(const int i) const { return data_[i]; };
-
-    std::shared_ptr<Matrix1e>& operator[](const int i) { return data_[i]; };
-
-};
 
 
 class GradEval_base;
@@ -63,6 +45,7 @@ class GradTask {
     std::vector<int> offset_;
     std::shared_ptr<const DF_AO> den_;
     std::shared_ptr<const Matrix1e> den2_;
+    std::shared_ptr<const Matrix1e> eden_;
     GradEval_base* ge_;
 
   public:
@@ -70,6 +53,8 @@ class GradTask {
       : shell_(s), atomindex_(a), offset_(o), den_(d), ge_(p) {};
     GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
       : shell_(s), atomindex_(a), offset_(o), den2_(d), ge_(p) {};
+    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
+      : shell_(s), atomindex_(a), offset_(o), den2_(d), eden_(w), ge_(p) {};
     ~GradTask() {};
 
     void compute();
@@ -83,11 +68,8 @@ class GradEval_base {
   protected:
     const std::shared_ptr<const Geometry> geom_;
 
-    void compute_grad1e_integrals(std::shared_ptr<Grad1eFile>, std::shared_ptr<Grad1eFile>) const;
-
-    /// contract 1-electron gradient integrals with density matrices "d" and "w" (the latter to be contracted with overlap derivatives) 
-    std::vector<double> contract_grad1e(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
-                                        const std::shared_ptr<const Grad1eFile> g1, const std::shared_ptr<const Grad1eFile> go) const;
+    /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
+    std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DF_AO> o);
