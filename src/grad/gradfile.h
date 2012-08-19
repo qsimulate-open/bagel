@@ -58,12 +58,19 @@ class GradFile {
     void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
     void daxpy(const double a, const std::shared_ptr<const GradFile> o) { daxpy(a, *o); };
 
+    GradFile operator+(const GradFile& o) const {
+      GradFile out(*this);
+      out.daxpy(1.0, o); 
+      return out;
+    };
+
     GradFile operator-(const GradFile& o) const {
       GradFile out(*this);
       out.daxpy(-1.0, o); 
       return out;
     };
 
+    GradFile& operator+=(const GradFile& o) { daxpy( 1.0, o); return *this; };
     GradFile& operator-=(const GradFile& o) { daxpy(-1.0, o); return *this; };
     GradFile& operator/=(const GradFile& o) { for (int i=0; i != size(); ++i) data(i)/=o.data(i); return *this; };
     GradFile operator/(const GradFile& o) const { GradFile out(*this); out /= o; return out; };

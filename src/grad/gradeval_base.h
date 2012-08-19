@@ -32,6 +32,7 @@
 #include <src/grad/gradfile.h>
 #include <src/scf/geometry.h>
 #include <src/scf/matrix1e.h>
+#include <boost/thread/mutex.hpp>
 
 class Grad1eFile {
   protected:
@@ -52,8 +53,33 @@ class Grad1eFile {
 
 };
 
+
+class GradEval_base;
+
+class GradTask {
+  protected:
+    std::vector<std::shared_ptr<const Shell> > shell_;
+    std::vector<int> atomindex_;
+    std::vector<int> offset_;
+    std::shared_ptr<const DF_AO> den_;
+    std::shared_ptr<const Matrix1e> den2_;
+    GradEval_base* ge_;
+
+  public:
+    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const DF_AO> d, GradEval_base* p)
+      : shell_(s), atomindex_(a), offset_(o), den_(d), ge_(p) {};
+    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
+      : shell_(s), atomindex_(a), offset_(o), den2_(d), ge_(p) {};
+    ~GradTask() {};
+
+    void compute();
+};
+
+
+
 // base class for gradient evaluations
 class GradEval_base {
+  friend class GradTask;
   protected:
     const std::shared_ptr<const Geometry> geom_;
 
@@ -64,18 +90,22 @@ class GradEval_base {
                                         const std::shared_ptr<const Grad1eFile> g1, const std::shared_ptr<const Grad1eFile> go) const;
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
-    std::vector<double> contract_grad2e(const std::shared_ptr<const DF_AO> o) const;
+    std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DF_AO> o);
 
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
-    std::vector<double> contract_grad2e_2index(const std::unique_ptr<double[]>& o) const;
+    std::vector<GradTask> contract_grad2e_2index(const std::unique_ptr<double[]>& o);
+
+    // the results will be stored in grad_ and grad2_ (seperate area for multi-threading);
+    std::shared_ptr<GradFile> grad_;
+    std::vector<boost::mutex> mutex_;
 
   public:
-    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g) { };
+    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(new GradFile(g->natom())), mutex_(g->natom()) { };
     ~GradEval_base() {};
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
-                                                const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2) const;
+                                                const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };

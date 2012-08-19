@@ -130,7 +130,6 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
 //fill(data2(), data2()+naux_*naux_, 0.0);
 
-  // will be distributed across nodes
   auto oa0 = aux_offsets.begin();
   for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0, ++oa0) {
     auto oa1 = oa0;

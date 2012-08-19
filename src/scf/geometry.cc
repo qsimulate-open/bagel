@@ -124,8 +124,9 @@ Geometry::Geometry(const multimap<string, string> geominfo)
       if (!(*iatom)->dummy()) { 
         RefAtom catom(new Atom(spherical_, (*iatom)->name(), (*iatom)->position(), auxfile_));
         aux_atoms_.push_back(catom);
-      } else { 
-        // do I need to do something?
+      } else {
+        // we need a dummy atom here to be consistent in gradient computations 
+        aux_atoms_.push_back(*iatom);
       }
     }
   }
@@ -413,13 +414,6 @@ void Geometry::print_atoms() const {
 
 }
 
-
-#if 0
-int Geometry::num_count_ncore() {
-  nfrc_ = num_count_ncore_only();
-  return nfrc_;
-}
-#endif
 
 int Geometry::num_count_ncore_only() const {
   int out = 0;

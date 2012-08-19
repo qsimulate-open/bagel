@@ -28,25 +28,30 @@
 #include <src/grad/gnaibatch.h>
 #include <src/grad/goverlapbatch.h>
 #include <src/grad/gkineticbatch.h>
+#include <src/util/taskqueue.h>
+#include <src/util/resources.h>
+#include <array>
 
 using namespace std;
 
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
-                                                      const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) const {
+                                                      const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {
 
   shared_ptr<Grad1eFile> g1(new Grad1eFile(geom_));
   shared_ptr<Grad1eFile> go(new Grad1eFile(geom_));
   compute_grad1e_integrals(g1, go);
 
   vector<double> grad = contract_grad1e(d, w, g1, go); 
-  vector<double> tmp0 = contract_grad2e(o);
-  vector<double> tmp1 = contract_grad2e_2index(o2);
+  vector<GradTask> tasks = contract_grad2e(o);
+  vector<GradTask> tmp = contract_grad2e_2index(o2);
+  tasks.insert(tasks.end(), tmp.begin(), tmp.end());
 
-  for (auto i = grad.begin(), t0 = tmp0.begin(), t1 = tmp1.begin(); i != grad.end(); ++i, ++t0, ++t1)
-    *i += *t0 + *t1;
+  TaskQueue<GradTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
 
-  return shared_ptr<GradFile>(new GradFile(grad));
+  shared_ptr<GradFile> g0(new GradFile(grad));
+  return shared_ptr<GradFile>(new GradFile(*g0+*grad_));
 }
 
 
@@ -153,80 +158,37 @@ vector<double> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d
 }
 
 
-vector<double> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) const {
 
-  vector<double> grad(geom_->natom()*3, 0.0);
+
+vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) {
+  vector<GradTask> out;
 
   // loop over atoms (using symmetry b0 <-> b1)
-  vector<shared_ptr<const Atom> > aux_atoms = geom_->aux_atoms();
-  vector<vector<int> > aux_offsets = geom_->aux_offsets();
-  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
-  const vector<vector<int> > offsets = geom_->offsets();
-  const int nbasis = geom_->nbasis();
-  for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
-    const shared_ptr<const Atom> catom0 = atoms[iatom0];
-    const int numshell0 = catom0->shells().size();
-    const vector<int> coffset0 = offsets[iatom0];
-    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
-
-    for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
-      const shared_ptr<const Atom> catom1 = atoms[iatom1];
-      const int numshell1 = catom1->shells().size();
-      const vector<int> coffset1 = offsets[iatom1];
-      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
-
-      for (int iatom2 = 0; iatom2 != geom_->natom(); ++iatom2) {
-        const shared_ptr<const Atom> catom2 = aux_atoms[iatom2];
-        const int numshell2 = catom2->shells().size();
-        const vector<int> coffset2 = aux_offsets[iatom2];
-        const vector<shared_ptr<const Shell> > shell2 = catom2->shells();
-
+  int iatom0 = 0;
+  auto oa0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = iatom0;
+    auto oa1 = oa0;
+    for (auto a1 = a0; a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+      int iatom2 = 0;
+      auto oa2 = geom_->aux_offsets().begin(); 
+      for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
 
         // dummy shell
-        const shared_ptr<const Shell> b3(new Shell(shell2.front()->spherical()));
+        const shared_ptr<const Shell> b3(new Shell((*a0)->shells().front()->spherical()));
 
-        for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
-          const int offset0 = coffset0[ibatch0]; 
-          shared_ptr<const Shell> b0 = shell0[ibatch0];
+        auto o0 = oa0->begin();
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+          auto o1 = a0!=a1 ? oa1->begin() : o0;
+          for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+            auto o2 = oa2->begin();
+            for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
+              vector<shared_ptr<const Shell> > input = {{b3, *b2, *b1, *b0}};
+              vector<int> atoms = {{iatom0, iatom1, iatom2}};
+              vector<int> offs = {{*o0, *o1, *o2}};
 
-          for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
-            const int offset1 = coffset1[ibatch1]; 
-            shared_ptr<const Shell> b1 = shell1[ibatch1];
-
-            for (int ibatch2 = 0; ibatch2 != numshell2; ++ibatch2) {
-              const int offset2 = coffset2[ibatch2]; 
-              shared_ptr<const Shell> b2 = shell2[ibatch2];
-
-              vector<shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
-
-              // pointer to stack
-              GradBatch gradbatch(input, 0.0);
-              gradbatch.compute();
-              const size_t block = gradbatch.size_block();
-
-              // unfortunately the convention is different...
-              int jatom[4] = {-1, iatom2, iatom1, iatom0};
-              if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
-              if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
-              if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
-
-              for (int i = 0; i != 12; ++i) {
-                // if this is a dummy atom
-                if (jatom[i/3] < 0) continue;
-
-                const double* ppt = gradbatch.data() + i*block;
-                double sum = 0.0;
-                for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
-                  for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1) {  
-                    for (int j2 = offset2; j2 != offset2 + b2->nbasis(); ++j2, ++ppt) {  
-                      // first we need to have a scheme to receive blocks before accessing the elements
-                      sum += *ppt * *o->ptr(j2, j1, j0);
-                      sum += *ppt * *o->ptr(j2, j0, j1);
-                    }
-                  }
-                }
-                grad[3*jatom[i/3]+i%3] += 0.5 * sum * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
-              }
+              GradTask task(input, atoms, offs, o, this); 
+              out.push_back(task);
             }
           }
         }
@@ -234,72 +196,43 @@ vector<double> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) c
       }
     }
   }
-
-  return grad;
-
+  return out;
 }
 
 
-vector<double> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>& o) const {
-  vector<double> grad(geom_->natom()*3, 0.0);
+vector<GradTask> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>& o) {
+  vector<GradTask> out;
+
+  shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
+  shared_ptr<Matrix1e> den(new Matrix1e(auxgeom));
+  copy(o.get(), o.get()+geom_->naux()*geom_->naux(), den->data());
 
   // using symmetry (b0 <-> b1)
-  vector<shared_ptr<const Atom> > aux_atoms = geom_->aux_atoms();
-  vector<vector<int> > aux_offsets = geom_->aux_offsets();
-  const vector<shared_ptr<const Atom> > atoms = geom_->atoms(); 
-  const vector<vector<int> > offsets = geom_->offsets();
+  int iatom0 = 0;
+  auto oa0 = geom_->aux_offsets().begin();
+  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = iatom0;
+    auto oa1 = oa0;
+    for (auto a1 = a0; a1 != geom_->aux_atoms().end(); ++a1, ++oa1, ++iatom1) {
 
-  for (int iatom0 = 0; iatom0 != geom_->natom(); ++iatom0) {
-    const shared_ptr<const Atom> catom0 = aux_atoms[iatom0];
-    const int numshell0 = catom0->shells().size();
-    const vector<int> coffset0 = aux_offsets[iatom0];
-    const vector<shared_ptr<const Shell> > shell0 = catom0->shells();
-    for (int iatom1 = iatom0; iatom1 != geom_->natom(); ++iatom1) {
-      const shared_ptr<const Atom> catom1 = aux_atoms[iatom1];
-      const int numshell1 = catom1->shells().size();
-      const vector<int> coffset1 = aux_offsets[iatom1];
-      const vector<shared_ptr<const Shell> > shell1 = catom1->shells();
       // dummy shell
-      const shared_ptr<const Shell> b3(new Shell(shell1.front()->spherical()));
-      for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
-        const int offset0 = coffset0[ibatch0]; 
-        shared_ptr<const Shell> b0 = shell0[ibatch0];
+      const shared_ptr<const Shell> b3(new Shell((*a0)->shells().front()->spherical()));
 
-        for (int ibatch1 = (iatom0 == iatom1 ? ibatch0 : 0); ibatch1 != numshell1; ++ibatch1) {
-          const int offset1 = coffset1[ibatch1]; 
-          shared_ptr<const Shell> b1 = shell1[ibatch1];
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = a0!=a1 ? oa1->begin() : o0;
+        for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
 
-          vector<shared_ptr<const Shell> > input = {{b1, b3, b0, b3}};
 
-          // pointer to stack
-          GradBatch gradbatch(input, 0.0);
-          gradbatch.compute();
-          const size_t block = gradbatch.size_block();
+          vector<shared_ptr<const Shell> > input = {{*b1, b3, *b0, b3}};
+          vector<int> atoms = {{iatom0, iatom1}};
+          vector<int> offs = {{*o0, *o1}};
 
-          // unfortunately the convention is different...
-          int jatom[4] = {iatom1, -1, iatom0, -1};
-          if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
-          if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
-          if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
-
-          for (int i = 0; i != 12; ++i) {
-            // if this is a dummy atom
-            if (jatom[i/3] < 0) continue;
-
-            const double* ppt = gradbatch.data() + i*block;
-            double sum = 0.0;
-            for (int j0 = offset0; j0 != offset0 + b0->nbasis(); ++j0) {  
-              for (int j1 = offset1; j1 != offset1 + b1->nbasis(); ++j1, ++ppt) {  
-                sum += *ppt * o[j1+geom_->naux()*j0];
-                sum += *ppt * o[j0+geom_->naux()*j1];
-              }
-            }
-            // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
-            grad[3*jatom[i/3]+i%3] -= 0.5 * sum * 0.5 * (iatom0 == iatom1 && ibatch0 == ibatch1 ? 1.0 : 2.0);
-          }
+          GradTask task(input, atoms, offs, den, this);
+          out.push_back(task);
         }
       }
     }
   }
-  return grad;
+  return out;
 }
