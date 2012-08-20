@@ -68,26 +68,26 @@ std::vector<double> scf_opt(std::string filename) {
 }
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
-  out[2] = 1.864207;
-  out[5] = 0.162365;
+  out[2] = 1.749334;
+  out[5] = 0.047492;
   return out;
 }
 std::vector<double> reference_scf_opt_cart() {
   std::vector<double> out(6);
-  out[2] = 1.714514;
-  out[5] = 0.012058;
+  out[2] = 1.719396;
+  out[5] = 0.016940;
   return out;
 }
 std::vector<double> reference_uhf_opt() {
   std::vector<double> out(6);
-  out[2] = 1.803313;
-  out[5] =-0.003313;
+  out[2] = 1.800736;
+  out[5] =-0.005890;
   return out;
 }
 std::vector<double> reference_rohf_opt() {
   std::vector<double> out(6);
-  out[2] = 2.049569;
-  out[5] =-0.049569;
+  out[2] = 2.014163;
+  out[5] =-0.084976;
   return out;
 }
 
@@ -116,8 +116,8 @@ std::vector<double> mp2_opt() {
 }
 std::vector<double> reference_mp2_opt() {
   std::vector<double> out(6);
-  out[2] = 1.981406;
-  out[5] = 0.245166;
+  out[2] = 1.932774;
+  out[5] = 0.196533;
   return out;
 }
  

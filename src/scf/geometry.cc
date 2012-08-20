@@ -38,6 +38,7 @@
 #include <src/scf/atommap.h>
 #include <src/molden/molden.h>
 #include <src/util/constants.h>
+#include <src/util/quatern.h>
 
 using namespace std;
 
@@ -236,10 +237,43 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
     aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
   }
 
+  // second find the unique frame.
+  // (i) center of chages
+  Quatern<double> oc = o.charge_center();
+  Quatern<double> mc = charge_center();
+  // (2) direction of the first atom
+  Quatern<double> oa = o.atoms().front()->position();
+  Quatern<double> ma =   atoms().front()->position();
+  Quatern<double> od = oa - oc; 
+  Quatern<double> md = ma - mc; 
+  // outer product (rotation axis)
+  od.normalize();
+  md.normalize();
+  Quatern<double> op = md * od;
+  op[0] = 1.0 - op[0]; 
+  op.normalize();
+  Quatern<double> opd = op.dagger();
+
+  // first subtract mc, rotate, and then add oc
+  vector<shared_ptr<const Atom> > newatoms;
+  vector<shared_ptr<const Atom> > newauxatoms;
+  for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
+    assert((*i)->position() == (*j)->position());
+    Quatern<double> source = (*i)->position();
+    Quatern<double> target = op * (source - mc) * opd + oc;
+    array<double,3> cdispl = (target - source).ijk(); 
+
+    newatoms.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
+    newauxatoms.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+  }
+  atoms_ = newatoms;
+  aux_atoms_ = newauxatoms;
+
   common_init1();
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
   common_init2(false, overlap_thresh_);
 }
+
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
