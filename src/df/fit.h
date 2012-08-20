@@ -27,18 +27,17 @@
 #ifndef __SRC_DF_FIT_H
 #define __SRC_DF_FIT_H
 
+#include <memory>
 #include <src/df/df.h>
+#include <src/rysint/eribatch.h>
+#include <src/slater/slaterbatch.h>
 #include <src/grad/gradbatch.h>
 #include <src/slater/slaterbatch.h>
 
 class ERIFit : public DensityFit {
   protected:
-    // TODO if I turn on primitive screening, it is broken.
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      std::shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 0.0));
-      eribatch->compute();
-      return std::make_pair(eribatch->data(), eribatch);
-    };
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
+
   public:
     ERIFit(const int nbas, const int naux,
        const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
@@ -46,7 +45,6 @@ class ERIFit : public DensityFit {
        const bool inverse, const double gam = 0.0) // gam is dummy
      : DensityFit(nbas, naux) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
-
     };
     ~ERIFit() {};
     
@@ -57,12 +55,8 @@ class ERIFit : public DensityFit {
 class YukawaFit : public DensityFit {
   protected:
     const double gamma_;
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
 
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      std::shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, true)); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
-      slaterbatch->compute();
-      return make_pair(slaterbatch->data2(), slaterbatch);
-    };
   public:
     YukawaFit(const int nbas, const int naux,
        const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
@@ -70,7 +64,6 @@ class YukawaFit : public DensityFit {
        const bool inverse, const double gam)
      : DensityFit(nbas, naux), gamma_(gam) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
-
     };
     ~YukawaFit() {};
     
@@ -79,12 +72,8 @@ class YukawaFit : public DensityFit {
 class SlaterFit : public DensityFit {
   protected:
     const double gamma_;
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
 
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override {
-      std::shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, false));
-      slaterbatch->compute();
-      return std::make_pair(slaterbatch->data(), slaterbatch);
-    };
   public:
     SlaterFit(const int nbas, const int naux,
        const std::vector<std::shared_ptr<const Atom> >& atoms,  const std::vector<std::vector<int> >& offsets,
@@ -92,7 +81,6 @@ class SlaterFit : public DensityFit {
        const bool inverse, const double gam)
      : DensityFit(nbas, naux), gamma_(gam) {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
-
     };
     ~SlaterFit() {};
     

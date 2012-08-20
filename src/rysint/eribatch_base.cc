@@ -39,11 +39,13 @@ using namespace std;
 static const double pitwohalf__ = pow(pi__, 2.5); 
 static const double pimhalf__ = 1.0/sqrt(pi__);
 
+static const double T_thresh__ = 1.0e-8;
+
 void ERIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
-      if (T_[i] < 1.0e-8) { 
+      if (T_[i] < T_thresh__) { 
         weights_[i] = 1.0;
       } else {
         const double sqrtt = ::sqrt(T_[i]);
@@ -84,7 +86,7 @@ void NAIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
-      if (T_[i] < 1.0e-8) { 
+      if (T_[i] < T_thresh__) { 
         weights_[i] = 1.0;
       } else {
         const double sqrtt = ::sqrt(T_[i]);
@@ -161,6 +163,8 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   const double minexp3 = *min_element(exp3, exp3+nexp3);
   const double min_ab = rnd(minexp0) * rnd(minexp1);
   const double min_cd = rnd(minexp2) * rnd(minexp3);
+  const double min_abp = minexp0 * minexp1;
+  const double min_cdp = minexp2 * minexp3;
 
   // minimum distance between two lines (AB and CD)
   const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1]; 
@@ -182,7 +186,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   {
     const double cxp_min = minexp0 + minexp1; 
     const double cxp_inv_min = 1.0 / cxp_min; 
-    const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
+    const double min_Eab = ::exp(-r01_sq * min_abp * cxp_inv_min);
     int index23 = 0;
     for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) { 
       for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) { 
@@ -203,7 +207,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
           const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
           const double tsqrt = ::sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
-                              * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
+                              * (T > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
           if (ssss > integral_thresh) {
             tuple_field[tuple_length*2  ] = *expi2;
             tuple_field[tuple_length*2+1] = *expi3;
@@ -227,7 +231,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
 
   const double cxq_min = minexp2 + minexp3; 
   const double cxq_inv_min = 1.0 / cxq_min; 
-  const double min_Ecd = ::exp(-r23_sq * min_cd * cxq_inv_min);
+  const double min_Ecd = ::exp(-r23_sq * min_cdp * cxq_inv_min);
   for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) { 
     for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) { 
       const double cxp = *expi0 + *expi1;
@@ -248,7 +252,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
         const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
         const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
         const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
-                          * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
+                          * (T_sc > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
         if (ssss < integral_thresh) continue;
       }
 

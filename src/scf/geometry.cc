@@ -246,7 +246,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
   Quatern<double> ma =   atoms().front()->position();
   Quatern<double> od = oa - oc; 
   Quatern<double> md = ma - mc; 
-  // outer product (rotation axis)
+  // Quaternion that maps md to od.
   od.normalize();
   md.normalize();
   Quatern<double> op = md * od;
