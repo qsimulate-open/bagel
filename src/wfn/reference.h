@@ -86,7 +86,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
 
     void set_eig(const std::vector<double>& eig) { eig_ = eig; };
-    std::vector<double> eig() const { return eig_; };
+    const std::vector<double>& eig() const { return eig_; };
     void set_erdm1(const std::shared_ptr<const Matrix1e> o) { erdm1_ = o; };
     std::shared_ptr<const Matrix1e> erdm1() const { return erdm1_; };
 

@@ -33,8 +33,10 @@
 #include <src/wfn/reference.h>
 #include <string>
 #include <map>
+#include <boost/thread/mutex.hpp>
 
 class MP2 {
+  friend class MP2AssemTask;
   protected:
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_; 
@@ -43,6 +45,7 @@ class MP2 {
     int ncore_;
 
     double energy_;
+    boost::mutex mut_;
 
   public:
     MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>,

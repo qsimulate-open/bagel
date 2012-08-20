@@ -34,6 +34,8 @@
 #include <src/scf/scf.h>
 #include <src/smith/prim_op.h>
 #include <src/mp2/f12int4.h>
+#include <src/util/taskqueue.h>
+#include <src/util/resources.h>
 
 using namespace std;
 
@@ -56,9 +58,44 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> 
 
 }
 
+
+class MP2AssemTask {
+  protected:
+    shared_ptr<const DF_Full> full_;
+    const size_t ivirt_;
+    const size_t nvirt_;
+    const size_t nocc_;
+    MP2* mp2_;
+    shared_ptr<StackMem> stack_;
+  public:
+    MP2AssemTask(shared_ptr<const DF_Full> f, const int iv, const int nv, const int no, MP2* m)
+      : full_(f), ivirt_(iv), nvirt_(nv), nocc_(no), mp2_(m), stack_(resources__->get()) {};
+    ~MP2AssemTask() { resources__->release(stack_); };
+    
+    void compute() {
+      double* const buf = stack_->get(nocc_*nvirt_*nocc_);
+      vector<double> eig(mp2_->ref_->eig().begin()+mp2_->ncore_, mp2_->ref_->eig().end());
+
+      // nocc * nvirt * nocc
+      unique_ptr<double[]> data = full_->form_4index(full_, ivirt_); 
+      copy(data.get(), data.get()+nocc_*nvirt_*nocc_, buf);
+
+      // using SMITH's symmetrizer (src/smith/prim_op.h)
+      SMITH::sort_indices<2,1,0,2,1,-1,1>(data.get(), buf, nocc_, nvirt_, nocc_);
+      double* tdata = buf;
+      for (size_t j = 0; j != nocc_; ++j)
+        for (size_t k = 0; k != nvirt_; ++k)
+          for (size_t l = 0; l != nocc_; ++l, ++tdata)
+            *tdata /= -eig[ivirt_+nocc_]+eig[j]-eig[k+nocc_]+eig[l]; 
+
+      boost::lock_guard<boost::mutex> lock(mp2_->mut_);
+      mp2_->energy_ += ddot_(nocc_*nvirt_*nocc_, data.get(), 1, buf, 1);
+    }
+};
+
 void MP2::compute() {
   // TODO this factor of 2 is very much error-prone..
-  const size_t nocc = geom_->nele() / 2 - ncore_;
+  const size_t nocc = geom_->nele()/2 - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons"); 
   const size_t nvirt = geom_->nbasis() - nocc - ncore_;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals"); 
@@ -80,37 +117,22 @@ void MP2::compute() {
   cout << "    * 3-index integral transformation done" << endl;
 
   // assemble
-  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]);
-  vector<double> eig_tm = ref_->eig();
-  vector<double> eig(eig_tm.begin()+ncore_, eig_tm.end());
-
-  // TODO in priciple this should run over occupied (for optimal implementations)...
-
-  double sum = 0.0;
-  for (size_t i = 0; i != nvirt; ++i) {
-    // nocc * nvirt * nocc
-    unique_ptr<double[]> data = full->form_4index(full, i); 
-    copy(data.get(), data.get()+nocc*nvirt*nocc, buf.get());
-
-    // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data, buf, nocc, nvirt, nocc);
-    double* tdata = buf.get();
-    for (size_t j = 0; j != nocc; ++j) {
-      for (size_t k = 0; k != nvirt; ++k) {
-        for (size_t l = 0; l != nocc; ++l, ++tdata) {
-          *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; 
-        }
-      }
-    }
-    sum += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
+  energy_ = 0.0;
+  vector<MP2AssemTask> task;
+  for (size_t i = 0; i < nvirt; ++i) {
+    MP2AssemTask tmp(full, i, nvirt, nocc, this);
+    task.push_back(tmp);
   }
+
+  TaskQueue<MP2AssemTask> tq(task);
+  tq.compute(resources__->max_num_threads());
 
   auto tp2 = chrono::high_resolution_clock::now(); 
   cout << "    * assembly done" << endl << endl;
-  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << sum
+  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_
                       << setw(10) << setprecision(2) << chrono::duration_cast<chrono::milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
 
-  energy_ = sum + ref_->energy();
+  energy_ += ref_->energy();
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
   // check if F12 is requested.
