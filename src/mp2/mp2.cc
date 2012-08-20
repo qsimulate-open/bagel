@@ -66,14 +66,13 @@ class MP2AssemTask {
     const size_t nvirt_;
     const size_t nocc_;
     MP2* mp2_;
-    shared_ptr<StackMem> stack_;
   public:
     MP2AssemTask(shared_ptr<const DF_Full> f, const int iv, const int nv, const int no, MP2* m)
-      : full_(f), ivirt_(iv), nvirt_(nv), nocc_(no), mp2_(m), stack_(resources__->get()) {};
-    ~MP2AssemTask() { resources__->release(stack_); };
+      : full_(f), ivirt_(iv), nvirt_(nv), nocc_(no), mp2_(m) {};
     
     void compute() {
-      double* const buf = stack_->get(nocc_*nvirt_*nocc_);
+      shared_ptr<StackMem> stack = resources__->get();
+      double* const buf = stack->get(nocc_*nvirt_*nocc_);
       vector<double> eig(mp2_->ref_->eig().begin()+mp2_->ncore_, mp2_->ref_->eig().end());
 
       // nocc * nvirt * nocc
@@ -90,6 +89,8 @@ class MP2AssemTask {
 
       boost::lock_guard<boost::mutex> lock(mp2_->mut_);
       mp2_->energy_ += ddot_(nocc_*nvirt_*nocc_, data.get(), 1, buf, 1);
+      stack->release(nocc_*nvirt_*nocc_, buf);
+      resources__->release(stack);
     }
 };
 
@@ -119,7 +120,7 @@ void MP2::compute() {
   // assemble
   energy_ = 0.0;
   vector<MP2AssemTask> task;
-  for (size_t i = 0; i < nvirt; ++i) {
+  for (size_t i = 0; i != nvirt; ++i) {
     MP2AssemTask tmp(full, i, nvirt, nocc, this);
     task.push_back(tmp);
   }
