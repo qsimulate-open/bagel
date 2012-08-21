@@ -114,6 +114,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
             eribatch.compute();
             const double emin = *min_element(eribatch.data(), eribatch.data()+eribatch.data_size());
             const double emax = *max_element(eribatch.data(), eribatch.data()+eribatch.data_size());
+            // TODO 1.0e-12 should be passed by input! Bad code
             sch.push_back(sqrt(max(fabs(emin), fabs(emax))) < 1.0e-12);
           }
         }
