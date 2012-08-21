@@ -45,12 +45,12 @@ using namespace std::chrono;
 class DFIntTask {
   protected:
     array<shared_ptr<const Shell>,4> shell_;
-    int offset_[4];
-    DensityFit* df_;
+    array<int,3> offset_; // at most 3 elements
     int rank_;
+    DensityFit* df_;
 
   public:
-    DFIntTask(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), df_(df), rank_(b.size()) {
+    DFIntTask(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), rank_(b.size()), df_(df) {
       int j = 0;
       for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
     }
