@@ -106,14 +106,28 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       auto oa1 = oa0;
       for (auto a1 = a0; a1 != atoms0.end(); ++a1, ++oa1) {
 
+        list<bool> sch;
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0) {
+          for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1) {
+            vector<shared_ptr<const Shell> > input = {{*b1, *b0, *b1, *b0}};
+            ERIBatch eribatch(input, 0.0);
+            eribatch.compute();
+            const double emin = *min_element(eribatch.data(), eribatch.data()+eribatch.data_size());
+            const double emax = *max_element(eribatch.data(), eribatch.data()+eribatch.data_size());
+            sch.push_back(sqrt(max(fabs(emin), fabs(emax))) < 1.0e-12);
+          }
+        }
+
         auto oa2 = aux_offsets.begin(); 
         for (auto a2 = aux_atoms.begin(); a2 != aux_atoms.end(); ++a2, ++oa2) {
 
+          auto s01 = sch.begin();
           auto o0 = oa0->begin();
           for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
             auto o1 = a0!=a1 ? oa1->begin() : o0;
-            for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+            for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1, ++s01) {
               auto o2 = oa2->begin();
+              if (*s01) continue;
               for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
                 tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}, this));
               }
