@@ -109,6 +109,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
         list<bool> sch;
         for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0) {
           for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1) {
+#if 0
             vector<shared_ptr<const Shell> > input = {{*b1, *b0, *b1, *b0}};
             ERIBatch eribatch(input, 0.0);
             eribatch.compute();
@@ -116,6 +117,9 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
             const double emax = *max_element(eribatch.data(), eribatch.data()+eribatch.data_size());
             // TODO 1.0e-12 should be passed by input! Bad code
             sch.push_back(sqrt(max(fabs(emin), fabs(emax))) < 1.0e-12);
+#else
+            sch.push_back(false);
+#endif
           }
         }
 
