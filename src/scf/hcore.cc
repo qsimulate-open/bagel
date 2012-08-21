@@ -52,7 +52,7 @@ Hcore::~Hcore() {
 }
 
 
-void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1) {
+void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -70,7 +70,6 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
       }
     }
   }
-#if 1
   {
     NAIBatch nai(input, geom_);
     nai.compute();
@@ -97,7 +96,6 @@ void Hcore::computebatch(const vector<RefShell>& input, const int offsetb0, cons
       }
     }
   }
-#endif
 }
 
 

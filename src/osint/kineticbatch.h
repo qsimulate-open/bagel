@@ -27,7 +27,6 @@
 #ifndef __src_osint_kineticbatch_h
 #define __src_osint_kineticbatch_h
 
-#include <vector>
 #include <src/osint/osint.h>
 #include <memory>
 
@@ -36,7 +35,7 @@ class KineticBatch : public OSInt {
     void perform_VRR(double*);
 
   public: 
-    KineticBatch(const std::vector<std::shared_ptr<const Shell> >&);
+    KineticBatch(const std::array<std::shared_ptr<const Shell>,2>&);
     ~KineticBatch();
 
     void compute() override;

@@ -194,11 +194,7 @@ void PSCF::init_schwarz() {
       for (int i1 = 0; i1 != size; ++i1) {
         const RefShell b1 = basis[i1]->move_atom(disp);
 
-        vector<RefShell> input;
-        input.push_back(b0);
-        input.push_back(b1);
-        input.push_back(b0);
-        input.push_back(b1);
+        array<RefShell,4> input = {{b0,b1,b0,b1}};
         ERIBatch eribatch(input, 0.0);
         eribatch.compute();
         const double* eridata = eribatch.data();

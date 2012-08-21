@@ -29,17 +29,26 @@
 #include <cmath>
 #include <algorithm>
 #include <cassert>
+#include <array>
 #include <stdexcept>
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
 
 using namespace std;
 
-RysInt::RysInt(const vector<std::shared_ptr<const Shell> >& info)
+RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
    hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())),
    stack_(resources__->get()) {
+}
 
+
+RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info)
+ : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
+   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())),
+   stack_(resources__->get()) {
+  shared_ptr<const Shell> dum(new Shell(spherical_));
+  basisinfo_ = {{ info[0], info[1], dum, dum }};
 }
 
 

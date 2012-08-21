@@ -197,7 +197,7 @@ template<typename T> class AOInt {
               const int b3offset = offset0[i3]; 
               const int b3size = b3->nbasis();
   
-              std::vector<std::shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
+              std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
   
               T batch(input, 0.0, gamma_, yukawa_);
               batch.compute();

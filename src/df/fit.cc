@@ -28,21 +28,21 @@
 
 using namespace std;
 
-pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(vector<shared_ptr<const Shell> >& input) { 
+pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) { 
   shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 2.0));
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
 }
 
 
-pair<const double*, shared_ptr<RysInt> > YukawaFit::compute_batch(vector<shared_ptr<const Shell> >& input) {
+pair<const double*, shared_ptr<RysInt> > YukawaFit::compute_batch(array<shared_ptr<const Shell>,4>& input) {
   shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, true)); // TODO true meas it computes Yukawa and Slater together, but Slater is discarded
   slaterbatch->compute();
   return make_pair(slaterbatch->data2(), slaterbatch);
 }
 
 
-pair<const double*, shared_ptr<RysInt> > SlaterFit::compute_batch(vector<shared_ptr<const Shell> >& input) {
+pair<const double*, shared_ptr<RysInt> > SlaterFit::compute_batch(array<shared_ptr<const Shell>,4>& input) {
   shared_ptr<SlaterBatch> slaterbatch(new SlaterBatch(input, 0.0, gamma_, false));
   slaterbatch->compute();
   return make_pair(slaterbatch->data(), slaterbatch);

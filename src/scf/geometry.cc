@@ -549,7 +549,7 @@ vector<double> Geometry::schwarz() const {
     for (int i1 = i0; i1 != size; ++i1) {
       const shared_ptr<const Shell> b1 = basis[i1];
 
-      vector<shared_ptr<const Shell> > input = {{b1, b0, b1, b0}};
+      array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
       ERIBatch eribatch(input, 1.0);
       eribatch.compute();
       const double* eridata = eribatch.data();

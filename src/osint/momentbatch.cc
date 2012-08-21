@@ -36,7 +36,7 @@
 using namespace std;
 
 
-MomentBatch::MomentBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
+MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 
  : OSInt(_basis, -1) {
 
 }  

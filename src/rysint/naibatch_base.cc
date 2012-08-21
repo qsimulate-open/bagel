@@ -29,7 +29,7 @@
 
 using namespace std;
 
-NAIBatch_base::NAIBatch_base(const std::vector<std::shared_ptr<const Shell> >& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
+NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
                              const int L, const double A)
  : RysInt(_info), geom_(gm), L_(L), A_(A) {
 
@@ -37,8 +37,6 @@ NAIBatch_base::NAIBatch_base(const std::vector<std::shared_ptr<const Shell> >& _
   const double integral_thresh = PRIM_SCREEN_THRESH; 
 
   if (_info.size() != 2) throw logic_error("NAIBatch_base should be called with shell pairs");
-  shared_ptr<Shell> dum(new Shell(spherical_));
-  basisinfo_.push_back(dum); basisinfo_.push_back(dum);
 
   // natom_ 
   natom_ = geom_->natom() * (2 * L + 1);

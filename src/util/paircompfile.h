@@ -95,11 +95,7 @@ void PairCompFile<T>::init_schwarz() {
       for (int i1 = 0; i1 != size; ++i1) {
         const RefShell b1 = files_.first->basis(i1)->move_atom(disp);
 
-        std::vector<RefShell> input;
-        input.push_back(b0);
-        input.push_back(b1);
-        input.push_back(b0);
-        input.push_back(b1);
+        std::array<RefShell,4> input = {{ b0, b1, b0, b1 }};
         T batch(input, 1.0, gamma_, true);
         batch.compute();
         const double* data1 = batch.data();
@@ -301,11 +297,7 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           const bool skip_schwarz2 = blocks2[offset] == blocks2[offset + 1];
           if (skip_schwarz1 && skip_schwarz2) continue;
 
-          std::vector<RefShell> input;
-          input.push_back(b3);
-          input.push_back(b2);
-          input.push_back(b1);
-          input.push_back(b0);
+          std::array<RefShell,4> input = {{ b3, b2, b1, b0 }};
 
           if (!skip_schwarz1 && skip_schwarz2) {
             T batch(input, 1.0, gamma_, false);

@@ -164,7 +164,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
             const bool skip_schwarz = integral_bound < schwarz_thresh_;
             if (skip_schwarz) continue;
 
-            std::vector<std::shared_ptr<const Shell> > input = {{b3, b2, b1, b0}};
+            std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
 
             ERIBatch eribatch(input, mulfactor);
             eribatch.compute();

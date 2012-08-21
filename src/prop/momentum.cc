@@ -57,7 +57,7 @@ array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
         auto offset1 = o1->begin();
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
 
-          vector<shared_ptr<const Shell> > input = {{*b1, *b0}};
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           MomentBatch mom(input);
           mom.compute();
 

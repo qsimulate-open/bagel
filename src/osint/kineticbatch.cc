@@ -35,7 +35,7 @@
 using namespace std;
 
 
-KineticBatch::KineticBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
+KineticBatch::KineticBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 
  : OSInt(_basis) {
 
 }  

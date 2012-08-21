@@ -28,7 +28,6 @@
 #define __SRC_RYSINT_NAIBATCH_BASE_H
 
 #include <memory>
-#include <vector>
 #include <tuple>
 #include <src/rysint/macros.h>
 #include <src/scf/shell.h>
@@ -49,7 +48,7 @@ class NAIBatch_base : public RysInt {
     void compute_ssss(const double);
 
   public:
-    NAIBatch_base(const std::vector<std::shared_ptr<const Shell> >& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
+    NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
                   const int L = 0, const double A = 0.0);
     ~NAIBatch_base() {};
 

@@ -33,7 +33,7 @@
 
 class Hcore : public Matrix1e {
   protected:
-    void computebatch(const std::vector<std::shared_ptr<const Shell> >&, const int, const int) override;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
     Hcore(const std::shared_ptr<const Geometry>);

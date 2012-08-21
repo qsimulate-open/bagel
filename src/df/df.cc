@@ -44,12 +44,16 @@ using namespace std::chrono;
 
 class DFIntTask {
   protected:
-    vector<shared_ptr<const Shell> > shell_;
-    vector<int> offset_;
+    array<shared_ptr<const Shell>,4> shell_;
+    int offset_[4];
     DensityFit* df_;
+    int rank_;
 
   public:
-    DFIntTask(vector<shared_ptr<const Shell> > a, vector<int> b, DensityFit* df) : shell_(a), offset_(b), df_(df) {};    
+    DFIntTask(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), df_(df), rank_(b.size()) {
+      int j = 0;
+      for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
+    }
     DFIntTask() {};
 
     void compute() {
@@ -59,7 +63,7 @@ class DFIntTask {
       const size_t nbasis1 = df_->nbasis1();
       const size_t naux = df_->naux();
       // all slot in
-      if (offset_.size() == 3) {
+      if (rank_ == 3) {
         double* const data = df_->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
@@ -68,7 +72,7 @@ class DFIntTask {
             }
           }
         }
-      } else if (offset_.size() == 2) {
+      } else if (rank_ == 2) {
         double* const data = df_->data2();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
@@ -90,7 +94,6 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   // this will be distributed in the future.
   auto tp0 = high_resolution_clock::now();
   data_ = unique_ptr<double[]>(new double[nbasis0_*nbasis1_*naux_]);
-//fill(data_.get(), data_.get()+nbasis0_*nbasis1_*naux_, 0.0);
 
   const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
 
@@ -98,43 +101,25 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   vector<DFIntTask> tasks;
 
   if (atoms0 == atoms1) {
-    // these atom loops will be distributed across nodes
-    // TODO align so that heavy atoms come first
+    size_t nshell = 0;
+    for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0) nshell += (*a0)->shells().size();
+    size_t nshell2 = 0;
+    for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0) nshell2 += (*a0)->shells().size();
+    tasks.reserve(nshell*(nshell+1)*nshell2/2 + nshell2*(nshell2+1)/2);
 
     auto oa0 = offsets0.begin();
     for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0, ++oa0) {
       auto oa1 = oa0;
       for (auto a1 = a0; a1 != atoms0.end(); ++a1, ++oa1) {
-
-        list<bool> sch;
-        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0) {
-          for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1) {
-#if 0
-            vector<shared_ptr<const Shell> > input = {{*b1, *b0, *b1, *b0}};
-            ERIBatch eribatch(input, 0.0);
-            eribatch.compute();
-            const double emin = *min_element(eribatch.data(), eribatch.data()+eribatch.data_size());
-            const double emax = *max_element(eribatch.data(), eribatch.data()+eribatch.data_size());
-            // TODO 1.0e-12 should be passed by input! Bad code
-            sch.push_back(sqrt(max(fabs(emin), fabs(emax))) < 1.0e-12);
-#else
-            sch.push_back(false);
-#endif
-          }
-        }
-
         auto oa2 = aux_offsets.begin(); 
         for (auto a2 = aux_atoms.begin(); a2 != aux_atoms.end(); ++a2, ++oa2) {
-
-          auto s01 = sch.begin();
           auto o0 = oa0->begin();
           for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
             auto o1 = a0!=a1 ? oa1->begin() : o0;
-            for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1, ++s01) {
+            for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
               auto o2 = oa2->begin();
-              if (*s01) continue;
               for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
-                tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}, this));
+                tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}, this));
               }
             }
           }
@@ -147,7 +132,6 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
-//fill(data2(), data2()+naux_*naux_, 0.0);
 
   auto oa0 = aux_offsets.begin();
   for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0, ++oa0) {
@@ -157,7 +141,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = a0!=a1 ? oa1->begin() : o0;
         for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-          tasks.push_back(DFIntTask(vector<shared_ptr<const Shell> >{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}, this));
+          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}, this));
         }
       }
     }
@@ -179,11 +163,8 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
     for (int i = 0; i != naux_; ++i)
       vec[i] = vec[i] > throverlap ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
-    for (int i = 0; i != naux_; ++i) {
-      for (int j = 0; j != naux_; ++j) {
-        data2_[j+i*naux_] *= vec[i];
-      }
-    }
+    for (int i = 0; i != naux_; ++i)
+      dscal_(naux_, vec[i], data2_.get()+i*naux_, 1);
     // work now contains -1/2
     dgemm_("N", "T", naux_, naux_, naux_, 1.0, data2_, naux_, data2_, naux_, 0.0, work, naux_); 
     copy(work.get(), work.get()+naux_*naux_, data2());

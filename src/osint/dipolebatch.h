@@ -38,7 +38,7 @@ class DipoleBatch : public OSInt {
     void perform_VRR(double*);
 
   public: 
-    DipoleBatch(const std::vector<std::shared_ptr<const Shell> >&, const std::array<double,3>& c);
+    DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<double,3>& c);
     ~DipoleBatch();
 
     void compute() override;

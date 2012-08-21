@@ -27,7 +27,6 @@
 #ifndef __src_osint_momentbatch_h
 #define __src_osint_momentbatch_h
 
-#include <vector>
 #include <src/osint/osint.h>
 #include <memory>
 
@@ -36,7 +35,7 @@ class MomentBatch : public OSInt {
     void perform_VRR(double*);
 
   public: 
-    MomentBatch(const std::vector<std::shared_ptr<const Shell> >&);
+    MomentBatch(const std::array<std::shared_ptr<const Shell>,2>&);
     ~MomentBatch();
 
     void compute() override;

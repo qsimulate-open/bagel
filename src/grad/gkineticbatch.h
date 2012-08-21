@@ -36,7 +36,7 @@ class GKineticBatch : public OSInt {
     const std::shared_ptr<const Geometry> geom_;
 
   public:
-    GKineticBatch(const std::vector<std::shared_ptr<const Shell> >& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,3), geom_(ge) { };
+    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,3), geom_(ge) { };
     ~GKineticBatch() {};
 
     void compute();

@@ -34,15 +34,15 @@
 using namespace std;
 
 void GradTask::compute() {
-  if (shell_.size() == 2) {
+  if (rank_ == 2) {
     const int iatom0 = atomindex_[0];
     const int iatom1 = atomindex_[1];
     const int nbasis = ge_->geom_->nbasis();
     shared_ptr<GradFile> grad_local(new GradFile(ge_->geom_->natom()));
-    const int dimb1 = shell_[0]->nbasis(); 
-    const int dimb0 = shell_[1]->nbasis(); 
+    const int dimb1 = shell2_[0]->nbasis(); 
+    const int dimb0 = shell2_[1]->nbasis(); 
     {
-      GNAIBatch batch2(shell_, ge_->geom_, tie(iatom1, iatom0));
+      GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
       batch2.compute();
       const double* ndata = batch2.data();
       const size_t s = batch2.size_block();
@@ -55,7 +55,7 @@ void GradTask::compute() {
       }
     }
     {
-      GKineticBatch batch(shell_, ge_->geom_);
+      GKineticBatch batch(shell2_, ge_->geom_);
       const double* kdata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();
@@ -71,7 +71,7 @@ void GradTask::compute() {
       }
     }
     {
-      GOverlapBatch batch(shell_, ge_->geom_);
+      GOverlapBatch batch(shell2_, ge_->geom_);
       const double* odata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();

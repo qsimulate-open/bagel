@@ -36,7 +36,7 @@ using namespace std;
 
 const static HRRList hrr;
 
-OverlapBatch::OverlapBatch(const vector<std::shared_ptr<const Shell> >& _basis) 
+OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 
  : OSInt(_basis) {
 
 }  

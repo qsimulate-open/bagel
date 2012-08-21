@@ -57,7 +57,7 @@ class RysInt {
     double *buff_;
     double *bkup_;
 
-    std::vector<std::shared_ptr<const Shell> > basisinfo_;
+    std::array<std::shared_ptr<const Shell>,4> basisinfo_;
     bool spherical_;
 
     // information on how many derivatives you take
@@ -116,7 +116,8 @@ class RysInt {
     std::shared_ptr<StackMem> stack_;
 
   public:
-    RysInt(const std::vector<std::shared_ptr<const Shell> >&);
+    RysInt(const std::array<std::shared_ptr<const Shell>,4>&);
+    RysInt(const std::array<std::shared_ptr<const Shell>,2>&);
     ~RysInt();
 
     virtual void compute() = 0;

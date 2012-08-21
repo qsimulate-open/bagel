@@ -46,7 +46,7 @@ using namespace std;
 static const double pitwohalf__ = ::pow(pi__, 2.5); 
 
 
-SlaterBatch::SlaterBatch(const vector<shared_ptr<const Shell> >& _info, const double max_density, const double gmm, const bool yukawa)
+SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;

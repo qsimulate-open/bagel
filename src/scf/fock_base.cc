@@ -96,7 +96,7 @@ Fock_base::~Fock_base() {
 }
 
 
-void Fock_base::computebatch(const vector<RefShell>& input, const int offsetb0, const int offsetb1) {
+void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);

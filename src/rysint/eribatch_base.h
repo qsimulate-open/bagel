@@ -28,7 +28,6 @@
 #define __SRC_RYSINT_ERIBATCH_BASE_H
 
 #include <src/rysint/macros.h>
-#include <vector>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
 #include <tuple>
@@ -39,7 +38,7 @@ class ERIBatch_base : public RysInt{
     void compute_ssss(const double);
 
   public:
-    ERIBatch_base(const std::vector<std::shared_ptr<const Shell> >& o, const double max_density, const int deriv) : RysInt(o) {
+    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv) : RysInt(o) {
       const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
       deriv_rank_ = deriv;
 

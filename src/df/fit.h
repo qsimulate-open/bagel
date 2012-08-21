@@ -36,7 +36,7 @@
 
 class ERIFit : public DensityFit {
   protected:
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
 
   public:
     ERIFit(const int nbas, const int naux,
@@ -55,7 +55,7 @@ class ERIFit : public DensityFit {
 class YukawaFit : public DensityFit {
   protected:
     const double gamma_;
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
 
   public:
     YukawaFit(const int nbas, const int naux,
@@ -72,7 +72,7 @@ class YukawaFit : public DensityFit {
 class SlaterFit : public DensityFit {
   protected:
     const double gamma_;
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::vector<std::shared_ptr<const Shell> >& input) override;
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
 
   public:
     SlaterFit(const int nbas, const int naux,

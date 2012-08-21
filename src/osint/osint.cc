@@ -36,7 +36,7 @@ using namespace std;
 
 static const double pisqrt__ = ::sqrt(pi__);
 
-OSInt::OSInt(const std::vector<std::shared_ptr<const Shell> >& basis, const int deriv)
+OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int deriv)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv), stack_(resources__->get()) {
 
   assert(basis.size() == 2);

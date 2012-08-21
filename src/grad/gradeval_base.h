@@ -40,21 +40,24 @@ class GradEval_base;
 
 class GradTask {
   protected:
-    std::vector<std::shared_ptr<const Shell> > shell_;
+    std::array<std::shared_ptr<const Shell>,4> shell_;
+    std::array<std::shared_ptr<const Shell>,2> shell2_;
     std::vector<int> atomindex_;
     std::vector<int> offset_;
     std::shared_ptr<const DF_AO> den_;
     std::shared_ptr<const Matrix1e> den2_;
     std::shared_ptr<const Matrix1e> eden_;
     GradEval_base* ge_;
+    int rank_;
 
   public:
-    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const DF_AO> d, GradEval_base* p)
-      : shell_(s), atomindex_(a), offset_(o), den_(d), ge_(p) {};
-    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
-      : shell_(s), atomindex_(a), offset_(o), den2_(d), ge_(p) {};
-    GradTask(const std::vector<std::shared_ptr<const Shell> >& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
-      : shell_(s), atomindex_(a), offset_(o), den2_(d), eden_(w), ge_(p) {};
+    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const DF_AO> d, GradEval_base* p)
+      : shell_(s), atomindex_(a), offset_(o), den_(d), ge_(p), rank_(3) {};
+    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
+      : shell_(s), atomindex_(a), offset_(o), den2_(d), ge_(p), rank_(3) {};
+    GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
+      : shell2_(s), atomindex_(a), offset_(o), den2_(d), eden_(w), ge_(p), rank_(2) {
+    };
     ~GradTask() {};
 
     void compute();

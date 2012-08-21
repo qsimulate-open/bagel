@@ -367,11 +367,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
           if (blocks[offset] == blocks[offset + 1]) continue;
 
-          std::vector<RefShell> input;
-          input.push_back(b3);
-          input.push_back(b2);
-          input.push_back(b1);
-          input.push_back(b0);
+          std::array<RefShell,4> input = {{ b3, b2, b1, b0 }};
 
           T batch(input, 1.0, gamma_);
           batch.compute();
@@ -429,11 +425,7 @@ void PCompFile<T>::init_schwarz() {
       for (int i1 = 0; i1 != size; ++i1) {
         const RefShell b1 = basis_[i1]->move_atom(disp);
 
-        std::vector<RefShell> input;
-        input.push_back(b0);
-        input.push_back(b1);
-        input.push_back(b0);
-        input.push_back(b1);
+        std::array<RefShell,4> input = {{b0, b1, b0, b1}};
         T batch(input, 1.0, gamma_);
         batch.compute();
         const double* data = batch.data();

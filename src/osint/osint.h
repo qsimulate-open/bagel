@@ -27,6 +27,7 @@
 #ifndef __src_osint_osint_h
 #define __src_osint_osint_h
 
+#include <array>
 #include <vector>
 #include <src/scf/shell.h>
 #include <src/rysint/sortlist.h>
@@ -37,7 +38,7 @@
 class OSInt {
   protected:
 
-    std::vector<std::shared_ptr<const Shell> > basisinfo_;
+    std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     bool spherical_;
 
     double* data_;
@@ -70,7 +71,7 @@ class OSInt {
 
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::vector<std::shared_ptr<const Shell> >&, const int deriv = 0);
+    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0);
     ~OSInt();
 
     virtual void compute() = 0; 

@@ -299,7 +299,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         vector<vector<double> > cont(1, *iter);
         vector<pair<int, int> > cran(1, *citer);
         shared_ptr<const Shell> current(new Shell(spherical_, position_, i, exponents, cont, cran));
-        vector<shared_ptr<const Shell> > cinp(2, current); 
+        array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
         const double scal = 1.0 / ::sqrt((coverlap.data())[0]);

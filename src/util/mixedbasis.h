@@ -43,7 +43,7 @@ class MixedBasis {
 
     std::unique_ptr<double[]> data_;
 
-    void computebatch(const std::vector<std::shared_ptr<const Shell> >& input, const int offsetb0, const int offsetb1, const int ndim) {
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, const int ndim) {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
@@ -87,7 +87,7 @@ class MixedBasis {
             for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
               const int offset1 = coffset1[ibatch1];
               std::shared_ptr<const Shell> b1 = shell1[ibatch1];
-              std::vector<std::shared_ptr<const Shell> > input = {{b1, b0}};
+              std::array<std::shared_ptr<const Shell>,2> input = {{b1, b0}};
 
               computebatch(input, offset0, offset1, nbasis1_);
 
