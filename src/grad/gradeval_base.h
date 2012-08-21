@@ -42,8 +42,8 @@ class GradTask {
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
     std::array<std::shared_ptr<const Shell>,2> shell2_;
-    std::vector<int> atomindex_;
-    std::vector<int> offset_;
+    std::array<int,4> atomindex_;
+    std::array<int,4> offset_;
     std::shared_ptr<const DF_AO> den_;
     std::shared_ptr<const Matrix1e> den2_;
     std::shared_ptr<const Matrix1e> eden_;
@@ -51,14 +51,28 @@ class GradTask {
     int rank_;
 
   public:
-    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const DF_AO> d, GradEval_base* p)
-      : shell_(s), atomindex_(a), offset_(o), den_(d), ge_(p), rank_(3) {};
-    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
-      : shell_(s), atomindex_(a), offset_(o), den2_(d), ge_(p), rank_(3) {};
-    GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o, const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
-      : shell2_(s), atomindex_(a), offset_(o), den2_(d), eden_(w), ge_(p), rank_(2) {
-    };
+    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
+             const std::shared_ptr<const DF_AO> d, GradEval_base* p)
+      : shell_(s), den_(d), ge_(p), rank_(3) { common_init(a,o); }
+
+    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
+             const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
+      : shell_(s), den2_(d), ge_(p), rank_(2) { common_init(a,o); }
+
+    GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
+             const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
+      : shell2_(s), den2_(d), eden_(w), ge_(p), rank_(1) { common_init(a,o); }
+
     ~GradTask() {};
+
+    void common_init(const std::vector<int>& a, const std::vector<int>& o) {
+      assert(a.size() == o.size());
+      int k = 0;
+      for (auto i = a.begin(), j = o.begin(); i != a.end(); ++i, ++j, ++k) {
+        atomindex_[k] = *i; 
+        offset_[k] = *j; 
+      }
+    }
 
     void compute();
 };

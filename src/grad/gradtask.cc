@@ -34,7 +34,7 @@
 using namespace std;
 
 void GradTask::compute() {
-  if (rank_ == 2) {
+  if (rank_ == 1) {
     const int iatom0 = atomindex_[0];
     const int iatom1 = atomindex_[1];
     const int nbasis = ge_->geom_->nbasis();
@@ -93,7 +93,7 @@ void GradTask::compute() {
       ge_->grad_->data(3*iatom+2) += grad_local->data(3*iatom+2);
     }
 
-  } else if (atomindex_.size() == 3) {
+  } else if (rank_ == 3) {
     // pointer to stack
     GradBatch gradbatch(shell_, 0.0);
     gradbatch.compute();
@@ -124,7 +124,7 @@ void GradTask::compute() {
       for (int icart = 0; icart != 3; ++icart)
         ge_->grad_->data(jatom[iatom], icart) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
-  } else if (atomindex_.size() == 2) {
+  } else if (rank_ == 2) {
     // pointer to stack
     GradBatch gradbatch(shell_, 0.0);
     gradbatch.compute();

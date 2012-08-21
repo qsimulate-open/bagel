@@ -35,7 +35,7 @@ using namespace std;
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
                                                       const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {
 
-  vector<GradTask> task  = contract_grad1e(d, w); 
+  vector<GradTask> task  = contract_grad1e(d, w);
   vector<GradTask> task2 = contract_grad2e(o);
   vector<GradTask> task3 = contract_grad2e_2index(o2);
   task.insert(task.end(), task2.begin(), task2.end());
@@ -52,6 +52,9 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
 vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w) {
   vector<GradTask> out;
+  size_t nshell = 0;
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();
+  out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
   int iatom0 = 0;
@@ -67,13 +70,13 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e>
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          vector<int> atom = {{iatom0, iatom1}}; 
+          vector<int> atom = {{iatom0, iatom1}};
           vector<int> offset_ = {{*o0, *o1}};
 
-          GradTask task(input, atom, offset_, d, w, this); 
+          GradTask task(input, atom, offset_, d, w, this);
           out.push_back(task);
         }
-      } 
+      }
     }
   }
   return out;
@@ -82,6 +85,11 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e>
 
 vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) {
   vector<GradTask> out;
+  size_t nshell = 0;
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();
+  size_t nshell2 = 0;
+  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0) nshell2 += (*a0)->shells().size();
+  out.reserve(nshell*(nshell+1)*nshell2/2);
 
   // loop over atoms (using symmetry b0 <-> b1)
   int iatom0 = 0;
@@ -91,7 +99,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o)
     auto oa1 = oa0;
     for (auto a1 = a0; a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
       int iatom2 = 0;
-      auto oa2 = geom_->aux_offsets().begin(); 
+      auto oa2 = geom_->aux_offsets().begin();
       for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
 
         // dummy shell
@@ -107,7 +115,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o)
               vector<int> atoms = {{iatom0, iatom1, iatom2}};
               vector<int> offs = {{*o0, *o1, *o2}};
 
-              GradTask task(input, atoms, offs, o, this); 
+              GradTask task(input, atoms, offs, o, this);
               out.push_back(task);
             }
           }
@@ -122,6 +130,9 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o)
 
 vector<GradTask> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>& o) {
   vector<GradTask> out;
+  size_t nshell2 = 0;
+  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0) nshell2 += (*a0)->shells().size();
+  out.reserve(nshell2*(nshell2+1)/2);
 
   shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
   shared_ptr<Matrix1e> den(new Matrix1e(auxgeom));
