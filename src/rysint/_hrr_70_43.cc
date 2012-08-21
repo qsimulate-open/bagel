@@ -8,7 +8,7 @@
 //
 // This file is part of the Newint package (to be renamed).
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The Newint package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -23,13 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include "hrrlist.h"
+#include <array>
 #include <algorithm>
 
 using namespace std;
 
-void HRRList::perform_HRR_70_43(const int nloop, const double* data_start, const double* AB, double* data_out) {
+void HRRList::perform_HRR_70_43(const int nloop, const double* data_start, const array<double,3>& AB, double* data_out) {
   for (int c = 0; c != nloop; ++c) {
     const double* current_data = &data_start[c * 100];
     double* current_out = &data_out[c * 150];

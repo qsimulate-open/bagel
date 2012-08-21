@@ -86,18 +86,40 @@ int main() {
       size = cartesian_xyz[a];
       string asize = lexical_cast<string>(size); 
 
+      string filename = "_hrr_" + n0 + "_" + ab + ".cc";
       out +="\
 //\n\
-// Author: Toru Shiozaki\n\
-// Machine Generated Code\n\
+// Newint - Parallel electron correlation program.\n\
+// Filename: " + filename + "\n\
+// Copyright (C) 2009 Toru Shiozaki\n\
+//\n\
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
+// Maintainer: Shiozaki group\n\
+//\n\
+// This file is part of the Newint package (to be renamed).\n\
+//\n\
+// The Newint package is free software; you can redistribute it and/or modify\n\
+// it under the terms of the GNU Library General Public License as published by\n\
+// the Free Software Foundation; either version 2, or (at your option)\n\
+// any later version.\n\
+//\n\
+// The Newint package is distributed in the hope that it will be useful,\n\
+// but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
+// GNU Library General Public License for more details.\n\
+//\n\
+// You should have received a copy of the GNU Library General Public License\n\
+// along with the Newint package; see COPYING.  If not, write to\n\
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
 #include \"hrrlist.h\"\n\
+#include <array>\n\
 #include <algorithm>\n\
 \n\
 using namespace std;\n\
 \n\
-void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* data_start, const double* AB, double* data_out) {\n\
+void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* data_start, const array<double,3>& AB, double* data_out) {\n\
   for (int c = 0; c != nloop; ++c) {\n\
     const double* current_data = &data_start[c * " + ssize + "];\n\
     double* current_out = &data_out[c * " + osize + "];\n";
@@ -206,7 +228,6 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
   }\n\
 }\n";
       ofstream ofs;
-      string filename = "_hrr_" + n0 + "_" + ab + ".cc";
       ofs.open(filename.c_str());
       ofs << out << endl;
       ofs.close();

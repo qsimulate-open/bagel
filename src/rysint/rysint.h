@@ -35,6 +35,7 @@
 #include <src/scf/shell.h>
 #include <src/util/resources.h>
 #include <tuple>
+#include <array>
 #include <vector>
 #include <memory>
 
@@ -43,7 +44,7 @@ class RysInt {
     // some basic info for integral evaluations
     bool swap01_, swap23_;
     bool swap0123_;
-    double AB_[3], CD_[3];
+    std::array<double,3> AB_, CD_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     double *p_, *q_;

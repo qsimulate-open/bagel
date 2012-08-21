@@ -45,7 +45,7 @@ class OSInt {
     std::vector<double> xp_, xa_, xb_, rho_, p_; 
     std::vector<double> coeffsx_, coeffsy_, coeffsz_;
     std::vector<double> coefftx_, coeffty_, coefftz_;
-    double AB_[3];
+    std::array<double,3> AB_;
 
     int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
 
