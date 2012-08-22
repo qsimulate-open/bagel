@@ -166,10 +166,10 @@ void MomentBatch::perform_VRR(double* intermediate) {
 
   } // end of prim exponent loop
 
-  stack_->release(worksize * worksize, worksx);
-  stack_->release(worksize * worksize, worksy);
   stack_->release(worksize * worksize, worksz);
-  stack_->release(worksize * worksize, worktx);
-  stack_->release(worksize * worksize, workty);
+  stack_->release(worksize * worksize, worksy);
+  stack_->release(worksize * worksize, worksx);
   stack_->release(worksize * worksize, worktz);
+  stack_->release(worksize * worksize, workty);
+  stack_->release(worksize * worksize, worktx);
 }
