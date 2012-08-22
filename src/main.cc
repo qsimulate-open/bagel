@@ -218,13 +218,39 @@ int main(int argc, char** argv) {
           if (opt->next()) break;
 
       } else if (method == "print") {
-        std::multimap<std::string, std::string> pdata = idata->get_input("print");
+
+        std::multimap<std::string, std::string> pdata = iter->second;
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
         std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
 
         Molden molden(geom->spherical());
         molden.write_geo(geom, out_file);
         if (orbitals) molden.write_mos(ref, out_file);
+
+      }
+        else if (method == "dimerize") {
+
+        std::multimap<std::string,std::string> dimdata = iter->second;
+
+        double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
+
+        double dx = read_input<double>(dimdata,"dx",0.0) * scale;
+        double dy = read_input<double>(dimdata,"dy",0.0) * scale;
+        double dz = read_input<double>(dimdata,"dz",0.0) * scale;
+        std::array<double,3> disp = {{dx,dy,dz}};
+
+        std::shared_ptr<Dimer> dim;
+        if (static_cast<bool>(ref)) {
+          dim = std::shared_ptr<Dimer>(new Dimer(ref,disp));
+          dim->orthonormalize();
+        }
+        else {
+          dim = std::shared_ptr<Dimer>(new Dimer(geom,disp));
+        }
+
+        geom = dim->supergeom();
+        ref = dim->superref();
+
       }
       #if 0 // <---- Testing environment
       else if (method == "testing") {
