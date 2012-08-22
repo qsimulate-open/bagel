@@ -29,9 +29,18 @@
 
 #include <cmath>
 
+/************************************************************
+*  Physical/Mathematical constants                          *
+************************************************************/
 static const double ang2bohr__ = 1.889725989;
 static const double pi__ = std::atan(1.0)*4.0; 
+
+/************************************************************
+*  Numerical constants                                      *
+************************************************************/
 static const double numerical_zero__ = 1.0e-15;
+static const unsigned int large__ = 32;
+static const unsigned int nbit__ = 32;
 
 #endif
 
