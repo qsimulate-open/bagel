@@ -39,6 +39,7 @@
 #include <src/molden/molden.h>
 #include <src/util/constants.h>
 #include <src/util/quatern.h>
+#include <src/rysint/libint.h>
 
 using namespace std;
 
@@ -550,7 +551,11 @@ vector<double> Geometry::schwarz() const {
       const shared_ptr<const Shell> b1 = basis[i1];
 
       array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
+#ifdef LIBINT_INTERFACE
+      Libint eribatch(input);
+#else
       ERIBatch eribatch(input, 1.0);
+#endif
       eribatch.compute();
       const double* eridata = eribatch.data();
       const int datasize = eribatch.data_size();

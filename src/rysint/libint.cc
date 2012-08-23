@@ -117,6 +117,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<size_t, 4> base;
 
   size_alloc_ = dim[0]*dim[1]*dim[2]*dim[3];
+  size_final_ = size_alloc_;
   data_ = stack_->get(size_alloc_);
   stack_save_ = data_;
 

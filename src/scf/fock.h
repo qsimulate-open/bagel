@@ -167,16 +167,12 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
 
             std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
 #ifdef LIBINT_INTERFACE
-            Libint valeev(input);
-            valeev.compute();
-            const double* eridata = valeev.data();
+            Libint eribatch(input);
 #else
             ERIBatch eribatch(input, mulfactor);
+#endif
             eribatch.compute();
             const double* eridata = eribatch.data();
-            assert((int)eribatch.data_size() == b0size * b1size * b2size * b3size);
-#endif
-
 
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {  
               const int j0n = j0 * nbasis_;
