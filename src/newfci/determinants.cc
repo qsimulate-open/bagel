@@ -68,7 +68,7 @@ void NewDeterminants::const_string_lists_() {
 
   vector<bitset<nbit__> >::iterator sa = stringa_.begin(); 
   do {
-    for (int i=0; i!=nelea_; ++i) (*sa).set(data[i]);
+    for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
 

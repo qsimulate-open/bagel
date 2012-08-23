@@ -42,7 +42,7 @@ void NewFCI::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   auto tp1 = high_resolution_clock::now();
-  jop_ = shared_ptr<NewMOFile>(new Jop(ref_, ncore_, ncore_+norb_, c));
+  jop_ = shared_ptr<NewMOFile>(new NewJop(ref_, ncore_, ncore_+norb_, c));
 
   // right now full basis is used. 
   auto tp2 = high_resolution_clock::now();

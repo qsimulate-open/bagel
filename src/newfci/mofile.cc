@@ -121,7 +121,7 @@ void NewMOFile::update_1ext_ints(const vector<double>& coeff) {
 }
 
 
-tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const int nfence) {
+tuple<unique_ptr<double[]>, double> NewJop::compute_mo1e(const int nstart, const int nfence) {
 
   const int ncore = nstart;
   double core_energy = 0.0;
@@ -147,7 +147,7 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
 }
 
 
-unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
+unique_ptr<double[]> NewJop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
   double* cdata = coeff_->data() + nstart*nbasis_;

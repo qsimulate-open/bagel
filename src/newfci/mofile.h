@@ -112,17 +112,17 @@ class NewMOFile {
 
 };
 
-class Jop : public NewMOFile {
+class NewJop : public NewMOFile {
   protected:
     std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
     std::unique_ptr<double[]> compute_mo2e(const int, const int);
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d) : NewMOFile(b,c,d) { core_energy_ = create_Jiiii(c, d); };
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e) : NewMOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); };
-    ~Jop() {};
+    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d) : NewMOFile(b,c,d) { core_energy_ = create_Jiiii(c, d); };
+    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e) : NewMOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); };
+    ~NewJop() {};
 };
 
-class Htilde : public NewMOFile {
+class NewHtilde : public NewMOFile {
   protected:
     // temp storage
     std::unique_ptr<double[]> h1_tmp_;
@@ -132,11 +132,11 @@ class Htilde : public NewMOFile {
     std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::move(h2_tmp_); };
   
   public:
-    Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)
+    NewHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)
       : NewMOFile(b,c,d), h1_tmp_(std::move(h1)), h2_tmp_(std::move(h2)) {
       core_energy_ = create_Jiiii(c, d);
     }
-    ~Htilde() {};
+    ~NewHtilde() {};
 };
 
 #endif

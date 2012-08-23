@@ -202,10 +202,11 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
-            nbit.set(j);
+            std::bitset<nbit__> mbit = nbit;
+            mbit.set(j);
             const int minij = std::min(i,j); 
             const int maxij = std::max(i,j);
-            phi[minij+((maxij*(maxij+1))/2)].push_back(std::make_tuple(lexical<spin>(nbit), sign(nbit, i, j), source));
+            phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if ((*iter)[i]) {
@@ -213,8 +214,9 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
-            nbit.reset(j);
-            phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(nbit), sign(nbit, i, j), source));
+            std::bitset<nbit__> mbit = nbit;
+            mbit.set(j);
+            phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       }

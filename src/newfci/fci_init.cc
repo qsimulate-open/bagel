@@ -58,7 +58,7 @@ void NewFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<N
     for (vector<pair<bitset<nbit__>, bitset<nbit__> > >::iterator iter = bits.begin(); iter != bits.end(); ++iter) {
       bitset<nbit__> alpha = iter->first;
       bitset<nbit__> beta = iter->second;
-      bitset<nbit__> open_bit = alpha; alpha ^= beta;
+      bitset<nbit__> open_bit = alpha^beta;
 
       // check if this orbital configuration is already used
       if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
@@ -94,8 +94,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > NewFCI::detseeds(const int ndet)
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
-  for (vector<bitset<nbit__> >::const_iterator aiter = det()->stringa().begin(); aiter != det()->stringa().end(); ++aiter) {
-    for (vector<bitset<nbit__> >::const_iterator biter = det()->stringb().begin(); biter != det()->stringb().end(); ++biter, ++diter) {
+  for (auto aiter = det()->stringa().begin(); aiter != det()->stringa().end(); ++aiter) {
+    for (auto biter = det()->stringb().begin(); biter != det()->stringb().end(); ++biter, ++diter) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(*biter, *aiter)));

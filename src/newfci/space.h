@@ -40,6 +40,7 @@
 #include <cassert>
 
 #include <src/util/constants.h>
+#include <src/newfci/determinants.h>
 
 #ifdef USE_SSE42_INTRINSICS
 #include <nmmintrin.h>
