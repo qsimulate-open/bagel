@@ -406,33 +406,23 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
             }
           }
 
-          double* ints;
-          double ssss = 0.0;
-          if (am[0] != 0 || am[1] != 0 || am[2] != 0 || am[3] != 0) {
-            stack_->libint_t_ptr(0)->contrdepth = p0123;
-            LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
-            ints = stack_->libint_t_ptr(0)->targets[0];
+          stack_->libint_t_ptr(0)->contrdepth = p0123;
+          LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          double* ints = stack_->libint_t_ptr(0)->targets[0];
 
-            if (spherical_) {
-              const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
-              double* area = stack_->get(batchsize);
-              const int carsphindex = am[2] * ANG_HRR_END + am[3];
-              const int carsphindex2 = am[0] * ANG_HRR_END + am[1];
-              const int m = cam[2]*cam[3];
-              const int n = sam[0]*sam[1];
-              const int nn = cam[0]*cam[1];
-              carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
-              mytranspose_(area, &m, &n, ints);
-              carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
-//            mytranspose_(area, &nn, &m, ints);
-              copy(area, area+nn*m, ints);
-              stack_->release(batchsize, area);
-            }
-            
-          } else { // ss|ss
-            for(int p = 0; p < p0123; ++p)
-              ssss += stack_->libint_t_ptr(p)->LIBINT_T_SS_EREP_SS(0)[0];
-            ints = &ssss;
+          if (spherical_) {
+            const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
+            double* area = stack_->get(batchsize);
+            const int carsphindex = am[2] * ANG_HRR_END + am[3];
+            const int carsphindex2 = am[0] * ANG_HRR_END + am[1];
+            const int m = cam[2]*cam[3];
+            const int n = sam[0]*sam[1];
+            const int nn = cam[0]*cam[1];
+            carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
+            mytranspose_(area, &m, &n, ints);
+            carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
+            copy(area, area+nn*m, ints);
+            stack_->release(batchsize, area);
           }
 
           // ijkl runs over xyz components
