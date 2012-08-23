@@ -30,6 +30,9 @@
 #include <src/grad/gnaibatch.h>
 #include <src/grad/goverlapbatch.h>
 #include <src/grad/gkineticbatch.h>
+#ifdef LIBINT_INTERFACE
+  #include <src/grad/glibint.h>
+#endif
 
 using namespace std;
 
@@ -94,10 +97,15 @@ void GradTask::compute() {
     }
 
   } else if (rank_ == 3) {
-    // pointer to stack
+
+#ifdef LIBINT_INTERFACE
+    GLibint gradbatch(shell_);
+#else
     GradBatch gradbatch(shell_, 0.0);
+#endif
     gradbatch.compute();
     const size_t block = gradbatch.size_block();
+
 
     // unfortunately the convention is different...
     array<int,4> jatom = {{-1, atomindex_[2], atomindex_[1], atomindex_[0]}};

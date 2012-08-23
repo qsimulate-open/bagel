@@ -1,6 +1,6 @@
 //
 // Newint - Parallel electron correlation program.
-// Filename: libint.cc
+// Filename: glibint.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -29,7 +29,7 @@
 #include <iostream>
 #include <src/util/f77.h>
 #include <src/rysint/carsphlist.h>
-#include <src/rysint/libint.h>
+#include <src/grad/glibint.h>
 #include <boys.h>
 
 static CarSphList carsphlist;
@@ -38,7 +38,8 @@ using namespace std;
 
 static libint2::FmEval_Chebyshev3 fmeval(18);
 
-Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysInt(shells) {
+GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysInt(shells) {
+  deriv_rank_ = 1;
 
   tenno_ = 0;
   size_allocated_ = 0LU;
@@ -46,6 +47,9 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   // in my program, integrals with 0,1,2,3 (0 runs first) format will be returned.
   swap(basisinfo_[0], basisinfo_[3]);
   swap(basisinfo_[1], basisinfo_[2]);
+  swap01_ = true;
+  swap23_ = true;
+  swap0123_ = true;
 
   // after this swaps, one needs to make 0 } 1 } 2 } 3
 
@@ -56,22 +60,17 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap(order[0], order[1]);
-    swap01_ = true;
-  } else {
-    swap01_ = false;
+    swap01_ ^= true;
   }
   // swap 23 indices when needed
   if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap(order[2], order[3]);
-    swap23_ = true;
-  } else {
-    swap23_ = false;
+    swap23_ ^= true;
   }
 
-  swap0123_ = false;
   if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())) {
-      swap0123_ = true;
+      swap0123_ ^= true;
       tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
         = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
     swap(order[0], order[2]);
@@ -104,7 +103,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<double,3> D = basisinfo_[3]->position();
 
   array<int,4> am = {{ basisinfo_[0]->angular_number(), basisinfo_[1]->angular_number(), basisinfo_[2]->angular_number(), basisinfo_[3]->angular_number() }};
-  const unsigned int amtot = am[0] + am[1] + am[2] + am[3];
+  const unsigned int amtot = am[0] + am[1] + am[2] + am[3] + deriv_rank_;
 
   double F[LIBINT_MAX_AM*4 + 6];
 
@@ -116,9 +115,11 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<size_t, 4> dim = {{cam[0]*ce[0].size(), cam[1]*ce[1].size(), cam[2]*ce[2].size(), cam[3]*ce[3].size()}};
   array<size_t, 4> base;
 
-  size_alloc_ = dim[0]*dim[1]*dim[2]*dim[3];
+  size_block_ = dim[0]*dim[1]*dim[2]*dim[3];
+  size_alloc_ = size_block_*12;
   size_final_ = size_alloc_;
   data_ = stack_->get(size_alloc_);
+  fill(data_, data_+size_alloc_, 0.0);
   stack_save_ = data_;
 
   base[0] = 0;
@@ -329,6 +330,58 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
 #if LIBINT2_DEFINED(eri,roe)
                   erieval->roe[0] = gammapq*oogammaq;
 #endif
+                  // prefactors for derivative ERI relations
+//                if (deriv_order > 0) {
+                  {
+#if LIBINT2_DEFINED(eri,alpha1_rho_over_zeta2)
+                    erieval->alpha1_rho_over_zeta2[0] = alpha0 * gammapq / (gammap * gammap);
+#endif
+#if LIBINT2_DEFINED(eri,alpha2_rho_over_zeta2)
+                    erieval->alpha2_rho_over_zeta2[0] = alpha1 * gammapq / (gammap * gammap);
+#endif
+#if LIBINT2_DEFINED(eri,alpha3_rho_over_eta2)
+                    erieval->alpha3_rho_over_eta2[0] = alpha2 * gammapq / (gammaq * gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,alpha4_rho_over_eta2)
+                    erieval->alpha4_rho_over_eta2[0] = alpha3 * gammapq / (gammaq * gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,alpha1_over_zetapluseta)
+                    erieval->alpha1_over_zetapluseta[0] = alpha0 / (gammap + gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,alpha2_over_zetapluseta)
+                    erieval->alpha2_over_zetapluseta[0] = alpha1 / (gammap + gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,alpha3_over_zetapluseta)
+                    erieval->alpha3_over_zetapluseta[0] = alpha2 / (gammap + gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,alpha4_over_zetapluseta)
+                    erieval->alpha4_over_zetapluseta[0] = alpha3 / (gammap + gammaq);
+#endif
+#if LIBINT2_DEFINED(eri,rho12_over_alpha1)
+                    erieval->rho12_over_alpha1[0] = rhop / alpha0;
+#endif
+#if LIBINT2_DEFINED(eri,rho12_over_alpha2)
+                    erieval->rho12_over_alpha2[0] = rhop / alpha1;
+#endif
+#if LIBINT2_DEFINED(eri,rho34_over_alpha3)
+                    erieval->rho34_over_alpha3[0] = rhoq / alpha2;
+#endif
+#if LIBINT2_DEFINED(eri,rho34_over_alpha4)
+                    erieval->rho34_over_alpha4[0] = rhoq / alpha3;
+#endif
+#if LIBINT2_DEFINED(eri,two_alpha0_bra)
+                    erieval->two_alpha0_bra[0] = 2.0 * alpha0;
+#endif
+#if LIBINT2_DEFINED(eri,two_alpha0_ket)
+                    erieval->two_alpha0_ket[0] = 2.0 * alpha1;
+#endif
+#if LIBINT2_DEFINED(eri,two_alpha1_bra)
+                    erieval->two_alpha1_bra[0] = 2.0 * alpha2;
+#endif
+#if LIBINT2_DEFINED(eri,two_alpha1_ket)
+                    erieval->two_alpha1_ket[0] = 2.0 * alpha3;
+#endif
+                  }
 
                   const double K1 = exp(- rhop * AB2);
                   const double K2 = exp(- rhoq * CD2);
@@ -407,58 +460,81 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           }
 
           stack_->libint_t_ptr(0)->contrdepth = p0123;
-          LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
-          double* ints = stack_->libint_t_ptr(0)->targets[0];
+          LIBINT2_PREFIXED_NAME(libint2_build_eri1)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
 
-          if (spherical_) {
-            const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
-            double* area = stack_->get(batchsize);
-            const int carsphindex = am[2] * ANG_HRR_END + am[3];
-            const int carsphindex2 = am[0] * ANG_HRR_END + am[1];
-            const int m = cam[2]*cam[3];
-            const int n = sam[0]*sam[1];
-            const int nn = cam[0]*cam[1];
-            carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
-            mytranspose_(area, &m, &n, ints);
-            carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
-            copy(area, area+nn*m, ints);
-            stack_->release(batchsize, area);
-          }
+          const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
+          // loop over target block
+          for (int iblock = 0; iblock != 12; ++iblock) {
+            const int icart = iblock % 3;
+            const int iatom = iblock / 3;
 
-          // ijkl runs over xyz components
-          int ijkl = 0;
-          array<int,4> id;
-          if (!spherical_) {
-            for (int i = 0; i != cam[0]; ++i) {
-              id[0] = i;
-              for (int j = 0; j != cam[1]; ++j) {
-                id[1] = j;
-                for (int k = 0; k != cam[2]; ++k) {
-                  id[2] = k;
-                  for (int l = 0; l != cam[3]; ++l, ++ijkl) {
-                    id[3] = l;
-                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+            const size_t sblock = 6;
+            if (iatom == sblock/3) continue;
+
+            const size_t rblock = sblock+icart;
+            size_t satom;
+            if (iblock < sblock) {
+              satom = iatom;
+            } else { 
+              satom = (iatom-1);
+            }
+            double* ints = stack_->libint_t_ptr(0)->targets[satom*3+icart];
+
+            if (spherical_) {
+              double* area = stack_->get(batchsize);
+              const int carsphindex = am[2] * ANG_HRR_END + am[3];
+              const int carsphindex2 = am[0] * ANG_HRR_END + am[1];
+              const int m = cam[2]*cam[3];
+              const int n = sam[0]*sam[1];
+              const int nn = cam[0]*cam[1];
+              carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
+              mytranspose_(area, &m, &n, ints);
+              carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
+              copy(area, area+nn*m, ints);
+              stack_->release(batchsize, area);
+            }
+
+            // ijkl runs over xyz components
+            int ijkl = 0;
+            array<int,4> id;
+            if (!spherical_) {
+              for (int i = 0; i != cam[0]; ++i) {
+                id[0] = i;
+                for (int j = 0; j != cam[1]; ++j) {
+                  id[1] = j;
+                  for (int k = 0; k != cam[2]; ++k) {
+                    id[2] = k;
+                    for (int l = 0; l != cam[3]; ++l, ++ijkl) {
+                      id[3] = l;
+                      const size_t ele = 
+                                 id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
+                                (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])));
+                      data_[size_block_*iblock + ele] = ints[ijkl]; 
+                      data_[size_block_*rblock + ele] -= ints[ijkl]; 
+                    }
+                  }
+                }
+              }
+            } else {
+              for (int i = 0; i != cam[2]; ++i) {
+                id[2] = i;
+                for (int j = 0; j != cam[3]; ++j) {
+                  id[3] = j;
+                  for (int k = 0; k != cam[0]; ++k) {
+                    id[0] = k;
+                    for (int l = 0; l != cam[1]; ++l, ++ijkl) {
+                      id[1] = l;
+                      const size_t ele = 
+                                 id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
+                                (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])));
+                      data_[size_block_*iblock + ele] = ints[ijkl]; 
+                      data_[size_block_*rblock + ele] -= ints[ijkl]; 
+                    }
                   }
                 }
               }
             }
-          } else {
-            for (int i = 0; i != cam[2]; ++i) {
-              id[2] = i;
-              for (int j = 0; j != cam[3]; ++j) {
-                id[3] = j;
-                for (int k = 0; k != cam[0]; ++k) {
-                  id[0] = k;
-                  for (int l = 0; l != cam[1]; ++l, ++ijkl) {
-                    id[1] = l;
-                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
-                  }
-                }
-              }
-            }
-          }
+          } // loop over blocks
 
         }
       }
