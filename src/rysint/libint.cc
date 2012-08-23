@@ -78,13 +78,6 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
     swap(order[1], order[3]);
   }
 
-#if 0
-  if (basisinfo_[0]->spherical()) {
-    swap(order[0], order[2]);
-    swap(order[1], order[3]);
-  }
-#endif
-
   array<int,4> invmap;
   for (int i = 0; i != 4; ++i) {
     invmap[order[i]] = i;
@@ -429,8 +422,9 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
               const int nn = cam[0]*cam[1];
               carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
               mytranspose_(area, &m, &n, ints);
-              carsphlist.carsphfunc_call(carsphindex2, cam[2]*sam[3], ints, area); 
-              mytranspose_(area, &nn, &m, ints);
+              carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
+//            mytranspose_(area, &nn, &m, ints);
+              copy(area, area+nn*m, ints);
               stack_->release(batchsize, area);
             }
             
@@ -443,16 +437,33 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           // ijkl runs over xyz components
           int ijkl = 0;
           array<int,4> id;
-          for (int i = 0; i != cam[0]; ++i) {
-            id[0] = i;
-            for (int j = 0; j != cam[1]; ++j) {
-              id[1] = j;
-              for (int k = 0; k != cam[2]; ++k) {
-                id[2] = k;
-                for (int l = 0; l != cam[3]; ++l, ++ijkl) {
-                  id[3] = l;
-                  data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                            (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+          if (!spherical_) {
+            for (int i = 0; i != cam[0]; ++i) {
+              id[0] = i;
+              for (int j = 0; j != cam[1]; ++j) {
+                id[1] = j;
+                for (int k = 0; k != cam[2]; ++k) {
+                  id[2] = k;
+                  for (int l = 0; l != cam[3]; ++l, ++ijkl) {
+                    id[3] = l;
+                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
+                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+                  }
+                }
+              }
+            }
+          } else {
+            for (int i = 0; i != cam[2]; ++i) {
+              id[2] = i;
+              for (int j = 0; j != cam[3]; ++j) {
+                id[3] = j;
+                for (int k = 0; k != cam[0]; ++k) {
+                  id[0] = k;
+                  for (int l = 0; l != cam[1]; ++l, ++ijkl) {
+                    id[1] = l;
+                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
+                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+                  }
                 }
               }
             }
