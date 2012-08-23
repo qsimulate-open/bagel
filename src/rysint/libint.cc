@@ -27,8 +27,12 @@
 #ifdef LIBINT_INTERFACE
 
 #include <iostream>
+#include <src/util/f77.h>
+#include <src/rysint/carsphlist.h>
 #include <src/rysint/libint.h>
 #include <boys.h>
+
+static CarSphList carsphlist;
 
 using namespace std;
 
@@ -74,6 +78,13 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
     swap(order[1], order[3]);
   }
 
+#if 0
+  if (basisinfo_[0]->spherical()) {
+    swap(order[0], order[2]);
+    swap(order[1], order[3]);
+  }
+#endif
+
   array<int,4> invmap;
   for (int i = 0; i != 4; ++i) {
     invmap[order[i]] = i;
@@ -104,10 +115,12 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
 
   static double F[LIBINT_MAX_AM*4 + 6];
 
-  array<unsigned int,4> sam; 
+  array<unsigned int,4> sam, cam;
   for (int i = 0; i != 4; ++i) sam[i] = (am[i]+1)*(am[i]+2)/2;
+  for (int i = 0; i != 4; ++i) cam[i] = 2*am[i]+1;
+  if (!spherical_) cam = sam;
 
-  array<size_t, 4> dim = {{sam[0]*ce[0].size(), sam[1]*ce[1].size(), sam[2]*ce[2].size(), sam[3]*ce[3].size()}};
+  array<size_t, 4> dim = {{cam[0]*ce[0].size(), cam[1]*ce[1].size(), cam[2]*ce[2].size(), cam[3]*ce[3].size()}};
   array<size_t, 4> base;
 
   size_alloc_ = dim[0]*dim[1]*dim[2]*dim[3];
@@ -115,13 +128,13 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   stack_save_ = data_;
 
   base[0] = 0;
-  for (auto i0 = ce[0].begin(); i0 != ce[0].end(); ++i0, base[0] += sam[0]) {
+  for (auto i0 = ce[0].begin(); i0 != ce[0].end(); ++i0, base[0] += cam[0]) {
     base[1] = 0;
-    for (auto i1 = ce[1].begin(); i1 != ce[1].end(); ++i1, base[1] += sam[1]) {
+    for (auto i1 = ce[1].begin(); i1 != ce[1].end(); ++i1, base[1] += cam[1]) {
       base[2] = 0;
-      for (auto i2 = ce[2].begin(); i2 != ce[2].end(); ++i2, base[2] += sam[2]) {
+      for (auto i2 = ce[2].begin(); i2 != ce[2].end(); ++i2, base[2] += cam[2]) {
         base[3] = 0;
-        for (auto i3 = ce[3].begin(); i3 != ce[3].end(); ++i3, base[3] += sam[3]) {
+        for (auto i3 = ce[3].begin(); i3 != ce[3].end(); ++i3, base[3] += cam[3]) {
 
           size_t p0123 = 0;
           for (auto j0 = i0->first.begin(), k0 = i0->second.begin(); j0 != i0->first.end(); ++j0, ++k0) {
@@ -399,12 +412,28 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
             }
           }
 
-          const double* ints;
+          double* ints;
           double ssss = 0.0;
           if (am[0] != 0 || am[1] != 0 || am[2] != 0 || am[3] != 0) {
             stack_->libint_t_ptr(0)->contrdepth = p0123;
             LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
             ints = stack_->libint_t_ptr(0)->targets[0];
+
+            if (spherical_) {
+              const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
+              double* area = stack_->get(batchsize);
+              const int carsphindex = am[2] * ANG_HRR_END + am[3];
+              const int carsphindex2 = am[0] * ANG_HRR_END + am[1];
+              const int m = cam[2]*cam[3];
+              const int n = sam[0]*sam[1];
+              const int nn = cam[0]*cam[1];
+              carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
+              mytranspose_(area, &m, &n, ints);
+              carsphlist.carsphfunc_call(carsphindex2, cam[2]*sam[3], ints, area); 
+              mytranspose_(area, &nn, &m, ints);
+              stack_->release(batchsize, area);
+            }
+            
           } else { // ss|ss
             for(int p = 0; p < p0123; ++p)
               ssss += stack_->libint_t_ptr(p)->LIBINT_T_SS_EREP_SS(0)[0];
@@ -414,13 +443,13 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           // ijkl runs over xyz components
           int ijkl = 0;
           array<int,4> id;
-          for (int i = 0; i != sam[0]; ++i) {
+          for (int i = 0; i != cam[0]; ++i) {
             id[0] = i;
-            for (int j = 0; j != sam[1]; ++j) {
+            for (int j = 0; j != cam[1]; ++j) {
               id[1] = j;
-              for (int k = 0; k != sam[2]; ++k) {
+              for (int k = 0; k != cam[2]; ++k) {
                 id[2] = k;
-                for (int l = 0; l != sam[3]; ++l, ++ijkl) {
+                for (int l = 0; l != cam[3]; ++l, ++ijkl) {
                   id[3] = l;
                   data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
                             (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
