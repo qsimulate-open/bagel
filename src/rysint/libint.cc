@@ -43,14 +43,6 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   tenno_ = 0;
   size_allocated_ = 0LU;
 
-  // in my program, integrals with 0,1,2,3 (0 runs first) format will be returned.
-  swap(basisinfo_[0], basisinfo_[3]);
-  swap(basisinfo_[1], basisinfo_[2]);
-
-  // after this swaps, one needs to make 0 } 1 } 2 } 3
-
-  // start evaluation
-
   array<int,4> order {{ 0,1,2,3 }};
 
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
@@ -437,8 +429,10 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   id[2] = k;
                   for (int l = 0; l != cam[3]; ++l, ++ijkl) {
                     id[3] = l;
-                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+                    const size_t ele = 
+                                 id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
+                                (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
+                    data_[ele] = ints[ijkl]; 
                   }
                 }
               }
@@ -452,8 +446,10 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   id[0] = k;
                   for (int l = 0; l != cam[1]; ++l, ++ijkl) {
                     id[1] = l;
-                    data_[id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                              (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])))] = ints[ijkl]; 
+                    const size_t ele = 
+                                 id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
+                                (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
+                    data_[ele] = ints[ijkl]; 
                   }
                 }
               }

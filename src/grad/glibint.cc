@@ -45,11 +45,9 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
   size_allocated_ = 0LU;
 
   // in my program, integrals with 0,1,2,3 (0 runs first) format will be returned.
-  swap(basisinfo_[0], basisinfo_[3]);
-  swap(basisinfo_[1], basisinfo_[2]);
-  swap01_ = true;
-  swap23_ = true;
-  swap0123_ = true;
+  swap01_ = false;
+  swap23_ = false;
+  swap0123_ = false;
 
   // after this swaps, one needs to make 0 } 1 } 2 } 3
 
@@ -507,8 +505,8 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
                     for (int l = 0; l != cam[3]; ++l, ++ijkl) {
                       id[3] = l;
                       const size_t ele = 
-                                 id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                                (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])));
+                                 id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
+                                (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
                       data_[size_block_*iblock + ele] = ints[ijkl]; 
                       data_[size_block_*rblock + ele] -= ints[ijkl]; 
                     }
@@ -525,8 +523,8 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
                     for (int l = 0; l != cam[1]; ++l, ++ijkl) {
                       id[1] = l;
                       const size_t ele = 
-                                 id[invmap[3]]+base[invmap[3]] + dim[invmap[3]]* (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]*
-                                (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]* (id[invmap[0]]+base[invmap[0]])));
+                                 id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
+                                (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
                       data_[size_block_*iblock + ele] = ints[ijkl]; 
                       data_[size_block_*rblock + ele] -= ints[ijkl]; 
                     }
