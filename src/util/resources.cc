@@ -28,12 +28,19 @@
 #include <stdexcept>
 #include <vector>
 #include <iostream>
+#include <src/rysint/macros.h>
 #include <src/util/resources.h>
 
 using namespace std;
 
 StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
   stack_area_ = unique_ptr<double[]>(new double[total_]);
+
+  // in case we use Libint for ERI
+#ifdef LIBINT_INTERFACE
+  libint_t_ = unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]); 
+  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
+#endif
 }
 
 
@@ -47,7 +54,7 @@ double* StackMem::get(const size_t size) {
 
 void StackMem::release(const size_t size, double* p) {
   pointer_ -= size; 
-  assert(p == stack_area_.get()+pointer_);
+  assert(p == stack_area_.get()+pointer_ || size == 0);
 }
 
 
@@ -57,6 +64,10 @@ Resources::Resources(const int n) : max_num_threads_(n) {
     flag_.push_back(shared_ptr<atomic_flag>(new atomic_flag(ATOMIC_FLAG_INIT)));
     stackmem_.push_back(shared_ptr<StackMem>(new StackMem()));
   }
+
+#ifdef LIBINT_INTERFACE
+  LIBINT2_PREFIXED_NAME(libint2_static_init)();
+#endif
 } 
 
 

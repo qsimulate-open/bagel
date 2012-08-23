@@ -32,12 +32,19 @@
 #include <memory>
 #include <atomic>
 #include <vector>
+#ifdef LIBINT_INTERFACE
+  #include <libint2.h>
+#endif
 
 class StackMem {
   protected:
     std::unique_ptr<double[]> stack_area_;
     size_t pointer_;
     const size_t total_;
+
+#ifdef LIBINT_INTERFACE
+    std::unique_ptr<Libint_t[]> libint_t_;
+#endif
 
   public:
     StackMem();
@@ -46,6 +53,11 @@ class StackMem {
     void release(const size_t size, double* p);
 
     void clear() { pointer_ = 0LU; };
+
+#ifdef LIBINT_INTERFACE
+    Libint_t* libint_t_ptr(const int i) { return &libint_t_[i]; };
+#endif
+
 };
 
 
