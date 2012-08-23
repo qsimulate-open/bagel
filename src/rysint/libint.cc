@@ -106,7 +106,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<int,4> am = {{ basisinfo_[0]->angular_number(), basisinfo_[1]->angular_number(), basisinfo_[2]->angular_number(), basisinfo_[3]->angular_number() }};
   const unsigned int amtot = am[0] + am[1] + am[2] + am[3];
 
-  static double F[LIBINT_MAX_AM*4 + 6];
+  double F[LIBINT_MAX_AM*4 + 6];
 
   array<unsigned int,4> sam, cam;
   for (int i = 0; i != 4; ++i) sam[i] = (am[i]+1)*(am[i]+2)/2;

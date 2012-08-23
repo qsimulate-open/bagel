@@ -25,11 +25,16 @@
 
 
 #include <src/df/fit.h>
+#include <src/rysint/libint.h>
 
 using namespace std;
 
 pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) { 
+#ifdef LIBINT_INTERFACE
+  shared_ptr<Libint> eribatch(new Libint(input));
+#else
   shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 2.0));
+#endif
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
 }
