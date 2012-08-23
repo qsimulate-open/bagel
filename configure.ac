@@ -29,6 +29,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/molden/Makefile
                  src/dimer/Makefile
+                 src/newfci/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
