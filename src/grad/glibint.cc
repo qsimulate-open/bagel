@@ -56,7 +56,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
 
   if (center == 3 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()))
     throw logic_error("dummy shell in an illegal position: 3 index gradient");
-  if (center == 2 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()) && !(basisinfo_[2]->dummy() || basisinfo_[3]->dummy()))
+  if (center == 2 && (!(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()) || !(basisinfo_[2]->dummy() || basisinfo_[3]->dummy())))
     throw logic_error("dummy shell in an illegal position: 2 index gradient");
   if (center < 2) throw logic_error("there are only one or less non-dummy basis in GLibint::GLibint");
 
@@ -481,7 +481,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
             const int iatom = iblock / 3;
 
             size_t rblock, satom;
-            if (center == 4 || center == 2) {
+            if (center == 4) {
               const size_t sblock = 6;
               if (iatom == sblock/3) continue;
               rblock = sblock+icart;
