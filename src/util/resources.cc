@@ -40,7 +40,7 @@ StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
 #ifdef LIBINT_INTERFACE
   // TODO 20LU should not be hardwired
   libint_t_ = unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]); 
-  if (libint2_need_memory_3eri1() < libint2_need_memory_eri) {
+  if (libint2_need_memory_3eri1(LIBINT_MAX_AM) < libint2_need_memory_eri(LIBINT_MAX_AM)) {
     LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
   } else {
     LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT_MAX_AM, 0);
