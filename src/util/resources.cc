@@ -38,8 +38,13 @@ StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
 
   // in case we use Libint for ERI
 #ifdef LIBINT_INTERFACE
+  // TODO 20LU should not be hardwired
   libint_t_ = unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]); 
-  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
+  if (libint2_need_memory_3eri1() < libint2_need_memory_eri) {
+    LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
+  } else {
+    LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT_MAX_AM, 0);
+  }
 #endif
 }
 
