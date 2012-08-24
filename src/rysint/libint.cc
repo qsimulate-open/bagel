@@ -98,8 +98,6 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<int,4> am = {{ basisinfo_[0]->angular_number(), basisinfo_[1]->angular_number(), basisinfo_[2]->angular_number(), basisinfo_[3]->angular_number() }};
   const unsigned int amtot = am[0] + am[1] + am[2] + am[3];
 
-  double F[LIBINT_MAX_AM*4 + 6];
-
   array<unsigned int,4> sam, cam;
   for (int i = 0; i != 4; ++i) sam[i] = (am[i]+1)*(am[i]+2)/2;
   for (int i = 0; i != 4; ++i) cam[i] = 2*am[i]+1;
@@ -111,7 +109,19 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   size_alloc_ = dim[0]*dim[1]*dim[2]*dim[3];
   size_final_ = size_alloc_;
   data_ = stack_->get(size_alloc_);
+
   stack_save_ = data_;
+
+  const double AB_x = A[0] - B[0];
+  const double AB_y = A[1] - B[1];
+  const double AB_z = A[2] - B[2];
+  const double AB2 = AB_x * AB_x + AB_y * AB_y + AB_z * AB_z;
+  const double CD_x = C[0] - D[0];
+  const double CD_y = C[1] - D[1];
+  const double CD_z = C[2] - D[2];
+  const double CD2 = CD_x * CD_x + CD_y * CD_y + CD_z * CD_z;
+
+  double* const F = stack_->get(LIBINT_MAX_AM*4 + 6);
 
   base[0] = 0;
   for (auto i0 = ce[0].begin(); i0 != ce[0].end(); ++i0, base[0] += cam[0]) {
@@ -125,14 +135,30 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           size_t p0123 = 0;
           for (auto j0 = i0->first.begin(), k0 = i0->second.begin(); j0 != i0->first.end(); ++j0, ++k0) {
             for (auto j1 = i1->first.begin(), k1 = i1->second.begin(); j1 != i1->first.end(); ++j1, ++k1) {
+              const double alpha0 = *k0;
+              const double alpha1 = *k1;
+
+              const double gammap = alpha0 + alpha1;
+              const double oogammap = 1.0 / gammap;
+              const double rhop = alpha0 * alpha1 * oogammap;
+              const double Px = (alpha0 * A[0] + alpha1 * B[0]) * oogammap;
+              const double Py = (alpha0 * A[1] + alpha1 * B[1]) * oogammap;
+              const double Pz = (alpha0 * A[2] + alpha1 * B[2]) * oogammap;
+              const double PAx = Px - A[0];
+              const double PAy = Py - A[1];
+              const double PAz = Pz - A[2];
+              const double PBx = Px - B[0];
+              const double PBy = Py - B[1];
+              const double PBz = Pz - B[2];
+
+              const double K1 = exp(- rhop * AB2);
+
               for (auto j2 = i2->first.begin(), k2 = i2->second.begin(); j2 != i2->first.end(); ++j2, ++k2) {
                 for (auto j3 = i3->first.begin(), k3 = i3->second.begin(); j3 != i3->first.end(); ++j3, ++k3, ++p0123) {
 
                   Libint_t* erieval = stack_->libint_t_ptr(p0123);
                   erieval->veclen = 1;
 
-                  const double alpha0 = *k0;
-                  const double alpha1 = *k1;
                   const double alpha2 = *k2;
                   const double alpha3 = *k3;
 
@@ -140,24 +166,6 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   const double c1 = *j1;
                   const double c2 = *j2;
                   const double c3 = *j3;
-
-                  const double gammap = alpha0 + alpha1;
-                  const double oogammap = 1.0 / gammap;
-                  const double rhop = alpha0 * alpha1 * oogammap;
-                  const double Px = (alpha0 * A[0] + alpha1 * B[0]) * oogammap;
-                  const double Py = (alpha0 * A[1] + alpha1 * B[1]) * oogammap;
-                  const double Pz = (alpha0 * A[2] + alpha1 * B[2]) * oogammap;
-                  const double PAx = Px - A[0];
-                  const double PAy = Py - A[1];
-                  const double PAz = Pz - A[2];
-                  const double PBx = Px - B[0];
-                  const double PBy = Py - B[1];
-                  const double PBz = Pz - B[2];
-                  const double AB_x = A[0] - B[0];
-                  const double AB_y = A[1] - B[1];
-                  const double AB_z = A[2] - B[2];
-                  const double AB2 = AB_x * AB_x + AB_y * AB_y + AB_z * AB_z;
-
 
 #if LIBINT2_DEFINED(eri,PA_x)
                   erieval->PA_x[0] = PAx;
@@ -205,10 +213,6 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   const double QDx = Qx - D[0];
                   const double QDy = Qy - D[1];
                   const double QDz = Qz - D[2];
-                  const double CD_x = C[0] - D[0];
-                  const double CD_y = C[1] - D[1];
-                  const double CD_z = C[2] - D[2];
-                  const double CD2 = CD_x * CD_x + CD_y * CD_y + CD_z * CD_z;
 
 #if LIBINT2_DEFINED(eri,QC_x)
                   erieval->QC_x[0] = QCx;
@@ -322,13 +326,11 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   erieval->roe[0] = gammapq*oogammaq;
 #endif
 
-                  const double K1 = exp(- rhop * AB2);
                   const double K2 = exp(- rhoq * CD2);
                   double pfac = 2 * pow(M_PI, 2.5) * K1 * K2 / (gammap * gammaq * sqrt(gammap + gammaq));
                   pfac *= c0 * c1 * c2 * c3;
 
                   fmeval.eval(F,PQ2*gammapq,amtot);
-
 
 #if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(0))
                   erieval->LIBINT_T_SS_EREP_SS(0)[0] = pfac*F[0];
@@ -461,6 +463,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
     }
   }
 
+  stack_->release(LIBINT_MAX_AM*4 + 6, F);
 }
 
 

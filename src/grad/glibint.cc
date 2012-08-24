@@ -111,8 +111,6 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
   array<int,4> am = {{ basisinfo_[0]->angular_number(), basisinfo_[1]->angular_number(), basisinfo_[2]->angular_number(), basisinfo_[3]->angular_number() }};
   const unsigned int amtot = am[0] + am[1] + am[2] + am[3] + deriv_rank_;
 
-  double F[LIBINT_MAX_AM*4 + 6];
-
   array<unsigned int,4> sam, cam;
   for (int i = 0; i != 4; ++i) sam[i] = (am[i]+1)*(am[i]+2)/2;
   for (int i = 0; i != 4; ++i) cam[i] = 2*am[i]+1;
@@ -127,6 +125,8 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
   data_ = stack_->get(size_alloc_);
   fill(data_, data_+size_alloc_, 0.0);
   stack_save_ = data_;
+
+  double* const F = stack_->get(LIBINT_MAX_AM*4 + 6);
 
   base[0] = 0;
   for (auto i0 = ce[0].begin(); i0 != ce[0].end(); ++i0, base[0] += cam[0]) {
@@ -563,6 +563,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
     }
   }
 
+  stack_->release(LIBINT_MAX_AM*4 + 6, F);
 }
 
 
