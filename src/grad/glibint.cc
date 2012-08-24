@@ -49,25 +49,33 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
   swap23_ = false;
   swap0123_ = false;
 
-  // after this swaps, one needs to make 0 } 1 } 2 } 3
+  // first count the number of dummys
+  int center = 4;
+  for (auto i = basisinfo_.begin(); i != basisinfo_.end(); ++i)
+    if ((*i)->dummy()) --center;
 
-  // start evaluation
+  if (center == 3 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()))
+    throw logic_error("dummy shell in an illegal position: 3 index gradient");
+  if (center == 2 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()) && !(basisinfo_[2]->dummy() || basisinfo_[3]->dummy()))
+    throw logic_error("dummy shell in an illegal position: 2 index gradient");
+  if (center < 2) throw logic_error("there are only one or less non-dummy basis in GLibint::GLibint");
 
   array<int,4> order {{ 0,1,2,3 }};
 
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->dummy()) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap(order[0], order[1]);
     swap01_ ^= true;
   }
   // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number() || basisinfo_[2]->dummy()) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap(order[2], order[3]);
     swap23_ ^= true;
   }
 
-  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())) {
+  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())
+      && center != 3) {
       swap0123_ ^= true;
       tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
         = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
@@ -458,7 +466,13 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
           }
 
           stack_->libint_t_ptr(0)->contrdepth = p0123;
-          LIBINT2_PREFIXED_NAME(libint2_build_eri1)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          if (center == 4) {
+            LIBINT2_PREFIXED_NAME(libint2_build_eri1)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else if (center == 3) {
+            LIBINT2_PREFIXED_NAME(libint2_build_3eri1)[am[0]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else {
+            LIBINT2_PREFIXED_NAME(libint2_build_2eri1)[am[0]][am[2]](stack_->libint_t_ptr(0));
+          }
 
           const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
           // loop over target block
@@ -466,15 +480,25 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
             const int icart = iblock % 3;
             const int iatom = iblock / 3;
 
-            const size_t sblock = 6;
-            if (iatom == sblock/3) continue;
-
-            const size_t rblock = sblock+icart;
-            size_t satom;
-            if (iblock < sblock) {
-              satom = iatom;
-            } else { 
-              satom = (iatom-1);
+            size_t rblock, satom;
+            if (center == 4 || center == 2) {
+              const size_t sblock = 6;
+              if (iatom == sblock/3) continue;
+              rblock = sblock+icart;
+              satom;
+              if (iblock < sblock) {
+                satom = iatom;
+              } else { 
+                satom = (iatom-1);
+              }
+            } else if (center == 3) {
+              if (iatom == 0 || iatom == 1) continue;
+              rblock = icart;
+              satom = iatom - 2;
+            } else { // center == 2
+              if (iatom < 3) continue;
+              rblock = icart;
+              satom = 3;
             }
             double* ints = stack_->libint_t_ptr(0)->targets[satom*3+icart];
 
