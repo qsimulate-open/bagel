@@ -396,10 +396,70 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
 
                   fmeval.eval(F,PQ2*gammapq,amtot);
 
-                  double* ssss_ptr = erieval->LIBINT_T_SS_EREP_SS(0);
-                  for(int l = 0; l < amtot; ++l, ++ssss_ptr)
-                    *ssss_ptr = pfac*F[l];
 
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(0))
+                  erieval->LIBINT_T_SS_EREP_SS(0)[0] = pfac*F[0];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(1))
+                  erieval->LIBINT_T_SS_EREP_SS(1)[0] = pfac*F[1];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(2))
+                  erieval->LIBINT_T_SS_EREP_SS(2)[0] = pfac*F[2];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(3))
+                  erieval->LIBINT_T_SS_EREP_SS(3)[0] = pfac*F[3];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(4))
+                  erieval->LIBINT_T_SS_EREP_SS(4)[0] = pfac*F[4];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(5))
+                  erieval->LIBINT_T_SS_EREP_SS(5)[0] = pfac*F[5];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(6))
+                  erieval->LIBINT_T_SS_EREP_SS(6)[0] = pfac*F[6];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(7))
+                  erieval->LIBINT_T_SS_EREP_SS(7)[0] = pfac*F[7];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(8))
+                  erieval->LIBINT_T_SS_EREP_SS(8)[0] = pfac*F[8];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(9))
+                  erieval->LIBINT_T_SS_EREP_SS(9)[0] = pfac*F[9];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(10))
+                  erieval->LIBINT_T_SS_EREP_SS(10)[0] = pfac*F[10];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(11))
+                  erieval->LIBINT_T_SS_EREP_SS(11)[0] = pfac*F[11];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(12))
+                  erieval->LIBINT_T_SS_EREP_SS(12)[0] = pfac*F[12];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(13))
+                  erieval->LIBINT_T_SS_EREP_SS(13)[0] = pfac*F[13];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(14))
+                  erieval->LIBINT_T_SS_EREP_SS(14)[0] = pfac*F[14];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(15))
+                  erieval->LIBINT_T_SS_EREP_SS(15)[0] = pfac*F[15];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(16))
+                  erieval->LIBINT_T_SS_EREP_SS(16)[0] = pfac*F[16];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(17))
+                  erieval->LIBINT_T_SS_EREP_SS(17)[0] = pfac*F[17];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(18))
+                  erieval->LIBINT_T_SS_EREP_SS(18)[0] = pfac*F[18];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(19))
+                  erieval->LIBINT_T_SS_EREP_SS(19)[0] = pfac*F[19];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(20))
+                  erieval->LIBINT_T_SS_EREP_SS(20)[0] = pfac*F[20];
+#endif
                 }
               }
             }
