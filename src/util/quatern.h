@@ -88,22 +88,8 @@ class Quatern {
     void normalize() { assert(false); };
 };
 
-template<> void Quatern<double>::print() const {
-  std::cout << std::setprecision(10) << std::setw(20) << data_[0];
-  std::cout << std::setprecision(10) << std::setw(20) << data_[1];
-  std::cout << std::setprecision(10) << std::setw(20) << data_[2];
-  std::cout << std::setprecision(10) << std::setw(20) << data_[3];
-  std::cout << std::endl;
-};
-
-template<> double Quatern<double>::norm() const { return ::sqrt(data_[0]*data_[0]+data_[1]*data_[1]+data_[2]*data_[2]+data_[3]*data_[3]); };
-
-template<> void Quatern<double>::normalize() {
-  const double n = norm();
-  data_[0] /= n;
-  data_[1] /= n;
-  data_[2] /= n;
-  data_[3] /= n;
-};
+template<> void Quatern<double>::print() const;
+template<> double Quatern<double>::norm() const;
+template<> void Quatern<double>::normalize();
 
 #endif
