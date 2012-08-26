@@ -421,15 +421,10 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom> > atoms,
 double Geometry::compute_nuclear_repulsion() {
   double out = 0.0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    const array<double,3> tmp = (*iter)->position();
     const double c = (*iter)->atom_charge();
     for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
-      const RefAtom target = *titer;   
-      const double x = target->position(0) - tmp[0];
-      const double y = target->position(1) - tmp[1];
-      const double z = target->position(2) - tmp[2];
-      const double dist = ::sqrt(x * x + y * y + z * z);
-      const double charge = c * target->atom_charge(); 
+      const double dist = (*iter)->distance(*titer); 
+      const double charge = c * (*titer)->atom_charge(); 
       // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
       if (!(*iter)->dummy() || !(*titer)->dummy())
         out += charge / dist;
@@ -477,20 +472,16 @@ const vector<double> Geometry::compute_grad_vnuc() const {
   fill(grad.begin(), grad.end(), 0.0);
   auto giter = grad.begin();
   for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter, giter+=3) {
-    const double ax = (*aiter)->position(0);
-    const double ay = (*aiter)->position(1);
-    const double az = (*aiter)->position(2);
     const double ac = (*aiter)->atom_charge();
     for (auto biter = atoms_.begin(); biter != atoms_.end(); ++biter) {
       if (aiter == biter) continue;
-      const double bx = (*biter)->position(0);
-      const double by = (*biter)->position(1);
-      const double bz = (*biter)->position(2);
+      const array<double,3> displ = (*aiter)->displ(*biter);
       const double c = (*biter)->atom_charge() * ac;
-      const double dist = sqrt((ax-bx)*(ax-bx)+(ay-by)*(ay-by)+(az-bz)*(az-bz));
-      *(giter+0) += c*(bx-ax)/(dist*dist*dist);
-      *(giter+1) += c*(by-ay)/(dist*dist*dist);
-      *(giter+2) += c*(bz-az)/(dist*dist*dist);
+      const double dist = (*aiter)->distance(*biter);
+      const double dist3 = dist*dist*dist;
+      *(giter+0) += c*displ[0]/dist3;
+      *(giter+1) += c*displ[1]/dist3;
+      *(giter+2) += c*displ[2]/dist3;
     }
   }
   return grad;
@@ -589,4 +580,41 @@ bool Geometry::operator==(const Geometry& o) const {
   out &= aux_lmax_ == o.aux_lmax_; 
 
   return out;
+}
+
+
+// connectivity graph
+
+#include <set>
+namespace Bagel {
+namespace Geometry {
+class Node {
+  protected:
+    std::shared_ptr<const Atom> myself_;
+    std::set<std::shared_ptr<const Atom> > connected_;
+
+  public:
+    Node(const std::shared_ptr<const Atom> o) : myself_(o) {};
+    ~Node() {};
+    void add_connected(const std::shared_ptr<const Atom> i) {
+      bool done = connected_.insert(i).second;
+      if (!done) throw logic_error("Node::add_connected");
+    };
+
+};
+} }
+
+using namespace Bagel::Geometry;
+
+void Geometry::compute_internal_coordinate() const {
+  cout << "    o Connectivitiy analysis" << endl;
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i)
+    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
+
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
+    for (auto j = i+1; j != atoms_.end(); ++j) {
+//    if ((*i)->
+
+    }
+  }
 }

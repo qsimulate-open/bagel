@@ -167,6 +167,10 @@ class Geometry {
     // external field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; };
     double external(const int i) const { return external_[i]; };
+
+    // TODO experimental code
+    // internal coordinate for geometry optimization
+    void compute_internal_coordinate() const;
 };
 
 #endif

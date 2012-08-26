@@ -80,7 +80,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
   ifstream ifs;
   string bfile = basis_file;
-  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))std::tolower);
+  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".basis";
   bool basis_found = false;
   ifs.open(filename.c_str());
@@ -89,7 +89,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
 
   if (!ifs.is_open()) {
-    throw std::runtime_error("Basis file not found");
+    throw runtime_error("Basis file not found");
   } else {
     boost::regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
     boost::regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
@@ -354,3 +354,17 @@ bool Atom::operator==(const Atom& o) const {
 
   return out;
 }
+
+
+double Atom::distance(const shared_ptr<const Atom> o) const {
+  double out = 0.0;
+  for (int i = 0; i != 3; ++i)
+    out += ::pow(position_[i] - o->position_[i], 2.0); 
+  return ::sqrt(out);
+}
+
+
+array<double,3> Atom::displ(const shared_ptr<const Atom> o) const {
+  return array<double,3>{{ o->position_[0]-position_[0], o->position_[1]-position_[1], o->position_[2]-position_[2] }};
+}
+

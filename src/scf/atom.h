@@ -80,6 +80,11 @@ class Atom {
     void print() const;
 
     bool operator==(const Atom&) const;
+
+    // distance between this and other
+    double distance(const std::shared_ptr<const Atom> o) const;
+    // displacement vector from this to other
+    std::array<double,3> displ(const std::shared_ptr<const Atom> o) const;
 };
 
 #endif
