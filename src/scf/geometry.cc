@@ -637,6 +637,9 @@ using namespace Bagel::Geometry;
 void Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
 
+  vector<vector<double> > out;
+  const size_t size = natom()*3;
+
   list<shared_ptr<Node> > nodes;
   int n = 0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
@@ -654,6 +657,18 @@ void Geometry::compute_internal_coordinate() const {
         (*j)->add_connected(*i); 
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl; 
+        Quatern<double> ip = (*i)->atom()->position();
+        Quatern<double> jp = (*j)->atom()->position();
+        jp -= ip;  // jp is a vector from i to j
+        jp.normalize(); 
+        vector<double> current(size);
+        current[3*(*i)->num()+0] =  jp[1];
+        current[3*(*i)->num()+1] =  jp[2];
+        current[3*(*i)->num()+2] =  jp[3];
+        current[3*(*j)->num()+0] = -jp[1];
+        current[3*(*j)->num()+1] = -jp[2];
+        current[3*(*j)->num()+2] = -jp[3];
+        out.push_back(current);
       }
     }
   }
@@ -664,13 +679,36 @@ void Geometry::compute_internal_coordinate() const {
     for (++j; j != nodes.end(); ++j) {
       std::set<std::shared_ptr<Node> > center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
+        const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
         cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
-                "     angle" << setw(10) << setprecision(4) << (*c)->atom()->angle((*i)->atom(), (*j)->atom()) << " deg" << endl; 
+                "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl; 
+        // I found explicit formulas in http://www.ncsu.edu/chemistry/franzen/public_html/nca/int_coord/int_coord.html (thanking the author)
+        // 1=A=i, 2=O=c, 3=B=j
+        Quatern<double> op = (*c)->atom()->position();
+        Quatern<double> ap = (*i)->atom()->position();
+        Quatern<double> bp = (*j)->atom()->position();
+        Quatern<double> e21 = ap - op;
+        Quatern<double> e23 = ap - op;
+        const double r21 = e21.norm();
+        const double r23 = e23.norm();
+        e21.normalize();
+        e23.normalize();
+        const double rad = theta/rad2deg__;
+        Quatern<double> st1 = (e21 * ::cos(rad) - e23) / (r21 * ::sin(rad)); 
+        Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad)); 
+        Quatern<double> st2 = (st1 + st3) * (-1.0);
+        vector<double> current(size);
+        for (int ic = 0; ic != 3; ++ic) {
+          current[3*(*i)->num() + ic] = st1[ic+1];
+          current[3*(*j)->num() + ic] = st3[ic+1];
+          current[3*(*c)->num() + ic] = st2[ic+1];
+        }
+        out.push_back(current);
       }
     }
   }
 
-  // then dihedral angle (A-O-B(-C)) i.e., ABC are connected to O.
+  // then dihedral angle (i-c-j-k)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
@@ -681,8 +719,70 @@ void Geometry::compute_internal_coordinate() const {
           if (*c == *k) continue;
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl; 
+          // following J. Molec. Spec. 44, 599 (1972)
+          // a=i, b=c, c=j, d=k
+          Quatern<double> ap = (*i)->atom()->position();
+          Quatern<double> bp = (*c)->atom()->position();
+          Quatern<double> cp = (*j)->atom()->position();
+          Quatern<double> dp = (*k)->atom()->position();
+          Quatern<double> eab = bp - ap;
+          Quatern<double> ebc = cp - bp;
+          Quatern<double> edc = cp - dp;
+          Quatern<double> ecb = bp - cp;
+          const double rab = eab.norm();
+          const double rbc = ebc.norm();
+          const double rcd = edc.norm();
+          eab.normalize();
+          ebc.normalize();
+          edc.normalize();
+          ecb.normalize();
+          Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
+          Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
+          const double tabc = ::atan2(rotabc.norm(), -eab.ddot(ebc)); 
+          const double tbcd = ::atan2(rotbcd.norm(), -edc.ddot(ecb)); 
+
+          Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
+          Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));
+          Quatern<double> sb = (eab * ebc) * ((rbc-rab*::cos(tabc)) / (rab*rbc*::pow(::sin(tabc), 2.0)))
+                             + (edc * ecb) * (::cos(tbcd) / (rbc*::pow(::sin(tbcd), 2.0)));
+          Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
+                             + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0))); 
+          vector<double> current(size);
+          for (int ic = 0; ic != 3; ++ic) {
+            current[3*(*i)->num() + ic] = sa[ic+1];
+            current[3*(*c)->num() + ic] = sb[ic+1];
+            current[3*(*j)->num() + ic] = sc[ic+1];
+            current[3*(*k)->num() + ic] = sd[ic+1];
+          }
+          out.push_back(current);
         }
       }
     }
   }
+
+  // debug output
+  const size_t primsize = out.size();
+
+  unique_ptr<double[]> bmat(new double[primsize*3*natom()]);
+  double* biter = bmat.get();
+  for (auto i = out.begin(); i != out.end(); ++i, biter += 3*natom()) {
+    copy(i->begin(), i->end(), biter); 
+  }
+
+  unique_ptr<double[]> bbdag(new double[primsize*primsize]);
+  unique_ptr<double[]> eig(new double[primsize]);
+  dgemm_("T", "N", primsize, primsize, 3*natom(), 1.0, bmat.get(), 3*natom(), bmat.get(), 3*natom(), 0.0, bbdag.get(), primsize);
+  const int lwork = primsize*5;
+  unique_ptr<double[]> work(new double[lwork]);
+  int info;
+  dsyev_("V", "U", primsize, bbdag.get(), primsize, eig.get(), work.get(), lwork, info); 
+  if (info) throw runtime_error("DSYEV failed in Geometry::compute_internal_coordinate");
+  int cnt = 0;
+  for (int i = 0; i != primsize; ++i) {
+    if (fabs(eig[i]) > numerical_zero__*1000.0) {
+      cout << eig[i] << endl;
+      ++cnt; 
+    }
+  }
+  cout << "      Nonredundant internal coordinate generated (dim = " << cnt << ")" << endl; 
 }

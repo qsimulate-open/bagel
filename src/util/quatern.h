@@ -40,7 +40,7 @@
 template<typename T>
 class Quatern {
   protected:
-    std::array<T, 4> data_;
+    std::array<T, 4>__attribute__((aligned(32))) data_;
 
   public:
     Quatern(std::array<T, 4> i) : data_(i) {};
@@ -71,7 +71,12 @@ class Quatern {
       data_[0]*o[1] + data_[1]*o[0] + data_[2]*o[3] - data_[3]*o[2],
       data_[0]*o[2] + data_[2]*o[0] + data_[3]*o[1] - data_[1]*o[3],
       data_[0]*o[3] + data_[3]*o[0] + data_[1]*o[2] - data_[2]*o[1] }}; };
-    Quatern<T>& operator*=(const Quatern<T>& o) { Quatern<T> a(*this*o); *this = a; }; 
+    Quatern<T>& operator*=(const Quatern<T>& o) { Quatern<T> a(*this*o); *this = a; return *this; };
+
+    Quatern<T>& operator*=(const double& a) { data_[0] *= a; data_[1] *= a; data_[2] *= a; data_[3] *= a; return *this; };
+    Quatern<T> operator*(const double& a) const { Quatern<T> out(*this); out *= a; return out; };
+    Quatern<T>& operator/=(const double& a) { data_[0] /= a; data_[1] /= a; data_[2] /= a; data_[3] /= a; return *this; };
+    Quatern<T> operator/(const double& a) const { Quatern<T> out(*this); out /= a; return out; };
 
     const T& data(int i) const { return data_[i]; }; 
     T& operator[](const int i) { return data_[i]; };
