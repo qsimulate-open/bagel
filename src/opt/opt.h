@@ -55,16 +55,27 @@ class Opt {
 
     // TODO make it adjustable from the input
     const double thresh_;
+
     static const int maxiter_ = 10;
+    static const bool nodf = true;
+    static const bool rotate = false; 
 
     // reference geometry
     const std::shared_ptr<const GradFile> refgeom_;
 
+    std::array<std::unique_ptr<double[]>,2> bmat_;
+
+    // whether we use a delocalized internal coordinate or not
+    bool internal_;
+
   public:
     Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(NULL), thresh_(1.0e-6), refgeom_(new GradFile(geom->xyz())) {
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(NULL), thresh_(1.0e-5), refgeom_(new GradFile(geom->xyz())) {
       std::shared_ptr<GradFile> denom(new GradFile(geom->natom(), 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
+      bmat_ = current_->compute_internal_coordinate();
+
+      internal_ = read_input<bool>(inp, "internal", true);
     };
     ~Opt() {};
 
@@ -80,26 +91,19 @@ class Opt {
       std::shared_ptr<GradFile> cgrad = eval.compute(); 
       std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
       std::shared_ptr<GradFile> displ;
-      if (true) {
-        // x = BX
-        // g = (BT)^-1 X
-        *cgeom -= *refgeom_;
-        std::array<std::unique_ptr<double[]>,2> b;
-        b  = current_->compute_internal_coordinate();
-        std::shared_ptr<GradFile> dgeom = cgeom->transform(b[0], false);
-        std::shared_ptr<GradFile> dgrad = cgrad->transform(b[1], false);
+      if (internal_) {
+        std::shared_ptr<GradFile> dgeom = cgeom->transform(bmat_[0], false);
+        std::shared_ptr<GradFile> dgrad = cgrad->transform(bmat_[1], false);
         displ = bfgs_->extrapolate(dgrad, dgeom);
-
+        // TODO  I haven't understood why this update (internal displacement to cartesian) can be iterative!!
+#if 0
         // self consistent cycle (Eq. 6 of JCP 105,192)
-        std::shared_ptr<GradFile> previous = displ->clone();
+        std::shared_ptr<GradFile> previous = displ;
         for (int i = 0; i != maxiter_; ++i) {
-          std::shared_ptr<GradFile> tmp = displ->transform(b[1], true);
-          std::shared_ptr<Geometry> tmpgeom = std::shared_ptr<Geometry>(new Geometry(*current_, tmp->xyz(), input_, false, true));
-          b  = tmpgeom->compute_internal_coordinate();
-          if ((*previous-*tmp).norm() < 1.0e-10) break;
-          previous = tmp;
         }
-        displ = displ->transform(b[1], true);
+#else
+        displ = displ->transform(bmat_[1], true);
+#endif
       } else { 
         displ = bfgs_->extrapolate(cgrad, cgeom);
       }
