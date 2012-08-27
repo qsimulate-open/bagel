@@ -55,10 +55,14 @@ class Opt {
 
     // TODO make it adjustable from the input
     const double thresh_;
+    static const int maxiter_ = 10;
+
+    // reference geometry
+    const std::shared_ptr<const GradFile> refgeom_;
 
   public:
     Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(NULL), thresh_(1.0e-6) {
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(NULL), thresh_(1.0e-6), refgeom_(new GradFile(geom->xyz())) {
       std::shared_ptr<GradFile> denom(new GradFile(geom->natom(), 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
     };
@@ -76,9 +80,10 @@ class Opt {
       std::shared_ptr<GradFile> cgrad = eval.compute(); 
       std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
       std::shared_ptr<GradFile> displ;
-      if (false) {
+      if (true) {
         // x = BX
         // g = (BT)^-1 X
+        *cgeom -= *refgeom_;
         std::array<std::unique_ptr<double[]>,2> b;
         b  = current_->compute_internal_coordinate();
         std::shared_ptr<GradFile> dgeom = cgeom->transform(b[0], false);
@@ -87,9 +92,9 @@ class Opt {
 
         // self consistent cycle (Eq. 6 of JCP 105,192)
         std::shared_ptr<GradFile> previous = displ->clone();
-        for (int i = 0; i != 10; ++i) {
+        for (int i = 0; i != maxiter_; ++i) {
           std::shared_ptr<GradFile> tmp = displ->transform(b[1], true);
-          std::shared_ptr<Geometry> tmpgeom = std::shared_ptr<Geometry>(new Geometry(*current_, tmp->xyz(), input_, false));
+          std::shared_ptr<Geometry> tmpgeom = std::shared_ptr<Geometry>(new Geometry(*current_, tmp->xyz(), input_, false, true));
           b  = tmpgeom->compute_internal_coordinate();
           if ((*previous-*tmp).norm() < 1.0e-10) break;
           previous = tmp;

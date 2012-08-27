@@ -196,7 +196,7 @@ void Geometry::common_init1() {
 }
 
 
-void Geometry::common_init2(const bool print, const double thresh) {
+void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
   // symmetry set-up
   plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
   nirrep_ = plist_->nirrep();
@@ -209,7 +209,7 @@ void Geometry::common_init2(const bool print, const double thresh) {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
 
-  if (!auxfile_.empty()) {
+  if (!auxfile_.empty() && !nodf) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     cout << "    o Being stored without compression. Storage requirement is "
@@ -226,7 +226,8 @@ void Geometry::common_init2(const bool print, const double thresh) {
 
 
 
-Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo, const bool rotate)
+// suitable for geometry updates in optimization
+Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
@@ -274,7 +275,7 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
 
   common_init1();
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
-  common_init2(false, overlap_thresh_);
+  common_init2(false, overlap_thresh_, nodf);
 }
 
 

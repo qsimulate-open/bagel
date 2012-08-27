@@ -63,9 +63,9 @@ shared_ptr<GradFile> GradFile::transform(const unique_ptr<double[]>& a, const bo
   shared_ptr<GradFile> out = clone();
   const int size = data_.size();
   if (transpose) {
-    dgemv_("T", size, 1, 1.0, a.get(), size, data(), 1, 0.0, out->data(), 1);
+    dgemv_("T", size, size, 1.0, a.get(), size, data(), 1, 0.0, out->data(), 1);
   } else {
-    dgemv_("N", size, 1, 1.0, a.get(), size, data(), 1, 0.0, out->data(), 1);
+    dgemv_("N", size, size, 1.0, a.get(), size, data(), 1, 0.0, out->data(), 1);
   }
   return out;
 }

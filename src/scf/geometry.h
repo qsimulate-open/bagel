@@ -89,13 +89,13 @@ class Geometry {
     // Constructor helpers
     void construct_from_atoms(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string,std::string> o);
     void common_init1();
-    void common_init2(const bool print, const double thresh);
+    void common_init2(const bool print, const double thresh, const bool nodf = false);
 
   public:
     Geometry(const std::string);
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string, std::string> o);
-    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true);
+    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry> >);
     ~Geometry();
