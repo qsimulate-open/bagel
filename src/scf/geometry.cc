@@ -590,15 +590,43 @@ namespace Bagel {
 namespace Geometry {
 class Node {
   protected:
-    std::shared_ptr<const Atom> myself_;
-    std::set<std::shared_ptr<const Atom> > connected_;
+    const std::shared_ptr<const Atom> myself_;
+    const int num_;
+    // in order to avoid cyclic references
+    std::list<std::weak_ptr<Node> > connected_;
+
 
   public:
-    Node(const std::shared_ptr<const Atom> o) : myself_(o) {};
+    Node(const std::shared_ptr<const Atom> o, const int n) : myself_(o), num_(n) {};
     ~Node() {};
-    void add_connected(const std::shared_ptr<const Atom> i) {
-      bool done = connected_.insert(i).second;
-      if (!done) throw logic_error("Node::add_connected");
+
+    void add_connected(const std::shared_ptr<Node> i) {
+      std::weak_ptr<Node> in = i;
+      for (auto iter = connected_.begin(); iter != connected_.end(); ++iter)
+        if (iter->lock() == i) throw logic_error("Node::add_connected");
+      connected_.push_back(in); 
+    };
+
+    const std::shared_ptr<const Atom> atom() const { return myself_; };
+    int num() const { return num_; };
+
+    std::set<std::shared_ptr<Node> > common_center(const std::shared_ptr<Node> o) const {
+      std::set<std::shared_ptr<Node> > out;
+      for (auto c = connected_.begin(); c != connected_.end(); ++c) {
+        if (c->lock()->connected_with(o)) out.insert(c->lock()); 
+      }
+      return out;
+    };
+
+    bool connected_with(const std::shared_ptr<Node> o) {
+      bool out = false;
+      for (auto i = connected_.begin(); i != connected_.end(); ++i) {
+        if (i->lock() == o) {
+          out = true;
+          break;
+        }
+      }
+      return out;
     };
 
 };
@@ -608,13 +636,53 @@ using namespace Bagel::Geometry;
 
 void Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
-  for (auto i = atoms_.begin(); i != atoms_.end(); ++i)
+
+  list<shared_ptr<Node> > nodes;
+  int n = 0;
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
     if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
+    nodes.push_back(shared_ptr<Node>(new Node(*i, n)));
+  }
 
-  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
-    for (auto j = i+1; j != atoms_.end(); ++j) {
-//    if ((*i)->
+  // first pick up bonds
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    auto j = i;
+    for (++j ; j != nodes.end(); ++j) {
+      // TODO hardwiring 2.0 is NOT a good practice
+      if ((*i)->atom()->distance((*j)->atom()) < 2.0*ang2bohr__) {
+        (*i)->add_connected(*j); 
+        (*j)->add_connected(*i); 
+        cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
+                                    setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl; 
+      }
+    }
+  }
 
+  // then bond angles A-O-B (A<B)
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    auto j = i;
+    for (++j; j != nodes.end(); ++j) {
+      std::set<std::shared_ptr<Node> > center = (*i)->common_center(*j);
+      for (auto c = center.begin(); c != center.end(); ++c) {
+        cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
+                "     angle" << setw(10) << setprecision(4) << (*c)->atom()->angle((*i)->atom(), (*j)->atom()) << " deg" << endl; 
+      }
+    }
+  }
+
+  // then dihedral angle (A-O-B(-C)) i.e., ABC are connected to O.
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    for (auto j = nodes.begin(); j != nodes.end(); ++j) {
+      if (*i == *j) continue;
+      std::set<std::shared_ptr<Node> > center = (*i)->common_center(*j);
+      for (auto k = nodes.begin(); k != nodes.end(); ++k) {
+        if (!(*k)->connected_with(*j)) continue;
+        for (auto c = center.begin(); c != center.end(); ++c) {
+          if (*c == *k) continue;
+          cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
+                  "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl; 
+        }
+      }
     }
   }
 }

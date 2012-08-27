@@ -85,11 +85,13 @@ class Quatern {
 
     void print() const { };
     double norm() const { assert(false); };
+    double ddot(const Quatern<T>&) const { assert(false); };
     void normalize() { assert(false); };
 };
 
 template<> void Quatern<double>::print() const;
 template<> double Quatern<double>::norm() const;
+template<> double Quatern<double>::ddot(const Quatern<double>& o) const;
 template<> void Quatern<double>::normalize();
 
 #endif

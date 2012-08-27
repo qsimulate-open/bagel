@@ -85,6 +85,10 @@ class Atom {
     double distance(const std::shared_ptr<const Atom> o) const;
     // displacement vector from this to other
     std::array<double,3> displ(const std::shared_ptr<const Atom> o) const;
+    // angle between two atoms (A,B)  and this (O) deg(A-O-B)
+    double angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
+    // dihedral angle for A-this-O-B
+    double dihedral_angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
 };
 
 #endif

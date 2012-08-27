@@ -36,7 +36,11 @@ template<> void Quatern<double>::print() const {
   cout << endl;
 };
 
-template<> double Quatern<double>::norm() const { return ::sqrt(data_[0]*data_[0]+data_[1]*data_[1]+data_[2]*data_[2]+data_[3]*data_[3]); };
+template<> double Quatern<double>::norm() const { return ::sqrt(ddot(*this)); };
+
+template<> double Quatern<double>::ddot(const Quatern<double>& o) const {
+  return data_[0]*o.data_[0] + data_[1]*o.data_[1] + data_[2]*o.data_[2] + data_[3]*o.data_[3];
+}
 
 template<> void Quatern<double>::normalize() {
   const double n = norm();

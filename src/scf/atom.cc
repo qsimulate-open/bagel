@@ -36,6 +36,7 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <tuple>
+#include <src/util/quatern.h>
 #include <src/osint/overlapbatch.h>
 #include <src/scf/atommap.h>
 #include <src/util/constants.h>
@@ -368,3 +369,30 @@ array<double,3> Atom::displ(const shared_ptr<const Atom> o) const {
   return array<double,3>{{ o->position_[0]-position_[0], o->position_[1]-position_[1], o->position_[2]-position_[2] }};
 }
 
+
+double Atom::angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<const Atom> b) const {
+  Quatern<double> ap = a->position(); 
+  Quatern<double> bp = b->position(); 
+  Quatern<double> op = this->position();
+  ap -= op;
+  bp -= op;
+  Quatern<double> rot = ap * bp;
+  rot[0] = 0;
+  return ::atan2(rot.norm(), ap.ddot(bp)) * rad2deg__;
+}
+
+
+// Dihedral angle of A-this-O-B
+double Atom::dihedral_angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<const Atom> o, const std::shared_ptr<const Atom> b) const {
+  Quatern<double> ap = a->position();
+  Quatern<double> tp = this->position();
+  Quatern<double> op = o->position();
+  Quatern<double> bp = b->position();
+  // following Wikipedia..
+  Quatern<double> b1 = tp - ap; 
+  Quatern<double> b2 = op - tp; 
+  Quatern<double> b3 = bp - op; 
+  Quatern<double> b12 = b1 * b2; b12[0] = 0.0;
+  Quatern<double> b23 = b2 * b3; b23[0] = 0.0;
+  return ::atan2(b2.norm()*b1.ddot(b23), b12.ddot(b23)) * rad2deg__; 
+}
