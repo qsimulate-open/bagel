@@ -95,7 +95,7 @@ class Geometry {
     Geometry(const std::string);
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string, std::string> o);
-    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo);
+    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry> >);
     ~Geometry();
@@ -126,7 +126,6 @@ class Geometry {
 
     bool operator==(const Geometry& o) const;
 
-//  int num_count_ncore(); // also set nfrc_
     int num_count_ncore_only() const; // also set nfrc_
     int num_count_full_valence_nocc() const;
 
@@ -168,9 +167,9 @@ class Geometry {
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; };
     double external(const int i) const { return external_[i]; };
 
-    // TODO experimental code
-    // internal coordinate for geometry optimization
-    void compute_internal_coordinate() const;
+    // transformation matrices for the internal coordinate for geometry optimization
+    // ninternal runs fast (and cartsize slower)
+    std::array<std::unique_ptr<double[]>,2> compute_internal_coordinate() const;
 };
 
 #endif

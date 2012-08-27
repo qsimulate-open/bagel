@@ -72,14 +72,38 @@ class Opt {
         print_header();
         mute_stdcout();
       }
+      // current geom and grad in the cartesian coordinate
       std::shared_ptr<GradFile> cgrad = eval.compute(); 
       std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
-      std::shared_ptr<GradFile> displ = bfgs_->extrapolate(cgrad, cgeom); 
+      std::shared_ptr<GradFile> displ;
+      if (false) {
+        // x = BX
+        // g = (BT)^-1 X
+        std::array<std::unique_ptr<double[]>,2> b;
+        b  = current_->compute_internal_coordinate();
+        std::shared_ptr<GradFile> dgeom = cgeom->transform(b[0], false);
+        std::shared_ptr<GradFile> dgrad = cgrad->transform(b[1], false);
+        displ = bfgs_->extrapolate(dgrad, dgeom);
+
+        // self consistent cycle (Eq. 6 of JCP 105,192)
+        std::shared_ptr<GradFile> previous = displ->clone();
+        for (int i = 0; i != 10; ++i) {
+          std::shared_ptr<GradFile> tmp = displ->transform(b[1], true);
+          std::shared_ptr<Geometry> tmpgeom = std::shared_ptr<Geometry>(new Geometry(*current_, tmp->xyz(), input_, false));
+          b  = tmpgeom->compute_internal_coordinate();
+          if ((*previous-*tmp).norm() < 1.0e-10) break;
+          previous = tmp;
+        }
+        displ = displ->transform(b[1], true);
+      } else { 
+        displ = bfgs_->extrapolate(cgrad, cgeom);
+      }
       const double gradnorm = cgrad->norm();
       const double disnorm = displ->norm();
       const bool converged = gradnorm < thresh_ && disnorm < thresh_;
       if (!converged) {
         displ->scale(-1.0);
+        if (iter_ == 0) displ->scale(0.01);
         current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), input_));
         current_->print_atoms();
       }

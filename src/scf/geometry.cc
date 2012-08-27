@@ -226,7 +226,7 @@ void Geometry::common_init2(const bool print, const double thresh) {
 
 
 
-Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo)
+Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo, const bool rotate)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) { 
 
@@ -240,35 +240,37 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
 
   // second find the unique frame.
   // (i) center of chages
-  Quatern<double> oc = o.charge_center();
-  Quatern<double> mc = charge_center();
-  // (2) direction of the first atom
-  Quatern<double> oa = o.atoms().front()->position();
-  Quatern<double> ma =   atoms().front()->position();
-  Quatern<double> od = oa - oc; 
-  Quatern<double> md = ma - mc; 
-  // Quaternion that maps md to od.
-  od.normalize();
-  md.normalize();
-  Quatern<double> op = md * od;
-  op[0] = 1.0 - op[0]; 
-  op.normalize();
-  Quatern<double> opd = op.dagger();
+  if (rotate) {
+    Quatern<double> oc = o.charge_center();
+    Quatern<double> mc = charge_center();
+    // (2) direction of the first atom
+    Quatern<double> oa = o.atoms().front()->position();
+    Quatern<double> ma =   atoms().front()->position();
+    Quatern<double> od = oa - oc; 
+    Quatern<double> md = ma - mc; 
+    // Quaternion that maps md to od.
+    od.normalize();
+    md.normalize();
+    Quatern<double> op = md * od;
+    op[0] = 1.0 - op[0]; 
+    op.normalize();
+    Quatern<double> opd = op.dagger();
 
-  // first subtract mc, rotate, and then add oc
-  vector<shared_ptr<const Atom> > newatoms;
-  vector<shared_ptr<const Atom> > newauxatoms;
-  for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-    assert((*i)->position() == (*j)->position());
-    Quatern<double> source = (*i)->position();
-    Quatern<double> target = op * (source - mc) * opd + oc;
-    array<double,3> cdispl = (target - source).ijk(); 
+    // first subtract mc, rotate, and then add oc
+    vector<shared_ptr<const Atom> > newatoms;
+    vector<shared_ptr<const Atom> > newauxatoms;
+    for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
+      assert((*i)->position() == (*j)->position());
+      Quatern<double> source = (*i)->position();
+      Quatern<double> target = op * (source - mc) * opd + oc;
+      array<double,3> cdispl = (target - source).ijk(); 
 
-    newatoms.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
-    newauxatoms.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+      newatoms.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
+      newauxatoms.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+    }
+    atoms_ = newatoms;
+    aux_atoms_ = newauxatoms;
   }
-  atoms_ = newatoms;
-  aux_atoms_ = newauxatoms;
 
   common_init1();
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8); 
@@ -503,6 +505,7 @@ void Geometry::merge_obs_aux() {
 
 vector<double> Geometry::xyz() const {
   vector<double> out;
+  out.reserve(3*natom());
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
     out.push_back((*i)->position(0));
     out.push_back((*i)->position(1));
@@ -634,7 +637,7 @@ class Node {
 
 using namespace Bagel::Geometry;
 
-void Geometry::compute_internal_coordinate() const {
+array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
 
   vector<vector<double> > out;
@@ -761,31 +764,68 @@ void Geometry::compute_internal_coordinate() const {
   }
 
   // debug output
-  const size_t primsize = out.size();
+  const int primsize = out.size();
+  const int cartsize = 3*natom();
 
-  unique_ptr<double[]> bdag(new double[primsize*3*natom()]);
+  unique_ptr<double[]> bdag(new double[primsize*cartsize]);
   double* biter = bdag.get();
-  for (auto i = out.begin(); i != out.end(); ++i, biter += 3*natom()) {
+  for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter); 
-  }
 
-  unique_ptr<double[]> bbdag(new double[primsize*primsize]);
+  unique_ptr<double[]> bb(new double[primsize*primsize]);
   unique_ptr<double[]> eig(new double[primsize]);
-  dgemm_("T", "N", primsize, primsize, 3*natom(), 1.0, bdag.get(), 3*natom(), bdag.get(), 3*natom(), 0.0, bbdag.get(), primsize);
+  dgemm_("T", "N", primsize, primsize, cartsize, -1.0, bdag.get(), cartsize, bdag.get(), cartsize, 0.0, bb.get(), primsize);
   const int lwork = primsize*5;
   unique_ptr<double[]> work(new double[lwork]);
   int info;
-  dsyev_("V", "U", primsize, bbdag.get(), primsize, eig.get(), work.get(), lwork, info); 
+  dsyev_("V", "U", primsize, bb.get(), primsize, eig.get(), work.get(), lwork, info); 
   if (info) throw runtime_error("DSYEV failed in Geometry::compute_internal_coordinate");
-  int cnt = 0;
+
+  int ninternal = 0;
   for (int i = 0; i != primsize; ++i) {
     if (fabs(eig[i]) > numerical_zero__*::pow(10.0,5)) {
-//    cout << eig[i] << endl;
-      ++cnt; 
+      ++ninternal;
+      eig[i] *= -1.0;
+    } else {
+      break;
     }
   }
-  cout << "      Nonredundant internal coordinate generated (dim = " << cnt << ")" << endl; 
-  if (cnt != 3*natom()-6) {
+  cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl; 
+  if (ninternal != cartsize-6)
     cout << "       ** caution **  the dimention of internal coordinates is not the same as 3*natom" << endl; 
+
+  // form B = U^+ Bprim
+  unique_ptr<double[]> bnew(new double[cartsize*cartsize]);
+  fill(bnew.get(), bnew.get()+cartsize*cartsize, 0.0);
+  dgemm_("T", "T", ninternal, cartsize, primsize, 1.0, bb, primsize, bdag, cartsize, 0.0, bnew, cartsize); 
+
+  // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
+  unique_ptr<double[]> bdmnew(new double[cartsize*cartsize]);
+  fill(bdmnew.get(), bdmnew.get()+cartsize*cartsize, 0.0);
+  for (int j = 0; j != cartsize; ++j)
+    for (int i = 0; i != ninternal; ++i)
+      bdmnew[i+j*cartsize] = bnew[i+j*cartsize] / eig[i];
+
+  // for debug
+  if (false) {
+    unique_ptr<double[]> tmp(new double[cartsize*cartsize]);
+    fill(tmp.get(), tmp.get()+cartsize*cartsize, 0.0);
+    dgemm_("N", "T", cartsize, cartsize, cartsize, 1.0, bdmnew, cartsize, bnew, cartsize, 0.0, tmp, cartsize); 
+    for (int i = 0; i != cartsize; ++i) {
+      for (int j = 0; j != cartsize; ++j) {
+        cout << setw(8) << setprecision(3) << tmp[j+i*cartsize];
+      }
+      cout << endl;
+    }
+    cout << "====" << endl;
+    dgemm_("N", "T", cartsize, cartsize, cartsize, 1.0, bnew, cartsize, bdmnew, cartsize, 0.0, tmp, cartsize); 
+    for (int i = 0; i != cartsize; ++i) {
+      for (int j = 0; j != cartsize; ++j) {
+        cout << setw(8) << setprecision(3) << tmp[j+i*cartsize];
+      }
+      cout << endl;
+    }
   }
+
+  return array<unique_ptr<double[]>,2>{{move(bnew), move(bdmnew)}};
 }
