@@ -45,7 +45,20 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
 
   array<int,4> order {{ 0,1,2,3 }};
 
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
+
+  // first count the number of dummys
+  int center = 4;
+  for (auto i = basisinfo_.begin(); i != basisinfo_.end(); ++i)
+    if ((*i)->dummy()) --center;
+
+  if (center == 3 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()))
+    throw logic_error("dummy shell in an illegal position: 3 index gradient");
+  if (center == 2 && (!(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()) || !(basisinfo_[2]->dummy() || basisinfo_[3]->dummy())))
+    throw logic_error("dummy shell in an illegal position: 2 index gradient");
+  if (center < 2) throw logic_error("there are only one or less non-dummy basis in GLibint::GLibint");
+
+
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->dummy()) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap(order[0], order[1]);
     swap01_ = true;
@@ -53,7 +66,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
     swap01_ = false;
   }
   // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number() || basisinfo_[2]->dummy()) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap(order[2], order[3]);
     swap23_ = true;
@@ -62,7 +75,8 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   }
 
   swap0123_ = false;
-  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())) {
+  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())
+      && center != 3) {
       swap0123_ = true;
       tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
         = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
@@ -401,7 +415,13 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           }
 
           stack_->libint_t_ptr(0)->contrdepth = p0123;
-          LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          if (center == 4) {
+            LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else if (center == 3) {
+            LIBINT2_PREFIXED_NAME(libint2_build_3eri)[am[0]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else {
+            LIBINT2_PREFIXED_NAME(libint2_build_2eri)[am[0]][am[2]](stack_->libint_t_ptr(0));
+          }
           double* ints = stack_->libint_t_ptr(0)->targets[0];
 
           if (spherical_) {
