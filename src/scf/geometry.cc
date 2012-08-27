@@ -688,7 +688,7 @@ void Geometry::compute_internal_coordinate() const {
         Quatern<double> ap = (*i)->atom()->position();
         Quatern<double> bp = (*j)->atom()->position();
         Quatern<double> e21 = ap - op;
-        Quatern<double> e23 = ap - op;
+        Quatern<double> e23 = bp - op;
         const double r21 = e21.norm();
         const double r23 = e23.norm();
         e21.normalize();
@@ -716,7 +716,7 @@ void Geometry::compute_internal_coordinate() const {
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
-          if (*c == *k) continue;
+          if (*c == *k || *k == *i) continue;
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl; 
           // following J. Molec. Spec. 44, 599 (1972)
@@ -779,10 +779,13 @@ void Geometry::compute_internal_coordinate() const {
   if (info) throw runtime_error("DSYEV failed in Geometry::compute_internal_coordinate");
   int cnt = 0;
   for (int i = 0; i != primsize; ++i) {
-    if (fabs(eig[i]) > numerical_zero__*1000.0) {
-      cout << eig[i] << endl;
+    if (fabs(eig[i]) > numerical_zero__*::pow(10.0,5)) {
+//    cout << eig[i] << endl;
       ++cnt; 
     }
   }
   cout << "      Nonredundant internal coordinate generated (dim = " << cnt << ")" << endl; 
+  if (cnt != 3*natom()-6) {
+    cout << "       ** caution **  the dimention of internal coordinates is not the same as 3*natom" << endl; 
+  }
 }
