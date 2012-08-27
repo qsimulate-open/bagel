@@ -763,15 +763,15 @@ void Geometry::compute_internal_coordinate() const {
   // debug output
   const size_t primsize = out.size();
 
-  unique_ptr<double[]> bmat(new double[primsize*3*natom()]);
-  double* biter = bmat.get();
+  unique_ptr<double[]> bdag(new double[primsize*3*natom()]);
+  double* biter = bdag.get();
   for (auto i = out.begin(); i != out.end(); ++i, biter += 3*natom()) {
     copy(i->begin(), i->end(), biter); 
   }
 
   unique_ptr<double[]> bbdag(new double[primsize*primsize]);
   unique_ptr<double[]> eig(new double[primsize]);
-  dgemm_("T", "N", primsize, primsize, 3*natom(), 1.0, bmat.get(), 3*natom(), bmat.get(), 3*natom(), 0.0, bbdag.get(), primsize);
+  dgemm_("T", "N", primsize, primsize, 3*natom(), 1.0, bdag.get(), 3*natom(), bdag.get(), 3*natom(), 0.0, bbdag.get(), primsize);
   const int lwork = primsize*5;
   unique_ptr<double[]> work(new double[lwork]);
   int info;
