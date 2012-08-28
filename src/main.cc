@@ -47,7 +47,7 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
-#include <src/prop/momentum.h>
+#include <src/rel/dirac.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -123,6 +123,12 @@ int main(int argc, char** argv) {
         scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
+
+      } else if (method == "dhf") {
+
+        scf = std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        scf->compute();
+//      ref = scf->conv_to_ref();
 
       } else if (method == "df-hf") {
 

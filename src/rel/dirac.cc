@@ -29,4 +29,16 @@
 using namespace std;
 using namespace bagel;
 
-void Dirac::compute() {};
+void Dirac::compute() {
+
+  kinetic_->print();
+
+  nai_->print();
+
+}
+
+
+shared_ptr<Reference> Dirac::conv_to_ref() const {
+
+  return shared_ptr<Reference>();
+}
