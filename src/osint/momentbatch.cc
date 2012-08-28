@@ -147,14 +147,9 @@ void MomentBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_ - jz; ++jy) {
               const int jx = ang1_ - jy - jz;
               if (jx >= 0) {
-#if 1
                 current_data[cnt              ] = worktx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz];
                 current_data[cnt+size_block_  ] = worksx[ix + dim * jx] * workty[iy + dim * jy] * worksz[iz + dim * jz];
                 current_data[cnt+size_block_*2] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worktz[iz + dim * jz];
-#else
-                current_data[cnt              ] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz];
-                current_data[cnt+size_block_  ] = current_data[cnt+size_block_*2] = 0.0;
-#endif
                 ++cnt;
               }
             }

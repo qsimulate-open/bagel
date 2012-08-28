@@ -1,5 +1,6 @@
-In order to compile this package:
+BAGEL -- Freshly leavened quantum chemistry       by NU Theory
 
+In order to compile this package:
 // first do the standard automake sequence
 aclocal
 autoconf
@@ -32,6 +33,9 @@ cd obj
              'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FFLAGS=-O0' 'FCFLAGS=-O0'
 
 // My Release build is compiled by (on mac; note that -ipo works, but it takes a lot to compile)
+//
+// ** currently Intel does not work since it does not support initializer lists **.
+//
 ../configure 'CXX=icpc' 'CXXFLAGS=-std=c++0x -O3 -parallel -xavx -gcc-name=gcc-mp-4.5 -Werror -I/opt/local/include'
              'LDFLAGS=-L/opt/intel/composerxe/lib -L/opt/intel/composerxe/mkl/lib -L/opt/local/lib'
              'LIBS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm' 'FFLAGS=-O3' 'FCFLAGS=-O3' 'AR=xiar'
