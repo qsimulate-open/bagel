@@ -84,13 +84,13 @@ shared_ptr<Matrix1e> CPHF::solve() const {
       unique_ptr<double[]> jrs = geom_->df()->compute_Jop(pbmao->data());
       dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
     }
-    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt);
 
     // K part
     {
       // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
       unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
-      dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca); 
+      dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
     }
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)

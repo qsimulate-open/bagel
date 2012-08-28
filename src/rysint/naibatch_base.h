@@ -45,7 +45,7 @@ class NAIBatch_base : public RysInt {
     const int L_;
     const double A_;
 
-    void root_weight(const int ps); 
+    void root_weight(const int ps);
     void compute_ssss(const double);
 
   public:
@@ -56,7 +56,7 @@ class NAIBatch_base : public RysInt {
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
 
-}; 
+};
 
 }
 

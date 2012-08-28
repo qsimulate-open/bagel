@@ -72,7 +72,7 @@ void Matrix1e::init() {
       }
     }
 
-    auto o1 = o0+1; 
+    auto o1 = o0+1;
     for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
       auto offset0 = o0->begin();
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {

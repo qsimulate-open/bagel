@@ -39,7 +39,7 @@ class DipoleBatch : public OSInt {
     const std::array<double,3> center_;
     void perform_VRR(double*);
 
-  public: 
+  public:
     DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<double,3>& c);
     ~DipoleBatch();
 

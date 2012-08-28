@@ -46,8 +46,8 @@ void PFock::pfock_two_electron_part() {
 
   const int shift = sizeof(int) * 4;
 
-  vector<size_t> tmp = file_->num_int_each(); 
-  size_t allocsize = *max_element(tmp.begin(), tmp.end()); 
+  vector<size_t> tmp = file_->num_int_each();
+  size_t allocsize = *max_element(tmp.begin(), tmp.end());
   double* diskdata = new double[allocsize];
 
   long file_position = 0l;
@@ -80,10 +80,10 @@ void PFock::pfock_two_electron_part() {
           const double* cdata = diskdata;
           complex<double>* density = density_->data()->front();
           complex<double>* data = data_->front();
-          
+
           const int size = file_->basissize(); // number of shells
           for (int i0 = 0; i0 != size; ++i0) {
-            const int b0offset = file_->offset(i0); 
+            const int b0offset = file_->offset(i0);
             const int b0size = file_->nbasis(i0);
 
             for (int i1 = 0; i1 != size; ++i1) {
@@ -104,25 +104,25 @@ void PFock::pfock_two_electron_part() {
                   if (skip_schwarz) continue;
 
                   if (m2nonzero && mmmin){
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell 
-                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {  
-                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {  
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {  
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
                             const double integral1 = *cdata;
                             const double integral2 = integral1 + integral1;
                             data[m1________k____b + j0n + j1] += density[m2___m3___k____b + j3n + j2] * integral2;
                             data[m3___m2___k____b + j2n + j3] += density[_____m1___k____b + j1n + j0] * integral2;
-                            data[m3________k____b + j0n + j3] -= density[m2___m1___k____b + j1n + j2] * integral1; 
-                            data[m1___m2___k____b + j2n + j1] -= density[_____m3___k____b + j3n + j0] * integral1; 
+                            data[m3________k____b + j0n + j3] -= density[m2___m1___k____b + j1n + j2] * integral1;
+                            data[m1___m2___k____b + j2n + j1] -= density[_____m3___k____b + j3n + j0] * integral1;
                           }
                         }
                       }
                     }
                   } else if (m2nonzero) {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell 
-                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {  
-                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {  
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {  
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                        for (int j2 = b2offset, j2n = b2offset * n; j2 != b2offset + b2size; ++j2, j2n += n) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
                             const double integral2 = *cdata + *cdata;
                             data[m1________k____b + j0n + j1] += density[m2___m3___k____b + j3n + j2] * integral2;
                             data[m3___m2___k____b + j2n + j3] += density[_____m1___k____b + j1n + j0] * integral2;
@@ -131,23 +131,23 @@ void PFock::pfock_two_electron_part() {
                       }
                     }
                   } else if (mmmin) {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell 
-                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {  
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {  
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {  
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset, j1n = b1offset * n; j1 != b1offset + b1size; ++j1, j1n += n) {
+                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
                             const double integral1 = *cdata;
                             const double integral2 = integral1 + integral1;
                             data[m1________k____b + j0n + j1] += density[m2___m3___k____b + j3n + j2] * integral2;
-                            data[m3________k____b + j0n + j3] -= density[m2___m1___k____b + j1n + j2] * integral1; 
+                            data[m3________k____b + j0n + j3] -= density[m2___m1___k____b + j1n + j2] * integral1;
                           }
                         }
                       }
                     }
                   } else {
-                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell 
-                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {  
-                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {  
-                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {  
+                    for (int j0 = b0offset, j0n = b0offset * n; j0 != b0offset + b0size; ++j0, j0n += n) { // center unit cell
+                      for (int j1 = b1offset                    ; j1 != b1offset + b1size; ++j1          ) {
+                        for (int j2 = b2offset                    ; j2 != b2offset + b2size; ++j2          ) {
+                          for (int j3 = b3offset, j3n = b3offset * n; j3 != b3offset + b3size; ++j3, j3n += n, ++cdata) {
                             const double integral2 = *cdata + *cdata;
                             data[m1________k____b + j0n + j1] += density[m2___m3___k____b + j3n + j2] * integral2;
                           }
@@ -164,9 +164,9 @@ void PFock::pfock_two_electron_part() {
 
       }
     }
-  } 
+  }
 
   delete[] diskdata;
 
-}  
+}
 

@@ -75,10 +75,10 @@ void test_solvers(shared_ptr<Geometry> geom_) {
       shared_ptr<Matrix1e> start(new Matrix1e(*prev));
       davidson.orthog(start);
       shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
 
-      shared_ptr<const Matrix1e> ss(new Matrix1e(*start)); 
-      shared_ptr<const Matrix1e> rr(new Matrix1e(*res)); 
+      shared_ptr<const Matrix1e> ss(new Matrix1e(*start));
+      shared_ptr<const Matrix1e> rr(new Matrix1e(*res));
       const double energy = davidson.compute(ss, rr);
       shared_ptr<Matrix1e> residual = davidson.residual().front();
 
@@ -104,7 +104,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int i = 0; i != n; ++i) {
       linear.orthog(prev);
       shared_ptr<Matrix1e> res = prev->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1);
 
       shared_ptr<Matrix1e> residual = linear.compute_residual(prev, res);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
@@ -129,7 +129,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int i = 0; i != n; ++i) {
       linear.orthog(prev);
       shared_ptr<Matrix1e> res = prev->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, prev->data(), 1, 0.0, res->data(), 1);
 
       shared_ptr<Matrix1e> residual = linear.compute_residual(prev, res);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
@@ -158,7 +158,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
       linear.orthog(start);
 
       shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
 
       shared_ptr<Matrix1e> residual = linear.compute_residual(start, res);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
@@ -187,7 +187,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int i = 0; i != n; ++i) {
       shared_ptr<Matrix1e> start(new Matrix1e(*prev));
       shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
       shared_ptr<Matrix1e> residual(new Matrix1e(*res - *tmp));
       for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
       cout << "residual " << setw(20) << setprecision(10) << fixed << residual->norm() << endl;
@@ -213,7 +213,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int i = 0; i != n; ++i) {
       shared_ptr<Matrix1e> start(new Matrix1e(*prev));
       shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
       shared_ptr<Matrix1e> residual0(new Matrix1e(*res - *tmp));
 
       shared_ptr<Matrix1e> residual = bfgs.extrapolate(residual0, prev);
@@ -241,7 +241,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
       shared_ptr<Matrix1e> start(new Matrix1e(*prev));
       linear.orthog(start);
       shared_ptr<Matrix1e> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1); 
+      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
 
       shared_ptr<Matrix1e> residual0 = linear.compute_residual(start, res);
 

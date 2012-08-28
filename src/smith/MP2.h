@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_MP2_H 
-#define __SRC_SMITH_MP2_H 
+#ifndef __SRC_SMITH_MP2_H
+#define __SRC_SMITH_MP2_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -160,7 +160,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 #endif
       r = t2->clone();
     };
-    ~MP2() {}; 
+    ~MP2() {};
 
     void solve() {
       this->print_iteration();
@@ -188,9 +188,9 @@ r->zero();
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
         en += c->energy() * 0.25; // FIXME
-      }   
-      return en; 
-    };  
+      }
+      return en;
+    };
 };
 
 }

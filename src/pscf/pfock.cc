@@ -46,10 +46,10 @@ PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, 
   pfock_two_electron_part();
 
   PMatrix1e tmp = this->ft();
-  zcopy_(&totalsize_, tmp.data()->front(), &unit, data_->front(), &unit); 
+  zcopy_(&totalsize_, tmp.data()->front(), &unit, data_->front(), &unit);
 
   // Finally, add the old Fock matrices
-  zaxpy_(&totalsize_, &one, prev->data()->front(), &unit, data_->front(), &unit); 
+  zaxpy_(&totalsize_, &one, prev->data()->front(), &unit, data_->front(), &unit);
 
 
 }
@@ -65,9 +65,9 @@ PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, 
   // First construct the 2-e Fock matrices
   pfock_two_electron_part();
   PMatrix1e tmp = this->ft();
-  zcopy_(&totalsize_, tmp.data()->front(), &unit, data_->front(), &unit); 
+  zcopy_(&totalsize_, tmp.data()->front(), &unit, data_->front(), &unit);
   // Finally, add the old Fock matrices
-  zaxpy_(&totalsize_, &one, prev->data()->front(), &unit, data_->front(), &unit); 
+  zaxpy_(&totalsize_, &one, prev->data()->front(), &unit, data_->front(), &unit);
 }
 
 PFock::PFock(const RefPGeometry g, const RefPHcore hcore) : PMatrix1e(g) {

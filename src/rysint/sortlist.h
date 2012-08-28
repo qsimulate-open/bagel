@@ -27,16 +27,16 @@
 // stand alone class for HRR functions.
 // can be called from outside through sortfunc_call.
 //
-  
+
 #ifndef __src_rysint_sortlist_h
 #define __src_rysint_sortlist_h
 
 #include <src/rysint/macros.h>
- 
+
 struct SortList {
   SortList(const bool);
   ~SortList();
-     
+
   static void sort_indices_00(double*, const double*, const int, const int, const int, const bool);
   static void sort_indices_01(double*, const double*, const int, const int, const int, const bool);
   static void sort_indices_02(double*, const double*, const int, const int, const int, const bool);

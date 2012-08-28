@@ -46,8 +46,8 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
     shared_ptr<DF_Full> in = half_->compute_second_transform(cc,nocc);
 
     // TODO this is not a very efficient implementation, obviously
-    // for the time being, I form the entire 2RDM 
-    unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]); 
+    // for the time being, I form the entire 2RDM
+    unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]);
     fill(rdm2all.get(), rdm2all.get()+nocc*nocc*nocc*nocc, 0.0);
     {
       // closed-closed

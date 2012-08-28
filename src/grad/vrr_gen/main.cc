@@ -74,10 +74,10 @@ int main() {
       else if (j == 13) jstr = lexical_cast<string>("d");
       else if (j == 14) jstr = lexical_cast<string>("e");
       else if (j == 15) jstr = lexical_cast<string>("c");
-      const string filename = "_gvrr_" + istr + "0" + jstr + "0"; 
+      const string filename = "_gvrr_" + istr + "0" + jstr + "0";
       declist.push_back(vrrij.dump(filename));
 //    cout << "    static void " << filename << "(double*, const double*, const double*, const double*, const double*, const double*);" << endl;
-      cout << filename << ".cc "; 
+      cout << filename << ".cc ";
     }
   }
   cout << endl;

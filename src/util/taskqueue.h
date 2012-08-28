@@ -58,14 +58,14 @@ class TaskQueue {
       for (size_t i = 0; i < n; ++i)
         task_[i].compute();
 #endif
-    } 
+    }
 
     void compute_one_thread() {
       int j = 0;
       for (auto i = flag_.begin(); i != flag_.end(); ++i, j += chunck_)
         if (!(*i)->test_and_set()) {
           task_[j].compute();
-          for (int k = 1; k < chunck_; ++k) 
+          for (int k = 1; k < chunck_; ++k)
             if (j+k < task_.size()) task_[j+k].compute();
         }
     }

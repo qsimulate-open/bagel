@@ -40,7 +40,7 @@ Resources b(8);
 Resources* bagel::resources__ = &b;
 
 static double THRESH = 1.0e-8;
- 
+
 bool compare(const double a, const double b, const double thr = THRESH) { return fabs(a-b) < thr; };
 
 template<class T>

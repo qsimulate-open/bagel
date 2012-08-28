@@ -39,17 +39,17 @@ class AugHess {
     std::list<std::shared_ptr<const T> > c_;
     std::list<std::shared_ptr<const T> > sigma_;
 
-    const int max_;    
+    const int max_;
     int size_;
     const std::shared_ptr<const T> grad_;
 
-    // contains 
+    // contains
     std::unique_ptr<double[]> mat_;
     std::unique_ptr<double[]> prod_;
     // scratch area for diagonalization
     std::unique_ptr<double[]> scr_;
-    std::unique_ptr<double[]> vec_; 
-    // an eigenvector 
+    std::unique_ptr<double[]> vec_;
+    // an eigenvector
     std::unique_ptr<double[]> eig_;
     // work area in a lapack routine
     std::unique_ptr<double[]> work_;
@@ -85,8 +85,8 @@ class AugHess {
       auto citer = c_.begin();
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
-      } 
-      prod_[size_-1] = c->ddot(*grad_); 
+      }
+      prod_[size_-1] = c->ddot(*grad_);
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
@@ -95,13 +95,13 @@ class AugHess {
         scr(size_, i) = scr(i, size_) = prod_[i];
       }
       scr(size_, size_) = 0.0;
-      dsyev_("V", "U", size_+1, scr_, max_, eig_, work_, lwork_, info); 
+      dsyev_("V", "U", size_+1, scr_, max_, eig_, work_, lwork_, info);
       if (info) throw std::runtime_error("dsyev failed in AugHess");
 
       // scale eigenfunction
       for (int i = 0; i != size_; ++i) vec_[i] = scr_[i] / scr_[size_];
-      
-      std::shared_ptr<T> out(new T(*grad_)); 
+
+      std::shared_ptr<T> out(new T(*grad_));
       int cnt = 0;
       for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
         out->daxpy(vec_[cnt], *j);
@@ -117,8 +117,8 @@ class AugHess {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->daxpy(vec_[cnt], *i); 
-      } 
+        out->daxpy(vec_[cnt], *i);
+      }
       return out;
     };
 

@@ -24,7 +24,7 @@
 //
 
 #include <vector>
-#include <tuple> 
+#include <tuple>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
 
         std::shared_ptr<CASSCF> casscf;
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
           casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom));
         } else if (algorithm == "werner" || algorithm == "knowles") {
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
         ref = casscf->conv_to_ref();
 
       } else if (method == "casscf-opt") {
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         // in case of SS-CASSCF
         if (read_input<int>(iter->second, "nstate", 1) == 1) {
           if (algorithm == "superci" || algorithm == "") {
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
           std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
           std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
           #endif
-        
+
           #if 0 // Get test coeff from SCF
           scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
           scf->compute();
@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
     /////////////////////////////////////
     //test_solvers(geom);
 
-    delete resources__; 
+    delete resources__;
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

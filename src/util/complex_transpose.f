@@ -135,7 +135,7 @@ c$omp parallel do
         vec(i+9,j  )=h(j  ,i+9)
        enddo
       enddo
-      do i=nlim+2,n 
+      do i=nlim+2,n
        do j=1,mlim,10
         vec(i  ,j  )=h(j  ,i  )
         vec(i  ,j+1)=h(j+1,i  )

@@ -40,7 +40,7 @@ StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
   // in case we use Libint for ERI
 #ifdef LIBINT_INTERFACE
   // TODO 20LU should not be hardwired
-  libint_t_ = unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]); 
+  libint_t_ = unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]);
   if (libint2_need_memory_3eri1(LIBINT_MAX_AM) < libint2_need_memory_eri(LIBINT_MAX_AM)) {
     LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
   } else {
@@ -59,7 +59,7 @@ double* StackMem::get(const size_t size) {
 
 
 void StackMem::release(const size_t size, double* p) {
-  pointer_ -= size; 
+  pointer_ -= size;
   assert(p == stack_area_.get()+pointer_ || size == 0);
 }
 
@@ -74,7 +74,7 @@ Resources::Resources(const int n) : max_num_threads_(n) {
 #ifdef LIBINT_INTERFACE
   LIBINT2_PREFIXED_NAME(libint2_static_init)();
 #endif
-} 
+}
 
 
 shared_ptr<StackMem> Resources::get() {
@@ -94,7 +94,7 @@ void Resources::release(shared_ptr<StackMem> o) {
   for (int i = 0; i != max_num_threads_; ++i) {
     if (stackmem_[i] == o) {
       o->clear();
-      flag_[i]->clear(); 
+      flag_[i]->clear();
       found = true;
       break;
     }

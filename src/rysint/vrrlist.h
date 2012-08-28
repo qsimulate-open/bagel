@@ -27,7 +27,7 @@
 // stand alone class for VRR functions.
 // can be called from outside through vrrfunc_call.
 //
-  
+
 #ifndef __rysint_vrrlist_h
 #define __rysint_vrrlist_h
 
@@ -43,11 +43,11 @@ struct VRRListBase {
 
   void (*vrrfunc[ANG_VRR_END * ANG_VRR_END])(double*, const double*, const double*, const double*, const double*, const double*);
 };
- 
+
 struct VRRList : public VRRListBase {
   VRRList();
   ~VRRList();
-  
+
   static void _vrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_0010(double*, const double*, const double*, const double*, const double*, const double*);
   static void _vrr_0020(double*, const double*, const double*, const double*, const double*, const double*);

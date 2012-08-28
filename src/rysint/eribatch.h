@@ -24,7 +24,7 @@
 //
 
 #ifndef __src_rysint_eriprim_h
-#define __src_rysint_eriprim_h 
+#define __src_rysint_eriprim_h
 
 #include <src/rysint/eribatch_base.h>
 
@@ -48,13 +48,13 @@ class ERIBatch : public ERIBatch_base {
     void perform_VRR13();
 
   public:
-    
+
     // dummy will never used.
     ERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~ERIBatch();
 
     /// compute a batch of integrals
-    virtual void compute(); 
+    virtual void compute();
 
 };
 

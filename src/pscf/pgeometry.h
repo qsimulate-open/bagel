@@ -36,7 +36,7 @@ class PGeometry : public Geometry {
   protected:
     int L_; // Namur cutoff L
     int S_; // Namur cutoff S
-    int K_; // number of K points (= number of unit cell in the *half* first Brillouin zone)  
+    int K_; // number of K points (= number of unit cell in the *half* first Brillouin zone)
     double A_; // fundamental vector
 
     // Computes the nuclear repulsion energy per unit cell.
@@ -54,7 +54,7 @@ class PGeometry : public Geometry {
     double A() const { return A_; };
 
     // Returns nuclear repulsion energies.
-    double nuclear_repulsion() const { return pnuclear_repulsion_; }; 
+    double nuclear_repulsion() const { return pnuclear_repulsion_; };
 };
 
 }

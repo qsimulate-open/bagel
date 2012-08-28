@@ -30,13 +30,13 @@ using namespace std;
 
 GradFile GradFile::operator+(const GradFile& o) const {
   GradFile out(*this);
-  out.daxpy(1.0, o); 
+  out.daxpy(1.0, o);
   return out;
 }
 
 GradFile GradFile::operator-(const GradFile& o) const {
   GradFile out(*this);
-  out.daxpy(-1.0, o); 
+  out.daxpy(-1.0, o);
   return out;
 }
 

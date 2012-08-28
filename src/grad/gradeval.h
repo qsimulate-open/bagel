@@ -70,7 +70,7 @@ class GradEval : public GradEval_base {
     std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); };
 
     double energy() const { return energy_; };
-}; 
+};
 
 // specialization
 template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute();

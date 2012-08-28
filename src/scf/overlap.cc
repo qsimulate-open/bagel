@@ -54,8 +54,8 @@ void Overlap::computebatch(const array<RefShell,2>& input, const int offsetb0, c
 
   // input = [b1, b0]
   assert(input.size() == 2);
-  const int dimb1 = input[0]->nbasis(); 
-  const int dimb0 = input[1]->nbasis(); 
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
   OverlapBatch overlap(input);
   overlap.compute();
   const double* odata = overlap.data();

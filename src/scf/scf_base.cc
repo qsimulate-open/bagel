@@ -60,7 +60,7 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
 
   // so far assuming that this is RHF
   int nact = read_input<int>(idata_, "nact", 0);
-  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2); 
+  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2);
   noccB_ = nocc_ - nact;
 
   if (nocc_+noccB_ != geom_->nele()) throw runtime_error("nocc and nact are not consistently specified");

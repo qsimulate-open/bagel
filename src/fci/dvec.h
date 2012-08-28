@@ -59,7 +59,7 @@ class Dvec {
 
     Dvec(std::shared_ptr<const Civec> e, const size_t ij);
 
-    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted. 
+    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted.
     Dvec(std::shared_ptr<const Dvec> o);
 
     Dvec(std::vector<std::shared_ptr<Civec> > o);

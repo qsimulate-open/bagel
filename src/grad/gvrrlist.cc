@@ -225,7 +225,7 @@ GVRRList::GVRRList() {
       vrrfunc[ANG_VRR_END *13 +13] = &_gvrr_d0d0;
 }
 
- 
+
 GVRRList::~GVRRList() {
 
 }

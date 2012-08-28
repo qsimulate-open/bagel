@@ -45,7 +45,7 @@ void ERIBatch::compute() {
   fill(data_, data_ + size_alloc_, 0.0);
 
   // perform VRR
-  // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
+  // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
   switch (rank_) {
     case 1: perform_VRR1(); break;
     case 2: perform_VRR2(); break;
@@ -55,35 +55,35 @@ void ERIBatch::compute() {
     case 6: perform_VRR6(); break;
     case 7: perform_VRR7(); break;
     case 8: perform_VRR8(); break;
-    case 9: perform_VRR9(); break;  
-    case 10: perform_VRR10(); break;  
-    case 11: perform_VRR11(); break;  
-    case 12: perform_VRR12(); break;  
-    case 13: perform_VRR13(); break;  
+    case 9: perform_VRR9(); break;
+    case 10: perform_VRR10(); break;
+    case 11: perform_VRR11(); break;
+    case 12: perform_VRR12(); break;
+    case 13: perform_VRR13(); break;
     default: assert(false); break;
   }
 
-  // contract indices 01 
+  // contract indices 01
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
   {
-    const int m = prim2size_ * prim3size_ * asize_ * csize_; 
-    perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_, 
-      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+    const int m = prim2size_ * prim3size_ * asize_ * csize_;
+    perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_,
+      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_,
       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
   }
 
-  // contract indices 23 
+  // contract indices 23
   // data will be stored in data_: cont01{ cont23{ xyz{ } } }
   {
     const int n = cont0size_ * cont1size_;
-    perform_contraction_new_inner(n, asize_*csize_, bkup_, prim2size_, prim3size_, data_, 
-      basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+    perform_contraction_new_inner(n, asize_*csize_, bkup_, prim2size_, prim3size_, data_,
+      basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_,
       basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }
 
   // HRR to indices 01
   // data will be stored in bkup_: cont01{ cont23{ xyzf{ xyzab{ } } } }
-  if (basisinfo_[1]->angular_number() != 0) { 
+  if (basisinfo_[1]->angular_number() != 0) {
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     hrr_->hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
   } else {
@@ -112,10 +112,10 @@ void ERIBatch::compute() {
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_ * csize_;
     if (!swapped)
-      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_);
     else
-      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
-    swapped = (swapped ^ true); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
+    swapped = (swapped ^ true);
   }
 
 
@@ -128,10 +128,10 @@ void ERIBatch::compute() {
     const int nloop = cont0size_ * cont1size_;
     int offset = 0;
     if (swapped) {
-      for (int i = 0; i != nloop; ++i, offset += m * n)  
+      for (int i = 0; i != nloop; ++i, offset += m * n)
         mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
     } else {
-      for (int i = 0; i != nloop; ++i, offset += m * n)  
+      for (int i = 0; i != nloop; ++i, offset += m * n)
         mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
     }
   } else {
@@ -141,14 +141,14 @@ void ERIBatch::compute() {
   // HRR to indices 23
   // data will be stored in bkup_: cont01{ xyzab{ cont23{ xyzcd{ } } } } if cartesian
   // data will be stored in data_: cont01{ xyzab{ cont23{ xyzcd{ } } } } if spherical
-  if (basisinfo_[3]->angular_number() != 0) { 
+  if (basisinfo_[3]->angular_number() != 0) {
     const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
     if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
     else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
     else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
     else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
   } else {
-    swapped = (swapped ^ true); 
+    swapped = (swapped ^ true);
   }
 
   // Cartesian to spherical 23 if necesarry
@@ -158,9 +158,9 @@ void ERIBatch::compute() {
     const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
     const int nloops = contsize_ * asph * bsph;
     if (swapped)
-      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
     else
-      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_);
     swapped = (swapped ^ true);
   }
   if (spherical_) {
@@ -170,8 +170,8 @@ void ERIBatch::compute() {
     d = dsph;
   }
 
-  // if swapped  bkup contains info 
-  // if !swapped  data contains info 
+  // if swapped  bkup contains info
+  // if !swapped  data contains info
   double *target_now = swapped ? bkup_ : data_;
   double *source_now = swapped ? data_ : bkup_;
 
@@ -188,14 +188,14 @@ void ERIBatch::compute() {
   target_now = swapped ? data_ : bkup_;
   source_now = swapped ? bkup_ : data_;
   // transpose batch
-  // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
+  // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } }
   if (!swap0123_) {
     const int m = c * d * cont2size_ * cont3size_;
-    const int n = a * b * cont0size_ * cont1size_; 
+    const int n = a * b * cont0size_ * cont1size_;
     mytranspose_(source_now, &m, &n, target_now);
   } else {
     swapped = (swapped ^ true);
-  } 
+  }
 
   target_now = swapped ? bkup_ : data_;
   source_now = swapped ? data_ : bkup_;
@@ -208,7 +208,7 @@ void ERIBatch::compute() {
   } else {
     swapped = (swapped ^ true);
   }
-  
+
   if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
 
   stack_->release(size_alloc_, stack_save);

@@ -42,18 +42,18 @@ class Atom {
 
     std::string name_;
     std::array<double,3> position_;
-    std::vector<std::shared_ptr<const Shell> > shells_; 
+    std::vector<std::shared_ptr<const Shell> > shells_;
     int atom_number_;
     double atom_charge_;
     int nbasis_;
     int lmax_;
 
     // This function sets shell_ and lmax_
-    // in : a vector of an angular label, exponents, and coefficients. 
+    // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double> > > > in);
 
     void common_init();
-     
+
   public:
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string basisfile);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);

@@ -40,7 +40,7 @@
 namespace bagel {
 namespace SMITH {
 
-// the template parameter T specifies the storage type 
+// the template parameter T specifies the storage type
 
 template <typename T>
 class K2ext {
@@ -52,7 +52,7 @@ class K2ext {
     // some handwritten drivers
     std::map<size_t, std::shared_ptr<DF_Full> > generate_list() {
       std::shared_ptr<const DensityFit> df = ref_->geom()->df();
-      std::shared_ptr<const Coeff> coeff = ref_->coeff(); 
+      std::shared_ptr<const Coeff> coeff = ref_->coeff();
 
       // It is the easiest to do integral transformation for each blocks.
       assert(blocks_.size() == 4);
@@ -62,7 +62,7 @@ class K2ext {
       assert(df->nbasis0() == df->nbasis1());
 
       // TODO this part should be heavily parallelized
-      // Also need to think a bit on the data layout. 
+      // Also need to think a bit on the data layout.
       // closed loop
       size_t cnt = blocks_[0].keyoffset();
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
@@ -102,8 +102,8 @@ class K2ext {
            std::vector<size_t> i01 = {{j0, j1}};
 #endif
           auto iter01 = dflist.find(generate_hash_key(i01));
-          assert(iter01 != dflist.end()); 
-          std::shared_ptr<DF_Full> df01 = iter01->second; 
+          assert(iter01 != dflist.end());
+          std::shared_ptr<DF_Full> df01 = iter01->second;
           size_t hashkey01 = generate_hash_key(i01);
 
           size_t j2 = blocks_[2].keyoffset();
@@ -123,13 +123,13 @@ class K2ext {
 
               auto iter23 = dflist.find(generate_hash_key(i23));
               assert(iter23 != dflist.end());
-              std::shared_ptr<const DF_Full> df23 = iter23->second; 
+              std::shared_ptr<const DF_Full> df23 = iter23->second;
 
               const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 
               // contract
               std::unique_ptr<double[]> target(new double[size]);
-              df01->form_4index(target, df23); 
+              df01->form_4index(target, df23);
 
               // move in place
               std::vector<size_t> hash = {{j0, j1, j2, j3}};
@@ -144,7 +144,7 @@ class K2ext {
                 std::unique_ptr<double[]> target2(new double[size]);
                 const int s01 = i0->size() * i1->size();
                 const int s23 = i2->size() * i3->size();
-                mytranspose_(target.get(), &s01, &s23, target2.get()); 
+                mytranspose_(target.get(), &s01, &s23, target2.get());
                 std::vector<size_t> hash2 = {{j2, j3, j0, j1}};
 #if 0
                 hash2.push_back(j2);
@@ -165,7 +165,7 @@ class K2ext {
   public:
     K2ext(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
       // so far MOInt can be called for 2-external K integral and all-internals.
-      if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3]) 
+      if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
       std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
       data_ = tmp;

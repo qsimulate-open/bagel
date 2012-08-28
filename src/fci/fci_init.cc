@@ -75,7 +75,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       if (oindex == nstate) break;
     }
     if (oindex < nstate) {
-      out->zero(); 
+      out->zero();
       ndet *= 4;
       goto start_over;
     }
@@ -99,7 +99,7 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(*biter, *aiter)));
         tmp.erase(tmp.begin());
-      } 
+      }
     }
   }
   assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
@@ -110,7 +110,7 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
 }
 
 //
-// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm. 
+// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
 //
 void FCI::const_denom() {
 
@@ -137,7 +137,7 @@ void FCI::const_denom() {
 
   shared_ptr<Civec> tmp(new Civec(det()));
   denom_ = tmp;
-  const int nspin = det()->nspin(); 
+  const int nspin = det()->nspin();
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
@@ -159,7 +159,7 @@ void FCI::const_denom() {
           const int nja = (iabit2&1);
           const int njb = (ibbit2&1);
           const int Nj = (nja ^ njb);
-          const int addj = niab * (nja + njb); 
+          const int addj = niab * (nja + njb);
           *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
         }
         *iter += (jop_->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);

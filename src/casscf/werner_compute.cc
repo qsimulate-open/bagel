@@ -73,7 +73,7 @@ shared_ptr<const Matrix1e> WernerKnowles::compute_denom(const shared_ptr<const M
 #else
   JKop jk(geom_->df(), coeff_, hcore_, fci_, nocc_, nclosed_, nact_);
   unique_ptr<double[]> cdiag = C->diag();
-  shared_ptr<Matrix1e> denom = jk.denom(); 
+  shared_ptr<Matrix1e> denom = jk.denom();
   for (int i = 0; i != nocc_; ++i) {
     for (int j = nocc_; j != nbasis_; ++j) {
       denom->element(j, i) -= cdiag[i] + cdiag[j];

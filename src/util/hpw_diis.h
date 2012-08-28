@@ -48,7 +48,7 @@ class HPW_DIIS  {
 
   public:
     HPW_DIIS(const int n, RefT o) : diis_(n), orig_(o) {
-      std::shared_ptr<T> b = o->clone(); 
+      std::shared_ptr<T> b = o->clone();
       b->unit();
       RefT tmp(new T(*b));
       base_ = tmp;

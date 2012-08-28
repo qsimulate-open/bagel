@@ -36,7 +36,7 @@ class KineticBatch : public OSInt {
   protected:
     void perform_VRR(double*);
 
-  public: 
+  public:
     KineticBatch(const std::array<std::shared_ptr<const Shell>,2>&);
     ~KineticBatch();
 

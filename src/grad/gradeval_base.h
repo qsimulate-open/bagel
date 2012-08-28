@@ -69,8 +69,8 @@ class GradTask {
       assert(a.size() == o.size());
       int k = 0;
       for (auto i = a.begin(), j = o.begin(); i != a.end(); ++i, ++j, ++k) {
-        atomindex_[k] = *i; 
-        offset_[k] = *j; 
+        atomindex_[k] = *i;
+        offset_[k] = *j;
       }
     }
 

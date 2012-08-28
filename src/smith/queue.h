@@ -61,7 +61,7 @@ class Queue {
       // delete dependency (to remove intermediate storages)
       for (auto j = tasklist_.begin(); j != tasklist_.end(); ++j) (*j)->delete_dep(out);
       // delete this task from the queue
-      tasklist_.erase(i); 
+      tasklist_.erase(i);
       return out;
     };
 

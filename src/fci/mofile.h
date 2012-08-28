@@ -129,9 +129,9 @@ class Htilde : public MOFile {
     std::unique_ptr<double[]> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); }; 
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); };
     std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::move(h2_tmp_); };
-  
+
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)
       : MOFile(b,c,d), h1_tmp_(std::move(h1)), h2_tmp_(std::move(h2)) {

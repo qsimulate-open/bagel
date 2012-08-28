@@ -49,35 +49,35 @@ tuple<Angular_Pair, Angular_Pair, int> Angular_Pair::hrr_formula() const {
 
   if (mine2.x() != 0) {
     // for first term
-    Angular_Index term11(mine1.x() + 1, mine1.y(), mine1.z());  
-    Angular_Index term12(mine2.x() - 1, mine2.y(), mine2.z());  
+    Angular_Index term11(mine1.x() + 1, mine1.y(), mine1.z());
+    Angular_Index term12(mine2.x() - 1, mine2.y(), mine2.z());
     Angular_Pair term1(make_pair(term11, term12));
     // for second term
-    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());  
-    Angular_Index term22(mine2.x() - 1, mine2.y(), mine2.z());  
+    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());
+    Angular_Index term22(mine2.x() - 1, mine2.y(), mine2.z());
     Angular_Pair term2(make_pair(term21, term22));
 
     return make_tuple(term1, term2, 0);
   } else if (mine2.y() != 0) {
     // for first term
-    Angular_Index term11(mine1.x(), mine1.y() + 1, mine1.z());  
-    Angular_Index term12(mine2.x(), mine2.y() - 1, mine2.z());  
+    Angular_Index term11(mine1.x(), mine1.y() + 1, mine1.z());
+    Angular_Index term12(mine2.x(), mine2.y() - 1, mine2.z());
     Angular_Pair term1(make_pair(term11, term12));
     // for second term
-    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());  
-    Angular_Index term22(mine2.x(), mine2.y() - 1, mine2.z());  
+    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());
+    Angular_Index term22(mine2.x(), mine2.y() - 1, mine2.z());
     Angular_Pair term2(make_pair(term21, term22));
 
     return make_tuple(term1, term2, 1);
   } else {
     assert(mine2.z() != 0);
     // for first term
-    Angular_Index term11(mine1.x(), mine1.y(), mine1.z() + 1);  
-    Angular_Index term12(mine2.x(), mine2.y(), mine2.z() - 1);  
+    Angular_Index term11(mine1.x(), mine1.y(), mine1.z() + 1);
+    Angular_Index term12(mine2.x(), mine2.y(), mine2.z() - 1);
     Angular_Pair term1(make_pair(term11, term12));
     // for second term
-    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());  
-    Angular_Index term22(mine2.x(), mine2.y(), mine2.z() - 1);  
+    Angular_Index term21(mine1.x(), mine1.y(), mine1.z());
+    Angular_Index term22(mine2.x(), mine2.y(), mine2.z() - 1);
     Angular_Pair term2(make_pair(term21, term22));
 
     return make_tuple(term1, term2, 2);

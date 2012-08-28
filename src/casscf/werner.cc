@@ -85,7 +85,7 @@ void WernerKnowles::compute() {
 
       if (error_micro < thresh_micro_) break;
 
-      // initializing a linear solver (SOLVER is defined above in this file) 
+      // initializing a linear solver (SOLVER is defined above in this file)
       SOLVER<Matrix1e> solver(max_mmicro_iter_+1, grad);
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
@@ -111,7 +111,7 @@ void WernerKnowles::compute() {
         if (error_mmicro < thresh_mmicro_ || mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
-        dR = bfgs.extrapolate(residual, solver.civec()); 
+        dR = bfgs.extrapolate(residual, solver.civec());
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
       }
 

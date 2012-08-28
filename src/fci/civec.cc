@@ -58,8 +58,8 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 
 shared_ptr<Civec> Civec::transpose() const {
   shared_ptr<Civec> ct(new Civec(det_));
-  double* cct = ct->data(); 
-  mytranspose_(cc(), &lenb_, &lena_, cct); 
+  double* cct = ct->data();
+  mytranspose_(cc(), &lenb_, &lena_, cct);
   return ct;
 }
 
@@ -95,7 +95,7 @@ double Civec::orthog(list<shared_ptr<const Civec> > c) {
   const double norm = this->norm();
   const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
   dscal_(lena_*lenb_, scal, cc(), 1);
-  return 1.0/scal; 
+  return 1.0/scal;
 }
 
 double Civec::orthog(shared_ptr<const Civec> o) {

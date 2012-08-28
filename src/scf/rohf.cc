@@ -46,7 +46,7 @@ void ROHF::compute() {
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
-  cout << endl; 
+  cout << endl;
   cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
             << endl << endl;
   cout << indent << "=== ROHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
@@ -81,7 +81,7 @@ void ROHF::compute() {
     shared_ptr<Matrix1e> error_vector(new Matrix1e(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                                        +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
-    
+
     const double error = error_vector->rms();
 
     energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
@@ -91,7 +91,7 @@ void ROHF::compute() {
     auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2)
-                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl; 
+                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

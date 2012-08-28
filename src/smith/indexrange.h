@@ -68,12 +68,12 @@ class IndexRange {
     IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0)
       : keyoffset_(boffset), orboffset_(orboff) {
       if (size > 0) {
-        // first determine number of blocks. 
+        // first determine number of blocks.
         const size_t nbl = (size-1) / maxblock + 1;
         const size_t nblock = (size-1) / nbl + 1;
-        // we want to distribute orbitals as evenly as possible 
-        const size_t rem = nbl * nblock - size; 
-        std::vector<size_t> blocksizes(nbl, nblock); 
+        // we want to distribute orbitals as evenly as possible
+        const size_t rem = nbl * nblock - size;
+        std::vector<size_t> blocksizes(nbl, nblock);
         auto iter = blocksizes.rbegin();
         for (int k = 0; k != rem; ++iter, ++k) --*iter;
         // push back to range_
@@ -90,7 +90,7 @@ class IndexRange {
       } else {
         size_ = 0;
       }
-    }; 
+    };
     IndexRange() {};
     ~IndexRange() {};
 
@@ -107,7 +107,7 @@ class IndexRange {
     int keyoffset() const { return keyoffset_; };
 
     void merge(const IndexRange& o) {
-       range_.insert(range_.end(), o.range_.begin(), o.range_.end()); 
+       range_.insert(range_.end(), o.range_.begin(), o.range_.end());
        size_ += o.size_;
     };
 
@@ -126,7 +126,7 @@ class IndexRange {
     std::string str() const {
       std::stringstream ss;
       for (auto i = range_.begin(); i != range_.end(); ++i)
-        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl; 
+        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl;
       return ss.str();
     };
     void print() const { std::cout << str() << std::endl; };

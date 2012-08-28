@@ -39,7 +39,7 @@ namespace bagel {
 class SuperCI : public CASSCF {
 
   protected:
-    // DIIS will be used after some macro iteration 
+    // DIIS will be used after some macro iteration
     int diis_start_;
 
     void common_init() {

@@ -92,7 +92,7 @@ class SpinFreeMethod {
               std::unique_ptr<double[]> data1 = r->get_block(g);
 
               // this is an inverse of the overlap.
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size()); 
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size());
               size_t iall = 0;
               for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
                 for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)

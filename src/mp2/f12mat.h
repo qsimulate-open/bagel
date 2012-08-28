@@ -43,7 +43,7 @@ class F12Ten {
     const size_t dim1_;
     std::unique_ptr<double[]> data_;
 
-  public:   
+  public:
     F12Ten(const size_t i, const size_t d0, const size_t d1) : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[i*i*d0*d1]) {};
     F12Ten(const size_t i, const size_t d0, const size_t d1, std::unique_ptr<double[]> b)
      : nocc_(i), dim0_(d0), dim1_(d1), data_(std::move(b)) {};
@@ -54,7 +54,7 @@ class F12Ten {
 
     F12Ten operator*(const double a) const {
       F12Ten f(*this);
-      dscal_(size(), a, f.data(), 1); 
+      dscal_(size(), a, f.data(), 1);
       return f;
     };
     F12Ten operator-(const F12Ten& o) const {
@@ -99,7 +99,7 @@ class F12Mat : public F12Ten {
 
     F12Mat operator*(const double a) const {
       F12Mat f(*this);
-      dscal_(size(), a, f.data(), 1); 
+      dscal_(size(), a, f.data(), 1);
       return f;
     };
     F12Mat operator-(const F12Mat& o) const {
@@ -146,7 +146,7 @@ class F12Mat : public F12Ten {
         for (int j = 0; j != OUTSIZE; ++j) {
           for (int k = 0; k != OUTSIZE; ++k) {
             for (int l = 0; l != OUTSIZE; ++l) {
-              std::cout << std::fixed << std::setw(9) << std::setprecision(6) << data(l,k,j,i)  << " "; 
+              std::cout << std::fixed << std::setw(9) << std::setprecision(6) << data(l,k,j,i)  << " ";
             }
           }
           std::cout << std::endl;

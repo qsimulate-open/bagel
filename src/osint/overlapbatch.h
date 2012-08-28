@@ -36,7 +36,7 @@ class OverlapBatch : public OSInt {
   protected:
     void perform_VRR(double*);
 
-  public: 
+  public:
     OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>&);
     ~OverlapBatch();
 

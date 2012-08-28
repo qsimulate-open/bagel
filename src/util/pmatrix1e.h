@@ -67,7 +67,7 @@ class PMatrix1e {
     PMatrix1e(const std::shared_ptr<PMatrix1e> source, const std::pair<int, int> mcut);
     // Constructing Pmatrix merging two matrices
     PMatrix1e(const std::shared_ptr<PMatrix1e>, const std::shared_ptr<PMatrix1e>);
-    ~PMatrix1e(); 
+    ~PMatrix1e();
 
     PMatrix1e operator*(const PMatrix1e&) const;
     PMatrix1e operator%(const PMatrix1e&) const; // caution
@@ -76,8 +76,8 @@ class PMatrix1e {
     PMatrix1e& operator=(const PMatrix1e&);
     PMatrix1e& operator+=(const PMatrix1e&);
 
-    PMatrix1e ft() const; 
-    PMatrix1e bft() const; 
+    PMatrix1e ft() const;
+    PMatrix1e bft() const;
 
     void set_geom(std::shared_ptr<PGeometry> a) {geom_ = a; };
 
@@ -112,7 +112,7 @@ class PMatrix1e {
     void zaxpy(const std::complex<double>, const std::shared_ptr<PMatrix1e>);
     const std::complex<double> zdotc(const PMatrix1e&) const;
     const std::complex<double> zdotc(const std::shared_ptr<PMatrix1e>) const;
-   
+
     double rms() const;
     double trace() const;
 
@@ -125,7 +125,7 @@ class PMatrix1e {
                              const int istart, const int ifence,
                              const int jstart, const int jfence) const;
 
-}; 
+};
 
 }
 

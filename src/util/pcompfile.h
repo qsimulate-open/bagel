@@ -24,7 +24,7 @@
 //
 
 
-// compressed file of double 
+// compressed file of double
 
 #ifndef __src_util_pcompfile_h
 #define __src_util_pcompfile_h
@@ -72,7 +72,7 @@ class PCompFile {
   public:
     PCompFile(std::shared_ptr<PGeometry>,  const double gam,
         const bool late_init = false, const std::string jobname = "");
-    ~PCompFile(); 
+    ~PCompFile();
 
     // create file...
     const std::string filename() const { return filename_; };
@@ -105,7 +105,7 @@ class PCompFile {
 
     // or import integrals computed externally
     void set_schwarz(const std::vector<double>& a) { schwarz_ = a; };
-    void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie; 
+    void set_num_int_each(const std::vector<size_t>& nie) { num_int_each_ = nie;
                                                             max_num_int_ = *std::max_element(nie.begin(), nie.end()); };
     void set_integrals(std::shared_ptr<std::fstream> inp) { file_ = inp; };
 
@@ -117,7 +117,7 @@ class PCompFile {
     double A() const { return A_; };
 
     // AO-to-MO integral transformation...
-    std::shared_ptr<PMOFile<std::complex<double> > > 
+    std::shared_ptr<PMOFile<std::complex<double> > >
                 mo_transform(std::shared_ptr<PCoeff>,
                              std::shared_ptr<PCoeff>,
                              std::shared_ptr<PCoeff>,
@@ -136,7 +136,7 @@ PCompFile<T>::PCompFile(std::shared_ptr<PGeometry> gm, const double gam, const b
  : geom_(gm), gamma_(gam), jobname_(jobname) {
 
   Filename tmpf;
-  filename_ = tmpf.filename_next(); 
+  filename_ = tmpf.filename_next();
 
   std::shared_ptr<std::fstream> tmp(new std::fstream(filename_.c_str(), std::ios::out | std::ios::binary));
   file_ = tmp;
@@ -149,8 +149,8 @@ PCompFile<T>::PCompFile(std::shared_ptr<PGeometry> gm, const double gam, const b
     int cnt = 0;
     for (std::vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
       const std::vector<RefShell> tmp = (*aiter)->shells();
-      basis_.insert(basis_.end(), tmp.begin(), tmp.end());  
-      const std::vector<int> tmpoff = geom_->offset(cnt); 
+      basis_.insert(basis_.end(), tmp.begin(), tmp.end());
+      const std::vector<int> tmpoff = geom_->offset(cnt);
       offset_.insert(offset_.end(), tmpoff.begin(), tmpoff.end());
     }
   }
@@ -187,7 +187,7 @@ void PCompFile<T>::add_block(const long position, const long length, const doubl
 
     file_->clear();
     file_->seekg((position + current) * sizeof(double));
-    file_->read((char*)work_char, readsize); 
+    file_->read((char*)work_char, readsize);
     for (long i = 0; i != rsize; ++i) work[i] += data[current + i];
 
     file_->clear();
@@ -196,7 +196,7 @@ void PCompFile<T>::add_block(const long position, const long length, const doubl
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -213,7 +213,7 @@ void PCompFile<T>::get_block(const long position, const long length, double* dat
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -230,7 +230,7 @@ void PCompFile<T>::put_block(const long position, const long length, const doubl
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -247,7 +247,7 @@ void PCompFile<T>::append(const long length, const double* data) {
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -269,15 +269,15 @@ void PCompFile<T>::calculate_num_int_each() {
 
 //#pragma omp parallel for reduction (+:data_written)
   for (int m1 = - S_; m1 <= S_; ++m1) {
-    const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
+    const double m1disp[3] = {0.0, 0.0, m1 * A_};
     size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);
     for (int m2 = 0; m2 <= L_; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
+      const double m2disp[3] = {0.0, 0.0, m2 * A_};
       for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
-        size_t thisblock = 0ul; 
+        const double m3disp[3] = {0.0, 0.0, m3 * A_};
+        size_t thisblock = 0ul;
         for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = offset_[i0]; 
+          const int b0offset = offset_[i0];
           const int b0size = basis_[i0]->nbasis();
 
           for (int i1 = 0; i1 != size; ++i1) {
@@ -289,7 +289,7 @@ void PCompFile<T>::calculate_num_int_each() {
               const int b2size = basis_[i2]->nbasis();
 
               for (int i3 = 0; i3 != size; ++i3) {
-                const int b3offset = offset_[i3]; 
+                const int b3offset = offset_[i3];
                 const int b3size = basis_[i3]->nbasis();
 
                 const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
@@ -297,7 +297,7 @@ void PCompFile<T>::calculate_num_int_each() {
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
-                thisblock += b0size * b1size * b2size * b3size; 
+                thisblock += b0size * b1size * b2size * b3size;
               }
             }
           }
@@ -330,9 +330,9 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
   typedef std::shared_ptr<const Shell> RefShell;
 
-  const double m1disp[3] = {0.0, 0.0, m1 * A_}; 
-  const double m2disp[3] = {0.0, 0.0, m2 * A_}; 
-  const double m3disp[3] = {0.0, 0.0, m3 * A_}; 
+  const double m1disp[3] = {0.0, 0.0, m1 * A_};
+  const double m2disp[3] = {0.0, 0.0, m2 * A_};
+  const double m3disp[3] = {0.0, 0.0, m3 * A_};
 
   const int size = basis_.size(); // number of shells
   size_t* blocks = new size_t[size * size * size * size + 1];
@@ -349,7 +349,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
                                       * schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
           const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-          blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+          blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
         }
       }
     }
@@ -405,7 +405,7 @@ void PCompFile<T>::store_integrals() {
         remaining -= num_int_each(cnt);
       }
     }
-  } 
+  }
   append(current, dcache);
   delete[] dcache;
 };
@@ -420,7 +420,7 @@ void PCompFile<T>::init_schwarz() {
   schwarz_.resize(size * size * (2 * K_ + 1));
 
 //#pragma omp parallel for
-  for (int m = - K_; m <= K_; ++m) { 
+  for (int m = - K_; m <= K_; ++m) {
     const double disp[3] = {0.0, 0.0, m * A_};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
       const RefShell b0 = basis_[i0];
@@ -446,7 +446,7 @@ void PCompFile<T>::init_schwarz() {
 
 
 template<class T>
-std::shared_ptr<PMOFile<std::complex<double> > > 
+std::shared_ptr<PMOFile<std::complex<double> > >
   PCompFile<T>::mo_transform(std::shared_ptr<PCoeff> coeff_i,
                              std::shared_ptr<PCoeff> coeff_j,
                              std::shared_ptr<PCoeff> coeff_a,
@@ -456,7 +456,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                              const int astart, const int afence,
                              const int bstart, const int bfence,
                              const std::string jobname) {
-// Loading a (2K * 2K * nov) quantity on memory 
+// Loading a (2K * 2K * nov) quantity on memory
 
   const int isize = ifence - istart;
   const int jsize = jfence - jstart;
@@ -465,7 +465,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   const size_t noovv = static_cast<size_t>(isize) * jsize * asize * bsize;
   assert(noovv > 0);
 
-  const double pi = 3.14159265358979323846; 
+  const double pi = 3.14159265358979323846;
   const int KK = K_ + K_;
 
   const int maxK1 = std::max(K_, 1);
@@ -507,7 +507,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   const size_t nalloc = std::max((size_t)nmax, std::max((size_t)std::max(nov,novv), noovv));
 
   std::complex<double>* datas = new std::complex<double>[nalloc];
-  std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)]; 
+  std::complex<double>* conjc = new std::complex<double>[nbasis1 * std::max(isize, jsize)];
   double* data_read = new double[nbasis4];
 
   const int size = basis_.size();
@@ -516,11 +516,11 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   const size_t sizem1 = S_ + S_ + 1lu;
   const size_t sizem2 = L_ + L_ + 1lu;
   const size_t sizem2abs = L_ + 1lu;
-  const size_t num_loops = sizem1 * sizem1 * sizem2; 
+  const size_t num_loops = sizem1 * sizem1 * sizem2;
   size_t loop_counter = 0lu;
   size_t loop_mod10 = 0lu;
 
-  size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end()); 
+  size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
   PFile<std::complex<double> > intermediate_mmK(nv * std::max(KK, 1), K_, false);
   std::complex<double>* intermediate_novv = new std::complex<double>[novv];
@@ -533,9 +533,9 @@ std::shared_ptr<PMOFile<std::complex<double> > >
     intermediate_mKK.clear();
     for (int q2 = -L_; q2 <= L_; ++q2) {
       const int m2 = q2;
-      intermediate_mmK.clear(); 
+      intermediate_mmK.clear();
       for (int q3 = -S_; q3 <= S_; ++q3, ++loop_counter) {
-        const int m3 = m2 + q3; 
+        const int m3 = m2 + q3;
 
         const double* cdata;
         if (q2 >= 0) {
@@ -572,7 +572,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                 const int b3size = basis_[i3]->nbasis();
 
                 double integral_bound;
-                if (m2 >= 0) { 
+                if (m2 >= 0) {
                   integral_bound = schwarz_[((q1 + K_) * size + i0) * size + i1]
                                  * schwarz_[((q3 + K_) * size + i2) * size + i3];
                 } else {
@@ -580,7 +580,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                                  * schwarz_[((q3 + K_) * size + i0) * size + i1];
                 }
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-                blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+                blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
               }
             }
           }
@@ -589,25 +589,25 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 //      #pragma omp parallel for
         for (int i0 = 0; i0 < size; ++i0) {
           int noffset = i0 * size * size * size;
-          const int b0offset = offset(i0); 
+          const int b0offset = offset(i0);
           const int b0size = nbasis(i0);
           for (int i1 = 0; i1 != size; ++i1) {
             const int b1offset = offset(i1);
             const int b1size = nbasis(i1);
             for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = offset(i2); 
+              const int b2offset = offset(i2);
               const int b2size = nbasis(i2);
               for (int i3 = 0; i3 != size; ++i3, ++noffset) {
-                const int b3offset = offset(i3); 
+                const int b3offset = offset(i3);
                 const int b3size = nbasis(i3);
 
-                if (blocks[noffset] != blocks[noffset + 1]) { 
+                if (blocks[noffset] != blocks[noffset + 1]) {
                   const double* ndata = cdata + blocks[noffset];
                   std::complex<double>* label = data + b3offset + nbasis1 * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
                   for (int j0 = 0; j0 != b0size; ++j0, label += nbasis3) {
-                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {  
+                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {
                       for (int j2 = 0; j2 != b2size; ++j2, label += nbasis1) {
-                        for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {  
+                        for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {
                           *label = static_cast<std::complex<double> >(*ndata);
                         }
                         label -= b3size;
@@ -619,9 +619,9 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                 } else {
                   std::complex<double>* label = data + b3offset + nbasis1 * (b2offset + nbasis1 * (b1offset + nbasis1 * b0offset));
                   for (int j0 = 0; j0 != b0size; ++j0, label += nbasis3) {
-                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {  
+                    for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {
                       for (int j2 = 0; j2 != b2size; ++j2, label += nbasis1) {
-                        std::fill(label, label + b3size, czero); 
+                        std::fill(label, label + b3size, czero);
                       }
                       label -= b2size * nbasis1;
                     }
@@ -635,7 +635,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
         } // end of shell loops; now data is ready
 
         if (m2 >= 0) { // start from j & b contractions -- needs transposition
-          const int mn = nbasis2;          
+          const int mn = nbasis2;
           mytranspose_complex_(data, &mn, &mn, datas);
           ::memcpy(data, datas, nbasis4 * sizeof(std::complex<double>));
         }
@@ -663,7 +663,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
       // intermediate_mmK is ready
       for (int nkb = -K_; nkb < maxK1; ++nkb) {
-        const int nkbc = nkb + K_; 
+        const int nkbc = nkb + K_;
         int nbj = nkbc * KK;
         intermediate_mmK.get_block(nv*nkbc, nv, data);
         for (int nkj = -K_; nkj < maxK1; ++nkj, ++nbj) {
@@ -689,7 +689,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
     for (int nkb = -K_, nbja = 0, nbj = 0; nkb != maxK1; ++nkb) {
       for (int nkj = -K_; nkj != maxK1; ++nkj, ++nbj) {
         intermediate_mKK.get_block(nov*nbj, nov, datas);
-        const int m = nbasis2; 
+        const int m = nbasis2;
         const int n = jsize * bsize;
         mytranspose_complex_(datas, &m, &n, data);
 
@@ -725,12 +725,12 @@ std::shared_ptr<PMOFile<std::complex<double> > >
     for (int nkj = -K_; nkj != maxK1; ++nkj) {
       for (int nka = -K_; nka < maxK1; ++nka, ++nbja) {
         intermediate_KKK.get_block(novv * nbja, novv, intermediate_novv);
-        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize]; 
+        std::complex<double>* conjc2 = new std::complex<double>[nbasis1 * isize];
 
         // momentum conservation
-        int nki = nka + nkb - nkj; 
-        if (nki < - K_) nki += K_ * 2; 
-        else if (nki >=  K_) nki -= K_ * 2; 
+        int nki = nka + nkb - nkj;
+        if (nki < - K_) nki += K_ * 2;
+        else if (nki >=  K_) nki -= K_ * 2;
 
         const std::complex<double>* idata = coeff_i->bp(nki) + nbasis1 * istart;
         for (int ii = 0; ii != nbasis1 * isize; ++ii) conjc2[ii] = conj(idata[ii]);

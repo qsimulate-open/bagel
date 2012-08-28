@@ -63,7 +63,7 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
 
-  vector<double>::const_iterator expi0, expi1; 
+  vector<double>::const_iterator expi0, expi1;
   p_.reserve(3 * prim0_ * prim1_);
   xa_.reserve(prim0_ * prim1_);
   xb_.reserve(prim0_ * prim1_);
@@ -79,15 +79,15 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
       xa_.push_back(*expi0);
       xb_.push_back(*expi1);
       const double cxp = *expi0 + *expi1;
-      const double cxp_inv = 1.0 / cxp; 
+      const double cxp_inv = 1.0 / cxp;
       const double px = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
       const double py = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
       const double pz = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
-      xp_.push_back(cxp); 
+      xp_.push_back(cxp);
       p_.push_back(px);
       p_.push_back(py);
       p_.push_back(pz);
-      const double tmp = pisqrt__ * ::sqrt(cxp_inv); 
+      const double tmp = pisqrt__ * ::sqrt(cxp_inv);
       coeffsx_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0])));
       coeffsy_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1])));
       coeffsz_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2])));
@@ -132,8 +132,8 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   amapping_.resize(amax1_ * amax1_ * amax1_);
   int cnt = 0;
   for (int i = amin_; i <= amax_; ++i) {
-    for (int iz = 0; iz <= i; ++iz) { 
-      for (int iy = 0; iy <= i - iz; ++iy) { 
+    for (int iz = 0; iz <= i; ++iz) {
+      for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
         if (ix >= 0) {
           amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt;

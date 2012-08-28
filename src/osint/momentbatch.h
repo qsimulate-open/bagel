@@ -36,7 +36,7 @@ class MomentBatch : public OSInt {
   protected:
     void perform_VRR(double*);
 
-  public: 
+  public:
     MomentBatch(const std::array<std::shared_ptr<const Shell>,2>&);
     ~MomentBatch();
 

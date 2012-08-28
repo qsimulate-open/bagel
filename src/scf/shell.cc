@@ -31,14 +31,14 @@
 using namespace std;
 using namespace bagel;
 
-Shell::Shell(const bool sph, array<double,3> _position, int _ang, vector<double> _expo, 
+Shell::Shell(const bool sph, array<double,3> _position, int _ang, vector<double> _expo,
                        vector<vector<double> > _contr,  vector<pair<int, int> > _range)
  : spherical_(sph), position_(_position), angular_number_(_ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false) {
 
   for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
-    contraction_lower_.push_back(piter->first);  
-    contraction_upper_.push_back(piter->second);  
+    contraction_lower_.push_back(piter->first);
+    contraction_upper_.push_back(piter->second);
   }
 
   if (spherical_)
@@ -64,18 +64,18 @@ Shell::~Shell() {
 
 std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   std::shared_ptr<Shell> out(new Shell(*this));
-  out->position_[0] += displacement[0]; 
-  out->position_[1] += displacement[1]; 
-  out->position_[2] += displacement[2]; 
+  out->position_[0] += displacement[0];
+  out->position_[1] += displacement[1];
+  out->position_[2] += displacement[2];
   return out;
 }
 
 
 std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
   std::shared_ptr<Shell> out(new Shell(*this));
-  out->position_[0] += displacement[0]; 
-  out->position_[1] += displacement[1]; 
-  out->position_[2] += displacement[2]; 
+  out->position_[0] += displacement[0];
+  out->position_[1] += displacement[1];
+  out->position_[2] += displacement[2];
   return out;
 }
 
@@ -103,14 +103,14 @@ const string Shell::show() const {
 bool Shell::operator==(const Shell& o) const {
   bool out = true;
   out &= spherical_ == o.spherical_;
-  out &= position_ == o.position_; 
+  out &= position_ == o.position_;
   out &= angular_number_ == o.angular_number_;
-  out &= exponents_ == o.exponents_; 
-  out &= contractions_ == o.contractions_; 
-  out &= contraction_ranges_ == o.contraction_ranges_; 
-  out &= dummy_ == o.dummy_; 
-  out &= contraction_upper_ == o.contraction_upper_; 
-  out &= contraction_lower_ == o.contraction_lower_; 
+  out &= exponents_ == o.exponents_;
+  out &= contractions_ == o.contractions_;
+  out &= contraction_ranges_ == o.contraction_ranges_;
+  out &= dummy_ == o.dummy_;
+  out &= contraction_upper_ == o.contraction_upper_;
+  out &= contraction_lower_ == o.contraction_lower_;
   out &= nbasis_ == o.nbasis_;
   return out;
 }

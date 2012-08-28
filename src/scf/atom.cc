@@ -46,7 +46,7 @@ using namespace bagel;
 
 static const AtomMap atommap_;
 
-Atom::Atom(const Atom& old, const array<double, 3>& displacement) 
+Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
@@ -55,10 +55,10 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
   const vector<shared_ptr<const Shell> > old_shells = old.shells();
   for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
     shells_.push_back((*siter)->move_atom(displacement));
-} 
+}
 
 
-Atom::Atom(const Atom& old, const double* displacement) 
+Atom::Atom(const Atom& old, const double* displacement)
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
@@ -97,9 +97,9 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
     boost::regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
     boost::regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
     string nnm = nm;
-    nnm[0] = toupper(nnm[0]); 
+    nnm[0] = toupper(nnm[0]);
     boost::regex atom_line("Atom:" + nnm +"\\s*$");
- 
+
     // Reading a file to the end of the file
     string buffer;
     while (!ifs.eof()) {
@@ -110,7 +110,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
       boost::smatch what;
       if (regex_search(start, end, what, atom_line)) {
         basis_found = true;
-        // temporary storage of info 
+        // temporary storage of info
         string angular_number;
         vector<double> exponents;
         vector<vector<double> > coefficients;
@@ -125,7 +125,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
             // if something is in temporary area, add to basis_info
             if (!exponents.empty()) {
               assert(!angular_number.empty());
-              basis_info.push_back(make_tuple(angular_number, exponents, coefficients)); 
+              basis_info.push_back(make_tuple(angular_number, exponents, coefficients));
               exponents.clear();
               coefficients.clear();
             }
@@ -145,7 +145,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
           } else if (regex_search(start, end, what, other_line)) {
             const string exp_str(what[1].first, what[1].second);
             exponents.push_back(boost::lexical_cast<double>(exp_str));
-            
+
             start = what[0].second;
             vector<double> tmp;
             while(regex_search(start, end, what, coeff_line)) {
@@ -155,7 +155,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
             }
             coefficients.push_back(tmp);
           } else {
-            basis_info.push_back(make_tuple(angular_number, exponents, coefficients)); 
+            basis_info.push_back(make_tuple(angular_number, exponents, coefficients));
             break;
           }
         }
@@ -175,7 +175,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double> > > in)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) { 
+ : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
@@ -189,7 +189,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
   construct_shells(basis_info);
   common_init();
-} 
+}
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
@@ -204,9 +204,9 @@ void Atom::common_init() {
   for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
     const int ang = (*siter)->angular_number();
     if (spherical_) {
-      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1); 
+      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1);
     } else {
-      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2; 
+      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2;
     }
   }
   atom_charge_ = static_cast<double>(atom_number_);
@@ -216,30 +216,30 @@ void Atom::common_init() {
 /* NOTE : Actually I realized that the code works with the following basis format as well
 
 Atom:Li
-s        1469.0000000              0.0007660       -0.0001200 
+s        1469.0000000              0.0007660       -0.0001200
           220.5000000              0.0058920       -0.0009230
            50.2600000              0.0296710       -0.0046890
-           14.2400000              0.1091800       -0.0176820 
-            4.5810000              0.2827890       -0.0489020 
-            1.5800000              0.4531230       -0.0960090 
-            0.5640000              0.2747740       -0.1363800 
+           14.2400000              0.1091800       -0.0176820
+            4.5810000              0.2827890       -0.0489020
+            1.5800000              0.4531230       -0.0960090
+            0.5640000              0.2747740       -0.1363800
             0.0734500              0.0097510        0.5751020
-s           0.0280500              1.0000000    
-p           1.5340000              0.0227840    
-            0.2749000              0.1391070    
-            0.0736200              0.5003750    
-p           0.0240300              1.0000000    
-d           0.1239000              1.0000000    
+s           0.0280500              1.0000000
+p           1.5340000              0.0227840
+            0.2749000              0.1391070
+            0.0736200              0.5003750
+p           0.0240300              1.0000000
+d           0.1239000              1.0000000
 
 which was the reason why the third argument was a vector of a vector.
 
 */
 
 
-// convert basis_info to vector<Shell> 
+// convert basis_info to vector<Shell>
 void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double> > > > in) {
 
-  for (int i = 0; i <= atommap_.max_angular_number(); ++i) { 
+  for (int i = 0; i <= atommap_.max_angular_number(); ++i) {
     vector<vector<double> > contractions;
     vector<pair<int, int> > contranges;
     vector<double> exponents;
@@ -249,7 +249,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
       // check the angular number
       if (atommap_.angular_number(get<0>(*biter)) != i) continue;
-      
+
       // contraction coefficient matrix
       const vector<vector<double> > conts = get<2>(*biter);
 
@@ -258,7 +258,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
         // picking the current contraction coefficients (for the case there are multiple coefficients specified).
         vector<double> current;
-        for (auto citer = conts.begin(); citer != conts.end(); ++citer) 
+        for (auto citer = conts.begin(); citer != conts.end(); ++citer)
           current.push_back((*citer)[j]);
 
         // counting the number of zeros above and below in the segmented contractions
@@ -274,7 +274,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         }
 
         // first make a vector with zero
-        vector<double> cont2(offset, 0.0); 
+        vector<double> cont2(offset, 0.0);
         // and add the coefficients
         cont2.insert(cont2.end(), current.begin(), current.end());
         contractions.push_back(cont2);
@@ -283,13 +283,13 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
       }
       const vector<double> exp = get<1>(*biter);
       if (biter+1 == in.end() || exp != get<1>(*(biter+1)) || atommap_.angular_number(get<0>(*(biter+1))) != i) {
-        exponents.insert(exponents.end(), exp.begin(), exp.end()); 
-        offset += exp.size(); 
+        exponents.insert(exponents.end(), exp.begin(), exp.end());
+        offset += exp.size();
       }
     }
 
     // this is to do with normalization
-    if (!exponents.empty()) { 
+    if (!exponents.empty()) {
       auto citer = contranges.begin();
       for (auto iter = contractions.begin(); iter != contractions.end(); ++iter, ++citer) {
         auto eiter = exponents.begin();
@@ -306,21 +306,21 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         coverlap.compute();
         const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
         for (auto diter = iter->begin(); diter != iter->end(); ++diter) *diter *= scal;
-      } 
+      }
 
       shared_ptr<const Shell> currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
       shells_.push_back(currentbatch);
       lmax_ = i;
     }
 
-  } // end of batch loop 
+  } // end of batch loop
 
 }
 
 
 void Atom::print_basis() const {
   for(auto iter = shells_.begin(); iter != shells_.end(); ++iter)
-     cout << (*iter)->show() << endl; 
+     cout << (*iter)->show() << endl;
 }
 
 
@@ -329,7 +329,7 @@ void Atom::print() const {
   tmp[0] = ::toupper(tmp[0]);
   cout << "  atom = (" << setw(2) << tmp << "," << fixed << setprecision(6) <<
       setw(14) << position_[0] << "," <<
-      setw(14) << position_[1] << "," << 
+      setw(14) << position_[1] << "," <<
       setw(14) << position_[2];
   if (dummy()) {
     cout << setw(14) << atom_charge_;
@@ -340,14 +340,14 @@ void Atom::print() const {
 
 bool Atom::operator==(const Atom& o) const {
   bool out = true;
-  out &= spherical_ == o.spherical_; 
+  out &= spherical_ == o.spherical_;
   out &= name_ == o.name_;
   out &= fabs(position_[0]-o.position_[0]) < numerical_zero__;
   out &= fabs(position_[1]-o.position_[1]) < numerical_zero__;
   out &= fabs(position_[2]-o.position_[2]) < numerical_zero__;
   out &= shells_.size() == o.shells_.size();
 
-  for (auto i = shells_.begin(), j = o.shells_.begin(); i != shells_.end(); ++i, ++j) out &= (**i) == (**j); 
+  for (auto i = shells_.begin(), j = o.shells_.begin(); i != shells_.end(); ++i, ++j) out &= (**i) == (**j);
 
   out &= atom_number_ == o.atom_number_;
   out &= fabs(atom_charge_ - o.atom_charge_) < numerical_zero__;
@@ -361,7 +361,7 @@ bool Atom::operator==(const Atom& o) const {
 double Atom::distance(const shared_ptr<const Atom> o) const {
   double out = 0.0;
   for (int i = 0; i != 3; ++i)
-    out += ::pow(position_[i] - o->position_[i], 2.0); 
+    out += ::pow(position_[i] - o->position_[i], 2.0);
   return ::sqrt(out);
 }
 
@@ -372,8 +372,8 @@ array<double,3> Atom::displ(const shared_ptr<const Atom> o) const {
 
 
 double Atom::angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<const Atom> b) const {
-  Quatern<double> ap = a->position(); 
-  Quatern<double> bp = b->position(); 
+  Quatern<double> ap = a->position();
+  Quatern<double> bp = b->position();
   Quatern<double> op = this->position();
   ap -= op;
   bp -= op;
@@ -390,10 +390,10 @@ double Atom::dihedral_angle(const std::shared_ptr<const Atom> a, const std::shar
   Quatern<double> op = o->position();
   Quatern<double> bp = b->position();
   // following Wikipedia..
-  Quatern<double> b1 = tp - ap; 
-  Quatern<double> b2 = op - tp; 
-  Quatern<double> b3 = bp - op; 
+  Quatern<double> b1 = tp - ap;
+  Quatern<double> b2 = op - tp;
+  Quatern<double> b3 = bp - op;
   Quatern<double> b12 = b1 * b2; b12[0] = 0.0;
   Quatern<double> b23 = b2 * b3; b23[0] = 0.0;
-  return ::atan2(b2.norm()*b1.ddot(b23), b12.ddot(b23)) * rad2deg__; 
+  return ::atan2(b2.norm()*b1.ddot(b23), b12.ddot(b23)) * rad2deg__;
 }

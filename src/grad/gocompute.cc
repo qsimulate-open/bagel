@@ -52,7 +52,7 @@ void GOverlapBatch::compute() {
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
-  for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
+  for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
@@ -80,24 +80,24 @@ void GOverlapBatch::compute() {
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
 
-    /// Sx(0 : i+j+1, 0) will be made here 
-    workx[0] = coeffsx_[ii]; 
+    /// Sx(0 : i+j+1, 0) will be made here
+    workx[0] = coeffsx_[ii];
     worky[0] = coeffsy_[ii];
     workz[0] = coeffsz_[ii];
     workx[1] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
     worky[1] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
     workz[1] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];
     for (int i = 2; i <= amax_; ++i) {
-      workx[i] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2]; 
-      worky[i] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2]; 
-      workz[i] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2]; 
+      workx[i] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
+      worky[i] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
+      workz[i] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
     }
     // HRR is done in one shot
     dgemv_("T", amax_+1, a2*b2, 1.0, transx, amax_+1, workx, 1, 0.0, bufx, 1);
     dgemv_("T", amax_+1, a2*b2, 1.0, transy, amax_+1, worky, 1, 0.0, bufy, 1);
     dgemv_("T", amax_+1, a2*b2, 1.0, transz, amax_+1, workz, 1, 0.0, bufz, 1);
 
-    const double alpha = xa_[ii]; 
+    const double alpha = xa_[ii];
     const double beta_ = xb_[ii];
     for (int ib = 0; ib <= b; ++ib) {
       for (int ia = 0; ia <= a; ++ia) {
@@ -119,11 +119,11 @@ void GOverlapBatch::compute() {
     double* current_data4 = data_ + offset_ii + acpsize*4;
     double* current_data5 = data_ + offset_ii + acpsize*5;
 
-    for (int iaz = 0; iaz <= a; ++iaz) { 
-      for (int iay = 0; iay <= a - iaz; ++iay) { 
-        const int iax = a - iaz - iay; 
-        for (int ibz = 0; ibz <= b; ++ibz) { 
-          for (int iby = 0; iby <= b - ibz; ++iby) { 
+    for (int iaz = 0; iaz <= a; ++iaz) {
+      for (int iay = 0; iay <= a - iaz; ++iay) {
+        const int iax = a - iaz - iay;
+        for (int ibz = 0; ibz <= b; ++ibz) {
+          for (int iby = 0; iby <= b - ibz; ++iby) {
             const int ibx = b - ibz - iby;
 
             *current_data0 += bufx_a[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
@@ -167,10 +167,10 @@ void GOverlapBatch::compute() {
   double* cdata = data_;
   for (int i = 0; i != 6; ++i, cdata += acpsize) {
     // first, contraction.
-    const double* source = cdata; 
+    const double* source = cdata;
     double* target = bkup;
-    perform_contraction(acsize, source, prim0_, prim1_, target, 
-                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
+    perform_contraction(acsize, source, prim0_, prim1_, target,
+                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
     if (spherical_) {
@@ -179,7 +179,7 @@ void GOverlapBatch::compute() {
       const int nloops = cont0_ * cont1_;
       source = bkup;
       target = cdata;
-      carsphlist.carsphfunc_call(carsph_index, nloops, source, target); 
+      carsphlist.carsphfunc_call(carsph_index, nloops, source, target);
 
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       source = cdata;
@@ -188,7 +188,7 @@ void GOverlapBatch::compute() {
       copy(bkup, bkup+acpsize, cdata);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      source = bkup; 
+      source = bkup;
       target = cdata;
       sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
     }

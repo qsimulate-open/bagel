@@ -64,14 +64,14 @@ AtomMap::~AtomMap () {
 
 
 int AtomMap::angular_number(const string input) const {
-  auto miter = angmap.find(input);  
+  auto miter = angmap.find(input);
   if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
   return miter->second;
 }
 
 
 int AtomMap::atom_number(const string input) const {
-  auto miter = atommap.find(input);  
+  auto miter = atommap.find(input);
   if (miter == atommap.end()) throw runtime_error("Unknown Atom number in a basis set file.");
   return miter->second;
 }

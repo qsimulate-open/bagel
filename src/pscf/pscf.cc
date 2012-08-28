@@ -49,7 +49,7 @@ typedef shared_ptr<PMatrix1e> RefPMatrix1e;
 
 PSCF::PSCF(const RefPGeometry g) : geom_(g), overlap_(new POverlap(g)), hcore_(new PHcore(g)) {
 
-  RefPTildeX tildex_tmp(new PTildeX(overlap_)); 
+  RefPTildeX tildex_tmp(new PTildeX(overlap_));
   tildex_ = tildex_tmp;
 
   direct_ = false;
@@ -115,7 +115,7 @@ void PSCF::compute() {
   PDIIS<PMatrix1e> diis(5, 0.1);
   cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ")===" << endl << indent << endl;
 
-  for (int iter = 0; iter != MAX_ITER_SCF; ++iter) { 
+  for (int iter = 0; iter != MAX_ITER_SCF; ++iter) {
     int start = ::clock();
 
     RefPFock fock(new PFock(geom_, previous_fock, densitychange, schwarz_, geom_->S(), direct_, ao_eri_));
@@ -141,11 +141,11 @@ void PSCF::compute() {
 #endif
 
     int end = ::clock();
-    const double energy = obtain_energy(*hcore_, fock->bft(), *new_density); 
+    const double energy = obtain_energy(*hcore_, fock->bft(), *new_density);
     const double error = error_vector->rms();
 
     cout << indent << setw(5) << iter << setw(18) << fixed << setprecision(10) << energy << space3
-                                      << setw(15) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl; 
+                                      << setw(15) << error << setw(15) << setprecision(2) << (end - start) * 1.0e-6 << endl;
 
     if (error < SCF_THRESH*1.0e-4) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
@@ -168,7 +168,7 @@ void PSCF::compute() {
     }
 
     RefPMatrix1e dtmp(new PMatrix1e(*diis_density - *aodensity_));
-    densitychange = dtmp; 
+    densitychange = dtmp;
     aodensity_ = diis_density;
   }
 
@@ -178,17 +178,17 @@ void PSCF::compute() {
 
 
 void PSCF::init_schwarz() {
-  const vector<RefAtom> atoms = geom_->atoms(); 
-  vector<RefShell> basis; 
+  const vector<RefAtom> atoms = geom_->atoms();
+  vector<RefShell> basis;
   for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
     const vector<RefShell> tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());  
+    basis.insert(basis.end(), tmp.begin(), tmp.end());
   }
   const int size = basis.size(); // the number of shells per unit cell
 
   schwarz_.resize(size * size * (2 * geom_->K() + 1));
   int mcount = 0;
-  for (int m = - geom_->K(); m <= geom_->K(); ++m, ++mcount) { 
+  for (int m = - geom_->K(); m <= geom_->K(); ++m, ++mcount) {
     const double disp[3] = {0.0, 0.0, m * geom_->A()};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
       const RefShell b0 = basis[i0];
@@ -246,10 +246,10 @@ double PSCF::obtain_energy(const PMatrix1e& hcore, const PMatrix1e& fock, const 
   const complex<double>* dat0 = hcore.data()->front();
   const complex<double>* dat1 = fock.data()->front();
   const complex<double>* dat2 = density.data()->front();
-  
+
   double en = 0.0;
   const int s = geom_->S();
-  for (int i = -s; i <= s; ++i) {  
+  for (int i = -s; i <= s; ++i) {
     assert(hcore.blocksize() == fock.blocksize() && fock.blocksize() == density.blocksize());
     const complex<double>* cdat0 = dat0 + (i + s) * hcore.blocksize();
     const complex<double>* cdat1 = dat1 + (i + s) * fock.blocksize();

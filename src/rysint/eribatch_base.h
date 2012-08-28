@@ -36,7 +36,7 @@ namespace bagel {
 
 class ERIBatch_base : public RysInt{
   protected:
-    void root_weight(const int ps); 
+    void root_weight(const int ps);
     void compute_ssss(const double);
 
   public:

@@ -52,8 +52,8 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input,
   // input = [b1, b0]
   // because of the convention in integral codes.
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); // b0 
-  const int dimb1 = input[0]->nbasis(); // b1 
+  const int dimb0 = input[1]->nbasis(); // b0
+  const int dimb1 = input[0]->nbasis(); // b1
   KineticBatch kinetic(input);
   kinetic.compute();
   const double* kdata = kinetic.data();

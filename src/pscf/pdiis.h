@@ -36,7 +36,7 @@
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have zaxpy and zdotc functions.
-// T must have geom() function that returns Geometry. 
+// T must have geom() function that returns Geometry.
 
 // Complex version
 
@@ -60,15 +60,15 @@ class PDIIS {
     Complex* coeff_;
     Complex* work_;
     int* ipiv_;
-  
+
   public:
     PDIIS(const int ndiis, const double dump) : ndiis_(ndiis), nld_(ndiis + 1), lwork_(nld_ * nld_), dumping_(dump) {
-      matrix_ = new Complex[nld_ * nld_]; 
-      matrix_save_ = new Complex[nld_ * nld_]; 
-      coeff_ = new Complex[nld_]; 
+      matrix_ = new Complex[nld_ * nld_];
+      matrix_save_ = new Complex[nld_ * nld_];
+      coeff_ = new Complex[nld_];
       work_ = new Complex[lwork_];
       ipiv_ = new int[nld_];
-    };  
+    };
 
     ~PDIIS() {
       delete[] matrix_;
@@ -88,17 +88,17 @@ class PDIIS {
 
       if (data_.size() > ndiis_) {
         data_.pop_front();
-        for (int i = 1; i != ndiis_; ++i) { 
+        for (int i = 1; i != ndiis_; ++i) {
           for (int j = 1; j != ndiis_; ++j)
-            matrix_[(j - 1) + (i - 1) * nld_] = matrix_save_[j + i * nld_]; 
+            matrix_[(j - 1) + (i - 1) * nld_] = matrix_save_[j + i * nld_];
         }
       } else if (data_.size() != 1) {
         zcopy_(&size, matrix_save_, &unit, matrix_, &unit);
-      } 
+      }
       const int cnum = data_.size();
       iterator data_iter = data_.begin();
 
-      for (int i = 0; i != cnum - 1; ++i, ++data_iter) 
+      for (int i = 0; i != cnum - 1; ++i, ++data_iter)
         matrix_[(cnum - 1) + i * nld_] = matrix_[i + (cnum - 1) * nld_] = (e->zdotc(*(data_iter->second))).real();
       matrix_[(cnum - 1) + (cnum - 1) * nld_] = (e->zdotc(e)).real();
       for (int i = 0; i != cnum; ++i)
@@ -107,14 +107,14 @@ class PDIIS {
       for (int i = 0; i != cnum; ++i) coeff_[i] = 0.0;
       coeff_[cnum] = -1.0;
 
-      zcopy_(&size, matrix_, &unit, matrix_save_, &unit); 
+      zcopy_(&size, matrix_, &unit, matrix_save_, &unit);
 
       const int cdim = cnum + 1;
       int info_in_diis;
       zhesv_("U", &cdim, &unit, matrix_, &nld_, ipiv_, coeff_, &nld_, work_, &lwork_, &info_in_diis);
       if(info_in_diis != 0) throw std::runtime_error("DHESV in DIIS failed");
 
-      RefT out(new T(e->geom())); 
+      RefT out(new T(e->geom()));
 
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)

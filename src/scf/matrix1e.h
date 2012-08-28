@@ -49,17 +49,17 @@ class Matrix1e {
 
   public:
     Matrix1e() : nbasis_(0), ndim_(0), mdim_(0) {};
-    Matrix1e(const std::shared_ptr<const Geometry>); 
+    Matrix1e(const std::shared_ptr<const Geometry>);
     Matrix1e(const std::shared_ptr<const Geometry>, const int n, const int m);
-    Matrix1e(const Matrix1e&); 
+    Matrix1e(const Matrix1e&);
     ~Matrix1e();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     int nbasis() const { return nbasis_; };
     int size() const { return nbasis_*nbasis_; };
-    int ndim() const { return ndim_; }; 
-    int mdim() const { return mdim_; }; 
+    int ndim() const { return ndim_; };
+    int mdim() const { return mdim_; };
     double* data() const { return data_.get(); };
     double& data(const size_t i) { return *(data_.get()+i); };
     const double& data(const size_t i) const { return *(data_.get()+i); };
@@ -112,7 +112,7 @@ class Matrix1e {
     double ddot(const std::shared_ptr<const Matrix1e>) const;
     double rms() const;
     double trace() const;
-    
+
     void dscal(const double a) { dscal_(size(), a, data(), 1); };
     void scale(const double a) { dscal(a); };
 

@@ -60,7 +60,7 @@ class Opt {
 
     static const int maxiter_ = 10;
     static const bool nodf = true;
-    static const bool rotate = false; 
+    static const bool rotate = false;
 
     // reference geometry
     const std::shared_ptr<const GradFile> refgeom_;
@@ -82,7 +82,7 @@ class Opt {
     ~Opt() {};
 
     bool next() {
-      if (iter_ > 0) mute_stdcout(); 
+      if (iter_ > 0) mute_stdcout();
       auto tp1 = std::chrono::high_resolution_clock::now();
       GradEval<T> eval(input_, current_);
       if (iter_ == 0) {
@@ -90,7 +90,7 @@ class Opt {
         mute_stdcout();
       }
       // current geom and grad in the cartesian coordinate
-      std::shared_ptr<GradFile> cgrad = eval.compute(); 
+      std::shared_ptr<GradFile> cgrad = eval.compute();
       std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
       std::shared_ptr<GradFile> displ;
       if (internal_) {
@@ -106,7 +106,7 @@ class Opt {
 #else
         displ = displ->transform(bmat_[1], true);
 #endif
-      } else { 
+      } else {
         displ = bfgs_->extrapolate(cgrad, cgeom);
       }
       const double gradnorm = cgrad->norm();
@@ -119,10 +119,10 @@ class Opt {
         current_->print_atoms();
       }
 
-      resume_stdcout(); 
+      resume_stdcout();
       auto tp2 = std::chrono::high_resolution_clock::now();
       print_iteration(eval.energy(), gradnorm, disnorm, tp1, tp2);
-      
+
       ++iter_;
       if (converged) { print_footer(); current_->print_atoms(); }
       return gradnorm < thresh_ && disnorm < thresh_;
@@ -130,18 +130,18 @@ class Opt {
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {
-        std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl << 
+        std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl <<
                                   "     iter           energy             res norm      step norm"
         << std::endl << std::endl;
     };
-     
+
     void print_iteration(const double energy, const double residual, const double step,
                          const std::chrono::high_resolution_clock::time_point tp1,
                          const std::chrono::high_resolution_clock::time_point tp2) const {
       auto dr = std::chrono::duration_cast<std::chrono::milliseconds>(tp2-tp1);
       std::cout << std::setw(8) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
-                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual  
-                                         << std::setw(15) << std::setprecision(8) << std::fixed << step  
+                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual
+                                         << std::setw(15) << std::setprecision(8) << std::fixed << step
                                          << std::setw(12) << std::setprecision(2) << std::fixed << dr.count()*0.001 << std::endl;
     };
 

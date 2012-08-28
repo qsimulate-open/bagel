@@ -100,7 +100,7 @@ class DF_AO : public DensityFit {
     };
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
-      data_ = std::move(dat); 
+      data_ = std::move(dat);
     };
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
@@ -112,7 +112,7 @@ class DF_AO : public DensityFit {
     std::unique_ptr<double[]>& data_ptr() { return data_; };
     const std::unique_ptr<double[]>& data_ptr() const { return data_; };
 
-    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); }; 
+    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); };
 };
 
 

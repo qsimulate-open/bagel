@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) { 
+pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
   shared_ptr<Libint> eribatch(new Libint(input));
 #else

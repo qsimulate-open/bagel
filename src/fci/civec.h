@@ -70,14 +70,14 @@ class Civec {
     ~Civec() { };
 
     double* data() { return cc(); };
-    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
-    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST
+    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     double& data(const int& i) { return cc(i); };
     const double& data(const int& i) const { return cc(i); };
 
     const double* data() const { return cc(); };
-    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     std::shared_ptr<const Determinants> det() const { return det_; };
     void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; };
@@ -106,7 +106,7 @@ class Civec {
     Civec operator/(const Civec& o) const;
 
     // assumes that Civec's in c are already orthogonal with each other.
-    // returns scaling factor (see implementation) 
+    // returns scaling factor (see implementation)
 
     double orthog(std::list<std::shared_ptr<const Civec> > c);
     double orthog(std::shared_ptr<const Civec> o);

@@ -44,7 +44,7 @@ using namespace bagel;
 #define GM1_THRESH 1.0e-15
 #define GM1_THRESH_MAX 1.0e+15
 
-static const double pitwohalf__ = ::pow(pi__, 2.5); 
+static const double pitwohalf__ = ::pow(pi__, 2.5);
 
 
 SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
@@ -64,7 +64,7 @@ SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const do
   // set members for angular information
   int asize_final, csize_final, asize_final_sph, csize_final_sph;
   tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
-  
+
   allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
 
   allocate_arrays(primsize_);
@@ -88,9 +88,9 @@ void SlaterBatch::root_weight(const int prim) {
   else if (rank_ == 2)
     root2_direct();
   else {
-    int ps = (int)primsize_; 
+    int ps = (int)primsize_;
     struct SRootList root;
-    root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps); 
+    root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps);
   }
 }
 
@@ -129,10 +129,10 @@ void SlaterBatch::root1_direct() {
     }
 
     if (gm1 > GM1_THRESH) {
-      weights_[ii] = gm1; 
+      weights_[ii] = gm1;
       roots_[ii] = g0 / gm1;
     } else {
-      weights_[ii] = 0.0; 
+      weights_[ii] = 0.0;
       roots_[ii] = 0.0;
     }
   }
@@ -169,8 +169,8 @@ void SlaterBatch::root2_direct() {
         g0 = (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
         const double cu2 = cu + cu;
         const double one2t = 0.5 / ct;
-        g1 = (g0 + cu2 * gm1 - expct) * one2t;  
-        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
+        g1 = (g0 + cu2 * gm1 - expct) * one2t;
+        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;
       } else {
         const double experfc_lambda = experfc(lambda);
         const double experfc_kappa  = experfc(kappa);
@@ -180,8 +180,8 @@ void SlaterBatch::root2_direct() {
         g0 = factor / sqct * (experfc_kappa - experfc_lambda);
         const double cu2 = cu + cu;
         const double one2t = 0.5 / ct;
-        g1 = (g0 + cu2 * gm1 - expct) * one2t;  
-        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;  
+        g1 = (g0 + cu2 * gm1 - expct) * one2t;
+        g2 = (3.0 * g1 + cu2 * g0 - expct) * one2t;
       }
     }
 
@@ -195,9 +195,9 @@ void SlaterBatch::root2_direct() {
       double x[2];
       double w[1];
       x[0] = g0 / gm1;
-      const double sigma11 = g1 - x[0] * g0; 
-      const double sigma12 = g2 - x[0] * g1; 
-      x[1] = sigma12 / sigma11 - x[0]; 
+      const double sigma11 = g1 - x[0] * g0;
+      const double sigma12 = g2 - x[0] * g1;
+      x[1] = sigma12 / sigma11 - x[0];
       w[0] = sigma11 / gm1;
 
       const double dd = x[0] + x[1];
@@ -240,7 +240,7 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   const vector<double> exp2 = basisinfo_[2]->exponents();
   const vector<double> exp3 = basisinfo_[3]->exponents();
 
-  vector<double> Ecd_save(prim2size_ * prim3size_); 
+  vector<double> Ecd_save(prim2size_ * prim3size_);
   vector<double> qx_save(prim2size_ * prim3size_);
   vector<double> qy_save(prim2size_ * prim3size_);
   vector<double> qz_save(prim2size_ * prim3size_);
@@ -254,16 +254,16 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
 
   indexpair23_.reserve(prim2size_ * prim3size_);
 
-  const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]; 
+  const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
   {
-    const double cxp_min = minexp0 + minexp1; 
-    const double cxp_inv_min = 1.0 / cxp_min; 
+    const double cxp_min = minexp0 + minexp1;
+    const double cxp_inv_min = 1.0 / cxp_min;
     const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
     int index23 = 0;
-    for (auto expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) { 
-      for (auto expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) { 
+    for (auto expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) {
+      for (auto expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) {
         const double cxq = *expi2 + *expi3;
         const double cd = *expi2 * *expi3;
         const double cxq_inv = 1.0 / cxq;
@@ -289,10 +289,10 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
   const double twogamma = 2.0 / gamma_;
-  for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) { 
-    for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) { 
+  for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
+    for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1, ++index01) {
       const double cxp = *expi0 + *expi1;
-      const double ab = *expi0 * *expi1; 
+      const double ab = *expi0 * *expi1;
       const double cxp_inv = 1.0 / cxp;
       if (-r01_sq * (ab * cxp_inv) < MIN_EXPONENT) continue;
       const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
@@ -306,11 +306,11 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
       for (auto expi23 = indexpair23_.begin(); expi23 != indexpair23_.end(); ++expi23) {
           const int index23 = get<0>(*expi23);
           const int index = index_base + index23;
-          const double exp2value = get<1>(*expi23); 
-          const double exp3value = get<2>(*expi23); 
+          const double exp2value = get<1>(*expi23);
+          const double exp3value = get<2>(*expi23);
           const double cxq = exp2value + exp3value;
           xp_[index] = cxp;
-          xq_[index] = cxq; 
+          xq_[index] = cxq;
           const double cxpxq = cxp * cxq;
           const double onepqp_q = 1.0 / (::sqrt(cxp + cxq) * cxpxq);
           coeffy_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
@@ -326,14 +326,14 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
           const double T = rho * pq_sq;
           coeff_[index] = coeffy_[index] * twogamma * U;
           const int index3 = index * 3;
-          p_[index3] = px; 
+          p_[index3] = px;
           p_[index3 + 1] = py;
           p_[index3 + 2] = pz;
-          q_[index3] =     qx_save[index23]; 
+          q_[index3] =     qx_save[index23];
           q_[index3 + 1] = qy_save[index23];
           q_[index3 + 2] = qz_save[index23];
-          T_[index] = T; 
-          U_[index] = U; 
+          T_[index] = T;
+          U_[index] = U;
           screening_[screening_size_] = index;
           ++screening_size_;
       }

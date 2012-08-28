@@ -65,12 +65,12 @@ class RysInt {
 
     // information on how many derivatives you take
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
-    // over written in the constructor of a derived class 
+    // over written in the constructor of a derived class
     int deriv_rank_;
     int tenno_;
 
-    std::shared_ptr<HRRList> hrr_; 
-    std::shared_ptr<VRRListBase> vrr_; 
+    std::shared_ptr<HRRList> hrr_;
+    std::shared_ptr<VRRListBase> vrr_;
     std::shared_ptr<SortList> sort_;
 
     double *data_;
@@ -78,7 +78,7 @@ class RysInt {
     unsigned int size_final_;
 
     /// info for Rys quadruture
-    double *roots_; 
+    double *roots_;
     double *weights_;
     int rank_;
 
@@ -133,9 +133,9 @@ class RysInt {
 
     size_t size_block() const { return size_block_; };
 
-    bool swap01() const { return swap01_; }; 
-    bool swap23() const { return swap23_; }; 
-    bool swap0123() const { return swap0123_; }; 
+    bool swap01() const { return swap01_; };
+    bool swap23() const { return swap23_; };
+    bool swap0123() const { return swap0123_; };
 };
 
 }

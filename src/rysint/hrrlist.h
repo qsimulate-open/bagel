@@ -27,17 +27,17 @@
 // stand alone class for HRR functions.
 // can be called from outside through hrrfunc_call.
 //
-  
+
 #ifndef __rysint_hrrlist_h
 #define __rysint_hrrlist_h
 
 #include <array>
 #include <src/rysint/macros.h>
- 
+
 struct HRRList {
   HRRList();
   ~HRRList();
-     
+
   static void perform_HRR_20_11(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_30_21(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_40_22(const int, const double*, const std::array<double,3>&, double*);

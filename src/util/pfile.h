@@ -45,8 +45,8 @@ class PFile {
     const int K_;
 
   public:
-    PFile(const long, const int, const bool late_init = false); 
-    ~PFile(); 
+    PFile(const long, const int, const bool late_init = false);
+    ~PFile();
 
     void append(const long, const T*);
     void add_block(const long, const long, const T*);
@@ -112,11 +112,11 @@ void PFile<T>::append(const long length, const T* data) {
 
   while (remaining > 0L) {
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
-    file_->write((const char*)(data + current), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -132,7 +132,7 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
 
     file_->clear();
     file_->seekg((position + current) * sizeof(T));
-    file_->read((char*)work, readsize); 
+    file_->read((char*)work, readsize);
     for (size_t i = 0; i != rsize; ++i) work[i] += data[current + i];
 
     file_->clear();
@@ -141,7 +141,7 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -159,7 +159,7 @@ void PFile<T>::get_block(const long position, const long length, T* data) const 
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -172,11 +172,11 @@ void PFile<T>::put_block(const long position, const long length, const T* data) 
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
     file_->clear();
     file_->seekp((position + current) * sizeof(T));
-    file_->write((const char*)(data + current), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -186,17 +186,17 @@ void PFile<T>::clear() {
   long current = 0L;
   T zero = static_cast<T>(0.0);
   T* work = (T*) work_char;
-  std::fill(work, work + cachesize, zero); 
+  std::fill(work, work + cachesize, zero);
 
   while (remaining > 0L) {
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
     file_->clear();
     file_->seekp(current * sizeof(T));
-    file_->write((const char*)work, writesize); 
+    file_->write((const char*)work, writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 

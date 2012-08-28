@@ -45,7 +45,7 @@ void FCI::update(shared_ptr<const Coeff> c) {
   auto tp1 = high_resolution_clock::now();
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c));
 
-  // right now full basis is used. 
+  // right now full basis is used.
   auto tp2 = high_resolution_clock::now();
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
           duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
@@ -58,17 +58,17 @@ void FCI::update(shared_ptr<const Coeff> c) {
 void FCI::compute() {
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
 
   // some constants
-  const int ij = nij(); 
+  const int ij = nij();
 
   // Creating an initial CI vector
   shared_ptr<Dvec> cc_tmp(new Dvec(det_, nstate_)); // B runs first
   cc_ = cc_tmp;
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc_); 
+  generate_guess(nelea_-neleb_, nstate_, cc_);
   // TODO note that generate_guess is only working fine for singlets
 
   // nuclear energy retrieved from geometry
@@ -82,7 +82,7 @@ void FCI::compute() {
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
-  for (int iter = 0; iter != max_iter_; ++iter) { 
+  for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
     // form a sigma vector given cc
@@ -104,7 +104,7 @@ void FCI::compute() {
     }
 
     if (!*min_element(conv.begin(), conv.end())) {
-      // denominator scaling 
+      // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         const int size = cc_->data(ist)->size();
@@ -117,7 +117,7 @@ void FCI::compute() {
         }
         davidson.orthog(cc_->data(ist));
         list<shared_ptr<const Civec> > tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst)); 
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
       }
     }
@@ -130,7 +130,7 @@ void FCI::compute() {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << dr.count()*0.001 << endl; 
+                              << dr.count()*0.001 << endl;
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;
@@ -147,9 +147,9 @@ void FCI::compute() {
 
 
 shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
-                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
+                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
 
-  const int ij = nij(); 
+  const int ij = nij();
 
   const int nstate = ccvec->ij();
   shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstate));
@@ -162,13 +162,13 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const 
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
-    shared_ptr<const Civec> cc = ccvec->data(istate);  
-    shared_ptr<Civec> sigma = sigmavec->data(istate);  
+    shared_ptr<const Civec> cc = ccvec->data(istate);
+    shared_ptr<Civec> sigma = sigmavec->data(istate);
 
     vector<pair<string, double> > timing;
     int start = ::clock();
 
-    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
+    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);
     if (tprint) print_timing_("task1", start, timing);
 
@@ -212,13 +212,13 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const 
 
 void FCI::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
-  const int ij = nij(); 
+  const int ij = nij();
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
     for (auto iter = cc->det()->phia(ip).begin();  iter != cc->det()->phia(ip).end(); ++iter) {
       const double hc = h * get<1>(*iter);
-      daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
+      daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1);
     }
   }
 }
@@ -248,7 +248,7 @@ void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
       double* const target_array0 = d->data(ip)->element_ptr(0, i);
       for (auto iter = cc->det()->phib(ip).begin(); iter != cc->det()->phib(ip).end(); ++iter) {
         const double sign = static_cast<double>(get<1>(*iter));
-        target_array0[get<2>(*iter)] += sign * source_array0[get<0>(*iter)]; 
+        target_array0[get<2>(*iter)] += sign * source_array0[get<0>(*iter)];
       }
     }
   }
@@ -257,10 +257,10 @@ void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
 void FCI::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) const {
   const int lb = e->lenb();
   const int ij = e->ij();
-  for (int ip = 0; ip != ij; ++ip) { 
+  for (int ip = 0; ip != ij; ++ip) {
     const double* const source_base = e->data(ip)->data();
     for (auto iter = e->det()->phia(ip).begin(); iter != e->det()->phia(ip).end(); ++iter) {
-      const double sign = static_cast<double>(get<1>(*iter)); 
+      const double sign = static_cast<double>(get<1>(*iter));
       double* const target_array = sigma->element_ptr(0, get<0>(*iter));
       daxpy_(lb, sign, source_base + lb*get<2>(*iter), 1, target_array, 1);
     }
@@ -276,7 +276,7 @@ void FCI::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) const {
       const double* const source_array0 = e->data(ip)->element_ptr(0, i);
       for (auto iter = e->det()->phib(ip).begin(); iter != e->det()->phib(ip).end(); ++iter) {
         const double sign = static_cast<double>(get<1>(*iter));
-        target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)]; 
+        target_array0[get<0>(*iter)] += sign * source_array0[get<2>(*iter)];
       }
     }
   }

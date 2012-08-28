@@ -52,7 +52,7 @@ static int numofbits(unsigned int bits) {
 // implements a determinant space
 class Determinants {
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta. 
+    // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
 
     const int nelea_;
@@ -78,7 +78,7 @@ class Determinants {
     int sign(unsigned int bit, int i, int j) {
       // masking irrelevant bits
       const unsigned int ii = ~((1 << (std::min(i,j)+1)) - 1);
-      const unsigned int jj = ((1 << (std::max(i,j))) - 1); 
+      const unsigned int jj = ((1 << (std::max(i,j))) - 1);
       bit = (bit & ii) & jj;
       return 1 - ((numofbits(bit) & 1) << 1);
     };
@@ -87,7 +87,7 @@ class Determinants {
     template <int spin> unsigned int lexical(int bit) const {
       unsigned int out = 0;
       int k = 0;
-      for (int i = 0; i != norb_; ++i, bit >>= 1) 
+      for (int i = 0; i != norb_; ++i, bit >>= 1)
         if (bit & 1) { out += zkl(k,i, spin); ++k; }
       return out;
     };
@@ -95,7 +95,7 @@ class Determinants {
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(unsigned int bit) const {
       std::vector<int> out;
-      for (int i = 0; bit != 0u; ++i, bit >>= 1) if (bit & 1) out.push_back(i); 
+      for (int i = 0; bit != 0u; ++i, bit >>= 1) if (bit & 1) out.push_back(i);
       return out;
     };
 
@@ -108,7 +108,7 @@ class Determinants {
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
 
   public:
-    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true); 
+    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true);
     ~Determinants() {};
 
     // static constants
@@ -116,18 +116,18 @@ class Determinants {
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
+    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); };
 
     size_t lena() const { return stringa_.size(); };
     size_t lenb() const { return stringb_.size(); };
 
     std::string print_bit(unsigned int bit) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i, bit >>=1) { if (bit&1) { out += "1"; } else { out += "."; } }
       return out;
     };
     std::string print_bit(unsigned int bit1, unsigned int bit2) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i, bit1 >>=1, bit2 >>=1) {
         if (bit1&1 && bit2&1) { out += "2"; }
         else if (bit1&1) { out += "a"; }
@@ -145,7 +145,7 @@ class Determinants {
 
     std::pair<std::vector<std::tuple<int, int, int> >, double> spin_adapt(const int, const int, const int) const;
 
-    int nspin() const { return nelea_ - neleb_; }; 
+    int nspin() const { return nelea_ - neleb_; };
 
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phia(const int i) const { return phia_[i]; };
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phib(const int i) const { return phib_[i]; };
@@ -169,22 +169,22 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
       const unsigned int ibit = (1 << i);
       // compress_ means that we store info only for i <= j
       if (ibit & *iter && compress_) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         const unsigned int nbit = (ibit^*iter); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
-          const unsigned int jbit = (1 << j); 
+          const unsigned int jbit = (1 << j);
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            const int minij = std::min(i,j); 
+            const int minij = std::min(i,j);
             const int maxij = std::max(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if (ibit & *iter) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         const unsigned int nbit = (ibit^*iter); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
-          const unsigned int jbit = (1 << j); 
+          const unsigned int jbit = (1 << j);
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
             phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));

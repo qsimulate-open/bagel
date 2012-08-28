@@ -56,7 +56,7 @@ class RDM {
     };
     ~RDM() {  };
 
-    std::shared_ptr<RDM<rank> > clone() const { 
+    std::shared_ptr<RDM<rank> > clone() const {
       return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_));
     };
 
@@ -91,7 +91,7 @@ class RDM {
     bool natural_orbitals() const {
       if (rank != 1) throw std::logic_error("RDM::natural_orbitals() is implemented only for rank 1");
       const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
-      const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1); 
+      const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1);
       return ::fabs(a-b) < 1.0e-12;
     };
 
@@ -100,10 +100,10 @@ class RDM {
       assert(rank == 1);
       std::shared_ptr<Matrix1e> out(new Matrix1e(g, nclosed+norb_, nclosed+norb_));
       if (all)
-        for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0; 
+        for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
       for (int i = 0; i != norb_; ++i)
         for (int j = 0; j != norb_; ++j)
-          out->element(j+nclosed, i+nclosed) = element(j,i); 
+          out->element(j+nclosed, i+nclosed) = element(j,i);
       return out;
     };
 
@@ -111,7 +111,7 @@ class RDM {
       assert(rank == 1);
       std::vector<double> buf(dim_*dim_);
       std::vector<double> vec(dim_);
-      for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0; 
+      for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0;
       daxpy_(dim_*dim_, -1.0, data(), 1, &(buf[0]), 1);
       int lwork = 5*dim_;
       std::unique_ptr<double[]> work(new double[lwork]);
@@ -126,17 +126,17 @@ class RDM {
       const double* start = &(coeff[0]);
       std::unique_ptr<double[]> buf(new double[dim_*dim_]);
       if (rank == 1) {
-        dgemm_("N", "N", dim_, dim_, dim_, 1.0, data(), dim_, start, dim_, 0.0, buf.get(), dim_); 
-        dgemm_("T", "N", dim_, dim_, dim_, 1.0, start, dim_, buf.get(), dim_, 0.0, data(), dim_); 
+        dgemm_("N", "N", dim_, dim_, dim_, 1.0, data(), dim_, start, dim_, 0.0, buf.get(), dim_);
+        dgemm_("T", "N", dim_, dim_, dim_, 1.0, start, dim_, buf.get(), dim_, 0.0, data(), dim_);
       } else if (rank == 2) {
         // first half transformation
-        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, data(), dim_*norb_, start, norb_, 0.0, buf.get(), dim_*norb_); 
+        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, data(), dim_*norb_, start, norb_, 0.0, buf.get(), dim_*norb_);
         for (int i = 0; i != norb_; ++i)
-          dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf.get()+i*dim_*norb_, dim_, start, norb_, 0.0, data()+i*dim_*norb_, dim_); 
+          dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf.get()+i*dim_*norb_, dim_, start, norb_, 0.0, data()+i*dim_*norb_, dim_);
         // then tranpose
         mytranspose_(data(), &dim_, &dim_, buf.get());
         // and do it again
-        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf.get(), dim_*norb_, start, norb_, 0.0, data(), dim_*norb_); 
+        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf.get(), dim_*norb_, start, norb_, 0.0, data(), dim_*norb_);
         for (int i = 0; i != norb_; ++i)
           dgemm_("N", "N", dim_, norb_, norb_, 1.0, data()+i*dim_*norb_, dim_, start, norb_, 0.0, buf.get()+i*dim_*norb_, dim_);
         // to make sure for non-symmetric density matrices (and anyway this should be cheap).
@@ -150,7 +150,7 @@ class RDM {
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j)
-            std::cout << std::setw(12) << std::setprecision(7) << element(j,i); 
+            std::cout << std::setw(12) << std::setprecision(7) << element(j,i);
           std::cout << std::endl;
         }
       } else if (rank == 2) {

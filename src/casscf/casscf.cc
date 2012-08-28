@@ -37,7 +37,7 @@ using namespace bagel;
 template<typename T>
 static string tostring(const T i) {
   stringstream ss;
-  ss << i; 
+  ss << i;
   return ss.str();
 };
 
@@ -275,7 +275,7 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold,
 
 
 
-vector<double> CASSCF::form_natural_orbs() { 
+vector<double> CASSCF::form_natural_orbs() {
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
     const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();

@@ -27,10 +27,10 @@
 // input  : x (kappa or lambda)
 // return : exp(x^2)erfc(x)
 
-// for t > 0 
+// for t > 0
 // inline static double experfc(const double t)
 
-// else  
+// else
 // inline static double experfcm(const double t)
 
 inline static double experfc(const double t) {
@@ -120,7 +120,7 @@ inline static double experfc(const double t) {
   double rr;
   double tt = t;
   if (tt > 10.0) {
-    // see Eq. (52) of Ten-no J. Chem. Phys. 126, 014108 (2007) 
+    // see Eq. (52) of Ten-no J. Chem. Phys. 126, 014108 (2007)
     const double denom1 = 0.5 / (tt * tt);
     const double denom2 = denom1 * denom1;
     const double denom3 = denom2 * denom1;
@@ -138,13 +138,13 @@ inline static double experfc(const double t) {
                                 + 10395.0 * denom6
                                - 135135.0 * denom7
                               + 2027025.0 * denom8
-                             - 34459425.0 * denom9); 
+                             - 34459425.0 * denom9);
   } else  {
     const int it = tt;
     tt = tt - it;
     tt = 2.0 * tt - 1.0 ;
     const double t2 = tt + tt ;
- 
+
     const int j = 14 * it - 1;
     double g = x[j + 14];
     double d = t2 * g + x[j + 13];
@@ -220,13 +220,13 @@ inline static double experfcm(const double t) {
   double rr;
   if (t < -6.0) {
     rr = 2.0;
-  } else {    
+  } else {
     double tt = -t;
     const int it = tt;
     tt = tt - it;
     tt = 2.0 * tt - 1.0 ;
     const double t2 = tt + tt ;
-   
+
     const int j = 14 * it - 1;
     double g = x[j + 14];
     double d = t2 * g + x[j + 13];
@@ -243,6 +243,6 @@ inline static double experfcm(const double t) {
     g = t2 * d - g + x[j + 2];
     rr = tt * g - d + x[j + 1] * 0.5;
   }
-  
+
   return rr;
 }

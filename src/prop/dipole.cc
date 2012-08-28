@@ -63,8 +63,8 @@ array<double,3> Dipole::compute() const {
           DipoleBatch dipole(input, center);
           dipole.compute();
 
-          const int dimb1 = input[0]->nbasis(); 
-          const int dimb0 = input[1]->nbasis(); 
+          const int dimb1 = input[0]->nbasis();
+          const int dimb0 = input[1]->nbasis();
           const double* dat0 = dipole.data();
           const double* dat1 = dipole.data() + dipole.size_block();
           const double* dat2 = dipole.data() + dipole.size_block()*2;

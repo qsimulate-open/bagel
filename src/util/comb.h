@@ -566,7 +566,7 @@ class Comb {
         c_[31*max_+30] = 31;
         c_[31*max_+31] = 1;
     };
-    int c(const int i, const int j) const { return c_[i*max_+j]; }; 
+    int c(const int i, const int j) const { return c_[i*max_+j]; };
 };
 
 #endif
@@ -590,12 +590,12 @@ int main() {
     for (int j=0; j!=i+1; ++j) {
       mpreal ii(i);
       mpreal jj(j);
-      mpreal kk = ii - jj; 
+      mpreal kk = ii - jj;
       mpreal out = fac(ii)/fac(jj)/fac(kk);
       int iout = (int)(out+0.1);
-      if (abs(out-iout) > 1.0e-10) assert(false); 
+      if (abs(out-iout) > 1.0e-10) assert(false);
       cout << "c_[" << i << "*max_+" << j << "] = " << iout << ";" << endl;
-    }   
+    }
   }
   return 0;
 }

@@ -32,12 +32,12 @@ using namespace std;
 
 
 vector<vector<Index> > LoopGenerator::block_loop() const {
-  // first, make a status vector 
+  // first, make a status vector
   std::vector<int> stat(loop_.size());
   std::vector<int> max(loop_.size());
   {
     auto j = loop_.begin();
-    for (auto i = max.begin(); i != max.end(); ++i, ++j) *i = j->nblock(); 
+    for (auto i = max.begin(); i != max.end(); ++i, ++j) *i = j->nblock();
   }
 
   vector<vector<Index> > out;
@@ -46,13 +46,13 @@ vector<vector<Index> > LoopGenerator::block_loop() const {
     vector<Index> tmp;
     auto l = loop_.begin();
     for (auto k = stat.begin(); k != stat.end(); ++k, ++l)
-      tmp.push_back(l->range(*k)); 
+      tmp.push_back(l->range(*k));
     out.push_back(tmp);
 
     auto j = stat.begin();
     auto i = max.begin();
     while (j != stat.end() && (++*j) == *i) {
-      *j = 0; 
+      *j = 0;
       ++j;
       ++i;
     }

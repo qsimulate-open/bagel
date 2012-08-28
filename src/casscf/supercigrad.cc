@@ -36,7 +36,7 @@ using namespace bagel;
 template<typename T>
 static string tostring(const T i) {
   stringstream ss;
-  ss << i; 
+  ss << i;
   return ss.str();
 };
 
@@ -90,7 +90,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 #if 1
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e0; 
+        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e0;
 #endif
 
   }
@@ -100,10 +100,10 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DF_Half> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
-  shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom())); 
+  shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom()));
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
-  // 1) one-electron contribution 
+  // 1) one-electron contribution
   shared_ptr<const Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
   shared_ptr<const Matrix1e> rdm1 = ref_->rdm1_mat(target);
   dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
@@ -111,7 +111,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
   shared_ptr<const DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
   unique_ptr<double[]> buf = half->form_2index(fulld);
-  dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis); 
+  dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis);
 
   // Recalculate the CI vectors (which can be avoided... TODO)
   shared_ptr<const Dvec> civ = task_->fci()->civectors();
@@ -134,13 +134,13 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
   dtot->daxpy(1.0, dm);
 
-  // form zdensity 
+  // form zdensity
   shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
   shared_ptr<const RDM<1> > zrdm1;
   shared_ptr<const RDM<2> > zrdm2;
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
-  shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand(); 
+  shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand();
   zrdm1_mat->symmetrize();
   dtot->daxpy(1.0, zrdm1_mat);
 

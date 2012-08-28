@@ -46,7 +46,7 @@ class Quatern {
     Quatern(std::array<T, 4> i) : data_(i) {};
     Quatern(std::initializer_list<T> list) {
       auto j = data_.begin();
-      for (auto i = list.begin(); i != list.end(); ++i, ++j) *j = *i; 
+      for (auto i = list.begin(); i != list.end(); ++i, ++j) *j = *i;
     };
     Quatern(std::array<T, 3> i) {
       data_[0] = T();
@@ -78,12 +78,12 @@ class Quatern {
     Quatern<T>& operator/=(const double& a) { data_[0] /= a; data_[1] /= a; data_[2] /= a; data_[3] /= a; return *this; };
     Quatern<T> operator/(const double& a) const { Quatern<T> out(*this); out /= a; return out; };
 
-    const T& data(int i) const { return data_[i]; }; 
+    const T& data(int i) const { return data_[i]; };
     T& operator[](const int i) { return data_[i]; };
     const T& operator[](const int i) const { return data_[i]; };
 
     Quatern<T> dagger() const {
-      return Quatern<T>{{ data_[0], data_[1]*(-1.0), data_[2]*(-1.0), data_[3]*(-1.0) }}; 
+      return Quatern<T>{{ data_[0], data_[1]*(-1.0), data_[2]*(-1.0), data_[3]*(-1.0) }};
     }
 
     std::array<T, 3> ijk() { return std::array<T, 3>{{data_[1], data_[2], data_[3]}}; };

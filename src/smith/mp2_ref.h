@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_MP2_REF_H 
-#define __SRC_SMITH_MP2_REF_H 
+#ifndef __SRC_SMITH_MP2_REF_H
+#define __SRC_SMITH_MP2_REF_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -76,7 +76,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       std::vector<std::shared_ptr<Tensor<T> > > tensor5 = vec(t2, this->v2_);
       std::shared_ptr<Task5<T> > t5(new Task5<T>(tensor5, index0));
       energy_->add_task(t5);
-      return make_pair(queue_, energy_); 
+      return make_pair(queue_, energy_);
     };
 
   public:
@@ -97,7 +97,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
         std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > >  q = make_queue_();
         std::shared_ptr<Queue<T> > queue = q.first;
         std::shared_ptr<Queue<T> > eng = q.second;
-        while (!queue->done()) queue->next_compute(); 
+        while (!queue->done()) queue->next_compute();
 
         this->update_amplitude(t2, r2);
         const double err = r2->rms();

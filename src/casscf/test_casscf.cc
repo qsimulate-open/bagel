@@ -39,7 +39,7 @@ double cas_energy(std::string filename) {
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "casscf") {
-      std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+      std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
       if (algorithm == "superci" || algorithm == "") {
         std::shared_ptr<CASSCF> cas(new SuperCI(iter->second, geom));
         cas->compute();
@@ -55,9 +55,9 @@ double cas_energy(std::string filename) {
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_CASSCF)
- 
+
 BOOST_AUTO_TEST_CASE(DF_CASSCF) {
     BOOST_CHECK(compare(cas_energy("lif_svp_cas22"),      -106.70563743));
 }
- 
+
 BOOST_AUTO_TEST_SUITE_END()

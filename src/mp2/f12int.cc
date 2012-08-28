@@ -98,12 +98,12 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   const size_t nbasis = geom->nbasis();
   const size_t nvirt = nbasis - nocc - ncore;
   const double* const oc = ref_->coeff()->data() + ncore*nbasis;
-  const double* const vc = oc + nocc*nbasis; 
+  const double* const vc = oc + nocc*nbasis;
 
   const shared_ptr<const DensityFit> df = geom_->df();
   const shared_ptr<const DF_Half> dxo = df->compute_half_transform(oc, nocc)->apply_J();
   const shared_ptr<const DF_Full> doo = dxo->compute_second_transform(oc, nocc);
- 
+
   shared_ptr<F12Mat> ymat;
   {
   // Yukawa integral can be thrown right away

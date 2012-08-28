@@ -198,7 +198,7 @@ SVRRList::SVRRList() : VRRList() {
       vrrfunc[ANG_VRR_END *12 +12] = &_svrr_c0c0;
 }
 
- 
+
 SVRRList::~SVRRList() {
 
 }

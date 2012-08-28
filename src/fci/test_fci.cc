@@ -63,11 +63,11 @@ std::vector<double> reference_fci_energy() {
   out[1] = -98.36567235;
   return out;
 }
- 
+
 BOOST_AUTO_TEST_SUITE(TEST_FCI)
- 
+
 BOOST_AUTO_TEST_CASE(FCI_2STATE) {
     BOOST_CHECK(compare(fci_energy(), reference_fci_energy()));
 }
- 
+
 BOOST_AUTO_TEST_SUITE_END()

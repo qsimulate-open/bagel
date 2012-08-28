@@ -37,7 +37,7 @@ Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 
   ndim_ = inp.ndim();
   mdim_ = inp.mdim();
-  dcopy_(nbasis_*nbasis_, inp.data(), 1, data(), 1); 
+  dcopy_(nbasis_*nbasis_, inp.data(), 1, data(), 1);
 
 }
 
@@ -47,7 +47,7 @@ Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix1e(supergeom(co
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
     mdim_ += (*icoeff)->mdim();
   }
-  
+
   double* cdata = data();
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
     double* cur_data = (*icoeff)->data();
@@ -83,7 +83,7 @@ shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coe
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
     geovec.push_back((*icoeff)->geom());
   }
-   
+
   shared_ptr<const Geometry> out(new const Geometry(geovec));
 
   return out;
@@ -93,22 +93,22 @@ shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) cons
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));
   double* out_data = out->data() + offset*nbasis_;
 
-  dgemm_("N", "T", nbasis_, nbasis_, n, 2.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_); 
+  dgemm_("N", "T", nbasis_, nbasis_, n, 2.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_);
 
   return out;
 }
- 
+
 
 shared_ptr<Matrix1e> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
   shared_ptr<Matrix1e> out(new Matrix1e(geom_));
   double* out_data = out->data() + offset*nbasis_;
   double* cdata = data();
   for (int i = 0; i != n; ++i, cdata += nbasis_) {
-    dgemm_("N", "T", nbasis_, nbasis_, 1, 2.0*e[i], cdata, nbasis_, cdata, nbasis_, 1.0, out_data, nbasis_); 
+    dgemm_("N", "T", nbasis_, nbasis_, 1, 2.0*e[i], cdata, nbasis_, cdata, nbasis_, 1.0, out_data, nbasis_);
   }
   return out;
 }
- 
+
 
 pair<shared_ptr<Coeff>, shared_ptr<Coeff> > Coeff::split(const int nrow1, const int nrow2) const {
   shared_ptr<Coeff> out1(new Coeff(geom_, nrow1, mdim_));

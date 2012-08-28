@@ -489,7 +489,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
               satom;
               if (iblock < sblock) {
                 satom = iatom;
-              } else { 
+              } else {
                 satom = (iatom-1);
               }
             } else if (center == 3) {
@@ -510,9 +510,9 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
               const int m = cam[2]*cam[3];
               const int n = sam[0]*sam[1];
               const int nn = cam[0]*cam[1];
-              carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
+              carsphlist.carsphfunc_call(carsphindex, n, ints, area);
               mytranspose_(area, &m, &n, ints);
-              carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
+              carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
               copy(area, area+nn*m, ints);
               stack_->release(batchsize, area);
             }
@@ -529,11 +529,11 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
                     id[2] = k;
                     for (int l = 0; l != cam[3]; ++l, ++ijkl) {
                       id[3] = l;
-                      const size_t ele = 
+                      const size_t ele =
                                  id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
                                 (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
-                      data_[size_block_*iblock + ele] = ints[ijkl]; 
-                      data_[size_block_*rblock + ele] -= ints[ijkl]; 
+                      data_[size_block_*iblock + ele] = ints[ijkl];
+                      data_[size_block_*rblock + ele] -= ints[ijkl];
                     }
                   }
                 }
@@ -547,11 +547,11 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
                     id[0] = k;
                     for (int l = 0; l != cam[1]; ++l, ++ijkl) {
                       id[1] = l;
-                      const size_t ele = 
+                      const size_t ele =
                                  id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
                                 (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
-                      data_[size_block_*iblock + ele] = ints[ijkl]; 
-                      data_[size_block_*rblock + ele] -= ints[ijkl]; 
+                      data_[size_block_*iblock + ele] = ints[ijkl];
+                      data_[size_block_*rblock + ele] -= ints[ijkl];
                     }
                   }
                 }

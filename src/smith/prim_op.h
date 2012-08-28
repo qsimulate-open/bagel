@@ -59,7 +59,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 //    dscal_(a*b, afac, sorted, 1);
 //    daxpy_(a*b, factor, unsorted, 1, sorted, 1);
     }
-  } else { 
+  } else {
     int id[2];
     int jd[2] = {b, a};
     long iall=0;
@@ -72,7 +72,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
       }
     }
   }
-} 
+}
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
@@ -95,7 +95,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
         sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
       }
     }
-  } 
+  }
 }
 
 template<int i, int j, int k, int an, int ad, int fn, int fd>
@@ -117,7 +117,7 @@ static void sort_indices(const double* const unsorted, double* const sorted,
         sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
       }
     }
-  } 
+  }
 };
 
 
@@ -143,8 +143,8 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
           sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
         }
       }
-    } 
-  } 
+    }
+  }
 };
 
 

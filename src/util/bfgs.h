@@ -39,7 +39,7 @@ namespace bagel {
 template<typename T>
 class BFGS {
   protected:
-    std::vector<std::shared_ptr<const T> > delta; 
+    std::vector<std::shared_ptr<const T> > delta;
     std::vector<std::shared_ptr<const T> > y;
     std::vector<std::shared_ptr<const T> > D;
 
@@ -80,7 +80,7 @@ class BFGS {
         }
         const int n = delta.size()-1;
         assert(delta.size() == y.size()+1 && y.size()+1 == D.size());
-        
+
         // (4)
         for (int i = 0; i < n; ++i) {
           const double s1 = 1.0 / delta[i]->ddot(D[i]);
@@ -110,7 +110,7 @@ class BFGS {
         }
         y.push_back(yy);
       }
-      prev_grad = grad; 
+      prev_grad = grad;
       prev_value = value;
       return out;
     };

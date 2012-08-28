@@ -41,7 +41,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
   assert(xyz.size() == 9);
 
   // real Abelian has only diagonal elements...
-  const double movex = xyz[0]; 
+  const double movex = xyz[0];
   const double movey = xyz[4];
   const double movez = xyz[8];
 
@@ -75,7 +75,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
       const int dimsph = 2 * i + 1;
       unique_ptr<double[]> pisph(new double[dimsph * dimsph]);
       const int carsphindex = i * ANG_HRR_END + i;
-      carsph.carsphfunc_call(carsphindex, 1, pitmp.get(), pisph.get()); 
+      carsph.carsphfunc_call(carsphindex, 1, pitmp.get(), pisph.get());
       for (int j = 0; j != dimsph; ++j) {
         double norm = 0.0;
         for (int k = 0; k != dimsph; ++k)

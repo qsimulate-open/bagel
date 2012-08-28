@@ -60,14 +60,14 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
   int mcount = 0;
   for (int m = -K(); m != max(K(), 1); ++m, ++mcount) {
     const int boffset = mcount * blocksize_;
-  
+
     const int lwork = 5 * nbasis_;
     complex<double>* work = new complex<double>[lwork];
-    const complex<double>* S = odata->pointer(boffset); 
+    const complex<double>* S = odata->pointer(boffset);
     complex<double>* cdata = data_->pointer(boffset);
     const int unit = 1;
     zcopy_(&blocksize_, S, &unit, cdata, &unit);
-  
+
     int info = 0;
     double* rwork = new double[5 * nbasis_];
     double* eig = new double[nbasis_];
@@ -75,7 +75,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     if (info != 0) throw runtime_error("zheev in ptildex.cc failed.");
     delete[] rwork;
     delete[] work;
-  
+
     // counting how many orbital must be deleted owing to the linear dependency
     const double largest = fabs(eig[ndim_ - 1]);
     int cnt = 0;
@@ -87,7 +87,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
       cout << "   Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
            << " in orthogonalization (m = " << m << ")" << setprecision(15) << eig[0] << endl;
     }
-  
+
     for (int i = cnt; i != ndim_; ++i) {
       assert(eig[i] > 0);
       const double scale = 1.0 / sqrt(eig[i]);
@@ -105,12 +105,12 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     removed.push_back(cnt);
     mdim_ = ndim_ - cnt;
 
-    if (cnt != 0) { 
+    if (cnt != 0) {
       for (int i = 0; i != mdim_; ++i) {
-        zcopy_(&ndim_, &cdata[(i + cnt) * ndim_], &unit, &cdata[i * ndim_], &unit); 
+        zcopy_(&ndim_, &cdata[(i + cnt) * ndim_], &unit, &cdata[i * ndim_], &unit);
       }
     }
-    
+
   }
   cout << setprecision(15) << endl;
   cout << "  Maximum residual in orthogonalization: " << *max_element(max_eig.begin(), max_eig.end()) << endl;

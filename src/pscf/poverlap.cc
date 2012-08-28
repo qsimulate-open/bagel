@@ -50,8 +50,8 @@ void POverlap::computebatch(const array<shared_ptr<const Shell>,2>& input,
   // input = [b1, b0]
   // because of the convention in integral codes
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); 
-  const int dimb1 = input[0]->nbasis(); 
+  const int dimb0 = input[1]->nbasis();
+  const int dimb1 = input[0]->nbasis();
   OverlapBatch overlap(input);
   overlap.compute();
   const double* odata = overlap.data();
@@ -75,7 +75,7 @@ int POverlap::calculate_thresh() const {
     const complex<double>* cdata = data_->pointer((i + K()) * blocksize_);
     for (int j = 0; j != blocksize_; ++j, ++cdata) {
       const double current = abs(*cdata);
-      cmax = current > cmax ? current : cmax; 
+      cmax = current > cmax ? current : cmax;
     }
     cout << "   cell " << setw(3) << i << ":  " << cmax << endl;
     if (cmax > 1.0e-15) ++out;

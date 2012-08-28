@@ -23,16 +23,16 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-  
+
 #ifndef __rysint_carsphlist_h
 #define __rysint_carsphlist_h
 
 #include <src/rysint/macros.h>
- 
+
 struct CarSphList {
   CarSphList();
   ~CarSphList();
-     
+
   static void carsph_00(const int, const double*, double*);
   static void carsph_10(const int, const double*, double*);
   static void carsph_20(const int, const double*, double*);

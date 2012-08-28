@@ -144,7 +144,7 @@ class Geometry {
     void print_atoms() const;
 
     // Returns the Petite list.
-    std::shared_ptr<Petite> plist() const { return plist_; }; 
+    std::shared_ptr<Petite> plist() const { return plist_; };
 
     // Rerurns DF data
     const std::shared_ptr<const DensityFit> df() const { return df_; };

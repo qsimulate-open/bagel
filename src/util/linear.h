@@ -41,14 +41,14 @@ class Linear {
     std::list<std::shared_ptr<const T> > c_;
     std::list<std::shared_ptr<const T> > sigma_;
 
-    const int max_;    
+    const int max_;
     int size_;
     const std::shared_ptr<const T> grad_;
 
-    // contains 
+    // contains
     std::unique_ptr<double[]> mat_;
     std::unique_ptr<double[]> scr_;
-    std::unique_ptr<double[]> vec_; 
+    std::unique_ptr<double[]> vec_;
     std::unique_ptr<double[]> prod_;
     std::unique_ptr<int[]> ipiv_;
     int info;
@@ -79,17 +79,17 @@ class Linear {
       auto citer = c_.begin();
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
-      } 
+      }
       // NOTE THE MINUS SIGN HERE!!
-      prod_[size_-1] = - c->ddot(*grad_); 
+      prod_[size_-1] = - c->ddot(*grad_);
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
       std::copy(prod_.get(), prod_.get()+max_, vec_.get());
-      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info); 
+      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
       if (info) throw std::runtime_error("dsyev failed in Linear");
 
-      std::shared_ptr<T> out(new T(*grad_)); 
+      std::shared_ptr<T> out(new T(*grad_));
       int cnt = 0;
       for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
         out->daxpy(vec_[cnt], *j);
@@ -101,8 +101,8 @@ class Linear {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->daxpy(vec_[cnt], *i); 
-      } 
+        out->daxpy(vec_[cnt], *i);
+      }
       return out;
     };
 

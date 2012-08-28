@@ -68,7 +68,7 @@ void Fock_base::fock_one_electron_part() {
     dscal_(size, 1.0/nirrep, data(), 1);
   }
   const double* previous_data = previous_->data();
-  daxpy_(size, 1.0, previous_data, 1, data(), 1); 
+  daxpy_(size, 1.0, previous_data, 1, data(), 1);
 
   fill_upper();
 }
@@ -77,7 +77,7 @@ void Fock_base::fock_one_electron_part() {
 Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
  : Matrix1e(geom) {
 
-  dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1); 
+  dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1);
 
   fill_upper();
 }
@@ -87,7 +87,7 @@ Fock_base::Fock_base(const RefGeometry geom)
  : Matrix1e(geom) {
 
   Hcore hcore(geom);
-  dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1); 
+  dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1);
 
   fill_upper();
 }
@@ -101,12 +101,12 @@ void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0,
 
   // input = [b1, b0]
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); 
-  const int dimb1 = input[0]->nbasis(); 
+  const int dimb0 = input[1]->nbasis();
+  const int dimb1 = input[0]->nbasis();
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i * nbasis_ + j] = 0.0; 
+      data_[i * nbasis_ + j] = 0.0;
     }
   }
 }

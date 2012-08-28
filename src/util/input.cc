@@ -47,8 +47,8 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     // get rid of comments
     const boost::regex comm("^(.*)//(.*)$");
     const string ss = sline;
-    auto start = ss.begin();  
-    auto end = ss.end();  
+    auto start = ss.begin();
+    auto end = ss.end();
     boost::smatch what;
     while (boost::regex_search(start, end, what, comm)) {
       sline = what[1];
@@ -68,14 +68,14 @@ InputData::InputData(const string filename) : inputfile_(filename) {
     boost::smatch what;
     while (regex_search(start, end, what, reg_true)) {
       stringstream ss; ss << what[1] << "=1;" << what[5];
-      const string sk = ss.str(); 
+      const string sk = ss.str();
       start = sk.begin();
       end = sk.end();
       content = sk;
     }
     while (regex_search(start, end, what, reg_false)) {
       stringstream ss; ss << what[1] << "=0;" << what[5];
-      const string sk = ss.str(); 
+      const string sk = ss.str();
       start = sk.begin();
       end = sk.end();
       content = sk;

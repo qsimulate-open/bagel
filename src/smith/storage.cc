@@ -25,7 +25,7 @@
 
 
 #include <src/util/f77.h>
-#include <src/smith/storage.h> 
+#include <src/smith/storage.h>
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
@@ -37,14 +37,14 @@ using namespace std;
 Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base(size, init) {
   if (init) {
     for (auto i = size.begin(); i != size.end(); ++i) {
-      unique_ptr<double[]> tmp(new double[i->second]); 
+      unique_ptr<double[]> tmp(new double[i->second]);
       fill(tmp.get(), tmp.get()+i->second, 0.0);
       data_.push_back(move(tmp));
     }
   } else {
     // if not init, we make a dummy tensor with size 1
     for (auto i = size.begin(); i != size.end(); ++i) {
-      unique_ptr<double[]> tmp(new double[1]); 
+      unique_ptr<double[]> tmp(new double[1]);
       data_.push_back(move(tmp));
     }
   }
@@ -52,7 +52,7 @@ Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Sto
 
 void Storage_Incore::initialize() {
   for (auto i = this->hashtable_.begin(); i != this->hashtable_.end(); ++i) {
-    unique_ptr<double[]> tmp(new double[i->second.second]); 
+    unique_ptr<double[]> tmp(new double[i->second.second]);
     data_.push_back(move(tmp));
   }
 }
@@ -64,13 +64,13 @@ unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::get_block(const size_t&)");
 
-  // then create a memory 
+  // then create a memory
   const size_t blocksize = hash->second.second;
   const size_t blocknum  = hash->second.first;
   unique_ptr<double[]> buf(new double[blocksize]);
 
   // then copy...
-  dcopy_(blocksize, data_.at(blocknum), 1, buf, 1); 
+  dcopy_(blocksize, data_.at(blocknum), 1, buf, 1);
 
   return move(buf);
 }
@@ -111,7 +111,7 @@ void Storage_Incore::add_block(const size_t& key, const unique_ptr<double[]>& da
   const size_t blocksize = hash->second.second;
   const size_t blocknum  = hash->second.first;
 
-  daxpy_(blocksize, 1.0, dat, 1, data_.at(blocknum), 1); 
+  daxpy_(blocksize, 1.0, dat, 1, data_.at(blocknum), 1);
 }
 
 

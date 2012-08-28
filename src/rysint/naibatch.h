@@ -35,7 +35,7 @@ class NAIBatch : public NAIBatch_base {
   protected:
 
   public:
-    
+
     NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int L = 0, const double A = 0.0)
       :  NAIBatch_base(_info, gm, 0, L, A) {};
      ~NAIBatch() {};

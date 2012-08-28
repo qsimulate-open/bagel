@@ -39,22 +39,22 @@ void ERIBatch::perform_HRR_40_22(const int nloop, const double* data_start, cons
     const double* current_data = &data_start[offset];
 
     // loop of a
-    for (int jz = 0; jz <= 2; ++jz) { 
+    for (int jz = 0; jz <= 2; ++jz) {
       const int rjz = 5 * jz;
-      for (int jy = 0; jy <= 2 - jz; ++jy) { 
+      for (int jy = 0; jy <= 2 - jz; ++jy) {
         const int jx = 2 - jy - jz;
-        if (jx >= 0) { 
+        if (jx >= 0) {
           const int place = jx + 5 * (jy + rjz);
-          const int ja_0 = amapping_[place]; 
-          const int jax_0 = amapping_[place + 1]; 
-          const int jay_0 = amapping_[place + 5]; 
-          const int jaz_0 = amapping_[place + 5 * 5]; 
-          const int jaxx_0 = amapping_[place + 2]; 
-          const int jaxy_0 = amapping_[place + 1 + 5]; 
-          const int jaxz_0 = amapping_[place + 1 + 5 * 5 ]; 
-          const int jayy_0 = amapping_[place + 5 * 2]; 
-          const int jayz_0 = amapping_[place + 5 + 5 * 5]; 
-          const int jazz_0 = amapping_[place + 5 * 5 * 2]; 
+          const int ja_0 = amapping_[place];
+          const int jax_0 = amapping_[place + 1];
+          const int jay_0 = amapping_[place + 5];
+          const int jaz_0 = amapping_[place + 5 * 5];
+          const int jaxx_0 = amapping_[place + 2];
+          const int jaxy_0 = amapping_[place + 1 + 5];
+          const int jaxz_0 = amapping_[place + 1 + 5 * 5 ];
+          const int jayy_0 = amapping_[place + 5 * 2];
+          const int jayz_0 = amapping_[place + 5 + 5 * 5];
+          const int jazz_0 = amapping_[place + 5 * 5 * 2];
 
           const double a_0 = current_data[ja_0];
           const double ax_0 = current_data[jax_0];
@@ -71,20 +71,20 @@ void ERIBatch::perform_HRR_40_22(const int nloop, const double* data_start, cons
           const double a_y  = ay_0  + AB_[1] * a_0;
           const double a_z  = az_0  + AB_[2] * a_0;
 
-          const double ax_x = axx_0 + AB_[0] * ax_0; 
-          const double ay_x = axy_0 + AB_[0] * ay_0; 
-          const double az_x = axz_0 + AB_[0] * az_0; 
-          const double ay_y = ayy_0 + AB_[1] * ay_0; 
-          const double az_y = ayz_0 + AB_[1] * az_0; 
-          const double az_z = azz_0 + AB_[2] * az_0; 
+          const double ax_x = axx_0 + AB_[0] * ax_0;
+          const double ay_x = axy_0 + AB_[0] * ay_0;
+          const double az_x = axz_0 + AB_[0] * az_0;
+          const double ay_y = ayy_0 + AB_[1] * ay_0;
+          const double az_y = ayz_0 + AB_[1] * az_0;
+          const double az_z = azz_0 + AB_[2] * az_0;
 
-          const double a_xx = ax_x  + AB_[0] * a_x; 
-          const double a_xy = ay_x  + AB_[1] * a_x; 
-          const double a_xz = az_x  + AB_[2] * a_x; 
-          const double a_yy = ay_y  + AB_[1] * a_y; 
-          const double a_yz = az_y  + AB_[2] * a_y; 
-          const double a_zz = az_z  + AB_[2] * a_z; 
-  
+          const double a_xx = ax_x  + AB_[0] * a_x;
+          const double a_xy = ay_x  + AB_[1] * a_x;
+          const double a_xz = az_x  + AB_[2] * a_x;
+          const double a_yy = ay_y  + AB_[1] * a_y;
+          const double a_yz = az_y  + AB_[2] * a_y;
+          const double a_zz = az_z  + AB_[2] * a_z;
+
         }
       }
     }

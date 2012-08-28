@@ -34,7 +34,7 @@ namespace bagel {
 namespace SMITH {
 
 // base class for Task objects
-// assumes that the operation table is static (not adjustable at runtime). 
+// assumes that the operation table is static (not adjustable at runtime).
 template <typename T>
 class Task {
   protected:

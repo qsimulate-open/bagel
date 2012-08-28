@@ -46,7 +46,7 @@ class CASSCF {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_; 
+    std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
 
@@ -55,7 +55,7 @@ class CASSCF {
     int nclosed_;
     int nact_;
     int nvirt_;
-    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing. 
+    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing.
     int nbasis_;
     int nstate_;
     int max_iter_;
@@ -100,7 +100,7 @@ class CASSCF {
 
     void set_occup(const std::vector<double>& o) { occup_ = o; };
 
-    double energy() const { return energy_; }; 
+    double energy() const { return energy_; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,

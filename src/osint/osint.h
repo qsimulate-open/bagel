@@ -44,7 +44,7 @@ class OSInt {
     bool spherical_;
 
     double* data_;
-    std::vector<double> xp_, xa_, xb_, rho_, p_; 
+    std::vector<double> xp_, xa_, xb_, rho_, p_;
     std::vector<double> coeffsx_, coeffsy_, coeffsz_;
     std::vector<double> coefftx_, coeffty_, coefftz_;
     std::array<double,3> AB_;
@@ -65,8 +65,8 @@ class OSInt {
     double* stack_save_;
 
     virtual void perform_VRR(double*) {};
-    void perform_contraction(const int, const double*, const int, const int, double*, 
-                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int, 
+    void perform_contraction(const int, const double*, const int, const int, double*,
+                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
     std::shared_ptr<StackMem> stack_;
@@ -76,11 +76,11 @@ class OSInt {
     OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0);
     ~OSInt();
 
-    virtual void compute() = 0; 
+    virtual void compute() = 0;
 
-    const double* data() const { return data_; }; 
+    const double* data() const { return data_; };
 
-    // since this is convenient for gradient evaluation.... 
+    // since this is convenient for gradient evaluation....
     bool swap01() const { return swap01_; };
 
     size_t size_block() const { return size_block_; };

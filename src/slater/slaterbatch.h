@@ -24,7 +24,7 @@
 //
 
 #ifndef __src_slater_slaterbatch_h
-#define __src_slater_slaterbatch_h 
+#define __src_slater_slaterbatch_h
 
 #include <cassert>
 #include <vector>
@@ -85,7 +85,7 @@ class SlaterBatch : public RysInt {
     void compute_ssss(const double);
 
   public:
-    
+
     SlaterBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double, const double gamma, const bool doyukawa = false);
     ~SlaterBatch();
 

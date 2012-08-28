@@ -57,8 +57,8 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
 
   // input = [b1, b0]
   assert(input.size() == 2);
-  const int dimb1 = input[0]->nbasis(); 
-  const int dimb0 = input[1]->nbasis(); 
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
 
   {
     KineticBatch kinetic(input);

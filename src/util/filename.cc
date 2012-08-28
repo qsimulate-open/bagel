@@ -42,10 +42,10 @@ Filename::~Filename() {
 
 
 const string Filename::filename_next() const {
-  stringstream ss; 
+  stringstream ss;
   ss << "temp_file_" << counter_ << ".data";
   ++counter_;
 
   return ss.str();
-} 
+}
 

@@ -49,7 +49,7 @@ class ERIFit : public DensityFit {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
     };
     ~ERIFit() {};
-    
+
 };
 
 
@@ -68,7 +68,7 @@ class YukawaFit : public DensityFit {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
     };
     ~YukawaFit() {};
-    
+
 };
 
 class SlaterFit : public DensityFit {
@@ -85,7 +85,7 @@ class SlaterFit : public DensityFit {
        common_init(atoms, offsets, atoms, offsets, aux_atoms, aux_offsets, thr, inverse);
     };
     ~SlaterFit() {};
-    
+
 };
 
 }

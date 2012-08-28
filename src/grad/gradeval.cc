@@ -33,7 +33,7 @@ using namespace bagel;
 
 template<>
 shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
-  auto tp0 = high_resolution_clock::now(); 
+  auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
@@ -50,7 +50,7 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
 
-  auto tp1 = high_resolution_clock::now(); 
+  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right <<
           setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl << endl;
 
@@ -60,7 +60,7 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<UHF>::compute() {
-  auto tp0 = high_resolution_clock::now(); 
+  auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
@@ -77,7 +77,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
-  auto tp1 = high_resolution_clock::now(); 
+  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right <<
           setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl << endl;
 
@@ -87,7 +87,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<ROHF>::compute() {
-  auto tp0 = high_resolution_clock::now(); 
+  auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
@@ -104,7 +104,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
-  auto tp1 = high_resolution_clock::now(); 
+  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right <<
           setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl << endl;
 
@@ -114,12 +114,12 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
-  auto tp0 = high_resolution_clock::now(); 
+  auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix1e> rdm1(new Matrix1e(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
-  shared_ptr<const Matrix1e> erdm1 = ref_->erdm1(); 
+  shared_ptr<const Matrix1e> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
@@ -131,7 +131,7 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
 
-  auto tp1 = high_resolution_clock::now(); 
+  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right <<
           setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl << endl;
 
@@ -140,7 +140,7 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<SuperCI>::compute() {
-  auto tp0 = high_resolution_clock::now(); 
+  auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix1e> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
@@ -149,7 +149,7 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   Dipole d(ref_->geom(), rdm1);
   d.compute();
 #endif
-  shared_ptr<const Matrix1e> erdm1 = ref_->erdm1(); 
+  shared_ptr<const Matrix1e> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
@@ -161,7 +161,7 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
 
-  auto tp1 = high_resolution_clock::now(); 
+  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right <<
           setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl << endl;
 

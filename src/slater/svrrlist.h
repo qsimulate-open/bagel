@@ -27,18 +27,18 @@
 // stand alone class for VRR functions.
 // can be called from outside through vrrfunc_call.
 //
-  
+
 #ifndef __slater_svrrlist_h
 #define __slater_svrrlist_h
 
 #include <src/rysint/macros.h>
 #include <src/rysint/vrrlist.h>
- 
+
 struct SVRRList : public VRRList {
   SVRRList();
   ~SVRRList();
 //
-// commented-out lines are hand-written, which is implimented in vrr_template.cc 
+// commented-out lines are hand-written, which is implimented in vrr_template.cc
 //
   static void _svrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
   static void _svrr_0010(double*, const double*, const double*, const double*, const double*, const double*);

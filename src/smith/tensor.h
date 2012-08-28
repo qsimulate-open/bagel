@@ -57,7 +57,7 @@ template <typename T>
 class Tensor {
   protected:
     std::vector<IndexRange> range_;
-    std::shared_ptr<T> data_; 
+    std::shared_ptr<T> data_;
     int rank_;
     bool initialized_;
 
@@ -68,7 +68,7 @@ class Tensor {
         LoopGenerator lg(in);
         std::vector<std::vector<Index> > index = lg.block_loop();
 
-        // first compute hashtags and length 
+        // first compute hashtags and length
         std::map<size_t, size_t> hashmap;
         size_t off = 0;
         for (auto i = index.begin(); i != index.end(); ++i) {
@@ -78,7 +78,7 @@ class Tensor {
             size *= j->size();
             h.push_back(j->key());
           }
-          hashmap.insert(std::make_pair(generate_hash_key(h), size)); 
+          hashmap.insert(std::make_pair(generate_hash_key(h), size));
           off += size;
         }
 
@@ -131,7 +131,7 @@ class Tensor {
     std::vector<IndexRange> indexrange() const { return range_; };
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
-      assert(p.size() == rank_); 
+      assert(p.size() == rank_);
       if (!static_cast<bool>(data_)) throw std::logic_error("Tensor not initialized");
       return std::move(data_->get_block(generate_hash_key(p)));
     };
@@ -151,7 +151,7 @@ class Tensor {
     };
 
     size_t get_size(const std::vector<size_t>& p) {
-      assert(p.size() == rank_); 
+      assert(p.size() == rank_);
       return data_->blocksize(generate_hash_key(p));
     };
 
@@ -166,9 +166,9 @@ class Tensor {
       std::unique_ptr<double[]> buf(new double[size]);
       for (auto i = range_[0].begin(); i != range_[0].end(); ++i) {
         std::vector<size_t> h = vec(i->key(), i->key());
-        std::unique_ptr<double[]> data0 = move_block(h); 
+        std::unique_ptr<double[]> data0 = move_block(h);
         for (int j = 0; j != i->size(); ++j) {
-          buf[j+i->offset()] = data0[j+j*i->size()]; 
+          buf[j+i->offset()] = data0[j+j*i->size()];
         }
         put_block(h, data0);
       }
@@ -187,7 +187,7 @@ class Tensor {
               std::vector<size_t> g(4); g[0] = i2->key(); g[1] = i3->key(); g[2] = i0->key(); g[3] = i1->key();
               std::unique_ptr<double[]> data0 = get_block(h);
               const std::unique_ptr<double[]> data1 = get_block(g);
-              sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2->size(), i3->size(), i0->size(), i1->size()); 
+              sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2->size(), i3->size(), i0->size(), i1->size());
               out->put_block(h,data0);
             }
           }
@@ -218,7 +218,7 @@ class Tensor {
                       if (fabs(data[iall]) > thresh) {
                          std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
                                         " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
-                                      " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl; 
+                                      " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
                       }
                     }
             }

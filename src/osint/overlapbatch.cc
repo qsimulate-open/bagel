@@ -36,10 +36,10 @@ using namespace bagel;
 
 const static HRRList hrr;
 
-OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 
+OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
  : OSInt(_basis) {
 
-}  
+}
 
 
 OverlapBatch::~OverlapBatch() {
@@ -53,13 +53,13 @@ void OverlapBatch::compute() {
 
   double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
   fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_, 0.0);
-  perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c, 
-                      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_, 
+  perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c,
+                      basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
   double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
 
-  if (basisinfo_[1]->angular_number() != 0) { 
+  if (basisinfo_[1]->angular_number() != 0) {
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
   } else {
@@ -72,7 +72,7 @@ void OverlapBatch::compute() {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
-    carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i); 
+    carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i);
 
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);

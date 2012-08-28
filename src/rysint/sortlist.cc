@@ -88,7 +88,7 @@ SortList::SortList(const bool spherical) {
   }
 }
 
- 
+
 SortList::~SortList() {
 
 }

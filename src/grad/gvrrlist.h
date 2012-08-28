@@ -27,7 +27,7 @@
 // stand alone class for VRR functions.
 // can be called from outside through vrrfunc_call.
 //
-  
+
 #ifndef __grad_gvrrlist_h
 #define __grad_gvrrlist_h
 
@@ -36,7 +36,7 @@
 struct GVRRList : public VRRListBase {
   GVRRList();
   ~GVRRList();
-  
+
   static void _gvrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_0010(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_0020(double*, const double*, const double*, const double*, const double*, const double*);

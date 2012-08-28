@@ -24,7 +24,7 @@
 //
 
 
-// carbon copy of what I wrote in the orz package 
+// carbon copy of what I wrote in the orz package
 // meant to be standalone
 
 #include <src/scf/scf.h>
@@ -86,7 +86,7 @@ void F12Ref::compute() {
     }
 
     // X intermediate
-    shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff); 
+    shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff);
     shared_ptr<F12Mat> x(new F12Mat(*x2));
 #if 0
     shared_ptr<F12Ten> s = slater->f12ten(coeff, coeff, nbasis, nbasis);
@@ -98,9 +98,9 @@ void F12Ref::compute() {
 x->print();
 
     // V intermediate
-    shared_ptr<F12Mat> v = yukawa->f12mat(ocoeff); 
+    shared_ptr<F12Mat> v = yukawa->f12mat(ocoeff);
     {
-      shared_ptr<F12Ten> r = eri->f12ten(coeff, coeff, nbasis, nbasis); 
+      shared_ptr<F12Ten> r = eri->f12ten(coeff, coeff, nbasis, nbasis);
       *v -= *r->contract(s);
     }
 v->print();
@@ -115,7 +115,7 @@ v->print();
       DTensor frs = gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "fav_", C_aoOBS, "_a__", C_aoOBS, "fav_", C_aoOBS, "_a__");
       DTensor xrs(ngen,ngen,ngen,ngen);
       contraction(xrs, frs, frs, nmoc, nmoc, ngen);
-      xterm -= xrs * 0.5; // 0.5 because of the definition of contraction 
+      xterm -= xrs * 0.5; // 0.5 because of the definition of contraction
     }
     {
       DTensor fxm =  gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "___r", C_aoOBS, "_a__", C_aoOBS, "fa__", C_aoOBS, "_a__")
@@ -224,7 +224,7 @@ v->print();
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, C_aoABS, "___r", C_aoOBS, "_a__", C_aoOBS, "fa__", C_aoOBS, "_a__");
       // P5A = R^mA_ij f^P_m R^kl_PA
       DTensor tmp2 = fock_weighted(Slice(0,ngen+nfrozen),Slice(0,nao)).copy();
-      DTensor tmp3 = fock_weighted(Slice(0,ngen+nfrozen),Slice(nao,nao+nao_RI_F12)).copy(); 
+      DTensor tmp3 = fock_weighted(Slice(0,ngen+nfrozen),Slice(nao,nao+nao_RI_F12)).copy();
       DTensor tmp4 = gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "___r", C_aoOBS, "_a__", tmp2   , "fa__", C_aoOBS, "_a__")
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, C_aoABS, "___r", C_aoOBS, "_a__", tmp2   , "fa__", C_aoOBS, "_a__")
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, tmp3   , "fa__", C_aoOBS, "_a__", C_aoOBS, "___r", C_aoOBS, "_a__").swapdim(2,3,0,1)
@@ -288,7 +288,7 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
 
   shared_ptr<Matrix1e> U(new Matrix1e(newgeom, tndim, tndim));
   shared_ptr<Matrix1e> V(new Matrix1e(newgeom, tmdim, tmdim));
-  tmp->svd(U, V); 
+  tmp->svd(U, V);
 
   shared_ptr<Matrix1e> Ured = U->slice(tmdim, tndim); //(new Matrix1e(U, make_pair(tmdim, tndim)));
   shared_ptr<Coeff> coeff_cabs = shared_ptr<Coeff>(new Coeff(*ri_coeff * *Ured));
@@ -299,7 +299,7 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
 
   // TODO check
   int ncabs = ri_coeff->mdim();
-  return make_tuple(t.first, t.second, coeff_entire, ncabs); 
+  return make_tuple(t.first, t.second, coeff_entire, ncabs);
 }
 
 

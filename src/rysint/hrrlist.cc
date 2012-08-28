@@ -50,7 +50,7 @@ HRRList::HRRList() {
       hrrfunc[ANG_HRR_END * 6 + 6] = &perform_HRR_c0_66;
 }
 
- 
+
 HRRList::~HRRList() {
 
 }

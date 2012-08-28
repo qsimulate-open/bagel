@@ -42,9 +42,9 @@ typedef std::shared_ptr<const Shell> RefShell;
 
 
 GradBatch::GradBatch(const array<RefShell,4>& shells, const double max_density, const double dummy, const bool dum)
- : ERIBatch_base(shells, max_density, 1) { 
+ : ERIBatch_base(shells, max_density, 1) {
 
-  centers_ = 4;  
+  centers_ = 4;
   for (auto i = shells.begin(); i != shells.end(); ++i) if ((*i)->dummy()) --centers_;
   vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new GVRRList()));
 

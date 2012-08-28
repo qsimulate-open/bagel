@@ -33,7 +33,7 @@ class Angular_Index {
     int rank_;
 
   public:
-    Angular_Index() {}; 
+    Angular_Index() {};
     Angular_Index(int i, int j, int k) : index_(boost::make_tuple(i, j, k)), rank_(i + j + k) {};
     ~Angular_Index() {};
 
@@ -58,10 +58,10 @@ class Angular_Pair {
 
     ~Angular_Pair() {};
 
-    const bool operator==(const Angular_Pair& o) const 
-    { return indices().first == o.indices().first && indices().second == o.indices().second; }; 
+    const bool operator==(const Angular_Pair& o) const
+    { return indices().first == o.indices().first && indices().second == o.indices().second; };
 
-    boost::tuple<Angular_Pair, Angular_Pair, int> hrr_formula() const; 
+    boost::tuple<Angular_Pair, Angular_Pair, int> hrr_formula() const;
 
     const std::pair<Angular_Index, Angular_Index> indices() const { return indices_; };
 

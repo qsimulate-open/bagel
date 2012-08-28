@@ -49,7 +49,7 @@ class Petite {
     std::vector<std::vector<int> > sym_atommap_;
     std::vector<std::vector<int> > sym_shellmap_;
     std::vector<int> p1_;
-    std::vector<int> lambda_; 
+    std::vector<int> lambda_;
 
 
   public:
@@ -58,14 +58,14 @@ class Petite {
 
     std::vector<double> symop(const int i) const { return symop_[i]; };
 
-    std::vector<int> sym_shellmap(const int i) const { return sym_shellmap_[i]; }; 
-    std::vector<int> sym_atommap(const int i) const { return sym_atommap_[i]; }; 
+    std::vector<int> sym_shellmap(const int i) const { return sym_shellmap_[i]; };
+    std::vector<int> sym_atommap(const int i) const { return sym_atommap_[i]; };
 
     int nirrep() const { return nirrep_; };
     int nsymop() const { return nsymop_; };
 
-    bool in_p1(int i) const { return (nirrep_ == 1 || p1_[i]); }; 
-    bool in_p2(int ij) const { return (nirrep_ == 1 || lambda_[ij]); }; 
+    bool in_p1(int i) const { return (nirrep_ == 1 || p1_[i]); };
+    bool in_p2(int ij) const { return (nirrep_ == 1 || lambda_[ij]); };
     int  in_p4(int ij, int kl, int i, int j, int k, int l) const {
       if (nirrep_ == 1) return 1;
       const int shift = sizeof(int) * 4;
@@ -76,14 +76,14 @@ class Petite {
         const int gj = sym_shellmap_[j][iop];
         const int gk = sym_shellmap_[k][iop];
         const int gl = sym_shellmap_[l][iop];
-        const int gij = std::min(gi, gj) * nshell_ + std::max(gi, gj); 
-        const int gkl = std::min(gk, gl) * nshell_ + std::max(gk, gl); 
+        const int gij = std::min(gi, gj) * nshell_ + std::max(gi, gj);
+        const int gkl = std::min(gk, gl) * nshell_ + std::max(gk, gl);
         const int gijkl =  gij < gkl ? (gij << shift) + gkl : (gkl << shift) + gij;
 
         if (gijkl < ijkl) return 0;
         else if (gijkl == ijkl) ++nijkl;
       }
-      return nsymop_ / nijkl; 
+      return nsymop_ / nijkl;
     };
 
 };
@@ -92,14 +92,14 @@ class Petite {
 class Symmetry {
   protected:
     // vector of 9 doubles (xyz * xyz)
-    std::vector<std::vector<double> > symop_; 
+    std::vector<std::vector<double> > symop_;
   public:
     Symmetry() {};
     ~Symmetry() {};
 
     virtual int nirrep() const = 0;
     std::vector<std::vector<double> > symop() const { return symop_; };
-    
+
 };
 
 
@@ -109,16 +109,16 @@ class SymCs : public Symmetry {
   public:
     SymCs() : Symmetry() {
       std::vector<double> E, sigmaxy;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double sxya[9] = { 1.0,  0.0,  0.0,  
-                         0.0,  1.0,  0.0, 
+      double sxya[9] = { 1.0,  0.0,  0.0,
+                         0.0,  1.0,  0.0,
                          0.0,  0.0, -1.0};
-      sigmaxy.insert(sigmaxy.begin(), sxya, sxya + 9); 
+      sigmaxy.insert(sigmaxy.begin(), sxya, sxya + 9);
       symop_.push_back(sigmaxy);
 
     };
@@ -134,16 +134,16 @@ class SymCi : public Symmetry {
   public:
     SymCi() : Symmetry() {
       std::vector<double> E, I;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double Ia[9] = {-1.0,  0.0,  0.0,  
-                       0.0, -1.0,  0.0, 
+      double Ia[9] = {-1.0,  0.0,  0.0,
+                       0.0, -1.0,  0.0,
                        0.0,  0.0, -1.0};
-      I.insert(I.begin(), Ia, Ia + 9); 
+      I.insert(I.begin(), Ia, Ia + 9);
       symop_.push_back(I);
 
     };
@@ -159,16 +159,16 @@ class SymC2 : public Symmetry {
   public:
     SymC2() : Symmetry() {
       std::vector<double> E, C2;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double c2a[9] = {-1.0,  0.0,  0.0,  
-                        0.0, -1.0,  0.0, 
+      double c2a[9] = {-1.0,  0.0,  0.0,
+                        0.0, -1.0,  0.0,
                         0.0,  0.0,  1.0};
-      C2.insert(C2.begin(), c2a, c2a + 9); 
+      C2.insert(C2.begin(), c2a, c2a + 9);
       symop_.push_back(C2);
 
     };
@@ -184,28 +184,28 @@ class SymC2h : public Symmetry {
   public:
     SymC2h() : Symmetry() {
       std::vector<double> E, C2, I, sigmaxy;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double C2a[9] = {-1.0,  0.0,  0.0,  
-                        0.0, -1.0,  0.0, 
+      double C2a[9] = {-1.0,  0.0,  0.0,
+                        0.0, -1.0,  0.0,
                         0.0,  0.0,  1.0};
-      C2.insert(C2.begin(), C2a, C2a + 9); 
+      C2.insert(C2.begin(), C2a, C2a + 9);
       symop_.push_back(C2);
 
-      double Ia[9] = {-1.0,  0.0,  0.0,  
-                       0.0, -1.0,  0.0, 
+      double Ia[9] = {-1.0,  0.0,  0.0,
+                       0.0, -1.0,  0.0,
                        0.0,  0.0, -1.0};
-      I.insert(I.begin(), Ia, Ia + 9); 
+      I.insert(I.begin(), Ia, Ia + 9);
       symop_.push_back(I);
 
-      double sza[9] = { 1.0,  0.0,  0.0,  
-                        0.0,  1.0,  0.0, 
+      double sza[9] = { 1.0,  0.0,  0.0,
+                        0.0,  1.0,  0.0,
                         0.0,  0.0, -1.0};
-      sigmaxy.insert(sigmaxy.begin(), sza, sza + 9); 
+      sigmaxy.insert(sigmaxy.begin(), sza, sza + 9);
       symop_.push_back(sigmaxy);
     };
 
@@ -220,28 +220,28 @@ class SymD2 : public Symmetry {
   public:
     SymD2() : Symmetry() {
       std::vector<double> E, C2x, C2y, C2z;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double C2xa[9] = { 1.0,  0.0,  0.0,  
-                         0.0, -1.0,  0.0, 
+      double C2xa[9] = { 1.0,  0.0,  0.0,
+                         0.0, -1.0,  0.0,
                          0.0,  0.0, -1.0};
-      C2x.insert(C2x.begin(), C2xa, C2xa + 9); 
+      C2x.insert(C2x.begin(), C2xa, C2xa + 9);
       symop_.push_back(C2x);
 
-      double C2ya[9] = {-1.0,  0.0,  0.0,  
-                         0.0,  1.0,  0.0, 
+      double C2ya[9] = {-1.0,  0.0,  0.0,
+                         0.0,  1.0,  0.0,
                          0.0,  0.0, -1.0};
-      C2y.insert(C2y.begin(), C2ya, C2ya + 9); 
+      C2y.insert(C2y.begin(), C2ya, C2ya + 9);
       symop_.push_back(C2y);
 
-      double C2za[9] = {-1.0,  0.0,  0.0,  
-                         0.0, -1.0,  0.0, 
+      double C2za[9] = {-1.0,  0.0,  0.0,
+                         0.0, -1.0,  0.0,
                          0.0,  0.0,  1.0};
-      C2z.insert(C2z.begin(), C2za, C2za + 9); 
+      C2z.insert(C2z.begin(), C2za, C2za + 9);
       symop_.push_back(C2z);
 
     };
@@ -257,28 +257,28 @@ class SymC2v : public Symmetry {
   public:
     SymC2v() : Symmetry() {
       std::vector<double> E, C2, sigmaxz, sigmayz;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double C2a[9] = {-1.0,  0.0,  0.0,  
-                        0.0, -1.0,  0.0, 
+      double C2a[9] = {-1.0,  0.0,  0.0,
+                        0.0, -1.0,  0.0,
                         0.0,  0.0,  1.0};
-      C2.insert(C2.begin(), C2a, C2a + 9); 
+      C2.insert(C2.begin(), C2a, C2a + 9);
       symop_.push_back(C2);
 
-      double sxa[9] = { 1.0,  0.0,  0.0,  
-                        0.0, -1.0,  0.0, 
+      double sxa[9] = { 1.0,  0.0,  0.0,
+                        0.0, -1.0,  0.0,
                         0.0,  0.0,  1.0};
-      sigmaxz.insert(sigmaxz.begin(), sxa, sxa + 9); 
+      sigmaxz.insert(sigmaxz.begin(), sxa, sxa + 9);
       symop_.push_back(sigmaxz);
 
-      double sya[9] = {-1.0,  0.0,  0.0,  
-                        0.0,  1.0,  0.0, 
+      double sya[9] = {-1.0,  0.0,  0.0,
+                        0.0,  1.0,  0.0,
                         0.0,  0.0,  1.0};
-      sigmayz.insert(sigmayz.begin(), sya, sya + 9); 
+      sigmayz.insert(sigmayz.begin(), sya, sya + 9);
       symop_.push_back(sigmayz);
     };
 
@@ -292,52 +292,52 @@ class SymD2h : public Symmetry {
   public:
     SymD2h() : Symmetry() {
       std::vector<double> E, C2z, C2y, C2x, I, sigmaxy, sigmayz, sigmazx;
-      double Ea[9] = {1.0, 0.0, 0.0,  
-                      0.0, 1.0, 0.0, 
+      double Ea[9] = {1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
-      E.insert(E.begin(), Ea, Ea + 9); 
+      E.insert(E.begin(), Ea, Ea + 9);
       symop_.push_back(E);
 
-      double C2za[9] = {-1.0,  0.0,  0.0,  
-                         0.0, -1.0,  0.0, 
+      double C2za[9] = {-1.0,  0.0,  0.0,
+                         0.0, -1.0,  0.0,
                          0.0,  0.0,  1.0};
-      C2z.insert(C2z.begin(), C2za, C2za + 9); 
+      C2z.insert(C2z.begin(), C2za, C2za + 9);
       symop_.push_back(C2z);
 
-      double C2ya[9] = {-1.0,  0.0,  0.0,  
-                         0.0,  1.0,  0.0, 
+      double C2ya[9] = {-1.0,  0.0,  0.0,
+                         0.0,  1.0,  0.0,
                          0.0,  0.0, -1.0};
-      C2y.insert(C2y.begin(), C2ya, C2ya + 9); 
+      C2y.insert(C2y.begin(), C2ya, C2ya + 9);
       symop_.push_back(C2y);
 
-      double C2xa[9] = { 1.0,  0.0,  0.0,  
-                         0.0, -1.0,  0.0, 
+      double C2xa[9] = { 1.0,  0.0,  0.0,
+                         0.0, -1.0,  0.0,
                          0.0,  0.0, -1.0};
-      C2x.insert(C2x.begin(), C2xa, C2xa + 9); 
+      C2x.insert(C2x.begin(), C2xa, C2xa + 9);
       symop_.push_back(C2x);
 
-      double Ia[9]  = {-1.0,  0.0,  0.0,  
-                        0.0, -1.0,  0.0, 
+      double Ia[9]  = {-1.0,  0.0,  0.0,
+                        0.0, -1.0,  0.0,
                         0.0,  0.0, -1.0};
-      I.insert(I.begin(), Ia, Ia + 9); 
+      I.insert(I.begin(), Ia, Ia + 9);
       symop_.push_back(I);
 
-      double sxya[9] = { 1.0,  0.0,  0.0,  
-                         0.0,  1.0,  0.0, 
+      double sxya[9] = { 1.0,  0.0,  0.0,
+                         0.0,  1.0,  0.0,
                          0.0,  0.0, -1.0};
-      sigmaxy.insert(sigmaxy.begin(), sxya, sxya + 9); 
+      sigmaxy.insert(sigmaxy.begin(), sxya, sxya + 9);
       symop_.push_back(sigmaxy);
 
-      double syza[9] = {-1.0,  0.0,  0.0,  
-                         0.0,  1.0,  0.0, 
+      double syza[9] = {-1.0,  0.0,  0.0,
+                         0.0,  1.0,  0.0,
                          0.0,  0.0,  1.0};
-      sigmayz.insert(sigmayz.begin(), syza, syza + 9); 
+      sigmayz.insert(sigmayz.begin(), syza, syza + 9);
       symop_.push_back(sigmayz);
 
-      double szxa[9] = { 1.0,  0.0,  0.0,  
-                         0.0, -1.0,  0.0, 
+      double szxa[9] = { 1.0,  0.0,  0.0,
+                         0.0, -1.0,  0.0,
                          0.0,  0.0,  1.0};
-      sigmazx.insert(sigmazx.begin(), szxa, szxa + 9); 
+      sigmazx.insert(sigmazx.begin(), szxa, szxa + 9);
       symop_.push_back(sigmazx);
 
     };

@@ -34,7 +34,7 @@ namespace bagel {
 
 struct AtomMap {
   public:
-    AtomMap(); 
+    AtomMap();
     ~AtomMap();
 
     std::map<std::string, int> atommap;

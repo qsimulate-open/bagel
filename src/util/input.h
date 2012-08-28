@@ -37,7 +37,7 @@
 
 class InputData {
   protected:
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_; 
+    std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_;
     const std::string inputfile_;
 
   public:
@@ -48,7 +48,7 @@ class InputData {
       auto iter = data_.begin();
       for (; iter != data_.end(); ++iter) if (iter->first == t) break;
       if (iter == data_.end())
-        throw std::runtime_error(t + " does not appear to be present in your input"); 
+        throw std::runtime_error(t + " does not appear to be present in your input");
       return iter->second;
     };
 

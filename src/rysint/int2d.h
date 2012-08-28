@@ -24,7 +24,7 @@
 //
 
 #ifndef __src_rysint_int2d_h
-#define __src_rysint_int2d_h 
+#define __src_rysint_int2d_h
 
 #include <vector>
 #include <map>
@@ -37,9 +37,9 @@ class Int2D {
   protected:
 
     /// for recursion
-    double C00_[RYS_MAX]; 
-    double D00_[RYS_MAX]; 
-    double B00_[RYS_MAX]; 
+    double C00_[RYS_MAX];
+    double D00_[RYS_MAX];
+    double B00_[RYS_MAX];
     double B10_[RYS_MAX];
     double B01_[RYS_MAX];
 
@@ -52,7 +52,7 @@ class Int2D {
 
   public:
 
-    Int2D(const std::array<double, 11>&, const double*, const int, const int, double*, 
+    Int2D(const std::array<double, 11>&, const double*, const int, const int, double*,
           void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*));
     Int2D() {};
     ~Int2D();

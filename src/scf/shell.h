@@ -68,19 +68,19 @@ class Shell {
     double position(const int i) const { return position_[i]; };
     const std::array<double,3> position() const { return position_; };
     int angular_number() const { return angular_number_; };
-    double exponents(const int i) const { return exponents_[i]; }; 
+    double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };
     const double* exponents_pointer() const { return &(exponents_[0]); };
     const std::vector<double> contractions(const int i) const { return contractions_[i]; };
     const std::vector<std::vector<double> >& contractions() const { return contractions_; };
-    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; }; 
-    const std::vector<std::pair<int, int> >& contraction_ranges() const { return contraction_ranges_; }; 
+    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; };
+    const std::vector<std::pair<int, int> >& contraction_ranges() const { return contraction_ranges_; };
 
-    const std::vector<int>& contraction_upper() const { return contraction_upper_; }; 
-    const std::vector<int>& contraction_lower() const { return contraction_lower_; }; 
+    const std::vector<int>& contraction_upper() const { return contraction_upper_; };
+    const std::vector<int>& contraction_lower() const { return contraction_lower_; };
 
     const std::string show() const;
-    int nbasis() const { return nbasis_; }; 
+    int nbasis() const { return nbasis_; };
 
     std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
     std::shared_ptr<const Shell> move_atom(const double*) const;

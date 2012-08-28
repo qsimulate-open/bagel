@@ -73,8 +73,8 @@ class RotFile {
     RotFile& operator-=(const RotFile& o);
     RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; };
     RotFile& operator/=(const RotFile& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; };
-    RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; }; 
-    RotFile operator=(const RotFile& o) { std::copy(o.data(), o.data()+size(), data());  return *this; }; 
+    RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; };
+    RotFile operator=(const RotFile& o) { std::copy(o.data(), o.data()+size(), data());  return *this; };
 
     // size of the file
     int size() const { return size_; };
@@ -82,20 +82,20 @@ class RotFile {
     void zero() { std::fill(data(), data()+size_, 0.0); };
     // returns dot product
     double ddot(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); };
-    double ddot(const std::shared_ptr<const RotFile> o) const { return ddot(*o); }; 
+    double ddot(const std::shared_ptr<const RotFile> o) const { return ddot(*o); };
     // returns norm of the vector
     double norm() const { return std::sqrt(ddot(*this)); };
     // daxpy added to self
-    void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }; 
-    void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy_(size_, a, o->data(), 1, data(), 1); }; 
+    void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); };
+    void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy_(size_, a, o->data(), 1, data(), 1); };
     // orthogonalize to the liset of RotFile's
     double orthog(std::list<std::shared_ptr<const RotFile> > c);
 
     // return data_
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
-    double& data(const size_t i) { return data_[i]; }; 
-    const double& data(const size_t i) const { return data_[i]; }; 
+    double& data(const size_t i) { return data_[i]; };
+    const double& data(const size_t i) const { return data_[i]; };
     // return data_
     double* begin() { return data(); };
     // return data_
@@ -157,7 +157,7 @@ class QFile {
       const int nc = na_; assert(nc == o.nb_);
       const int m = o.na_;
       QFile out(m, n);
-      dgemm_("N", "N", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n); 
+      dgemm_("N", "N", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n);
       return out;
     };
 
@@ -180,7 +180,7 @@ class QFile {
       const int nc = nb_; assert(nc == o.nb_);
       const int m = o.na_;
       QFile out(m, n);
-      dgemm_("T", "N", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n); 
+      dgemm_("T", "N", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n);
       return out;
     };
 
@@ -189,24 +189,24 @@ class QFile {
       const int nc = na_; assert(nc == o.na_);
       const int m = o.nb_;
       QFile out(m, n);
-      dgemm_("N", "T", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n); 
+      dgemm_("N", "T", n, m, nc, 1.0, data(), n, o.data(), nc, 0.0, out.data(), n);
       return out;
     };
 
 
     QFile& operator+=(const QFile& o) {
-      daxpy_(nb_*na_, 1.0, o.data(), 1, data(), 1); return *this; 
+      daxpy_(nb_*na_, 1.0, o.data(), 1, data(), 1); return *this;
     };
 
     QFile operator+(const QFile& o) {
       QFile tmp(*this);
-      daxpy_(nb_*na_, 1.0, o.data(), 1, tmp.data(), 1); 
+      daxpy_(nb_*na_, 1.0, o.data(), 1, tmp.data(), 1);
       return tmp;
     };
 
     QFile operator-(const QFile& o) {
       QFile tmp(*this);
-      daxpy_(nb_*na_, -1.0, o.data(), 1, tmp.data(), 1); 
+      daxpy_(nb_*na_, -1.0, o.data(), 1, tmp.data(), 1);
       return tmp;
     };
 
@@ -220,7 +220,7 @@ class QFile {
       const double* d = data();
       for (int i = 0; i != na_; ++i) {
         for (int j = 0; j != nb_; ++j, ++d)
-          std::cout << std::setw(12) << std::setprecision(8) << *d; 
+          std::cout << std::setw(12) << std::setprecision(8) << *d;
         std::cout << std::fixed << std::endl;
       }
     };

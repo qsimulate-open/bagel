@@ -44,7 +44,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
     // Geometry which this wave function is beloinging to
-    const std::shared_ptr<const Geometry> geom_; 
+    const std::shared_ptr<const Geometry> geom_;
     // MO coefficients
     const std::shared_ptr<const Coeff> coeff_;
     // in case of spin-broken wave functions (UHF)
@@ -110,16 +110,16 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     double energy() const { return energy_; };
 
-    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }; 
-    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; }; 
+    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); };
+    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
 
     // returns an occ-occ sized 1RDM
-    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const; 
+    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const;
     std::shared_ptr<Matrix1e> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
     std::shared_ptr<Matrix1e> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
 
-    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }; 
-    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; }; 
+    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); };
+    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<Dvec> civectors() const;

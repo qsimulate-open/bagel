@@ -52,7 +52,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
     int info;
     const int lwork = 5 * nbasis_;
     unique_ptr<double[]> work(new double[lwork]);
-    dsyev_("V", "L", ndim_, data(), ndim_, eig.get(), work.get(), lwork, info); 
+    dsyev_("V", "L", ndim_, data(), ndim_, eig.get(), work.get(), lwork, info);
     if(info) throw runtime_error("dsyev in tildex failed.");
   }
   const double largest = fabs(eig[ndim_ - 1]);
@@ -63,7 +63,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
     if (fabs(eig[i]) < largest * thresh) ++cnt;
     else break;
   }
-  if (cnt != 0) 
+  if (cnt != 0)
     cout << "  Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s") << " in the orthogonalization." << endl << endl;
 
   for (int i = cnt; i != ndim_; ++i) {
@@ -74,25 +74,25 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
 #endif
     const int offset = i * ndim_;
     for (int j = 0; j != ndim_; ++j) {
-      data_[j + offset] *= scale; 
+      data_[j + offset] *= scale;
     }
   }
 #ifdef USE_CANONICAL
   mdim_ = ndim_ - cnt;
-  if (cnt != 0) { 
+  if (cnt != 0) {
     for (int i = 0; i != mdim_; ++i) {
-      dcopy_(ndim_, data()+(i+cnt)*ndim_, 1, data()+i*ndim_, 1); 
+      dcopy_(ndim_, data()+(i+cnt)*ndim_, 1, data()+i*ndim_, 1);
     }
   }
 #else
   {
     mdim_ = ndim_;
     unique_ptr<double[]> tmp(new double[size]);
-    dgemm_("N", "T", ndim_, ndim_, ndim_-cnt, 1.0, data()+cnt*ndim_, ndim_, data()+cnt*ndim_, ndim_, 0.0, tmp.get(), ndim_); 
+    dgemm_("N", "T", ndim_, ndim_, ndim_-cnt, 1.0, data()+cnt*ndim_, ndim_, data()+cnt*ndim_, ndim_, 0.0, tmp.get(), ndim_);
     dcopy_(size, tmp, 1, data_, 1);
   }
 #endif
-  
+
 
 }
 

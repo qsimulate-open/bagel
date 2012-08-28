@@ -24,7 +24,7 @@
 //
 
 
-// compressed file of double 
+// compressed file of double
 
 #ifndef __src_util_paircompfile_h
 #define __src_util_paircompfile_h
@@ -46,8 +46,8 @@ class PairCompFile {
     void eval_new_block(double*, double*, int, int, int);
 
   public:
-    PairCompFile(std::shared_ptr<PGeometry>, const double, const std::string); 
-    ~PairCompFile(); 
+    PairCompFile(std::shared_ptr<PGeometry>, const double, const std::string);
+    ~PairCompFile();
     void store_integrals();
     void reopen_with_inout();
 
@@ -86,11 +86,11 @@ void PairCompFile<T>::init_schwarz() {
   typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = files_.first->basissize(); // the number of shells per unit cell
-  const int K = files_.first->K(); 
+  const int K = files_.first->K();
   std::vector<double> schwarz1(size * size * (2 * K + 1));
   std::vector<double> schwarz2(size * size * (2 * K + 1));
 
-  for (int m = - K; m <= K; ++m) { 
+  for (int m = - K; m <= K; ++m) {
     const double disp[3] = {0.0, 0.0, m * files_.first->A()};
     for (int i0 = 0; i0 != size; ++i0) { // center unit cell
       const RefShell b0 = files_.first->basis(i0);
@@ -124,7 +124,7 @@ void PairCompFile<T>::init_schwarz() {
   std::cout << "debug in util/paircompfile.h" << std::endl;
   std::cout << std::scientific << files_.first->schwarz(0) << std::endl;
 #endif
-   
+
 };
 
 
@@ -150,46 +150,46 @@ void PairCompFile<T>::calculate_num_int_each() {
 //#pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
     const double A = first->A();
-    const double m1disp[3] = {0.0, 0.0, m1 * A}; 
+    const double m1disp[3] = {0.0, 0.0, m1 * A};
     size_t offset = (m1 + S) * (L + 1) * (S * 2 + 1);
     for (int m2 = 0; m2 <= L; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * A}; 
+      const double m2disp[3] = {0.0, 0.0, m2 * A};
       for (int m3 = m2 - S; m3 <= m2 + S; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3 * A}; 
-        size_t thisblock1 = 0ul; 
-        size_t thisblock2 = 0ul; 
+        const double m3disp[3] = {0.0, 0.0, m3 * A};
+        size_t thisblock1 = 0ul;
+        size_t thisblock2 = 0ul;
         for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = first->offset(i0); 
+          const int b0offset = first->offset(i0);
           const int b0size = first->basis(i0)->nbasis();
 
           for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = first->offset(i1); 
+            const int b1offset = first->offset(i1);
             const int b1size = first->basis(i1)->nbasis();
 
             for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = first->offset(i2); 
+              const int b2offset = first->offset(i2);
               const int b2size = first->basis(i2)->nbasis();
 
               for (int i3 = 0; i3 != size; ++i3) {
-                const int b3offset = first->offset(i3); 
+                const int b3offset = first->offset(i3);
                 const int b3size = first->basis(i3)->nbasis();
 
                 {
                   const double integral_bound = first->schwarz((m1 + K) * size * size + i0 * size + i1)
                                               * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
                   const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-                  if (!skip_schwarz) { 
+                  if (!skip_schwarz) {
                     data_written1 += b0size * b1size * b2size * b3size;
-                    thisblock1 += b0size * b1size * b2size * b3size; 
+                    thisblock1 += b0size * b1size * b2size * b3size;
                   }
                 }
                 {
                   const double integral_bound = second->schwarz((m1 + K) * size * size + i0 * size + i1)
                                               * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
                   const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-                  if (!skip_schwarz) { 
+                  if (!skip_schwarz) {
                     data_written2 += b0size * b1size * b2size * b3size;
-                    thisblock2 += b0size * b1size * b2size * b3size; 
+                    thisblock2 += b0size * b1size * b2size * b3size;
                   }
                 }
 
@@ -239,9 +239,9 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 
   const int K = first->K();
   const double A = first->A();
-  const double m1disp[3] = {0.0, 0.0, m1 * A}; 
-  const double m2disp[3] = {0.0, 0.0, m2 * A}; 
-  const double m3disp[3] = {0.0, 0.0, m3 * A}; 
+  const double m1disp[3] = {0.0, 0.0, m1 * A};
+  const double m2disp[3] = {0.0, 0.0, m2 * A};
+  const double m3disp[3] = {0.0, 0.0, m3 * A};
 
   const int size = first->basissize(); // number of shells
   int* blocks1 = new int[size * size * size * size + 1];
@@ -261,13 +261,13 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
             const double integral_bound = first->schwarz((m1 + K) * size * size + i0 * size + i1)
                                         * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
             const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-            blocks1[iall + 1] = blocks1[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+            blocks1[iall + 1] = blocks1[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
           }
           {
             const double integral_bound = second->schwarz((m1 + K) * size * size + i0 * size + i1)
                                         * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
             const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
-            blocks2[iall + 1] = blocks2[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size)); 
+            blocks2[iall + 1] = blocks2[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
           }
         }
       }
@@ -276,12 +276,12 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 //#pragma omp parallel for
   for (int i0 = 0; i0 < size; ++i0) {
     const RefShell b0 = first->basis(i0); // b0 is the center cell
-    const int b0offset_ = first->offset(i0); 
+    const int b0offset_ = first->offset(i0);
     const int b0size = b0->nbasis();
-    int offset = i0 * size * size * size; 
+    int offset = i0 * size * size * size;
 
     for (int i1 = 0; i1 != size; ++i1) {
-      const RefShell b1 = first->basis(i1)->move_atom(m1disp); 
+      const RefShell b1 = first->basis(i1)->move_atom(m1disp);
       const int b1offset_ = first->offset(i1);
       const int b1size = b1->nbasis();
 
@@ -294,7 +294,7 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           const RefShell b3 = first->basis(i3)->move_atom(m3disp);
           const int b3offset_ = first->offset(i3);
           const int b3size = b3->nbasis();
-        
+
           const bool skip_schwarz1 = blocks1[offset] == blocks1[offset + 1];
           const bool skip_schwarz2 = blocks2[offset] == blocks2[offset + 1];
           if (skip_schwarz1 && skip_schwarz2) continue;
@@ -345,7 +345,7 @@ void PairCompFile<T>::store_integrals() {
         second->append(second->num_int_each(cnt), dcache2);
       }
     }
-  } 
+  }
   delete[] dcache1;
   delete[] dcache2;
 };

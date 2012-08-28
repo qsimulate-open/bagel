@@ -36,13 +36,13 @@ namespace bagel {
 
 class SymMat : public Matrix1e {
   protected:
-    std::shared_ptr<SymRotAbel> symrot_; 
-    std::shared_ptr<Petite> petite_; 
+    std::shared_ptr<SymRotAbel> symrot_;
+    std::shared_ptr<Petite> petite_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override {};
 
   public:
     SymMat(const std::shared_ptr<const Geometry>, const int);
-    ~SymMat(); 
+    ~SymMat();
 
 };
 

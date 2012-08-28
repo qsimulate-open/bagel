@@ -64,7 +64,7 @@ class PMOFile : public PFile<T> {
         const int, const int,
         const int, const int,
         const std::map<size_t, size_t>&, const bool late_init = false);
-    ~PMOFile(); 
+    ~PMOFile();
 
     std::map<size_t, size_t>::const_iterator oiter(int i, int j, int a, int b) const {
       const int k = this->K_;
@@ -358,12 +358,12 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > o
 
   const int k2 = std::max(k+k, 1);
 
-  size_t current = 0lu; 
-  for (int kj = -k; kj < std::max(k, 1); ++kj) { 
+  size_t current = 0lu;
+  for (int kj = -k; kj < std::max(k, 1); ++kj) {
     for (int ki = -k; ki < std::max(k, 1); ++ki) {
-      for (int kn = -k; kn < std::max(k, 1); ++kn) { 
+      for (int kn = -k; kn < std::max(k, 1); ++kn) {
         for (int km = -k; km < std::max(k, 1); ++km) {
-          if ((km + kn - ki - kj) % k2 != 0) continue; 
+          if ((km + kn - ki - kj) % k2 != 0) continue;
 
           // block index is in Physicists' notation!!!
           const T zero = 0.0;
@@ -371,7 +371,7 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > o
 
           for (int ka = -k; ka < std::max(k, 1); ++ka) {
             for (int kb = -k; kb < std::max(k, 1); ++kb) {
-              if ((ka + kb - ki - kj) % k2 != 0) continue; 
+              if ((ka + kb - ki - kj) % k2 != 0) continue;
 
               get_block2(ki, kj, ka, kb, buffer1);
               other->get_block2(km, kn, ka, kb, buffer2);
@@ -573,8 +573,8 @@ void PMOFile<T>::print() const {
 
 template<class T>
 void PMOFile<T>::rprint() const {
-  const int isize = ifence_ - istart_;  
-  const int jsize = jfence_ - jstart_;  
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
   const size_t ijsize = isize * jsize;
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
@@ -613,8 +613,8 @@ void PMOFile<T>::rprint() const {
 
 template<class T>
 T PMOFile<T>::get_energy_one_amp() const {
-  const int isize = ifence_ - istart_;  
-  const int jsize = jfence_ - jstart_;  
+  const int isize = ifence_ - istart_;
+  const int jsize = jfence_ - jstart_;
   const size_t ijsize = isize * jsize;
   assert(isize == jsize && isize == (afence_ - astart_) && jsize == (bfence_ - astart_));
   const int k = this->K_;

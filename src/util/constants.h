@@ -33,7 +33,7 @@
 *  Physical/Mathematical constants                          *
 ************************************************************/
 static const double ang2bohr__ = 1.889725989;
-static const double pi__ = std::atan(1.0)*4.0; 
+static const double pi__ = std::atan(1.0)*4.0;
 static const double rad2deg__ = 180.0 / pi__;
 
 /************************************************************

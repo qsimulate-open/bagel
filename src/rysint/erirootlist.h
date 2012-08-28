@@ -40,7 +40,7 @@ struct ERIRootList  {
       return (rfunc[i])(a1, a2, a3, a4);
     };
 
-}; 
+};
 
 #endif
 

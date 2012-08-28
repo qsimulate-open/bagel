@@ -35,9 +35,9 @@ namespace bagel {
 
 class Jvec {
   protected:
-    std::shared_ptr<const DF_Half> half_; 
+    std::shared_ptr<const DF_Half> half_;
     std::shared_ptr<const DF_Full> jvec_;
-    std::unique_ptr<double[]> rdm2_all_; 
+    std::unique_ptr<double[]> rdm2_all_;
 
   public:
     Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<const Coeff> c, const size_t, const size_t, const size_t);

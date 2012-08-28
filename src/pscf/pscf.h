@@ -34,7 +34,7 @@
 #include <src/pscf/phcore.h>
 #include <src/pscf/pfock.h>
 #include <src/pscf/ptildex.h>
-#include <src/util/pdata.h> 
+#include <src/util/pdata.h>
 #include <src/pscf/pcoeff.h>
 #include <src/rysint/eribatch.h>
 

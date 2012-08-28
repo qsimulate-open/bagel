@@ -37,7 +37,7 @@ class SMITH_info {
     double thresh_residual_;
 
   public:
-    SMITH_info(); 
+    SMITH_info();
     ~SMITH_info();
 
     int maxiter() const { return maxiter_; };

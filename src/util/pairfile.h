@@ -57,12 +57,12 @@ class PairFile {
     PairFile<T, U> operator+(const PairFile<T, U>& o) const {
       std::shared_ptr<T> a0(new T(*first())); *a0 += *o.first();
       std::shared_ptr<U> a1(new U(*second())); *a1 += *o.second();
-      return PairFile(a0, a1); 
+      return PairFile(a0, a1);
     };
     PairFile<T, U> operator-(const PairFile<T, U>& o) const {
       std::shared_ptr<T> a0(new T(*first())); *a0 -= *o.first();
       std::shared_ptr<U> a1(new U(*second())); *a1 -= *o.second();
-      return PairFile(a0, a1); 
+      return PairFile(a0, a1);
     };
     PairFile<T, U>& operator+=(const PairFile<T, U>& o) { *first()+=*o.first(); *second()+=*o.second(); return *this; };
     PairFile<T, U>& operator-=(const PairFile<T, U>& o) { *first()-=*o.first(); *second()-=*o.second(); return *this; };
@@ -75,7 +75,7 @@ class PairFile {
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; };
 
     // lapack functions
-    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
+    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
 #ifndef DEBUG_ORBITAL
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
 #else
@@ -97,7 +97,7 @@ class PairFile {
       }
       const double scal = 1.0/this->norm();
       scale(scal);
-      return 1.0/scal; 
+      return 1.0/scal;
     };
 
 };

@@ -48,7 +48,7 @@ class Storage_base {
     // this relates hash keys, block number, and block lengths (in this order).
     std::map<size_t, std::pair<size_t, size_t> > hashtable_;
     std::vector<bool> initialized_;
-    
+
 
   public:
     // size contains hashkey and length (in this order)
@@ -57,8 +57,8 @@ class Storage_base {
       size_t cnt = 0;
       for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
         auto j = hashtable_.insert(std::make_pair(i->first, std::make_pair(cnt, i->second)));
-        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage"); 
-        length_ += i->second; 
+        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
+        length_ += i->second;
       }
       std::vector<bool> tmp(cnt, init);
       initialized_ = tmp;

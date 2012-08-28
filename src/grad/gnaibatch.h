@@ -41,7 +41,7 @@ class GNAIBatch : public NAIBatch_base {
     std::tuple<int,int> iatom_;
 
   public:
-    
+
     GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const std::tuple<int,int> i,
               const int L = 0, const double A = 0.0)
       :  NAIBatch_base(_info, gm, 1, L, A), iatom_(i) {

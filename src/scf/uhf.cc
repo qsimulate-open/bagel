@@ -46,7 +46,7 @@ void UHF::compute() {
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
-  cout << endl; 
+  cout << endl;
   cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
             << endl << endl;
   cout << indent << "=== UHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
@@ -76,7 +76,7 @@ void UHF::compute() {
     shared_ptr<Matrix1e> error_vector(new Matrix1e(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                                        +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
-    
+
     const double error = error_vector->rms();
 
     energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
@@ -86,7 +86,7 @@ void UHF::compute() {
     auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2)
-                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl; 
+                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
@@ -136,7 +136,7 @@ void UHF::print_S2(const string tag) const {
 tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
   shared_ptr<Matrix1e> cinv(new Matrix1e(*coeff_));
   cinv->inverse(); // TODO maybe unnecessary
-  shared_ptr<Matrix1e> intermediate(new Matrix1e(*cinv * *aodensity_ ^ *cinv)); 
+  shared_ptr<Matrix1e> intermediate(new Matrix1e(*cinv * *aodensity_ ^ *cinv));
   *intermediate *= -1.0;
   unique_ptr<double[]> occup(new double[geom_->nbasis()]);
   intermediate->diagonalize(occup.get());
@@ -161,7 +161,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
       ra->element(j,i) = amat->element(j,i) * 0.5;
       rb->element(j,i) = bmat->element(j,i) * 0.5;
     }
-  } 
+  }
 
   vector<shared_ptr<RDM<1> > > rdm(1,r);
   rdm.push_back(ra);
@@ -189,7 +189,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
   *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
   *erdm *= 0.5;
   out->set_erdm1(erdm);
-  
+
   // this is just dummy...
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);

@@ -49,11 +49,11 @@ double mp2_energy() {
   assert(false);
   return 0.0;
 }
- 
+
 BOOST_AUTO_TEST_SUITE(TEST_MP2)
- 
+
 BOOST_AUTO_TEST_CASE(MP2) {
     BOOST_CHECK(compare(mp2_energy(), -231.31440958));
 }
- 
+
 BOOST_AUTO_TEST_SUITE_END()

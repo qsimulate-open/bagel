@@ -55,9 +55,9 @@ class GradFile {
     double* data() { return &data_[0]; };
     const double* data() const { return &data_[0]; };
     const std::vector<double>& data_vec() const { return data_; };
-    size_t size() const { return data_.size(); }; 
+    size_t size() const { return data_.size(); };
 
-    void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); }; 
+    void daxpy(const double a, const GradFile& o) { daxpy_(size(), a, o.data(), 1, data(), 1); };
     void daxpy(const double a, const std::shared_ptr<const GradFile> o) { daxpy(a, *o); };
 
     GradFile operator+(const GradFile& o) const;
