@@ -35,6 +35,8 @@
 #include <stdexcept>
 #include <boost/lexical_cast.hpp>
 
+namespace bagel {
+
 class InputData {
   protected:
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_;
@@ -68,5 +70,7 @@ template <typename T> T read_input(const std::multimap<std::string, std::string>
   if (iter != idat.end()) out = boost::lexical_cast<T>(iter->second);
   return out;
 };
+
+}
 
 #endif

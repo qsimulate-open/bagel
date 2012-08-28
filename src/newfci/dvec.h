@@ -40,6 +40,8 @@
 // TODO The NewDvec class is NOT yet flexible for NewCivectors with different NewDeterminants objects.
 // This can be easily done by modifing what follows.
 
+namespace bagel {
+
 class NewDvec {
   protected:
     // the determinant space where NewDvec's are sitting
@@ -59,7 +61,7 @@ class NewDvec {
 
     NewDvec(std::shared_ptr<const NewCivec> e, const size_t ij);
 
-    // I think this is very confusiong... this is done this way in order not to delete NewCivec when NewDvec is deleted. 
+    // I think this is very confusiong... this is done this way in order not to delete NewCivec when NewDvec is deleted.
     NewDvec(std::shared_ptr<const NewDvec> o);
 
     NewDvec(std::vector<std::shared_ptr<NewCivec> > o);
@@ -112,5 +114,6 @@ class NewDvec {
     void print(const double thresh = 0.05) const;
 };
 
+}
 
 #endif

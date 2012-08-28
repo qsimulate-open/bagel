@@ -29,6 +29,8 @@
 
 #include <string>
 
+namespace bagel {
+
 class Filename {
   private:
 
@@ -38,5 +40,7 @@ class Filename {
 
     const std::string filename_next() const;
 };
+
+}
 
 #endif

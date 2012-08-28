@@ -33,6 +33,7 @@
 #include <boost/regex.hpp>
 
 using namespace std;
+using namespace bagel;
 
 InputData::InputData(const string filename) : inputfile_(filename) {
   ifstream ifs;

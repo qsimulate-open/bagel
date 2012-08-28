@@ -32,6 +32,8 @@
 #include <stdexcept>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template<typename T>
 class AugHess {
 
@@ -126,5 +128,7 @@ class AugHess {
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 };
+
+}
 
 #endif

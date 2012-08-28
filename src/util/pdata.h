@@ -30,6 +30,8 @@
 #include <complex>
 #include <algorithm>
 
+namespace bagel {
+
 class PData {
   protected:
     std::complex<double>* data_;
@@ -49,5 +51,7 @@ class PData {
     std::complex<double>* pointer(size_t j) { return data_ + j; };
 
 };
+
+}
 
 #endif

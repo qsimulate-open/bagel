@@ -40,6 +40,8 @@
 // TODO The Dvec class is NOT yet flexible for Civectors with different Determinants objects.
 // This can be easily done by modifing what follows.
 
+namespace bagel {
+
 class Dvec {
   protected:
     // the determinant space where Dvec's are sitting
@@ -112,5 +114,6 @@ class Dvec {
     void print(const double thresh = 0.05) const;
 };
 
+}
 
 #endif

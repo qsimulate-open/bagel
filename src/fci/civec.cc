@@ -27,6 +27,7 @@
 #include <src/fci/civec.h>
 
 using namespace std;
+using namespace bagel;
 
 Civec::Civec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);

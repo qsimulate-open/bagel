@@ -27,6 +27,7 @@
 #include <src/newfci/civec.h>
 
 using namespace std;
+using namespace bagel;
 
 NewCivec::NewCivec(shared_ptr<const NewDeterminants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
@@ -58,8 +59,8 @@ NewCivec::NewCivec(shared_ptr<NewCivec> o, shared_ptr<const NewDeterminants> det
 
 shared_ptr<NewCivec> NewCivec::transpose() const {
   shared_ptr<NewCivec> ct(new NewCivec(det_));
-  double* cct = ct->data(); 
-  mytranspose_(cc(), &lenb_, &lena_, cct); 
+  double* cct = ct->data();
+  mytranspose_(cc(), &lenb_, &lena_, cct);
   return ct;
 }
 
@@ -95,7 +96,7 @@ double NewCivec::orthog(list<shared_ptr<const NewCivec> > c) {
   const double norm = this->norm();
   const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
   dscal_(lena_*lenb_, scal, cc(), 1);
-  return 1.0/scal; 
+  return 1.0/scal;
 }
 
 double NewCivec::orthog(shared_ptr<const NewCivec> o) {

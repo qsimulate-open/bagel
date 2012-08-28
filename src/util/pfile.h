@@ -35,6 +35,8 @@
 #include <src/util/filename.h>
 #include <src/util/cache.h>
 
+namespace bagel {
+
 template<class T>
 class PFile {
   protected:
@@ -199,6 +201,7 @@ void PFile<T>::clear() {
   }
 };
 
+}
 
 #endif
 

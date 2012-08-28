@@ -29,6 +29,7 @@
 #include <src/util/combination.hpp>
 
 using namespace std;
+using namespace bagel;
 
 const static Comb comb;
 

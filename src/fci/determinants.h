@@ -39,6 +39,8 @@
 #include <nmmintrin.h>
 #endif
 
+namespace bagel {
+
 static int numofbits(unsigned int bits) {
 #ifndef USE_SSE42_INTRINSICS
   bits = (bits & 0x55555555) + (bits >> 1 & 0x55555555); bits = (bits & 0x33333333) + (bits >> 2 & 0x33333333);
@@ -202,5 +204,6 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
 #endif
 };
 
+}
 
 #endif

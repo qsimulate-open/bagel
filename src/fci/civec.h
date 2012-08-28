@@ -35,6 +35,8 @@
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
 
+namespace bagel {
+
 class Civec {
   protected:
     // The determinant space in which this Civec object is defined
@@ -115,5 +117,6 @@ class Civec {
     void print(const double& thresh) const { det_->print(data(), thresh); };
 };
 
+}
 
 #endif

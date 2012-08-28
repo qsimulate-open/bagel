@@ -36,6 +36,8 @@
 // which have daxpy and ddot functions.
 // T must have clone() function that returns shared_ptr<T>
 
+namespace bagel {
+
 template <class T>
 class DIIS {
   typedef std::shared_ptr<const T> RefT;
@@ -109,6 +111,8 @@ class DIIS {
     };
 
 };
+
+}
 
 #endif
 

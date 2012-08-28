@@ -28,6 +28,7 @@
 #include <sstream>
 
 using namespace std;
+using namespace bagel;
 
 static unsigned int counter_ = 0;
 

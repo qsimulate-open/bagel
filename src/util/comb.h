@@ -30,6 +30,8 @@
 
 #include <algorithm>
 
+namespace bagel {
+
 class Comb {
     std::vector<unsigned int> c_;
     static const int max_ = 32;
@@ -600,3 +602,6 @@ int main() {
   return 0;
 }
 #endif
+
+
+}

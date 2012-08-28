@@ -27,6 +27,7 @@
 #include <src/fci/dvec.h>
 
 using namespace std;
+using namespace bagel;
 
 Dvec::Dvec(shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
   // data should be in a consecutive area to call dgemm.

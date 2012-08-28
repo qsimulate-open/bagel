@@ -38,6 +38,8 @@
 #include <stdexcept>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template <typename T>
 class DavidsonDiag {
   protected:
@@ -142,5 +144,7 @@ class DavidsonDiag {
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 };
+
+}
 
 #endif

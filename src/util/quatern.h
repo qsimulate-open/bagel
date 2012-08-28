@@ -37,6 +37,8 @@
 // Implements Quaternion for a Dirac equation solver
 // T SHOULD NOT BE A POINTER!!
 
+namespace bagel {
+
 template<typename T>
 class Quatern {
   protected:
@@ -98,5 +100,7 @@ template<> void Quatern<double>::print() const;
 template<> double Quatern<double>::norm() const;
 template<> double Quatern<double>::ddot(const Quatern<double>& o) const;
 template<> void Quatern<double>::normalize();
+
+}
 
 #endif

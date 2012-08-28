@@ -30,6 +30,7 @@
 #include <src/util/combination.hpp>
 
 using namespace std;
+using namespace bagel;
 
 Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress)
   : norb_(_norb), nelea_(_nelea), neleb_(_neleb), M_(_M), compress_(_compress) {

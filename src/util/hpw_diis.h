@@ -38,6 +38,8 @@
 #include <src/util/diis.h>
 #include <src/util/bfgs.h>
 
+namespace bagel {
+
 template<class T>
 class HPW_DIIS  {
   typedef std::shared_ptr<const T> RefT;
@@ -71,5 +73,7 @@ class HPW_DIIS  {
     };
 
 };
+
+}
 
 #endif

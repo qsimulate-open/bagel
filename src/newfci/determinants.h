@@ -43,6 +43,8 @@
 #include <nmmintrin.h>
 #endif
 
+namespace bagel {
+
 /*
 static int numofbits(unsigned int bits) {
 #ifndef USE_SSE42_INTRINSICS
@@ -60,7 +62,7 @@ class NewDeterminants {
   friend class Space; // TODO Is this correct?
 
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta. 
+    // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
 
     const int nelea_;
@@ -92,7 +94,7 @@ class NewDeterminants {
     int sign(std::bitset<nbit__> bit, int i, int j) {
       // masking irrelevant bits
       std::bitset<nbit__> ii(~((1 << (std::min(i,j)+1)) - 1));
-      std::bitset<nbit__> jj(((1 << (std::max(i,j))) - 1)); 
+      std::bitset<nbit__> jj(((1 << (std::max(i,j))) - 1));
       bit = (bit & ii) & jj;
       return 1 - ((bit.count() & 1) << 1);
     };
@@ -101,7 +103,7 @@ class NewDeterminants {
     template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
       unsigned int out = 0;
       int k = 0;
-      for (int i = 0; i != norb_; ++i) 
+      for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += zkl(k,i, spin); ++k; }
       return out;
     };
@@ -109,7 +111,7 @@ class NewDeterminants {
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
       std::vector<int> out;
-      for (int i = 0; i != bit.size(); ++i) if (bit[i]) out.push_back(i); 
+      for (int i = 0; i != bit.size(); ++i) if (bit[i]) out.push_back(i);
       return out;
     };
 
@@ -130,7 +132,7 @@ class NewDeterminants {
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phidownb_;
 
   public:
-    NewDeterminants(const int norb, const int nelea, const int neleb, const bool compress = true); 
+    NewDeterminants(const int norb, const int nelea, const int neleb, const bool compress = true);
     ~NewDeterminants() {};
 
     // static constants
@@ -138,19 +140,19 @@ class NewDeterminants {
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
+    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); };
 
     size_t lena() const { return stringa_.size(); };
     size_t lenb() const { return stringb_.size(); };
 
     std::string print_bit(std::bitset<nbit__> bit) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i) { if (bit[i]) { out += "1"; } else { out += "."; } }
       return out;
     };
 
     std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i) {
         if (bit1[i] && bit2[i]) { out += "2"; }
         else if (bit1[i]) { out += "a"; }
@@ -168,7 +170,7 @@ class NewDeterminants {
 
     std::pair<std::vector<std::tuple<int, int, int> >, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
-    int nspin() const { return nelea_ - neleb_; }; 
+    int nspin() const { return nelea_ - neleb_; };
     int nelea() const { return nelea_; };
     int neleb() const { return neleb_; };
 
@@ -198,19 +200,19 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       // compress_ means that we store info only for i <= j
       if ((*iter)[i] && compress_) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
-            const int minij = std::min(i,j); 
+            const int minij = std::min(i,j);
             const int maxij = std::max(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if ((*iter)[i]) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
@@ -231,5 +233,6 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
 #endif
 };
 
+}
 
 #endif

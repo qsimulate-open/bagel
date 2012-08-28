@@ -35,6 +35,8 @@
 #include <src/util/f77.h>
 #include <src/newfci/determinants.h>
 
+namespace bagel {
+
 class NewCivec {
   protected:
     // The determinant space in which this NewCivec object is defined
@@ -70,14 +72,14 @@ class NewCivec {
     ~NewCivec() { };
 
     double* data() { return cc(); };
-    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
-    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST
+    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     double& data(const int& i) { return cc(i); };
     const double& data(const int& i) const { return cc(i); };
 
     const double* data() const { return cc(); };
-    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     std::shared_ptr<const NewDeterminants> det() const { return det_; };
     void set_det(std::shared_ptr<const NewDeterminants> o) const { det_ = o; };
@@ -106,7 +108,7 @@ class NewCivec {
     NewCivec operator/(const NewCivec& o) const;
 
     // assumes that NewCivec's in c are already orthogonal with each other.
-    // returns scaling factor (see implementation) 
+    // returns scaling factor (see implementation)
 
     double orthog(std::list<std::shared_ptr<const NewCivec> > c);
     double orthog(std::shared_ptr<const NewCivec> o);
@@ -115,5 +117,6 @@ class NewCivec {
     void print(const double& thresh) const { det_->print(data(), thresh); };
 };
 
+}
 
 #endif

@@ -46,6 +46,8 @@
 #include <nmmintrin.h>
 #endif
 
+namespace bagel {
+
 /************************************************************************************
 *     Note: I've been using as many of the member functions of bitset as possible,  *
 *        not necessarily because I think it will be faster (I have no idea) but     *
@@ -163,5 +165,6 @@ void Space::form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<N
   }
 };
 
+}
 
 #endif

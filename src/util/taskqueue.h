@@ -33,6 +33,8 @@
 #include <stdexcept>
 #include <boost/thread/thread.hpp>
 
+namespace bagel {
+
 template<typename T>
 class TaskQueue {
   protected:
@@ -70,5 +72,7 @@ class TaskQueue {
         }
     }
 };
+
+}
 
 #endif

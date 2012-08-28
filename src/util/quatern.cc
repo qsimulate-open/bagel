@@ -27,6 +27,7 @@
 #include <src/util/quatern.h>
 
 using namespace std;
+using namespace bagel;
 
 template<> void Quatern<double>::print() const {
   cout << setprecision(10) << setw(20) << data_[0];

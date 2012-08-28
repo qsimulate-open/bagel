@@ -32,6 +32,7 @@
 #include <bitset>
 
 using namespace std;
+using namespace bagel;
 
 static Comb comb;
 
@@ -66,13 +67,13 @@ void NewDeterminants::const_string_lists_() {
   fill(stringa_.begin(), stringa_.end(),bitset<nbit__>(0));
   fill(stringb_.begin(), stringb_.end(),bitset<nbit__>(0));
 
-  vector<bitset<nbit__> >::iterator sa = stringa_.begin(); 
+  vector<bitset<nbit__> >::iterator sa = stringa_.begin();
   do {
     for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
 
-  sa = stringb_.begin(); 
+  sa = stringb_.begin();
   do {
     for (int i=0; i!=neleb_; ++i) sa->set(data[i]);
     ++sa;
@@ -83,19 +84,19 @@ void NewDeterminants::const_string_lists_() {
 
 void NewDeterminants::const_lexical_mapping_() {
   // combination numbers up to 31 orbitals (util/comb.h)
-  zkl_.resize(nelea_ * norb_ + neleb_ * norb_); 
+  zkl_.resize(nelea_ * norb_ + neleb_ * norb_);
   fill(zkl_.begin(), zkl_.end(), 0u);
 
   // this part is 1 offset due to the convention of Knowles & Handy's paper.
-  // Just a blind copy from the paper without understanding much, but the code below works. 
+  // Just a blind copy from the paper without understanding much, but the code below works.
   for (int k = 1; k < nelea_; ++k) {
     for (int l = k; l <= norb_-nelea_+k; ++l) {
       for (int m = norb_-l+1; m <= norb_-k; ++m) {
-        zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1); 
+        zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
       }
     }
   }
-  for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_; 
+  for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
 
   if (nelea_ == neleb_) {
     copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
@@ -103,8 +104,8 @@ void NewDeterminants::const_lexical_mapping_() {
     for (int k = 1; k <= neleb_; ++k)
       for (int l = k; l <= norb_-neleb_+k; ++l)
         for (int m = norb_-l+1; m <= norb_-k; ++m)
-          zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1); 
-    for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_; 
+          zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
+    for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
   }
 }
 
@@ -116,13 +117,13 @@ void NewDeterminants::print(const double* const civec, const double thr) const {
   for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
     for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {
       if (abs(*i) > thr) {
-        tmp.insert(make_pair(-abs(*i), make_tuple(*i, *ia, *ib))); 
+        tmp.insert(make_pair(-abs(*i), make_tuple(*i, *ia, *ib)));
       }
     }
   }
   for (auto iter = tmp.begin(); iter != tmp.end(); ++iter) {
     cout << "       " << print_bit(get<1>(iter->second), get<2>(iter->second))
-         << "  " << setprecision(10) << setw(15) << get<0>(iter->second) << endl; 
+         << "  " << setprecision(10) << setw(15) << get<0>(iter->second) << endl;
   }
 }
 
