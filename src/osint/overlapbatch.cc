@@ -35,6 +35,7 @@ using namespace std;
 using namespace bagel;
 
 const static HRRList hrr;
+const static CarSphList carsphlist;
 
 OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
  : OSInt(_basis) {
@@ -68,7 +69,6 @@ void OverlapBatch::compute() {
   }
 
   if (spherical_) {
-    struct CarSphList carsphlist;
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;

@@ -31,6 +31,7 @@ using namespace std;
 using namespace bagel;
 
 const static HRRList hrr;
+const static CarSphList carsphlist;
 
 DipoleBatch::DipoleBatch(const array<std::shared_ptr<const Shell>,2>& _basis, const array<double,3>& c)
  : OSInt(_basis, -1), center_(c) {
@@ -69,7 +70,6 @@ void DipoleBatch::compute() {
     }
 
     if (spherical_) {
-      struct CarSphList carsphlist;
       double* const intermediate_i = stack_->get(cont0_*cont1_*asize_final_);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;

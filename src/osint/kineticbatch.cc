@@ -35,6 +35,7 @@
 using namespace std;
 using namespace bagel;
 
+const static CarSphList carsphlist;
 
 KineticBatch::KineticBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
  : OSInt(_basis) {
@@ -58,7 +59,6 @@ void KineticBatch::compute() {
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
   if (spherical_) {
-    struct CarSphList carsphlist;
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;

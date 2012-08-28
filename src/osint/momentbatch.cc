@@ -36,6 +36,8 @@
 using namespace std;
 using namespace bagel;
 
+const static CarSphList carsphlist;
+
 MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
  : OSInt(_basis, -1) {
 
@@ -60,8 +62,8 @@ void MomentBatch::compute() {
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-    if (spherical_) {
-      struct CarSphList carsphlist;
+    if (basisinfo_[0]->spherical() && basisinfo_[1]->spherical()) {
+      // transform both indices to spherical
       double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;

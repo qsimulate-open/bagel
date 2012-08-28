@@ -110,9 +110,12 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   amin_ = ang0_;
 
   asize_ = 0;
-  for (int i = amin_; i != amax1_; ++i) asize_ += (i + 1) * (i + 2) / 2;
-  asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
-  asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
+  for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
+  asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
+
+  // note: for relativistic casees, mixed spherical and cartesian basis is considered
+  asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
+               * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
   if (deriv_rank_ == 0) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
@@ -135,10 +138,8 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
     for (int iz = 0; iz <= i; ++iz) {
       for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
-        if (ix >= 0) {
-          amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt;
-          ++cnt;
-        }
+        amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt;
+        ++cnt;
       }
     }
   }
