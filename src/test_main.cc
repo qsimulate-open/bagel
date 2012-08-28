@@ -34,8 +34,10 @@
 #include <src/util/resources.h>
 #include <boost/test/unit_test.hpp>
 
+using namespace bagel;
+
 Resources b(8);
-Resources* resources__ = &b;
+Resources* bagel::resources__ = &b;
 
 static double THRESH = 1.0e-8;
  
