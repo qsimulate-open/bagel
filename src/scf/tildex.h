@@ -31,6 +31,8 @@
 #include <src/scf/matrix1e.h>
 #include <memory>
 
+namespace bagel {
+
 class TildeX : public Matrix1e {
   protected:
 
@@ -41,5 +43,7 @@ class TildeX : public Matrix1e {
     TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+nbasis_*nbasis_, this->data()); return *this; };
 
 };
+
+}
 
 #endif

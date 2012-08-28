@@ -41,6 +41,7 @@
 #include <src/util/constants.h>
 
 using namespace std;
+using namespace bagel;
 
 Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
    /************************************************************

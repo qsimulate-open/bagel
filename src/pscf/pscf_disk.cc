@@ -32,15 +32,16 @@
 #include <algorithm>
 #include <cstring>
 
-typedef std::shared_ptr<const Atom> RefAtom;
-typedef std::shared_ptr<Shell> RefShell;
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-typedef std::shared_ptr<PFock> RefPFock;
-typedef std::shared_ptr<PTildeX> RefPTildeX;
-typedef std::shared_ptr<PCoeff> RefPCoeff;
-typedef std::shared_ptr<PMatrix1e> RefPMatrix1e;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<Shell> RefShell;
+typedef shared_ptr<PGeometry> RefPGeometry;
+typedef shared_ptr<PFock> RefPFock;
+typedef shared_ptr<PTildeX> RefPTildeX;
+typedef shared_ptr<PCoeff> RefPCoeff;
+typedef shared_ptr<PMatrix1e> RefPMatrix1e;
 
 PSCF_DISK::PSCF_DISK(const RefPGeometry g) : PSCF(g) {
 

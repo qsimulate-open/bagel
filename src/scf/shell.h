@@ -33,6 +33,8 @@
 #include <string>
 #include <memory>
 
+namespace bagel {
+
 class Shell {
 
   protected:
@@ -85,6 +87,8 @@ class Shell {
 
     bool operator==(const Shell& o) const;
 };
+
+}
 
 #endif
 

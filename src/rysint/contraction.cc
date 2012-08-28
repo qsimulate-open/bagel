@@ -32,7 +32,7 @@
 #include <algorithm>
 
 using namespace std;
-
+using namespace bagel;
 
 void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                        const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0, 

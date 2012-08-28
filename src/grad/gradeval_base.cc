@@ -30,7 +30,7 @@
 #include <array>
 
 using namespace std;
-
+using namespace bagel;
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
                                                       const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {

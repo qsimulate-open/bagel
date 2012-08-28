@@ -32,6 +32,8 @@
 #include <algorithm>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 class JKop {
   protected:
     // CAUTION packing is different between J and K ops
@@ -177,5 +179,7 @@ class JKop {
     };
 
 };
+
+}
 
 #endif

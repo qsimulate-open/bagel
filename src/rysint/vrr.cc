@@ -33,7 +33,7 @@
 #include <cstring>
 
 using namespace std;
-
+using namespace bagel;
 
 void ERIBatch::perform_VRR4() {
   const int isize = (amax_ + 1) * (cmax_ + 1);

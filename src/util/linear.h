@@ -32,6 +32,8 @@
 #include <stdexcept>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template<typename T>
 class Linear {
 
@@ -108,5 +110,7 @@ class Linear {
     double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
 
 };
+
+}
 
 #endif

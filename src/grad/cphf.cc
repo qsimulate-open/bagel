@@ -31,6 +31,7 @@
 #define CPHF_THRESH 1.0e-8
 
 using namespace std;
+using namespace bagel;
 
 CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
            const shared_ptr<const Reference> r)

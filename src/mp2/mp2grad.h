@@ -32,6 +32,8 @@
 #include <string>
 #include <map>
 
+namespace bagel {
+
 class MP2Grad : public MP2 {
   protected:
 
@@ -43,5 +45,7 @@ class MP2Grad : public MP2 {
 
     std::shared_ptr<Reference> conv_to_ref() const { return ref_; };
 };
+
+}
 
 #endif

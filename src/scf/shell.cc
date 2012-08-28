@@ -29,6 +29,7 @@
 #include <sstream>
 
 using namespace std;
+using namespace bagel;
 
 Shell::Shell(const bool sph, array<double,3> _position, int _ang, vector<double> _expo, 
                        vector<vector<double> > _contr,  vector<pair<int, int> > _range)

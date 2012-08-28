@@ -39,6 +39,8 @@
 #include <src/util/pdata.h>
 #include <memory>
 
+namespace bagel {
+
 class PMatrix1e {
   protected:
     std::shared_ptr<PGeometry> geom_;
@@ -124,5 +126,7 @@ class PMatrix1e {
                              const int jstart, const int jfence) const;
 
 }; 
+
+}
 
 #endif

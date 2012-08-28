@@ -44,6 +44,8 @@
 #include <src/util/cache.h>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template<class T>
 class PCompFile {
   protected:
@@ -754,6 +756,8 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   mo_int->sort_inside_blocks();
   return mo_int;
 };
+
+}
 
 #endif
 

@@ -31,6 +31,8 @@
 
 #include <src/util/pcompfile.h>
 
+namespace bagel {
+
 template<class T>
 class PairCompFile {
   protected:
@@ -354,6 +356,8 @@ void PairCompFile<T>::reopen_with_inout() {
   files_.first->reopen_with_inout();
   files_.second->reopen_with_inout();
 };
+
+}
 
 #endif
 

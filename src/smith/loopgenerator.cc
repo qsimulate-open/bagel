@@ -27,7 +27,7 @@
 #include <src/smith/loopgenerator.h>
 #include <algorithm>
 
-using namespace SMITH;
+using namespace bagel::SMITH;
 using namespace std;
 
 

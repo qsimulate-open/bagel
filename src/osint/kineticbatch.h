@@ -30,6 +30,8 @@
 #include <src/osint/osint.h>
 #include <memory>
 
+namespace bagel {
+
 class KineticBatch : public OSInt {
   protected:
     void perform_VRR(double*);
@@ -40,5 +42,7 @@ class KineticBatch : public OSInt {
 
     void compute() override;
 };
+
+}
 
 #endif

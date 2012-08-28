@@ -32,6 +32,8 @@
 #include <src/util/pmatrix1e.h>
 #include <memory>
 
+namespace bagel {
+
 class PTildeX : public PMatrix1e {
   protected:
 
@@ -40,5 +42,7 @@ class PTildeX : public PMatrix1e {
     ~PTildeX();
 
 };
+
+}
 
 #endif

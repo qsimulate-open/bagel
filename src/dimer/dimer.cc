@@ -33,6 +33,7 @@
 #include <src/dimer/dimer.h>
 
 using namespace std;
+using namespace bagel;
 
 /************************************************************************************
 *  Dimer::Dimer(shared_ptr<Geometry> A, vector<double> displacement)                *

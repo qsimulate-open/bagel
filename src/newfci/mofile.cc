@@ -33,6 +33,7 @@
 #include <src/scf/scf.h>
 
 using namespace std;
+using namespace bagel;
 
 
 NewMOFile::NewMOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence)

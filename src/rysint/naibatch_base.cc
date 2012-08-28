@@ -28,6 +28,7 @@
 #include <src/util/constants.h>
 
 using namespace std;
+using namespace bagel;
 
 NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
                              const int L, const double A)

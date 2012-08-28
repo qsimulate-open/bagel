@@ -29,6 +29,7 @@
 #include <iomanip>
 
 using namespace std;
+using namespace bagel;
 
 #if 0
 int perm(const int i, const int j, const int k, const int l){

@@ -38,6 +38,7 @@
 #include <src/slater/sinline.h>
 
 using namespace std;
+using namespace bagel;
 
 #define MIN_EXPONENT -200.0
 #define GM1_THRESH 1.0e-15

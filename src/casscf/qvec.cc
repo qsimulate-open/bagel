@@ -27,6 +27,7 @@
 #include <src/casscf/qvec.h>
 
 using namespace std;
+using namespace bagel;
 
 
 Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2> > rdm)

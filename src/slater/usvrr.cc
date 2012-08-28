@@ -33,6 +33,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace bagel;
 
 /*
 void SlaterBatch::perform_USVRR3() {

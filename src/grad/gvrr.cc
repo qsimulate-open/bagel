@@ -33,6 +33,7 @@
 #include <src/util/comb.h>
 
 using namespace std;
+using namespace bagel;
 
 static const Comb comb;
 

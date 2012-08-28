@@ -30,6 +30,7 @@
 #include <src/fci/fci.h>
 
 using namespace std;
+using namespace bagel;
 
 FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {

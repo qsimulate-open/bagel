@@ -18,10 +18,12 @@
 #include <src/molden/molden.h>
 
 using namespace std;
+using namespace bagel;
 
 #define LARGE 32
 #define LEND 5
 
+namespace bagel {
 struct Data {
     vector<double> factorial;
     Data() {
@@ -37,6 +39,7 @@ struct Data {
       return factorial[i] / factorial[j] / factorial[i - j];
     }; 
 };
+}
 
 
 void Molden::compute_transforms() {

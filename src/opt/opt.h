@@ -37,6 +37,8 @@
 #include <src/grad/gradfile.h>
 #include <src/grad/gradeval.h>
 
+namespace bagel {
+
 template<typename T>
 class Opt {
   protected:
@@ -156,5 +158,7 @@ class Opt {
     std::shared_ptr<const Geometry> geometry() const { return current_; };
 
 };
+
+}
 
 #endif

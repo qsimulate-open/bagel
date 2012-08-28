@@ -36,6 +36,8 @@
 #include <vector>
 #include <complex>
 
+namespace bagel {
+
 class PFock : public PMatrix1e {
   protected:
     const std::shared_ptr<PFock> previous_;
@@ -59,6 +61,8 @@ class PFock : public PMatrix1e {
     bool direct() const { return direct_; };
 
 };
+
+}
 
 #endif
 

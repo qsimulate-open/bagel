@@ -36,6 +36,8 @@
 // Compared to Linear, this is robust because we don't assume
 // positive definiteness of the A matrix here.
 
+namespace bagel {
+
 template<typename T>
 class LinearRM {
 
@@ -112,5 +114,7 @@ class LinearRM {
     double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
 
 };
+
+}
 
 #endif

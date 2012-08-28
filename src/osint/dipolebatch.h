@@ -32,6 +32,8 @@
 #include <src/osint/osint.h>
 #include <memory>
 
+namespace bagel {
+
 class DipoleBatch : public OSInt {
   protected:
     const std::array<double,3> center_;
@@ -43,5 +45,7 @@ class DipoleBatch : public OSInt {
 
     void compute() override;
 };
+
+}
 
 #endif

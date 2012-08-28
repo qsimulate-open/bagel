@@ -39,6 +39,8 @@
 #include <vector>
 #include <memory>
 
+namespace bagel {
+
 class RysInt {
   protected:
     // some basic info for integral evaluations
@@ -135,6 +137,8 @@ class RysInt {
     bool swap23() const { return swap23_; }; 
     bool swap0123() const { return swap0123_; }; 
 };
+
+}
 
 #endif
 

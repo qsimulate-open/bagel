@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 using namespace std;
+using namespace bagel;
 
 AtomMap::AtomMap () {
   atommap.insert(make_pair("q" ,  0)); // dummy atom

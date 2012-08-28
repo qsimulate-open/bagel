@@ -34,7 +34,7 @@
 #define CPHF_THRESH 1.0e-10
 
 using namespace std;
-
+using namespace bagel;
 
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ, 
                    const shared_ptr<const Matrix1e> eig, const shared_ptr<const DF_Half> h,

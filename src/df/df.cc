@@ -40,7 +40,9 @@
 
 using namespace std;
 using namespace std::chrono;
+using namespace bagel;
 
+namespace bagel {
 
 class DFIntTask {
   protected:
@@ -84,6 +86,8 @@ class DFIntTask {
       }
     };
 };
+
+}
 
 
 void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  const vector<vector<int> >& offsets0,

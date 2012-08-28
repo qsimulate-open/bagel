@@ -37,6 +37,7 @@
 #include <src/smith/tensor.h>
 #include <src/scf/fock.h>
 
+namespace bagel {
 namespace SMITH {
 
 // the template parameter T specifies the storage type 
@@ -228,6 +229,7 @@ class MOFock {
     std::shared_ptr<Tensor<T> > tensor() { return data_; };
 };
 
+}
 }
 
 #endif

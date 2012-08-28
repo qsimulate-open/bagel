@@ -38,6 +38,8 @@
 #include <src/pscf/pcoeff.h>
 #include <src/rysint/eribatch.h>
 
+namespace bagel {
+
 class PSCF {
   protected:
     const std::shared_ptr<PGeometry> geom_;
@@ -76,6 +78,8 @@ class PSCF {
     }
     std::shared_ptr<PCompFile<ERIBatch> > ao_eri() { return ao_eri_; };
 };
+
+}
 
 #endif
 

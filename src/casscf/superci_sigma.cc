@@ -27,6 +27,7 @@
 #include <src/casscf/superci.h>
 
 using namespace std;
+using namespace bagel;
 
 
 //////////////////////////////////////////////////////

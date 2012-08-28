@@ -35,6 +35,7 @@
 #include <src/mp2/f12int4.h>
 
 using namespace std;
+using namespace bagel;
 
 extern "C" { void start_up_slater_(); };
 

@@ -35,9 +35,10 @@
 #include <cassert>
 
 using namespace std;
+using namespace bagel;
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<const Shell> RefShell;
+typedef shared_ptr<const Geometry> RefGeometry;
+typedef shared_ptr<const Shell> RefShell;
 
 Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
 

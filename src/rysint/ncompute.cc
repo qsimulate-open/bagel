@@ -35,7 +35,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
-
+using namespace bagel;
 
 typedef std::shared_ptr<Atom> RefAtom;
 

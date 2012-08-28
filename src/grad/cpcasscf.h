@@ -37,6 +37,8 @@
 // CP-CASSCF Z vector equation. Note that in addition to orbital derivatives (as in CPHF),
 // we have CI derivatives in CP-CASSCF.
 
+namespace bagel {
+
 class CPCASSCF {
   protected:
     const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad_;
@@ -60,6 +62,8 @@ class CPCASSCF {
     std::shared_ptr<PairFile<Matrix1e, Dvec> > solve() const;
 
 };
+
+}
 
 #endif
 

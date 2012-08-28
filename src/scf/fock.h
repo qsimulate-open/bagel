@@ -38,6 +38,8 @@
 #include <src/rysint/eribatch.h>
 #include <src/scf/fock_base.h>
 
+namespace bagel {
+
 template<int DF>
 class Fock : public Fock_base {
   protected:
@@ -272,6 +274,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   }
 
 };
+
+}
 
 
 #endif

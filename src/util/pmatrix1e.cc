@@ -36,9 +36,11 @@
 #include <src/util/f77.h>
 #include <src/macros.h>
 
+using namespace std;
+using namespace bagel;
+
 typedef std::complex<double> Complex;
 
-using namespace std;
 
 // I have supposed that ndim_ is the leading dimension in the data.
 

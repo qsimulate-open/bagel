@@ -35,6 +35,8 @@
 #include <memory>
 #include <src/util/resources.h>
 
+namespace bagel {
+
 class OSInt {
   protected:
 
@@ -83,6 +85,8 @@ class OSInt {
 
     size_t size_block() const { return size_block_; };
 };
+
+}
 
 #endif
 

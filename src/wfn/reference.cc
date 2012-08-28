@@ -31,6 +31,7 @@
 #include <src/util/mixedbasis.h>
 
 using namespace std;
+using namespace bagel;
 
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,

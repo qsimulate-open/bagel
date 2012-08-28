@@ -34,11 +34,15 @@
 #include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>
 
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<PGeometry> RefGeom;
-typedef std::shared_ptr<PCoeff> RefPCoeff;
-typedef std::shared_ptr<Shell> RefShell;
-typedef std::shared_ptr<PMatrix1e> RefMatrix;
+using namespace bagel;
+using namespace std;
+
+
+typedef shared_ptr<Atom> RefAtom;
+typedef shared_ptr<PGeometry> RefGeom;
+typedef shared_ptr<PCoeff> RefPCoeff;
+typedef shared_ptr<Shell> RefShell;
+typedef shared_ptr<PMatrix1e> RefMatrix;
 
 extern "C" { void start_up_slater_(); };
 
@@ -57,8 +61,6 @@ extern "C" { void start_up_slater_(); };
 //#define SKIP_CASE1
 //#define ONLY_P2
 //#define ONLY_P3
-
-using namespace std;
 
 PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl, const bool hy2)
  : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl), use_hy2_(hy2) {

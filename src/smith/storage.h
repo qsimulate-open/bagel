@@ -38,6 +38,7 @@
 #include <cassert>
 #include <stdexcept>
 
+namespace bagel {
 namespace SMITH {
 
 class Storage_base {
@@ -110,6 +111,7 @@ class Storage_Incore : public Storage_base {
     void initialize();
 };
 
+}
 }
 
 #endif

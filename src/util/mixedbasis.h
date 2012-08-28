@@ -35,6 +35,8 @@
 #include <string>
 #include <src/scf/geometry.h>
 
+namespace bagel {
+
 template<typename T>
 class MixedBasis {
   protected:
@@ -113,5 +115,7 @@ class MixedBasis {
     };
 
 };
+
+}
 
 #endif

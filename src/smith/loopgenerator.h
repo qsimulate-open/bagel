@@ -30,6 +30,7 @@
 #include <vector>
 #include <src/smith/indexrange.h>
 
+namespace bagel {
 namespace SMITH {
 
 class LoopGenerator {
@@ -42,6 +43,7 @@ class LoopGenerator {
     std::vector<std::vector<Index> > block_loop() const; 
 };
 
+}
 }
 
 #endif

@@ -44,6 +44,8 @@
 // o void compute()
 // o std::shared_ptr<Referenc> conv_to_ref()
 
+namespace bagel {
+
 template<typename T>
 class GradEval : public GradEval_base {
   protected:
@@ -78,5 +80,7 @@ template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
+
+}
 
 #endif

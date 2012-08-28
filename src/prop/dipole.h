@@ -30,6 +30,8 @@
 #include <memory>
 #include <src/scf/matrix1e.h>
 
+namespace bagel {
+
 class Dipole {
   protected:
     std::shared_ptr<const Geometry> geom_;
@@ -41,5 +43,7 @@ class Dipole {
 
     std::array<double,3> compute() const;
 };
+
+}
 
 #endif

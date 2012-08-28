@@ -47,13 +47,15 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
+#include <src/prop/momentum.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
 
 
+using namespace bagel;
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources* resources__;
+Resources* bagel::resources__;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);

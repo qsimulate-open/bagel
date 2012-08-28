@@ -31,6 +31,7 @@
 #include <src/util/pcompcabsfile.h>
 
 using namespace std;
+using namespace bagel;
 
 // create RI basis
 

@@ -37,6 +37,7 @@
 #include <src/grad/gradeval.h>
 
 using namespace std;
+using namespace bagel;
 
 MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
 

@@ -34,6 +34,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace bagel;
 
 void test_solvers(shared_ptr<Geometry> geom_) {
   cout << " Testing solvers." << endl;

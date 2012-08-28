@@ -37,6 +37,7 @@
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
 
+namespace bagel {
 namespace SMITH {
 
 // this function should be fast
@@ -228,6 +229,7 @@ class Tensor {
     };
 };
 
+}
 }
 
 #endif

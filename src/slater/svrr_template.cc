@@ -36,6 +36,7 @@
 //#define LOCAL_DEBUG3
 
 using namespace std;
+using namespace bagel;
 
 void SlaterBatch::perform_SVRR1() {
   for (int j = 0; j != screening_size_; ++j) {

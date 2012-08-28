@@ -33,7 +33,7 @@
 #include <src/scf/scf.h>
 
 using namespace std;
-
+using namespace bagel;
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence)
 : geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(ref_->coeff()) {

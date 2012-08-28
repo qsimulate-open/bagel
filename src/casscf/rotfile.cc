@@ -27,6 +27,7 @@
 #include <src/casscf/rotfile.h>
 
 using namespace std;
+using namespace bagel;
 
 shared_ptr<RotFile> RotFile::clone() const {
   shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, superci_)); 

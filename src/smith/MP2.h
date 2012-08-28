@@ -36,6 +36,7 @@
 #include <src/smith/MP2_tasks.h>
 #include <src/smith/smith.h>
 
+namespace bagel {
 namespace SMITH {
 namespace MP2{
 
@@ -192,6 +193,7 @@ r->zero();
     };  
 };
 
+}
 }
 }
 #endif

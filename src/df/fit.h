@@ -34,6 +34,8 @@
 #include <src/grad/gradbatch.h>
 #include <src/slater/slaterbatch.h>
 
+namespace bagel {
+
 class ERIFit : public DensityFit {
   protected:
     std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
@@ -86,6 +88,7 @@ class SlaterFit : public DensityFit {
     
 };
 
+}
 
 #endif
 

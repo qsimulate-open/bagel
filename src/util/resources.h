@@ -36,6 +36,8 @@
   #include <libint2.h>
 #endif
 
+namespace bagel {
+
 class StackMem {
   protected:
     std::unique_ptr<double[]> stack_area_;
@@ -78,5 +80,7 @@ class Resources {
 };
 
 extern Resources* resources__;
+
+}
 
 #endif

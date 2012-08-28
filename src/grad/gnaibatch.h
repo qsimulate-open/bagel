@@ -30,6 +30,8 @@
 #include <tuple>
 #include <src/rysint/naibatch_base.h>
 
+namespace bagel {
+
 class GNAIBatch : public NAIBatch_base {
 
   protected:
@@ -54,6 +56,8 @@ class GNAIBatch : public NAIBatch_base {
     void compute();
 
 };
+
+}
 
 #endif
 

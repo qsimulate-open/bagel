@@ -34,6 +34,8 @@
 #include <src/casscf/superci.h>
 #include <src/wfn/rdm.h>
 
+namespace bagel {
+
 class SuperCIGrad : public SuperCI {
 
   protected:
@@ -64,5 +66,7 @@ class SuperCIGrad : public SuperCI {
     };
 
 };
+
+}
 
 #endif

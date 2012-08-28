@@ -31,6 +31,8 @@
 #include <array>
 #include <src/scf/matrix1e.h>
 
+namespace bagel {
+
 class Momentum {
   protected:
     std::shared_ptr<const Geometry> geom_;
@@ -41,5 +43,7 @@ class Momentum {
 
     std::array<std::shared_ptr<Matrix1e>,3> compute() const;
 };
+
+}
 
 #endif

@@ -28,6 +28,7 @@
 #include <src/pmp2/pmp2.h>
 
 using namespace std;
+using namespace bagel;
 
 void PMP2::compute_conv_mp2() {
   cout << "  Now computing mp2 energy" << endl << endl;

@@ -34,6 +34,8 @@
 #include <vector>
 #include <memory>
 
+namespace bagel {
+
 template<typename T>
 class BFGS {
   protected:
@@ -113,7 +115,8 @@ class BFGS {
       return out;
     };
 
-
 };
+
+}
 
 #endif

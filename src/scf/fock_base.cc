@@ -32,13 +32,14 @@
 #include <iomanip>
 #include <algorithm>
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<const Hcore> RefHcore;
-typedef std::shared_ptr<Matrix1e> RefAODensity;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<const Fock_base> RefFock_base;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<const Geometry> RefGeometry;
+typedef shared_ptr<const Hcore> RefHcore;
+typedef shared_ptr<Matrix1e> RefAODensity;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<const Fock_base> RefFock_base;
 
 Fock_base::Fock_base(const RefGeometry geom, const RefFock_base previous, const RefAODensity den, const vector<double>& schwarz)
  : Matrix1e(geom), previous_(previous), density_(den), schwarz_(schwarz) {

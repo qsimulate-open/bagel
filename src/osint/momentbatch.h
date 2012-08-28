@@ -30,6 +30,8 @@
 #include <src/osint/osint.h>
 #include <memory>
 
+namespace bagel {
+
 class MomentBatch : public OSInt {
   protected:
     void perform_VRR(double*);
@@ -40,5 +42,7 @@ class MomentBatch : public OSInt {
 
     void compute() override;
 };
+
+}
 
 #endif

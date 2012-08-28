@@ -32,7 +32,7 @@
 #include <src/util/constants.h>
 
 using namespace std;
-
+using namespace bagel;
 
 static const double pisqrt__ = ::sqrt(pi__);
 

@@ -34,6 +34,8 @@
 #include <src/util/bfgs.h>
 
 using namespace std;
+using namespace bagel;
+
 static const vector<double> zero(1,0.0);
 
 //#define SOLVER Linear

@@ -35,6 +35,7 @@
 #endif
 
 using namespace std;
+using namespace bagel;
 
 void GradTask::compute() {
   if (rank_ == 1) {

@@ -37,7 +37,7 @@
 #include <src/pscf/pscf_macros.h>
 
 using namespace std;
-
+using namespace bagel;
 
 // olp is real-space quantity.
 PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {

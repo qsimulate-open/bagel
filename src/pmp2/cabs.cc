@@ -32,6 +32,7 @@
 #include <src/util/pcompcabsfile.h>
 
 using namespace std;
+using namespace bagel;
 
 //#define LOCAL_DEBUG
 

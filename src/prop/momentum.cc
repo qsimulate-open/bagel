@@ -29,6 +29,7 @@
 #include <iomanip>
 
 using namespace std;
+using namespace bagel;
 
 Momentum::Momentum(shared_ptr<const Geometry> g) : geom_(g) {
 

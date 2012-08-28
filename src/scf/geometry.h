@@ -35,6 +35,8 @@
 #include <src/df/fit.h>
 #include <src/util/input.h>
 
+namespace bagel {
+
 class Geometry {
   protected:
     // Spherical or Cartesian basis set.
@@ -171,6 +173,8 @@ class Geometry {
     // ninternal runs fast (and cartsize slower)
     std::array<std::unique_ptr<double[]>,2> compute_internal_coordinate() const;
 };
+
+}
 
 #endif
 

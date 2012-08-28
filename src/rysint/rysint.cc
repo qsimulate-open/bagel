@@ -35,6 +35,7 @@
 #include <src/rysint/naibatch_base.h>
 
 using namespace std;
+using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),

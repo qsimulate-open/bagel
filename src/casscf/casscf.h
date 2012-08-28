@@ -40,6 +40,8 @@
 #include <src/wfn/rdm.h>
 #include <src/casscf/rotfile.h>
 
+namespace bagel {
+
 class CASSCF {
 
   protected:
@@ -111,5 +113,6 @@ class CASSCF {
 
 static const double occup_thresh = 1.0e-10;
 
+}
 
 #endif

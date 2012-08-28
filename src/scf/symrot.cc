@@ -35,6 +35,7 @@
 #include <src/rysint/macros.h>
 
 using namespace std;
+using namespace bagel;
 
 SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool spherical) {
   assert(xyz.size() == 9);

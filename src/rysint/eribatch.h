@@ -28,6 +28,8 @@
 
 #include <src/rysint/eribatch_base.h>
 
+namespace bagel {
+
 class ERIBatch : public ERIBatch_base {
 
   protected:
@@ -55,6 +57,8 @@ class ERIBatch : public ERIBatch_base {
     virtual void compute(); 
 
 };
+
+}
 
 #endif
 

@@ -32,6 +32,8 @@
 #include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
 
+namespace bagel {
+
 typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
@@ -77,5 +79,7 @@ class Dimer {
       void construct_geometry();
       void construct_coeff();
 };
+
+}
 
 #endif

@@ -44,6 +44,8 @@
 #include <src/wfn/reference.h>
 #include <src/newfci/determinants.h>
 
+namespace bagel {
+
 class NewFCI {
 
   protected:
@@ -186,6 +188,7 @@ class NewFCI {
 
 };
 
+}
 
 #endif
 

@@ -33,6 +33,8 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 
+namespace bagel {
+
 class F12Int {
   protected:
 
@@ -53,6 +55,8 @@ class F12Int {
     std::shared_ptr<F12Mat> robust_fitting(std::shared_ptr<const DF_Full> doo, std::shared_ptr<const DF_Full> yoo);
 
 };
+
+}
 
 
 #endif

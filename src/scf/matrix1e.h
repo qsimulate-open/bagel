@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <memory>
 
+namespace bagel {
+
 class Matrix1e {
   protected:
     std::unique_ptr<double[]> data_;
@@ -131,6 +133,8 @@ class Matrix1e {
 
     double orthog(const std::list<std::shared_ptr<const Matrix1e> > o);
 };
+
+}
 
 #endif
 

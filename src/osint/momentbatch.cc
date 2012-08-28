@@ -34,7 +34,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
-
+using namespace bagel;
 
 MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 
  : OSInt(_basis, -1) {

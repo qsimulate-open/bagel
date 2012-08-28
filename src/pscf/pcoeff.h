@@ -29,6 +29,8 @@
 
 #include <src/util/pmatrix1e.h>
 
+namespace bagel {
+
 class PCoeff : public PMatrix1e {
   protected:
 
@@ -43,6 +45,8 @@ class PCoeff : public PMatrix1e {
           split(const int nrow1, const int nrow2);
 
 };
+
+}
 
 #endif
 

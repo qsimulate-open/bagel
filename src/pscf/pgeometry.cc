@@ -35,6 +35,7 @@
 #include <cmath>
 
 using namespace std;
+using namespace bagel;
 
 PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
   ifstream ifs;

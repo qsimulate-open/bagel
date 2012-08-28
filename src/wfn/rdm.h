@@ -34,6 +34,8 @@
 #include <cassert>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template <int rank>
 class RDM {
   protected:
@@ -165,5 +167,7 @@ class RDM {
       }
     };
 };
+
+}
 
 #endif

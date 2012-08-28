@@ -34,6 +34,7 @@
 #include <src/smith/task.h>
 #include <vector>
 
+namespace bagel {
 namespace SMITH {
 namespace MP2{
 
@@ -663,6 +664,7 @@ class Task13 : public EnergyTask<T> {
 };
 
 
+}
 }
 }
 #endif

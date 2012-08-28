@@ -33,6 +33,8 @@
 #include <src/fci/fci.h> // 2RDM and half-transformed integrals
 #include <src/casscf/rotfile.h>
 
+namespace bagel {
+
 class Qvec : public QFile {
   protected:
 
@@ -44,5 +46,6 @@ class Qvec : public QFile {
 
 };
 
+}
 
 #endif

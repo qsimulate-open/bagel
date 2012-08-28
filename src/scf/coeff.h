@@ -31,6 +31,8 @@
 #include <src/scf/matrix1e.h>
 #include <memory>
 
+namespace bagel {
+
 class Coeff : public Matrix1e {
   protected:
 
@@ -49,5 +51,7 @@ class Coeff : public Matrix1e {
     std::shared_ptr<Matrix1e> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
     std::pair<std::shared_ptr<Coeff>, std::shared_ptr<Coeff> > split(const int, const int) const;
 };
+
+}
 
 #endif

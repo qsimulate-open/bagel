@@ -35,6 +35,7 @@
 #include <src/rysint/macros.h>
 
 using namespace std;
+using namespace bagel;
 
 
 ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)

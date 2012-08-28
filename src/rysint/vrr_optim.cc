@@ -30,7 +30,7 @@
 #include <iomanip>
 
 using namespace std;
-
+using namespace bagel;
 
 void ERIBatch::perform_VRR3() {
 

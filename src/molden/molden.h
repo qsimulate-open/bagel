@@ -31,6 +31,7 @@
 #include <src/wfn/reference.h>
 #include <vector>
 
+namespace bagel {
 
 class Molden {
    protected:
@@ -61,5 +62,7 @@ class Molden {
 
       void set_spherical(bool is_spherical) { is_spherical_ = is_spherical; }
 };
+
+}
 
 #endif

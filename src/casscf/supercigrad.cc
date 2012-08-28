@@ -31,6 +31,7 @@
 #include <src/util/pairfile.h>
 
 using namespace std;
+using namespace bagel;
 
 template<typename T>
 static string tostring(const T i) {

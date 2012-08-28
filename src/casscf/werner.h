@@ -31,6 +31,8 @@
 #include <src/casscf/rotfile.h>
 #include <src/casscf/jvec.h>
 
+namespace bagel {
+
 class WernerKnowles : public CASSCF {
   protected:
     virtual void common_init() {
@@ -62,6 +64,8 @@ class WernerKnowles : public CASSCF {
 
 
 }; 
+
+}
 
 #endif
 

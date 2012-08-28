@@ -30,6 +30,8 @@
 #include <src/osint/osint.h>
 #include <src/scf/geometry.h>
 
+namespace bagel {
+
 // computes derivative integrals of kinetic operator.
 class GKineticBatch : public OSInt {
   protected:
@@ -44,5 +46,7 @@ class GKineticBatch : public OSInt {
     std::shared_ptr<const Geometry> geom() const { return geom_; };
 
 };
+
+}
 
 #endif

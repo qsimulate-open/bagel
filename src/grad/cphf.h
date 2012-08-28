@@ -32,6 +32,8 @@
 #include <src/util/linearRM.h>
 #include <src/wfn/reference.h>
 
+namespace bagel {
+
 class CPHF {
   protected:
     const std::shared_ptr<LinearRM<Matrix1e> > solver_;
@@ -49,6 +51,8 @@ class CPHF {
     std::shared_ptr<Matrix1e> solve() const;
 
 };
+
+}
 
 #endif
 

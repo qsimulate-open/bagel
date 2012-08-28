@@ -28,12 +28,13 @@
 #include <src/util/f77.h>
 #include <cstring>
 
-typedef std::shared_ptr<PFock> RefPFock;
-typedef std::shared_ptr<PHcore> RefPHcore;
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-typedef std::shared_ptr<PMatrix1e> RefPMatrix1e;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<PFock> RefPFock;
+typedef shared_ptr<PHcore> RefPHcore;
+typedef shared_ptr<PGeometry> RefPGeometry;
+typedef shared_ptr<PMatrix1e> RefPMatrix1e;
 
 PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, const vector<double>& shw, const int th, const bool dir)
  : PMatrix1e(g), previous_(prev), density_(den), schwarz_(shw), S2_(th), direct_(dir) {

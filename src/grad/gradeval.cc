@@ -29,6 +29,7 @@
 
 using namespace std;
 using namespace std::chrono;
+using namespace bagel;
 
 template<>
 shared_ptr<GradFile> GradEval<SCF<1> >::compute() {

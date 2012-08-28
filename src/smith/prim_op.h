@@ -31,6 +31,7 @@
 #include <vector>
 #include <src/util/f77.h>
 
+namespace bagel {
 namespace SMITH {
 
 
@@ -195,6 +196,7 @@ static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7) {
 };
 
 
+}
 }
 
 #endif

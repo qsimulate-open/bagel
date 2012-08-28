@@ -37,6 +37,7 @@
 #include <src/scf/scf.h>
 #include <src/scf/geometry.h>
 
+namespace bagel {
 
 class NewMOFile {
 
@@ -138,5 +139,7 @@ class NewHtilde : public NewMOFile {
     }
     ~NewHtilde() {};
 };
+
+}
 
 #endif

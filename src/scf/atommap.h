@@ -30,6 +30,8 @@
 #include <map>
 #include <string>
 
+namespace bagel {
+
 struct AtomMap {
   public:
     AtomMap(); 
@@ -45,5 +47,7 @@ struct AtomMap {
 
     const std::string angular_string(const int);
 };
+
+}
 
 #endif

@@ -36,6 +36,7 @@
 #include <src/smith/mp2_ref_task.h>
 #include <src/smith/smith.h>
 
+namespace bagel {
 namespace SMITH {
 
 template <typename T>
@@ -120,6 +121,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
 };
 
+}
 }
 
 #endif

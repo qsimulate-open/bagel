@@ -32,6 +32,8 @@
 #include <src/util/pmatrix1e.h>
 #include <src/util/pcompfile.h>
 
+namespace bagel {
+
 class PSCF_DISK : public PSCF {
   protected:
     void store_ERI();
@@ -41,7 +43,8 @@ class PSCF_DISK : public PSCF {
     PSCF_DISK(const std::shared_ptr<PGeometry>, std::shared_ptr<PMatrix1e>);
     ~PSCF_DISK();
 
-
 };
+
+}
 
 #endif

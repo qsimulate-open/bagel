@@ -31,11 +31,12 @@
 #include <src/fci/fci.h>
 #include <src/util/davidson.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
-
 using namespace std;
 using namespace std::chrono;
+using namespace bagel;
+
+// toggle for timing print out.
+static const bool tprint = false;
 
 void FCI::update(shared_ptr<const Coeff> c) {
 

@@ -28,6 +28,7 @@
 #include <src/rysint/libint.h>
 
 using namespace std;
+using namespace bagel;
 
 pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) { 
 #ifdef LIBINT_INTERFACE

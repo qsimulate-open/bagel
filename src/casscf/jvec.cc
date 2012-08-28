@@ -27,6 +27,7 @@
 #include <src/casscf/jvec.h>
 
 using namespace std;
+using namespace bagel;
 
 Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
 

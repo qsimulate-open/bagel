@@ -34,6 +34,8 @@
 #include <src/casscf/casscf.h>
 #include <src/wfn/rdm.h>
 
+namespace bagel {
+
 class SuperCI : public CASSCF {
 
   protected:
@@ -69,5 +71,7 @@ class SuperCI : public CASSCF {
     void compute();
 
 };
+
+}
 
 #endif

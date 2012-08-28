@@ -27,7 +27,7 @@
 #include <src/smith/smith.h>
 
 using namespace std;
-using namespace SMITH;
+using namespace bagel::SMITH;
 
 SMITH_info::SMITH_info() {
   maxiter_ = 5;

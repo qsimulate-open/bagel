@@ -34,7 +34,7 @@
 #include <src/scf/matrix1e.h>
 #include <boost/thread/mutex.hpp>
 
-
+namespace bagel {
 
 class GradEval_base;
 
@@ -108,5 +108,7 @@ class GradEval_base {
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };
+
+}
 
 #endif

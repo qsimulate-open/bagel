@@ -27,9 +27,10 @@
 #include <src/pscf/pcoeff.h>
 #include <src/util/f77.h>
 
-typedef std::complex<double> Complex;
-
 using namespace std;
+using namespace bagel;
+
+typedef complex<double> Complex;
 
 PCoeff::PCoeff(const PMatrix1e& inp) : PMatrix1e(inp.geom(), inp.ndim(), inp.mdim()) {
 

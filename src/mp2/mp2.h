@@ -35,6 +35,8 @@
 #include <map>
 #include <boost/thread/mutex.hpp>
 
+namespace bagel {
+
 class MP2 {
   friend class MP2AssemTask;
   protected:
@@ -56,5 +58,7 @@ class MP2 {
 
     double energy() const { return energy_; };
 };
+
+}
 
 #endif

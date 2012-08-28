@@ -32,6 +32,8 @@
 #include <src/scf/petite.h>
 #include <src/scf/symrot.h>
 
+namespace bagel {
+
 class SymMat : public Matrix1e {
   protected:
     std::shared_ptr<SymRotAbel> symrot_; 
@@ -43,5 +45,7 @@ class SymMat : public Matrix1e {
     ~SymMat(); 
 
 };
+
+}
 
 #endif

@@ -33,6 +33,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace bagel;
 
 void SlaterBatch::perform_USVRR1() {
   for (int j = 0; j != screening_size_; ++j) {

@@ -29,6 +29,8 @@
 
 #include <vector>
 
+namespace bagel {
+
 class SymRotAbel {
   protected:
     std::vector<std::vector<double> > primrot_; 
@@ -41,6 +43,8 @@ class SymRotAbel {
 
 
 };
+
+}
 
 #endif
 

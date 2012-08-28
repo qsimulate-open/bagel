@@ -33,6 +33,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
+using namespace bagel;
 
 
 KineticBatch::KineticBatch(const array<std::shared_ptr<const Shell>,2>& _basis) 

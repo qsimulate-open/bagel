@@ -33,6 +33,8 @@
 // I only implement a DF version
 //template<int DF>
 
+namespace bagel {
+
 class UHF : public SCF_base {
   protected:
     std::shared_ptr<Matrix1e> aodensityA_;
@@ -66,5 +68,7 @@ class UHF : public SCF_base {
     // return the natural orbital coefficients and nclosed and nact
     std::tuple<std::shared_ptr<Coeff>, int, std::vector<std::shared_ptr<RDM<1> > > > natural_orbitals() const;
 };
+
+}
 
 #endif

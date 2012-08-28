@@ -34,6 +34,7 @@
 #include <src/rysint/rysint.h>
 #include <src/scf/geometry.h>
 
+namespace bagel {
 
 class NAIBatch_base : public RysInt {
   protected:
@@ -56,5 +57,7 @@ class NAIBatch_base : public RysInt {
 
 
 }; 
+
+}
 
 #endif

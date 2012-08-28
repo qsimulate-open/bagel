@@ -32,6 +32,8 @@
 #include <src/util/f77.h>
 #include <map>
 
+namespace bagel {
+
 template<class T>
 class PMOFile : public PFile<T> {
   protected:
@@ -802,5 +804,7 @@ T PMOFile<T>::get_energy_two_amp_B() const {
   en /= static_cast<T>(std::max(k * k * 4, 1));
   return en;
 };
+
+}
 
 #endif

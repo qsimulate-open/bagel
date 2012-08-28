@@ -31,6 +31,7 @@
 #include <src/util/diis.h>
 
 // implements UHF as in Tsuchimochi and Scuseria, J. Chem. Phys. 133, 141102 (2010)
+namespace bagel {
 
 class ROHF : public UHF {
   protected:
@@ -46,5 +47,7 @@ class ROHF : public UHF {
     void symmetrize_cv(std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>);
 
 };
+
+}
 
 #endif

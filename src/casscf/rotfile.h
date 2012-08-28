@@ -36,6 +36,8 @@
 #include <src/scf/matrix1e.h>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 class RotFile {
   protected:
     const int nclosed_;
@@ -223,5 +225,7 @@ class QFile {
       }
     };
 };
+
+}
 
 #endif

@@ -32,6 +32,7 @@
 #include <src/util/resources.h>
 
 using namespace std;
+using namespace bagel;
 
 StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // 80MByte
   stack_area_ = unique_ptr<double[]>(new double[total_]);

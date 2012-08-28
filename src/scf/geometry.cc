@@ -42,8 +42,9 @@
 #include <src/rysint/libint.h>
 
 using namespace std;
+using namespace bagel;
 
-typedef std::shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<const Atom> RefAtom;
 
 const static AtomMap atommap_;
 

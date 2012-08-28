@@ -33,6 +33,8 @@
 #include <src/scf/shell.h>
 #include <memory>
 
+namespace bagel {
+
 class Atom {
   protected:
 
@@ -90,6 +92,8 @@ class Atom {
     // dihedral angle for A-this-O-B
     double dihedral_angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
 };
+
+}
 
 #endif
 

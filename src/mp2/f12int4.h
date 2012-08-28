@@ -39,6 +39,7 @@
 #include <src/mp2/f12mat.h>
 #include <tuple>
 
+namespace bagel {
 
 // Reference implementation of an F12 theory
 class F12Ref {
@@ -245,6 +246,8 @@ template<typename T> class AOInt {
     std::shared_ptr<File4> data2() { return std::shared_ptr<File4>(new File4(data2_, dim_, dim0_, dim1_)); }; 
 
 };
+
+}
 
 #endif
 

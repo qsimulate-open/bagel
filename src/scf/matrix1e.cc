@@ -33,6 +33,7 @@
 #include <cmath>
 
 using namespace std;
+using namespace bagel;
 
 
 Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom) : data_(new double[geom->nbasis()*geom->nbasis()]), geom_(geom), nbasis_(geom->nbasis()) {

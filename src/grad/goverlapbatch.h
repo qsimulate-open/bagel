@@ -30,6 +30,8 @@
 #include <src/osint/osint.h>
 #include <src/scf/geometry.h>
 
+namespace bagel {
+
 class GOverlapBatch : public OSInt {
   protected:
     const std::shared_ptr<const Geometry> geom_;
@@ -43,5 +45,7 @@ class GOverlapBatch : public OSInt {
     std::shared_ptr<const Geometry> geom() const { return geom_; };
 
 };
+
+}
 
 #endif

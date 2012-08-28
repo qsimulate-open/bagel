@@ -28,6 +28,7 @@
 #include <src/wfn/rdm.h>
 
 using namespace std;
+using namespace bagel;
 
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.

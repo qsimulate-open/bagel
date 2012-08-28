@@ -27,6 +27,7 @@
 #include <src/grad/gnaibatch.h>
 
 using namespace std;
+using namespace bagel;
 
 void GNAIBatch::set_exponents() {
   exponents_ = unique_ptr<double[]>(new double[primsize_*2]);

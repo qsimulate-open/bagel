@@ -29,7 +29,7 @@
 #include <iomanip>
 
 using namespace std;
-
+using namespace bagel;
 
 // private functions
 void OverlapBatch::perform_VRR(double* intermediate) {

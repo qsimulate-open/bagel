@@ -35,6 +35,8 @@
 #include <memory>
 #include <tuple>
 
+namespace bagel {
+
 class SlaterBatch : public RysInt {
 
   protected:
@@ -91,6 +93,8 @@ class SlaterBatch : public RysInt {
     void compute();
 
 };
+
+}
 
 #endif
 

@@ -28,6 +28,8 @@
 #include <src/casscf/jkop.h>
 
 using namespace std;
+using namespace bagel;
+
 #define DEBUG4INDEX
 
 

@@ -36,15 +36,16 @@
 #define MAX_ITER_SCF 200
 #define SCF_THRESH 1.0e-8
 
-typedef std::shared_ptr<const Atom> RefAtom;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-typedef std::shared_ptr<PFock> RefPFock;
-typedef std::shared_ptr<PTildeX> RefPTildeX;
-typedef std::shared_ptr<PCoeff> RefPCoeff;
-typedef std::shared_ptr<PMatrix1e> RefPMatrix1e;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<PGeometry> RefPGeometry;
+typedef shared_ptr<PFock> RefPFock;
+typedef shared_ptr<PTildeX> RefPTildeX;
+typedef shared_ptr<PCoeff> RefPCoeff;
+typedef shared_ptr<PMatrix1e> RefPMatrix1e;
 
 PSCF::PSCF(const RefPGeometry g) : geom_(g), overlap_(new POverlap(g)), hcore_(new PHcore(g)) {
 

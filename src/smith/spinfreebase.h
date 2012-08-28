@@ -32,6 +32,7 @@
 #include <src/smith/moint.h>
 #include <src/wfn/reference.h>
 
+namespace bagel {
 namespace SMITH {
 
 template <typename T>
@@ -172,6 +173,7 @@ class SpinFreeMethod {
 
 };
 
+}
 }
 
 #endif

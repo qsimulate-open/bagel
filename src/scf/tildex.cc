@@ -33,6 +33,7 @@
 #include <vector>
 
 using namespace std;
+using namespace bagel;
 
 //#define USE_CANONICAL
 

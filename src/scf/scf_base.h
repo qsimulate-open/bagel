@@ -37,6 +37,8 @@
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 
+namespace bagel {
+
 class SCF_base {
   protected:
     const std::multimap<std::string, std::string> idata_;
@@ -87,5 +89,7 @@ class SCF_base {
 
     double* eig() { return eig_.get(); };
 };
+
+}
 
 #endif

@@ -28,7 +28,8 @@
 
 #include <src/smith/MP2.h>
 
-using namespace SMITH;
+using namespace bagel;
+using namespace bagel::SMITH;
 using namespace std;
 
 // called from the main function

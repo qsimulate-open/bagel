@@ -38,6 +38,7 @@
 #include <src/util/resources.h>
 
 using namespace std;
+using namespace bagel;
 
 MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
 
@@ -58,6 +59,7 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> 
 
 }
 
+namespace bagel {
 
 class MP2AssemTask {
   protected:
@@ -93,6 +95,8 @@ class MP2AssemTask {
       resources__->release(stack);
     }
 };
+
+}
 
 void MP2::compute() {
   // TODO this factor of 2 is very much error-prone..

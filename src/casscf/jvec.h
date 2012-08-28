@@ -31,6 +31,8 @@
 #include <src/scf/coeff.h>
 #include <src/df/df.h>
 
+namespace bagel {
+
 class Jvec {
   protected:
     std::shared_ptr<const DF_Half> half_; 
@@ -48,5 +50,7 @@ class Jvec {
     const double* rdm2_all() const { return rdm2_all_.get(); };
 
 };
+
+}
 
 #endif

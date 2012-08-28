@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <src/scf/atom.h>
 
+namespace bagel {
+
 class Petite {
   protected:
     int natom_;
@@ -343,6 +345,8 @@ class SymD2h : public Symmetry {
     ~SymD2h() {};
     int nirrep() const { return 8; };
 };
+
+}
 
 #endif
 

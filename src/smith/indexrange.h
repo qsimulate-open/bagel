@@ -33,6 +33,7 @@
 #include <sstream>
 #include <iomanip>
 
+namespace bagel {
 namespace SMITH {
 
 // one index block
@@ -131,6 +132,7 @@ class IndexRange {
     void print() const { std::cout << str() << std::endl; };
 };
 
+}
 }
 
 #endif

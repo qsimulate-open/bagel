@@ -30,6 +30,8 @@
 #include <string>
 #include <src/scf/geometry.h>
 
+namespace bagel {
+
 class PGeometry : public Geometry {
   protected:
     int L_; // Namur cutoff L
@@ -54,6 +56,8 @@ class PGeometry : public Geometry {
     // Returns nuclear repulsion energies.
     double nuclear_repulsion() const { return pnuclear_repulsion_; }; 
 };
+
+}
 
 #endif
 

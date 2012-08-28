@@ -31,7 +31,7 @@
 #include <algorithm>
 
 using namespace std;
-
+using namespace bagel;
 
 void OSInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont, 
                                        const vector<vector<double> >& coeff0, const vector<pair<int, int> >& ranges0, const int cdim0, 

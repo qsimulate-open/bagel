@@ -34,6 +34,7 @@
 
 // same function for NAI below.
 using namespace std;
+using namespace bagel;
 
 
 static const double pitwohalf__ = pow(pi__, 2.5); 

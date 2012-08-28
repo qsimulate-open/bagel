@@ -28,6 +28,8 @@
 
 #include <src/rysint/naibatch_base.h>
 
+namespace bagel {
+
 class NAIBatch : public NAIBatch_base {
 
   protected:
@@ -42,6 +44,8 @@ class NAIBatch : public NAIBatch_base {
     void compute();
 
 };
+
+}
 
 #endif
 

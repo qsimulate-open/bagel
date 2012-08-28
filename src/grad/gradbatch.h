@@ -31,6 +31,8 @@
 #include <memory>
 #include <src/rysint/eribatch_base.h>
 
+namespace bagel {
+
 class GradBatch : public ERIBatch_base {
   protected:
     // if we only compute three-center integrals, we want to use this info
@@ -65,6 +67,8 @@ class GradBatch : public ERIBatch_base {
     void compute();
 
 };
+
+}
 
 #endif
 

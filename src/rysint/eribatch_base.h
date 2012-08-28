@@ -32,6 +32,8 @@
 #include <src/rysint/rysint.h>
 #include <tuple>
 
+namespace bagel {
+
 class ERIBatch_base : public RysInt{
   protected:
     void root_weight(const int ps); 
@@ -67,5 +69,7 @@ class ERIBatch_base : public RysInt{
     ~ERIBatch_base() {};
 
 };
+
+}
 
 #endif

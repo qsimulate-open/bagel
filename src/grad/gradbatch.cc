@@ -36,6 +36,7 @@
 #include <src/rysint/macros.h>
 
 using namespace std;
+using namespace bagel;
 
 typedef std::shared_ptr<const Shell> RefShell;
 

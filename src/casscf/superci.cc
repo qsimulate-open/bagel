@@ -36,6 +36,7 @@
 #include <src/util/hpw_diis.h>
 
 using namespace std;
+using namespace bagel;
 
 #define DF 1
 

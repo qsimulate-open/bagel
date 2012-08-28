@@ -34,6 +34,8 @@
 #include <src/rysint/eribatch.h>
 #include <stdexcept>
 
+namespace bagel {
+
 class DF_Half;
 class DF_Full;
 
@@ -255,6 +257,8 @@ class DF_Full {
     std::shared_ptr<DF_Half> back_transform(const double* c) const;
 
 };
+
+}
 
 #endif
 

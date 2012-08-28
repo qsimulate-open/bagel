@@ -30,6 +30,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
+using namespace bagel;
 
 const static CarSphList carsphlist;
 

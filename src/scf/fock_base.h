@@ -33,6 +33,8 @@
 #include <memory>
 #include <vector>
 
+namespace bagel {
+
 class Fock_base : public Matrix1e {
   protected:
     const std::shared_ptr<const Fock_base> previous_;
@@ -57,5 +59,7 @@ class Fock_base : public Matrix1e {
     ~Fock_base();
 
 };
+
+}
 
 #endif

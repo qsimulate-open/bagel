@@ -27,9 +27,10 @@
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/hrrlist.h>
 
-const static HRRList hrr;
-
 using namespace std;
+using namespace bagel;
+
+const static HRRList hrr;
 
 DipoleBatch::DipoleBatch(const array<std::shared_ptr<const Shell>,2>& _basis, const array<double,3>& c)
  : OSInt(_basis, -1), center_(c) {

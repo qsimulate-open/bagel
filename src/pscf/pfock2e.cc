@@ -32,12 +32,13 @@
 #include <fstream>
 #include <cassert>
 
-typedef std::complex<double> Complex;
-typedef std::shared_ptr<Atom> RefAtom;
-typedef std::shared_ptr<Shell> RefShell;
-
-
 using namespace std;
+using namespace bagel;
+
+typedef complex<double> Complex;
+typedef shared_ptr<Atom> RefAtom;
+typedef shared_ptr<Shell> RefShell;
+
 
 void PFock::pfock_two_electron_part() {
 

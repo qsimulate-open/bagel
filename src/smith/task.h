@@ -30,6 +30,7 @@
 #include <list>
 #include <memory>
 
+namespace bagel {
 namespace SMITH {
 
 // base class for Task objects
@@ -89,6 +90,7 @@ class EnergyTask : public Task<T> {
 
 };
 
+}
 }
 
 #endif

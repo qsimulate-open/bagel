@@ -34,6 +34,7 @@
 #include <src/smith/task.h>
 #include <vector>
 
+namespace bagel {
 namespace SMITH {
 
 template <typename T>
@@ -280,6 +281,7 @@ class Task5 : public EnergyTask<T> {
 
 };
 
+}
 }
 
 #endif

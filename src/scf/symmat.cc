@@ -30,17 +30,17 @@
 #include <cassert>
 
 using namespace std;
+using namespace bagel;
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<const Atom> RefAtom;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<Petite> RefPetite;
-typedef std::shared_ptr<SymRotAbel> RefSymRotAbel;
+typedef shared_ptr<const Geometry> RefGeometry;
+typedef shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<Petite> RefPetite;
+typedef shared_ptr<SymRotAbel> RefSymRotAbel;
 
 SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix1e(gm), petite_(gm->plist()) {
 
-  RefSymRotAbel symrt(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
-  symrot_ = symrt;
+  symrot_ = RefSymRotAbel(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
 
   const vector<RefAtom> atoms = gm->atoms(); 
   const int natom = atoms.size();

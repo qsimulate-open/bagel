@@ -31,6 +31,7 @@
 #include <src/util/f77.h>
 
 using namespace std;
+using namespace bagel;
 
 Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 

@@ -35,6 +35,8 @@
 #include <chrono>
 #include <iomanip>
 
+namespace bagel {
+
 template<int DF>
 class SCF : public SCF_base {
 
@@ -148,5 +150,7 @@ class SCF : public SCF_base {
     };
 
 };
+
+}
 
 #endif

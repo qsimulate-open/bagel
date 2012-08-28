@@ -33,6 +33,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
 
 SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)

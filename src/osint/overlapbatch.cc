@@ -31,8 +31,8 @@
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/macros.h>
 
-
 using namespace std;
+using namespace bagel;
 
 const static HRRList hrr;
 

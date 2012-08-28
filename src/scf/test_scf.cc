@@ -29,6 +29,8 @@
 #include <src/scf/uhf.h>
 #include <src/wfn/reference.h>
 
+using namespace bagel;
+
 double scf_energy(std::string filename) {
   std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());

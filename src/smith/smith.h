@@ -28,6 +28,7 @@
 #ifndef __SMIT_SMITH_H
 #define __SMIT_SMITH_H
 
+namespace bagel {
 namespace SMITH {
 
 class SMITH_info {
@@ -43,6 +44,7 @@ class SMITH_info {
     double thresh_residual() const { return thresh_residual_; };
 };
 
+}
 }
 
 #endif

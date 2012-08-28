@@ -28,9 +28,10 @@
 #include <src/osint/overlapbatch.h>
 #include <iostream>
 
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<PGeometry> RefPGeometry;
 
 POverlap::POverlap(const RefPGeometry g) : PMatrix1e(g) {
 

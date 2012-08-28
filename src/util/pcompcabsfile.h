@@ -30,6 +30,8 @@
 #include <vector>
 #include <src/util/pcompfile.h>
 
+namespace bagel {
+
 template<class T>
 class PCompCABSFile : public PCompFile<T> {
   protected:
@@ -733,6 +735,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
 };
 
+}
 
 #endif
 

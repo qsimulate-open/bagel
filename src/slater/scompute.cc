@@ -36,6 +36,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
+using namespace bagel;
 
 
 void SlaterBatch::compute() {

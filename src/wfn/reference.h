@@ -38,6 +38,8 @@
 
 // all the info to construct wave functions
 
+namespace bagel {
+
 class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
@@ -126,5 +128,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
 
 };
+
+}
 
 #endif

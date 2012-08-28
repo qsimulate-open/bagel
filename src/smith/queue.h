@@ -35,6 +35,7 @@
 #include <list>
 #include <memory>
 
+namespace bagel {
 namespace SMITH {
 
 template <typename T>
@@ -74,6 +75,7 @@ class Queue {
     };
 };
 
+}
 }
 
 #endif

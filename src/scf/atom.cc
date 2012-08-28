@@ -42,6 +42,7 @@
 #include <src/util/constants.h>
 
 using namespace std;
+using namespace bagel;
 
 static const AtomMap atommap_;
 

@@ -31,6 +31,8 @@
 #include <src/pscf/pgeometry.h>
 #include <memory>
 
+namespace bagel {
+
 class PHcore : public PMatrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, const int, const int);
@@ -45,6 +47,8 @@ class PHcore : public PMatrix1e {
     ~PHcore();
 
 };
+
+}
 
 #endif
 

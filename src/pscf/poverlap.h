@@ -31,6 +31,8 @@
 #include <src/pscf/pgeometry.h>
 #include <memory>
 
+namespace bagel {
+
 class POverlap : public PMatrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, const int, const int);
@@ -42,6 +44,8 @@ class POverlap : public PMatrix1e {
     int calculate_thresh() const;
 
 };
+
+}
 
 #endif
 

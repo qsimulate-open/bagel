@@ -33,11 +33,12 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
-typedef std::shared_ptr<Petite> RefPetite;
-typedef std::shared_ptr<const Atom> RefAtom;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<Symmetry> RefSymmetry;
+typedef shared_ptr<Petite> RefPetite;
+typedef shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<Symmetry> RefSymmetry;
 
 static inline array<double,3> matmul33(const vector<double>& a, const array<double,3>& b) {
   assert(a.size() == 9 && b.size() == 3); 

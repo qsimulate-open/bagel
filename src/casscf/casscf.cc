@@ -32,6 +32,7 @@
 #include <src/casscf/qvec.h>
 
 using namespace std;
+using namespace bagel;
 
 template<typename T>
 static string tostring(const T i) {

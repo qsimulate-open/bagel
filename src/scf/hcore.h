@@ -31,6 +31,8 @@
 #include <src/scf/matrix1e.h>
 #include <memory>
 
+namespace bagel {
+
 class Hcore : public Matrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
@@ -40,6 +42,8 @@ class Hcore : public Matrix1e {
     ~Hcore();
 
 };
+
+}
 
 #endif
 
