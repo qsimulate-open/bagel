@@ -35,6 +35,7 @@
 static CarSphList carsphlist;
 
 using namespace std;
+using namespace bagel;
 
 static libint2::FmEval_Chebyshev3 fmeval(18);
 

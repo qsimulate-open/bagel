@@ -31,6 +31,8 @@
 
 #include <src/rysint/rysint.h>
 
+namespace bagel {
+
 class GLibint : public RysInt {
   protected:
     void root_weight(int){};
@@ -43,6 +45,8 @@ class GLibint : public RysInt {
     void compute() {};
 
 };
+
+}
 
 #endif
 
