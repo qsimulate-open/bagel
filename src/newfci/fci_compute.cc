@@ -36,11 +36,13 @@
 #include <vector>
 
 // toggle for timing print out.
-static const bool tprint = false;
+static const bool tprint = true;
 
 using namespace std;
 using namespace std::chrono;
 using namespace bagel;
+
+static shared_ptr<Space> space;
 
 void NewFCI::update(shared_ptr<const Coeff> c) {
 
@@ -78,6 +80,9 @@ void NewFCI::compute() {
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
+  // construct space
+  space = shared_ptr<Space>(new Space(det_,1));
+
   // Davidson utility
   DavidsonDiag<NewCivec> davidson(nstate_, max_iter_);
 
@@ -90,7 +95,9 @@ void NewFCI::compute() {
     auto tp1 = high_resolution_clock::now();
 
     // form a sigma vector given cc
+    cout << "probably see this" << endl;
     shared_ptr<NewDvec> sigma = form_sigma(cc_, jop_, conv);
+    cout << "and not this" << endl;
 
     // constructing NewDvec's for Davidson
     shared_ptr<const NewDvec> ccn(new NewDvec(cc_));
@@ -226,7 +233,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
   shared_ptr<NewDvec> sigmavec(new NewDvec(ccvec->det(), nstate));
   sigmavec->zero();
 
-  shared_ptr<Space> space(new Space(ccvec->det(), 1));
+  //static shared_ptr<Space> space(new Space(ccvec->det(), 1));
 
   shared_ptr<NewDeterminants> base_det = space->finddet(0,0);
   shared_ptr<NewDeterminants> int_det = space->finddet(-1,-1);
@@ -283,7 +290,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
         target_base += lb;
       }
     }
-    if (tprint) print_timing_("task2-aa", start, timing);
+    if (tprint) print_timing_("task2aa", start, timing);
     
     // (2bb) beta-beta contributions
     /* Mostly the same as the alpha-alpha, except for data storage */
@@ -310,7 +317,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
                 bitset<nbit__> string_ijkl = string_ij;
                 string_ijkl.set(k); string_ijkl.set(l);
                 double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,l,k,j) );
-                const double* source = source_base + cc->det()->lexical<1>(string_ijkl);
+                const double* source = source_base + base_det->lexical<1>(string_ijkl);
                 daxpy_(la, temp, source, lb, target_base, lb);
               }
             }
@@ -323,11 +330,14 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
     d->zero();
+    e->zero();
     {
-      const int lat = int_det->lena(); const int lbt = int_det->lenb();
-      const int las = base_det->lena(); const int lbs = base_det->lenb();
+      const int lbt = d->lenb();
+      const int lbs = cc->lenb();
       const double* source_base = cc->data();
 
+  cout << "here" << endl;
+  cout << d->ij() << endl;
       for (int i = 0; i < norb; ++i) {
         for (int j = 0; j < norb; ++j) {
           double* target_base = d->data(i*norb + j)->data();
@@ -341,6 +351,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       }
     }
     if (tprint) print_timing_("task2ab-1", start, timing);
+  cout << "please" << endl;
 
     {
       const int lenab = int_det->lena() * int_det->lenb();
@@ -361,7 +372,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
           for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
             for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
               const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-              target_base[get<0>(*aiter)*lbt + get<1>(*biter)] += sign * source_base[get<2>(*aiter)*lbs + get<2>(*biter)];
+              target_base[get<0>(*aiter)*lbt + get<0>(*biter)] += sign * source_base[get<2>(*aiter)*lbs + get<2>(*biter)];
             }
           } 
         }
@@ -378,6 +389,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       for (auto iter = timing.begin(); iter != timing.end(); ++iter)
         cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
     }
+  cout << "there" << endl;
   }
 
   return sigmavec;

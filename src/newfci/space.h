@@ -148,7 +148,7 @@ void Space::form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<N
   for (auto iter = stringplus.begin(); iter != stringplus.end(); ++iter) {
     for (unsigned int i = 0; i!= norb_; ++i) {
       if ((*iter)[i]) { // annihilation
-        const int source = nplusdet->lexical<spin>(*iter);
+        const unsigned int source = nplusdet->lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); //annihilated.
         const unsigned int target = ndet->lexical<spin>(nbit);
         phidown[i].push_back(std::make_tuple(target, sign(nbit, i), source));
@@ -156,14 +156,21 @@ void Space::form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<N
     }
   }
 
+
   // finally link
   if (spin == Alpha) {
     nplusdet->detremalpha_ = ndet;
+    nplusdet->phidowna_ = phidown;
+
     ndet->detaddalpha_ = nplusdet;
+    ndet->phiupa_ = phiup;
   }
   else {
     nplusdet->detrembeta_ = ndet;
+    nplusdet->phidownb_ = phidown;
+
     ndet->detaddbeta_ = nplusdet;
+    ndet->phiupb_ = phiup;
   }
 };
 
