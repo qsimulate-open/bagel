@@ -23,13 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#define __NEWFCI_DEBUGGING
 
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <stdexcept>
 #include <src/newfci/fci.h>
+#include <src/newfci/space.h>
 #include <src/util/davidson.h>
+#include <src/util/constants.h>
+#include <vector>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -145,6 +149,7 @@ void NewFCI::compute() {
 
 
 
+#ifndef __NEWFCI_DEBUGGING
 shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
 
@@ -207,6 +212,176 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
 
   return sigmavec;
 }
+#else
+/* This part is only intended for debugging the Space functions. It should probably be reworked if performance is desired. */
+/* Implementing the method as described by Harrison and Zarrabian */
+shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
+                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
+
+  const int norb = norb_;
+  const int ij = norb*norb; 
+
+  const int nstate = ccvec->ij();
+  shared_ptr<NewDvec> sigmavec(new NewDvec(ccvec->det(), nstate));
+  sigmavec->zero();
+
+  shared_ptr<Space> space(new Space(ccvec->det(), 1));
+
+  shared_ptr<NewDeterminants> base_det = space->finddet(0,0);
+  shared_ptr<NewDeterminants> int_det = space->finddet(-1,-1);
+
+  /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
+  shared_ptr<NewDvec> d(new NewDvec(int_det, ij));
+  shared_ptr<NewDvec> e(new NewDvec(int_det, ij));
+
+  for (int istate = 0; istate != nstate; ++istate) {
+    if (conv[istate]) continue;
+    shared_ptr<const NewCivec> cc = ccvec->data(istate);  
+    shared_ptr<NewCivec> sigma = sigmavec->data(istate);  
+
+    vector<pair<string, double> > timing;
+    int start = ::clock();
+
+    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
+    sigma_1(cc, sigma, jop);
+    if (tprint) print_timing_("task1", start, timing);
+
+    // (task2) two electron contributions
+
+    // (2aa) alpha-alpha contributions
+    /* Apparently the advantage to having this loop structure is the top loop can be threaded easily */
+    {
+      const double* const source_base = cc->data();
+      double* target_base = sigma->data();
+      int lb = sigma->lenb();
+      
+      for (auto aiter = int_det->stringa().begin(); aiter != int_det->stringa().end(); ++aiter) {
+        bitset<nbit__> nstring = *aiter;
+        for (int i = 0; i != norb; ++i) {
+          if (!nstring[i]) continue;
+          for (int j = 0; j < i; ++j) {
+            if(!nstring[j]) continue;
+            int ij_phase = int_det->sign(nstring,i,j);
+            bitset<nbit__> string_ij = nstring; 
+            string_ij.reset(i); string_ij.reset(j);
+            for (int k = 0; k != norb; ++k) {
+              if (string_ij[k]) continue;
+              for (int l = 0; l < k; ++l) {
+                if (string_ij[l]) continue;
+                int kl_phase = int_det->sign(string_ij,k,l);
+                double phase = static_cast<double>(ij_phase*kl_phase);
+                bitset<nbit__> string_ijkl = string_ij;
+                string_ijkl.set(k); string_ijkl.set(l);
+                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,l,k,j) );
+                const double* source = source_base + base_det->lexical<0>(string_ijkl)*lb;
+                daxpy_(lb, temp, source, 1, target_base, 1);
+              }
+            }
+          }
+        }
+        target_base += lb;
+      }
+    }
+    if (tprint) print_timing_("task2-aa", start, timing);
+    
+    // (2bb) beta-beta contributions
+    /* Mostly the same as the alpha-alpha, except for data storage */
+    {
+      const double* const source_base = cc->data();
+      double* target_base = sigma->data();
+      int la = sigma->lena();
+      int lb = sigma->lenb();
+      for (auto biter = cc->det()->stringb().begin(); biter != cc->det()->stringb().end(); ++biter,++target_base) {
+        bitset<nbit__> nstring = *biter;
+        for (int i = 0; i != norb; ++i) {
+          if (!nstring[i]) continue;
+          for (int j = 0; j < i; ++j) {
+            if(!nstring[j]) continue;
+            int ij_phase = int_det->sign(nstring,i,j);
+            bitset<nbit__> string_ij = nstring;
+            string_ij.reset(i); string_ij.reset(j);
+            for (int k = 0; k != norb; ++k) {
+              if (string_ij[k]) continue;
+              for (int l = 0; l < k; ++l) {
+                if (string_ij[l]) continue;
+                int kl_phase = int_det->sign(string_ij,k,l);
+                double phase = static_cast<double>(ij_phase*kl_phase);
+                bitset<nbit__> string_ijkl = string_ij;
+                string_ijkl.set(k); string_ijkl.set(l);
+                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,l,k,j) );
+                const double* source = source_base + cc->det()->lexical<1>(string_ijkl);
+                daxpy_(la, temp, source, lb, target_base, lb);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (tprint) print_timing_("task2bb", start, timing);
+
+    // (2ab) alpha-beta contributions
+    /* Resembles more the Knowles & Handy FCI terms */
+    d->zero();
+    {
+      const int lat = int_det->lena(); const int lbt = int_det->lenb();
+      const int las = base_det->lena(); const int lbs = base_det->lenb();
+      const double* source_base = cc->data();
+
+      for (int i = 0; i < norb; ++i) {
+        for (int j = 0; j < norb; ++j) {
+          double* target_base = d->data(i*norb + j)->data();
+          for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
+            for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
+              const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
+              target_base[get<2>(*aiter)*lbt + get<2>(*biter)] += sign * source_base[get<0>(*aiter)*lbs + get<0>(*biter)];
+            }
+          }
+        }
+      }
+    }
+    if (tprint) print_timing_("task2ab-1", start, timing);
+
+    {
+      const int lenab = int_det->lena() * int_det->lenb();
+      const int ij = d->ij();
+      // TODO: check 0.5 coefficient.
+      dgemm_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
+    }
+    if (tprint) print_timing_("task2ab-2", start, timing);
+
+    {
+      const int lbt = base_det->lenb();
+      const int lbs = int_det->lenb();
+      double* target_base = sigma->data();
+
+      for (int k = 0; k < norb; ++k) {
+        for (int l = 0; l < norb; ++l) {
+          const double* source_base = e->data(k*norb + l)->data();
+          for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
+            for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
+              const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
+              target_base[get<0>(*aiter)*lbt + get<1>(*biter)] += sign * source_base[get<2>(*aiter)*lbs + get<2>(*biter)];
+            }
+          } 
+        }
+      }
+    }
+    if (tprint) print_timing_("task2ab-3", start, timing);
+    
+    // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
+    sigma_3(cc, sigma, jop);
+
+    if (tprint) {
+      print_timing_("task3", start, timing);
+      cout << "     timing info" << endl;
+      for (auto iter = timing.begin(); iter != timing.end(); ++iter)
+        cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
+    }
+  }
+
+  return sigmavec;
+}
+#endif
 
 
 void NewFCI::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {

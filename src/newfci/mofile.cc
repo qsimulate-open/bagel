@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#define __NEWFCI_DEBUGGING
+
 
 #include <iostream>
 #include <iomanip>
@@ -85,6 +87,7 @@ void NewMOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2
   sizeij_ = nocc*(nocc+1)/2;
   mo2e_ = unique_ptr<double[]>(new double[sizeij_*sizeij_]);
 
+  #ifndef __NEWFCI_DEBUGGING
   int ijkl = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j <= i; ++j) {
@@ -94,6 +97,21 @@ void NewMOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2
           mo2e_[ijkl] = buf2e[l+k*nocc+ijo];
     }
   }
+  #else
+  int iljk = 0;
+  // In this case, there is no compression
+  // Is currently ordered like (ij|kl), should be ordered like (il|jk), with the last index moving the fastest
+  for (int i = 0; i != nocc; ++i) {
+    for (int l = 0; l != nocc; ++l) {
+      for (int j = 0; j != nocc; ++j) {
+        for (int k = 0; k != nocc; ++k, ++iljk) {
+          /* Yes, this is horribly inefficient use of the indices, but it's only for debugging, so meh! */
+          mo2e_[iljk] = buf2e[l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc];
+        }
+      }
+    }
+  }
+  #endif
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)
   mo1e_ = unique_ptr<double[]>(new double[sizeij_]);
@@ -101,8 +119,10 @@ void NewMOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2
   for (int i=0; i!=nocc; ++i) {
     for (int j=0; j<=i; ++j, ++ij) {
       mo1e_[ij] = buf1e[j+i*nocc];
+      #ifndef __NEWFCI_DEBUGGING
       for (int k=0; k!=nocc; ++k)
         mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
+      #endif
     }
   }
 }

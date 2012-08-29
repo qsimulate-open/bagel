@@ -39,6 +39,7 @@
 #include <src/molden/molden.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
+#include <src/newfci/fci.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
 #include <src/mp2/mp2grad.h>
@@ -47,6 +48,7 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
+#include <src/newfci/space.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -228,6 +230,13 @@ int main(int argc, char** argv) {
         if (orbitals) molden.write_mos(ref, out_file);
 
       }
+        else if (method == "newfci") {
+        if (!static_cast<bool>(ref)) throw std::runtime_error("FCI needs a reference");
+
+        std::shared_ptr<NewFCI> fci(new NewFCI(iter->second, ref));
+        fci->compute();
+
+      }
         else if (method == "dimerize") {
 
         std::multimap<std::string,std::string> dimdata = iter->second;
@@ -256,6 +265,12 @@ int main(int argc, char** argv) {
       else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
+
+        #if 1
+        std::shared_ptr<Space> space(new Space(16, 8, 8, 1));
+
+
+        #endif
 
         #if 0 // Dimer overlap testing
         double dx = read_input<double>(testdata, "dx", 0.0) * ang2bohr__;

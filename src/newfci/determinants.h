@@ -89,23 +89,6 @@ class NewDeterminants {
     void const_phis_(const std::vector<std::bitset<nbit__> >& string,
                      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target);
 
-    int sign(std::bitset<nbit__> bit, int i, int j) {
-      // masking irrelevant bits
-      std::bitset<nbit__> ii(~((1 << (std::min(i,j)+1)) - 1));
-      std::bitset<nbit__> jj(((1 << (std::max(i,j))) - 1)); 
-      bit = (bit & ii) & jj;
-      return 1 - ((bit.count() & 1) << 1);
-    };
-
-    // maps bit to lexical numbers.
-    template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
-      unsigned int out = 0;
-      int k = 0;
-      for (int i = 0; i != norb_; ++i) 
-        if (bit[i]) { out += zkl(k,i, spin); ++k; }
-      return out;
-    };
-
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
       std::vector<int> out;
@@ -160,6 +143,23 @@ class NewDeterminants {
       return out;
     };
 
+    int sign(std::bitset<nbit__> bit, int i, int j) {
+      // masking irrelevant bits
+      std::bitset<nbit__> ii(~((1 << (std::min(i,j)+1)) - 1));
+      std::bitset<nbit__> jj(((1 << (std::max(i,j))) - 1)); 
+      bit = (bit & ii) & jj;
+      return 1 - ((bit.count() & 1) << 1);
+    };
+
+    // maps bit to lexical numbers.
+    template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
+      unsigned int out = 0;
+      int k = 0;
+      for (int i = 0; i != norb_; ++i) 
+        if (bit[i]) { out += zkl(k,i, spin); ++k; }
+      return out;
+    };
+
     void print(const double* const civec, const double thr) const;
     std::bitset<nbit__> stringa(int i) { return stringa_[i]; };
     std::bitset<nbit__> stringb(int i) { return stringb_[i]; };
@@ -169,6 +169,7 @@ class NewDeterminants {
     std::pair<std::vector<std::tuple<int, int, int> >, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
     int nspin() const { return nelea_ - neleb_; }; 
+    int norb()  const { return norb_; };
     int nelea() const { return nelea_; };
     int neleb() const { return neleb_; };
 
@@ -180,6 +181,11 @@ class NewDeterminants {
 
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidowna(const int i) const { return phidowna_[i]; };
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidownb(const int i) const { return phidownb_[i]; };
+
+    std::shared_ptr<NewDeterminants> addalpha() { return detaddalpha_;};
+    std::shared_ptr<NewDeterminants> remalpha() { return detremalpha_;};
+    std::shared_ptr<NewDeterminants> addbeta() { return detaddbeta_;};
+    std::shared_ptr<NewDeterminants> rembeta() { return detrembeta_;};
 };
 
 

@@ -70,7 +70,7 @@ class Space {
     template <int spin>
     void form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<NewDeterminants> nplusdet ); // links two NewDeterminants objects
 
-    const int key_(const int a, const int b) { return ( (nelea_ - a)*large__ + (neleb_ - b) ); }
+    const int key_(const int a, const int b) { return ( a*large__ + b ); }
     const int key_(std::shared_ptr<NewDeterminants> det) { return key_((nelea_ - det->nelea()),(neleb_ - det->neleb())); }
 
     const int sign(std::bitset<nbit__> bit, int i) {
@@ -80,7 +80,7 @@ class Space {
     }
 
   public:
-    Space(std::shared_ptr<NewDeterminants>, const int M);
+    Space(std::shared_ptr<const NewDeterminants>, const int M);
     Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = true);
     ~Space() {};
 
@@ -90,10 +90,12 @@ class Space {
 
     int nspin() const { return nelea_ - neleb_; }; 
 
-    std::shared_ptr<NewDeterminants> basedet() { return finddet(nelea_, neleb_); }
+    std::shared_ptr<NewDeterminants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
-    std::shared_ptr<NewDeterminants> finddet( const int i, const int j ) { auto idet = detmap_.find(key_(i,j)); return idet->second; }
+    std::shared_ptr<NewDeterminants> finddet( const int i, const int j ) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
 
+  private:
+    void common_init();
 };
 
 

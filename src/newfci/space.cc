@@ -34,6 +34,15 @@ using namespace std;
 Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress)
   : norb_(_norb), nelea_(_nelea), neleb_(_neleb), M_(_M), compress_(_compress) {
 
+  common_init();
+}
+
+Space::Space(shared_ptr<const NewDeterminants> det, int _M) : norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(det->compress_) {
+
+  common_init();
+}
+
+void Space::common_init() {
   const bool mute = !compress_;
 
   if (!mute) cout << " Constructing space of all determinants that can formed by adding or removing " 
@@ -76,5 +85,5 @@ Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, 
     }
   }
   if (!mute) cout << "    - " << nlinks << " links formed" << endl;
-}
 
+}
