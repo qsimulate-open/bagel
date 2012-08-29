@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.cc
+// Filename: smallnaibatch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,41 @@
 //
 
 
-#include <src/rel/dirac.h>
-#include <src/rel/smallnai.h>
+#ifndef __SRC_REL_SMALL_NAI_H
+#define __SRC_REL_SMALL_NAI_H
 
-using namespace std;
-using namespace bagel;
+#include <src/scf/shell.h>
+#include <src/scf/geometry.h>
+#include <memory>
+#include <src/rysint/naibatch.h>
 
-void Dirac::compute() {
+// computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 
-  kinetic_->print();
-  nai_->print();
+namespace bagel {
 
-  SmallNAI snai(geom_);
+class SmallNAIBatch {
+  protected:
+    std::unique_ptr<double[]> data_;
+
+    const std::array<std::shared_ptr<const Shell>,2> shells_;
+    const std::array<std::shared_ptr<const Shell>,2> aux_;
+
+    std::shared_ptr<NAIBatch> nai_;
+
+    const size_t size_block_;
+
+  public:
+    SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom);
+    ~SmallNAIBatch() {};
+
+    void compute();
+
+    size_t size_block() const { return size_block_; };
+
+    const double* data() const { return data_.get(); };
+
+};
 
 }
 
-
-shared_ptr<Reference> Dirac::conv_to_ref() const {
-  assert(false);
-  return shared_ptr<Reference>();
-}
+#endif

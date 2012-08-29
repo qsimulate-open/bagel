@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.cc
+// Filename: smallnai.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,32 @@
 //
 
 
-#include <src/rel/dirac.h>
-#include <src/rel/smallnai.h>
+#ifndef __SRC_REL_SMALLNAI_H
+#define __SRC_REL_SMALLNAI_H
 
-using namespace std;
-using namespace bagel;
+#include <memory>
+#include <array>
+#include <src/scf/matrix1e.h>
+#include <src/scf/geometry.h>
 
-void Dirac::compute() {
+namespace bagel {
 
-  kinetic_->print();
-  nai_->print();
+class SmallNAI {
+  protected:
+    std::array<std::shared_ptr<Matrix1e>, 4> data_;
+    const std::shared_ptr<const Geometry> geom_;
 
-  SmallNAI snai(geom_);
+    void init();
+
+  public:
+    SmallNAI(const std::shared_ptr<const Geometry> geom);
+    ~SmallNAI() {};
+  
+    const std::shared_ptr<Matrix1e>& operator[](const int i) const { return data_[i]; }; 
+
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
+};
 
 }
 
-
-shared_ptr<Reference> Dirac::conv_to_ref() const {
-  assert(false);
-  return shared_ptr<Reference>();
-}
+#endif

@@ -31,11 +31,13 @@
 using namespace std;
 using namespace bagel;
 
-Shell::Shell(const bool sph, array<double,3> _position, int _ang, vector<double> _expo,
-                       vector<vector<double> > _contr,  vector<pair<int, int> > _range)
+Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
+                       const vector<vector<double> >& _contr,  const vector<pair<int, int> >& _range)
  : spherical_(sph), position_(_position), angular_number_(_ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false) {
 
+  contraction_lower_.reserve(_range.size());
+  contraction_upper_.reserve(_range.size());
   for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
     contraction_lower_.push_back(piter->first);
     contraction_upper_.push_back(piter->second);
@@ -114,3 +116,26 @@ bool Shell::operator==(const Shell& o) const {
   out &= nbasis_ == o.nbasis_;
   return out;
 }
+
+
+// returns uncontracted cartesian shell with one higher angular number 
+shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
+  int i = 0;
+  vector<vector<double> > conts;
+  vector<pair<int, int> > ranges;
+  for (auto e = exponents_.begin(); e != exponents_.end(); ++e, ++i) {
+    vector<double> cont(exponents_.size(), 0);
+    cont[i] = 1.0;
+    conts.push_back(cont);
+    ranges.push_back(make_pair(i,i+1));
+  }
+  return shared_ptr<const Shell>(new Shell(false, position_, angular_number_+1, exponents_, conts, ranges));
+}
+
+
+shared_ptr<const Shell> Shell::cartesian_shell() const {
+  shared_ptr<Shell> out(new Shell(*this));
+  out->spherical_ = false;
+  return out;
+}
+

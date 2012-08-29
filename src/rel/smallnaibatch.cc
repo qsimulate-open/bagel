@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.cc
+// Filename: smallnaibatch.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,29 @@
 //
 
 
-#include <src/rel/dirac.h>
-#include <src/rel/smallnai.h>
+#include <src/rel/smallnaibatch.h>
+#include <src/osint/momentbatch.h>
 
 using namespace std;
 using namespace bagel;
 
-void Dirac::compute() {
 
-  kinetic_->print();
-  nai_->print();
+SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom)
+  : shells_(info), aux_{{shells_[0]->kinetic_balance_uncont(), shells_[1]->kinetic_balance_uncont()}}, nai_(new NAIBatch(aux_, geom)),
+    size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
-  SmallNAI snai(geom_);
-
+  // TODO do you need 4? or 3?
+  data_ = unique_ptr<double[]>(new double[size_block_*4]);
 }
 
 
-shared_ptr<Reference> Dirac::conv_to_ref() const {
-  assert(false);
-  return shared_ptr<Reference>();
+void SmallNAIBatch::compute() {
+  // first compute uncontracted NAI with auxiliary basis (cartesian)
+  nai_->compute();
+
+  // then we need to have momentum integrals
+  MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}); 
+  MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}});
+
+assert(false);
 }

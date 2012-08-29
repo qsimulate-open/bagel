@@ -34,10 +34,8 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<const Geometry> RefGeometry;
-typedef shared_ptr<const Shell> RefShell;
 
-Overlap::Overlap(const RefGeometry gm) : Matrix1e(gm) {
+Overlap::Overlap(const shared_ptr<const Geometry> gm) : Matrix1e(gm) {
 
   init();
   fill_upper();
@@ -50,7 +48,7 @@ Overlap::~Overlap() {
 }
 
 
-void Overlap::computebatch(const array<RefShell,2>& input, const int offsetb0, const int offsetb1) {
+void Overlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
