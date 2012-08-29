@@ -36,8 +36,11 @@ class NAIBatch : public NAIBatch_base {
 
   public:
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int L = 0, const double A = 0.0)
-      :  NAIBatch_base(_info, gm, 0, L, A) {};
+    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      :  NAIBatch_base(_info, gm, 0, stack, 0, 0.0) {};
+
+    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int L, const double A = 0.0)
+      :  NAIBatch_base(_info, gm, 0, std::shared_ptr<StackMem>(), L, A) {};
      ~NAIBatch() {};
 
     /// compute a batch of integrals

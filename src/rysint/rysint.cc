@@ -37,19 +37,33 @@
 using namespace std;
 using namespace bagel;
 
-RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info)
+RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
-   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())),
-   stack_(resources__->get()) {
+   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
+
+  if (!static_cast<bool>(stack)) {
+    stack_ = resources__->get();
+    allocated_here_ = true;
+  } else {
+    stack_ = stack;
+    allocated_here_ = false;
+  }
 }
 
 
-RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info)
+RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
  : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
-   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())),
-   stack_(resources__->get()) {
+   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
   shared_ptr<const Shell> dum(new Shell(spherical_));
   basisinfo_ = {{ info[0], info[1], dum, dum }};
+
+  if (!static_cast<bool>(stack)) {
+    stack_ = resources__->get();
+    allocated_here_ = true;
+  } else {
+    stack_ = stack;
+    allocated_here_ = false;
+  }
 }
 
 
@@ -61,7 +75,8 @@ RysInt::~RysInt() {
   if (tenno_) stack_->release(size_alloc_, stack_save2_);
   stack_->release(size_alloc_, stack_save_);
 
-  resources__->release(stack_);
+  if (allocated_here_)
+    resources__->release(stack_);
 }
 
 

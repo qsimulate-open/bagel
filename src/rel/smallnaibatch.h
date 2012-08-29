@@ -31,6 +31,7 @@
 #include <src/scf/geometry.h>
 #include <memory>
 #include <src/rysint/naibatch.h>
+#include <src/util/resources.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 
@@ -38,24 +39,25 @@ namespace bagel {
 
 class SmallNAIBatch {
   protected:
-    std::unique_ptr<double[]> data_;
+    double* data_;
 
+    const std::shared_ptr<const Geometry> geom_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
     const std::array<std::shared_ptr<const Shell>,2> aux_;
 
-    std::shared_ptr<NAIBatch> nai_;
-
     const size_t size_block_;
+
+    std::shared_ptr<StackMem> stack_;
 
   public:
     SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom);
-    ~SmallNAIBatch() {};
+    ~SmallNAIBatch();
 
     void compute();
 
     size_t size_block() const { return size_block_; };
 
-    const double* data() const { return data_.get(); };
+    const double* data() const { return data_; };
 
 };
 

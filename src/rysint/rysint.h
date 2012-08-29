@@ -116,11 +116,12 @@ class RysInt {
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
+    bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
 
   public:
-    RysInt(const std::array<std::shared_ptr<const Shell>,4>&);
-    RysInt(const std::array<std::shared_ptr<const Shell>,2>&);
+    RysInt(const std::array<std::shared_ptr<const Shell>,4>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
+    RysInt(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~RysInt();
 
     virtual void compute() = 0;

@@ -37,7 +37,7 @@ class MomentBatch : public OSInt {
     void perform_VRR(double*);
 
   public:
-    MomentBatch(const std::array<std::shared_ptr<const Shell>,2>&);
+    MomentBatch(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~MomentBatch();
 
     void compute() override;

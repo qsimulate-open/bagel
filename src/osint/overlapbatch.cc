@@ -37,8 +37,8 @@ using namespace bagel;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
- : OSInt(_basis) {
+OverlapBatch::OverlapBatch(const array<std::shared_ptr<const Shell>,2>& _basis, shared_ptr<StackMem> stack)
+ : OSInt(_basis, 0, stack) {
 
 }
 

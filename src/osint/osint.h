@@ -69,11 +69,12 @@ class OSInt {
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
                              const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
 
+    bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
 
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0);
+    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSInt();
 
     virtual void compute() = 0;

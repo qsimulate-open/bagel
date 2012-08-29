@@ -32,21 +32,35 @@ using namespace bagel;
 
 
 SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom)
-  : shells_(info), aux_{{shells_[0]->kinetic_balance_uncont(), shells_[1]->kinetic_balance_uncont()}}, nai_(new NAIBatch(aux_, geom)),
-    size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
+  : geom_(geom), shells_(info), aux_{{shells_[0]->kinetic_balance_uncont(), shells_[1]->kinetic_balance_uncont()}},
+    size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()), stack_(resources__->get()) {
 
   // TODO do you need 4? or 3?
-  data_ = unique_ptr<double[]>(new double[size_block_*4]);
+  data_ = stack_->get(size_block_*4);
 }
 
 
+SmallNAIBatch::~SmallNAIBatch() {
+  stack_->release(size_block_*4, data_);
+  resources__->release(stack_);
+}
+
 void SmallNAIBatch::compute() {
   // first compute uncontracted NAI with auxiliary basis (cartesian)
-  nai_->compute();
+  NAIBatch nai(aux_, geom_, stack_);
+  nai.compute();
 
   // then we need to have momentum integrals
-  MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}); 
-  MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}});
+  {
+    // first half transformation
+    MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}, stack_); 
+  }
+  {
+    // second half transformation
+    MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}, stack_);
+  }
+  {
+    // optionally transformation to spherical
+  }
 
-assert(false);
 }

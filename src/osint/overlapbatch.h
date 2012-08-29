@@ -37,7 +37,7 @@ class OverlapBatch : public OSInt {
     void perform_VRR(double*);
 
   public:
-    OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>&);
+    OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OverlapBatch();
 
     void compute() override;

@@ -43,8 +43,8 @@ class GNAIBatch : public NAIBatch_base {
   public:
 
     GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const std::tuple<int,int> i,
-              const int L = 0, const double A = 0.0)
-      :  NAIBatch_base(_info, gm, 1, L, A), iatom_(i) {
+              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      :  NAIBatch_base(_info, gm, 1, stack), iatom_(i) {
       if (swap01_) {
         std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
       }

@@ -38,8 +38,8 @@ using namespace bagel;
 
 const static CarSphList carsphlist;
 
-MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
- : OSInt(_basis, -1) {
+MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis, shared_ptr<StackMem> stack)
+ : OSInt(_basis, -1, stack) {
 
 }
 

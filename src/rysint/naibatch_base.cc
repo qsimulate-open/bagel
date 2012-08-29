@@ -31,8 +31,8 @@ using namespace std;
 using namespace bagel;
 
 NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
-                             const int L, const double A)
- : RysInt(_info), geom_(gm), L_(L), A_(A) {
+                             shared_ptr<StackMem> stack, const int L, const double A)
+ : RysInt(_info, stack), geom_(gm), L_(L), A_(A) {
 
   deriv_rank_ = deriv;
   const double integral_thresh = PRIM_SCREEN_THRESH;
