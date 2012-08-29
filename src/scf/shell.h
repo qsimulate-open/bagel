@@ -53,8 +53,8 @@ class Shell {
     int nbasis_;
 
   public:
-    Shell(const bool, std::array<double,3>, int, std::vector<double>,
-        std::vector<std::vector<double> >, std::vector<std::pair<int, int> >);
+    Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
+          const std::vector<std::vector<double> >& contraction, const std::vector<std::pair<int, int> >& cont_range);
     // default constructor for adding null basis
     Shell(const bool sph);
 
@@ -86,6 +86,11 @@ class Shell {
     std::shared_ptr<const Shell> move_atom(const double*) const;
 
     bool operator==(const Shell& o) const;
+
+    // generates a shell that satisfy kinetic balance at the primitive level.
+    std::shared_ptr<const Shell> kinetic_balance_uncont() const;
+
+    std::shared_ptr<const Shell> cartesian_shell() const;
 };
 
 }
