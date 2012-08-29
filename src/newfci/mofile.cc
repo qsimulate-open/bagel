@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#define __NEWFCI_DEBUGGING
+//#define __NEWFCI_DEBUGGING
 
 
 #include <iostream>

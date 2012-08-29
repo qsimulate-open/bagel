@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#define __NEWFCI_DEBUGGING
+//#define __NEWFCI_DEBUGGING
 
 #include <iostream>
 #include <iomanip>
@@ -336,13 +336,11 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       const int lbs = cc->lenb();
       const double* source_base = cc->data();
 
-  cout << "here" << endl;
-  cout << d->ij() << endl;
       for (int i = 0; i < norb; ++i) {
         for (int j = 0; j < norb; ++j) {
           double* target_base = d->data(i*norb + j)->data();
-          for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
-            for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
+          for (auto aiter = d->det()->phiupa(i).begin(); aiter != d->det()->phiupa(i).end(); ++aiter) {
+            for (auto biter = d->det()->phiupb(j).begin(); biter != d->det()->phiupb(j).end(); ++biter) {
               const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
               target_base[get<2>(*aiter)*lbt + get<2>(*biter)] += sign * source_base[get<0>(*aiter)*lbs + get<0>(*biter)];
             }

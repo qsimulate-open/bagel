@@ -73,7 +73,7 @@ class Space {
     void form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<NewDeterminants> nplusdet ); // links two NewDeterminants objects
 
     const int key_(const int a, const int b) { return ( a*large__ + b ); }
-    const int key_(std::shared_ptr<NewDeterminants> det) { return key_((nelea_ - det->nelea()),(neleb_ - det->neleb())); }
+    const int key_(std::shared_ptr<NewDeterminants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
     const int sign(std::bitset<nbit__> bit, int i) {
       const std::bitset<nbit__> ii( (1 << (i+1)) - 1 );

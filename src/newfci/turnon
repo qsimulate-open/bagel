@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sed -i ".backup" 's/\/\/#define __NEWFCI_DEBUGGING/#define __NEWFCI_DEBUGGING/' *.cc
+sed -i ".backup" 's/\/\/#define __NEWFCI_DEBUGGING/#define __NEWFCI_DEBUGGING/' *.h

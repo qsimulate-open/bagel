@@ -28,7 +28,7 @@
 #ifndef __NEWINT_NEWFCI_MOFILE_H
 #define __NEWINT_NEWFCI_MOFILE_H
 
-#define __NEWFCI_DEBUGGING
+//#define __NEWFCI_DEBUGGING
 
 #include <fstream>
 #include <string>
