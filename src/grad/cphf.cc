@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: cphf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -31,6 +31,7 @@
 #define CPHF_THRESH 1.0e-8
 
 using namespace std;
+using namespace bagel;
 
 CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
            const shared_ptr<const Reference> r)
@@ -83,13 +84,13 @@ shared_ptr<Matrix1e> CPHF::solve() const {
       unique_ptr<double[]> jrs = geom_->df()->compute_Jop(pbmao->data());
       dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
     }
-    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt);
 
     // K part
     {
       // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
       unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
-      dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca); 
+      dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
     }
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: pfile.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,6 +35,8 @@
 #include <src/util/filename.h>
 #include <src/util/cache.h>
 
+namespace bagel {
+
 template<class T>
 class PFile {
   protected:
@@ -45,8 +47,8 @@ class PFile {
     const int K_;
 
   public:
-    PFile(const long, const int, const bool late_init = false); 
-    ~PFile(); 
+    PFile(const long, const int, const bool late_init = false);
+    ~PFile();
 
     void append(const long, const T*);
     void add_block(const long, const long, const T*);
@@ -112,11 +114,11 @@ void PFile<T>::append(const long length, const T* data) {
 
   while (remaining > 0L) {
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
-    file_->write((const char*)(data + current), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -132,7 +134,7 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
 
     file_->clear();
     file_->seekg((position + current) * sizeof(T));
-    file_->read((char*)work, readsize); 
+    file_->read((char*)work, readsize);
     for (size_t i = 0; i != rsize; ++i) work[i] += data[current + i];
 
     file_->clear();
@@ -141,7 +143,7 @@ void PFile<T>::add_block(const long position, const long length, const T* data) 
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -159,7 +161,7 @@ void PFile<T>::get_block(const long position, const long length, T* data) const 
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -172,11 +174,11 @@ void PFile<T>::put_block(const long position, const long length, const T* data) 
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
     file_->clear();
     file_->seekp((position + current) * sizeof(T));
-    file_->write((const char*)(data + current), writesize); 
+    file_->write((const char*)(data + current), writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
 
@@ -186,19 +188,20 @@ void PFile<T>::clear() {
   long current = 0L;
   T zero = static_cast<T>(0.0);
   T* work = (T*) work_char;
-  std::fill(work, work + cachesize, zero); 
+  std::fill(work, work + cachesize, zero);
 
   while (remaining > 0L) {
     const long writesize = std::min(remaining, cachesize) * sizeof(T);
     file_->clear();
     file_->seekp(current * sizeof(T));
-    file_->write((const char*)work, writesize); 
+    file_->write((const char*)work, writesize);
 
     remaining -= cachesize;
     current += cachesize;
-  } 
+  }
 };
 
+}
 
 #endif
 

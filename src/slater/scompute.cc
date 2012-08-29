@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: scompute.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -36,6 +36,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
+using namespace bagel;
 
 
 void SlaterBatch::compute() {
@@ -45,23 +46,23 @@ void SlaterBatch::compute() {
   const int unit = 1;
 
   bkup_ = stack_->get(size_alloc_);
-  if (yukawa_) 
+  if (yukawa_)
     bkup2_ = stack_->get(size_alloc_);
-  
+
   const int size = size_alloc_;
   dcopy_(&size, &zero, &zeroint, data_, &unit);
-  if (yukawa_) 
+  if (yukawa_)
     dcopy_(&size, &zero, &zeroint, data2_, &unit);
 
   // perform VRR
-  // data_ and data2_ will contain the intermediates: prim01{ prim23{ xyz{ } } } 
+  // data_ and data2_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
   if (yukawa_) {
     switch (rank_) {
       case 1: perform_USVRR1(); break;
       case 2: perform_USVRR2(); break;
 #if 0
 // I cannot believe my code
-// See comments in svrr_template.cc 
+// See comments in svrr_template.cc
       case 3: perform_USVRR3(); break;
       case 4: perform_USVRR4(); break;
       case 5: perform_USVRR5(); break;
@@ -72,63 +73,63 @@ void SlaterBatch::compute() {
       case 10: perform_USVRR10(); break;
       case 11: perform_USVRR11(); break;
       case 12: perform_USVRR12(); break;
-      case 13: perform_USVRR13(); break;  
+      case 13: perform_USVRR13(); break;
 #endif
       default: perform_USVRR(); break;
-    } 
+    }
   } else {
     switch (rank_) {
       case 1: perform_SVRR1(); break;
       case 2: perform_SVRR2(); break;
 #if 0
 // I cannot believe my code
-// See comments in svrr_template.cc 
+// See comments in svrr_template.cc
       case 3: perform_SVRR3(); break;
       case 4: perform_SVRR4(); break;
       case 5: perform_SVRR5(); break;
       case 6: perform_SVRR6(); break;
       case 7: perform_SVRR7(); break;
       case 8: perform_SVRR8(); break;
-      case 9: perform_SVRR9(); break;  
-      case 10: perform_SVRR10(); break;  
-      case 11: perform_SVRR11(); break;  
-      case 12: perform_SVRR12(); break;  
+      case 9: perform_SVRR9(); break;
+      case 10: perform_SVRR10(); break;
+      case 11: perform_SVRR11(); break;
+      case 12: perform_SVRR12(); break;
       case 13: perform_SVRR13(); break;
 #endif
       default: perform_SVRR(); break;
-    } 
+    }
   }
 
-  // contract indices 01 
+  // contract indices 01
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
   {
-    const int m = prim2size_ * prim3size_ * asize_ * csize_; 
-    const int bkupsize = m * cont0size_ * cont1size_; 
-    perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_, 
-            basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+    const int m = prim2size_ * prim3size_ * asize_ * csize_;
+    const int bkupsize = m * cont0size_ * cont1size_;
+    perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_,
+            basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_,
             basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
     if (yukawa_)
-      perform_contraction_new_outer(m, data2_, prim0size_, prim1size_, bkup2_, 
-              basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_, 
+      perform_contraction_new_outer(m, data2_, prim0size_, prim1size_, bkup2_,
+              basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_,
               basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);
   }
-  // contract indices 23 
+  // contract indices 23
   // data will be stored in data_: cont01{ cont23{ xyz{ } } }
   {
     const int n = cont0size_ * cont1size_;
-    perform_contraction_new_inner(n, asize_*csize_, bkup_, prim2size_, prim3size_, data_, 
-            basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+    perform_contraction_new_inner(n, asize_*csize_, bkup_, prim2size_, prim3size_, data_,
+            basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_,
             basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
     if (yukawa_)
-      perform_contraction_new_inner(n, asize_*csize_, bkup2_, prim2size_, prim3size_, data2_, 
-              basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_, 
+      perform_contraction_new_inner(n, asize_*csize_, bkup2_, prim2size_, prim3size_, data2_,
+              basisinfo_[2]->contractions(), basisinfo_[2]->contraction_upper(), basisinfo_[2]->contraction_lower(), cont2size_,
               basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
   }
 
   // HRR to indices 01
   // data will be stored in bkup_: cont01{ cont23{ xyzf{ xyzab{ } } } }
   {
-    if (basisinfo_[1]->angular_number() != 0) { 
+    if (basisinfo_[1]->angular_number() != 0) {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr_->hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
       if (yukawa_)
@@ -160,15 +161,15 @@ void SlaterBatch::compute() {
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_ * csize_;
     if (!swapped) {
-      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
-      if (yukawa_) 
-        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_);
+      if (yukawa_)
+        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_);
     } else {
-      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
-      if (yukawa_) 
-        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
+      if (yukawa_)
+        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_);
     }
-    swapped = (swapped ^ true); 
+    swapped = (swapped ^ true);
   }
 
 
@@ -183,13 +184,13 @@ void SlaterBatch::compute() {
     if (swapped) {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
         mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
-        if (yukawa_) 
+        if (yukawa_)
           mytranspose_(&data2_[offset], &m, &n, &bkup2_[offset]);
       }
     } else {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
         mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
-        if (yukawa_) 
+        if (yukawa_)
           mytranspose_(&bkup2_[offset], &m, &n, &data2_[offset]);
       }
     }
@@ -199,21 +200,21 @@ void SlaterBatch::compute() {
   // data will be stored in bkup_: cont01{ xyzab{ cont23{ xyzcd{ } } } } if cartesian
   // data will be stored in data_: cont01{ xyzab{ cont23{ xyzcd{ } } } } if spherical
   {
-    if (basisinfo_[3]->angular_number() != 0) { 
+    if (basisinfo_[3]->angular_number() != 0) {
       const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
       if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
       else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
       else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
       else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
 
-      if (yukawa_) { 
+      if (yukawa_) {
         if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup2_, CD_, data2_);
         else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
         else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data2_, CD_, bkup2_);
         else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
       }
     } else {
-      swapped = (swapped ^ true); 
+      swapped = (swapped ^ true);
     }
   }
 
@@ -223,13 +224,13 @@ void SlaterBatch::compute() {
     const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
     const int nloops = contsize_ * asph * bsph;
     if (swapped) {
-      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
       if (yukawa_)
-        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_);
     } else {
-      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, data_);
       if (yukawa_)
-        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_); 
+        carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_);
     }
     swapped = (swapped ^ true);
     a = asph;
@@ -254,10 +255,10 @@ void SlaterBatch::compute() {
   }
 
   // transpose batch
-  // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } } 
+  // data will be stored in bkup_: cont3d{ cont2c{ cont01{ xyzab{ } } } }
   {
     const int m = c * d * cont2size_ * cont3size_;
-    const int n = a * b * cont0size_ * cont1size_; 
+    const int n = a * b * cont0size_ * cont1size_;
     mytranspose_(data_now, &m, &n, bkup_now);
     if (yukawa_)
       mytranspose_(data_now_2, &m, &n, bkup_now_2);
@@ -272,11 +273,11 @@ void SlaterBatch::compute() {
     if (yukawa_)
       sort_->sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
   }
-  
+
   if (swapped) {
-    dcopy_(&size, bkup_, &unit, data_, &unit); 
+    dcopy_(&size, bkup_, &unit, data_, &unit);
     if (yukawa_)
-      dcopy_(&size, bkup2_, &unit, data2_, &unit); 
+      dcopy_(&size, bkup2_, &unit, data2_, &unit);
   }
 
   stack_->release(size_alloc_, bkup_);

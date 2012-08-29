@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: osint.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -32,7 +32,7 @@
 #include <src/util/constants.h>
 
 using namespace std;
-
+using namespace bagel;
 
 static const double pisqrt__ = ::sqrt(pi__);
 
@@ -63,7 +63,7 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
 
-  vector<double>::const_iterator expi0, expi1; 
+  vector<double>::const_iterator expi0, expi1;
   p_.reserve(3 * prim0_ * prim1_);
   xa_.reserve(prim0_ * prim1_);
   xb_.reserve(prim0_ * prim1_);
@@ -79,15 +79,15 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
       xa_.push_back(*expi0);
       xb_.push_back(*expi1);
       const double cxp = *expi0 + *expi1;
-      const double cxp_inv = 1.0 / cxp; 
+      const double cxp_inv = 1.0 / cxp;
       const double px = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
       const double py = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
       const double pz = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
-      xp_.push_back(cxp); 
+      xp_.push_back(cxp);
       p_.push_back(px);
       p_.push_back(py);
       p_.push_back(pz);
-      const double tmp = pisqrt__ * ::sqrt(cxp_inv); 
+      const double tmp = pisqrt__ * ::sqrt(cxp_inv);
       coeffsx_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0])));
       coeffsy_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1])));
       coeffsz_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2])));
@@ -110,9 +110,12 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   amin_ = ang0_;
 
   asize_ = 0;
-  for (int i = amin_; i != amax1_; ++i) asize_ += (i + 1) * (i + 2) / 2;
-  asize_intermediate_ = (ang0_ + 1) * (ang0_ + 2) * (ang1_ + 1) * (ang1_ + 2) / 4;
-  asize_final_ = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_intermediate_;
+  for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
+  asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
+
+  // note: for relativistic casees, mixed spherical and cartesian basis is considered
+  asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
+               * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
   if (deriv_rank_ == 0) {
     size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
@@ -132,13 +135,11 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   amapping_.resize(amax1_ * amax1_ * amax1_);
   int cnt = 0;
   for (int i = amin_; i <= amax_; ++i) {
-    for (int iz = 0; iz <= i; ++iz) { 
-      for (int iy = 0; iy <= i - iz; ++iy) { 
+    for (int iz = 0; iz <= i; ++iz) {
+      for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
-        if (ix >= 0) {
-          amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt;
-          ++cnt;
-        }
+        amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt;
+        ++cnt;
       }
     }
   }

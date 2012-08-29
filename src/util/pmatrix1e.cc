@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: pmatrix1e.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -36,9 +36,11 @@
 #include <src/util/f77.h>
 #include <src/macros.h>
 
+using namespace std;
+using namespace bagel;
+
 typedef std::complex<double> Complex;
 
-using namespace std;
 
 // I have supposed that ndim_ is the leading dimension in the data.
 
@@ -48,7 +50,7 @@ PMatrix1e::PMatrix1e(const shared_ptr<PGeometry> pg)
 
   mdim_ = ndim_ = nbasis_;
   shared_ptr<PData> tmp(new PData(totalsize_));
-  data_ = tmp; 
+  data_ = tmp;
 }
 
 
@@ -122,7 +124,7 @@ PMatrix1e::PMatrix1e(const shared_ptr<PMatrix1e> source1, const shared_ptr<PMatr
   if (source1->ndim() != source2->ndim()) {
     cout << " source 1 dimension: " << source1->ndim() << " " << source1->mdim() << " " << source1->nbasis() << " " << source1->blocksize() << endl;
     cout << " source 2 dimension: " << source2->ndim() << " " << source2->mdim() << " " << source2->nbasis() << " " << source2->blocksize() << endl;
-    throw runtime_error("source 1 and source 2 should have the same ndim"); 
+    throw runtime_error("source 1 and source 2 should have the same ndim");
   }
 
   shared_ptr<PData> tmp(new PData(totalsize_));
@@ -150,7 +152,7 @@ PMatrix1e::~PMatrix1e() {
 PMatrix1e PMatrix1e::operator+(const PMatrix1e& add) const {
   assert(add.totalsize() == totalsize_);
   PMatrix1e out(geom_, ndim_, mdim_);
-  for (int j = 0; j != totalsize_; ++j) (*out.data_)[j] = (*add.data_)[j] + (*data_)[j]; 
+  for (int j = 0; j != totalsize_; ++j) (*out.data_)[j] = (*add.data_)[j] + (*data_)[j];
   return out;
 }
 
@@ -159,15 +161,15 @@ PMatrix1e PMatrix1e::operator-(const PMatrix1e& sub) const {
   assert(sub.totalsize() == totalsize_);
   PMatrix1e out(geom_, ndim_, mdim_);
 //#pragma omp parallel for
-  for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j]; 
+  for (int j = 0; j < totalsize_; ++j) (*out.data_)[j] = (*data_)[j] - (*sub.data_)[j];
   return out;
 }
 
 
 PMatrix1e& PMatrix1e::operator=(const PMatrix1e& source) {
   assert(source.totalsize() == totalsize_);
-  ::memcpy(data_->front(), source.data_->front(), totalsize_ * sizeof(Complex)); 
-  return *this; 
+  ::memcpy(data_->front(), source.data_->front(), totalsize_ * sizeof(Complex));
+  return *this;
 }
 
 
@@ -176,7 +178,7 @@ PMatrix1e& PMatrix1e::operator+=(const PMatrix1e& source) {
   const int unit = 1;
   const Complex one(1.0, 0.0);
   zaxpy_(&totalsize_, &one, source.data_->cfront(), &unit, data_->front(), &unit);
-  return *this; 
+  return *this;
 }
 
 
@@ -189,7 +191,7 @@ PMatrix1e PMatrix1e::ft() const {
     const int boffset = (k + K()) * blocksize_;
     for (int m = -S(), mcount = 0; m <= S(); ++m, ++mcount) {
       const int moffset = mcount * blocksize_;
-      Complex factor = exp(- kq * static_cast<double>(m)); // caution 
+      Complex factor = exp(- kq * static_cast<double>(m)); // caution
       zaxpy_(&blocksize_, &factor, data_->front() + moffset, &unit, out.data_->front() + boffset, &unit);
     }
   }
@@ -237,15 +239,15 @@ void PMatrix1e::init() {
       const int blockoffset = mcount * blocksize_;
       for (int iatom1 = 0; iatom1 != geom_->natom(); ++iatom1) {
         double disp[3];
-        disp[0] = disp[1] = 0.0; 
+        disp[0] = disp[1] = 0.0;
         disp[2] = geom_->A() * m;
         const RefAtom catom1(new Atom(*(atoms[iatom1]), disp));
         const int numshell1 = catom1->shells().size();
         const std::vector<int> coffset1 = offsets[iatom1];
         const std::vector<RefShell> shell1 = catom1->shells();
-  
+
         for (int ibatch0 = 0; ibatch0 != numshell0; ++ibatch0) {
-          const int offset0 = coffset0[ibatch0]; 
+          const int offset0 = coffset0[ibatch0];
           const shared_ptr<const Shell> b0 = shell0[ibatch0];
           for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1];
@@ -253,13 +255,13 @@ void PMatrix1e::init() {
             std::vector<RefShell> input;
             input.push_back(b1);
             input.push_back(b0);
-  
+
             computebatch(input, offset0, offset1, nbasis_, blockoffset);
-  
+
           }
-        } 
+        }
       }
-    } 
+    }
   }
 };
 
@@ -298,9 +300,9 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
   const Complex one(1.0, 0.0);
   const Complex zero(0.0, 0.0);
   const int l = mdim_;
-  const int m = ndim_; 
+  const int m = ndim_;
   assert(ndim_ == o.ndim());
-  const int n = o.mdim(); 
+  const int n = o.mdim();
   const shared_ptr<PData> odata = o.data();
 
   PMatrix1e out(geom_, l, n);
@@ -447,7 +449,7 @@ void PMatrix1e::hermite() {
 //#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
-    const int koffset = kcount * blocksize_; 
+    const int koffset = kcount * blocksize_;
     Complex* dat = data_->pointer(koffset);
     for (int i = 0; i != ndim_; ++i) {
       for (int j = 0; j != ndim_; ++j) {
@@ -465,7 +467,7 @@ void PMatrix1e::real() {
 //#pragma omp parallel for
   for (int k = -K(); k <= K(); ++k) {
     const int kcount = k + K();
-    const int koffset = kcount * blocksize_; 
+    const int koffset = kcount * blocksize_;
     Complex* dat = data_->pointer(koffset);
     for (int i = 0; i != mdim_; ++i) {
       for (int j = 0; j != ndim_; ++j) {
@@ -519,14 +521,14 @@ void PMatrix1e::scale(const Complex a) {
 void PMatrix1e::zaxpy(const Complex a, const PMatrix1e& o) {
   const int unit = 1;
   const Complex* odata = o.data()->front();
-  zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit); 
+  zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit);
 }
 
 
 void PMatrix1e::zaxpy(const Complex a, const shared_ptr<PMatrix1e> o) {
   const int unit = 1;
   const Complex* odata = o->data()->front();
-  zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit); 
+  zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit);
 }
 
 
@@ -536,9 +538,9 @@ const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
   const Complex* odata = o.data()->front();
   Complex out;
 #ifndef ZDOT_RETURN
-  zdotc_(&out, &totalsize_, data_->front(), &unit, odata, &unit); 
+  zdotc_(&out, &totalsize_, data_->front(), &unit, odata, &unit);
 #else
-  out = zdotc_(&totalsize_, data_->front(), &unit, odata, &unit); 
+  out = zdotc_(&totalsize_, data_->front(), &unit, odata, &unit);
 #endif
   return out;
 }
@@ -550,9 +552,9 @@ const Complex PMatrix1e::zdotc(const shared_ptr<PMatrix1e> o) const {
   const Complex* odata = o->data()->front();
   Complex out;
 #ifndef ZDOT_RETURN
-  zdotc_(&out, &totalsize_, data_->front(), &unit, odata, &unit); 
+  zdotc_(&out, &totalsize_, data_->front(), &unit, odata, &unit);
 #else
-  out = zdotc_(&totalsize_, data_->front(), &unit, odata, &unit); 
+  out = zdotc_(&totalsize_, data_->front(), &unit, odata, &unit);
 #endif
   return out;
 }
@@ -562,9 +564,9 @@ double PMatrix1e::rms() const {
   const int unit = 1;
   Complex zdot;
 #ifndef ZDOT_RETURN
-  zdotc_(&zdot, &totalsize_, data_->front(), &unit, data_->front(), &unit); 
+  zdotc_(&zdot, &totalsize_, data_->front(), &unit, data_->front(), &unit);
 #else
-  zdot = zdotc_(&totalsize_, data_->front(), &unit, data_->front(), &unit); 
+  zdot = zdotc_(&totalsize_, data_->front(), &unit, data_->front(), &unit);
 #endif
   return ::sqrt(abs(zdot) / totalsize_);
 }
@@ -575,7 +577,7 @@ double PMatrix1e::trace() const {
   double out = 0.0;
   int scount = 0;
   for (int s = -L(); s <= L(); ++s, ++scount) {
-    const int boffset =  scount * blocksize_; 
+    const int boffset =  scount * blocksize_;
     for (int i = 0; i != ndim_; ++i)
       out += ((*data_)[boffset + i * ndim_ + i]).real();
   }

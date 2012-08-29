@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: casscf.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -40,11 +40,13 @@
 #include <src/wfn/rdm.h>
 #include <src/casscf/rotfile.h>
 
+namespace bagel {
+
 class CASSCF {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_; 
+    std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
 
@@ -53,7 +55,7 @@ class CASSCF {
     int nclosed_;
     int nact_;
     int nvirt_;
-    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing. 
+    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing.
     int nbasis_;
     int nstate_;
     int max_iter_;
@@ -98,7 +100,7 @@ class CASSCF {
 
     void set_occup(const std::vector<double>& o) { occup_ = o; };
 
-    double energy() const { return energy_; }; 
+    double energy() const { return energy_; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix1e>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&, std::shared_ptr<QFile>&,
@@ -111,5 +113,6 @@ class CASSCF {
 
 static const double occup_thresh = 1.0e-10;
 
+}
 
 #endif

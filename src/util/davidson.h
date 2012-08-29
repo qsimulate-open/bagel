@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: davidson.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -27,7 +27,7 @@
 //  - double ddot(const T&)
 //  - void daxpy(double, const T&) // added to self
 //  - copy constructor (values are not used, though).
-//  - void orthog(list<shared_ptr<T> >) 
+//  - void orthog(list<shared_ptr<T> >)
 //
 
 #ifndef __NEWINT_UTIL_DAVIDSON
@@ -38,6 +38,8 @@
 #include <stdexcept>
 #include <src/util/f77.h>
 
+namespace bagel {
+
 template <typename T>
 class DavidsonDiag {
   protected:
@@ -47,12 +49,12 @@ class DavidsonDiag {
     std::list<std::shared_ptr<const T> > c_;
     std::list<std::shared_ptr<const T> > sigma_;
 
-    // contains 
+    // contains
     std::vector<double> mat_;
     // scratch area for diagonalization
     std::vector<double> scr_;
-    std::vector<double> vec_; 
-    // an eigenvector 
+    std::vector<double> vec_;
+    // an eigenvector
     std::vector<double> eig_;
     // work area in a lapack routine
     std::vector<double> work_;
@@ -84,7 +86,7 @@ class DavidsonDiag {
       // add entry
       for (auto iter = cc.begin(); iter != cc.end(); ++iter) c_.push_back(*iter);
       for (auto iter = cs.begin(); iter != cs.end(); ++iter) sigma_.push_back(*iter);
-      // adding new matrix elements 
+      // adding new matrix elements
       for (auto siter = cs.begin(); siter != cs.end(); ++siter) {
         auto iter = c_.begin();
         ++size_;
@@ -92,10 +94,10 @@ class DavidsonDiag {
           mat(i,size_-1) = mat(size_-1,i) = (*iter)->ddot(**siter);
         }
       }
-      // diagonalize matrix to get 
+      // diagonalize matrix to get
       std::copy(mat_.begin(), mat_.end(), scr_.begin());
       int info = 0;
-      dsyev_("V", "U", &size_, &(scr_[0]), &max_, &(vec_[0]), &(work_[0]), &lwork_, &info); 
+      dsyev_("V", "U", &size_, &(scr_[0]), &max_, &(vec_[0]), &(work_[0]), &lwork_, &info);
       if (info != 0) throw std::runtime_error("dsyev in davidson failed");
       // copy energies and eigen functions
       std::copy(scr_.begin(), scr_.begin()+nstate_*max_, eig_.begin());
@@ -109,7 +111,7 @@ class DavidsonDiag {
       std::vector<std::shared_ptr<T> > out;
       for (int i = 0; i != nstate_; ++i) {
         std::shared_ptr<T> tmp(new T(*c_.front()));
-        tmp->zero(); // <- waste of time 
+        tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
           tmp->daxpy(-vec_[i]*eig_[i*max_+k], **iter);
@@ -128,7 +130,7 @@ class DavidsonDiag {
       std::vector<std::shared_ptr<T> > out;
       for (int i = 0; i != nstate_; ++i) {
         std::shared_ptr<T> tmp(new T(*c_.front()));
-        tmp->zero(); // <- waste of time 
+        tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
           tmp->daxpy(eig_[i*max_+k], **iter);
@@ -141,6 +143,8 @@ class DavidsonDiag {
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
-}; 
+};
+
+}
 
 #endif

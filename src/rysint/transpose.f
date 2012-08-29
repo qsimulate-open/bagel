@@ -134,7 +134,7 @@ c      quick return if possible
         vec(i+9,j  )=h(j  ,i+9)
        enddo
       enddo
-      do i=nlim+2,n 
+      do i=nlim+2,n
        do j=1,mlim,10
         vec(i  ,j  )=h(j  ,i  )
         vec(i  ,j+1)=h(j+1,i  )
@@ -161,7 +161,7 @@ c
       if((m.eq.1).or.(n.eq.1)) then
 c      quick return if possible
        call dcopy(m*n,0.0d0,0,vec,1)
-       call daxpy(m*n,factor,h,1,vec,1) 
+       call daxpy(m*n,factor,h,1,vec,1)
        return
       endif
       mresidual=mod(m,10)
@@ -284,7 +284,7 @@ c      quick return if possible
         vec(i+9,j  )=h(j  ,i+9)*factor
        enddo
       enddo
-      do i=nlim+2,n 
+      do i=nlim+2,n
        do j=1,mlim,10
         vec(i  ,j  )=h(j  ,i  )*factor
         vec(i  ,j+1)=h(j+1,i  )*factor
@@ -315,7 +315,7 @@ c      quick return if possible
         vec(i,j)=h(j,i)
        enddo
       enddo
-      return 
+      return
       end
 
       subroutine mytranspose4(h,m,n,vec)
@@ -357,7 +357,7 @@ c      quick return if possible
         vec(i+3,j  )=h(j  ,i+3)
        enddo
       enddo
-      do i=nlim+2,n 
+      do i=nlim+2,n
        do j=1,mlim,4
         vec(i  ,j  )=h(j  ,i  )
         vec(i  ,j+1)=h(j+1,i  )

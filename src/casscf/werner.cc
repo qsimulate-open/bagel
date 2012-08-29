@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: werner.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -34,6 +34,8 @@
 #include <src/util/bfgs.h>
 
 using namespace std;
+using namespace bagel;
+
 static const vector<double> zero(1,0.0);
 
 //#define SOLVER Linear
@@ -83,7 +85,7 @@ void WernerKnowles::compute() {
 
       if (error_micro < thresh_micro_) break;
 
-      // initializing a linear solver (SOLVER is defined above in this file) 
+      // initializing a linear solver (SOLVER is defined above in this file)
       SOLVER<Matrix1e> solver(max_mmicro_iter_+1, grad);
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
@@ -109,7 +111,7 @@ void WernerKnowles::compute() {
         if (error_mmicro < thresh_mmicro_ || mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
-        dR = bfgs.extrapolate(residual, solver.civec()); 
+        dR = bfgs.extrapolate(residual, solver.civec());
         dR->purify_redrotation(nclosed_,nact_,nvirt_);
       }
 

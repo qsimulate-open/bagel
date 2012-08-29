@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: fci.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -42,11 +42,13 @@
 #include <src/wfn/reference.h>
 #include <src/fci/determinants.h>
 
+namespace bagel {
+
 class FCI {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_; 
+    std::multimap<std::string, std::string> idata_;
     // reference
     std::shared_ptr<const Reference> ref_;
     // geometry file
@@ -77,7 +79,7 @@ class FCI {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1> > rdm1_av_;
     std::shared_ptr<RDM<2> > rdm2_av_;
-    // MO integrals 
+    // MO integrals
     std::shared_ptr<MOFile> jop_;
 
     //
@@ -100,7 +102,7 @@ class FCI {
     // obtain determinants for guess generation
     std::vector<std::pair<int, int> > detseeds(const int ndet);
 
-  
+
     // run-time functions
     void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
@@ -111,15 +113,15 @@ class FCI {
     void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
 
     // functions related to natural orbitals
-    void update_rdms(const std::vector<double>& coeff); 
+    void update_rdms(const std::vector<double>& coeff);
 
-    // internal function for RDM1 and RDM2 computations 
+    // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 
     // print functions
     void print_header() const;
-    void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const; 
+    void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
@@ -184,6 +186,7 @@ class FCI {
 
 };
 
+}
 
 #endif
 

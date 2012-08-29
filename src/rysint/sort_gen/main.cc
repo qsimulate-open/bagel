@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include "../macros.h"
-  
+
 #include <fstream>
 //#define SPHERICAL 1
 
@@ -42,15 +42,15 @@ int main() {
 using namespace std;\n\
 \n";
 
-  for (int x2 = 0; x2 != ANG_HRR_END; ++x2) { 
-  for (int x3 = 0; x3 != x2 + 1; ++x3) { 
+  for (int x2 = 0; x2 != ANG_HRR_END; ++x2) {
+  for (int x3 = 0; x3 != x2 + 1; ++x3) {
 #if SPHERICAL
     const double xyz[10] = {1, 3, 5, 7, 9, 11, 13, 15, 17, 19};
 #else
     const double xyz[10] = {1, 3, 6, 10, 15, 21, 28, 36, 45, 55};
 #endif
-    const int x2end = xyz[x2]; 
-    const int x3end = xyz[x3]; 
+    const int x2end = xyz[x2];
+    const int x3end = xyz[x3];
     const string label = String<int>(x3) + String<int>(x2);
 
 #if SPHERICAL
@@ -73,7 +73,7 @@ void SortList::sort_indices_" << label << "(double* target, const double* source
         const int c2x2end = c2 * " << x2end << ";\n\
         for (int c3 = 0; c3 != c3end; ++c3) {\n\
           const int soffset = " << x2end*x3end << " * (c3 + c3end * c2);\n\
-          const int toffset = " << x3end << " * c3 * cont2csize + c2x2end;" << endl; 
+          const int toffset = " << x3end << " * c3 * cont2csize + c2x2end;" << endl;
     for (int x2 = 0; x2 != x2end; ++x2) {
       for (int x3 = 0; x3 != x3end; ++x3) {
         out << "\
@@ -97,10 +97,10 @@ void SortList::sort_indices_" << label << "(double* target, const double* source
           const int c3x3end = c3 * " << x3end << ";\n";
           out << "\
           const int soffset = " << x2end*x3end << " * (c3 + c3end * c2);\n\
-          const int toffset = " << x2end << " * c2 * cont3csize + c3x3end;" << endl; 
+          const int toffset = " << x2end << " * c2 * cont3csize + c3x3end;" << endl;
           for (int x2 = 0; x2 != x2end; ++x2) {
             out << "\
-          copy(current_source+soffset+" << (x3end * (x2)) << ", current_source+soffset+" << (x3end * (x2+1)) << ", current_target+toffset+" << x2 << "*cont3csize);" << endl; 
+          copy(current_source+soffset+" << (x3end * (x2)) << ", current_source+soffset+" << (x3end * (x2+1)) << ", current_target+toffset+" << x2 << "*cont3csize);" << endl;
           }
     out << "\
         }\n\

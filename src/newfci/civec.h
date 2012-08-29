@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: civec.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -34,6 +34,8 @@
 #include <cassert>
 #include <src/util/f77.h>
 #include <src/newfci/determinants.h>
+
+namespace bagel {
 
 class NewCivec {
   protected:
@@ -70,14 +72,14 @@ class NewCivec {
     ~NewCivec() { };
 
     double* data() { return cc(); };
-    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST 
-    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST
+    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     double& data(const int& i) { return cc(i); };
     const double& data(const int& i) const { return cc(i); };
 
     const double* data() const { return cc(); };
-    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST 
+    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST
 
     std::shared_ptr<const NewDeterminants> det() const { return det_; };
     void set_det(std::shared_ptr<const NewDeterminants> o) const { det_ = o; };
@@ -106,7 +108,7 @@ class NewCivec {
     NewCivec operator/(const NewCivec& o) const;
 
     // assumes that NewCivec's in c are already orthogonal with each other.
-    // returns scaling factor (see implementation) 
+    // returns scaling factor (see implementation)
 
     double orthog(std::list<std::shared_ptr<const NewCivec> > c);
     double orthog(std::shared_ptr<const NewCivec> o);
@@ -115,5 +117,6 @@ class NewCivec {
     void print(const double& thresh) const { det_->print(data(), thresh); };
 };
 
+}
 
 #endif

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: fock_base.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -32,13 +32,14 @@
 #include <iomanip>
 #include <algorithm>
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<const Hcore> RefHcore;
-typedef std::shared_ptr<Matrix1e> RefAODensity;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<const Fock_base> RefFock_base;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<const Geometry> RefGeometry;
+typedef shared_ptr<const Hcore> RefHcore;
+typedef shared_ptr<Matrix1e> RefAODensity;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<const Fock_base> RefFock_base;
 
 Fock_base::Fock_base(const RefGeometry geom, const RefFock_base previous, const RefAODensity den, const vector<double>& schwarz)
  : Matrix1e(geom), previous_(previous), density_(den), schwarz_(schwarz) {
@@ -67,7 +68,7 @@ void Fock_base::fock_one_electron_part() {
     dscal_(size, 1.0/nirrep, data(), 1);
   }
   const double* previous_data = previous_->data();
-  daxpy_(size, 1.0, previous_data, 1, data(), 1); 
+  daxpy_(size, 1.0, previous_data, 1, data(), 1);
 
   fill_upper();
 }
@@ -76,7 +77,7 @@ void Fock_base::fock_one_electron_part() {
 Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
  : Matrix1e(geom) {
 
-  dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1); 
+  dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1);
 
   fill_upper();
 }
@@ -86,7 +87,7 @@ Fock_base::Fock_base(const RefGeometry geom)
  : Matrix1e(geom) {
 
   Hcore hcore(geom);
-  dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1); 
+  dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1);
 
   fill_upper();
 }
@@ -100,12 +101,12 @@ void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0,
 
   // input = [b1, b0]
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); 
-  const int dimb1 = input[0]->nbasis(); 
+  const int dimb0 = input[1]->nbasis();
+  const int dimb1 = input[0]->nbasis();
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i * nbasis_ + j] = 0.0; 
+      data_[i * nbasis_ + j] = 0.0;
     }
   }
 }

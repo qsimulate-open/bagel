@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: civec.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -27,6 +27,7 @@
 #include <src/fci/civec.h>
 
 using namespace std;
+using namespace bagel;
 
 Civec::Civec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
@@ -58,8 +59,8 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 
 shared_ptr<Civec> Civec::transpose() const {
   shared_ptr<Civec> ct(new Civec(det_));
-  double* cct = ct->data(); 
-  mytranspose_(cc(), &lenb_, &lena_, cct); 
+  double* cct = ct->data();
+  mytranspose_(cc(), &lenb_, &lena_, cct);
   return ct;
 }
 
@@ -95,7 +96,7 @@ double Civec::orthog(list<shared_ptr<const Civec> > c) {
   const double norm = this->norm();
   const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
   dscal_(lena_*lenb_, scal, cc(), 1);
-  return 1.0/scal; 
+  return 1.0/scal;
 }
 
 double Civec::orthog(shared_ptr<const Civec> o) {

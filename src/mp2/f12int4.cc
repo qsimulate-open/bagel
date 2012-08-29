@@ -1,30 +1,30 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: f12int4.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
 
-// carbon copy of what I wrote in the orz package 
+// carbon copy of what I wrote in the orz package
 // meant to be standalone
 
 #include <src/scf/scf.h>
@@ -35,6 +35,7 @@
 #include <src/mp2/f12int4.h>
 
 using namespace std;
+using namespace bagel;
 
 extern "C" { void start_up_slater_(); };
 
@@ -85,7 +86,7 @@ void F12Ref::compute() {
     }
 
     // X intermediate
-    shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff); 
+    shared_ptr<F12Mat> x2 = slater2->f12mat(ocoeff);
     shared_ptr<F12Mat> x(new F12Mat(*x2));
 #if 0
     shared_ptr<F12Ten> s = slater->f12ten(coeff, coeff, nbasis, nbasis);
@@ -97,9 +98,9 @@ void F12Ref::compute() {
 x->print();
 
     // V intermediate
-    shared_ptr<F12Mat> v = yukawa->f12mat(ocoeff); 
+    shared_ptr<F12Mat> v = yukawa->f12mat(ocoeff);
     {
-      shared_ptr<F12Ten> r = eri->f12ten(coeff, coeff, nbasis, nbasis); 
+      shared_ptr<F12Ten> r = eri->f12ten(coeff, coeff, nbasis, nbasis);
       *v -= *r->contract(s);
     }
 v->print();
@@ -114,7 +115,7 @@ v->print();
       DTensor frs = gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "fav_", C_aoOBS, "_a__", C_aoOBS, "fav_", C_aoOBS, "_a__");
       DTensor xrs(ngen,ngen,ngen,ngen);
       contraction(xrs, frs, frs, nmoc, nmoc, ngen);
-      xterm -= xrs * 0.5; // 0.5 because of the definition of contraction 
+      xterm -= xrs * 0.5; // 0.5 because of the definition of contraction
     }
     {
       DTensor fxm =  gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "___r", C_aoOBS, "_a__", C_aoOBS, "fa__", C_aoOBS, "_a__")
@@ -223,7 +224,7 @@ v->print();
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, C_aoABS, "___r", C_aoOBS, "_a__", C_aoOBS, "fa__", C_aoOBS, "_a__");
       // P5A = R^mA_ij f^P_m R^kl_PA
       DTensor tmp2 = fock_weighted(Slice(0,ngen+nfrozen),Slice(0,nao)).copy();
-      DTensor tmp3 = fock_weighted(Slice(0,ngen+nfrozen),Slice(nao,nao+nao_RI_F12)).copy(); 
+      DTensor tmp3 = fock_weighted(Slice(0,ngen+nfrozen),Slice(nao,nao+nao_RI_F12)).copy();
       DTensor tmp4 = gtrans_int2(ctinp, orbSymIRs, aotei_sl1, C_aoOBS, "___r", C_aoOBS, "_a__", tmp2   , "fa__", C_aoOBS, "_a__")
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, C_aoABS, "___r", C_aoOBS, "_a__", tmp2   , "fa__", C_aoOBS, "_a__")
                    + gtrans_int2(ctinp, orbSymIRs, aotei_sl2, tmp3   , "fa__", C_aoOBS, "_a__", C_aoOBS, "___r", C_aoOBS, "_a__").swapdim(2,3,0,1)
@@ -287,7 +288,7 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
 
   shared_ptr<Matrix1e> U(new Matrix1e(newgeom, tndim, tndim));
   shared_ptr<Matrix1e> V(new Matrix1e(newgeom, tmdim, tmdim));
-  tmp->svd(U, V); 
+  tmp->svd(U, V);
 
   shared_ptr<Matrix1e> Ured = U->slice(tmdim, tndim); //(new Matrix1e(U, make_pair(tmdim, tndim)));
   shared_ptr<Coeff> coeff_cabs = shared_ptr<Coeff>(new Coeff(*ri_coeff * *Ured));
@@ -298,7 +299,7 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
 
   // TODO check
   int ncabs = ri_coeff->mdim();
-  return make_tuple(t.first, t.second, coeff_entire, ncabs); 
+  return make_tuple(t.first, t.second, coeff_entire, ncabs);
 }
 
 

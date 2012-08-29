@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: df.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -33,6 +33,8 @@
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
 #include <stdexcept>
+
+namespace bagel {
 
 class DF_Half;
 class DF_Full;
@@ -98,7 +100,7 @@ class DF_AO : public DensityFit {
     };
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
-      data_ = std::move(dat); 
+      data_ = std::move(dat);
     };
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
@@ -110,7 +112,7 @@ class DF_AO : public DensityFit {
     std::unique_ptr<double[]>& data_ptr() { return data_; };
     const std::unique_ptr<double[]>& data_ptr() const { return data_; };
 
-    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); }; 
+    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); };
 };
 
 
@@ -255,6 +257,8 @@ class DF_Full {
     std::shared_ptr<DF_Half> back_transform(const double* c) const;
 
 };
+
+}
 
 #endif
 

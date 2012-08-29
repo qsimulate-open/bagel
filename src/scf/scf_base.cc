@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: scf_base.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -33,6 +33,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
 
 SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
@@ -59,7 +60,7 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
 
   // so far assuming that this is RHF
   int nact = read_input<int>(idata_, "nact", 0);
-  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2); 
+  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2);
   noccB_ = nocc_ - nact;
 
   if (nocc_+noccB_ != geom_->nele()) throw runtime_error("nocc and nact are not consistently specified");

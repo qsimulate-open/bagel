@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: prim_op.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -31,6 +31,7 @@
 #include <vector>
 #include <src/util/f77.h>
 
+namespace bagel {
 namespace SMITH {
 
 
@@ -58,7 +59,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 //    dscal_(a*b, afac, sorted, 1);
 //    daxpy_(a*b, factor, unsorted, 1, sorted, 1);
     }
-  } else { 
+  } else {
     int id[2];
     int jd[2] = {b, a};
     long iall=0;
@@ -71,7 +72,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
       }
     }
   }
-} 
+}
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
@@ -94,7 +95,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
         sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
       }
     }
-  } 
+  }
 }
 
 template<int i, int j, int k, int an, int ad, int fn, int fd>
@@ -116,7 +117,7 @@ static void sort_indices(const double* const unsorted, double* const sorted,
         sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
       }
     }
-  } 
+  }
 };
 
 
@@ -142,8 +143,8 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
           sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
         }
       }
-    } 
-  } 
+    }
+  }
 };
 
 
@@ -195,6 +196,7 @@ static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7) {
 };
 
 
+}
 }
 
 #endif

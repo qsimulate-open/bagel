@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: gradtask.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,6 +35,7 @@
 #endif
 
 using namespace std;
+using namespace bagel;
 
 void GradTask::compute() {
   if (rank_ == 1) {
@@ -42,8 +43,8 @@ void GradTask::compute() {
     const int iatom1 = atomindex_[1];
     const int nbasis = ge_->geom_->nbasis();
     shared_ptr<GradFile> grad_local(new GradFile(ge_->geom_->natom()));
-    const int dimb1 = shell2_[0]->nbasis(); 
-    const int dimb0 = shell2_[1]->nbasis(); 
+    const int dimb1 = shell2_[0]->nbasis();
+    const int dimb0 = shell2_[1]->nbasis();
     {
       GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
       batch2.compute();
@@ -118,9 +119,9 @@ void GradTask::compute() {
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
         const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {  
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {  
-            for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {  
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
+            for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
               // first we need to have a scheme to receive blocks before accessing the elements
               sum[icart] += *ppt * *den_->ptr(j2, j1, j0);
               sum[icart] += *ppt * *den_->ptr(j2, j0, j1);
@@ -149,8 +150,8 @@ void GradTask::compute() {
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
         const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {  
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {  
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
             sum[icart] += *ppt * den2_->element(j1,j0);
             sum[icart] += *ppt * den2_->element(j0,j1);
           }
@@ -164,5 +165,5 @@ void GradTask::compute() {
   } else {
     throw logic_error("calling GradTask::compute() with illegal setups");
   }
-} 
+}
 

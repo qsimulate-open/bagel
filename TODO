@@ -1,5 +1,3 @@
-o Stach should be automatically released as in the case of unique_ptr!!
-
 o Currently FCI is limited to singlet, due to the fact that there is no effective way to compute an inintial guess CI vector. 
 
 o Restart capability
@@ -9,8 +7,6 @@ o DF-Fock builder
    - Screening of the first half transformation
 
 //o (ii|ii) = (ii|D)(J-1_DE(E|ii))s + ((ii|D)J-1_DE)s(E|ii) - ((ii|D)J-1_DE)s J_DE (J-1_EF(F|ii))s
-
-o Coefficient should be kept (and not referenced from ref_!!)
 
 o FCI can be faster if one uses Olsen's algorithm
 

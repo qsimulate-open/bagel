@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: phcore.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -29,9 +29,10 @@
 #include <src/rysint/naibatch.h>
 #include <iostream>
 
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<PGeometry> RefPGeometry;
 
 PHcore::PHcore(const RefPGeometry g, const bool cabs, const bool kinetic_only)
 : PMatrix1e(g), cabs_(cabs), kinetic_only_(kinetic_only) {
@@ -51,8 +52,8 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input,
   // input = [b1, b0]
   // because of the convention in integral codes.
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); // b0 
-  const int dimb1 = input[0]->nbasis(); // b1 
+  const int dimb0 = input[1]->nbasis(); // b0
+  const int dimb1 = input[0]->nbasis(); // b1
   KineticBatch kinetic(input);
   kinetic.compute();
   const double* kdata = kinetic.data();

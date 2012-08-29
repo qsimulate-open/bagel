@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: gvrr.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -33,6 +33,7 @@
 #include <src/util/comb.h>
 
 using namespace std;
+using namespace bagel;
 
 static const Comb comb;
 
@@ -66,7 +67,7 @@ void GradBatch::perform_VRR() {
   const int b = basisinfo_[1]->angular_number();
   const int c = basisinfo_[2]->angular_number();
   const int d = basisinfo_[3]->angular_number();
-  assert(a+b+1 == amax_ && c+d+1 == cmax_); 
+  assert(a+b+1 == amax_ && c+d+1 == cmax_);
 
   const int a2 = a+2;
   const int b2 = b+2;
@@ -74,8 +75,8 @@ void GradBatch::perform_VRR() {
   const int d2 = d+2;
 
   double* const workx = stack_->get(worksize*3);
-  double* const worky = workx + worksize; 
-  double* const workz = worky + worksize; 
+  double* const worky = workx + worksize;
+  double* const workz = worky + worksize;
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
   double* const transz = stack_->get((amax_+1)*a2*b2);
@@ -89,7 +90,7 @@ void GradBatch::perform_VRR() {
   fill(trans2y, trans2y+(cmax_+1)*c2*d2, 0.0);
   fill(trans2z, trans2z+(cmax_+1)*c2*d2, 0.0);
   // for usual integrals
-  for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
+  for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
@@ -99,7 +100,7 @@ void GradBatch::perform_VRR() {
       }
     }
   }
-  for (int id = 0, k = 0; id <= d+1; ++id) { 
+  for (int id = 0, k = 0; id <= d+1; ++id) {
     for (int ic = 0; ic <= c+1; ++ic, ++k) {
       if (ic == c+1 && id == d+1) continue;
       for (int i = ic; i <= ic+id; ++i) {
@@ -131,7 +132,7 @@ void GradBatch::perform_VRR() {
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
-    
+
     int offset = ii * rank_;
     int data_offset_ii = ii * acsize;
     double* expo = exponents_.get() + ii*4;
@@ -190,7 +191,7 @@ void GradBatch::perform_VRR() {
         }
       }
     }
- 
+
     double* current_data0  = data_ + data_offset_ii;
     double* current_data1  = data_ + data_offset_ii + size_block_;
     double* current_data2  = data_ + data_offset_ii + size_block_* 2;
@@ -205,21 +206,21 @@ void GradBatch::perform_VRR() {
 //  double* current_data11 = data_ + data_offset_ii + size_block_*11;
 
     // CAUTION!
-    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order 
-    for (int icz = 0; icz <= c; ++icz) { 
-    for (int icy = 0; icy <= c - icz; ++icy) { 
-    const int icx = c - icz - icy; 
+    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
+    for (int icz = 0; icz <= c; ++icz) {
+    for (int icy = 0; icy <= c - icz; ++icy) {
+    const int icx = c - icz - icy;
 
-      for (int idz = 0; idz <= d; ++idz) { 
-      for (int idy = 0; idy <= d - idz; ++idy) { 
-      const int idx = d - idz - idy; 
+      for (int idz = 0; idz <= d; ++idz) {
+      for (int idy = 0; idy <= d - idz; ++idy) {
+      const int idx = d - idz - idy;
 
-        for (int iaz = 0; iaz <= a; ++iaz) { 
-        for (int iay = 0; iay <= a - iaz; ++iay) { 
-        const int iax = a - iaz - iay; 
+        for (int iaz = 0; iaz <= a; ++iaz) {
+        for (int iay = 0; iay <= a - iaz; ++iay) {
+        const int iax = a - iaz - iay;
 
-          for (int ibz = 0; ibz <= b; ++ibz) { 
-          for (int iby = 0; iby <= b - ibz; ++iby) { 
+          for (int ibz = 0; ibz <= b; ++ibz) {
+          for (int iby = 0; iby <= b - ibz; ++iby) {
           const int ibx = b - ibz - iby;
 
             for (int i = 0; i != rank_; ++i) {

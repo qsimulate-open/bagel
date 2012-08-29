@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: f12mat.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -43,7 +43,7 @@ class F12Ten {
     const size_t dim1_;
     std::unique_ptr<double[]> data_;
 
-  public:   
+  public:
     F12Ten(const size_t i, const size_t d0, const size_t d1) : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[i*i*d0*d1]) {};
     F12Ten(const size_t i, const size_t d0, const size_t d1, std::unique_ptr<double[]> b)
      : nocc_(i), dim0_(d0), dim1_(d1), data_(std::move(b)) {};
@@ -54,7 +54,7 @@ class F12Ten {
 
     F12Ten operator*(const double a) const {
       F12Ten f(*this);
-      dscal_(size(), a, f.data(), 1); 
+      dscal_(size(), a, f.data(), 1);
       return f;
     };
     F12Ten operator-(const F12Ten& o) const {
@@ -99,7 +99,7 @@ class F12Mat : public F12Ten {
 
     F12Mat operator*(const double a) const {
       F12Mat f(*this);
-      dscal_(size(), a, f.data(), 1); 
+      dscal_(size(), a, f.data(), 1);
       return f;
     };
     F12Mat operator-(const F12Mat& o) const {
@@ -146,7 +146,7 @@ class F12Mat : public F12Ten {
         for (int j = 0; j != OUTSIZE; ++j) {
           for (int k = 0; k != OUTSIZE; ++k) {
             for (int l = 0; l != OUTSIZE; ++l) {
-              std::cout << std::fixed << std::setw(9) << std::setprecision(6) << data(l,k,j,i)  << " "; 
+              std::cout << std::fixed << std::setw(9) << std::setprecision(6) << data(l,k,j,i)  << " ";
             }
           }
           std::cout << std::endl;

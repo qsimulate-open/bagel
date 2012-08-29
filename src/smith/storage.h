@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: storage.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -38,6 +38,7 @@
 #include <cassert>
 #include <stdexcept>
 
+namespace bagel {
 namespace SMITH {
 
 class Storage_base {
@@ -47,7 +48,7 @@ class Storage_base {
     // this relates hash keys, block number, and block lengths (in this order).
     std::map<size_t, std::pair<size_t, size_t> > hashtable_;
     std::vector<bool> initialized_;
-    
+
 
   public:
     // size contains hashkey and length (in this order)
@@ -56,8 +57,8 @@ class Storage_base {
       size_t cnt = 0;
       for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
         auto j = hashtable_.insert(std::make_pair(i->first, std::make_pair(cnt, i->second)));
-        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage"); 
-        length_ += i->second; 
+        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
+        length_ += i->second;
       }
       std::vector<bool> tmp(cnt, init);
       initialized_ = tmp;
@@ -110,6 +111,7 @@ class Storage_Incore : public Storage_base {
     void initialize();
 };
 
+}
 }
 
 #endif

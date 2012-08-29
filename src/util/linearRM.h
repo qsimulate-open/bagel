@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: linearRM.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -36,6 +36,8 @@
 // Compared to Linear, this is robust because we don't assume
 // positive definiteness of the A matrix here.
 
+namespace bagel {
+
 template<typename T>
 class LinearRM {
 
@@ -43,14 +45,14 @@ class LinearRM {
     std::list<std::shared_ptr<const T> > c_;
     std::list<std::shared_ptr<const T> > sigma_;
 
-    const int max_;    
+    const int max_;
     int size_;
     const std::shared_ptr<const T> grad_;
 
-    // contains 
+    // contains
     std::unique_ptr<double[]> mat_;
     std::unique_ptr<double[]> scr_;
-    std::unique_ptr<double[]> vec_; 
+    std::unique_ptr<double[]> vec_;
     std::unique_ptr<double[]> prod_;
     std::unique_ptr<int[]> ipiv_;
     int info;
@@ -81,17 +83,17 @@ class LinearRM {
       auto citer = sigma_.begin();
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
-      } 
+      }
       // NOTE THE MINUS SIGN HERE!!
-      prod_[size_-1] = - s->ddot(*grad_); 
+      prod_[size_-1] = - s->ddot(*grad_);
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
       std::copy(prod_.get(), prod_.get()+max_, vec_.get());
-      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info); 
+      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
       if (info) throw std::runtime_error("dsyev failed in Linear");
 
-      std::shared_ptr<T> out(new T(*grad_)); 
+      std::shared_ptr<T> out(new T(*grad_));
       int cnt = 0;
       for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
         out->daxpy(vec_[cnt], *j);
@@ -103,8 +105,8 @@ class LinearRM {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->daxpy(vec_[cnt], *i); 
-      } 
+        out->daxpy(vec_[cnt], *i);
+      }
       return out;
     };
 
@@ -112,5 +114,7 @@ class LinearRM {
     double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
 
 };
+
+}
 
 #endif

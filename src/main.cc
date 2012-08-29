@@ -1,30 +1,30 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: main.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
 #include <vector>
-#include <tuple> 
+#include <tuple>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -48,14 +48,15 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
-#include <src/newfci/space.h>
+#include <src/rel/dirac.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
 
 
+using namespace bagel;
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources* resources__;
+Resources* bagel::resources__;
 
 // debugging
 extern void smith_test(std::shared_ptr<Reference>);
@@ -124,6 +125,12 @@ int main(int argc, char** argv) {
         scf->compute();
         ref = scf->conv_to_ref();
 
+      } else if (method == "dhf") {
+
+        scf = std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        scf->compute();
+//      ref = scf->conv_to_ref();
+
       } else if (method == "df-hf") {
 
         scf = std::shared_ptr<SCF<1> >(new SCF<1>(iter->second, geom, ref));
@@ -163,7 +170,7 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
 
         std::shared_ptr<CASSCF> casscf;
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
           casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom));
         } else if (algorithm == "werner" || algorithm == "knowles") {
@@ -175,7 +182,7 @@ int main(int argc, char** argv) {
         ref = casscf->conv_to_ref();
 
       } else if (method == "casscf-opt") {
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", ""); 
+        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         // in case of SS-CASSCF
         if (read_input<int>(iter->second, "nstate", 1) == 1) {
           if (algorithm == "superci" || algorithm == "") {
@@ -318,7 +325,7 @@ int main(int argc, char** argv) {
           std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
           std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
           #endif
-        
+
           #if 0 // Get test coeff from SCF
           scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
           scf->compute();
@@ -345,7 +352,7 @@ int main(int argc, char** argv) {
     /////////////////////////////////////
     //test_solvers(geom);
 
-    delete resources__; 
+    delete resources__;
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

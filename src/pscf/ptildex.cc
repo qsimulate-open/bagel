@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: ptildex.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -37,7 +37,7 @@
 #include <src/pscf/pscf_macros.h>
 
 using namespace std;
-
+using namespace bagel;
 
 // olp is real-space quantity.
 PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
@@ -60,14 +60,14 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
   int mcount = 0;
   for (int m = -K(); m != max(K(), 1); ++m, ++mcount) {
     const int boffset = mcount * blocksize_;
-  
+
     const int lwork = 5 * nbasis_;
     complex<double>* work = new complex<double>[lwork];
-    const complex<double>* S = odata->pointer(boffset); 
+    const complex<double>* S = odata->pointer(boffset);
     complex<double>* cdata = data_->pointer(boffset);
     const int unit = 1;
     zcopy_(&blocksize_, S, &unit, cdata, &unit);
-  
+
     int info = 0;
     double* rwork = new double[5 * nbasis_];
     double* eig = new double[nbasis_];
@@ -75,7 +75,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     if (info != 0) throw runtime_error("zheev in ptildex.cc failed.");
     delete[] rwork;
     delete[] work;
-  
+
     // counting how many orbital must be deleted owing to the linear dependency
     const double largest = fabs(eig[ndim_ - 1]);
     int cnt = 0;
@@ -87,7 +87,7 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
       cout << "   Caution: ignored " << cnt << " orbital" << (cnt == 1 ? "" : "s")
            << " in orthogonalization (m = " << m << ")" << setprecision(15) << eig[0] << endl;
     }
-  
+
     for (int i = cnt; i != ndim_; ++i) {
       assert(eig[i] > 0);
       const double scale = 1.0 / sqrt(eig[i]);
@@ -105,12 +105,12 @@ PTildeX::PTildeX(const shared_ptr<POverlap> olp) : PMatrix1e(olp->geom())  {
     removed.push_back(cnt);
     mdim_ = ndim_ - cnt;
 
-    if (cnt != 0) { 
+    if (cnt != 0) {
       for (int i = 0; i != mdim_; ++i) {
-        zcopy_(&ndim_, &cdata[(i + cnt) * ndim_], &unit, &cdata[i * ndim_], &unit); 
+        zcopy_(&ndim_, &cdata[(i + cnt) * ndim_], &unit, &cdata[i * ndim_], &unit);
       }
     }
-    
+
   }
   cout << setprecision(15) << endl;
   cout << "  Maximum residual in orthogonalization: " << *max_element(max_eig.begin(), max_eig.end()) << endl;

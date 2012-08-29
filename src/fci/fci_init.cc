@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: fci_init.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -32,6 +32,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace bagel;
 
 //
 // generate initial vectors
@@ -74,7 +75,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
       if (oindex == nstate) break;
     }
     if (oindex < nstate) {
-      out->zero(); 
+      out->zero();
       ndet *= 4;
       goto start_over;
     }
@@ -98,7 +99,7 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(*biter, *aiter)));
         tmp.erase(tmp.begin());
-      } 
+      }
     }
   }
   assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
@@ -109,7 +110,7 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
 }
 
 //
-// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm. 
+// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
 //
 void FCI::const_denom() {
 
@@ -136,7 +137,7 @@ void FCI::const_denom() {
 
   shared_ptr<Civec> tmp(new Civec(det()));
   denom_ = tmp;
-  const int nspin = det()->nspin(); 
+  const int nspin = det()->nspin();
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
@@ -158,7 +159,7 @@ void FCI::const_denom() {
           const int nja = (iabit2&1);
           const int njb = (ibbit2&1);
           const int Nj = (nja ^ njb);
-          const int addj = niab * (nja + njb); 
+          const int addj = niab * (nja + njb);
           *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
         }
         *iter += (jop_->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);

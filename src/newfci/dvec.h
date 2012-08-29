@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: dvec.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -40,6 +40,8 @@
 // TODO The NewDvec class is NOT yet flexible for NewCivectors with different NewDeterminants objects.
 // This can be easily done by modifing what follows.
 
+namespace bagel {
+
 class NewDvec {
   protected:
     // the determinant space where NewDvec's are sitting
@@ -59,7 +61,7 @@ class NewDvec {
 
     NewDvec(std::shared_ptr<const NewCivec> e, const size_t ij);
 
-    // I think this is very confusiong... this is done this way in order not to delete NewCivec when NewDvec is deleted. 
+    // I think this is very confusiong... this is done this way in order not to delete NewCivec when NewDvec is deleted.
     NewDvec(std::shared_ptr<const NewDvec> o);
 
     NewDvec(std::vector<std::shared_ptr<NewCivec> > o);
@@ -112,5 +114,6 @@ class NewDvec {
     void print(const double thresh = 0.05) const;
 };
 
+}
 
 #endif

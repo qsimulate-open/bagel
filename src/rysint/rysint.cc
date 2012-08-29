@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: rysint.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,6 +35,7 @@
 #include <src/rysint/naibatch_base.h>
 
 using namespace std;
+using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
@@ -56,7 +57,7 @@ RysInt::~RysInt() {
   // TODO this is a little inconsistent
   // stack should be allocated in the constructor of this class
 
-  stack_->release(size_allocated_, buff_); 
+  stack_->release(size_allocated_, buff_);
   if (tenno_) stack_->release(size_alloc_, stack_save2_);
   stack_->release(size_alloc_, stack_save_);
 
@@ -113,7 +114,7 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   const int ang2 = basisinfo_[2]->angular_number();
   const int ang3 = basisinfo_[3]->angular_number();
   rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_));
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_); 
+  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_);
 
   amax_ = ang0 + ang1 + deriv_rank_;
   cmax_ = ang2 + ang3 + deriv_rank_;
@@ -122,8 +123,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   amax1_ = amax_ + 1;
   cmax1_ = cmax_ + 1;
 
-  asize_ = 0; 
-  csize_ = 0; 
+  asize_ = 0;
+  csize_ = 0;
   for (int i = amin_; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
   for (int i = cmin_; i <= cmax_; ++i) csize_ += (i + 1) * (i + 2) / 2;
 
@@ -135,8 +136,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
 
   int cnt = 0;
   for (int i = cmin_; i <= cmax_; ++i) {
-    for (int iz = 0; iz <= i; ++iz) { 
-      for (int iy = 0; iy <= i - iz; ++iy) { 
+    for (int iz = 0; iz <= i; ++iz) {
+      for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
         if (ix >= 0) {
           cmapping_[ix + cmax1_ * (iy + cmax1_ * iz)] = cnt;
@@ -147,11 +148,11 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   }
   cnt = 0;
   for (int j = amin_; j <= amax_; ++j) {
-    for (int jz = 0; jz <= j; ++jz) { 
-      for (int jy = 0; jy <= j - jz; ++jy) { 
+    for (int jz = 0; jz <= j; ++jz) {
+      for (int jy = 0; jy <= j - jz; ++jy) {
         const int jx = j - jy - jz;
         if (jx >= 0){
-          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt; 
+          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt;
           ++cnt;
         }
       }
@@ -175,12 +176,12 @@ void RysInt::set_ab_cd() {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
 
-  AB_[0] = ax - bx; 
-  AB_[1] = ay - by; 
-  AB_[2] = az - bz; 
-  CD_[0] = cx - dx; 
-  CD_[1] = cy - dy; 
-  CD_[2] = cz - dz; 
+  AB_[0] = ax - bx;
+  AB_[1] = ay - by;
+  AB_[2] = az - bz;
+  CD_[0] = cx - dx;
+  CD_[1] = cy - dy;
+  CD_[2] = cz - dz;
 }
 
 
@@ -188,7 +189,7 @@ void RysInt::allocate_arrays(const size_t ps) {
   size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
   buff_ = stack_->get(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
-  double* pointer = buff_; 
+  double* pointer = buff_;
   screening_ = (int*)pointer;
                     pointer += ps;
   p_ = pointer;     pointer += ps * 3;
@@ -197,19 +198,19 @@ void RysInt::allocate_arrays(const size_t ps) {
   xq_ = pointer;    pointer += ps;
   coeff_ = pointer; pointer += ps;
   T_ = pointer;     pointer += ps;
-  roots_ = pointer; pointer += rank_ * ps; 
+  roots_ = pointer; pointer += rank_ * ps;
   weights_ = pointer; pointer += rank_ * ps;
   if (tenno_) {
     coeffy_ = pointer;pointer += ps;
     U_ = pointer;     pointer += ps;
-  } 
+  }
 }
 
 // TODO this is not a good design. Should refactor at certain point using virtual functions...
 void RysInt::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
-    const unsigned int size_start = asize_ * csize_ * primsize_; 
+    const unsigned int size_start = asize_ * csize_ * primsize_;
     const unsigned int size_intermediate = asize_final * csize_ * contsize_;
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
@@ -238,7 +239,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     stack_save2_ = NULL;
   }
   data_ = stack_save_;
-  data2_ = stack_save2_; 
+  data2_ = stack_save2_;
 }
 
 

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: main.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -39,37 +39,37 @@ using namespace boost;
 
 int main() {
 
-  for (int n = 0; n != ANG_VRR_END; ++n) { 
+  for (int n = 0; n != ANG_VRR_END; ++n) {
     for (int a = 0; a <= n; ++a) {
       const int b = n - a;
       if (a < b || a >= ANG_HRR_END) continue;
       if (b == 0) continue;
       string astr;
-      if (a < 10) astr = lexical_cast<string>(a); 
-      if (a == 10) astr = lexical_cast<string>("a"); 
-      if (a == 11) astr = lexical_cast<string>("b"); 
-      if (a == 12) astr = lexical_cast<string>("c"); 
+      if (a < 10) astr = lexical_cast<string>(a);
+      if (a == 10) astr = lexical_cast<string>("a");
+      if (a == 11) astr = lexical_cast<string>("b");
+      if (a == 12) astr = lexical_cast<string>("c");
       string nstr;
-      if (n < 10) nstr = lexical_cast<string>(n); 
-      if (n == 10) nstr = lexical_cast<string>("a"); 
-      if (n == 11) nstr = lexical_cast<string>("b"); 
-      if (n == 12) nstr = lexical_cast<string>("c"); 
+      if (n < 10) nstr = lexical_cast<string>(n);
+      if (n == 10) nstr = lexical_cast<string>("a");
+      if (n == 11) nstr = lexical_cast<string>("b");
+      if (n == 12) nstr = lexical_cast<string>("c");
 
       string n0 = nstr + lexical_cast<string>(0);
-      string ab = astr + lexical_cast<string>(b); 
+      string ab = astr + lexical_cast<string>(b);
       string sa = astr;
-      string out; 
-      const double cartesian_xyz[20] = {1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 
-                                       78, 91, 105, 120, 136, 153, 171, 190, 210}; 
-       
-      int size = 0; 
+      string out;
+      const double cartesian_xyz[20] = {1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66,
+                                       78, 91, 105, 120, 136, 153, 171, 190, 210};
+
+      int size = 0;
       for (int i = max(a, b); i <= a + b; ++i) size += cartesian_xyz[i];
 
       int mapping[(n + 1) * (n + 1) * (n + 1)];
       int cnt_local = 0;
       for (int i = max(a,b); i <= a + b; ++i) {
-        for (int iz = 0; iz <= i; ++iz) { 
-          for (int iy = 0; iy <= i - iz; ++iy) { 
+        for (int iz = 0; iz <= i; ++iz) {
+          for (int iy = 0; iy <= i - iz; ++iy) {
             const int ix = i - iy - iz;
             if (ix >= 0) {
               mapping[ix + (n + 1) * (iy + (n + 1) * iz)] = cnt_local;
@@ -82,34 +82,34 @@ int main() {
       string ssize = lexical_cast<string>(size);
 
       size = cartesian_xyz[a] * cartesian_xyz[b];
-      string osize = lexical_cast<string>(size); 
+      string osize = lexical_cast<string>(size);
       size = cartesian_xyz[a];
-      string asize = lexical_cast<string>(size); 
+      string asize = lexical_cast<string>(size);
 
       string filename = "_hrr_" + n0 + "_" + ab + ".cc";
       out +="\
 //\n\
-// Newint - Parallel electron correlation program.\n\
+// BAGEL - Parallel electron correlation program.\n\
 // Filename: " + filename + "\n\
 // Copyright (C) 2009 Toru Shiozaki\n\
 //\n\
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
 // Maintainer: Shiozaki group\n\
 //\n\
-// This file is part of the Newint package (to be renamed).\n\
+// This file is part of the BAGEL package.\n\
 //\n\
-// The Newint package is free software; you can redistribute it and/or modify\n\
+// The BAGEL package is free software; you can redistribute it and/or modify\n\
 // it under the terms of the GNU Library General Public License as published by\n\
 // the Free Software Foundation; either version 2, or (at your option)\n\
 // any later version.\n\
 //\n\
-// The Newint package is distributed in the hope that it will be useful,\n\
+// The BAGEL package is distributed in the hope that it will be useful,\n\
 // but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
 // GNU Library General Public License for more details.\n\
 //\n\
 // You should have received a copy of the GNU Library General Public License\n\
-// along with the Newint package; see COPYING.  If not, write to\n\
+// along with the BAGEL package; see COPYING.  If not, write to\n\
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
@@ -143,8 +143,8 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
       for (int m = 0; m <= (n - a); ++m) {
         for (int iz = 0; iz <= m; ++iz) {
           for (int iy = 0; iy <= m - iz; ++iy) {
-             
-            const int ix = m - iz - iy; 
+
+            const int ix = m - iz - iy;
             if (ix >= 0) {
               Angular_Index ai(ix, iy, iz);
               const string offset = lexical_cast<string>(pl + ix + (n + 1) * (iy + (n + 1) * iz));
@@ -162,7 +162,7 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
       out += out2 + "\n";
 //    out += out1 + "\n" + out2;
 
-      list<Angular_Pair> needed; 
+      list<Angular_Pair> needed;
       vector<string> blocks;
 
       for (int m = b; m >= 1; --m) {
@@ -171,13 +171,13 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
         mylist.resize(ANG_HRR_END);
         for (int iz = 0; iz <= m; ++iz) {
           for (int iy = 0; iy <= m - iz; ++iy) {
-            const int ix = m - iz - iy; 
+            const int ix = m - iz - iy;
             if (ix >= 0) {
               Angular_Index bi(ix, iy, iz);
               for (int l = n - m - a; l >= 0; --l) {
                 for (int jz = 0; jz <= l; ++jz) {
                   for (int jy = 0; jy <= l - jz; ++jy) {
-                    const int jx = l - jz - jy; 
+                    const int jx = l - jz - jy;
                     if (jx >= 0) {
                       Angular_Index ai(jx, jy, jz);
                       Angular_Pair indexpair(make_pair(ai, bi));
@@ -185,17 +185,17 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
                         tuple<Angular_Pair, Angular_Pair, int> next = indexpair.hrr_formula();
                         needed.push_back(get<0>(next));
                         needed.push_back(get<1>(next));
-                        const int ixyz = jx + jy + jz; 
+                        const int ixyz = jx + jy + jz;
                         string number_str = lexical_cast<string>(number);
                         if (m != b) {
                           const string sprim = "\
-      const double " + indexpair.show() + " = " + get<0>(next).show() + 
-                        " + AB[" + lexical_cast<string>(get<2>(next)) + "] * " + get<1>(next).show() + ";\n"; 
+      const double " + indexpair.show() + " = " + get<0>(next).show() +
+                        " + AB[" + lexical_cast<string>(get<2>(next)) + "] * " + get<1>(next).show() + ";\n";
                           mylist[ixyz].push_back(sprim);
                         } else {
                           const string sprim = "\
       current_out[" + lexical_cast<string>(cnt) + "] = " + get<0>(next).show() +
-                        " + AB[" + lexical_cast<string>(get<2>(next)) + "] * " + get<1>(next).show() + "; // " + indexpair.show() + "\n"; 
+                        " + AB[" + lexical_cast<string>(get<2>(next)) + "] * " + get<1>(next).show() + "; // " + indexpair.show() + "\n";
                           mylist[ixyz].push_back(sprim);
                           ++cnt;
                         }
@@ -210,14 +210,14 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
         string outblock;
         for (vector<AP>::iterator iter = mylist.begin(); iter != mylist.end(); ++iter) {
           bool goinside = false;
-          for (AP::iterator aiter = iter->begin(); aiter != iter->end(); ++aiter) { 
+          for (AP::iterator aiter = iter->begin(); aiter != iter->end(); ++aiter) {
             goinside = true;
             outblock += *aiter;
           }
           if (goinside) outblock += "\n";
         }
         blocks.push_back(outblock);
-      } 
+      }
       for (vector<string>::reverse_iterator riter = blocks.rbegin(); riter != blocks.rend(); ++riter)
         out += *riter;
       out += "\
@@ -231,7 +231,7 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
       ofs.open(filename.c_str());
       ofs << out << endl;
       ofs.close();
-    } 
+    }
   }
   return 0;
 }

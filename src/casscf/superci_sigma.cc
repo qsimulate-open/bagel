@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: superci_sigma.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -27,6 +27,7 @@
 #include <src/casscf/superci.h>
 
 using namespace std;
+using namespace bagel;
 
 
 //////////////////////////////////////////////////////
@@ -48,7 +49,7 @@ void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    const double fac = (occup_[i]>occup_thresh) ? 1.0/std::sqrt(occup_[i]) : 0.0; 
+    const double fac = (occup_[i]>occup_thresh) ? 1.0/std::sqrt(occup_[i]) : 0.0;
     daxpy_(nvirt_, fac, fact->element_ptr(nocc_, i), 1, target, 1);
   }
 }
@@ -59,7 +60,7 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shar
   if (!nclosed_ || !nact_) return;
   double* target = sigma->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    const double fac = (2.0-occup_[i] > occup_thresh) ? 1.0/std::sqrt(2.0-occup_[i]) : 0.0; 
+    const double fac = (2.0-occup_[i] > occup_thresh) ? 1.0/std::sqrt(2.0-occup_[i]) : 0.0;
     daxpy_(nclosed_, 2.0*fac, f->element_ptr(0,nclosed_+i), 1, target, 1);
     daxpy_(nclosed_, -fac, fact->element_ptr(0,i), 1, target, 1);
   }
@@ -102,10 +103,10 @@ void SuperCI::sigma_at_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   tmp.zero();
   for (int i = 0; i != nact_; ++i) {
     const double fac = -std::sqrt(0.5*occup_[i]);
-    daxpy_(nclosed_, fac, fact->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1); 
+    daxpy_(nclosed_, fac, fact->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
   }
-  dgemm_("N", "N", nvirt_, nact_, nclosed_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_va(), nvirt_); 
-  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, cc->ptr_va(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_); 
+  dgemm_("N", "N", nvirt_, nact_, nclosed_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_va(), nvirt_);
+  dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, cc->ptr_va(), nvirt_, tmp.data(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_);
 }
 
 
@@ -116,9 +117,9 @@ void SuperCI::sigma_ai_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   tmp.zero();
   for (int i = 0; i != nact_; ++i) {
     const double fac = std::sqrt(1.0-0.5*occup_[i]);
-    daxpy_(nvirt_, fac, fact->element_ptr(nocc_,i), 1, tmp.element_ptr(0,i), 1); 
+    daxpy_(nvirt_, fac, fact->element_ptr(nocc_,i), 1, tmp.element_ptr(0,i), 1);
   }
-  dgemm_("T", "N", nclosed_, nact_, nvirt_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nvirt_, 1.0, sigma->ptr_ca(), nclosed_); 
+  dgemm_("T", "N", nclosed_, nact_, nvirt_, 1.0, cc->ptr_vc(), nvirt_, tmp.data(), nvirt_, 1.0, sigma->ptr_ca(), nclosed_);
   dgemm_("N", "T", nvirt_, nclosed_, nact_, 1.0, tmp.data(), nvirt_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_vc(), nvirt_);
 
 }
@@ -135,7 +136,7 @@ void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
       tmp.element(j,i) = -((2.0 - occup_[j] - occup_[i]) * factp->element(j,i) - gaa->element(j,i)) * fac;
     }
   }
-  dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_); 
-  dgemm_("N", "N", nclosed_, nact_, nclosed_, -1.0, f->data(), nbasis_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_ca(), nclosed_); 
+  dgemm_("N", "N", nclosed_, nact_, nact_, 1.0, cc->ptr_ca(), nclosed_, tmp.data(), nact_, 1.0, sigma->ptr_ca(), nclosed_);
+  dgemm_("N", "N", nclosed_, nact_, nclosed_, -1.0, f->data(), nbasis_, cc->ptr_ca(), nclosed_, 1.0, sigma->ptr_ca(), nclosed_);
 }
 

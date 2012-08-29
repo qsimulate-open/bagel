@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: rohf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -29,6 +29,7 @@
 
 using namespace std;
 using namespace std::chrono;
+using namespace bagel;
 
 void ROHF::compute() {
 
@@ -45,7 +46,7 @@ void ROHF::compute() {
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
-  cout << endl; 
+  cout << endl;
   cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
             << endl << endl;
   cout << indent << "=== ROHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
@@ -80,7 +81,7 @@ void ROHF::compute() {
     shared_ptr<Matrix1e> error_vector(new Matrix1e(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                                        +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
-    
+
     const double error = error_vector->rms();
 
     energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
@@ -90,7 +91,7 @@ void ROHF::compute() {
     auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2)
-                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl; 
+                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

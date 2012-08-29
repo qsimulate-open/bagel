@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: pairfile.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -57,12 +57,12 @@ class PairFile {
     PairFile<T, U> operator+(const PairFile<T, U>& o) const {
       std::shared_ptr<T> a0(new T(*first())); *a0 += *o.first();
       std::shared_ptr<U> a1(new U(*second())); *a1 += *o.second();
-      return PairFile(a0, a1); 
+      return PairFile(a0, a1);
     };
     PairFile<T, U> operator-(const PairFile<T, U>& o) const {
       std::shared_ptr<T> a0(new T(*first())); *a0 -= *o.first();
       std::shared_ptr<U> a1(new U(*second())); *a1 -= *o.second();
-      return PairFile(a0, a1); 
+      return PairFile(a0, a1);
     };
     PairFile<T, U>& operator+=(const PairFile<T, U>& o) { *first()+=*o.first(); *second()+=*o.second(); return *this; };
     PairFile<T, U>& operator-=(const PairFile<T, U>& o) { *first()-=*o.first(); *second()-=*o.second(); return *this; };
@@ -75,7 +75,7 @@ class PairFile {
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; };
 
     // lapack functions
-    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); }; 
+    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
 #ifndef DEBUG_ORBITAL
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
 #else
@@ -97,7 +97,7 @@ class PairFile {
       }
       const double scal = 1.0/this->norm();
       scale(scal);
-      return 1.0/scal; 
+      return 1.0/scal;
     };
 
 };

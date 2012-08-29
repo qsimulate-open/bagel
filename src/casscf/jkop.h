@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: jkop.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -31,6 +31,8 @@
 #include <src/fci/fci.h>
 #include <algorithm>
 #include <src/util/f77.h>
+
+namespace bagel {
 
 class JKop {
   protected:
@@ -91,21 +93,21 @@ class JKop {
         }
       }
       // sort RDM for K
-      for (int i = 0; i != nocc; ++i) { 
-        for (int j = 0; j != nocc; ++j) { 
-          for (int k = 0; k != nocc; ++k) { 
+      for (int i = 0; i != nocc; ++i) {
+        for (int j = 0; j != nocc; ++j) {
+          for (int k = 0; k != nocc; ++k) {
             dcopy_(nocc, rdm2all.get()+nocc*(j+nocc*(k+nocc*i)), 1, rdm2allk.get()+nocc*(k+nocc*(j+nocc*i)), 1);
           }
         }
       }
-      // sort K 
+      // sort K
       // after here buf contains K as (aa|ii)
       std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis_*nbasis_]);
-      for (int i = 0; i != nocc; ++i) { 
-        for (int j = 0; j != nocc; ++j) { 
+      for (int i = 0; i != nocc; ++i) {
+        for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nbasis_; ++k) {
             for (int l = 0; l != nbasis_; ++l) {
-              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_[j+nocc*(l+nbasis_*(i+nocc*k))]; 
+              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_[j+nocc*(l+nbasis_*(i+nocc*k))];
             }
           }
         }
@@ -118,11 +120,11 @@ class JKop {
       size_t icnt = 0lu;
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j, icnt += nbasis_*nbasis_) {
-          if (i >= nclosed && j >= nclosed) { 
-            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1); 
+          if (i >= nclosed && j >= nclosed) {
+            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1);
           } else if (i == j) {
-            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_.get()+icnt, 1); 
-          } 
+            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_.get()+icnt, 1);
+          }
         }
       }
     };
@@ -143,7 +145,7 @@ class JKop {
 
     std::shared_ptr<Matrix1e> denom() const {
       std::shared_ptr<Matrix1e> out(new Matrix1e(fci_->geom()));
-      const size_t nbasis = nbasis_; 
+      const size_t nbasis = nbasis_;
       const int nocc = nocc_;
       const int nclosed = nclosed_;
       std::shared_ptr<Matrix1e> tmp(new Matrix1e(fci_->geom(), nbasis, nocc));
@@ -157,7 +159,7 @@ class JKop {
                                                    0.0, data_.get()+i*nbasis*nbasis, nbasis);
         }
       }
-    
+
       // virtual-occ part
       out->fill(1.0e100);
       for (int i = 0; i != nocc; ++i) {
@@ -177,5 +179,7 @@ class JKop {
     };
 
 };
+
+}
 
 #endif

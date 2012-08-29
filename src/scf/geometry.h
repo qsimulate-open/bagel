@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: geometry.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -34,6 +34,8 @@
 #include <memory>
 #include <src/df/fit.h>
 #include <src/util/input.h>
+
+namespace bagel {
 
 class Geometry {
   protected:
@@ -89,13 +91,13 @@ class Geometry {
     // Constructor helpers
     void construct_from_atoms(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string,std::string> o);
     void common_init1();
-    void common_init2(const bool print, const double thresh);
+    void common_init2(const bool print, const double thresh, const bool nodf = false);
 
   public:
     Geometry(const std::string);
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string, std::string> o);
-    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo);
+    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry> >);
     ~Geometry();
@@ -126,7 +128,6 @@ class Geometry {
 
     bool operator==(const Geometry& o) const;
 
-//  int num_count_ncore(); // also set nfrc_
     int num_count_ncore_only() const; // also set nfrc_
     int num_count_full_valence_nocc() const;
 
@@ -143,7 +144,7 @@ class Geometry {
     void print_atoms() const;
 
     // Returns the Petite list.
-    std::shared_ptr<Petite> plist() const { return plist_; }; 
+    std::shared_ptr<Petite> plist() const { return plist_; };
 
     // Rerurns DF data
     const std::shared_ptr<const DensityFit> df() const { return df_; };
@@ -167,7 +168,13 @@ class Geometry {
     // external field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; };
     double external(const int i) const { return external_[i]; };
+
+    // transformation matrices for the internal coordinate for geometry optimization
+    // ninternal runs fast (and cartsize slower)
+    std::array<std::unique_ptr<double[]>,2> compute_internal_coordinate() const;
 };
+
+}
 
 #endif
 

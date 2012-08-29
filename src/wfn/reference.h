@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: reference.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -38,11 +38,13 @@
 
 // all the info to construct wave functions
 
+namespace bagel {
+
 class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
     // Geometry which this wave function is beloinging to
-    const std::shared_ptr<const Geometry> geom_; 
+    const std::shared_ptr<const Geometry> geom_;
     // MO coefficients
     const std::shared_ptr<const Coeff> coeff_;
     // in case of spin-broken wave functions (UHF)
@@ -108,16 +110,16 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     double energy() const { return energy_; };
 
-    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }; 
-    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; }; 
+    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); };
+    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
 
     // returns an occ-occ sized 1RDM
-    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const; 
+    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const;
     std::shared_ptr<Matrix1e> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
     std::shared_ptr<Matrix1e> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
 
-    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }; 
-    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; }; 
+    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); };
+    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<Dvec> civectors() const;
@@ -126,5 +128,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
 
 };
+
+}
 
 #endif

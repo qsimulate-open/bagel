@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: casscf.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -32,11 +32,12 @@
 #include <src/casscf/qvec.h>
 
 using namespace std;
+using namespace bagel;
 
 template<typename T>
 static string tostring(const T i) {
   stringstream ss;
-  ss << i; 
+  ss << i;
   return ss.str();
 };
 
@@ -274,7 +275,7 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold,
 
 
 
-vector<double> CASSCF::form_natural_orbs() { 
+vector<double> CASSCF::form_natural_orbs() {
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
     const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();

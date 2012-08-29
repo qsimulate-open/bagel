@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: gncompute.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -28,6 +28,7 @@
 #include <src/util/comb.h>
 
 using namespace std;
+using namespace bagel;
 
 const static Comb comb;
 
@@ -56,7 +57,7 @@ void GNAIBatch::compute() {
 
   const int a2 = a+2;
   const int b2 = b+2;
-  assert(a+b+1 == amax_); 
+  assert(a+b+1 == amax_);
 
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
@@ -64,7 +65,7 @@ void GNAIBatch::compute() {
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
-  for (int ib = 0, k = 0; ib <= b+1; ++ib) { 
+  for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
@@ -106,8 +107,8 @@ void GNAIBatch::compute() {
 
     if (cell != 0) throw logic_error("I haven't thought about periodic cases");
 
-    const double* croots = &roots_[i * rank_]; 
-    const double* cweights = &weights_[i * rank_]; 
+    const double* croots = &roots_[i * rank_];
+    const double* cweights = &weights_[i * rank_];
     double PC[3];
     PC[0] = p_[i*3  ] - geom_->atoms(iatom)->position(0) - disp[0];
     PC[1] = p_[i*3+1] - geom_->atoms(iatom)->position(1) - disp[1];
@@ -145,7 +146,7 @@ void GNAIBatch::compute() {
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky, rank_, transy, amax_+1, 0.0, bufy, rank_);
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz, rank_, transz, amax_+1, 0.0, bufz, rank_);
 
-    unsigned int aatom, batom; 
+    unsigned int aatom, batom;
     tie(aatom, batom) = iatom_;
     const unsigned int catom = iatom;
     const double alpha = exponents_[iprim*2+0];
@@ -185,12 +186,12 @@ void GNAIBatch::compute() {
     double* current_data7 = data_ + size_block_*(3*catom+1) + offset_iprim;
     double* current_data8 = data_ + size_block_*(3*catom+2) + offset_iprim;
 
-    for (int iaz = 0; iaz <= a; ++iaz) { 
-      for (int iay = 0; iay <= a - iaz; ++iay) { 
-        const int iax = a - iaz - iay; 
+    for (int iaz = 0; iaz <= a; ++iaz) {
+      for (int iay = 0; iay <= a - iaz; ++iay) {
+        const int iax = a - iaz - iay;
 
-        for (int ibz = 0; ibz <= b; ++ibz) { 
-          for (int iby = 0; iby <= b - ibz; ++iby) { 
+        for (int ibz = 0; ibz <= b; ++ibz) {
+          for (int iby = 0; iby <= b - ibz; ++iby) {
             const int ibx = b - ibz - iby;
             for (int r = 0; r != rank_; ++r) {
               *current_data0 += bufx_a[r+rank_*(iax+a2*ibx)] * bufy  [r+rank_*(iay+a2*iby)] * bufz  [r+rank_*(iaz+a2*ibz)];
@@ -245,34 +246,34 @@ void GNAIBatch::compute() {
   for (int i = 0; i != natom_*3; ++i, cdata += size_block_) {
     double* target = bkup_;
     const double* source = cdata;
-    // contract indices 01 
+    // contract indices 01
     // data will be stored in bkup_: cont01{ xyz{ } }
-    const int m = acsize; 
-    perform_contraction(m, source, prim0size_, prim1size_, target, 
-                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_, 
+    const int m = acsize;
+    perform_contraction(m, source, prim0size_, prim1size_, target,
+                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1size_);
 
     // Cartesian to spherical 01 if necesarry
     // data will be stored in bkup_
-    target = cdata; 
+    target = cdata;
     source = bkup_;
     if (spherical_) {
       struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
-      carsphlist.carsphfunc_call(carsphindex, nloops, source, target); 
+      carsphlist.carsphfunc_call(carsphindex, nloops, source, target);
     }
 
     // Sort cont01 and xyzab
     // data will be stored in data_: cont1b{ cont0a{ } }
     if (spherical_) {
-      target = bkup_; 
+      target = bkup_;
       source = cdata;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort_->sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
       copy(bkup_, bkup_+size_block_, cdata);
     } else {
-      target = cdata; 
+      target = cdata;
       source = bkup_;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort_->sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);

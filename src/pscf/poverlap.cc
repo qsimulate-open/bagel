@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: poverlap.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -28,9 +28,10 @@
 #include <src/osint/overlapbatch.h>
 #include <iostream>
 
-typedef std::shared_ptr<PGeometry> RefPGeometry;
-
 using namespace std;
+using namespace bagel;
+
+typedef shared_ptr<PGeometry> RefPGeometry;
 
 POverlap::POverlap(const RefPGeometry g) : PMatrix1e(g) {
 
@@ -49,8 +50,8 @@ void POverlap::computebatch(const array<shared_ptr<const Shell>,2>& input,
   // input = [b1, b0]
   // because of the convention in integral codes
   assert(input.size() == 2);
-  const int dimb0 = input[1]->nbasis(); 
-  const int dimb1 = input[0]->nbasis(); 
+  const int dimb0 = input[1]->nbasis();
+  const int dimb1 = input[0]->nbasis();
   OverlapBatch overlap(input);
   overlap.compute();
   const double* odata = overlap.data();
@@ -74,7 +75,7 @@ int POverlap::calculate_thresh() const {
     const complex<double>* cdata = data_->pointer((i + K()) * blocksize_);
     for (int j = 0; j != blocksize_; ++j, ++cdata) {
       const double current = abs(*cdata);
-      cmax = current > cmax ? current : cmax; 
+      cmax = current > cmax ? current : cmax;
     }
     cout << "   cell " << setw(3) << i << ":  " << cmax << endl;
     if (cmax > 1.0e-15) ++out;

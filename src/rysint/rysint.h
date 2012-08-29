@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: rysint.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -38,6 +38,8 @@
 #include <array>
 #include <vector>
 #include <memory>
+
+namespace bagel {
 
 class RysInt {
   protected:
@@ -63,12 +65,12 @@ class RysInt {
 
     // information on how many derivatives you take
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be
-    // over written in the constructor of a derived class 
+    // over written in the constructor of a derived class
     int deriv_rank_;
     int tenno_;
 
-    std::shared_ptr<HRRList> hrr_; 
-    std::shared_ptr<VRRListBase> vrr_; 
+    std::shared_ptr<HRRList> hrr_;
+    std::shared_ptr<VRRListBase> vrr_;
     std::shared_ptr<SortList> sort_;
 
     double *data_;
@@ -76,7 +78,7 @@ class RysInt {
     unsigned int size_final_;
 
     /// info for Rys quadruture
-    double *roots_; 
+    double *roots_;
     double *weights_;
     int rank_;
 
@@ -131,10 +133,12 @@ class RysInt {
 
     size_t size_block() const { return size_block_; };
 
-    bool swap01() const { return swap01_; }; 
-    bool swap23() const { return swap23_; }; 
-    bool swap0123() const { return swap0123_; }; 
+    bool swap01() const { return swap01_; };
+    bool swap23() const { return swap23_; };
+    bool swap0123() const { return swap0123_; };
 };
+
+}
 
 #endif
 

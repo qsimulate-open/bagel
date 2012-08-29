@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: hpw_diis.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -38,6 +38,8 @@
 #include <src/util/diis.h>
 #include <src/util/bfgs.h>
 
+namespace bagel {
+
 template<class T>
 class HPW_DIIS  {
   typedef std::shared_ptr<const T> RefT;
@@ -48,7 +50,7 @@ class HPW_DIIS  {
 
   public:
     HPW_DIIS(const int n, RefT o) : diis_(n), orig_(o) {
-      std::shared_ptr<T> b = o->clone(); 
+      std::shared_ptr<T> b = o->clone();
       b->unit();
       RefT tmp(new T(*b));
       base_ = tmp;
@@ -71,5 +73,7 @@ class HPW_DIIS  {
     };
 
 };
+
+}
 
 #endif

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: shell.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -32,6 +32,8 @@
 #include <vector>
 #include <string>
 #include <memory>
+
+namespace bagel {
 
 class Shell {
 
@@ -66,25 +68,27 @@ class Shell {
     double position(const int i) const { return position_[i]; };
     const std::array<double,3> position() const { return position_; };
     int angular_number() const { return angular_number_; };
-    double exponents(const int i) const { return exponents_[i]; }; 
+    double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };
     const double* exponents_pointer() const { return &(exponents_[0]); };
     const std::vector<double> contractions(const int i) const { return contractions_[i]; };
     const std::vector<std::vector<double> >& contractions() const { return contractions_; };
-    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; }; 
-    const std::vector<std::pair<int, int> >& contraction_ranges() const { return contraction_ranges_; }; 
+    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; };
+    const std::vector<std::pair<int, int> >& contraction_ranges() const { return contraction_ranges_; };
 
-    const std::vector<int>& contraction_upper() const { return contraction_upper_; }; 
-    const std::vector<int>& contraction_lower() const { return contraction_lower_; }; 
+    const std::vector<int>& contraction_upper() const { return contraction_upper_; };
+    const std::vector<int>& contraction_lower() const { return contraction_lower_; };
 
     const std::string show() const;
-    int nbasis() const { return nbasis_; }; 
+    int nbasis() const { return nbasis_; };
 
     std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
     std::shared_ptr<const Shell> move_atom(const double*) const;
 
     bool operator==(const Shell& o) const;
 };
+
+}
 
 #endif
 

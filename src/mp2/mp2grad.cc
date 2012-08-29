@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: mp2grad.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -37,6 +37,7 @@
 #include <src/grad/gradeval.h>
 
 using namespace std;
+using namespace bagel;
 
 MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
 
@@ -47,7 +48,7 @@ MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Ge
 void MP2Grad::compute() { }
 
 
-template<> 
+template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto tp1 = chrono::high_resolution_clock::now();
 
@@ -57,9 +58,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const size_t naux = geom_->naux();
   const size_t nocc = ref_->nocc() - ncore;
   const size_t nocca = ref_->nocc();
-  if (nocc < 1) throw runtime_error("no correlated electrons"); 
+  if (nocc < 1) throw runtime_error("no correlated electrons");
   const size_t nvirt = geom_->nbasis() - nocca;
-  if (nvirt < 1) throw runtime_error("no virtuals orbitals"); 
+  if (nvirt < 1) throw runtime_error("no virtuals orbitals");
   assert(geom_->nbasis() == ref_->coeff()->mdim());
 
   const size_t nbasis = geom_->nbasis();
@@ -69,7 +70,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const double* const vcoeff = coeff + nocc*nbasis;
 
   // first compute half transformed integrals
-  shared_ptr<const DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);  
+  shared_ptr<const DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);
   // TODO this is a waste...
   shared_ptr<const DF_Half> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
   // second transform for virtual index
@@ -95,7 +96,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   double ecorr = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
     // nocc * nvirt * nocc
-    unique_ptr<double[]> data = full->form_4index(full, i); 
+    unique_ptr<double[]> data = full->form_4index(full, i);
     copy(data.get(), data.get()+nocc*nvirt*nocc, buf.get());
     copy(data.get(), data.get()+nocc*nvirt*nocc, buf2.get());
 
@@ -108,7 +109,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
         for (size_t l = 0; l != nocc; ++l, ++tdata, ++bdata) {
           const double denom = 1.0 / (-eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]);
           *tdata *= denom;
-          *bdata *= denom; 
+          *bdata *= denom;
         }
       }
     }
@@ -116,16 +117,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux); 
+    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux);
 
-    // G(ja|ic) -> G_c(a,ij) 
+    // G(ja|ic) -> G_c(a,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);
-    // T(jb|ic) -> T_c(b,ij) 
+    // T(jb|ic) -> T_c(b,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf2, buf, nocc, nvirt, nocc);
     // D_ab = G(ja|ic) T(jb|ic)
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis); 
+    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis);
     // D_ij = - G(ja|kc) T(ia|kc)
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis); 
+    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis);
   }
 
   auto tp3 = chrono::high_resolution_clock::now();
@@ -137,7 +138,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   unique_ptr<double[]> lai(new double[nocca*nvirt]);
   const unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
   {
-    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq.get(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt); 
+    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq.get(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt);
   }
 
   // Gip = Gia(D|ia) C+_ap
@@ -148,9 +149,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   unique_ptr<double[]> lif(new double[nocc*max(ncore,1lu)]);
   const unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
   {
-    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca); 
+    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
     if (ncore)
-      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc); 
+      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc);
   }
 
   // core-occ density matrix elements
@@ -165,13 +166,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
     unique_ptr<double[]> jri(new double[nbasis*nocca]);
     dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
-    dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt); 
+    dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt);
   }
   // -1*K_al(d_rs)
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
   {
     unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
-    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca); 
+    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
   }
 
   shared_ptr<Matrix1e> grad(new Matrix1e(geom_));
@@ -210,13 +211,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<Matrix1e> dbarao(new Matrix1e(*dtotao - *d0ao*0.5));
 
   // size of naux
-  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data()); 
-  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao->data()); 
+  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data());
+  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao->data());
 
 
   // three-index derivatives (seperable part)...
   vector<const double*> cd; cd.push_back(cd0.get());      cd.push_back(cdbar.get());
-  vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data()); 
+  vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data());
   shared_ptr<DF_AO> sep3(new DF_AO(nbasis, nbasis, naux, cd, dd));
 
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
@@ -233,7 +234,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // two-index derivatives (seperable part)..
   unique_ptr<double[]> sep2(new double[naux*naux]);
   fill(sep2.get(), sep2.get()+naux*naux, 0.0);
-  dger_(naux, naux, 2.0, cd0, 1, cdbar, 1, sep2, naux); 
+  dger_(naux, naux, 2.0, cd0, 1, cdbar, 1, sep2, naux);
   {
     unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
@@ -256,16 +257,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (int j = 0; j != nvirt; ++j)
       wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis); 
-  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis); 
-  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis); 
+  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis);
+  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis);
+  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis);
 
   unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao->data());
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
-  dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis); 
+  dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis);
   unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
-  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis); 
+  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
 
   wd->symmetrize();
   shared_ptr<Matrix1e> wdao(new Matrix1e(*ref_->coeff() * *wd ^ *ref_->coeff()));
@@ -282,9 +283,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right << setw(10) << dr6.count()*0.001 << endl << endl;
 
   // set proper energy_
-  energy_ = ref_->energy() + ecorr; 
+  energy_ = ref_->energy() + ecorr;
 
-  return gradf; 
+  return gradf;
 
 }
 

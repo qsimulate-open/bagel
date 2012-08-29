@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: petite.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -33,21 +33,22 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
-typedef std::shared_ptr<Petite> RefPetite;
-typedef std::shared_ptr<const Atom> RefAtom;
-typedef std::shared_ptr<const Shell> RefShell;
-typedef std::shared_ptr<Symmetry> RefSymmetry;
+typedef shared_ptr<Petite> RefPetite;
+typedef shared_ptr<const Atom> RefAtom;
+typedef shared_ptr<const Shell> RefShell;
+typedef shared_ptr<Symmetry> RefSymmetry;
 
 static inline array<double,3> matmul33(const vector<double>& a, const array<double,3>& b) {
-  assert(a.size() == 9 && b.size() == 3); 
+  assert(a.size() == 9 && b.size() == 3);
   // note that the array is writen in C style (not in fortran style)!!!
   array<double,3> out;
-  out[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; 
-  out[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2]; 
-  out[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2]; 
+  out[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  out[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
+  out[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
   return out;
-}; 
+};
 
 Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
   const string c1("c1");
@@ -66,7 +67,7 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
   int cnt = 0;
   for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
     vector<RefShell> tmp = (*aiter)->shells();
-    vbb.insert(vbb.end(), tmp.begin(), tmp.end()); 
+    vbb.insert(vbb.end(), tmp.begin(), tmp.end());
     offset.push_back(cnt);
     cnt += tmp.size();
   }
@@ -77,31 +78,31 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
   } else {
     if (sym == c2v){
       SymC2v datc2v;
-      symop_ = datc2v.symop(); 
+      symop_ = datc2v.symop();
       nirrep_ = datc2v.nirrep();
     } else if (sym == d2h) {
       SymD2h datd2h;
-      symop_ = datd2h.symop(); 
+      symop_ = datd2h.symop();
       nirrep_ = datd2h.nirrep();
     } else if (sym == cs) {
       SymCs datcs;
-      symop_ = datcs.symop(); 
+      symop_ = datcs.symop();
       nirrep_ = datcs.nirrep();
     } else if (sym == ci) {
       SymCi datci;
-      symop_ = datci.symop(); 
+      symop_ = datci.symop();
       nirrep_ = datci.nirrep();
     } else if (sym == c2) {
       SymC2 datc2;
-      symop_ = datc2.symop(); 
+      symop_ = datc2.symop();
       nirrep_ = datc2.nirrep();
     } else if (sym == d2) {
       SymD2 datd2;
-      symop_ = datd2.symop(); 
+      symop_ = datd2.symop();
       nirrep_ = datd2.nirrep();
     } else if (sym == c2h) {
       SymC2h datc2h;
-      symop_ = datc2h.symop(); 
+      symop_ = datc2h.symop();
       nirrep_ = datc2h.nirrep();
     } else {
       assert(false);
@@ -114,7 +115,7 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
       vector<int> tmp(nsymop_);
 
       for (int iop = 0; iop != nsymop_; ++iop) {
-        const array<double,3> target = matmul33(symop_[iop], position); 
+        const array<double,3> target = matmul33(symop_[iop], position);
         bool found = false;
         for (int jatom = 0; jatom != natom_; ++jatom) {
           const array<double,3> current = atoms[jatom]->position();
@@ -143,7 +144,7 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
     lambda_.resize(nshell_ * nshell_);
 
     fill(p1_.begin(), p1_.end(), 0);
-    
+
     for (int i = 0; i != nshell_; ++i) {
       bool skipp1 = false;
       for (int iop = 0; iop != nsymop_; ++iop)
@@ -157,11 +158,11 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
         int nij = 0;
 
         bool skipp2 = false;
-        for (int iop = 0; iop != nsymop_; ++iop) { 
+        for (int iop = 0; iop != nsymop_; ++iop) {
           const int ci = sym_shellmap_[i][iop];
           const int cj = sym_shellmap_[j][iop];
-          const int cij = ci * nshell_ + cj; 
-          if (ij == cij) ++nij; 
+          const int cij = ci * nshell_ + cj;
+          if (ij == cij) ++nij;
           else if (cij < ij) skipp2 = true;
         }
         if (skipp2) continue;

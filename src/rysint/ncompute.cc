@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: ncompute.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,7 +35,7 @@
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
-
+using namespace bagel;
 
 typedef std::shared_ptr<Atom> RefAtom;
 
@@ -48,7 +48,7 @@ void NAIBatch::compute() {
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
-  
+
   double* const workx = stack_->get(worksize);
   double* const worky = stack_->get(worksize);
   double* const workz = stack_->get(worksize);
@@ -62,7 +62,7 @@ void NAIBatch::compute() {
   double r1z[20];
   double r2[20];
 
-  const int alc = size_alloc_; 
+  const int alc = size_alloc_;
   fill(data_, data_ + alc, zero);
 
   // perform VRR
@@ -80,8 +80,8 @@ void NAIBatch::compute() {
     const int offset_iprim = iprim * asize_;
     double* current_data = &data_[offset_iprim];
 
-    const double* croots = &roots_[i * rank_]; 
-    const double* cweights = &weights_[i * rank_]; 
+    const double* croots = &roots_[i * rank_];
+    const double* cweights = &weights_[i * rank_];
     for (int r = 0; r != rank_; ++r) {
       r1x[r] = p_[i * 3    ] - ax - (p_[i * 3    ] - geom_->atoms(iatom)->position(0) - disp[0]) * croots[r];
       r1y[r] = p_[i * 3 + 1] - ay - (p_[i * 3 + 1] - geom_->atoms(iatom)->position(1) - disp[1]) * croots[r];
@@ -120,19 +120,19 @@ void NAIBatch::compute() {
     }
   }
 
-  // contract indices 01 
+  // contract indices 01
   // data will be stored in bkup_: cont01{ xyz{ } }
   {
-    const int m = asize_; 
-    perform_contraction(m, data_, prim0size_, prim1size_, bkup_, 
-                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_, 
+    const int m = asize_;
+    perform_contraction(m, data_, prim0size_, prim1size_, bkup_,
+                        basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1size_);
   }
 
   // HRR to indices 01
   // data will be stored in data_: cont01{ xyzab{ } }
   {
-    if (basisinfo_[1]->angular_number() != 0) { 
+    if (basisinfo_[1]->angular_number() != 0) {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr_->hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
@@ -146,7 +146,7 @@ void NAIBatch::compute() {
     struct CarSphList carsphlist;
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_;
-    carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_); 
+    carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
   }
 
   // Sort cont01 and xyzab

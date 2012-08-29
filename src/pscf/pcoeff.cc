@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: pcoeff.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -27,16 +27,17 @@
 #include <src/pscf/pcoeff.h>
 #include <src/util/f77.h>
 
-typedef std::complex<double> Complex;
-
 using namespace std;
+using namespace bagel;
+
+typedef complex<double> Complex;
 
 PCoeff::PCoeff(const PMatrix1e& inp) : PMatrix1e(inp.geom(), inp.ndim(), inp.mdim()) {
 
   const int unit = 1;
   const int ndim_ = inp.ndim();
   const int mdim_ = inp.mdim();
-  zcopy_(&totalsize_, inp.data()->front(), &unit, data()->front(), &unit); 
+  zcopy_(&totalsize_, inp.data()->front(), &unit, data()->front(), &unit);
 
 }
 
@@ -57,14 +58,14 @@ PMatrix1e PCoeff::form_density_rhf(const bool return_ao) const {
   const Complex one(1.0, 0.0);
   const Complex zero(0.0, 0.0);
 
-  // first, form the density matrix in k space. 
+  // first, form the density matrix in k space.
   PMatrix1e k_density(geom_);
   int kcount = 0;
-  for (int k = -K(); k <= K(); ++k, ++kcount) { 
+  for (int k = -K(); k <= K(); ++k, ++kcount) {
     const int koffset = kcount * blocksize_;
-    zgemm_("N", "C", &nbasis_, &nbasis_, &nocc, &one, data()->pointer(koffset), &nbasis_, 
+    zgemm_("N", "C", &nbasis_, &nbasis_, &nocc, &one, data()->pointer(koffset), &nbasis_,
                                                       data()->pointer(koffset), &nbasis_,
-                                     &zero, k_density.data()->pointer(koffset), &nbasis_); 
+                                     &zero, k_density.data()->pointer(koffset), &nbasis_);
   }
 
   // back Fourier transform

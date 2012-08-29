@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: werner_compute.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -28,6 +28,8 @@
 #include <src/casscf/jkop.h>
 
 using namespace std;
+using namespace bagel;
+
 #define DEBUG4INDEX
 
 
@@ -71,7 +73,7 @@ shared_ptr<const Matrix1e> WernerKnowles::compute_denom(const shared_ptr<const M
 #else
   JKop jk(geom_->df(), coeff_, hcore_, fci_, nocc_, nclosed_, nact_);
   unique_ptr<double[]> cdiag = C->diag();
-  shared_ptr<Matrix1e> denom = jk.denom(); 
+  shared_ptr<Matrix1e> denom = jk.denom();
   for (int i = 0; i != nocc_; ++i) {
     for (int j = nocc_; j != nbasis_; ++j) {
       denom->element(j, i) -= cdiag[i] + cdiag[j];

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: libint.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,6 +35,7 @@
 static CarSphList carsphlist;
 
 using namespace std;
+using namespace bagel;
 
 static libint2::FmEval_Chebyshev3 fmeval(18);
 
@@ -45,7 +46,20 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
 
   array<int,4> order {{ 0,1,2,3 }};
 
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()) {
+
+  // first count the number of dummys
+  int center = 4;
+  for (auto i = basisinfo_.begin(); i != basisinfo_.end(); ++i)
+    if ((*i)->dummy()) --center;
+
+  if (center == 3 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()))
+    throw logic_error("dummy shell in an illegal position: 3 index gradient");
+  if (center == 2 && (!(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()) || !(basisinfo_[2]->dummy() || basisinfo_[3]->dummy())))
+    throw logic_error("dummy shell in an illegal position: 2 index gradient");
+  if (center < 2) throw logic_error("there are only one or less non-dummy basis in GLibint::GLibint");
+
+
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->dummy()) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap(order[0], order[1]);
     swap01_ = true;
@@ -53,7 +67,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
     swap01_ = false;
   }
   // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()) {
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number() || basisinfo_[2]->dummy()) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap(order[2], order[3]);
     swap23_ = true;
@@ -62,7 +76,8 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   }
 
   swap0123_ = false;
-  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())) {
+  if ((basisinfo_[0]->angular_number()+basisinfo_[1]->angular_number() > basisinfo_[2]->angular_number()+basisinfo_[3]->angular_number())
+      && center != 3) {
       swap0123_ = true;
       tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
         = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
@@ -332,17 +347,82 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
 
                   fmeval.eval(F,PQ2*gammapq,amtot);
 
-                  double* ssss_ptr = erieval->LIBINT_T_SS_EREP_SS(0);
-                  for(int l = 0; l < amtot; ++l, ++ssss_ptr)
-                    *ssss_ptr = pfac*F[l];
-
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(0))
+                  erieval->LIBINT_T_SS_EREP_SS(0)[0] = pfac*F[0];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(1))
+                  erieval->LIBINT_T_SS_EREP_SS(1)[0] = pfac*F[1];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(2))
+                  erieval->LIBINT_T_SS_EREP_SS(2)[0] = pfac*F[2];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(3))
+                  erieval->LIBINT_T_SS_EREP_SS(3)[0] = pfac*F[3];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(4))
+                  erieval->LIBINT_T_SS_EREP_SS(4)[0] = pfac*F[4];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(5))
+                  erieval->LIBINT_T_SS_EREP_SS(5)[0] = pfac*F[5];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(6))
+                  erieval->LIBINT_T_SS_EREP_SS(6)[0] = pfac*F[6];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(7))
+                  erieval->LIBINT_T_SS_EREP_SS(7)[0] = pfac*F[7];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(8))
+                  erieval->LIBINT_T_SS_EREP_SS(8)[0] = pfac*F[8];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(9))
+                  erieval->LIBINT_T_SS_EREP_SS(9)[0] = pfac*F[9];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(10))
+                  erieval->LIBINT_T_SS_EREP_SS(10)[0] = pfac*F[10];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(11))
+                  erieval->LIBINT_T_SS_EREP_SS(11)[0] = pfac*F[11];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(12))
+                  erieval->LIBINT_T_SS_EREP_SS(12)[0] = pfac*F[12];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(13))
+                  erieval->LIBINT_T_SS_EREP_SS(13)[0] = pfac*F[13];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(14))
+                  erieval->LIBINT_T_SS_EREP_SS(14)[0] = pfac*F[14];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(15))
+                  erieval->LIBINT_T_SS_EREP_SS(15)[0] = pfac*F[15];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(16))
+                  erieval->LIBINT_T_SS_EREP_SS(16)[0] = pfac*F[16];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(17))
+                  erieval->LIBINT_T_SS_EREP_SS(17)[0] = pfac*F[17];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(18))
+                  erieval->LIBINT_T_SS_EREP_SS(18)[0] = pfac*F[18];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(19))
+                  erieval->LIBINT_T_SS_EREP_SS(19)[0] = pfac*F[19];
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(20))
+                  erieval->LIBINT_T_SS_EREP_SS(20)[0] = pfac*F[20];
+#endif
                 }
               }
             }
           }
 
           stack_->libint_t_ptr(0)->contrdepth = p0123;
-          LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          if (center == 4) {
+            LIBINT2_PREFIXED_NAME(libint2_build_eri)[am[0]][am[1]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else if (center == 3) {
+            LIBINT2_PREFIXED_NAME(libint2_build_3eri)[am[0]][am[2]][am[3]](stack_->libint_t_ptr(0));
+          } else {
+            LIBINT2_PREFIXED_NAME(libint2_build_2eri)[am[0]][am[2]](stack_->libint_t_ptr(0));
+          }
           double* ints = stack_->libint_t_ptr(0)->targets[0];
 
           if (spherical_) {
@@ -353,9 +433,9 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
             const int m = cam[2]*cam[3];
             const int n = sam[0]*sam[1];
             const int nn = cam[0]*cam[1];
-            carsphlist.carsphfunc_call(carsphindex, n, ints, area); 
+            carsphlist.carsphfunc_call(carsphindex, n, ints, area);
             mytranspose_(area, &m, &n, ints);
-            carsphlist.carsphfunc_call(carsphindex2, m, ints, area); 
+            carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
             copy(area, area+nn*m, ints);
             stack_->release(batchsize, area);
           }
@@ -372,10 +452,10 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   id[2] = k;
                   for (int l = 0; l != cam[3]; ++l, ++ijkl) {
                     id[3] = l;
-                    const size_t ele = 
+                    const size_t ele =
                                  id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
                                 (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
-                    data_[ele] = ints[ijkl]; 
+                    data_[ele] = ints[ijkl];
                   }
                 }
               }
@@ -389,10 +469,10 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
                   id[0] = k;
                   for (int l = 0; l != cam[1]; ++l, ++ijkl) {
                     id[1] = l;
-                    const size_t ele = 
+                    const size_t ele =
                                  id[invmap[0]]+base[invmap[0]] + dim[invmap[0]]* (id[invmap[1]]+base[invmap[1]] + dim[invmap[1]]*
                                 (id[invmap[2]]+base[invmap[2]] + dim[invmap[2]]* (id[invmap[3]]+base[invmap[3]])));
-                    data_[ele] = ints[ijkl]; 
+                    data_[ele] = ints[ijkl];
                   }
                 }
               }

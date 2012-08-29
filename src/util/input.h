@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: input.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -35,9 +35,11 @@
 #include <stdexcept>
 #include <boost/lexical_cast.hpp>
 
+namespace bagel {
+
 class InputData {
   protected:
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_; 
+    std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_;
     const std::string inputfile_;
 
   public:
@@ -48,7 +50,7 @@ class InputData {
       auto iter = data_.begin();
       for (; iter != data_.end(); ++iter) if (iter->first == t) break;
       if (iter == data_.end())
-        throw std::runtime_error(t + " does not appear to be present in your input"); 
+        throw std::runtime_error(t + " does not appear to be present in your input");
       return iter->second;
     };
 
@@ -68,5 +70,7 @@ template <typename T> T read_input(const std::multimap<std::string, std::string>
   if (iter != idat.end()) out = boost::lexical_cast<T>(iter->second);
   return out;
 };
+
+}
 
 #endif

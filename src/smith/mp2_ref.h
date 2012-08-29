@@ -1,31 +1,31 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: mp2_ref.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
 
-#ifndef __SRC_SMITH_MP2_REF_H 
-#define __SRC_SMITH_MP2_REF_H 
+#ifndef __SRC_SMITH_MP2_REF_H
+#define __SRC_SMITH_MP2_REF_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -36,6 +36,7 @@
 #include <src/smith/mp2_ref_task.h>
 #include <src/smith/smith.h>
 
+namespace bagel {
 namespace SMITH {
 
 template <typename T>
@@ -75,7 +76,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
       std::vector<std::shared_ptr<Tensor<T> > > tensor5 = vec(t2, this->v2_);
       std::shared_ptr<Task5<T> > t5(new Task5<T>(tensor5, index0));
       energy_->add_task(t5);
-      return make_pair(queue_, energy_); 
+      return make_pair(queue_, energy_);
     };
 
   public:
@@ -96,7 +97,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
         std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > >  q = make_queue_();
         std::shared_ptr<Queue<T> > queue = q.first;
         std::shared_ptr<Queue<T> > eng = q.second;
-        while (!queue->done()) queue->next_compute(); 
+        while (!queue->done()) queue->next_compute();
 
         this->update_amplitude(t2, r2);
         const double err = r2->rms();
@@ -120,6 +121,7 @@ class MP2_Ref : public SpinFreeMethod<T>, SMITH_info {
 
 };
 
+}
 }
 
 #endif

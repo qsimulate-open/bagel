@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: pcompcabsfile.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -29,6 +29,8 @@
 
 #include <vector>
 #include <src/util/pcompfile.h>
+
+namespace bagel {
 
 template<class T>
 class PCompCABSFile : public PCompFile<T> {
@@ -131,8 +133,8 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
     int cnt = 0;
     for (std::vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
       const std::vector<RefShell> tmp = (*aiter)->shells();
-      cabs_basis_.insert(cabs_basis_.end(), tmp.begin(), tmp.end());  
-      const std::vector<int> tmpoff = pg->aux_offset(cnt); 
+      cabs_basis_.insert(cabs_basis_.end(), tmp.begin(), tmp.end());
+      const std::vector<int> tmpoff = pg->aux_offset(cnt);
       aux_offset_.insert(aux_offset_.end(), tmpoff.begin(), tmpoff.end());
     }
   }
@@ -185,7 +187,7 @@ void PCompCABSFile<T>::init_schwarz_jb() {
   schwarz_jb_.resize(size_b_ * size_j_ * (2 * this->K_ + 1));
 
 //#pragma omp parallel for
-  for (int m = - this->K_; m <= this->K_; ++m) { 
+  for (int m = - this->K_; m <= this->K_; ++m) {
     const double disp[3] = {0.0, 0.0, m * this->A_};
     for (int i0 = 0; i0 != size_j_; ++i0) { // center unit cell
       const RefShell b0 = basis_j_[i0];
@@ -261,7 +263,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
       const double m2disp[3] = {0.0, 0.0, m2*a};
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++offset) {
         const double m3disp[3] = {0.0, 0.0, m3*a};
-        size_t thisblock = 0ul; 
+        size_t thisblock = 0ul;
         for (int i0 = 0; i0 != size_i_; ++i0) {
           const int b0offset = offset_i_[i0];
           const int b0size = basis_i_[i0]->nbasis();
@@ -283,7 +285,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
                 const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
-                thisblock += b0size * b1size * b2size * b3size; 
+                thisblock += b0size * b1size * b2size * b3size;
               }
             }
           }
@@ -733,6 +735,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
 };
 
+}
 
 #endif
 

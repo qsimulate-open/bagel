@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: bfgs.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -34,10 +34,12 @@
 #include <vector>
 #include <memory>
 
+namespace bagel {
+
 template<typename T>
 class BFGS {
   protected:
-    std::vector<std::shared_ptr<const T> > delta; 
+    std::vector<std::shared_ptr<const T> > delta;
     std::vector<std::shared_ptr<const T> > y;
     std::vector<std::shared_ptr<const T> > D;
 
@@ -78,7 +80,7 @@ class BFGS {
         }
         const int n = delta.size()-1;
         assert(delta.size() == y.size()+1 && y.size()+1 == D.size());
-        
+
         // (4)
         for (int i = 0; i < n; ++i) {
           const double s1 = 1.0 / delta[i]->ddot(D[i]);
@@ -108,12 +110,13 @@ class BFGS {
         }
         y.push_back(yy);
       }
-      prev_grad = grad; 
+      prev_grad = grad;
       prev_value = value;
       return out;
     };
 
-
 };
+
+}
 
 #endif

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: molden.cc
 // Copyright (C) 2012 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: NU theory
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -41,13 +41,14 @@
 #include <src/util/constants.h>
 
 using namespace std;
+using namespace bagel;
 
 Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
    /************************************************************
    * These are temporary fixes to account for different        *
    *  normalizations of the mixed d functions. I stress        *
    *  temporary. As written, this should be applied after      *
-   *  everything is in Newint order                            *
+   *  everything is in BAGEL order                            *
    ************************************************************/
    {
       double s_scale_array[] = { 1.0 };
@@ -73,7 +74,7 @@ Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
    * conversions                                               *
    ************************************************************/
    /************************************************************
-   * Build maps from Molden ordering to Newint ordering.       *
+   * Build maps from Molden ordering to BAGEL ordering.       *
    ************************************************************/
    {
       vector<int> cart_s_order = { 0 };
@@ -95,7 +96,7 @@ Molden::Molden(bool is_spherical) : is_spherical_(is_spherical) {
 
 
    /************************************************************
-   * Build maps from Newint ordering to Molden ordering.       *
+   * Build maps from BAGEL ordering to Molden ordering.       *
    ************************************************************/
    {
       vector<int> cart_s_order = { 0 };

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: indexrange.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -33,6 +33,7 @@
 #include <sstream>
 #include <iomanip>
 
+namespace bagel {
 namespace SMITH {
 
 // one index block
@@ -67,12 +68,12 @@ class IndexRange {
     IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0)
       : keyoffset_(boffset), orboffset_(orboff) {
       if (size > 0) {
-        // first determine number of blocks. 
+        // first determine number of blocks.
         const size_t nbl = (size-1) / maxblock + 1;
         const size_t nblock = (size-1) / nbl + 1;
-        // we want to distribute orbitals as evenly as possible 
-        const size_t rem = nbl * nblock - size; 
-        std::vector<size_t> blocksizes(nbl, nblock); 
+        // we want to distribute orbitals as evenly as possible
+        const size_t rem = nbl * nblock - size;
+        std::vector<size_t> blocksizes(nbl, nblock);
         auto iter = blocksizes.rbegin();
         for (int k = 0; k != rem; ++iter, ++k) --*iter;
         // push back to range_
@@ -89,7 +90,7 @@ class IndexRange {
       } else {
         size_ = 0;
       }
-    }; 
+    };
     IndexRange() {};
     ~IndexRange() {};
 
@@ -106,7 +107,7 @@ class IndexRange {
     int keyoffset() const { return keyoffset_; };
 
     void merge(const IndexRange& o) {
-       range_.insert(range_.end(), o.range_.begin(), o.range_.end()); 
+       range_.insert(range_.end(), o.range_.begin(), o.range_.end());
        size_ += o.size_;
     };
 
@@ -125,12 +126,13 @@ class IndexRange {
     std::string str() const {
       std::stringstream ss;
       for (auto i = range_.begin(); i != range_.end(); ++i)
-        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl; 
+        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl;
       return ss.str();
     };
     void print() const { std::cout << str() << std::endl; };
 };
 
+}
 }
 
 #endif

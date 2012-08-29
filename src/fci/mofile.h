@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: mofile.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -37,6 +37,7 @@
 #include <src/scf/scf.h>
 #include <src/scf/geometry.h>
 
+namespace bagel {
 
 class MOFile {
 
@@ -128,9 +129,9 @@ class Htilde : public MOFile {
     std::unique_ptr<double[]> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); }; 
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); };
     std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::move(h2_tmp_); };
-  
+
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)
       : MOFile(b,c,d), h1_tmp_(std::move(h1)), h2_tmp_(std::move(h2)) {
@@ -138,5 +139,7 @@ class Htilde : public MOFile {
     }
     ~Htilde() {};
 };
+
+}
 
 #endif

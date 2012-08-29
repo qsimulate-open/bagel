@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: gradeval.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -43,6 +43,8 @@
 // o Constructor with the input and geometry
 // o void compute()
 // o std::shared_ptr<Referenc> conv_to_ref()
+
+namespace bagel {
 
 template<typename T>
 class GradEval : public GradEval_base {
@@ -68,7 +70,7 @@ class GradEval : public GradEval_base {
     std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); };
 
     double energy() const { return energy_; };
-}; 
+};
 
 // specialization
 template<> std::shared_ptr<GradFile> GradEval<SCF<1> >::compute();
@@ -78,5 +80,7 @@ template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
+
+}
 
 #endif

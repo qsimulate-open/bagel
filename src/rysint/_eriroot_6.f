@@ -4682,6 +4682,6 @@
             rr(offset+j) = t*d - f + x(boxof+1)*0.5d0
             ww(offset+j) = t*e - g + w(boxof+1)*0.5d0
           enddo
-        endif 
+        endif
       enddo
       end subroutine

@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: reference.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -31,6 +31,7 @@
 #include <src/util/mixedbasis.h>
 
 using namespace std;
+using namespace bagel;
 
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
@@ -78,7 +79,7 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
     const int nold = geom_->nbasis();
 
     unique_ptr<int[]> ipiv(new int[nnew+1]);
-    dgesv_(nnew, nold, snew->data(), nnew, ipiv.get(), mixed->data(), nnew, ipiv[nnew]); 
+    dgesv_(nnew, nold, snew->data(), nnew, ipiv.get(), mixed->data(), nnew, ipiv[nnew]);
     if (ipiv[nnew]) throw runtime_error("DGESV failed in Reference::project_coeff");
 
     shared_ptr<Coeff> c(new Coeff(geomin));
@@ -86,7 +87,7 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
 
 #if 1
     unique_ptr<double[]> diag(new double[nnew]);
-    Matrix1e m = *c % *snew2 * *c; 
+    Matrix1e m = *c % *snew2 * *c;
     for (int i = nold; i < nnew; ++i) m.element(i,i) = 1.0;
     m.diagonalize(diag.get());
     for (int i = 0; i != nnew; ++i) dscal_(nnew, 1.0/sqrt(sqrt(diag[i])), m.data()+i*nnew, 1);

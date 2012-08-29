@@ -1,31 +1,31 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: MP2.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
 
-#ifndef __SRC_SMITH_MP2_H 
-#define __SRC_SMITH_MP2_H 
+#ifndef __SRC_SMITH_MP2_H
+#define __SRC_SMITH_MP2_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -36,6 +36,7 @@
 #include <src/smith/MP2_tasks.h>
 #include <src/smith/smith.h>
 
+namespace bagel {
 namespace SMITH {
 namespace MP2{
 
@@ -159,7 +160,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 #endif
       r = t2->clone();
     };
-    ~MP2() {}; 
+    ~MP2() {};
 
     void solve() {
       this->print_iteration();
@@ -187,11 +188,12 @@ r->zero();
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
         en += c->energy() * 0.25; // FIXME
-      }   
-      return en; 
-    };  
+      }
+      return en;
+    };
 };
 
+}
 }
 }
 #endif

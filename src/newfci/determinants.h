@@ -1,25 +1,25 @@
 //
-// Newint - Parallel electron correlation program.
+// BAGEL - Parallel electron correlation program.
 // Filename: determinants.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
-// This file is part of the Newint package (to be renamed).
+// This file is part of the BAGEL package.
 //
-// The Newint package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The Newint package is distributed in the hope that it will be useful,
+// The BAGEL package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the Newint package; see COPYING.  If not, write to
+// along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -43,6 +43,8 @@
 #include <nmmintrin.h>
 #endif
 
+namespace bagel {
+
 /*
 static int numofbits(unsigned int bits) {
 #ifndef USE_SSE42_INTRINSICS
@@ -60,7 +62,7 @@ class NewDeterminants {
   friend class Space; // TODO Is this correct?
 
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta. 
+    // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
 
     const int nelea_;
@@ -92,7 +94,7 @@ class NewDeterminants {
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
       std::vector<int> out;
-      for (int i = 0; i != bit.size(); ++i) if (bit[i]) out.push_back(i); 
+      for (int i = 0; i != bit.size(); ++i) if (bit[i]) out.push_back(i);
       return out;
     };
 
@@ -113,7 +115,7 @@ class NewDeterminants {
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phidownb_;
 
   public:
-    NewDeterminants(const int norb, const int nelea, const int neleb, const bool compress = true); 
+    NewDeterminants(const int norb, const int nelea, const int neleb, const bool compress = true);
     ~NewDeterminants() {};
 
     // static constants
@@ -121,19 +123,19 @@ class NewDeterminants {
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }; 
+    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); };
 
     size_t lena() const { return stringa_.size(); };
     size_t lenb() const { return stringb_.size(); };
 
     std::string print_bit(std::bitset<nbit__> bit) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i) { if (bit[i]) { out += "1"; } else { out += "."; } }
       return out;
     };
 
     std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2) const {
-      std::string out; 
+      std::string out;
       for (int i = 0; i != norb_; ++i) {
         if (bit1[i] && bit2[i]) { out += "2"; }
         else if (bit1[i]) { out += "a"; }
@@ -204,19 +206,19 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       // compress_ means that we store info only for i <= j
       if ((*iter)[i] && compress_) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
-            const int minij = std::min(i,j); 
+            const int minij = std::min(i,j);
             const int maxij = std::max(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if ((*iter)[i]) {
-        const unsigned int source = lexical<spin>(*iter); 
+        const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           if (!(nbit[j])) {
@@ -237,5 +239,6 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
 #endif
 };
 
+}
 
 #endif
