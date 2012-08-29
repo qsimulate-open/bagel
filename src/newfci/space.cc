@@ -44,18 +44,16 @@ Space::Space(shared_ptr<const NewDeterminants> det, int _M) : norb_(det->norb())
 }
 
 void Space::common_init() {
-  const bool mute = !compress_;
+  const bool compress = false;
+  const bool mute = false;
 
   if (!mute) cout << " Constructing space of all determinants that can formed by adding or removing " 
                   << M_ << " electrons from " << nelea_ 
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
   for(int i = -M_; i <= M_; ++i ) {
     for(int j = -M_; j <= M_; ++j) {
-      if ( ::abs(i+j) > M_ ) continue;
-      else {
-        shared_ptr<NewDeterminants> tmpdet(new NewDeterminants(norb_, nelea_ + i, neleb_ + j, compress_));
-        detmap_.insert(pair<int,shared_ptr<NewDeterminants> >(key_(nelea_ + i,neleb_ + j), tmpdet));
-      }
+      shared_ptr<NewDeterminants> tmpdet(new NewDeterminants(norb_, nelea_ + i, neleb_ + j, compress));
+      detmap_.insert(pair<int,shared_ptr<NewDeterminants> >(key_(i,j), tmpdet));
     }
   }
   if (!mute) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
@@ -64,7 +62,7 @@ void Space::common_init() {
   int nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na+1,nb));
+    auto jdet = detmap_.find(key_(na-nelea_+1,nb-neleb_));
     if(jdet==detmap_.end()) continue;
     else {
       form_link_<0>(idet->second, jdet->second);
@@ -78,7 +76,7 @@ void Space::common_init() {
   nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na,nb+1));
+    auto jdet = detmap_.find(key_(na-nelea_,nb-neleb_+1));
     if(jdet==detmap_.end()) continue;
     else {
       form_link_<1>(idet->second, jdet->second);

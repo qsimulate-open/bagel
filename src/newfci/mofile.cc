@@ -85,7 +85,11 @@ void NewMOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2
 
   // mo2e is compressed
   const int nocc = nocc_;
+  #ifndef __NEWFCI_DEBUGGING
   sizeij_ = nocc*(nocc+1)/2;
+  #else
+  sizeij_ = nocc*nocc;
+  #endif
   mo2e_ = unique_ptr<double[]>(new double[sizeij_*sizeij_]);
 
   #ifndef __NEWFCI_DEBUGGING
