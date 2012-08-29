@@ -36,7 +36,7 @@
 #include <vector>
 
 // toggle for timing print out.
-static const bool tprint = true;
+static const bool tprint = false;
 
 using namespace std;
 using namespace std::chrono;
@@ -95,9 +95,7 @@ void NewFCI::compute() {
     auto tp1 = high_resolution_clock::now();
 
     // form a sigma vector given cc
-    cout << "probably see this" << endl;
     shared_ptr<NewDvec> sigma = form_sigma(cc_, jop_, conv);
-    cout << "and not this" << endl;
 
     // constructing NewDvec's for Davidson
     shared_ptr<const NewDvec> ccn(new NewDvec(cc_));
@@ -233,6 +231,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
   shared_ptr<NewDvec> sigmavec(new NewDvec(ccvec->det(), nstate));
   sigmavec->zero();
 
+  //TODO move space to a class variable in HZ algorithm
   //static shared_ptr<Space> space(new Space(ccvec->det(), 1));
 
   shared_ptr<NewDeterminants> base_det = space->finddet(0,0);
@@ -263,20 +262,20 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       double* target_base = sigma->data();
       int lb = sigma->lenb();
       
-      for (auto aiter = int_det->stringa().begin(); aiter != int_det->stringa().end(); ++aiter) {
+      for (auto aiter = base_det->stringa().begin(); aiter != base_det->stringa().end(); ++aiter) {
         bitset<nbit__> nstring = *aiter;
         for (int i = 0; i != norb; ++i) {
           if (!nstring[i]) continue;
           for (int j = 0; j < i; ++j) {
             if(!nstring[j]) continue;
-            int ij_phase = int_det->sign(nstring,i,j);
+            int ij_phase = base_det->sign(nstring,i,j);
             bitset<nbit__> string_ij = nstring; 
             string_ij.reset(i); string_ij.reset(j);
             for (int k = 0; k != norb; ++k) {
               if (string_ij[k]) continue;
               for (int l = 0; l < k; ++l) {
                 if (string_ij[l]) continue;
-                int kl_phase = int_det->sign(string_ij,k,l);
+                int kl_phase = base_det->sign(string_ij,k,l);
                 double phase = static_cast<double>(ij_phase*kl_phase);
                 bitset<nbit__> string_ijkl = string_ij;
                 string_ijkl.set(k); string_ijkl.set(l);
@@ -299,20 +298,20 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       double* target_base = sigma->data();
       int la = sigma->lena();
       int lb = sigma->lenb();
-      for (auto biter = cc->det()->stringb().begin(); biter != cc->det()->stringb().end(); ++biter,++target_base) {
+      for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter,++target_base) {
         bitset<nbit__> nstring = *biter;
         for (int i = 0; i != norb; ++i) {
           if (!nstring[i]) continue;
           for (int j = 0; j < i; ++j) {
             if(!nstring[j]) continue;
-            int ij_phase = int_det->sign(nstring,i,j);
+            int ij_phase = base_det->sign(nstring,i,j);
             bitset<nbit__> string_ij = nstring;
             string_ij.reset(i); string_ij.reset(j);
             for (int k = 0; k != norb; ++k) {
               if (string_ij[k]) continue;
               for (int l = 0; l < k; ++l) {
                 if (string_ij[l]) continue;
-                int kl_phase = int_det->sign(string_ij,k,l);
+                int kl_phase = base_det->sign(string_ij,k,l);
                 double phase = static_cast<double>(ij_phase*kl_phase);
                 bitset<nbit__> string_ijkl = string_ij;
                 string_ijkl.set(k); string_ijkl.set(l);
@@ -349,7 +348,6 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       }
     }
     if (tprint) print_timing_("task2ab-1", start, timing);
-  cout << "please" << endl;
 
     {
       const int lenab = int_det->lena() * int_det->lenb();
@@ -387,7 +385,6 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       for (auto iter = timing.begin(); iter != timing.end(); ++iter)
         cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
     }
-  cout << "there" << endl;
   }
 
   return sigmavec;
