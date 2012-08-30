@@ -26,13 +26,13 @@
 
 #include <src/fci/fci.h>
 
-std::vector<double> fci_energy() {
+std::vector<double> fci_energy(std::string inp) {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_sto3g_fci2.testout", std::ios::trunc));
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp + ".testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/hf_sto3g_fci2.in"));
+  std::shared_ptr<InputData> idata(new InputData("../../test/" + inp + ".in"));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
@@ -43,12 +43,13 @@ std::vector<double> fci_energy() {
       std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
-
-    }
-    if (iter->first == "fci") {
+    } else if (iter->first == "df-rohf"){
+      std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
+      scf->compute();
+      ref = scf->conv_to_ref();
+    } else if (iter->first == "fci") {
       std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
       fci->compute();
-
       std::cout.rdbuf(backup_stream);
       return fci->energy();
     }
@@ -63,11 +64,19 @@ std::vector<double> reference_fci_energy() {
   out[1] = -98.36567235;
   return out;
 }
+std::vector<double> reference_fci_energy2() {
+  std::vector<double> out(2);
+  out[0] = -3.30315793;
+  out[1] = -2.78407879;
+  return out;
+}
+
 
 BOOST_AUTO_TEST_SUITE(TEST_FCI)
 
 BOOST_AUTO_TEST_CASE(FCI_2STATE) {
-    BOOST_CHECK(compare(fci_energy(), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci2"), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hhe_svp_fci2_trip"), reference_fci_energy2()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

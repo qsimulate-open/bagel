@@ -1,0 +1,22 @@
+molecule {
+  symmetry = C1;
+  basis = svp;
+  df_basis = svp-jkfit;
+  schwarz_thresh = 1.0e-12;
+  stack = 100M;
+  angstrom = true;
+  atom = ( H,     -0.000000,     -0.000000,      0.000000);
+  atom = ( He,     -0.000000,     -0.000000,      1.000000);
+}
+
+df-rohf {
+  nact = 1;
+  thresh = 1.0e-12;
+}
+
+fci {
+  nspin = 1;
+  nstate = 2;
+  frozen = false;
+  thresh = 1.0e-13;
+}
