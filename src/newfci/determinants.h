@@ -71,10 +71,10 @@ class NewDeterminants {
     const bool compress_;
 
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
-    std::shared_ptr<NewDeterminants> detaddalpha_;
-    std::shared_ptr<NewDeterminants> detaddbeta_;
-    std::shared_ptr<NewDeterminants> detremalpha_;
-    std::shared_ptr<NewDeterminants> detrembeta_;
+    std::weak_ptr<NewDeterminants> detaddalpha_;
+    std::weak_ptr<NewDeterminants> detaddbeta_;
+    std::weak_ptr<NewDeterminants> detremalpha_;
+    std::weak_ptr<NewDeterminants> detrembeta_;
 
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
@@ -184,10 +184,10 @@ class NewDeterminants {
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidowna(const int i) const { return phidowna_[i]; };
     const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidownb(const int i) const { return phidownb_[i]; };
 
-    std::shared_ptr<NewDeterminants> addalpha() { return detaddalpha_;};
-    std::shared_ptr<NewDeterminants> remalpha() { return detremalpha_;};
-    std::shared_ptr<NewDeterminants> addbeta() { return detaddbeta_;};
-    std::shared_ptr<NewDeterminants> rembeta() { return detrembeta_;};
+    std::shared_ptr<NewDeterminants> addalpha() { return detaddalpha_.lock();};
+    std::shared_ptr<NewDeterminants> remalpha() { return detremalpha_.lock();};
+    std::shared_ptr<NewDeterminants> addbeta() { return detaddbeta_.lock();};
+    std::shared_ptr<NewDeterminants> rembeta() { return detrembeta_.lock();};
 };
 
 
