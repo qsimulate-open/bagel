@@ -42,34 +42,37 @@ using namespace bagel;
 
 void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec> out) {
 
-  // TODO currently this is only for singlet states, sorry...
-  assert(nspin == 0);
-
   int ndet = nstate_*10;
   start_over:
   vector<pair<int, int> > bits = detseeds(ndet);
 
   // Spin adapt detseeds
-  if (nspin == 0) {
+  if (true) {
     // in this case, easy. The singlet combinations are made for open-shell singlet bits
     int oindex = 0;
     vector<int> done;
     for (auto iter = bits.begin(); iter != bits.end(); ++iter) {
-      const int alpha = iter->first;
-      const int beta = iter->second;
+      const int alpha = iter->second;
+      const int beta = iter->first;
       const int open_bit = (alpha^beta);
+
+      // make sure that we have enough unpaired alpha
+      const int unpairalpha = numofbits(alpha ^ (alpha & beta));
+      const int unpairbeta = numofbits(beta ^ (alpha & beta));
+      if (unpairalpha-unpairbeta < nelea_-neleb_) continue; 
 
       // check if this orbital configuration is already used
       if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
       done.push_back(open_bit);
 
-      pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(0, alpha, beta);
+      pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
       const double fac = adapt.second;
-      for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter)
+      for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter) {
         out->data(oindex)->element(get<0>(*iter), get<1>(*iter)) = get<2>(*iter)*fac;
+      }
 
-//    cout << "     guess " << setw(3) << oindex << ":   closed " <<
-//          setw(20) << left << print_bit(common) << " open " << setw(20) << print_bit(open_bit) << right << endl;
+      cout << "     guess " << setw(3) << oindex << ":   closed " <<
+            setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
 
       ++oindex;
       if (oindex == nstate) break;

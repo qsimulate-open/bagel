@@ -101,6 +101,12 @@ class Determinants {
       return out;
     };
 
+    int numbers_to_bit(const std::vector<int>& num) const {
+      int out = 0;
+      for (auto i = num.begin(); i != num.end(); ++i) out += (1 << *i);
+      return out;
+    };
+
     // some utility functions
     unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
     const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; };

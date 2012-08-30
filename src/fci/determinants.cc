@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <cassert>
 #include <stdexcept>
 #include <src/fci/determinants.h>
 #include <src/util/comb.h>
@@ -130,27 +131,47 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
 
   int icnt = 0;
 
-  if (spin == 0) {
-    const int common = (alpha & beta);
-    const int nalpha = numofbits(alpha^common);
+  // bit pattern for doubly occupied orbitals
+  const int common = (alpha & beta);
 
-    vector<int> open = bit_to_numbers(alpha^beta);
-    int init_alpha = common;
-    for (int i=0; i!=nalpha; ++i) init_alpha &= (1<<open[i]);
+  const int alpha_without_common = alpha ^ common;
+  const int beta_without_common = beta ^ common;
 
-    // take a linear combination to make a vector singlet coupled.
-    do {
-      int ialpha = common;
-      int ibeta = common;
-      for (int i=0; i!=nalpha; ++i) ialpha ^= (1<<open[i]);
-      for (int i=nalpha; i!=open.size(); ++i) ibeta  ^= (1<<open[i]);
-      const double sign = pow(-1.0, numofbits((init_alpha^ialpha)/2));
-      out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
-      ++icnt;
-    } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
-  } else {
-    throw runtime_error("not yet implemented. Determinants::spin_adapt");
+  // alpha pattern without highest spin orbitals
+  vector<int> salpha_array = bit_to_numbers(alpha_without_common);
+  vector<int> ualpha_array;
+  if (salpha_array.size() < spin) throw logic_error("Something is wrong? Determinants::spin_adapt");
+  for (int i = 0; i != spin; ++i) {
+    ualpha_array.push_back(salpha_array.back());
+    salpha_array.pop_back();
   }
+  const int salpha = numbers_to_bit(salpha_array); 
+  const int ualpha = numbers_to_bit(ualpha_array); 
+  const int common_plus_alpha = common + ualpha;
+
+  // number of unpaired alpha orbitals (minus Ms)
+  const int nalpha = numofbits(salpha);
+
+  // a vector of number that specify open orbitals
+  vector<int> open = bit_to_numbers(salpha^beta_without_common);
+  assert((salpha^beta_without_common) == (salpha|beta_without_common));
+
+  // the first bit pattern for alpha (to determine the sign) 
+  int init_alpha = common_plus_alpha;
+  for (int i=0; i!=nalpha; ++i) init_alpha &= (1<<open[i]);
+
+  // take a linear combination to make a vector singlet coupled.
+  // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
+  assert(nalpha*2 == open.size());
+  do {
+    int ialpha = common_plus_alpha;
+    int ibeta = common;
+    for (int i =0; i!=nalpha; ++i) ialpha ^= (1<<open[i]);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta  ^= (1<<open[i]);
+    const double sign = 1.0 - ((numofbits((init_alpha^ialpha)/2) & 1) << 1);
+    out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
+    ++icnt;
+  } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
 
   // scale to make the vector normalized
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
