@@ -134,8 +134,7 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
 
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  shared_ptr<Shell> out(new Shell(*this));
-  out->spherical_ = false;
+  shared_ptr<Shell> out(new Shell(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_));
   return out;
 }
 

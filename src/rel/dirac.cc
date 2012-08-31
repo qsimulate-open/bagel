@@ -36,6 +36,7 @@ void Dirac::compute() {
   nai_->print();
 
   SmallNAI snai(geom_);
+  snai.print();
 
 }
 

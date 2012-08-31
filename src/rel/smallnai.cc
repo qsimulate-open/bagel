@@ -42,6 +42,13 @@ SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 }
 
 
+void SmallNAI::print() const {
+  for (auto i = data_.begin(); i != data_.end(); ++i) {
+    (*i)->print();
+  }
+}
+
+
 void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]

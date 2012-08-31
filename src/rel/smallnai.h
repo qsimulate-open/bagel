@@ -48,6 +48,8 @@ class SmallNAI {
     const std::shared_ptr<Matrix1e>& operator[](const int i) const { return data_[i]; }; 
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
+
+    void print() const;
 };
 
 }
