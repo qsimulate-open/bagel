@@ -47,43 +47,40 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
   vector<pair<int, int> > bits = detseeds(ndet);
 
   // Spin adapt detseeds
-  if (true) {
-    // in this case, easy. The singlet combinations are made for open-shell singlet bits
-    int oindex = 0;
-    vector<int> done;
-    for (auto iter = bits.begin(); iter != bits.end(); ++iter) {
-      const int alpha = iter->second;
-      const int beta = iter->first;
-      const int open_bit = (alpha^beta);
+  int oindex = 0;
+  vector<int> done;
+  for (auto iter = bits.begin(); iter != bits.end(); ++iter) {
+    const int alpha = iter->second;
+    const int beta = iter->first;
+    const int open_bit = (alpha^beta);
 
-      // make sure that we have enough unpaired alpha
-      const int unpairalpha = numofbits(alpha ^ (alpha & beta));
-      const int unpairbeta = numofbits(beta ^ (alpha & beta));
-      if (unpairalpha-unpairbeta < nelea_-neleb_) continue; 
+    // make sure that we have enough unpaired alpha
+    const int unpairalpha = numofbits(alpha ^ (alpha & beta));
+    const int unpairbeta = numofbits(beta ^ (alpha & beta));
+    if (unpairalpha-unpairbeta < nelea_-neleb_) continue; 
 
-      // check if this orbital configuration is already used
-      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-      done.push_back(open_bit);
+    // check if this orbital configuration is already used
+    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+    done.push_back(open_bit);
 
-      pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
-      const double fac = adapt.second;
-      for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter) {
-        out->data(oindex)->element(get<0>(*iter), get<1>(*iter)) = get<2>(*iter)*fac;
-      }
-
-      cout << "     guess " << setw(3) << oindex << ":   closed " <<
-            setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
-
-      ++oindex;
-      if (oindex == nstate) break;
+    pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    const double fac = adapt.second;
+    for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter) {
+      out->data(oindex)->element(get<0>(*iter), get<1>(*iter)) = get<2>(*iter)*fac;
     }
-    if (oindex < nstate) {
-      out->zero();
-      ndet *= 4;
-      goto start_over;
-    }
-    cout << endl;
+
+    cout << "     guess " << setw(3) << oindex << ":   closed " <<
+          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+
+    ++oindex;
+    if (oindex == nstate) break;
   }
+  if (oindex < nstate) {
+    out->zero();
+    ndet *= 4;
+    goto start_over;
+  }
+  cout << endl;
 
 }
 

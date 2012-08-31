@@ -26,9 +26,12 @@
 
 #include <src/rel/smallnaibatch.h>
 #include <src/osint/momentbatch.h>
+#include <src/rysint/carsphlist.h>
 
 using namespace std;
 using namespace bagel;
+
+const static CarSphList carsphlist;
 
 
 SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom)
@@ -51,16 +54,36 @@ void SmallNAIBatch::compute() {
   nai.compute();
 
   // then we need to have momentum integrals
+  const size_t s0size = shells_[0]->nbasis();
+  const size_t s1size = shells_[1]->nbasis();
+  const size_t a0size = aux_[0]->nbasis();
+  const size_t a1size = aux_[1]->nbasis();
+  double* ints = stack_->get(3 * s0size * a1size);
   {
     // first half transformation
-    MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}, stack_); 
+    // momentum integrals (x,y,z)
+    MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_[0]}}, stack_); 
+
+    // shell[0] runs faster 
+    double* tmparea = stack_->get(s0size * a0size);
+    for (int i = 0; i != 3; ++i) {
+      if (shells_[0]->spherical()) {
+        const int carsphindex = shells_[0]->angular_number() * ANG_HRR_END + 0; // only transform shell
+        const int nloop = shells_[0]->num_contracted() * a0size; 
+        carsphlist.carsphfunc_call(carsphindex, nloop, coeff0.data(), tmparea);
+      } else {
+        assert(coeff0.size_block() == a0size*s0size);
+        copy(coeff0.data(), coeff0.data()+coeff0.size_block(), tmparea); 
+      }
+      dgemm_("N", "N", s0size, a1size, a0size, 1.0, tmparea, s0size, nai.data(), a0size, 0.0, ints+i*s0size*a1size, s0size);
+    }
+    stack_->release(shells_[0]->nbasis()*aux_[0]->nbasis(), tmparea);
   }
   {
     // second half transformation
-    MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{aux_[0], shells_[0]->cartesian_shell()}}, stack_);
+    MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_[1]}}, stack_);
   }
-  {
-    // optionally transformation to spherical
-  }
+
+  stack_->release(3*shells_[0]->nbasis()*aux_[1]->nbasis(), ints);
 
 }
