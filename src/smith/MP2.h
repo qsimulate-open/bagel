@@ -151,7 +151,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
     };
 
   public:
-    MP2(std::shared_ptr<Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
+    MP2(std::shared_ptr<const Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
 #if 1

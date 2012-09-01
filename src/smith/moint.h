@@ -45,7 +45,7 @@ namespace SMITH {
 template <typename T>
 class K2ext {
   protected:
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
 
@@ -163,7 +163,7 @@ class K2ext {
     }; // vaaii_;
 
   public:
-    K2ext(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+    K2ext(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
@@ -183,11 +183,11 @@ class K2ext {
 template <typename T>
 class MOFock {
   protected:
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
   public:
-    MOFock(std::shared_ptr<Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+    MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 

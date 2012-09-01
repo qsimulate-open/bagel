@@ -49,6 +49,8 @@
 #include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
+#include <src/smith/storage.h>
+#include <src/smith/MP2.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -225,6 +227,12 @@ int main(int argc, char** argv) {
         std::shared_ptr<Opt<MP2Grad> > opt(new Opt<MP2Grad>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
+
+      } else if (method == "smith") {
+
+        if (!static_cast<bool>(ref)) throw std::runtime_error("SMITH needs a reference");
+        std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore> > mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
+        mp2->solve();
 
       } else if (method == "print") {
 

@@ -42,7 +42,7 @@ class SpinFreeMethod {
     IndexRange act_;
     IndexRange closed_;
     IndexRange all_;
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
 
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
@@ -132,7 +132,7 @@ class SpinFreeMethod {
 
 
   public:
-    SpinFreeMethod(std::shared_ptr<Reference> r) : ref_(r) {
+    SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
       const int max = 10;
       IndexRange c(r->nclosed(), max);
       IndexRange act(r->nact(), max, c.nblock(), c.size());
@@ -164,7 +164,7 @@ class SpinFreeMethod {
     IndexRange& all() { return all_; };
     IndexRange& closed() { return closed_; };
 
-    std::shared_ptr<Reference>& ref() { return ref_; };;
+    std::shared_ptr<const Reference>& ref() { return ref_; };;
 
     std::shared_ptr<Tensor<T> >& v2() { return v2_; };
     std::shared_ptr<Tensor<T> >& f1() { return f1_; };
