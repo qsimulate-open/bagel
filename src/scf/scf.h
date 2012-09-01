@@ -83,12 +83,7 @@ class SCF : public SCF_base {
       for (int iter = 0; iter != max_iter_; ++iter) {
         auto tp1 = std::chrono::high_resolution_clock::now();
 
-        std::shared_ptr<Fock<DF> > fock;
-        if (!DF) {
-          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
-        } else {
-          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_));
-        }
+        std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, (DF==0?previous_fock:hcore_fock), (DF==0?densitychange:aodensity_), schwarz_));
         previous_fock = fock;
 
         Matrix1e intermediate = *coeff_ % *fock * *coeff_;
