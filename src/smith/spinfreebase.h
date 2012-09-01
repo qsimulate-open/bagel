@@ -31,6 +31,7 @@
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/wfn/reference.h>
+#include <chrono>
 
 namespace bagel {
 namespace SMITH {
@@ -47,7 +48,7 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
 
-    size_t time_;
+    std::chrono::high_resolution_clock::time_point time_;
 
     // the diagonal denominator
     std::unique_ptr<double[]> eig_;
@@ -55,15 +56,15 @@ class SpinFreeMethod {
     // printing functions called from the solve function of a derived class
     void print_iteration() {
       std::cout << "      ---- iteration ----" << std::endl << std::endl;
-      time_ = ::clock();
+      time_ = std::chrono::high_resolution_clock::now();
     };
 
     void print_iteration(const int i, const double en, const double err) {
-      const size_t end = ::clock();
-      const double tim = static_cast<double>(end - time_) / CLOCKS_PER_SEC;
+      auto end = std::chrono::high_resolution_clock::now();
+      const double tim = std::chrono::duration_cast<std::chrono::milliseconds>(end-time_).count() * 0.001;
       std::cout << "     " << std::setw(4) << i << std::setw(15) << std::fixed << std::setprecision(10) << en
                                                 << std::setw(15) << std::fixed << std::setprecision(10) << err
-                                                << std::setw(10) << std::fixed << std::setprecision(3) << tim << std::endl;
+                                                << std::setw(10) << std::fixed << std::setprecision(2) << tim << std::endl;
       time_ = end;
     };
 
