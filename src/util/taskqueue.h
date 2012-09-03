@@ -27,7 +27,7 @@
 #ifndef __SRC_UTIL_TASKQUEUE_H
 #define __SRC_UTIL_TASKQUEUE_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <list>
 #include <atomic>
 #include <memory>

@@ -27,7 +27,7 @@
 #ifndef __SRC_SMITH_TENSOR_H
 #define __SRC_SMITH_TENSOR_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <list>
 #include <map>
 #include <memory>

@@ -27,7 +27,7 @@
 #ifndef __SRC_SMITH_TASK_H
 #define __SRC_SMITH_TASK_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <list>
 #include <memory>
 

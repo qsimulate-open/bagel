@@ -27,7 +27,7 @@
 #ifndef __src_scf_geometry_h
 #define __src_scf_geometry_h
 
-#include <cstddef>
+#include <stddef.h>
 #include <string>
 #include <vector>
 #include <src/scf/atom.h>

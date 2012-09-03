@@ -27,7 +27,7 @@
 #ifndef __SRC_SMITH_INDEXRANGE_H
 #define __SRC_SMITH_INDEXRANGE_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <vector>
 #include <string>
 #include <iostream>

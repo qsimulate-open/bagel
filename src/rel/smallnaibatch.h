@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_SMALL_NAI_H
 #define __SRC_REL_SMALL_NAI_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <src/scf/shell.h>
 #include <src/scf/geometry.h>
 #include <memory>

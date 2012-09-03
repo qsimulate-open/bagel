@@ -27,7 +27,7 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <memory>
 #include <tuple>
 #include <string>

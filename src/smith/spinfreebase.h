@@ -27,7 +27,7 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <src/smith/prim_op.h>
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>

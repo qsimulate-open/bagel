@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <cstddef>
+#include <stddef.h>
 #include <src/mp2/mp2grad.h>
 #include <src/grad/cphf.h>
 #include <iostream>

@@ -27,7 +27,7 @@
 #ifndef __SRC_SMITH_PRIM_OP_H
 #define __SRC_SMITH_PRIM_OP_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <memory>
 #include <vector>
 #include <src/util/f77.h>

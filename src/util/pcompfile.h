@@ -29,7 +29,7 @@
 #ifndef __src_util_pcompfile_h
 #define __src_util_pcompfile_h
 
-#include <cstddef>
+#include <stddef.h>
 #include <cstring>
 #include <cassert>
 #include <vector>

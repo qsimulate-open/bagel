@@ -26,7 +26,7 @@
 
 #ifdef LIBINT_INTERFACE
 
-#include <cstddef>
+#include <stddef.h>
 #include <iostream>
 #include <src/util/f77.h>
 #include <src/rysint/carsphlist.h>

@@ -29,7 +29,7 @@
 
 #include <vector>
 #include <memory>
-#include <cstddef>
+#include <stddef.h>
 #include <src/scf/atom.h>
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>

@@ -27,7 +27,7 @@
 #ifndef __src_util_pmofile_h
 #define __src_util_pmofile_h
 
-#include <cstddef>
+#include <stddef.h>
 #include <src/pscf/pgeometry.h>
 #include <src/util/pfile.h>
 #include <src/util/f77.h>

@@ -31,7 +31,7 @@
 #ifndef __SRC_SMITH_MOINT_H
 #define __SRC_SMITH_MOINT_H
 
-#include <cstddef>
+#include <stddef.h>
 #include <memory>
 #include <stdexcept>
 #include <src/wfn/reference.h>

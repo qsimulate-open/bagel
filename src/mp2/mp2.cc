@@ -26,7 +26,7 @@
 
 // implements the MP2-F12 theory
 
-#include <cstddef>
+#include <stddef.h>
 #include <src/mp2/mp2.h>
 #include <iostream>
 #include <iomanip>
