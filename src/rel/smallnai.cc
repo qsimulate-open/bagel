@@ -24,6 +24,7 @@
 //
 
 
+#include <cstddef>
 #include <src/rel/smallnai.h>
 #include <src/rel/smallnaibatch.h>
 

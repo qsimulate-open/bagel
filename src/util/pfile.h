@@ -27,6 +27,7 @@
 #ifndef __src_util_pfile_h
 #define __src_util_pfile_h
 
+#include <cstddef>
 #include <fstream>
 #include <string>
 #include <complex>

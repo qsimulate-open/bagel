@@ -28,6 +28,7 @@
 #define __SRC_RYSINT_GRAD_H
 
 // compute analytic nuclear gradients
+#include <cstddef>
 #include <memory>
 #include <src/rysint/eribatch_base.h>
 

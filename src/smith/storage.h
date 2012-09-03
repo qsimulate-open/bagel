@@ -31,6 +31,7 @@
 #ifndef __SRC_SMITH_STORAGE_H
 #define __SRC_SMITH_STORAGE_H
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <tuple>

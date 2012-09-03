@@ -31,6 +31,7 @@
 // T needs clone, ddot and daxpy, along with overloaded operators, a copy constructor
 //         data(const size_t)
 
+#include <cstddef>
 #include <vector>
 #include <memory>
 

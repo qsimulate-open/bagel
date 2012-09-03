@@ -27,6 +27,7 @@
 #ifndef __src_util_pdata_h
 #define __src_util_pdata_h
 
+#include <cstddef>
 #include <complex>
 #include <algorithm>
 

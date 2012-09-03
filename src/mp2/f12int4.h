@@ -30,6 +30,7 @@
 #ifndef __SRC_MP2_F12INT4_H
 #define __SRC_MP2_F12INT4_H
 
+#include <cstddef>
 #include <src/rysint/rysint.h>
 #include <src/rysint/eribatch.h>
 #include <src/slater/slaterbatch.h>

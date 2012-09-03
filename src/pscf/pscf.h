@@ -27,6 +27,7 @@
 #ifndef __src_pscf_pscf_h
 #define __src_pscf_pscf_h
 
+#include <cstddef>
 #include <memory>
 #include <src/util/pcompfile.h>
 #include <src/pscf/pgeometry.h>

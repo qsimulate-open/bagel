@@ -27,6 +27,7 @@
 #ifndef __src_osint_osint_h
 #define __src_osint_osint_h
 
+#include <cstddef>
 #include <array>
 #include <vector>
 #include <src/scf/shell.h>

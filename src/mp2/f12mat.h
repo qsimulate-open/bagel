@@ -27,6 +27,7 @@
 #ifndef __SRC_MP2_F12MAT_H
 #define __SRC_MP2_F12MAT_H
 
+#include <cstddef>
 #include <iostream>
 #include <iomanip>
 #include <memory>

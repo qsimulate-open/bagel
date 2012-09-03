@@ -27,6 +27,7 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE Suites
 
+#include <cstddef>
 #include <array>
 #include <fstream>
 #include <memory>

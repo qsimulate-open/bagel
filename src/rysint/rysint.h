@@ -29,6 +29,7 @@
 #ifndef __src_rysint_rysint_h
 #define __src_rysint_rysint_h
 
+#include <cstddef>
 #include <src/rysint/vrrlist.h>
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>

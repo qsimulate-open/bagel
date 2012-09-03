@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <cstddef>
 #include <src/pmp2/pmp2.h>
 #include <src/pscf/poverlap.h>
 #include <src/pscf/ptildex.h>

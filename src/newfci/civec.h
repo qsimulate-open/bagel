@@ -27,6 +27,7 @@
 #ifndef NEWINT_NEWFCI_CIVEC_H
 #define NEWINT_NEWFCI_CIVEC_H
 
+#include <cstddef>
 #include <list>
 #include <memory>
 #include <vector>

@@ -29,6 +29,7 @@
 
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 
+#include <cstddef>
 #include <memory>
 #include <atomic>
 #include <vector>

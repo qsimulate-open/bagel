@@ -24,6 +24,7 @@
 //
 
 
+#include <cstddef>
 #include <array>
 #include <src/grad/gradeval_base.h>
 #include <src/grad/gradfile.h>

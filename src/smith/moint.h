@@ -31,6 +31,7 @@
 #ifndef __SRC_SMITH_MOINT_H
 #define __SRC_SMITH_MOINT_H
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <src/wfn/reference.h>
@@ -73,12 +74,7 @@ class K2ext {
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
           std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1->offset(), i1->size());
 
-#if 0
-          std::vector<size_t> h(1,cnt);
-          h.push_back(cnt2);
-#else
           std::vector<size_t> h = {{cnt, cnt2}};
-#endif
           dflist.insert(make_pair(generate_hash_key(h), df_full));
         }
       }
@@ -94,13 +90,8 @@ class K2ext {
         size_t j1 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
           // find three-index integrals
-#if 0
-          std::vector<size_t> i01;
-          i01.push_back(j0);
-          i01.push_back(j1);
-#else
-           std::vector<size_t> i01 = {{j0, j1}};
-#endif
+          std::vector<size_t> i01 = {{j0, j1}};
+
           auto iter01 = dflist.find(generate_hash_key(i01));
           assert(iter01 != dflist.end());
           std::shared_ptr<DF_Full> df01 = iter01->second;
@@ -111,13 +102,8 @@ class K2ext {
             size_t j3 = blocks_[3].keyoffset();
             for (auto i3 = blocks_[3].range().begin(); i3 != blocks_[3].range().end(); ++i3, ++j3) {
               // find three-index integrals
-#if 0
-              std::vector<size_t> i23;
-              i23.push_back(j2);
-              i23.push_back(j3);
-#else
               std::vector<size_t> i23 = {{j2, j3}};
-#endif
+
               size_t hashkey23 = generate_hash_key(i23);
               if (hashkey23 > hashkey01) continue;
 
@@ -133,12 +119,6 @@ class K2ext {
 
               // move in place
               std::vector<size_t> hash = {{j0, j1, j2, j3}};
-#if 0
-              hash.push_back(j0);
-              hash.push_back(j1);
-              hash.push_back(j2);
-              hash.push_back(j3);
-#endif
 
               if (hashkey23 != hashkey01) {
                 std::unique_ptr<double[]> target2(new double[size]);
@@ -146,12 +126,7 @@ class K2ext {
                 const int s23 = i2->size() * i3->size();
                 mytranspose_(target.get(), &s01, &s23, target2.get());
                 std::vector<size_t> hash2 = {{j2, j3, j0, j1}};
-#if 0
-                hash2.push_back(j2);
-                hash2.push_back(j3);
-                hash2.push_back(j0);
-                hash2.push_back(j1);
-#endif
+
                 data_->put_block(hash2, target2);
               }
 
@@ -212,13 +187,7 @@ class MOFock {
             }
           }
 
-#if 0
-          std::vector<size_t> hash;
-          hash.push_back(j1);
-          hash.push_back(j0);
-#else
           std::vector<size_t> hash = {{j1, j0}};
-#endif
           data_->put_block(hash, target);
         }
       }

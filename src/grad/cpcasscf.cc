@@ -24,6 +24,7 @@
 //
 
 
+#include <cstddef>
 #include <src/grad/cpcasscf.h>
 #include <src/util/linearRM.h>
 #include <cassert>
