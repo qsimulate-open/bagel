@@ -99,7 +99,7 @@ void Determinants::const_lexical_mapping_() {
   if (nelea_ == neleb_) {
     copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
   } else {
-    for (int k = 1; k <= neleb_; ++k)
+    for (int k = 1; k < neleb_; ++k)
       for (int l = k; l <= norb_-neleb_+k; ++l)
         for (int m = norb_-l+1; m <= norb_-k; ++m)
           zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
