@@ -24,6 +24,7 @@
 //
 
 
+#include <iostream>
 #include <src/rel/smallnaibatch.h>
 #include <src/osint/momentbatch.h>
 #include <src/osint/overlapbatch.h>
