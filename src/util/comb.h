@@ -29,6 +29,7 @@
 #define __NEWINT_UTIL_COMB_H
 
 #include <algorithm>
+#include <cassert>
 
 namespace bagel {
 
@@ -568,7 +569,7 @@ class Comb {
         c_[31*max_+30] = 31;
         c_[31*max_+31] = 1;
     };
-    int c(const int i, const int j) const { return c_[i*max_+j]; };
+    int c(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; };
 };
 
 #endif
