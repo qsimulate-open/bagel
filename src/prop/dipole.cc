@@ -24,10 +24,11 @@
 //
 
 
-#include <src/prop/dipole.h>
-#include <src/osint/dipolebatch.h>
+#include <iostream>
 #include <iomanip>
 #include <array>
+#include <src/prop/dipole.h>
+#include <src/osint/dipolebatch.h>
 
 using namespace std;
 using namespace bagel;
