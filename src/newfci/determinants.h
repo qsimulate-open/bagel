@@ -46,18 +46,6 @@
 
 namespace bagel {
 
-/*
-static int numofbits(unsigned int bits) {
-#ifndef USE_SSE42_INTRINSICS
-  bits = (bits & 0x55555555) + (bits >> 1 & 0x55555555); bits = (bits & 0x33333333) + (bits >> 2 & 0x33333333);
-  bits = (bits & 0x0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f); bits = (bits & 0x00ff00ff) + (bits >> 8 & 0x00ff00ff);
-  return (bits & 0x0000ffff) + (bits >>16 & 0x0000ffff); // can be cheaper, but it is fine for the time being...
-#else
-  return _mm_popcnt_u32(bits); // i7 or later
-#endif
-};
-*/
-
 // implements a determinant space
 class NewDeterminants {
   friend class Space; // TODO Is this correct?

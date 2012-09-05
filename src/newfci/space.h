@@ -42,10 +42,6 @@
 #include <src/util/constants.h>
 #include <src/newfci/determinants.h>
 
-#ifdef USE_SSE42_INTRINSICS
-#include <nmmintrin.h>
-#endif
-
 namespace bagel {
 
 /************************************************************************************
@@ -76,7 +72,7 @@ class Space {
     const int key_(std::shared_ptr<NewDeterminants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
     const int sign(std::bitset<nbit__> bit, int i) {
-      const std::bitset<nbit__> ii( (1 << (i+1)) - 1 );
+      const std::bitset<nbit__> ii( (1 << (i)) - 1 );
       bit = bit & ii;
       return (1 - ((bit.count() & 1 ) << 1));
     }

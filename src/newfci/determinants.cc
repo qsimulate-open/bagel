@@ -89,23 +89,27 @@ void NewDeterminants::const_lexical_mapping_() {
 
   // this part is 1 offset due to the convention of Knowles & Handy's paper.
   // Just a blind copy from the paper without understanding much, but the code below works.
-  for (int k = 1; k < nelea_; ++k) {
-    for (int l = k; l <= norb_-nelea_+k; ++l) {
-      for (int m = norb_-l+1; m <= norb_-k; ++m) {
-        zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
+  if( nelea_ != 0 ) { // There may be a better way to deal with zero electrons...
+    for (int k = 1; k < nelea_; ++k) {
+      for (int l = k; l <= norb_-nelea_+k; ++l) {
+        for (int m = norb_-l+1; m <= norb_-k; ++m) {
+          zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
+        }
       }
     }
+    for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
   }
-  for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
 
   if (nelea_ == neleb_) {
     copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
   } else {
-    for (int k = 1; k < neleb_; ++k)
-      for (int l = k; l <= norb_-neleb_+k; ++l)
-        for (int m = norb_-l+1; m <= norb_-k; ++m)
-          zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
-    for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
+    if( neleb_ != 0 ) {
+      for (int k = 1; k < neleb_; ++k)
+        for (int l = k; l <= norb_-neleb_+k; ++l)
+          for (int m = norb_-l+1; m <= norb_-k; ++m)
+            zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
+      for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
+    }
   }
 }
 

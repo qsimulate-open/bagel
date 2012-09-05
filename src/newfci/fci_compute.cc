@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-//#define __NEWFCI_DEBUGGING
+#define __NEWFCI_DEBUGGING
 
 #include <iostream>
 #include <iomanip>
@@ -260,9 +260,9 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
     {
       const double* const source_base = cc->data();
       double* target_base = sigma->data();
-      int lb = sigma->lenb();
+      const int lb = sigma->lenb();
       
-      for (auto aiter = base_det->stringa().begin(); aiter != base_det->stringa().end(); ++aiter) {
+      for (auto aiter = base_det->stringa().begin(); aiter != base_det->stringa().end(); ++aiter, target_base+=lb) {
         bitset<nbit__> nstring = *aiter;
         for (int i = 0; i != norb; ++i) {
           if (!nstring[i]) continue;
@@ -271,22 +271,21 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
             int ij_phase = base_det->sign(nstring,i,j);
             bitset<nbit__> string_ij = nstring; 
             string_ij.reset(i); string_ij.reset(j);
-            for (int k = 0; k != norb; ++k) {
-              if (string_ij[k]) continue;
-              for (int l = 0; l < k; ++l) {
-                if (string_ij[l]) continue;
-                int kl_phase = base_det->sign(string_ij,k,l);
-                double phase = static_cast<double>(ij_phase*kl_phase);
+            for (int l = 0; l != norb; ++l) {
+              if (string_ij[l]) continue;
+              for (int k = 0; k < l; ++k) {
+                if (string_ij[k]) continue;
+                int kl_phase = base_det->sign(string_ij,l,k);
+                double phase = -static_cast<double>(ij_phase*kl_phase);
                 bitset<nbit__> string_ijkl = string_ij;
                 string_ijkl.set(k); string_ijkl.set(l);
-                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,l,k,j) );
+                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,j,l,k) );
                 const double* source = source_base + base_det->lexical<0>(string_ijkl)*lb;
                 daxpy_(lb, temp, source, 1, target_base, 1);
               }
             }
           }
         }
-        target_base += lb;
       }
     }
     if (tprint) print_timing_("task2aa", start, timing);
@@ -307,15 +306,15 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
             int ij_phase = base_det->sign(nstring,i,j);
             bitset<nbit__> string_ij = nstring;
             string_ij.reset(i); string_ij.reset(j);
-            for (int k = 0; k != norb; ++k) {
-              if (string_ij[k]) continue;
-              for (int l = 0; l < k; ++l) {
-                if (string_ij[l]) continue;
-                int kl_phase = base_det->sign(string_ij,k,l);
-                double phase = static_cast<double>(ij_phase*kl_phase);
+            for (int l = 0; l != norb; ++l) {
+              if (string_ij[l]) continue;
+              for (int k = 0; k < l; ++k) {
+                if (string_ij[k]) continue;
+                int kl_phase = base_det->sign(string_ij,l,k);
+                double phase = -static_cast<double>(ij_phase*kl_phase);
                 bitset<nbit__> string_ijkl = string_ij;
                 string_ijkl.set(k); string_ijkl.set(l);
-                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,l,k,j) );
+                double temp = phase * ( jop->mo2e(i,j,k,l) - jop->mo2e(i,j,l,k) );
                 const double* source = source_base + base_det->lexical<1>(string_ijkl);
                 daxpy_(la, temp, source, lb, target_base, lb);
               }
@@ -329,17 +328,16 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
     d->zero();
-    e->zero();
     {
-      const int lbt = d->lenb();
-      const int lbs = cc->lenb();
+      const int lbt = int_det->lenb();
+      const int lbs = base_det->lenb();
       const double* source_base = cc->data();
 
-      for (int i = 0; i < norb; ++i) {
-        for (int j = 0; j < norb; ++j) {
-          double* target_base = d->data(i*norb + j)->data();
-          for (auto aiter = d->det()->phiupa(i).begin(); aiter != d->det()->phiupa(i).end(); ++aiter) {
-            for (auto biter = d->det()->phiupb(j).begin(); biter != d->det()->phiupb(j).end(); ++biter) {
+      for (int k = 0; k < norb; ++k) {
+        for (int l = 0; l < norb; ++l) {
+          double* target_base = d->data(k*norb + l)->data();
+          for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
+            for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
               const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
               target_base[get<2>(*aiter)*lbt + get<2>(*biter)] += sign * source_base[get<0>(*aiter)*lbs + get<0>(*biter)];
             }
@@ -352,8 +350,7 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
     {
       const int lenab = int_det->lena() * int_det->lenb();
       const int ij = d->ij();
-      // TODO: check 0.5 coefficient.
-      dgemm_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
+      dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
     }
     if (tprint) print_timing_("task2ab-2", start, timing);
 
@@ -362,11 +359,11 @@ shared_ptr<NewDvec> NewFCI::form_sigma(shared_ptr<const NewDvec> ccvec, shared_p
       const int lbs = int_det->lenb();
       double* target_base = sigma->data();
 
-      for (int k = 0; k < norb; ++k) {
-        for (int l = 0; l < norb; ++l) {
-          const double* source_base = e->data(k*norb + l)->data();
-          for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
-            for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
+      for (int i = 0; i < norb; ++i) {
+        for (int j = 0; j < norb; ++j) {
+          const double* source_base = e->data(i*norb + j)->data();
+          for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
+            for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
               const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
               target_base[get<0>(*aiter)*lbt + get<0>(*biter)] += sign * source_base[get<2>(*aiter)*lbs + get<2>(*biter)];
             }

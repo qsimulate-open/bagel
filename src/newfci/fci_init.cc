@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#define __NEWFCI_DEBUGGING
 
 #include <iomanip>
 #include <stdexcept>
@@ -122,12 +123,20 @@ void NewFCI::const_denom() {
   fk.resize(norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
+      #ifndef __NEWFCI_DEBUGGING
       jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e(j, j, i, i);
+      #else
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e(j, i, j, i);
+      #endif
     }
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
+      #ifndef __NEWFCI_DEBUGGING
       kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e(j, i, j, i);
+      #else
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e(j, i, i, j);
+      #endif
     }
   }
   for (int i = 0; i != norb_; ++i) {

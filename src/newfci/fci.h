@@ -30,6 +30,8 @@
 #ifndef __NEWINT_NEWFCI_FCI_H
 #define __NEWINT_NEWFCI_FCI_H
 
+#define __NEWFCI_DEBUGGING
+
 #include <tuple>
 #include <src/scf/scf.h>
 #include <cassert>

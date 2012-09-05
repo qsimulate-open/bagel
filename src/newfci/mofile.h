@@ -1,4 +1,4 @@
-//
+
 // BAGEL - Parallel electron correlation program.
 // Filename: mofile.h
 // Copyright (C) 2011 Toru Shiozaki
@@ -28,7 +28,7 @@
 #ifndef __NEWINT_NEWFCI_MOFILE_H
 #define __NEWINT_NEWFCI_MOFILE_H
 
-//#define __NEWFCI_DEBUGGING
+#define __NEWFCI_DEBUGGING
 
 #include <fstream>
 #include <string>
@@ -100,7 +100,8 @@ class NewMOFile {
     #ifndef __NEWFCI_DEBUGGING
     double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
     #else
-    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e_[k + nocc_*j + nocc_*nocc_*l + nocc_*nocc_*nocc_*i]; };
+    // This is in <ij|kl> == (ik|jl) format
+    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
     #endif
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
     std::shared_ptr<const Matrix1e> core_fock() const { return core_fock_; };
