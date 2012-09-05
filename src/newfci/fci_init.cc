@@ -141,9 +141,11 @@ void NewFCI::const_denom() {
   }
   for (int i = 0; i != norb_; ++i) {
     fk[i] = 0.0;
+    #ifndef __NEWFCI_DEBUGGING
     for (int j = 0; j != norb_; ++j) {
       fk[i] += kop[i*norb_+j];
     }
+    #endif
   }
 
   shared_ptr<NewCivec> tmp(new NewCivec(det()));
