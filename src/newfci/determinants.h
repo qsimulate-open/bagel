@@ -83,7 +83,13 @@ class NewDeterminants {
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
       std::vector<int> out;
-      for (int i = 0; i != bit.size(); ++i) if (bit[i]) out.push_back(i);
+      for (int i = 0; i != norb_; ++i) if (bit[i]) out.push_back(i);
+      return out;
+    };
+
+    std::bitset<nbit__> numbers_to_bit(const std::vector<int>& num) const {
+      std::bitset<nbit__> out(0);
+      for (auto i = num.begin(); i != num.end(); ++i) out.set(*i);
       return out;
     };
 

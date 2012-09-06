@@ -47,11 +47,11 @@ void Space::common_init() {
   const bool compress = false;
   const bool mute = false;
 
-  if (!mute) cout << " Constructing space of all determinants that can formed by adding or removing " 
+  if (!mute) cout << " Constructing space of all determinants that can formed by removing " 
                   << M_ << " electrons from " << nelea_ 
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
-  for(int i = -M_; i <= M_; ++i ) {
-    for(int j = -M_; j <= M_; ++j) {
+  for(int i = -M_; i <= 0; ++i ) {
+    for(int j = -M_; j <= 0; ++j) {
       shared_ptr<NewDeterminants> tmpdet(new NewDeterminants(norb_, nelea_ + i, neleb_ + j, compress));
       detmap_.insert(pair<int,shared_ptr<NewDeterminants> >(key_(i,j), tmpdet));
     }
