@@ -24,13 +24,13 @@
 //
 
 
-#include <src/newfci/fci_base.h>
+#include <src/newfci/fci.h>
 #include <src/wfn/rdm.h>
 
 using namespace std;
 using namespace bagel;
 
-void NewFCI_Base::compute_rdm12() {
+void NewFCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0].
   if (!static_cast<bool>(rdm1_av_) && nstate_ > 1) {
@@ -52,13 +52,13 @@ void NewFCI_Base::compute_rdm12() {
 
 
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
-  NewFCI_Base::compute_rdm12_last_step(shared_ptr<const NewDvec> dbra, shared_ptr<const NewDvec> dket, shared_ptr<const NewCivec> cibra) const {
+  NewFCI::compute_rdm12_last_step(shared_ptr<const NewDvec> dbra, shared_ptr<const NewDvec> dket, shared_ptr<const NewCivec> cibra) const {
 
   const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb_*norb_;
 
   if (nri != dket->lena()*dket->lenb())
-    throw logic_error("NewFCI_Base::compute_rdm12_last_step called with inconsistent RI spaces");
+    throw logic_error("NewFCI::compute_rdm12_last_step called with inconsistent RI spaces");
 
   // 1RDM
   // c^dagger <I|\hat{E}|0>
@@ -91,7 +91,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
 
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
-  NewFCI_Base::compute_rdm12_from_civec(shared_ptr<const NewCivec> cbra, shared_ptr<const NewCivec> cket) const {
+  NewFCI::compute_rdm12_from_civec(shared_ptr<const NewCivec> cbra, shared_ptr<const NewCivec> cket) const {
 
   // since we consider here number conserving operators...
   shared_ptr<NewDvec> dbra(new NewDvec(cbra->det(), norb_*norb_));
@@ -115,7 +115,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
 
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
-  NewFCI_Base::compute_rdm12_av_from_dvec(shared_ptr<const NewDvec> dbra, shared_ptr<const NewDvec> dket, shared_ptr<const NewDeterminants> o) const {
+  NewFCI::compute_rdm12_av_from_dvec(shared_ptr<const NewDvec> dbra, shared_ptr<const NewDvec> dket, shared_ptr<const NewDeterminants> o) const {
 
   if (static_cast<bool>(o)) {
     dbra->set_det(o);
@@ -146,7 +146,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 }
 
 
-void NewFCI_Base::compute_rdm12(const int ist) {
+void NewFCI::compute_rdm12(const int ist) {
   shared_ptr<NewCivec> cc = cc_->data(ist);
 
   shared_ptr<RDM<1> > rdm1;
@@ -168,7 +168,7 @@ void NewFCI_Base::compute_rdm12(const int ist) {
 
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<vector<double>, vector<double> > NewFCI_Base::natorb_convert() {
+pair<vector<double>, vector<double> > NewFCI::natorb_convert() {
   assert(static_cast<bool>(rdm1_av_));
   pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
@@ -177,7 +177,7 @@ pair<vector<double>, vector<double> > NewFCI_Base::natorb_convert() {
 }
 
 
-void NewFCI_Base::update_rdms(const vector<double>& coeff) {
+void NewFCI::update_rdms(const vector<double>& coeff) {
   for (auto iter = rdm1_.begin(); iter != rdm1_.end(); ++iter)
     (*iter)->transform(coeff);
   for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)

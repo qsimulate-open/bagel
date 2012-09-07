@@ -27,8 +27,8 @@
 //         It is amazing how easy it is to implement NewFCI !!
 //
 
-#ifndef __NEWINT_NEWFCI_FCI_KH_H
-#define __NEWINT_NEWFCI_FCI_KH_H
+#ifndef __NEWINT_NEWFCI_KNOWLESHANDY_H
+#define __NEWINT_NEWFCI_KNOWLESHANDY_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -40,13 +40,13 @@
 #include <src/util/constants.h>
 #include <src/newfci/dvec.h>
 #include <src/newfci/mofile.h>
-#include <src/newfci/fci_base.h>
+#include <src/newfci/fci.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
 
-class NewFCI_KH : public NewFCI_Base {
+class KnowlesHandy : public NewFCI {
 
   protected:
     // denominator
@@ -64,11 +64,11 @@ class NewFCI_KH : public NewFCI_Base {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    NewFCI_KH(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : NewFCI_Base( a, b, ncore, nocc, nstate){
+    KnowlesHandy(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
+        const int ncore = -1, const int nocc = -1, const int nstate = -1) : NewFCI( a, b, ncore, nocc, nstate){
       update(ref_->coeff());
     };
-    ~NewFCI_KH(){};
+    ~KnowlesHandy(){};
 
     void update(std::shared_ptr<const Coeff>) override;
 };

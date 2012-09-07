@@ -27,8 +27,8 @@
 #include <iomanip>
 #include <string>
 #include <stdexcept>
-#include <src/newfci/fci_base.h>
-#include <src/newfci/fci_kh.h>
+#include <src/newfci/fci.h>
+#include <src/newfci/knowles.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
@@ -40,7 +40,7 @@ using namespace std;
 using namespace std::chrono;
 using namespace bagel;
 
-shared_ptr<NewDvec> NewFCI_KH::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
+shared_ptr<NewDvec> KnowlesHandy::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
 
   const int ij = nij(); 
@@ -104,7 +104,7 @@ shared_ptr<NewDvec> NewFCI_KH::form_sigma(shared_ptr<const NewDvec> ccvec, share
 }
 
 // The first two are a part of Base because they are needed in the RDM parts
-void NewFCI_Base::sigma_2a1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
+void NewFCI::sigma_2a1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
   assert(d->det() == cc->det());
   const int lb = d->lenb();
   const int ij = d->ij();
@@ -119,7 +119,7 @@ void NewFCI_Base::sigma_2a1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d
   }
 }
 
-void NewFCI_Base::sigma_2a2(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
+void NewFCI::sigma_2a2(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
   assert(d->det() == cc->det());
   const int la = d->lena();
   const int ij = d->ij();
@@ -135,7 +135,7 @@ void NewFCI_Base::sigma_2a2(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d
   }
 }
 
-void NewFCI_KH::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void KnowlesHandy::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   assert(cc->det() == sigma->det());
   const int ij = nij(); 
   const int lb = cc->lenb();
@@ -148,7 +148,7 @@ void NewFCI_KH::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigm
   }
 }
 
-void NewFCI_KH::sigma_2c1(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> e) const {
+void KnowlesHandy::sigma_2c1(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> e) const {
   const int lb = e->lenb();
   const int ij = e->ij();
   for (int ip = 0; ip != ij; ++ip) { 
@@ -161,7 +161,7 @@ void NewFCI_KH::sigma_2c1(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> 
   }
 }
 
-void NewFCI_KH::sigma_2c2(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> e) const {
+void KnowlesHandy::sigma_2c2(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> e) const {
   const int la = e->lena();
   const int ij = e->ij();
   for (int i = 0; i < la; ++i) {
@@ -177,7 +177,7 @@ void NewFCI_KH::sigma_2c2(shared_ptr<NewCivec> sigma, shared_ptr<const NewDvec> 
 }
 
 
-void NewFCI_KH::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void KnowlesHandy::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -194,7 +194,7 @@ void NewFCI_KH::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigm
   }
 }
 
-void NewFCI_KH::sigma_2b(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
+void KnowlesHandy::sigma_2b(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();

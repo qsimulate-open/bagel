@@ -26,8 +26,8 @@
 // Desc :: The implementation closely follows Harrison and Zarrabian
 //
 
-#ifndef __NEWINT_NEWFCI_FCI_HZ_H
-#define __NEWINT_NEWFCI_FCI_HZ_H
+#ifndef __NEWINT_NEWFCI_HARRISONZARRABIAN_H
+#define __NEWINT_NEWFCI_HARRISONZARRABIAN_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -39,7 +39,7 @@
 #include <src/util/constants.h>
 #include <src/newfci/dvec.h>
 #include <src/newfci/mofile.h>
-#include <src/newfci/fci_base.h>
+#include <src/newfci/fci.h>
 #include <src/newfci/space.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
@@ -47,7 +47,7 @@
 
 namespace bagel {
 
-class NewFCI_HZ : public NewFCI_Base {
+class HarrisonZarrabian : public NewFCI {
 
   protected:
     //void create_Jiiii();
@@ -69,12 +69,12 @@ class NewFCI_HZ : public NewFCI_Base {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    NewFCI_HZ(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : NewFCI_Base(a, b, ncore, nocc, nstate) {
+    HarrisonZarrabian(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
+        const int ncore = -1, const int nocc = -1, const int nstate = -1) : NewFCI(a, b, ncore, nocc, nstate) {
       space_ = std::shared_ptr<Space>(new Space(det_, 1));
       update(ref_->coeff());
     };
-    ~NewFCI_HZ(){};
+    ~HarrisonZarrabian(){};
 
     void update(std::shared_ptr<const Coeff>) override; 
 };

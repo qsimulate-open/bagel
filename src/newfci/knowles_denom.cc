@@ -26,7 +26,7 @@
 
 #include <iomanip>
 #include <stdexcept>
-#include <src/newfci/fci_kh.h>
+#include <src/newfci/knowles.h>
 #include <src/newfci/mofile.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
@@ -39,7 +39,7 @@ using namespace bagel;
 //
 // averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
 //
-void NewFCI_KH::const_denom() {
+void KnowlesHandy::const_denom() {
   vector<double> jop, kop, fk;
   jop.resize(norb_*norb_);
   kop.resize(norb_*norb_);
@@ -90,7 +90,7 @@ void NewFCI_KH::const_denom() {
   }
 }
 
-void NewFCI_KH::update(shared_ptr<const Coeff> c) {
+void KnowlesHandy::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   auto tp1 = high_resolution_clock::now();

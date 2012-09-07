@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <bitset>
-#include <src/newfci/fci_hz.h>
+#include <src/newfci/harrison.h>
 #include <src/newfci/mofile.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
@@ -37,7 +37,7 @@ using namespace std;
 using namespace std::chrono;
 using namespace bagel;
 
-void NewFCI_HZ::const_denom() {
+void HarrisonZarrabian::const_denom() {
   vector<double> jop, kop;
   jop.resize(norb_*norb_);
   kop.resize(norb_*norb_);
@@ -81,7 +81,7 @@ void NewFCI_HZ::const_denom() {
   }
 }
 
-void NewFCI_HZ::update(shared_ptr<const Coeff> c) {
+void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   auto tp1 = high_resolution_clock::now();

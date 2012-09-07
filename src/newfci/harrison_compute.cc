@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <string>
 #include <stdexcept>
-#include <src/newfci/fci_hz.h>
+#include <src/newfci/harrison.h>
 #include <src/newfci/space.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
@@ -41,7 +41,7 @@ using namespace std::chrono;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<NewDvec> NewFCI_HZ::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
+shared_ptr<NewDvec> HarrisonZarrabian::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
   const int ij = norb_*norb_; 
 
@@ -107,7 +107,7 @@ shared_ptr<NewDvec> NewFCI_HZ::form_sigma(shared_ptr<const NewDvec> ccvec, share
   return sigmavec;
 }
 
-void NewFCI_HZ::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   assert(cc->det() == sigma->det());
   const int ij = nij(); 
   const int lb = cc->lenb();
@@ -120,7 +120,7 @@ void NewFCI_HZ::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigm
   }
 }
 
-void NewFCI_HZ::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -137,7 +137,7 @@ void NewFCI_HZ::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigm
   }
 }
 
-void NewFCI_HZ::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
 
   const int norb = norb_;
@@ -173,7 +173,7 @@ void NewFCI_HZ::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> si
   }
 }
 
-void NewFCI_HZ::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
   const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
 
   const double* const source_base = cc->data();
@@ -209,7 +209,7 @@ void NewFCI_HZ::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> si
   }
 }
 
-void NewFCI_HZ::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
+void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
   const int norb = norb_;
 
   shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
@@ -232,7 +232,7 @@ void NewFCI_HZ::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d
   }
 }
 
-void NewFCI_HZ::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
@@ -240,7 +240,7 @@ void NewFCI_HZ::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }
 
-void NewFCI_HZ::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDvec> e) const {
+void HarrisonZarrabian::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDvec> e) const {
   const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
   const shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
 

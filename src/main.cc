@@ -39,8 +39,8 @@
 #include <src/molden/molden.h>
 #include <src/wfn/reference.h>
 #include <src/fci/fci.h>
-#include <src/newfci/fci_hz.h>
-#include <src/newfci/fci_kh.h>
+#include <src/newfci/harrison.h>
+#include <src/newfci/knowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
 #include <src/mp2/mp2grad.h>
@@ -248,13 +248,13 @@ int main(int argc, char** argv) {
       }
         else if (method == "newfci") {
         if (!static_cast<bool>(ref)) throw std::runtime_error("FCI needs a reference");
-        std::shared_ptr<NewFCI_Base> fci;
+        std::shared_ptr<NewFCI> fci;
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
-        if (algorithm == "kh" || algorithm == "") {
-          fci = std::shared_ptr<NewFCI_Base>(new NewFCI_KH(iter->second, ref));
-        } else if (algorithm == "hz") {
-          fci = std::shared_ptr<NewFCI_Base>(new NewFCI_HZ(iter->second, ref));
+        if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy" || algorithm == "") {
+          fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second, ref));
+        } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
+          fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
         } else {
           throw std::runtime_error("unknown NewFCI algorithm specified.");
         }

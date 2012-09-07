@@ -23,12 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Desc :: The implementation closely follows Knowles and Handy 1984 CPL.
-//         It is amazing how easy it is to implement NewFCI !!
-//
-
-#ifndef __NEWINT_NEWFCI_FCI_BASE_H
-#define __NEWINT_NEWFCI_FCI_BASE_H
+#ifndef __NEWINT_NEWFCI_FCI_H
+#define __NEWINT_NEWFCI_FCI_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -46,7 +42,7 @@
 
 namespace bagel {
 
-class NewFCI_Base {
+class NewFCI {
 
   protected:
     // input
@@ -115,9 +111,9 @@ class NewFCI_Base {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    NewFCI_Base(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
+    NewFCI(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
-    ~NewFCI_Base();
+    ~NewFCI();
     void compute();
 
     virtual void update(std::shared_ptr<const Coeff> ) = 0;

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci_base.cc
+// Filename: fci.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <stdexcept>
 
-#include <src/newfci/fci_base.h>
+#include <src/newfci/fci.h>
 #include <src/newfci/space.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
@@ -41,12 +41,12 @@ using namespace std;
 using namespace std::chrono;
 using namespace bagel;
 
-NewFCI_Base::NewFCI_Base(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+NewFCI::NewFCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
 
-void NewFCI_Base::common_init() {
+void NewFCI::common_init() {
   print_header();
 
   const bool frozen = read_input<bool>(idata_, "frozen", false);
@@ -78,9 +78,9 @@ void NewFCI_Base::common_init() {
   det_ = shared_ptr<const NewDeterminants>(new NewDeterminants(norb_, nelea_, neleb_));
 }
 
-NewFCI_Base::~NewFCI_Base() { }
+NewFCI::~NewFCI() { }
 
-void NewFCI_Base::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
+void NewFCI::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
   timing.push_back(make_pair(label, (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC)));
   time = ::clock();
 }
@@ -89,7 +89,7 @@ void NewFCI_Base::print_timing_(const string label, int& time, std::vector<pair<
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void NewFCI_Base::generate_guess(const int nspin, const int nstate, std::shared_ptr<NewDvec> out) {
+void NewFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<NewDvec> out) {
   int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__> > > bits = detseeds(ndet);
@@ -132,7 +132,7 @@ void NewFCI_Base::generate_guess(const int nspin, const int nstate, std::shared_
 }
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__> > > NewFCI_Base::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__> > > NewFCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__> > > tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
@@ -153,13 +153,13 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > NewFCI_Base::detseeds(const int 
   return out;
 }
 
-void NewFCI_Base::print_header() const {
+void NewFCI::print_header() const {
   cout << "  ---------------------------" << endl;
   cout << "        NewFCI calculation      " << endl;
   cout << "  ---------------------------" << endl << endl;
 }
 
-void NewFCI_Base::compute() {
+void NewFCI::compute() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("NewFCI: C1 only at the moment."); 
 
