@@ -27,10 +27,8 @@
 //         It is amazing how easy it is to implement NewFCI !!
 //
 
-#ifndef __NEWINT_NEWFCI_FCI_H
-#define __NEWINT_NEWFCI_FCI_H
-
-#define __NEWFCI_DEBUGGING
+#ifndef __NEWINT_NEWFCI_FCI_BASE_H
+#define __NEWINT_NEWFCI_FCI_BASE_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -48,7 +46,7 @@
 
 namespace bagel {
 
-class NewFCI {
+class NewFCI_Base {
 
   protected:
     // input
@@ -86,10 +84,6 @@ class NewFCI {
     // MO integrals 
     std::shared_ptr<NewMOFile> jop_;
 
-    //
-    // Below here, internal private members
-    //
-
     // Determinant space
     std::shared_ptr<const NewDeterminants> det_;
 
@@ -97,24 +91,16 @@ class NewFCI {
     std::shared_ptr<NewCivec> denom_;
 
     // some init functions
-    void common_init();
+    void common_init(); // may end up unnecessary
     void create_Jiiii();
-    // generate spin-adapted guess configurations
-    void generate_guess(const int nspin, const int nstate, std::shared_ptr<NewDvec>);
-    // denominator
-    void const_denom();
     // obtain determinants for guess generation
+    void generate_guess(const int nspin, const int nstate, std::shared_ptr<NewDvec>);
+    // generate spin-adapted guess configurations
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__> > > detseeds(const int ndet);
 
-  
-    // run-time functions
-    void sigma_1(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_3(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2a1(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewDvec> d) const;
-    void sigma_2a2(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewDvec> d) const;
-    void sigma_2b (std::shared_ptr<NewDvec> d, std::shared_ptr<NewDvec> e, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2c1(std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewDvec> e) const;
-    void sigma_2c2(std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewDvec> e) const;
+    /* Virtual functions -- these MUST be defined in the derived class*/
+    // denominator
+    virtual void const_denom() = 0;
 
     // functions related to natural orbitals
     void update_rdms(const std::vector<double>& coeff); 
@@ -129,24 +115,26 @@ class NewFCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    NewFCI(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
+    NewFCI_Base(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
-    ~NewFCI();
+    ~NewFCI_Base();
     void compute();
-    void update(std::shared_ptr<const Coeff> );
+
+    virtual void update(std::shared_ptr<const Coeff> ) = 0;
 
     // returns members
     int norb() const { return norb_; };
     int nelea() const { return nelea_; };
     int neleb() const { return neleb_; };
-    int nij() const { return norb_*(norb_+1)/2; };
     int ncore() const { return ncore_; };
     double core_energy() const { return jop_->core_energy(); };
 
+    virtual int nij() const { return norb_*(norb_+1)/2; };
+
     double weight(const int i) const { return weight_[i]; };
 
-    // application of Hamiltonian
-    std::shared_ptr<NewDvec> form_sigma(std::shared_ptr<const NewDvec> c, std::shared_ptr<const NewMOFile> jop, const std::vector<int>& conv) const;
+    // virtual application of Hamiltonian
+    virtual std::shared_ptr<NewDvec> form_sigma(std::shared_ptr<const NewDvec> c, std::shared_ptr<const NewMOFile> jop, const std::vector<int>& conv) const = 0;
 
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
@@ -188,6 +176,9 @@ class NewFCI {
     // returns CI vectors
     std::shared_ptr<NewDvec> civectors() const { return cc_; };
 
+    // These are needed for the RDM stuff, apparently
+    void sigma_2a1(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewDvec> d) const;
+    void sigma_2a2(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewDvec> d) const;
 };
 
 }

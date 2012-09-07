@@ -28,8 +28,6 @@
 #ifndef __NEWINT_NEWFCI_MOFILE_H
 #define __NEWINT_NEWFCI_MOFILE_H
 
-#define __NEWFCI_DEBUGGING
-
 #include <fstream>
 #include <string>
 #include <memory>
@@ -49,6 +47,7 @@ class NewMOFile {
     int nbasis_;
 
     bool do_df_;
+    bool hz_; // If true, do hz stuff. This may be revisited if more algorithms are implemented
     double core_energy_;
 
     const std::shared_ptr<const Geometry> geom_;
@@ -87,8 +86,8 @@ class NewMOFile {
     std::shared_ptr<const Coeff> coeff_;
 
   public:
-    NewMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence);
-    NewMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>);
+    NewMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::string method = std::string("KH"));
+    NewMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
     ~NewMOFile();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
@@ -96,13 +95,11 @@ class NewMOFile {
     int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
+    // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l
-    #ifndef __NEWFCI_DEBUGGING
-    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
-    #else
+    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
     // This is in <ij|kl> == (ik|jl) format
-    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
-    #endif
+    double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
     std::shared_ptr<const Matrix1e> core_fock() const { return core_fock_; };
     double* core_fock_ptr() { return core_fock_->data(); };
@@ -126,8 +123,8 @@ class NewJop : public NewMOFile {
     std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
     std::unique_ptr<double[]> compute_mo2e(const int, const int);
   public:
-    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d) : NewMOFile(b,c,d) { core_energy_ = create_Jiiii(c, d); };
-    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e) : NewMOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); };
+    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH")) : NewMOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
+    NewJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH")) : NewMOFile(b,c,d,e,f) { core_energy_ = create_Jiiii(c, d); };
     ~NewJop() {};
 };
 
