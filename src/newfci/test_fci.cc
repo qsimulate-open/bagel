@@ -24,16 +24,16 @@
 //
 
 
-#include <src/newfci/fci.h>
+#include <src/newfci/harrison.h>
+#include <src/newfci/knowles.h>
 
-std::vector<double> fci_energy() {
+std::vector<double> newfci_energy(std::string inp) {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("hf_sto3g_fci2.testout", std::ios::trunc));
+  std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp + ".testout", std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/hf_sto3g_fci2.in"));
-  stack = new StackMem(static_cast<size_t>(1000000LU));
+  std::shared_ptr<InputData> idata(new InputData("../../test/" + inp + ".in"));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
@@ -44,13 +44,18 @@ std::vector<double> fci_energy() {
       std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
-
-    }
-    if (iter->first == "fci") {
-      std::shared_ptr<NewFCI> fci(new NewFCI(iter->second, ref));
+    } else if (iter->first == "df-rohf"){
+      std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
+      scf->compute();
+      ref = scf->conv_to_ref();
+    } else if (iter->first == "newfci") {
+      std::shared_ptr<NewFCI> fci;
+      std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+      if (algorithm == "harrison") fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
+      else if (algorithm == "knowles") fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second,ref));
+      else assert(false);
+     
       fci->compute();
-
-      delete stack;
       std::cout.rdbuf(backup_stream);
       return fci->energy();
     }
@@ -59,17 +64,27 @@ std::vector<double> fci_energy() {
   return std::vector<double>();
 }
 
-std::vector<double> reference_fci_energy() {
+std::vector<double> reference_newfci_energy() {
   std::vector<double> out(2);
   out[0] = -98.56280393;
   out[1] = -98.36567235;
   return out;
 }
- 
-BOOST_AUTO_TEST_SUITE(TEST_NewFCI)
- 
-BOOST_AUTO_TEST_CASE(NewFCI_2STATE) {
-    BOOST_CHECK(compare(fci_energy(), reference_fci_energy()));
+std::vector<double> reference_newfci_energy2() {
+  std::vector<double> out(2);
+  out[0] = -3.30315793;
+  out[1] = -2.78407879;
+  return out;
 }
- 
+
+
+BOOST_AUTO_TEST_SUITE(TEST_NEWFCI)
+
+BOOST_AUTO_TEST_CASE(NEWFCI_2STATE) {
+    BOOST_CHECK(compare(newfci_energy("hf_sto3g_newfci_hz"), reference_newfci_energy()));
+    BOOST_CHECK(compare(newfci_energy("hf_sto3g_newfci_kh"), reference_newfci_energy()));
+    BOOST_CHECK(compare(newfci_energy("hhe_svp_newfci_hz_trip"), reference_newfci_energy2()));
+    BOOST_CHECK(compare(newfci_energy("hhe_svp_newfci_kh_trip"), reference_newfci_energy2()));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

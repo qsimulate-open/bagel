@@ -251,7 +251,13 @@ int main(int argc, char** argv) {
         std::shared_ptr<NewFCI> fci;
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
-        if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy" || algorithm == "") {
+        if (algorithm == "" || algorithm == "auto") {
+          // TODO At the moment this doesn't take freezing of orbitals into account
+          const int nele = ref->geom()->nele();
+          const int norb = ref->geom()->nbasis();
+          if ( (nele) <= norb ) fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
+          else fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second, ref));
+        } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
           fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
           fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
