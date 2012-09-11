@@ -223,9 +223,11 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<Ne
     for (int l = 0; l < norb; ++l) {
       double* target_base = d->data(k*norb + l)->data();
       for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
+        double *target = target_base + get<2>(*aiter)*lbt;
+        const double *source = source_base + get<0>(*aiter)*lbs;
         for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
           const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target_base[get<2>(*aiter)*lbt + get<2>(*biter)] += sign * source_base[get<0>(*aiter)*lbs + get<0>(*biter)];
+          target[get<2>(*biter)] += sign * source[get<0>(*biter)];
         }
       }
     }
@@ -253,9 +255,11 @@ void HarrisonZarrabian::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDv
     for (int j = 0; j < norb; ++j) {
       const double* source_base = e->data(i*norb + j)->data();
       for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
+        double *target = target_base + get<0>(*aiter)*lbt;
+        const double *source = source_base + get<2>(*aiter)*lbs;
         for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
           const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target_base[get<0>(*aiter)*lbt + get<0>(*biter)] += sign * source_base[get<2>(*aiter)*lbs + get<2>(*biter)];
+          target[get<0>(*biter)] += sign * source[get<2>(*biter)];
         }
       } 
     }
