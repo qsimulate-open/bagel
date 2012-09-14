@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -38,7 +38,7 @@ static CarSphList carsphlist;
 using namespace std;
 using namespace bagel;
 
-static libint2::FmEval_Chebyshev3 fmeval(18);
+const static libint2::FmEval_Chebyshev3 fmeval(18);
 
 Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysInt(shells) {
 
