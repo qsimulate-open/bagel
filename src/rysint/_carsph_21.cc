@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -23,11 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
-// editied by hand a little
-
 #include <src/rysint/carsphlist.h>
-#include <src/util/f77.h>
+#include <cstring>
+
+using namespace bagel;
 
 
 void CarSphList::carsph_21(const int nloop, const double* source, double* target) {
@@ -35,14 +34,21 @@ void CarSphList::carsph_21(const int nloop, const double* source, double* target
   const double c0 = 0.8660254037844386;
   const double c2 = 0.5;
   for (int iloop = 0; iloop != nloop; ++iloop, target += 15, source += 18) {
-    for (int i = 0; i != 3; ++i)
-      target[  i] = c0 * (source[i] - source[6+i]);
-    for (int i = 0; i != 3; ++i)
-      target[3+i] = c1 * source[3+i];
-    for (int i = 0; i != 7; ++i)
-      target[6+i] = c1 * source[9+i];
-    for (int i = 0; i != 3; ++i)
-      target[12+i] = source[15+i] - c2 * (source[i] + source[6+i]);
+    target[0] =  c0 * source[0] - c0 * source[6];
+    target[1] =  c0 * source[1] - c0 * source[7];
+    target[2] =  c0 * source[2] - c0 * source[8];
+    target[3] =  c1 * source[3];
+    target[4] =  c1 * source[4];
+    target[5] =  c1 * source[5];
+    target[6] =  c1 * source[9];
+    target[7] =  c1 * source[10];
+    target[8] =  c1 * source[11];
+    target[9] =  c1 * source[12];
+    target[10] =  c1 * source[13];
+    target[11] =  c1 * source[14];
+    target[12] =  source[15] - c2 * source[0] - c2 * source[6];
+    target[13] =  source[16] - c2 * source[1] - c2 * source[7];
+    target[14] =  source[17] - c2 * source[2] - c2 * source[8];
   }
 }
 

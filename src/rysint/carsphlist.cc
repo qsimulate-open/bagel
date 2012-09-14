@@ -28,6 +28,8 @@
 
 // same convention as HRR
 
+using namespace bagel;
+
 CarSphList::CarSphList() {
       carsphfunc[ANG_HRR_END * 0 + 0] = &carsph_00;
       carsphfunc[ANG_HRR_END * 1 + 0] = &carsph_10;

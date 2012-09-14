@@ -121,19 +121,43 @@ int main() {
     assert(l0mtuv.size() == spherical_xyz[l0]);
     const string l0str = lexical_cast<string>(l0);
     for (int l1 = l0; l1 != LEND; ++l1) {
+
+      const string l1str = lexical_cast<string>(l1);
+      string filename = "_carsph_" + l1str + l0str + ".cc";
   string code = "\
 //\n\
-// Author : Toru Shiozaki\n\
-// Date   : May 2009\n\
+// BAGEL - Parallel electron correlation program.\n\
+// Filename: " + filename + "\n\
+// Copyright (C) 2009 Toru Shiozaki\n\
+//\n\
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
+// Maintainer: Shiozaki group\n\
+//\n\
+// This file is part of the BAGEL package.\n\
+//\n\
+// The BAGEL package is free software; you can redistribute it and/or modify\n\
+// it under the terms of the GNU Library General Public License as published by\n\
+// the Free Software Foundation; either version 2, or (at your option)\n\
+// any later version.\n\
+//\n\
+// The BAGEL package is distributed in the hope that it will be useful,\n\
+// but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
+// GNU Library General Public License for more details.\n\
+//\n\
+// You should have received a copy of the GNU Library General Public License\n\
+// along with the BAGEL package; see COPYING.  If not, write to\n\
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include \"carsphlist.h\"\n\
-#include \"f77.h\"\n\
+#include <src/rysint/carsphlist.h>\n\
+#include <cstring>\n\
+\n\
+using namespace bagel;\n\
 \n";
   code += "\n";
       const vector<vector<pair<int, mpreal> > > l1mtuv = lmtuv.at(l1);
       assert(l1mtuv.size() == spherical_xyz[l1]);
-      const string l1str = lexical_cast<string>(l1);
       const int lcartsize = cartesian_xyz[l1];
 
       code += "\
@@ -200,17 +224,13 @@ void CarSphList::carsph_" + l1str + l0str + "(const int nloop, const double* sou
   }\n";
       } else {
         code += "\
-  const int size = nloop" + (l1 != 0 ? (" * " + lexical_cast<string>(cartesian_xyz[l0] * cartesian_xyz[l1])) : "") + ";\n\
-  const int unit = 1;\n\
-  dcopy_(&size, source, &unit, target, &unit);\n";
+  ::memcpy(target, source, nloop" + (l1 != 0 ? (" * " + lexical_cast<string>(cartesian_xyz[l0] * cartesian_xyz[l1])) : "") + "  * sizeof(double));\n";
       }
     code += "\
 }\n\n";
 
     ofstream ofs;
-    string filename = "_carsph_" + l1str + l0str + ".cc";
     ofs.open(filename.c_str());
-cout << filename << " ";
     ofs << code;
     ofs.close();
     }

@@ -33,10 +33,10 @@
 #include <src/grad/glibint.h>
 #include <boys.h>
 
-static CarSphList carsphlist;
-
 using namespace std;
 using namespace bagel;
+
+const static CarSphList carsphlist;
 
 const static libint2::FmEval_Chebyshev3 fmeval(18);
 

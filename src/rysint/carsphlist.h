@@ -29,6 +29,8 @@
 
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct CarSphList {
   CarSphList();
   ~CarSphList();
@@ -68,5 +70,7 @@ struct CarSphList {
 
   void (*carsphfunc[ANG_HRR_END * ANG_HRR_END])(const int, const double*, double*);
 };
+
+}
 
 #endif

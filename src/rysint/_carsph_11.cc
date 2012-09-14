@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -23,11 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/rysint/carsphlist.h>
 #include <cstring>
 
+using namespace bagel;
+
+
 void CarSphList::carsph_11(const int nloop, const double* source, double* target) {
-  ::memcpy(target, source, (nloop * 9) * sizeof(double));
+  ::memcpy(target, source, nloop * 9  * sizeof(double));
 }
 

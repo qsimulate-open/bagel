@@ -56,6 +56,7 @@ class StackMem {
     void release(const size_t size, double* p);
 
     void clear() { pointer_ = 0LU; };
+    size_t pointer() const { return pointer_; };
 
 #ifdef LIBINT_INTERFACE
     Libint_t* libint_t_ptr(const int i) { return &libint_t_[i]; };
