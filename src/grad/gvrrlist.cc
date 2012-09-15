@@ -26,6 +26,8 @@
 
 #include <src/grad/gvrrlist.h>
 
+using namespace bagel;
+
 GVRRList::GVRRList() {
       vrrfunc[                  0] = &_gvrr_0000;
       vrrfunc[                  1] = &_gvrr_0010;

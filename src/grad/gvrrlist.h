@@ -33,6 +33,8 @@
 
 #include <src/rysint/vrrlist.h>
 
+namespace bagel {
+
 struct GVRRList : public VRRListBase {
   GVRRList();
   ~GVRRList();
@@ -247,5 +249,7 @@ struct GVRRList : public VRRListBase {
   static void _gvrr_d0c0(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_d0d0(double*, const double*, const double*, const double*, const double*, const double*);
 };
+
+}
 
 #endif

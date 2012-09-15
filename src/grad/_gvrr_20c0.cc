@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -23,8 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/grad/gvrrlist.h>
+
+using namespace bagel;
 
 // returns double array of length 273
 void GVRRList::_gvrr_20c0(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {

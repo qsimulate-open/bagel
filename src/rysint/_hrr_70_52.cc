@@ -28,6 +28,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
 void HRRList::perform_HRR_70_52(const int nloop, const double* data_start, const array<double,3>& AB, double* data_out) {
   for (int c = 0; c != nloop; ++c) {

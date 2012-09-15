@@ -29,6 +29,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace bagel;
 
 Int2D::Int2D(const array<double,11>& dparam, const double* roots, const int rank, const int datasize, double* data_pointer,
    void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*))

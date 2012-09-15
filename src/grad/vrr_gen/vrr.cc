@@ -38,11 +38,33 @@ const string VRR::dump(const string filename) const {
   stringstream contents;
 
   contents << "//" << endl;
-  contents << "// Author: Toru Shiozaki" << endl;
-  contents << "// Machine Generated Code in NewInt" << endl;
+  contents << "// BAGEL - Parallel electron correlation program." << endl;
+  contents << "// Filename: " << filename << ".cc" << endl;
+  contents << "// Copyright (C) 2009 Toru Shiozaki" << endl;
+  contents << "//" << endl;
+  contents << "// Author: Toru Shiozaki <shiozaki@northwestern.edu>" << endl;
+  contents << "// Maintainer: Shiozaki group" << endl;
+  contents << "//" << endl;
+  contents << "// This file is part of the BAGEL package." << endl;
+  contents << "//" << endl;
+  contents << "// The BAGEL package is free software; you can redistribute it and/or modify" << endl;
+  contents << "// it under the terms of the GNU Library General Public License as published by" << endl;
+  contents << "// the Free Software Foundation; either version 2, or (at your option)" << endl;
+  contents << "// any later version." << endl;
+  contents << "//" << endl;
+  contents << "// The BAGEL package is distributed in the hope that it will be useful," << endl;
+  contents << "// but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl;
+  contents << "// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl;
+  contents << "// GNU Library General Public License for more details." << endl;
+  contents << "//" << endl;
+  contents << "// You should have received a copy of the GNU Library General Public License" << endl;
+  contents << "// along with the BAGEL package; see COPYING.  If not, write to" << endl;
+  contents << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
   contents << "//" << endl;
   contents << endl;
   contents << "#include <src/grad/gvrrlist.h>" << endl;
+  contents << endl;
+  contents << "using namespace bagel;" << endl;
   contents << endl;
 
   contents << "// returns double array of length " << ((a_ + 1) * (c_ + 1) * rank_) << endl;

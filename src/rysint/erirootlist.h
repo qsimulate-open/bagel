@@ -29,6 +29,8 @@
 
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct ERIRootList  {
   public:
     ERIRootList();
@@ -41,6 +43,8 @@ struct ERIRootList  {
     };
 
 };
+
+}
 
 #endif
 

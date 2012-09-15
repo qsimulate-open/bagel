@@ -29,6 +29,8 @@
 
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct ScaleList {
   public:
     ScaleList();
@@ -50,6 +52,8 @@ struct ScaleList {
 
     void (*scalefunc[RYS_MAX + 1])(double*, const double*, const double, const double*, const int);
 };
+
+}
 
 #endif
 

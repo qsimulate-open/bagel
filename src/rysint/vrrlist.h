@@ -33,6 +33,8 @@
 
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct VRRListBase {
   VRRListBase() {};
   ~VRRListBase() {};
@@ -231,5 +233,7 @@ struct VRRList : public VRRListBase {
   static void _vrr_c0c0(double*, const double*, const double*, const double*, const double*, const double*);
 
 };
+
+}
 
 #endif

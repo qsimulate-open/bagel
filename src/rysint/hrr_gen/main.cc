@@ -118,6 +118,7 @@ int main() {
 #include <algorithm>\n\
 \n\
 using namespace std;\n\
+using namespace bagel;\n\
 \n\
 void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* data_start, const array<double,3>& AB, double* data_out) {\n\
   for (int c = 0; c != nloop; ++c) {\n\

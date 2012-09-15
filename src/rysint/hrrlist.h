@@ -34,6 +34,8 @@
 #include <array>
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct HRRList {
   HRRList();
   ~HRRList();
@@ -66,5 +68,7 @@ struct HRRList {
 
   void (*hrrfunc[ANG_HRR_END * ANG_HRR_END])(const int, const double*, const std::array<double,3>&, double*);
 };
+
+}
 
 #endif

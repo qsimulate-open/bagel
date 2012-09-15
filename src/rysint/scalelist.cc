@@ -26,6 +26,8 @@
 
 #include <src/rysint/scalelist.h>
 
+using namespace bagel;
+
 ScaleList::ScaleList() {
   scalefunc[1] = &scale_data_1;
   scalefunc[2] = &scale_data_2;

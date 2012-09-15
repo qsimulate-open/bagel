@@ -26,6 +26,8 @@
 
 #include <src/rysint/vrrlist.h>
 
+using namespace bagel;
+
 VRRList::VRRList() {
       vrrfunc[                  0] = &_vrr_0000;
       vrrfunc[                  1] = &_vrr_0010;

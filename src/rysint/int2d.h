@@ -32,6 +32,8 @@
 #include <src/rysint/scalelist.h>
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 class Int2D {
 
   protected:
@@ -69,5 +71,6 @@ class Int2D {
     };
 };
 
+}
 
 #endif

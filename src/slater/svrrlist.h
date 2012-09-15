@@ -34,6 +34,8 @@
 #include <src/rysint/macros.h>
 #include <src/rysint/vrrlist.h>
 
+namespace bagel {
+
 struct SVRRList : public VRRList {
   SVRRList();
   ~SVRRList();
@@ -223,5 +225,7 @@ struct SVRRList : public VRRList {
   static void _svrr_c0c0(double*, const double*, const double*, const double*, const double*, const double*);
 
 };
+
+}
 
 #endif

@@ -35,35 +35,57 @@ using namespace boost;
 
 const string VRR::dump(const string filename) const {
   string header;
-  string contents;
+  stringstream contents;
 
-  contents += "//\n";
-  contents += "// Author: Toru Shiozaki\n";
-  contents += "// Machine Generated Code in NewInt\n";
-  contents += "//\n";
-  contents += "\n";
-  contents += "#include \"svrrlist.h\"\n";
-  contents += "\n";
+  contents << "//" << endl;
+  contents << "// BAGEL - Parallel electron correlation program." << endl;
+  contents << "// Filename: " << filename << ".cc" << endl;
+  contents << "// Copyright (C) 2009 Toru Shiozaki" << endl;
+  contents << "//" << endl;
+  contents << "// Author: Toru Shiozaki <shiozaki@northwestern.edu>" << endl;
+  contents << "// Maintainer: Shiozaki group" << endl;
+  contents << "//" << endl;
+  contents << "// This file is part of the BAGEL package." << endl;
+  contents << "//" << endl;
+  contents << "// The BAGEL package is free software; you can redistribute it and/or modify" << endl;
+  contents << "// it under the terms of the GNU Library General Public License as published by" << endl;
+  contents << "// the Free Software Foundation; either version 2, or (at your option)" << endl;
+  contents << "// any later version." << endl;
+  contents << "//" << endl;
+  contents << "// The BAGEL package is distributed in the hope that it will be useful," << endl;
+  contents << "// but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl;
+  contents << "// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl;
+  contents << "// GNU Library General Public License for more details." << endl;
+  contents << "//" << endl;
+  contents << "// You should have received a copy of the GNU Library General Public License" << endl;
+  contents << "// along with the BAGEL package; see COPYING.  If not, write to" << endl;
+  contents << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
+  contents << "//" << endl;
+  contents << endl;
+  contents << "#include \"svrrlist.h\"\n";
+  contents << endl;
+  contents << "using namespace bagel;" << endl;
+  contents << endl;
 
-  contents += "// returns double array of length " + lexical_cast<string>((a_ + 1) * (c_ + 1) * rank_) + "\n";
-  contents += "void SVRRList::" + filename + "(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {\n";
+  contents << "// returns double array of length " + lexical_cast<string>((a_ + 1) * (c_ + 1) * rank_) + "\n";
+  contents << "void SVRRList::" + filename + "(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {\n";
 
-  if (a_ > 1 && c_ > 1)        contents += vrrnm(a_, c_).first;
-  else if (a_ == 1 && c_ >  1) contents += vrrnm(1 , c_).first;
-  else if (a_ == 0 && c_ >  0) contents += vrr0m(c_).first;
-  else if (a_ >  1 && c_ == 1) contents += vrrn1(a_).first;
-  else if (a_ == 1 && c_ == 1) contents += vrr11(  ).first;
-  else if (a_ >  0 && c_ == 0) contents += vrrn0(a_).first;
-  else if (a_ == 0 && c_ == 0) contents += vrr00(  ).first;
+  if (a_ > 1 && c_ > 1)        contents << vrrnm(a_, c_).first;
+  else if (a_ == 1 && c_ >  1) contents << vrrnm(1 , c_).first;
+  else if (a_ == 0 && c_ >  0) contents << vrr0m(c_).first;
+  else if (a_ >  1 && c_ == 1) contents << vrrn1(a_).first;
+  else if (a_ == 1 && c_ == 1) contents << vrr11(  ).first;
+  else if (a_ >  0 && c_ == 0) contents << vrrn0(a_).first;
+  else if (a_ == 0 && c_ == 0) contents << vrr00(  ).first;
   else cout << "NEVER COMES HERE" << endl;
 
 
-  contents += "}\n";
+  contents << "}\n";
 
   ofstream cc;
   const string ccfilename = filename + ".cc";
   cc.open(ccfilename.c_str());
-  cc << contents << endl;
+  cc << contents.str() << endl;
   cc.close();
 
   return header;
@@ -71,11 +93,11 @@ const string VRR::dump(const string filename) const {
 
 
 const pair<string, int> VRR::vrr00() const {
-  string contents;
+  stringstream contents;
   int i = 0;
   for (int t = 0; t != rank_; ++t, ++i)
-    contents += "  data_[" + lexical_cast<string>(i) + "] = 1.0;\n";
-  return make_pair(contents, i);
+    contents << "  data_[" + lexical_cast<string>(i) + "] = 1.0;\n";
+  return make_pair(contents.str(), i);
 }
 
 

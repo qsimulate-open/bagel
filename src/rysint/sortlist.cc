@@ -26,6 +26,8 @@
 
 #include <src/rysint/sortlist.h>
 
+using namespace bagel;
+
 SortList::SortList(const bool spherical) {
   if (spherical) {
     sortfunc[ANG_HRR_END * 0 + 0] = &sort_indices_00_sph;

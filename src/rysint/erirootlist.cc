@@ -27,6 +27,8 @@
 #include <src/rysint/erirootlist.h>
 #include <src/rysint/f77.h>
 
+using namespace bagel;
+
 ERIRootList::ERIRootList() {
 
   rfunc[1] = &eriroot1_;

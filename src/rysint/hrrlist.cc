@@ -26,6 +26,8 @@
 
 #include <src/rysint/hrrlist.h>
 
+using namespace bagel;
+
 HRRList::HRRList() {
       hrrfunc[ANG_HRR_END * 1 + 1] = &perform_HRR_20_11;
       hrrfunc[ANG_HRR_END * 2 + 1] = &perform_HRR_30_21;

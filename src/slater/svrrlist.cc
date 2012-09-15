@@ -26,6 +26,8 @@
 
 #include <src/slater/svrrlist.h>
 
+using namespace bagel;
+
 SVRRList::SVRRList() : VRRList() {
       vrrfunc[                  0] = &_svrr_0000;
       vrrfunc[                  1] = &_svrr_0010;

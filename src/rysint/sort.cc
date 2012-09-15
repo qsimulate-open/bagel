@@ -28,6 +28,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace bagel;
 
 void SortList::sort_indices_00(double* target, const double* source, const int c3end, const int c2end, const int loopsize, const bool swap23) {
   const int innerloopsize = c2end * c3end * 1;

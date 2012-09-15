@@ -33,6 +33,8 @@
 
 #include <src/rysint/macros.h>
 
+namespace bagel {
+
 struct SortList {
   SortList(const bool);
   ~SortList();
@@ -101,5 +103,7 @@ struct SortList {
 
   void (*sortfunc[ANG_HRR_END * ANG_HRR_END])(double*, const double*, const int, const int, const int, const bool);
 };
+
+}
 
 #endif
