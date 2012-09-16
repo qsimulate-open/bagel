@@ -105,6 +105,7 @@ class Civec {
     Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }; // <- note I used a stride 0
     Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; };
 
+    Civec& operator=(const Civec& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; };
     Civec& operator/=(const Civec& o);
     Civec operator/(const Civec& o) const;
 
@@ -115,7 +116,7 @@ class Civec {
     double orthog(std::shared_ptr<const Civec> o);
     void project_out(std::shared_ptr<const Civec> o) { daxpy(-ddot(*o), *o); }
 
-    void print(const double& thresh) const { det_->print(data(), thresh); };
+    void print(const double thresh) const { det_->print(data(), thresh); };
 };
 
 }

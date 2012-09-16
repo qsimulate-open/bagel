@@ -47,6 +47,13 @@ void FCI::compute_rdm12() {
 
   for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
 
+//#define LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
+  cout << "====" << endl;
+  compute_rdm34(0);
+  cout << "=<< " << endl;
+#endif
+
   cc_->set_det(det_);
 }
 
@@ -75,9 +82,14 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
       dcopy_(norb_*norb_, rdm2->element_ptr(0,0,k,i), 1, buf.get(), 1);
-      mytranspose1_(buf.get(), &norb_, &norb_, rdm2->element_ptr(0,0,k,i)); // sorting with stride 1 as norb_ is small
+      mytranspose4_(buf.get(), &norb_, &norb_, rdm2->element_ptr(0,0,k,i)); // sorting with stride 1 as norb_ is small
     }
   }
+
+#ifdef LOCAL_DEBUG
+  cout << "debug print" << endl;
+  rdm2->print();
+#endif
 
   // put in diagonal into 2RDM
   // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
@@ -163,7 +175,45 @@ void FCI::compute_rdm12(const int ist) {
     rdm1_av_ = rdm1;
     rdm2_av_ = rdm2;
   }
+}
 
+
+// computes 3 and 4RDM
+tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int ist) const {
+  shared_ptr<RDM<3> > rdm3(new RDM<3>(norb_));
+  shared_ptr<RDM<4> > rdm4(new RDM<4>(norb_));
+
+  shared_ptr<Civec> cbra = cc_->data(ist);
+
+  // first make <I|E_ij|0>
+  shared_ptr<Dvec> dbra(new Dvec(cbra->det(), norb_*norb_));
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  // second make <J|E_kl|I><I|E_ij|0>
+  shared_ptr<Dvec> ebra(new Dvec(cbra->det(), norb_*norb_*norb_*norb_));
+  shared_ptr<Dvec> tmp(new Dvec(cbra->det(), norb_*norb_));
+  int ij = 0;
+  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter) {
+    tmp->zero();
+    sigma_2a1(*iter, tmp);
+    sigma_2a2(*iter, tmp);
+    for (auto i = tmp->dvec().begin(); i != tmp->dvec().end(); ++i, ++ij) {
+      *ebra->data(ij) = **i;
+    }
+  }
+
+  // Checking
+  // multiply civec to get 2RDM
+#ifdef LOCAL_DEBUG
+  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
+  const size_t nri = ebra->lena() * ebra->lenb();
+  dgemm_("T", "N", 1, ebra->ij(), nri, 1.0, cbra->data(), nri, ebra->data(0)->data(), nri, 0.0, rdm2->data(), 1); // <- should be dgemv, but anyway
+  rdm2->print();
+#endif
+
+  return make_tuple(rdm3, rdm4);
 }
 
 

@@ -147,6 +147,7 @@ class FCI {
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
+    std::tuple<std::shared_ptr<RDM<3> >, std::shared_ptr<RDM<4> > > compute_rdm34(const int istate) const;
 
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
