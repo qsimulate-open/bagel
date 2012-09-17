@@ -54,6 +54,13 @@ void FCI::compute_rdm12() {
   cout << "=<< " << endl;
 #endif
 
+#define LOCAL_DEBUG2
+#ifdef LOCAL_DEBUG2
+  compute_rdm34(0);
+  cout << "rdm2 reference" << endl;
+  rdm2_[0]->print();
+#endif
+
   cc_->set_det(det_);
 }
 
@@ -211,6 +218,51 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   const size_t nri = ebra->lena() * ebra->lenb();
   dgemm_("T", "N", 1, ebra->ij(), nri, 1.0, cbra->data(), nri, ebra->data(0)->data(), nri, 0.0, rdm2->data(), 1); // <- should be dgemv, but anyway
   rdm2->print();
+#endif
+
+  // first form <0|E_ij,kl|I><I|E_mn|0>
+  shared_ptr<RDM<3> > tmp3(new RDM<3>(norb_));
+  const size_t nri = ebra->lena() * ebra->lenb();
+  dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(0)->data(), nri, ebra->data(0)->data(), nri, 0.0, tmp3->data(), dbra->ij());
+
+  // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
+  // we assume that rdm2_[ist] is set
+  for (int i0 = 0; i0 != norb_; ++i0) {
+    for (int i1 = 0; i1 != norb_; ++i1) {
+      for (int i2 = 0; i2 != norb_; ++i2) {
+        for (int i3 = 0; i3 != norb_; ++i3) {
+          // i4 and i5 correspond to m and n (they should be transposed here)
+          for (int i4 = 0; i4 != norb_; ++i4) {
+            for (int i5 = 0; i5 != norb_; ++i5) {
+              rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
+              if (i5 == i2) rdm3->element(i5, i4, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i4, i1, i0);
+              if (i5 == i0) rdm3->element(i5, i4, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i1, i4);
+            }
+          }
+        }
+      }
+    }
+  }
+
+#ifdef LOCAL_DEBUG2
+  // takes trace of 3RDM and check if it is identical to 2RDM 
+  shared_ptr<RDM<2> > tmp2(new RDM<2>(norb_));
+  tmp2->zero();
+  for (int i0 = 0; i0 != norb_; ++i0) {
+    for (int i1 = 0; i1 != norb_; ++i1) {
+      for (int i2 = 0; i2 != norb_; ++i2) {
+        for (int i3 = 0; i3 != norb_; ++i3) {
+          // i4 and i5 correspond to m and n (they should be transposed here)
+          for (int i4 = 0; i4 != norb_; ++i4) {
+            for (int i5 = 0; i5 != norb_; ++i5) {
+              tmp2->element(i3,i2,i1,i0) += 1.0/(nelea()+neleb()) * rdm3->element(i5, i4, i3, i2, i1, i0);
+            }
+          }
+        }
+      }
+    }
+  }
+  tmp2->print();
 #endif
 
   return make_tuple(rdm3, rdm4);
