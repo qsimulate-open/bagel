@@ -106,6 +106,8 @@ class Civec {
     Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; };
 
     Civec& operator=(const Civec& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; };
+    Civec& operator+=(const Civec& o) { daxpy( 1.0, o); return *this; };
+    Civec& operator-=(const Civec& o) { daxpy(-1.0, o); return *this; };
     Civec& operator/=(const Civec& o);
     Civec operator/(const Civec& o) const;
 

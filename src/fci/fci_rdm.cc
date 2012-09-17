@@ -56,9 +56,10 @@ void FCI::compute_rdm12() {
 
 #define LOCAL_DEBUG2
 #ifdef LOCAL_DEBUG2
-  compute_rdm34(0);
   cout << "rdm2 reference" << endl;
   rdm2_[0]->print();
+  cout << "rdm2 computed" << endl;
+  compute_rdm34(0);
 #endif
 
   cc_->set_det(det_);
@@ -198,25 +199,33 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
-  // second make <J|E_kl|I><I|E_ij|0>
+  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
   shared_ptr<Dvec> ebra(new Dvec(cbra->det(), norb_*norb_*norb_*norb_));
   shared_ptr<Dvec> tmp(new Dvec(cbra->det(), norb_*norb_));
+  int ijkl = 0;
   int ij = 0;
-  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter) {
+  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
     tmp->zero();
     sigma_2a1(*iter, tmp);
     sigma_2a2(*iter, tmp);
-    for (auto i = tmp->dvec().begin(); i != tmp->dvec().end(); ++i, ++ij) {
-      *ebra->data(ij) = **i;
+    int kl = 0;
+    for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+      *ebra->data(ijkl) = **t;
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      if (l == i) *ebra->data(ijkl) -= *dbra->data(k+j*norb_);
     }
   }
 
   // Checking
   // multiply civec to get 2RDM
-#ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG2
   shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
-  const size_t nri = ebra->lena() * ebra->lenb();
-  dgemm_("T", "N", 1, ebra->ij(), nri, 1.0, cbra->data(), nri, ebra->data(0)->data(), nri, 0.0, rdm2->data(), 1); // <- should be dgemv, but anyway
+  const size_t nritest = ebra->lena() * ebra->lenb();
+  dgemm_("T", "N", 1, ebra->ij(), nritest, 1.0, cbra->data(), nritest, ebra->data(0)->data(), nritest, 0.0, rdm2->data(), 1); // <- should be dgemv, but anyway
+  cout << "RDM2 debug" << endl;
   rdm2->print();
 #endif
 
@@ -232,12 +241,12 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
       for (int i2 = 0; i2 != norb_; ++i2) {
         for (int i3 = 0; i3 != norb_; ++i3) {
           // i4 and i5 correspond to m and n (they should be transposed here)
-          for (int i4 = 0; i4 != norb_; ++i4) {
-            for (int i5 = 0; i5 != norb_; ++i5) {
+          for (int i5 = 0; i5 != norb_; ++i5) {
+            for (int i4 = 0; i4 != norb_; ++i4) {
               rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
-              if (i5 == i2) rdm3->element(i5, i4, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i4, i1, i0);
-              if (i5 == i0) rdm3->element(i5, i4, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i1, i4);
             }
+            rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
+            rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
           }
         }
       }
@@ -254,14 +263,13 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
         for (int i3 = 0; i3 != norb_; ++i3) {
           // i4 and i5 correspond to m and n (they should be transposed here)
           for (int i4 = 0; i4 != norb_; ++i4) {
-            for (int i5 = 0; i5 != norb_; ++i5) {
-              tmp2->element(i3,i2,i1,i0) += 1.0/(nelea()+neleb()) * rdm3->element(i5, i4, i3, i2, i1, i0);
-            }
+            tmp2->element(i3,i2,i1,i0) += 1.0/(nelea()+neleb()-2) * rdm3->element(i3, i2, i1, i0, i4, i4);
           }
         }
       }
     }
   }
+  cout << "??" << endl;
   tmp2->print();
 #endif
 
