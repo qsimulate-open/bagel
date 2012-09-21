@@ -33,7 +33,7 @@ using namespace bagel;
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0].
-  if (!static_cast<bool>(rdm1_av_) && nstate_ > 1) {
+  if (rdm1_av_ == nullptr && nstate_ > 1) {
     rdm1_av_ = shared_ptr<RDM<1> >(new RDM<1>(norb_));
     rdm2_av_ = shared_ptr<RDM<2> >(new RDM<2>(norb_));
   }
@@ -137,7 +137,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
 
-  if (static_cast<bool>(o)) {
+  if (o != nullptr) {
     dbra->set_det(o);
     dket->set_det(o);
   }
@@ -157,7 +157,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
     rdm2->daxpy(weight_[i], r2);
   }
 
-  if (static_cast<bool>(o)) {
+  if (o != nullptr) {
     dbra->set_det(det_);
     dket->set_det(det_);
   }
@@ -279,7 +279,7 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
 pair<vector<double>, vector<double> > FCI::natorb_convert() {
-  assert(static_cast<bool>(rdm1_av_));
+  assert(rdm1_av_ != nullptr);
   pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);

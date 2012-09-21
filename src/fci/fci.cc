@@ -27,9 +27,11 @@
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
+#include <chrono>
 #include <src/fci/fci.h>
 
 using namespace std;
+using namespace std::chrono;
 using namespace bagel;
 
 FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
@@ -80,7 +82,7 @@ FCI::~FCI() {
 
 
 
-void FCI::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
-  timing.push_back(make_pair(label, (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC)));
-  time = ::clock();
+void FCI::print_timing_(const string label, high_resolution_clock::time_point& time, std::vector<pair<string, double> >& timing) const {
+  timing.push_back(make_pair(label, duration_cast<milliseconds>(high_resolution_clock::now()-time).count()*0.001));
+  time = high_resolution_clock::now();
 }

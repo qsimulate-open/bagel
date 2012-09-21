@@ -70,8 +70,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
 
   // for debug <- what did I mean by this?? TODO
   density_->fill_upper();
-  if (static_cast<bool>(den_ex) && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
-  if (!static_cast<bool>(den_ex)) den_ex = density_;
+  if (den_ex != nullptr && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
+  if (den_ex == nullptr) den_ex = density_;
 
   const std::vector<std::shared_ptr<const Atom> > atoms = geom_->atoms();
   std::vector<std::shared_ptr<const Shell> > basis;

@@ -41,7 +41,7 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
    hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
 
-  if (!static_cast<bool>(stack)) {
+  if (stack == nullptr) {
     stack_ = resources__->get();
     allocated_here_ = true;
   } else {
@@ -57,7 +57,7 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<Sta
   shared_ptr<const Shell> dum(new Shell(spherical_));
   basisinfo_ = {{ info[0], info[1], dum, dum }};
 
-  if (!static_cast<bool>(stack)) {
+  if (stack == nullptr) {
     stack_ = resources__->get();
     allocated_here_ = true;
   } else {
@@ -231,7 +231,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_block_ = size_alloc_;
     stack_save_ = stack_->get(size_alloc_);
-    stack_save2_ = NULL;
+    stack_save2_ = nullptr;
     if (tenno_) {
       stack_save2_ = stack_->get(size_alloc_);
     }
@@ -251,7 +251,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
       throw logic_error("something is strange in RysInt::allocate_data");
     }
     stack_save_ = stack_->get(size_alloc_);
-    stack_save2_ = NULL;
+    stack_save2_ = nullptr;
   }
   data_ = stack_save_;
   data2_ = stack_save2_;

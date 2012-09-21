@@ -62,7 +62,7 @@ class SCF : public SCF_base {
         if (DF) hcore_fock = previous_fock;
       }
 
-      if (!static_cast<bool>(SCF_base::coeff_)) {
+      if (SCF_base::coeff_ == nullptr) {
         Matrix1e intermediate = *tildex_ % *previous_fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));

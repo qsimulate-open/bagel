@@ -114,12 +114,12 @@ int main(int argc, char** argv) {
         geom = std::shared_ptr<Geometry>(); // kill the previous one first
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
         if (read_input<bool>(iter->second, "restart", false)) ref = std::shared_ptr<const Reference>();
-        if (static_cast<bool>(ref)) ref = ref->project_coeff(geom);
+        if (ref != nullptr) ref = ref->project_coeff(geom);
       } else {
-        if (!static_cast<bool>(geom)) throw std::runtime_error("molecule block is missing");
+        if (geom == nullptr) throw std::runtime_error("molecule block is missing");
       }
 
-      if (method.substr(0,3) == "df-" && !static_cast<bool>(geom->df()))
+      if (method.substr(0,3) == "df-" && geom->df() == nullptr)
         throw std::runtime_error("It seems that DF basis was not specified in Geometry");
 
       if (method == "hf") {
@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
         }
 
       } else if (method == "fci") {
-        if (!static_cast<bool>(ref)) throw std::runtime_error("FCI needs a reference");
+        if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
 
         std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
         fci->compute();
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "smith") {
 
-        if (!static_cast<bool>(ref)) throw std::runtime_error("SMITH needs a reference");
+        if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
         std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore> > mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
         mp2->solve();
 
@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
 
       }
         else if (method == "newfci") {
-        if (!static_cast<bool>(ref)) throw std::runtime_error("FCI needs a reference");
+        if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
         std::shared_ptr<NewFCI> fci;
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
@@ -280,7 +280,7 @@ int main(int argc, char** argv) {
         std::array<double,3> disp = {{dx,dy,dz}};
 
         std::shared_ptr<Dimer> dim;
-        if (static_cast<bool>(ref)) {
+        if (ref != nullptr) {
           dim = std::shared_ptr<Dimer>(new Dimer(ref,disp));
           dim->orthonormalize();
         }

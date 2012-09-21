@@ -39,7 +39,7 @@ static const double pisqrt__ = ::sqrt(pi__);
 OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int deriv, std::shared_ptr<StackMem> stack)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
 
-  if (!static_cast<bool>(stack)) {
+  if (stack == nullptr) {
     stack_ = resources__->get();
     allocated_here_ = true;
   } else {

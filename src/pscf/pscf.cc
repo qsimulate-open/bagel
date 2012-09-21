@@ -80,7 +80,7 @@ void PSCF::compute() {
   const string indent = "  ";
   const string space3 = "   ";
 
-  const bool density_provided = aodensity_.get() != NULL;
+  const bool density_provided = aodensity_.get() != nullptr;
 
   RefPMatrix1e provided_density;
   RefPFock previous_fock;

@@ -80,9 +80,9 @@ void NewFCI::common_init() {
 
 NewFCI::~NewFCI() { }
 
-void NewFCI::print_timing_(const string label, int& time, std::vector<pair<string, double> >& timing) const {
-  timing.push_back(make_pair(label, (::clock()-time)/static_cast<double>(CLOCKS_PER_SEC)));
-  time = ::clock();
+void NewFCI::print_timing_(const string label, high_resolution_clock::time_point& time, std::vector<pair<string, double> >& timing) const {
+  timing.push_back(make_pair(label, duration_cast<milliseconds>(high_resolution_clock::now()-time).count()*0.001));
+  time = high_resolution_clock::now();
 }
 
 // generate initial vectors

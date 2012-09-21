@@ -24,6 +24,7 @@
 //
 
 
+#include <chrono>
 #include <src/casscf/superci.h>
 #include <iostream>
 #include <src/fci/fci.h>
@@ -36,11 +37,10 @@
 #include <src/util/hpw_diis.h>
 
 using namespace std;
+using namespace std::chrono;
 using namespace bagel;
 
 #define DF 1
-
-static const double cps = static_cast<double>(CLOCKS_PER_SEC);
 
 void SuperCI::compute() {
 
@@ -58,9 +58,9 @@ void SuperCI::compute() {
   double gradient = 1.0e100;
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
-    int start = ::clock();
+    auto start = high_resolution_clock::now();
 
-    if (iter >= diis_start_ && gradient < 1.0e-4 && !static_cast<bool>(diis)) {
+    if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
       shared_ptr<Matrix1e> tmp(new Matrix1e(*coeff_));
       diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(10, tmp));
     }
@@ -72,7 +72,7 @@ void SuperCI::compute() {
     // get energy
     vector<double> energy = fci_->energy();
 
-    int start0 = ::clock();
+    auto start0 = high_resolution_clock::now();
 
     // here make a natural orbitals and update the coefficients
     vector<double> natorb = form_natural_orbs();
@@ -118,7 +118,7 @@ void SuperCI::compute() {
     // then microiteration for diagonalization
     // ---------------------------------------
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
-      const int mstart = ::clock();
+      auto mstart = high_resolution_clock::now();
 
       if (miter != 0) {
         sigma_->zero();
@@ -148,10 +148,10 @@ void SuperCI::compute() {
       shared_ptr<RotFile> residual = davidson.residual().front();
       const double error = residual->ddot(*residual) / residual->size();
 
-      const int mend = ::clock();
+      auto mend = high_resolution_clock::now();
       if (miter == 0) cout << endl << "     == micro iteration == " << endl;
       cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-           << setw(10) << scientific << setprecision(2) << error << fixed << " " << (mend - mstart)/cps << endl;
+           << setw(10) << scientific << setprecision(2) << error << fixed << " " << duration_cast<milliseconds>(mend - mstart).count()*0.001 << endl;
 
       if (error < thresh_micro_) { cout << endl; break; }
       if (miter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
@@ -175,7 +175,7 @@ void SuperCI::compute() {
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
-    if (!static_cast<bool>(diis)) {
+    if (diis == nullptr) {
       coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *rot));
     } else {
       // including natorb.first to rot so that they can be processed at once
@@ -195,9 +195,9 @@ void SuperCI::compute() {
 #endif
 
     // print out...
-    int end = ::clock();
+    auto end = high_resolution_clock::now();
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy, gradient, (end - start)/cps);
+    print_iteration(iter, 0, 0, energy, gradient, duration_cast<milliseconds>(end - start).count()*0.001);
     mute_stdcout();
 
     // set energy_

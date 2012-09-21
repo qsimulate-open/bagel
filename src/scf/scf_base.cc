@@ -70,7 +70,7 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   init_schwarz();
 
   // if ref is passed to this
-  if (static_cast<bool>(re)) {
+  if (re != nullptr) {
     SCF_base::coeff_ = re->coeff();
   }
 }

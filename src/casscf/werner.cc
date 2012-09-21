@@ -34,6 +34,7 @@
 #include <src/util/bfgs.h>
 
 using namespace std;
+using namespace std::chrono;
 using namespace bagel;
 
 static const vector<double> zero(1,0.0);
@@ -41,14 +42,13 @@ static const vector<double> zero(1,0.0);
 //#define SOLVER Linear
 #define SOLVER AugHess
 
-static const double cps = static_cast<double>(CLOCKS_PER_SEC);
-
 void WernerKnowles::compute() {
 
   // All the equation numbers refer to those in Werner and Knowles, J. Chem. Phys. 82, 5053 (1985).
   // macro iteration
   mute_stdcout();
-  for (int iter = 0, start = ::clock(); iter != max_iter_; ++iter, start = ::clock()) {
+  for (int iter = 0; iter != max_iter_; ++iter) {
+    auto start = high_resolution_clock::now();
 
     // performs FCI, which also computes one-index transformed integrals
     fci_->update(coeff_);
@@ -100,14 +100,15 @@ void WernerKnowles::compute() {
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
-      for (int mmiter = 0, mstart = ::clock(); mmiter != max_mmicro_iter_; ++mmiter, ++tcount, mstart = ::clock()) {
+      for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter, ++tcount) {
+        auto mstart = high_resolution_clock::now();
         // first need to orthonomalize
         solver.orthog(dR);
         shared_ptr<Matrix1e> sigma = compute_sigma_R(jvec, dR, C, U);
         shared_ptr<Matrix1e> residual = solver.compute_residual(dR, sigma);
 
         const double error_mmicro = ::pow(residual->norm(),2.0) / residual->size();
-        print_iteration(iter, miter, tcount, zero, error_mmicro, (::clock() - mstart)/cps);
+        print_iteration(iter, miter, tcount, zero, error_mmicro, duration_cast<milliseconds>(high_resolution_clock::now() - mstart).count()*0.001);
         if (error_mmicro < thresh_mmicro_ || mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
@@ -128,7 +129,7 @@ void WernerKnowles::compute() {
     coeff_ = newcc;
 
     resume_stdcout();
-    print_iteration(iter, miter, tcount, energy, error, (::clock() - start)/cps);
+    print_iteration(iter, miter, tcount, energy, error, duration_cast<milliseconds>(high_resolution_clock::now() - start).count()*0.001);
     mute_stdcout();
 
     // set energy_

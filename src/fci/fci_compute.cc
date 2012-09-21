@@ -166,7 +166,7 @@ shared_ptr<Dvec> FCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const 
     shared_ptr<Civec> sigma = sigmavec->data(istate);
 
     vector<pair<string, double> > timing;
-    int start = ::clock();
+    auto start = high_resolution_clock::now();
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);

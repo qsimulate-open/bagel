@@ -35,6 +35,7 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <chrono>
 #include <src/util/input.h>
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>
@@ -121,7 +122,7 @@ class FCI {
 
     // print functions
     void print_header() const;
-    void print_timing_(const std::string, int& time, std::vector<std::pair<std::string, double> >&) const;
+    void print_timing_(const std::string, std::chrono::high_resolution_clock::time_point& time, std::vector<std::pair<std::string, double> >&) const;
 
   public:
     // this constructor is ugly... to be fixed some day...

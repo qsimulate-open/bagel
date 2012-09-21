@@ -60,7 +60,7 @@ shared_ptr<NewDvec> KnowlesHandy::form_sigma(shared_ptr<const NewDvec> ccvec, sh
     shared_ptr<NewCivec> sigma = sigmavec->data(istate);  
 
     vector<pair<string, double> > timing;
-    int start = ::clock();
+    auto start = high_resolution_clock::now();
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
     sigma_1(cc, sigma, jop);

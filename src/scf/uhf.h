@@ -52,7 +52,7 @@ class UHF : public SCF_base {
       : SCF_base(idata_, geom, re) {
       // TODO init schwarz for auxiliary basis
 
-      if (static_cast<bool>(re)) {
+      if (re != nullptr) {
         coeff_  = re->coeffA();
         coeffB_ = re->coeffB();
       }

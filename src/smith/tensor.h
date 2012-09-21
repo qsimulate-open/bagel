@@ -133,7 +133,7 @@ class Tensor {
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_);
-      if (!static_cast<bool>(data_)) throw std::logic_error("Tensor not initialized");
+      if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
       return std::move(data_->get_block(generate_hash_key(p)));
     };
 
@@ -147,7 +147,7 @@ class Tensor {
     };
 
     void add_block(const std::vector<size_t>& p, const std::unique_ptr<double[]>& o) {
-      if (!static_cast<bool>(data_)) throw std::logic_error("Tensor not initialized");
+      if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
       data_->add_block(generate_hash_key(p), o);
     };
 

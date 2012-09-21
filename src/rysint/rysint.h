@@ -130,7 +130,7 @@ class RysInt {
     /// retrieve a batch of integrals
     const double* data() const { return data_; };
     const double* data2() const { return data2_; };
-    bool data2_exists() const { return data2_ != NULL; };
+    bool data2_exists() const { return data2_ != nullptr; };
     unsigned int data_size() const { return size_final_; };
 
     size_t size_block() const { return size_block_; };
