@@ -23,31 +23,24 @@ using namespace bagel;
 #define LARGE 32
 #define LEND 5
 
-namespace bagel {
-struct Data {
+
+void Molden::compute_transforms() {
+  struct Data {
     vector<double> factorial;
     Data() {
-      factorial.reserve(LEND * 2);
-      const double one = 1.0;
-      factorial.push_back(one);
-      for (int i = 1; i != LEND * 2; ++i) {
+      factorial.push_back(1.0);
+      for (int i = 1; i != LEND * 2; ++i)
         factorial.push_back(factorial.back() * i);
-      }
     };
-    ~Data(){};
     double comb(const int i, const int j) const {
       return factorial[i] / factorial[j] / factorial[i - j];
     }; 
-};
-}
+  } data;
 
-
-void Molden::compute_transforms() {
   const double one = 1.0;
   const double two = 2.0;
   const double quarter = 0.25;
 
-  struct Data data;
   vector<double> factorial = data.factorial;
 
   vector<pair<int, double> > s0(1, make_pair(0, one));
