@@ -36,14 +36,14 @@ using namespace std;
 
 Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base(size, init) {
   if (init) {
-    for (auto i = size.begin(); i != size.end(); ++i) {
-      unique_ptr<double[]> tmp(new double[i->second]);
-      fill(tmp.get(), tmp.get()+i->second, 0.0);
+    for (auto& i : size) {
+      unique_ptr<double[]> tmp(new double[i.second]);
+      fill(tmp.get(), tmp.get()+i.second, 0.0);
       data_.push_back(move(tmp));
     }
   } else {
     // if not init, we make a dummy tensor with size 1
-    for (auto i = size.begin(); i != size.end(); ++i) {
+    for (auto& i : size) {
       unique_ptr<double[]> tmp(new double[1]);
       data_.push_back(move(tmp));
     }
@@ -51,8 +51,8 @@ Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Sto
 }
 
 void Storage_Incore::initialize() {
-  for (auto i = this->hashtable_.begin(); i != this->hashtable_.end(); ++i) {
-    unique_ptr<double[]> tmp(new double[i->second.second]);
+  for (auto& i : this->hashtable_) {
+    unique_ptr<double[]> tmp(new double[i.second.second]);
     data_.push_back(move(tmp));
   }
 }
@@ -116,17 +116,17 @@ void Storage_Incore::add_block(const size_t& key, const unique_ptr<double[]>& da
 
 
 void Storage_Incore::zero() {
-  for (auto i = hashtable_.begin(); i != hashtable_.end(); ++i) {
-    const size_t bn = i->second.first;
-    const size_t ln = i->second.second;
+  for (auto& i : hashtable_) {
+    const size_t bn = i.second.first;
+    const size_t ln = i.second.second;
     fill(data_[bn].get(), data_[bn].get()+ln, 0.0);
   }
 }
 
 void Storage_Incore::scale(const double a) {
-  for (auto i = hashtable_.begin(); i != hashtable_.end(); ++i) {
-    const size_t bn = i->second.first;
-    const size_t ln = i->second.second;
+  for (auto& i : hashtable_) {
+    const size_t bn = i.second.first;
+    const size_t ln = i.second.second;
     dscal_(ln, a, data_[bn], 1);
   }
 }

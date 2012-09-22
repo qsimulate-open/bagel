@@ -46,10 +46,10 @@ inline static size_t generate_hash_key(const std::vector<size_t>& o) {
   // this assumes < 256 blocks; TODO runtime determination?
   const int shift = 8;
   size_t out = 0;
-  for (auto i = o.begin(); i != o.end(); ++i) {
+  for (auto& i : o) {
     out <<= shift;
-    out ^= (*i);
-    assert(*i < (1 << shift));
+    out ^= i;
+    assert(i < (1 << shift));
   }
   return out;
 };
@@ -72,12 +72,12 @@ class Tensor {
         // first compute hashtags and length
         std::map<size_t, size_t> hashmap;
         size_t off = 0;
-        for (auto i = index.begin(); i != index.end(); ++i) {
+        for (auto& i : index) {
           size_t size = 1lu;
           std::vector<size_t> h;
-          for (auto j = i->begin(); j != i->end(); ++j) {
-            size *= j->size();
-            h.push_back(j->key());
+          for (auto& j : i) {
+            size *= j.size();
+            h.push_back(j.key());
           }
           hashmap.insert(std::make_pair(generate_hash_key(h), size));
           off += size;
@@ -165,11 +165,11 @@ class Tensor {
         throw std::logic_error("Tensor::diag can be called only with a square tensor of rank 2");
       const size_t size = range_[0].size();
       std::unique_ptr<double[]> buf(new double[size]);
-      for (auto i = range_[0].begin(); i != range_[0].end(); ++i) {
-        std::vector<size_t> h = vec(i->key(), i->key());
+      for (auto& i : range_[0]) {
+        std::vector<size_t> h = vec(i.key(), i.key());
         std::unique_ptr<double[]> data0 = move_block(h);
-        for (int j = 0; j != i->size(); ++j) {
-          buf[j+i->offset()] = data0[j+j*i->size()];
+        for (int j = 0; j != i.size(); ++j) {
+          buf[j+i.offset()] = data0[j+j*i.size()];
         }
         put_block(h, data0);
       }
@@ -180,15 +180,15 @@ class Tensor {
       std::shared_ptr<Tensor<T> > out = clone();
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 4);
-      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i2->key(); g[1] = i3->key(); g[2] = i0->key(); g[3] = i1->key();
+      for (auto& i3 : o[3].range()) {
+        for (auto& i2 : o[2].range()) {
+          for (auto& i1 : o[1].range()) {
+            for (auto& i0 : o[0].range()) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> g = {i2.key(), i3.key(), i0.key(), i1.key()};
               std::unique_ptr<double[]> data0 = get_block(h);
               const std::unique_ptr<double[]> data1 = get_block(g);
-              sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2->size(), i3->size(), i0->size(), i1->size());
+              sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2.size(), i3.size(), i0.size(), i1.size());
               out->put_block(h,data0);
             }
           }
@@ -203,19 +203,19 @@ class Tensor {
 
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 4);
-      for (auto i3 = o[3].range().begin(); i3 != o[3].range().end(); ++i3) {
-        for (auto i2 = o[2].range().begin(); i2 != o[2].range().end(); ++i2) {
-          for (auto i1 = o[1].range().begin(); i1 != o[1].range().end(); ++i1) {
-            for (auto i0 = o[0].range().begin(); i0 != o[0].range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+      for (auto& i3 : o[3].range()) {
+        for (auto& i2 : o[2].range()) {
+          for (auto& i1 : o[1].range()) {
+            for (auto& i0 : o[0].range()) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
               // if this block is not included in the current wave function, skip it
               if (!this->get_size(h)) continue;
               std::unique_ptr<double[]> data = this->get_block(h);
               size_t iall = 0;
-              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
-                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)
-                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1)
-                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall) {
+              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
                       if (fabs(data[iall]) > thresh) {
                          std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
                                         " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
