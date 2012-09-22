@@ -89,9 +89,9 @@ InputData::InputData(const string filename) : inputfile_(filename) {
   vector<string> lines;
   if (content.find("}") == string::npos) throw runtime_error("Check your input format");
   split(blocks, content, boost::is_any_of("}"));
-  for (auto iter = blocks.begin(); iter != blocks.end(); ++iter) {
-    if (iter->size() == 0) continue;
-    split(pairs, *iter, boost::is_any_of("{"));
+  for (auto& it : blocks) {
+    if (it.size() == 0) continue;
+    split(pairs, it, boost::is_any_of("{"));
     if (pairs[1].size() > 0) {
       boost::trim(pairs[0]);
       string tag = pairs[0];
@@ -99,10 +99,10 @@ InputData::InputData(const string filename) : inputfile_(filename) {
 
       split(lines, pairs[1], boost::is_any_of(";"));
       multimap<string, string> tmp;
-      for (auto i = lines.begin(); i != lines.end(); ++i) {
-        if (i->size() > 0) {
+      for (auto& i : lines) {
+        if (i.size() > 0) {
           vector<string> ll;
-          split(ll, *i, boost::is_any_of("="));
+          split(ll, i, boost::is_any_of("="));
           if (ll.size() != 2) {
             stringstream ss;
             ss << "There seem " << ll.size()-1 << " '=' in a single directive. Check your input.";

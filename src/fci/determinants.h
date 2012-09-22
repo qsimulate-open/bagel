@@ -104,7 +104,7 @@ class Determinants {
 
     int numbers_to_bit(const std::vector<int>& num) const {
       int out = 0;
-      for (auto i = num.begin(); i != num.end(); ++i) out += (1 << *i);
+      for (auto& i : num) out += (1 << i);
       return out;
     };
 
@@ -169,17 +169,16 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
 
   phi.clear();
   phi.resize(compress_ ? norb_*(norb_+1)/2 : norb_*norb_);
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    iter->reserve(string.size());
-  }
+  for (auto& it : phi)
+    it.reserve(string.size());
 
-  for (auto iter = string.begin(); iter != string.end(); ++iter) {
+  for (auto& it : string) {
     for (unsigned int i = 0; i != norb_; ++i) { // annihilation
       const unsigned int ibit = (1 << i);
       // compress_ means that we store info only for i <= j
-      if (ibit & *iter && compress_) {
-        const unsigned int source = lexical<spin>(*iter);
-        const unsigned int nbit = (ibit^*iter); // annihilated.
+      if ((ibit & it) && compress_) {
+        const unsigned int source = lexical<spin>(it);
+        const unsigned int nbit = (ibit^it); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           const unsigned int jbit = (1 << j);
           if (!(jbit & nbit)) {
@@ -189,9 +188,9 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
-      } else if (ibit & *iter) {
-        const unsigned int source = lexical<spin>(*iter);
-        const unsigned int nbit = (ibit^*iter); // annihilated.
+      } else if (ibit & it) {
+        const unsigned int source = lexical<spin>(it);
+        const unsigned int nbit = (ibit^it); // annihilated.
         for (unsigned int j = 0; j != norb_; ++j) { // creation
           const unsigned int jbit = (1 << j);
           if (!(jbit & nbit)) {
@@ -205,8 +204,8 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
 
 #if 0
   // sort each vectors
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    std::sort(iter->begin(), iter->end());
+  for (auto& it : phi) {
+    std::sort(it.begin(), it.end());
   }
 #endif
 };

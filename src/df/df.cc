@@ -106,9 +106,9 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   if (atoms0 == atoms1) {
     size_t nshell = 0;
-    for (auto a0 = atoms0.begin(); a0 != atoms0.end(); ++a0) nshell += (*a0)->shells().size();
+    for (auto& a0 : atoms0) nshell += a0->shells().size();
     size_t nshell2 = 0;
-    for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0) nshell2 += (*a0)->shells().size();
+    for (auto& a0 : aux_atoms) nshell2 += a0->shells().size();
     tasks.reserve(nshell*(nshell+1)*nshell2/2 + nshell2*(nshell2+1)/2);
 
     auto oa0 = offsets0.begin();

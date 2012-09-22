@@ -77,8 +77,8 @@ int AtomMap::atom_number(const string input) const {
 }
 
 const string AtomMap::angular_string(const int input) {
-  for(auto miter = angmap.begin(); miter != angmap.end(); ++miter) {
-    if(miter->second == input) { return miter->first; }
+  for(auto& m : angmap) {
+    if(m.second == input) { return m.first; }
   }
   return "X";
 }

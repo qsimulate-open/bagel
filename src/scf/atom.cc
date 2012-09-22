@@ -53,8 +53,8 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
   const vector<shared_ptr<const Shell> > old_shells = old.shells();
-  for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
-    shells_.push_back((*siter)->move_atom(displacement));
+  for(auto& s : old_shells)
+    shells_.push_back(s->move_atom(displacement));
 }
 
 
@@ -64,8 +64,8 @@ Atom::Atom(const Atom& old, const double* displacement)
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
   const vector<shared_ptr<const Shell> > old_shells = old.shells();
-  for(auto siter = old_shells.begin(); siter != old_shells.end(); ++siter)
-    shells_.push_back((*siter)->move_atom(displacement));
+  for (auto& s : old_shells)
+    shells_.push_back(s->move_atom(displacement));
 }
 
 
@@ -179,12 +179,11 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
-  for (auto iter = in.begin(); iter != in.end(); ++iter) {
-    vector<double> tmp = get<2>(*iter);
+  for (auto& iele : in) {
+    vector<double> tmp = get<2>(iele);
     vector<vector<double> > tmp2;
-    for (auto i = tmp.begin(); i != tmp.end(); ++i) tmp2.push_back(vector<double>(1, *i));
-
-    basis_info.push_back(make_tuple(get<0>(*iter), get<1>(*iter), tmp2));
+    for (auto& i : tmp) tmp2.push_back(vector<double>(1, i));
+    basis_info.push_back(make_tuple(get<0>(iele), get<1>(iele), tmp2));
   }
 
   construct_shells(basis_info);
@@ -201,12 +200,12 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const doub
 void Atom::common_init() {
   // counting the number of basis functions belonging to this atom
   nbasis_ = 0;
-  for (auto siter = shells_.begin(); siter != shells_.end(); ++siter) {
-    const int ang = (*siter)->angular_number();
+  for (auto& s : shells_) {
+    const int ang = s->angular_number();
     if (spherical_) {
-      nbasis_ += (*siter)->num_contracted() * (2 * ang + 1);
+      nbasis_ += s->num_contracted() * (2 * ang + 1);
     } else {
-      nbasis_ += (*siter)->num_contracted() * (ang + 1) * (ang + 2) / 2;
+      nbasis_ += s->num_contracted() * (ang + 1) * (ang + 2) / 2;
     }
   }
   atom_charge_ = static_cast<double>(atom_number_);
@@ -305,7 +304,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         OverlapBatch coverlap(cinp);
         coverlap.compute();
         const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
-        for (auto diter = iter->begin(); diter != iter->end(); ++diter) *diter *= scal;
+        for (auto& d : *iter) d *= scal;
       }
 
       shared_ptr<const Shell> currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
@@ -319,8 +318,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
 
 void Atom::print_basis() const {
-  for(auto iter = shells_.begin(); iter != shells_.end(); ++iter)
-     cout << (*iter)->show() << endl;
+  for (auto& i : shells_) cout << i->show() << endl;
 }
 
 

@@ -84,14 +84,14 @@ class DavidsonDiag {
     std::vector<double> compute(std::vector<std::shared_ptr<const T> > cc, std::vector<std::shared_ptr<const T> > cs) {
       if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
       // add entry
-      for (auto iter = cc.begin(); iter != cc.end(); ++iter) c_.push_back(*iter);
-      for (auto iter = cs.begin(); iter != cs.end(); ++iter) sigma_.push_back(*iter);
+      for (auto& it : cc) c_.push_back(it);
+      for (auto& it : cs) sigma_.push_back(it);
       // adding new matrix elements
-      for (auto siter = cs.begin(); siter != cs.end(); ++siter) {
+      for (auto& s : cs) {
         auto iter = c_.begin();
         ++size_;
         for (int i = 0; i != size_; ++iter, ++i) {
-          mat(i,size_-1) = mat(size_-1,i) = (*iter)->ddot(**siter);
+          mat(i,size_-1) = mat(size_-1,i) = (*iter)->ddot(*s);
         }
       }
       // diagonalize matrix to get

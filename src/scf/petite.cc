@@ -65,8 +65,8 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
   vector<RefShell> vbb;
   vector<int> offset;
   int cnt = 0;
-  for (vector<RefAtom>::const_iterator aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
-    vector<RefShell> tmp = (*aiter)->shells();
+  for (auto& a : atoms) {
+    vector<RefShell> tmp = a->shells();
     vbb.insert(vbb.end(), tmp.begin(), tmp.end());
     offset.push_back(cnt);
     cnt += tmp.size();
