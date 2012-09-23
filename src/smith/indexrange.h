@@ -126,8 +126,8 @@ class IndexRange {
 
     std::string str() const {
       std::stringstream ss;
-      for (auto i = range_.begin(); i != range_.end(); ++i)
-        ss << std::setw(10) << i->offset() << std::setw(10) << i->size() << std::endl;
+      for (auto& i : range_)
+        ss << std::setw(10) << i.offset() << std::setw(10) << i.size() << std::endl;
       return ss.str();
     };
     void print() const { std::cout << str() << std::endl; };

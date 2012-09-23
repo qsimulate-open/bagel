@@ -81,12 +81,12 @@ class SpinFreeMethod {
       // ranks of t and r are assumed to be the same
 
       // TODO should be parallelized
-      for (auto i3 = virt_.begin(); i3 != virt_.range().end(); ++i3) {
-        for (auto i2 = closed_.begin(); i2 != closed_.range().end(); ++i2) {
-          for (auto i1 = virt_.begin(); i1 != virt_.range().end(); ++i1) {
-            for (auto i0 = closed_.begin(); i0 != closed_.range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
-              std::vector<size_t> g(4); g[0] = i0->key(); g[1] = i3->key(); g[2] = i2->key(); g[3] = i1->key();
+      for (auto& i3 : virt_) {
+        for (auto& i2 : closed_) {
+          for (auto& i1 : virt_) {
+            for (auto& i0 : closed_) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
 
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
@@ -94,12 +94,12 @@ class SpinFreeMethod {
               std::unique_ptr<double[]> data1 = r->get_block(g);
 
               // this is an inverse of the overlap.
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0->size(), i3->size(), i2->size(), i1->size());
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
               size_t iall = 0;
-              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
-                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)
-                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1)
-                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall)
+              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               t->add_block(h,data0);
             }
@@ -110,20 +110,20 @@ class SpinFreeMethod {
 
     void update_amplitude_start(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r) {
       // ranks of t and r are assumed to be the same
-      for (auto i3 = virt_.begin(); i3 != virt_.range().end(); ++i3) {
-        for (auto i2 = closed_.begin(); i2 != closed_.range().end(); ++i2) {
-          for (auto i1 = virt_.begin(); i1 != virt_.range().end(); ++i1) {
-            for (auto i0 = closed_.begin(); i0 != closed_.range().end(); ++i0) {
-              std::vector<size_t> h(4); h[0] = i0->key(); h[1] = i1->key(); h[2] = i2->key(); h[3] = i3->key();
+      for (auto& i3 : virt_) {
+        for (auto& i2 : closed_) {
+          for (auto& i1 : virt_) {
+            for (auto& i0 : closed_) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
               std::unique_ptr<double[]> data0 = r->get_block(h);
               // this is an inverse of the overlap.
               size_t iall = 0;
-              for (int j3 = i3->offset(); j3 != i3->offset()+i3->size(); ++j3)
-                for (int j2 = i2->offset(); j2 != i2->offset()+i2->size(); ++j2)
-                  for (int j1 = i1->offset(); j1 != i1->offset()+i1->size(); ++j1)
-                    for (int j0 = i0->offset(); j0 != i0->offset()+i0->size(); ++j0, ++iall)
+              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               t->put_block(h,data0);
             }

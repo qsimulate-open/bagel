@@ -166,7 +166,7 @@ class Tensor {
       const size_t size = range_[0].size();
       std::unique_ptr<double[]> buf(new double[size]);
       for (auto& i : range_[0]) {
-        std::vector<size_t> h = vec(i.key(), i.key());
+        std::vector<size_t> h = {i.key(), i.key()};
         std::unique_ptr<double[]> data0 = move_block(h);
         for (int j = 0; j != i.size(); ++j) {
           buf[j+i.offset()] = data0[j+j*i.size()];
@@ -219,7 +219,7 @@ class Tensor {
                       if (fabs(data[iall]) > thresh) {
                          std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
                                         " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
-                                      " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+                                        " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
                       }
                     }
             }

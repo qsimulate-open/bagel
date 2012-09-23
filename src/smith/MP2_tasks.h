@@ -70,16 +70,16 @@ class Task1 : public Task<T> {
     std::shared_ptr<Tensor<T> > I0;
 
     void compute_() {
-      for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
-        for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-          for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
-            for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
-              std::vector<size_t> ohash = vec(c3->key(), a4->key(), c1->key(), a2->key());
+      for (auto& a2 : virt_) {
+        for (auto& c1 : closed_) {
+          for (auto& a4 : virt_) {
+            for (auto& c3 : closed_) {
+              std::vector<size_t> ohash = vec(c3.key(), a4.key(), c1.key(), a2.key());
               std::unique_ptr<double[]> odata = r->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::vector<size_t> i0hash = vec(c1.key(), a4.key(), c3.key(), a2.key());
                 std::unique_ptr<double[]> i0data = I0->get_block(i0hash);
-                sort_indices<2,1,0,3,1,1,1,1>(i0data, odata, c1->size(), a4->size(), c3->size(), a2->size());
+                sort_indices<2,1,0,3,1,1,1,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
               }
               r->put_block(ohash, odata);
             }
