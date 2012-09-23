@@ -53,8 +53,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
 
   // first count the number of dummys
   int center = 4;
-  for (auto i = basisinfo_.begin(); i != basisinfo_.end(); ++i)
-    if ((*i)->dummy()) --center;
+  for (auto& i : basisinfo_) if (i->dummy()) --center;
 
   if (center == 3 && !(basisinfo_[0]->dummy() || basisinfo_[1]->dummy()))
     throw logic_error("dummy shell in an illegal position: 3 index gradient");

@@ -119,7 +119,7 @@ class RDM {
       int info;
       dsyev_("V", "U", &dim_, &(buf[0]), &dim_, &(vec[0]), work.get(), &lwork, &info);
       assert(!info);
-      for (auto i = vec.begin(); i != vec.end(); ++i) *i = 2.0-*i;
+      for (auto& i : vec) i = 2.0-i;
       return std::make_pair(buf, vec);
     };
 

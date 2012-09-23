@@ -123,13 +123,13 @@ Geometry::Geometry(const multimap<string, string> geominfo)
   /* Set up aux_atoms_ */
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
   if (!auxfile_.empty()) {
-    for(auto iatom = atoms_.begin(); iatom != atoms_.end(); ++iatom) {
-      if (!(*iatom)->dummy()) {
-        RefAtom catom(new Atom(spherical_, (*iatom)->name(), (*iatom)->position(), auxfile_));
+    for(auto& iatom : atoms_) {
+      if (!iatom->dummy()) {
+        RefAtom catom(new Atom(spherical_, iatom->name(), iatom->position(), auxfile_));
         aux_atoms_.push_back(catom);
       } else {
         // we need a dummy atom here to be consistent in gradient computations
-        aux_atoms_.push_back(*iatom);
+        aux_atoms_.push_back(iatom);
       }
     }
   }
@@ -163,34 +163,34 @@ void Geometry::common_init1() {
   nele_ = 0;
   nfrc_ = 0;
 
-  for (auto catom = atoms_.begin(); catom != atoms_.end(); ++catom) {
-    nele_ += atommap_.atom_number((*catom)->name());
+  for (auto& catom : atoms_) {
+    nele_ += atommap_.atom_number(catom->name());
 
     int cc = 0;
     vector<int> coffsets;
-    for (auto iter = (*catom)->shells().begin(); iter != (*catom)->shells().end(); ++iter) {
+    for (auto& it : catom->shells()) {
       coffsets.push_back(nbasis_ + cc);
-      const int ang = (*iter)->angular_number();
+      const int ang = it->angular_number();
       const int angsize = spherical_ ? (2*ang+1) : (ang+1)*(ang+2)/2;
-      cc += angsize * (*iter)->num_contracted();
+      cc += angsize * it->num_contracted();
     }
-    lmax_ = max(lmax_, (*catom)->lmax());
-    nbasis_ += (*catom)->nbasis();
+    lmax_ = max(lmax_, catom->lmax());
+    nbasis_ += catom->nbasis();
     offsets_.push_back(coffsets);
   }
 
   if (!auxfile_.empty()) {
-    for (auto catom = aux_atoms_.begin(); catom != aux_atoms_.end(); ++catom) {
+    for (auto& catom : aux_atoms_) {
       int cc = 0;
       vector<int> coffsets;
-      for (auto iter = (*catom)->shells().begin(); iter != (*catom)->shells().end(); ++iter) {
+      for (auto& it : catom->shells()) {
         coffsets.push_back(naux_ + cc);
-        const int ang = (*iter)->angular_number();
+        const int ang = it->angular_number();
         const int angsize = spherical_ ? (2*ang+1) : (ang+1)*(ang+2)/2;
-        cc += angsize * (*iter)->num_contracted();
+        cc += angsize * it->num_contracted();
       }
-      aux_lmax_ = max(lmax_, (*catom)->lmax());
-      naux_ += (*catom)->nbasis();
+      aux_lmax_ = max(lmax_, catom->lmax());
+      naux_ += catom->nbasis();
       aux_offsets_.push_back(coffsets);
     }
   }
@@ -451,9 +451,9 @@ void Geometry::print_atoms() const {
 
 int Geometry::num_count_ncore_only() const {
   int out = 0;
-  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    if ((*iter)->atom_number() >= 2 && (*iter)->atom_number() <= 10) out += 2;
-    if ((*iter)->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
+  for (auto& it : atoms_) {
+    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 2;
+    if (it->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
   }
   return out;
 }
@@ -461,10 +461,10 @@ int Geometry::num_count_ncore_only() const {
 
 int Geometry::num_count_full_valence_nocc() const {
   int out = 0;
-  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    if ((*iter)->atom_number() < 2) out += 1;
-    if ((*iter)->atom_number() >= 2 && (*iter)->atom_number() <= 10) out += 5;
-    if ((*iter)->atom_number() > 10) throw logic_error("needs to modify Geometry::num_count_full_valence_nocc for atoms beyond Ne"); // TODO
+  for (auto& it : atoms_) {
+    if (it->atom_number() < 2) out += 1;
+    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 5;
+    if (it->atom_number() > 10) throw logic_error("needs to modify Geometry::num_count_full_valence_nocc for atoms beyond Ne"); // TODO
   }
   return out;
 };
@@ -475,18 +475,19 @@ const vector<double> Geometry::compute_grad_vnuc() const {
   vector<double> grad(natom()*3);
   fill(grad.begin(), grad.end(), 0.0);
   auto giter = grad.begin();
-  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter, giter+=3) {
-    const double ac = (*aiter)->atom_charge();
-    for (auto biter = atoms_.begin(); biter != atoms_.end(); ++biter) {
-      if (aiter == biter) continue;
-      const array<double,3> displ = (*aiter)->displ(*biter);
-      const double c = (*biter)->atom_charge() * ac;
-      const double dist = (*aiter)->distance(*biter);
+  for (auto& a : atoms_) {
+    const double ac = a->atom_charge();
+    for (auto& b : atoms_) {
+      if (a == b) continue;
+      const array<double,3> displ = a->displ(b);
+      const double c = b->atom_charge() * ac;
+      const double dist = a->distance(b);
       const double dist3 = dist*dist*dist;
       *(giter+0) += c*displ[0]/dist3;
       *(giter+1) += c*displ[1]/dist3;
       *(giter+2) += c*displ[2]/dist3;
     }
+    giter += 3;
   }
   return grad;
 }

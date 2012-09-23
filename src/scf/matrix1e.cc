@@ -509,9 +509,9 @@ void Matrix1e::inverse() {
 
 
 double Matrix1e::orthog(const std::list<std::shared_ptr<const Matrix1e> > o) {
-  for (auto iter = o.begin(); iter != o.end(); ++iter) {
-    const double m = this->ddot(*iter);
-    this->daxpy(-m, *iter);
+  for (auto& it : o) {
+    const double m = this->ddot(it);
+    this->daxpy(-m, it);
   }
   const double n = norm();
   *this /= n;
