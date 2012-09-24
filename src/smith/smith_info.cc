@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: smith.cc
+// Filename: smith_info.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
@@ -24,7 +24,7 @@
 //
 
 
-#include <src/smith/smith.h>
+#include <src/smith/smith_info.h>
 
 using namespace std;
 using namespace bagel::SMITH;

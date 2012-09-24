@@ -125,7 +125,7 @@ class K2ext {
                 const int s01 = i0->size() * i1->size();
                 const int s23 = i2->size() * i3->size();
                 mytranspose_(target.get(), &s01, &s23, target2.get());
-                std::vector<size_t> hash2 = {{j2, j3, j0, j1}};
+                std::vector<size_t> hash2 = {j2, j3, j0, j1};
 
                 data_->put_block(hash2, target2);
               }
@@ -170,26 +170,27 @@ class MOFock {
       data_ = tmp;
 
       // TODO parallel not considered yet at all...
-      std::shared_ptr<Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
+      std::shared_ptr<const Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
       std::shared_ptr<Matrix1e> den = ref_->coeff()->form_density_rhf(ref_->nclosed()+ref_->nact());
-      std::shared_ptr<Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
+      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
       Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
       size_t j0 = blocks_[0].keyoffset();
-      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++j0) {
+      for (auto& i0 : blocks_[0].range()) {
         size_t j1 = blocks_[1].keyoffset();
-        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
-          const size_t size = i0->size() * i1->size();
+        for (auto& i1 : blocks_[1].range()) {
+          const size_t size = i0.size() * i1.size();
           std::unique_ptr<double[]> target(new double[size]);
           double* buf = target.get();
-          for (int k0 = i0->offset(); k0 != i0->offset()+i0->size(); ++k0) {
-            for (int k1 = i1->offset(); k1 != i1->offset()+i1->size(); ++k1, ++buf) {
+          for (int k0 = i0.offset(); k0 != i0.offset()+i0.size(); ++k0) {
+            for (int k1 = i1.offset(); k1 != i1.offset()+i1.size(); ++k1, ++buf) {
               *buf = f.element(k1, k0);
             }
           }
-
-          std::vector<size_t> hash = {{j1, j0}};
+          std::vector<size_t> hash = {j1, j0};
           data_->put_block(hash, target);
+          ++j1;
         }
+        ++j0;
       }
     };
     ~MOFock() {};

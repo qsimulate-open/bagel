@@ -34,7 +34,7 @@
 #include <iomanip>
 #include <src/smith/queue.h>
 #include <src/smith/mp2_ref_task.h>
-#include <src/smith/smith.h>
+#include <src/smith/smith_info.h>
 
 namespace bagel {
 namespace SMITH {
