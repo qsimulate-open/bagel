@@ -48,6 +48,9 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
+    std::shared_ptr<Tensor<T> > rdm1_;
+    std::shared_ptr<Tensor<T> > rdm2_;
+    std::shared_ptr<Tensor<T> > rdm3_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -147,18 +150,22 @@ class SpinFreeMethod {
 
       // v2 tensor.
       {
-        std::vector<IndexRange> o;
-        o.push_back(closed_); o.push_back(virt_);
-        o.push_back(closed_); o.push_back(virt_);
+        std::vector<IndexRange> o = {closed_, virt_, closed_, virt_};
         K2ext<T> v2k(ref_, o);
         v2_ = v2k.tensor();
       }
       // f1 tensor.
       {
-        std::vector<IndexRange> o;
-        o.push_back(all_); o.push_back(all_);
+        std::vector<IndexRange> o = {all_, all_};
         MOFock<T> fock(ref_, o);
         f1_ = fock.tensor();
+      }
+      // rdms
+      if (!ref_->rdm1().empty()) {
+        std::vector<IndexRange> o = {act_, act_};
+        rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
+        // TODO for the time being we hardwire "0" here (but this should be fixed)
+        std::shared_ptr<const RDM<1> > rdm = ref_->rdm1(0);
       }
     };
 
@@ -167,9 +174,6 @@ class SpinFreeMethod {
     IndexRange& closed() { return closed_; };
 
     std::shared_ptr<const Reference>& ref() { return ref_; };;
-
-    std::shared_ptr<Tensor<T> >& v2() { return v2_; };
-    std::shared_ptr<Tensor<T> >& f1() { return f1_; };
 
     virtual void solve() = 0;
 

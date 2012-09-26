@@ -110,6 +110,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     double energy() const { return energy_; };
 
+    const std::vector<std::shared_ptr<RDM<1> > >& rdm1() const { return rdm1_; };
+    const std::vector<std::shared_ptr<RDM<2> > >& rdm2() const { return rdm2_; };
+
     std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); };
     std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
 
