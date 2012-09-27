@@ -23,19 +23,37 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "svrrlist.h"
+#include <src/slater/svrrlist.h>
 
 using namespace bagel;
 
 // returns double array of length 100
-void SVRRList::_svrr_4030(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
+void SVRRList::_svrr_4030(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
+#ifdef __GNUC__
+  const double C00_[5]__attribute__((aligned(32))) = {C00[0], C00[1], C00[2], C00[3], C00[4]};
+  const double D00_[5]__attribute__((aligned(32))) = {D00[0], D00[1], D00[2], D00[3], D00[4]};
+  const double B00_[5]__attribute__((aligned(32))) = {B00[0], B00[1], B00[2], B00[3], B00[4]};
+  const double B01_[5]__attribute__((aligned(32))) = {B01[0], B01[1], B01[2], B01[3], B01[4]};
+  const double B10_[5]__attribute__((aligned(32))) = {B10[0], B10[1], B10[2], B10[3], B10[4]};
+#else
+  const double* C00_ = C00;
+  const double* D00_ = D00;
+  const double* B00_ = B00;
+  const double* B01_ = B01;
+  const double* B10_ = B10;
+#endif
+
   for (int t = 0; t != 5; ++t)
     data_[0+t] = 1.0;
 
   for (int t = 0; t != 5; ++t)
     data_[5+t] = C00_[t];
 
+#ifdef __GNUC__
+  double B10_current[5]__attribute__((aligned(32)));
+#else
   double B10_current[5];
+#endif
   for (int t = 0; t != 5; ++t)
     B10_current[t] = B10_[t];
 
@@ -57,7 +75,11 @@ void SVRRList::_svrr_4030(double* data_, const double* C00_, const double* D00_,
   for (int t = 0; t != 5; ++t)
     data_[25+t] = D00_[t];
 
+#ifdef __GNUC__
+  double cB00_current[5]__attribute__((aligned(32)));
+#else
   double cB00_current[5];
+#endif
   for (int t = 0; t != 5; ++t)
     cB00_current[t] = B00_[t];
 
@@ -82,7 +104,11 @@ void SVRRList::_svrr_4030(double* data_, const double* C00_, const double* D00_,
   for (int t = 0; t != 5; ++t)
     data_[45+t] = C00_[t] * data_[40+t] + B10_current[t] * data_[35+t] + cB00_current[t] * data_[15+t];
 
+#ifdef __GNUC__
+  double B01_current[5]__attribute__((aligned(32)));
+#else
   double B01_current[5];
+#endif
   for (int t = 0; t != 5; ++t)
     B01_current[t] = B01_[t];
 

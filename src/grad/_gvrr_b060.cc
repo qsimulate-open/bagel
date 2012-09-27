@@ -49,7 +49,11 @@ void GVRRList::_gvrr_b060(double* data_, const double* C00, const double* D00, c
   for (int t = 0; t != 9; ++t)
     data_[9+t] = C00_[t];
 
+#ifdef __GNUC__
+  double B10_current[9]__attribute__((aligned(32)));
+#else
   double B10_current[9];
+#endif
   for (int t = 0; t != 9; ++t)
     B10_current[t] = B10_[t];
 
@@ -113,7 +117,11 @@ void GVRRList::_gvrr_b060(double* data_, const double* C00, const double* D00, c
   for (int t = 0; t != 9; ++t)
     data_[108+t] = D00_[t];
 
+#ifdef __GNUC__
+  double cB00_current[9]__attribute__((aligned(32)));
+#else
   double cB00_current[9];
+#endif
   for (int t = 0; t != 9; ++t)
     cB00_current[t] = B00_[t];
 
@@ -180,7 +188,11 @@ void GVRRList::_gvrr_b060(double* data_, const double* C00, const double* D00, c
   for (int t = 0; t != 9; ++t)
     data_[207+t] = C00_[t] * data_[198+t] + B10_current[t] * data_[189+t] + cB00_current[t] * data_[90+t];
 
+#ifdef __GNUC__
+  double B01_current[9]__attribute__((aligned(32)));
+#else
   double B01_current[9];
+#endif
   for (int t = 0; t != 9; ++t)
     B01_current[t] = B01_[t];
 

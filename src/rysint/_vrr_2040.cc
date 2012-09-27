@@ -55,7 +55,11 @@ void VRRList::_vrr_2040(double* data_, const double* C00, const double* D00, con
   for (int t = 0; t != 4; ++t)
     data_[12+t] = D00_[t];
 
+#ifdef __GNUC__
+  double cB00_current[4]__attribute__((aligned(32)));
+#else
   double cB00_current[4];
+#endif
   for (int t = 0; t != 4; ++t)
     cB00_current[t] = B00_[t];
 
@@ -65,7 +69,11 @@ void VRRList::_vrr_2040(double* data_, const double* C00, const double* D00, con
   for (int t = 0; t != 4; ++t)
     data_[20+t] = C00_[t] * data_[16+t] + B10_[t] * data_[12+t] + cB00_current[t] * data_[4+t];
 
+#ifdef __GNUC__
+  double B01_current[4]__attribute__((aligned(32)));
+#else
   double B01_current[4];
+#endif
   for (int t = 0; t != 4; ++t)
     B01_current[t] = B01_[t];
 

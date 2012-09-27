@@ -48,7 +48,7 @@ class VRR {
     VRR(const int _i, const int _j): a_(_i), c_(_j), rank_(::ceil(0.5 * (_i + _j + 2))) { }; // for slater!!
     ~VRR() { };
 
-    const std::string dump(const std::string) const;
+    const std::string dump(const std::string, const std::string) const;
 
 };
 
