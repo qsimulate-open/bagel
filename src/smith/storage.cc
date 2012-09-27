@@ -69,6 +69,8 @@ unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   const size_t blocknum  = hash->second.first;
   unique_ptr<double[]> buf(new double[blocksize]);
 
+  assert(initialized_[blocknum]);
+
   // then copy...
   dcopy_(blocksize, data_.at(blocknum), 1, buf, 1);
 
@@ -90,6 +92,8 @@ unique_ptr<double[]> Storage_Incore::move_block(const size_t& key) {
     initialized_[blocknum] = true;
   }
 
+  assert(initialized_[blocknum]);
+
   return move(data_.at(blocknum));
 }
 
@@ -100,6 +104,7 @@ void Storage_Incore::put_block(const size_t& key, unique_ptr<double[]>& dat) {
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
   const size_t blocknum  = hash->second.first;
   data_[blocknum] = move(dat);
+  initialized_[blocknum] = true;
 }
 
 

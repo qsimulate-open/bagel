@@ -90,7 +90,7 @@ class K2ext {
         size_t j1 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
           // find three-index integrals
-          std::vector<size_t> i01 = {{j0, j1}};
+          std::vector<size_t> i01 = {j0, j1};
 
           auto iter01 = dflist.find(generate_hash_key(i01));
           assert(iter01 != dflist.end());
@@ -102,7 +102,7 @@ class K2ext {
             size_t j3 = blocks_[3].keyoffset();
             for (auto i3 = blocks_[3].range().begin(); i3 != blocks_[3].range().end(); ++i3, ++j3) {
               // find three-index integrals
-              std::vector<size_t> i23 = {{j2, j3}};
+              std::vector<size_t> i23 = {j2, j3};
 
               size_t hashkey23 = generate_hash_key(i23);
               if (hashkey23 > hashkey01) continue;
@@ -118,7 +118,7 @@ class K2ext {
               df01->form_4index(target, df23);
 
               // move in place
-              std::vector<size_t> hash = {{j0, j1, j2, j3}};
+              std::vector<size_t> hash = {j0, j1, j2, j3};
 
               if (hashkey23 != hashkey01) {
                 std::unique_ptr<double[]> target2(new double[size]);
@@ -142,8 +142,7 @@ class K2ext {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
-      std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
-      data_ = tmp;
+      data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
       form_4index(generate_list());
     };
 
@@ -166,8 +165,7 @@ class MOFock {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
-      std::shared_ptr<Tensor<T> > tmp(new Tensor<T>(blocks_));
-      data_ = tmp;
+      data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
 
       // TODO parallel not considered yet at all...
       std::shared_ptr<const Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));

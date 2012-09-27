@@ -164,8 +164,42 @@ class SpinFreeMethod {
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {act_, act_};
         rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
-        // TODO for the time being we hardwire "0" here (but this should be fixed)
-        std::shared_ptr<const RDM<1> > rdm = ref_->rdm1(0);
+        for (auto& i1 : act_) {
+          for (auto& i0 : act_) {
+            std::vector<size_t> hash = {i0.key(), i1.key()};
+            const size_t size = i0.size() * i1.size();
+            std::unique_ptr<double[]> data(new double[size]); 
+            int iall = 0;
+            for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                // TODO for the time being we hardwire "0" here (but this should be fixed)
+                data[iall] = ref_->rdm1(0)->element(j0, j1);
+            rdm1_->put_block(hash, data);
+          }
+        }
+      }
+      if (!ref_->rdm2().empty()) {
+        std::vector<IndexRange> o = {act_, act_, act_, act_};
+        rdm2_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
+        for (auto& i3 : act_) {
+          for (auto& i2 : act_) {
+            for (auto& i1 : act_) {
+              for (auto& i0 : act_) {
+                std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()};
+                const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
+                std::unique_ptr<double[]> data(new double[size]); 
+                int iall = 0;
+                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                        // TODO for the time being we hardwire "0" here (but this should be fixed)
+                        data[iall] = ref_->rdm2(0)->element(j0, j1, j2, j3);
+                 rdm2_->put_block(hash, data);
+              }
+            }
+          }
+        }
       }
     };
 

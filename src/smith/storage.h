@@ -61,8 +61,7 @@ class Storage_base {
         if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
         length_ += i->second;
       }
-      std::vector<bool> tmp(cnt, init);
-      initialized_ = tmp;
+      initialized_ = std::vector<bool>(cnt, init);
     };
     ~Storage_base() {};
 
