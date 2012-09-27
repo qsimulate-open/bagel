@@ -148,55 +148,6 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
   }
 };
 
-
-static std::vector<size_t> vec() {
-  std::vector<size_t> out(1,0lu);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0) {
-  std::vector<T> out(1,i0);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1) {
-  std::vector<T> out(1,i0); out.push_back(i1);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2, T i3) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2); out.push_back(i3);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2); out.push_back(i3); out.push_back(i4);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4, T i5) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2); out.push_back(i3); out.push_back(i4); out.push_back(i5);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4, T i5, T i6) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2); out.push_back(i3); out.push_back(i4); out.push_back(i5);
-                            out.push_back(i6);
-  return out;
-};
-template <typename T>
-static std::vector<T> vec(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7) {
-  std::vector<T> out(1,i0); out.push_back(i1); out.push_back(i2); out.push_back(i3); out.push_back(i4); out.push_back(i5);
-                            out.push_back(i6); out.push_back(i7);
-  return out;
-};
-
-
 }
 }
 

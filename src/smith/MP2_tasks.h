@@ -74,10 +74,10 @@ class Task1 : public Task<T> {
         for (auto& c1 : closed_) {
           for (auto& a4 : virt_) {
             for (auto& c3 : closed_) {
-              std::vector<size_t> ohash = vec(c3.key(), a4.key(), c1.key(), a2.key());
+              std::vector<size_t> ohash = {c3.key(), a4.key(), c1.key(), a2.key()};
               std::unique_ptr<double[]> odata = r->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1.key(), a4.key(), c3.key(), a2.key());
+                std::vector<size_t> i0hash = {c1.key(), a4.key(), c3.key(), a2.key()};
                 std::unique_ptr<double[]> i0data = I0->get_block(i0hash);
                 sort_indices<2,1,0,3,1,1,1,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
               }
@@ -113,15 +113,15 @@ class Task2 : public Task<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> odata = I0->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::vector<size_t> i0hash = {c1->key(), a4->key(), c3->key(), a2->key()};
                 std::unique_ptr<double[]> i0data = v2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1->size(), a4->size(), c3->size(), a2->size());
               }
               {
-                std::vector<size_t> i1hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+                std::vector<size_t> i1hash = {c1->key(), a2->key(), c3->key(), a4->key()};
                 std::unique_ptr<double[]> i1data = v2->get_block(i1hash);
                 sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1->size(), a2->size(), c3->size(), a4->size());
               }
@@ -159,17 +159,17 @@ class Task3 : public Task<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> odata = I0->move_block(ohash);
               std::unique_ptr<double[]> odata_sorted(new double[I0->get_size(ohash)]);
               std::fill(odata_sorted.get(), odata_sorted.get()+I0->get_size(ohash), 0.0);
 
-              std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> i0hash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
               std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
               sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1->size(), a4->size(), c3->size(), a2->size());
 
-              std::vector<size_t> i1hash = vec();
+              std::vector<size_t> i1hash = {};
               std::unique_ptr<double[]> i1data = I1->get_block(i1hash);
               std::unique_ptr<double[]> i1data_sorted(new double[I1->get_size(i1hash)]);
               sort_indices<0,1,1,1>(i1data, i1data_sorted);
@@ -208,10 +208,10 @@ class Task4 : public Task<T> {
     std::shared_ptr<Tensor<T> > Gamma;
 
     void compute_() {
-      std::vector<size_t> ohash = vec();
+      std::vector<size_t> ohash = {};
       std::unique_ptr<double[]> odata = I1->move_block(ohash);
       {
-        std::vector<size_t> i0hash = vec();
+        std::vector<size_t> i0hash = {};
         std::unique_ptr<double[]> i0data = Gamma->get_block(i0hash);
         sort_indices<1,1,-4,1>(i0data, odata);
       }
@@ -244,17 +244,17 @@ class Task5 : public Task<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> odata = I0->move_block(ohash);
               std::unique_ptr<double[]> odata_sorted(new double[I0->get_size(ohash)]);
               std::fill(odata_sorted.get(), odata_sorted.get()+I0->get_size(ohash), 0.0);
 
-              std::vector<size_t> i0hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+              std::vector<size_t> i0hash = {c1->key(), a2->key(), c3->key(), a4->key()};
               std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
               std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
               sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1->size(), a2->size(), c3->size(), a4->size());
 
-              std::vector<size_t> i1hash = vec();
+              std::vector<size_t> i1hash = {};
               std::unique_ptr<double[]> i1data = I3->get_block(i1hash);
               std::unique_ptr<double[]> i1data_sorted(new double[I3->get_size(i1hash)]);
               sort_indices<0,1,1,1>(i1data, i1data_sorted);
@@ -293,10 +293,10 @@ class Task6 : public Task<T> {
     std::shared_ptr<Tensor<T> > Gamma;
 
     void compute_() {
-      std::vector<size_t> ohash = vec();
+      std::vector<size_t> ohash = {};
       std::unique_ptr<double[]> odata = I3->move_block(ohash);
       {
-        std::vector<size_t> i0hash = vec();
+        std::vector<size_t> i0hash = {};
         std::unique_ptr<double[]> i0data = Gamma->get_block(i0hash);
         sort_indices<1,1,8,1>(i0data, odata);
       }
@@ -329,15 +329,15 @@ class Task7 : public Task<T> {
         for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
-              std::vector<size_t> ohash = vec(c3->key(), a4->key(), c1->key(), a2->key());
+              std::vector<size_t> ohash = {c3->key(), a4->key(), c1->key(), a2->key()};
               std::unique_ptr<double[]> odata = r->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), a2->key(), c3->key());
+                std::vector<size_t> i0hash = {c1->key(), a4->key(), a2->key(), c3->key()};
                 std::unique_ptr<double[]> i0data = I4->get_block(i0hash);
                 sort_indices<3,1,0,2,1,1,1,1>(i0data, odata, c1->size(), a4->size(), a2->size(), c3->size());
               }
               {
-                std::vector<size_t> i0hash = vec(c3->key(), a2->key(), a4->key(), c1->key());
+                std::vector<size_t> i0hash = {c3->key(), a2->key(), a4->key(), c1->key()};
                 std::unique_ptr<double[]> i0data = I4->get_block(i0hash);
                 sort_indices<0,2,3,1,1,1,1,1>(i0data, odata, c3->size(), a2->size(), a4->size(), c1->size());
               }
@@ -374,18 +374,18 @@ class Task8 : public Task<T> {
         for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), a2->key(), c3->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), a2->key(), c3->key()};
               std::unique_ptr<double[]> odata = I4->move_block(ohash);
               std::unique_ptr<double[]> odata_sorted(new double[I4->get_size(ohash)]);
               std::fill(odata_sorted.get(), odata_sorted.get()+I4->get_size(ohash), 0.0);
 
               for (auto c5 = closed_.begin(); c5 != closed_.end(); ++c5) {
-                std::vector<size_t> i0hash = vec(c3->key(), c5->key());
+                std::vector<size_t> i0hash = {c3->key(), c5->key()};
                 std::unique_ptr<double[]> i0data = f1->get_block(i0hash);
                 std::unique_ptr<double[]> i0data_sorted(new double[f1->get_size(i0hash)]);
                 sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c3->size(), c5->size());
 
-                std::vector<size_t> i1hash = vec(c1->key(), a4->key(), c5->key(), a2->key());
+                std::vector<size_t> i1hash = {c1->key(), a4->key(), c5->key(), a2->key()};
                 std::unique_ptr<double[]> i1data = I5->get_block(i1hash);
                 std::unique_ptr<double[]> i1data_sorted(new double[I5->get_size(i1hash)]);
                 sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, c1->size(), a4->size(), c5->size(), a2->size());
@@ -429,15 +429,15 @@ class Task9 : public Task<T> {
         for (auto c5 = closed_.begin(); c5 != closed_.end(); ++c5) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c5->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), c5->key(), a2->key()};
               std::unique_ptr<double[]> odata = I5->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c5->key(), a2->key());
+                std::vector<size_t> i0hash = {c1->key(), a4->key(), c5->key(), a2->key()};
                 std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,4,1>(i0data, odata, c1->size(), a4->size(), c5->size(), a2->size());
               }
               {
-                std::vector<size_t> i1hash = vec(c1->key(), a2->key(), c5->key(), a4->key());
+                std::vector<size_t> i1hash = {c1->key(), a2->key(), c5->key(), a4->key()};
                 std::unique_ptr<double[]> i1data = t2->get_block(i1hash);
                 sort_indices<0,3,2,1,1,1,-8,1>(i1data, odata, c1->size(), a2->size(), c5->size(), a4->size());
               }
@@ -474,18 +474,18 @@ class Task10 : public Task<T> {
         for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), a2->key(), c3->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), a2->key(), c3->key()};
               std::unique_ptr<double[]> odata = I4->move_block(ohash);
               std::unique_ptr<double[]> odata_sorted(new double[I4->get_size(ohash)]);
               std::fill(odata_sorted.get(), odata_sorted.get()+I4->get_size(ohash), 0.0);
 
               for (auto a5 = virt_.begin(); a5 != virt_.end(); ++a5) {
-                std::vector<size_t> i0hash = vec(a5->key(), a4->key());
+                std::vector<size_t> i0hash = {a5->key(), a4->key()};
                 std::unique_ptr<double[]> i0data = f1->get_block(i0hash);
                 std::unique_ptr<double[]> i0data_sorted(new double[f1->get_size(i0hash)]);
                 sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a5->size(), a4->size());
 
-                std::vector<size_t> i1hash = vec(c1->key(), a5->key(), c3->key(), a2->key());
+                std::vector<size_t> i1hash = {c1->key(), a5->key(), c3->key(), a2->key()};
                 std::unique_ptr<double[]> i1data = I9->get_block(i1hash);
                 std::unique_ptr<double[]> i1data_sorted(new double[I9->get_size(i1hash)]);
                 sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, c1->size(), a5->size(), c3->size(), a2->size());
@@ -529,15 +529,15 @@ class Task11 : public Task<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a5 = virt_.begin(); a5 != virt_.end(); ++a5) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a5->key(), c3->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a5->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> odata = I9->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a5->key(), c3->key(), a2->key());
+                std::vector<size_t> i0hash = {c1->key(), a5->key(), c3->key(), a2->key()};
                 std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1->size(), a5->size(), c3->size(), a2->size());
               }
               {
-                std::vector<size_t> i1hash = vec(c1->key(), a2->key(), c3->key(), a5->key());
+                std::vector<size_t> i1hash = {c1->key(), a2->key(), c3->key(), a5->key()};
                 std::unique_ptr<double[]> i1data = t2->get_block(i1hash);
                 sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1->size(), a2->size(), c3->size(), a5->size());
               }
@@ -576,12 +576,12 @@ class Task12 : public EnergyTask<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a2 = virt_.begin(); a2 != virt_.end(); ++a2) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> i0hash = vec(c3->key(), a4->key(), c1->key(), a2->key());
+              std::vector<size_t> i0hash = {c3->key(), a4->key(), c1->key(), a2->key()};
               std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
               std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
               sort_indices<1,0,3,2,0,1,1,1>(i0data, i0data_sorted, c3->size(), a4->size(), c1->size(), a2->size());
 
-              std::vector<size_t> i1hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> i1hash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> i1data = I15->get_block(i1hash);
               std::unique_ptr<double[]> i1data_sorted(new double[I15->get_size(i1hash)]);
               sort_indices<1,2,3,0,0,1,1,1>(i1data, i1data_sorted, c1->size(), a4->size(), c3->size(), a2->size());
@@ -622,25 +622,25 @@ class Task13 : public EnergyTask<T> {
         for (auto c3 = closed_.begin(); c3 != closed_.end(); ++c3) {
           for (auto a4 = virt_.begin(); a4 != virt_.end(); ++a4) {
             for (auto c1 = closed_.begin(); c1 != closed_.end(); ++c1) {
-              std::vector<size_t> ohash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+              std::vector<size_t> ohash = {c1->key(), a4->key(), c3->key(), a2->key()};
               std::unique_ptr<double[]> odata = I15->move_block(ohash);
               {
-                std::vector<size_t> i0hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::vector<size_t> i0hash = {c1->key(), a4->key(), c3->key(), a2->key()};
                 std::unique_ptr<double[]> i0data = v2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1->size(), a4->size(), c3->size(), a2->size());
               }
               {
-                std::vector<size_t> i1hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+                std::vector<size_t> i1hash = {c1->key(), a2->key(), c3->key(), a4->key()};
                 std::unique_ptr<double[]> i1data = v2->get_block(i1hash);
                 sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1->size(), a2->size(), c3->size(), a4->size());
               }
               {
-                std::vector<size_t> i2hash = vec(c1->key(), a4->key(), c3->key(), a2->key());
+                std::vector<size_t> i2hash = {c1->key(), a4->key(), c3->key(), a2->key()};
                 std::unique_ptr<double[]> i2data = r->get_block(i2hash);
                 sort_indices<0,1,2,3,1,1,-4,1>(i2data, odata, c1->size(), a4->size(), c3->size(), a2->size());
               }
               {
-                std::vector<size_t> i3hash = vec(c1->key(), a2->key(), c3->key(), a4->key());
+                std::vector<size_t> i3hash = {c1->key(), a2->key(), c3->key(), a4->key()};
                 std::unique_ptr<double[]> i3data = r->get_block(i3hash);
                 sort_indices<0,3,2,1,1,1,8,1>(i3data, odata, c1->size(), a2->size(), c3->size(), a4->size());
               }

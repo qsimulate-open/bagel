@@ -51,15 +51,15 @@ class Task0 : public Task<T> {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
             for (auto i0 = closed_.begin(); i0 != closed_.end(); ++i0) {
-              std::vector<size_t> ohash = vec(i0->key(), i1->key(), i2->key(), i3->key());
+              std::vector<size_t> ohash = {i0->key(), i1->key(), i2->key(), i3->key()};
               std::unique_ptr<double[]> odata = r2_->move_block(ohash);
 
               for (auto c0 = closed_.begin(); c0 != closed_.end(); ++c0) {
-                std::vector<size_t> ihash0 = vec(c0->key(), i0->key());
+                std::vector<size_t> ihash0 = {c0->key(), i0->key()};
                 const std::unique_ptr<double[]> idata0 = f1_->get_block(ihash0);
 
-                std::vector<size_t> ihash1 = vec(c0->key(), i1->key(), i2->key(), i3->key());
-                std::vector<size_t> ihash2 = vec(c0->key(), i3->key(), i2->key(), i1->key());
+                std::vector<size_t> ihash1 = {c0->key(), i1->key(), i2->key(), i3->key()};
+                std::vector<size_t> ihash2 = {c0->key(), i3->key(), i2->key(), i1->key()};
                 const std::unique_ptr<double[]> idata1 = t2_->get_block(ihash1);
                 const std::unique_ptr<double[]> idata2 = t2_->get_block(ihash2);
                 std::unique_ptr<double[]> idata3(new double[t2_->get_size(ihash1)]);
@@ -109,16 +109,16 @@ class Task1 : public Task<T> {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
             for (auto i0 = closed_.begin(); i0 != closed_.end(); ++i0) {
-              std::vector<size_t> ohash = vec(i0->key(), i1->key(), i2->key(), i3->key());
+              std::vector<size_t> ohash = {i0->key(), i1->key(), i2->key(), i3->key()};
               std::unique_ptr<double[]> odata = r2_->move_block(ohash);
               std::unique_ptr<double[]> idata4(new double[r2_->get_size(ohash)]);
 
               for (auto c0 = virt_.begin(); c0 != virt_.end(); ++c0) {
-                std::vector<size_t> ihash0 = vec(c0->key(), i1->key());
+                std::vector<size_t> ihash0 = {c0->key(), i1->key()};
                 const std::unique_ptr<double[]> idata0 = f1_->get_block(ihash0);
 
-                std::vector<size_t> ihash1 = vec(i0->key(), c0->key(), i2->key(), i3->key());
-                std::vector<size_t> ihash2 = vec(i0->key(), i3->key(), i2->key(), c0->key());
+                std::vector<size_t> ihash1 = {i0->key(), c0->key(), i2->key(), i3->key()};
+                std::vector<size_t> ihash2 = {i0->key(), i3->key(), i2->key(), c0->key()};
                 const std::unique_ptr<double[]> idata1 = t2_->get_block(ihash1);
                 const std::unique_ptr<double[]> idata2 = t2_->get_block(ihash2);
 
@@ -167,8 +167,8 @@ class Task2 : public Task<T> {
         for (auto i2 = closed_.begin(); i2 != closed_.end(); ++i2) {
           for (auto i1 = virt_.begin(); i1 != virt_.end(); ++i1) {
             for (auto i0 = closed_.begin(); i0 != closed_.end(); ++i0) {
-              std::vector<size_t> h = vec(i0->key(), i1->key(), i2->key(), i3->key());
-              std::vector<size_t> g = vec(i0->key(), i3->key(), i2->key(), i1->key());
+              std::vector<size_t> h = {i0->key(), i1->key(), i2->key(), i3->key()};
+              std::vector<size_t> g = {i0->key(), i3->key(), i2->key(), i1->key()};
               std::unique_ptr<double[]> odata = r2_->get_block(h);
               std::unique_ptr<double[]> data0 = v2_->get_block(h);
               const std::unique_ptr<double[]> data1 = v2_->get_block(g);

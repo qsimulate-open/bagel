@@ -59,7 +59,7 @@ class Queue {
       // execute
       out->compute();
       // delete dependency (to remove intermediate storages)
-      for (auto j = tasklist_.begin(); j != tasklist_.end(); ++j) (*j)->delete_dep(out);
+      for (auto& j : tasklist_) j->delete_dep(out);
       // delete this task from the queue
       tasklist_.erase(i);
       return out;
@@ -70,8 +70,7 @@ class Queue {
     bool done() const { return tasklist_.empty(); };
 
     void initialize() {
-      for (auto i = tasklist_.begin(); i != tasklist_.end(); ++i)
-        (*i)->initialize();
+      for (auto& i : tasklist_) i->initialize();
     };
 };
 
