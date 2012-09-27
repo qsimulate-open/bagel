@@ -169,7 +169,7 @@ class Task3 : public Task<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
               sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1->size(), a4->size(), c3->size(), a2->size());
 
-              std::vector<size_t> i1hash = {};
+              std::vector<size_t> i1hash = {0lu};
               std::unique_ptr<double[]> i1data = I1->get_block(i1hash);
               std::unique_ptr<double[]> i1data_sorted(new double[I1->get_size(i1hash)]);
               sort_indices<0,1,1,1>(i1data, i1data_sorted);
@@ -208,10 +208,10 @@ class Task4 : public Task<T> {
     std::shared_ptr<Tensor<T> > Gamma;
 
     void compute_() {
-      std::vector<size_t> ohash = {};
+      std::vector<size_t> ohash = {0lu};
       std::unique_ptr<double[]> odata = I1->move_block(ohash);
       {
-        std::vector<size_t> i0hash = {};
+        std::vector<size_t> i0hash = {0lu};
         std::unique_ptr<double[]> i0data = Gamma->get_block(i0hash);
         sort_indices<1,1,-4,1>(i0data, odata);
       }
@@ -254,7 +254,7 @@ class Task5 : public Task<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
               sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1->size(), a2->size(), c3->size(), a4->size());
 
-              std::vector<size_t> i1hash = {};
+              std::vector<size_t> i1hash = {0lu};
               std::unique_ptr<double[]> i1data = I3->get_block(i1hash);
               std::unique_ptr<double[]> i1data_sorted(new double[I3->get_size(i1hash)]);
               sort_indices<0,1,1,1>(i1data, i1data_sorted);
@@ -293,10 +293,10 @@ class Task6 : public Task<T> {
     std::shared_ptr<Tensor<T> > Gamma;
 
     void compute_() {
-      std::vector<size_t> ohash = {};
+      std::vector<size_t> ohash = {0lu};
       std::unique_ptr<double[]> odata = I3->move_block(ohash);
       {
-        std::vector<size_t> i0hash = {};
+        std::vector<size_t> i0hash = {0lu};
         std::unique_ptr<double[]> i0data = Gamma->get_block(i0hash);
         sort_indices<1,1,8,1>(i0data, odata);
       }
