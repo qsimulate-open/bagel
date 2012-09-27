@@ -175,15 +175,15 @@ class MOFock {
       std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
       Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
       size_t j0 = blocks_[0].keyoffset();
-      for (auto& i0 : blocks_[0].range()) {
+      for (auto& i0 : blocks_[0]) {
         size_t j1 = blocks_[1].keyoffset();
-        for (auto& i1 : blocks_[1].range()) {
+        for (auto& i1 : blocks_[1]) {
           const size_t size = i0.size() * i1.size();
           std::unique_ptr<double[]> target(new double[size]);
-          double* buf = target.get();
+          int iall = 0;
           for (int k0 = i0.offset(); k0 != i0.offset()+i0.size(); ++k0) {
-            for (int k1 = i1.offset(); k1 != i1.offset()+i1.size(); ++k1, ++buf) {
-              *buf = f.element(k1, k0);
+            for (int k1 = i1.offset(); k1 != i1.offset()+i1.size(); ++k1, ++iall) {
+              target[iall] = f.element(k1, k0);
             }
           }
           std::vector<size_t> hash = {j1, j0};
