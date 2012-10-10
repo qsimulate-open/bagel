@@ -108,6 +108,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task7->add_dep(task8);
       task8->add_dep(task0);
       queue_->add_task(task8);
+
 #endif
       std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
@@ -186,6 +187,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 //      *r = *(r->add_dagger());
         this->update_amplitude(t2, r);
         const double err = r->rms();
+        r->zero();
         const double en = energy(energ);
         this->print_iteration(iter, en, err);
         if (err < thresh_residual()) break;
