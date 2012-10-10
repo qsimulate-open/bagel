@@ -1,31 +1,31 @@
 //
-// BAGEL - Parallel electron correlation program.
+// Newint - Parallel electron correlation program.
 // Filename: MP2.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2012 Shiozaki group
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
+// The Newint package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 2, or (at your option)
+// the Free Software Foundation; either version 3, or (at your option)
 // any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// The Newint package is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
 //
 // You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
+// along with the Newint package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
 
-#ifndef __SRC_SMITH_MP2_H
-#define __SRC_SMITH_MP2_H
+#ifndef __SRC_SMITH_MP2_H 
+#define __SRC_SMITH_MP2_H 
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -49,7 +49,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 
     std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > make_queue_() {
       std::shared_ptr<Queue<T> > queue_(new Queue<T>());
-      std::vector<IndexRange> index = {this->closed_, this->act_, this->virt_};
+      std::vector<IndexRange> index = {this->closed_, this->active_, this->virt_};
 
       std::vector<std::shared_ptr<Tensor<T> > > tensor0 = {r};
       std::shared_ptr<Task0<T> > task0(new Task0<T>(tensor0, index));
@@ -83,69 +83,80 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task4->add_dep(task0);
       queue_->add_task(task4);
 
-      std::vector<IndexRange> I3_index;
-      std::shared_ptr<Tensor<T> > I3(new Tensor<T>(I3_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor5 = {I0, t2, I3};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor5 = {Gamma, rdm1_, f1_};
       std::shared_ptr<Task5<T> > task5(new Task5<T>(tensor5, index));
-      task1->add_dep(task5);
+      task4->add_dep(task5);
       task5->add_dep(task0);
       queue_->add_task(task5);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor6 = {I3, Gamma};
+      std::vector<IndexRange> I3_index;
+      std::shared_ptr<Tensor<T> > I3(new Tensor<T>(I3_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor6 = {I0, t2, I3};
       std::shared_ptr<Task6<T> > task6(new Task6<T>(tensor6, index));
-      task5->add_dep(task6);
+      task1->add_dep(task6);
       task6->add_dep(task0);
       queue_->add_task(task6);
-#endif
 
-      std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
-      std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {r, I4};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {I3, Gamma};
       std::shared_ptr<Task7<T> > task7(new Task7<T>(tensor7, index));
+      task6->add_dep(task7);
       task7->add_dep(task0);
       queue_->add_task(task7);
 
-      std::vector<IndexRange> I5_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {I4, this->f1_, I5};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {Gamma, rdm1_, f1_};
       std::shared_ptr<Task8<T> > task8(new Task8<T>(tensor8, index));
       task7->add_dep(task8);
       task8->add_dep(task0);
       queue_->add_task(task8);
-
-      std::vector<std::shared_ptr<Tensor<T> > > tensor9 = {I5, t2};
+#endif
+      std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
+      std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor9 = {r, I4};
       std::shared_ptr<Task9<T> > task9(new Task9<T>(tensor9, index));
-      task8->add_dep(task9);
       task9->add_dep(task0);
       queue_->add_task(task9);
 
-      std::vector<IndexRange> I9_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T> > I9(new Tensor<T>(I9_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor10 = {I4, this->f1_, I9};
+      std::vector<IndexRange> I5_index = {this->closed_, this->virt_, this->closed_, this->virt_};
+      std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor10 = {I4, this->f1_, I5};
       std::shared_ptr<Task10<T> > task10(new Task10<T>(tensor10, index));
-      task7->add_dep(task10);
+      task9->add_dep(task10);
       task10->add_dep(task0);
       queue_->add_task(task10);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor11 = {I9, t2};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor11 = {I5, t2};
       std::shared_ptr<Task11<T> > task11(new Task11<T>(tensor11, index));
       task10->add_dep(task11);
       task11->add_dep(task0);
       queue_->add_task(task11);
+
+      std::vector<IndexRange> I9_index = {this->closed_, this->virt_, this->closed_, this->virt_};
+      std::shared_ptr<Tensor<T> > I9(new Tensor<T>(I9_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor12 = {I4, this->f1_, I9};
+      std::shared_ptr<Task12<T> > task12(new Task12<T>(tensor12, index));
+      task9->add_dep(task12);
+      task12->add_dep(task0);
+      queue_->add_task(task12);
+
+      std::vector<std::shared_ptr<Tensor<T> > > tensor13 = {I9, t2};
+      std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
+      task12->add_dep(task13);
+      task13->add_dep(task0);
+      queue_->add_task(task13);
 
       std::shared_ptr<Queue<T> > energy_(new Queue<T>());
       std::vector<IndexRange> I14_index;
       std::shared_ptr<Tensor<T> > I14(new Tensor<T>(I14_index, false));
       std::vector<IndexRange> I15_index = {this->closed_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor12 = {I14, t2, I15};
-      std::shared_ptr<Task12<T> > task12(new Task12<T>(tensor12, index));
-      energy_->add_task(task12);
+      std::vector<std::shared_ptr<Tensor<T> > > tensor14 = {I14, t2, I15};
+      std::shared_ptr<Task14<T> > task14(new Task14<T>(tensor14, index));
+      energy_->add_task(task14);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor13 = {I15, this->v2_, r};
-      std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
-      task12->add_dep(task13);
-      energy_->add_task(task13);
+      std::vector<std::shared_ptr<Tensor<T> > > tensor15 = {I15, this->v2_, r};
+      std::shared_ptr<Task15<T> > task15(new Task15<T>(tensor15, index));
+      task14->add_dep(task15);
+      energy_->add_task(task15);
 
       return make_pair(queue_, energy_);
     };
@@ -160,7 +171,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 #endif
       r = t2->clone();
     };
-    ~MP2() {};
+    ~MP2() {}; 
 
     void solve() {
       this->print_iteration();
@@ -175,7 +186,6 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
 //      *r = *(r->add_dagger());
         this->update_amplitude(t2, r);
         const double err = r->rms();
-r->zero();
         const double en = energy(energ);
         this->print_iteration(iter, en, err);
         if (err < thresh_residual()) break;
@@ -188,9 +198,9 @@ r->zero();
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
         en += c->energy() * 0.25; // FIXME
-      }
-      return en;
-    };
+      }   
+      return en; 
+    };  
 };
 
 }
