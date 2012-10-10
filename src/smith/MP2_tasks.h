@@ -143,7 +143,6 @@ class Task2 : public Task<T> {
     ~Task2() {};
 };
 
-#if 0
 template <typename T>
 class Task3 : public Task<T> {
   protected:
@@ -198,6 +197,7 @@ class Task3 : public Task<T> {
     ~Task3() {};
 };
 
+#if 0
 template <typename T>
 class Task4 : public Task<T> {
   protected:
