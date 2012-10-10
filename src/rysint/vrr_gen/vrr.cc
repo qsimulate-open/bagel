@@ -28,12 +28,13 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
 #include <boost/lexical_cast.hpp>
 
 using namespace std;
 using namespace boost;
 
-const string VRR::dump(const string filename) const {
+const string VRR::dump(const string filename, const string prefix) const {
   string header;
   stringstream contents;
 
@@ -62,13 +63,29 @@ const string VRR::dump(const string filename) const {
   contents << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
   contents << "//" << endl;
   contents << endl;
-  contents << "#include <src/rysint/vrrlist.h>\n";
+  if (prefix == "") {
+    contents << "#include <src/rysint/vrrlist.h>\n";
+  } else if (prefix == "s") {
+    contents << "#include <src/slater/svrrlist.h>\n";
+  } else if (prefix == "g") {
+    contents << "#include <src/grad/gvrrlist.h>\n";
+  } else {
+    throw logic_error("prefix is not defined in vrr_gen/vrr.cc");
+  }
   contents << endl;
   contents << "using namespace bagel;" << endl;
   contents << endl;
 
   contents << "// returns double array of length " + lexical_cast<string>((a_ + 1) * (c_ + 1) * rank_) + "\n";
-  contents << "void VRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+  if (prefix == "") {
+    contents << "void VRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+  } else if (prefix == "s") {
+    contents << "void SVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+  } else if (prefix == "g") {
+    contents << "void GVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+  } else {
+    throw logic_error("prefix is not defined in vrr_gen/vrr.cc");
+  }
 
   contents << "#ifdef __GNUC__" << endl;
   contents << "  const double C00_[" << rank_ << "]__attribute__((aligned(32))) = {";
@@ -125,7 +142,7 @@ const pair<string, int> VRR::vrr00() const {
   stringstream contents;
   int i = 0;
   for (int t = 0; t != rank_; ++t, ++i)
-    contents << "  data_[" + lexical_cast<string>(i) + "] = 1.0;" << endl;
+    contents << "  data_[" << i << "] = 1.0;" << endl;
   return make_pair(contents.str(), i);
 }
 
@@ -149,7 +166,13 @@ const pair<string, int> VRR::vrrn0(const int n) const {
       contents << " + B10_[t];\n";
       i += rank_;
     } else {
-      if (a == 2) contents << "  double B10_current[" << rank_ << "];\n";
+      if (a == 2) {
+        contents << "#ifdef __GNUC__" << endl;
+        contents << "  double B10_current[" << rank_ << "]__attribute__((aligned(32)));\n";
+        contents << "#else" << endl;
+        contents << "  double B10_current[" << rank_ << "];\n";
+        contents << "#endif" << endl;
+      }
       contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
       contents << "    B10_current[t] " << (a == 2 ? "=" : "+=");
       contents << " B10_[t];" << endl;
@@ -191,7 +214,13 @@ const pair<string, int> VRR::vrr0m(const int m) const {
       contents << " + B01_[t];" << endl;
       i += rank_;
     } else {
-      if (c == 2) contents << "  double B01_current[" << rank_ << "];\n";
+      if (c == 2) {
+        contents << "#ifdef __GNUC__" << endl;
+        contents << "  double B01_current[" << rank_ << "]__attribute__((aligned(32)));\n";
+        contents << "#else" << endl;
+        contents << "  double B01_current[" << rank_ << "];\n";
+        contents << "#endif" << endl;
+      }
       contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
       contents << "    B01_current[t] " << (c == 2 ? "=" : "+=");
       contents << " B01_[t];" << endl;
@@ -290,7 +319,11 @@ const pair<string, int> VRR::vrrnm(const int n, const int m) const {
   contents << "    data_[" << i << "+t] = D00_[t];" << endl;
   i += rank_;
   contents << endl;
+  contents << "#ifdef __GNUC__" << endl;
+  contents << "  double cB00_current[" << rank_ << "]__attribute__((aligned(32)));\n";
+  contents << "#else" << endl;
   contents << "  double cB00_current[" << rank_ << "];\n";
+  contents << "#endif" << endl;
   contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
   contents << "    cB00_current[t] = B00_[t];" << endl;
   contents << endl;
@@ -323,8 +356,13 @@ const pair<string, int> VRR::vrrnm(const int n, const int m) const {
   for (int c = 2; c != m + 1; ++c) {
     contents << "\n";
     if (m != 2) {
-      if (c == 2)
-      contents << "  double B01_current[" << rank_ << "];" << endl;
+      if (c == 2) {
+        contents << "#ifdef __GNUC__" << endl;
+        contents << "  double B01_current[" << rank_ << "]__attribute__((aligned(32)));\n";
+        contents << "#else" << endl;
+        contents << "  double B01_current[" << rank_ << "];\n";
+        contents << "#endif" << endl;
+      }
       contents << "  for (int t = 0; t != " << rank_ << "; ++t)" << endl;
       contents << "    B01_current[t] " << (c == 2 ? "=" : "+=") << " B01_[t];\n";
     }

@@ -52,14 +52,22 @@ void GVRRList::_gvrr_1070(double* data_, const double* C00, const double* D00, c
   for (int t = 0; t != 4; ++t)
     data_[8+t] = D00_[t];
 
+#ifdef __GNUC__
+  double cB00_current[4]__attribute__((aligned(32)));
+#else
   double cB00_current[4];
+#endif
   for (int t = 0; t != 4; ++t)
     cB00_current[t] = B00_[t];
 
   for (int t = 0; t != 4; ++t)
     data_[12+t] = C00_[t] * data_[8+t] + cB00_current[t];
 
+#ifdef __GNUC__
+  double B01_current[4]__attribute__((aligned(32)));
+#else
   double B01_current[4];
+#endif
   for (int t = 0; t != 4; ++t)
     B01_current[t] = B01_[t];
 

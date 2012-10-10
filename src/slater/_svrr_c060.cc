@@ -23,19 +23,37 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "svrrlist.h"
+#include <src/slater/svrrlist.h>
 
 using namespace bagel;
 
 // returns double array of length 910
-void SVRRList::_svrr_c060(double* data_, const double* C00_, const double* D00_, const double* B00_, const double* B01_, const double* B10_) {
+void SVRRList::_svrr_c060(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
+#ifdef __GNUC__
+  const double C00_[10]__attribute__((aligned(32))) = {C00[0], C00[1], C00[2], C00[3], C00[4], C00[5], C00[6], C00[7], C00[8], C00[9]};
+  const double D00_[10]__attribute__((aligned(32))) = {D00[0], D00[1], D00[2], D00[3], D00[4], D00[5], D00[6], D00[7], D00[8], D00[9]};
+  const double B00_[10]__attribute__((aligned(32))) = {B00[0], B00[1], B00[2], B00[3], B00[4], B00[5], B00[6], B00[7], B00[8], B00[9]};
+  const double B01_[10]__attribute__((aligned(32))) = {B01[0], B01[1], B01[2], B01[3], B01[4], B01[5], B01[6], B01[7], B01[8], B01[9]};
+  const double B10_[10]__attribute__((aligned(32))) = {B10[0], B10[1], B10[2], B10[3], B10[4], B10[5], B10[6], B10[7], B10[8], B10[9]};
+#else
+  const double* C00_ = C00;
+  const double* D00_ = D00;
+  const double* B00_ = B00;
+  const double* B01_ = B01;
+  const double* B10_ = B10;
+#endif
+
   for (int t = 0; t != 10; ++t)
     data_[0+t] = 1.0;
 
   for (int t = 0; t != 10; ++t)
     data_[10+t] = C00_[t];
 
+#ifdef __GNUC__
+  double B10_current[10]__attribute__((aligned(32)));
+#else
   double B10_current[10];
+#endif
   for (int t = 0; t != 10; ++t)
     B10_current[t] = B10_[t];
 
@@ -105,7 +123,11 @@ void SVRRList::_svrr_c060(double* data_, const double* C00_, const double* D00_,
   for (int t = 0; t != 10; ++t)
     data_[130+t] = D00_[t];
 
+#ifdef __GNUC__
+  double cB00_current[10]__attribute__((aligned(32)));
+#else
   double cB00_current[10];
+#endif
   for (int t = 0; t != 10; ++t)
     cB00_current[t] = B00_[t];
 
@@ -178,7 +200,11 @@ void SVRRList::_svrr_c060(double* data_, const double* C00_, const double* D00_,
   for (int t = 0; t != 10; ++t)
     data_[250+t] = C00_[t] * data_[240+t] + B10_current[t] * data_[230+t] + cB00_current[t] * data_[110+t];
 
+#ifdef __GNUC__
+  double B01_current[10]__attribute__((aligned(32)));
+#else
   double B01_current[10];
+#endif
   for (int t = 0; t != 10; ++t)
     B01_current[t] = B01_[t];
 

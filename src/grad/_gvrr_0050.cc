@@ -49,7 +49,11 @@ void GVRRList::_gvrr_0050(double* data_, const double* C00, const double* D00, c
   for (int t = 0; t != 3; ++t)
     data_[3+t] = D00_[t];
 
+#ifdef __GNUC__
+  double B01_current[3]__attribute__((aligned(32)));
+#else
   double B01_current[3];
+#endif
   for (int t = 0; t != 3; ++t)
     B01_current[t] = B01_[t];
 

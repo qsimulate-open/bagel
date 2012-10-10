@@ -49,7 +49,11 @@ void VRRList::_vrr_7000(double* data_, const double* C00, const double* D00, con
   for (int t = 0; t != 4; ++t)
     data_[4+t] = C00_[t];
 
+#ifdef __GNUC__
+  double B10_current[4]__attribute__((aligned(32)));
+#else
   double B10_current[4];
+#endif
   for (int t = 0; t != 4; ++t)
     B10_current[t] = B10_[t];
 
