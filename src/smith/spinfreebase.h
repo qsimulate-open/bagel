@@ -41,7 +41,7 @@ template <typename T>
 class SpinFreeMethod {
   protected:
     IndexRange virt_;
-    IndexRange act_;
+    IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
     std::shared_ptr<const Reference> ref_;
@@ -144,7 +144,7 @@ class SpinFreeMethod {
       IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
       IndexRange a(c); a.merge(act); a.merge(v);
       closed_ = c;
-      act_ = act;
+      active_ = act;
       virt_ = v;
       all_ = a;
 
@@ -162,10 +162,10 @@ class SpinFreeMethod {
       }
       // rdms
       if (!ref_->rdm1().empty()) {
-        std::vector<IndexRange> o = {act_, act_};
+        std::vector<IndexRange> o = {active_, active_};
         rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
-        for (auto& i1 : act_) {
-          for (auto& i0 : act_) {
+        for (auto& i1 : active_) {
+          for (auto& i0 : active_) {
             std::vector<size_t> hash = {i0.key(), i1.key()};
             const size_t size = i0.size() * i1.size();
             std::unique_ptr<double[]> data(new double[size]); 
@@ -179,12 +179,12 @@ class SpinFreeMethod {
         }
       }
       if (!ref_->rdm2().empty()) {
-        std::vector<IndexRange> o = {act_, act_, act_, act_};
+        std::vector<IndexRange> o = {active_, active_, active_, active_};
         rdm2_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
-        for (auto& i3 : act_) {
-          for (auto& i2 : act_) {
-            for (auto& i1 : act_) {
-              for (auto& i0 : act_) {
+        for (auto& i3 : active_) {
+          for (auto& i2 : active_) {
+            for (auto& i1 : active_) {
+              for (auto& i0 : active_) {
                 std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()};
                 const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
                 std::unique_ptr<double[]> data(new double[size]); 

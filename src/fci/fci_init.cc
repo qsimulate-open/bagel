@@ -49,9 +49,9 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
   // Spin adapt detseeds
   int oindex = 0;
   vector<int> done;
-  for (auto iter = bits.begin(); iter != bits.end(); ++iter) {
-    const int alpha = iter->second;
-    const int beta = iter->first;
+  for (auto& it : bits) {
+    const int alpha = it.second;
+    const int beta = it.first;
     const int open_bit = (alpha^beta);
 
     // make sure that we have enough unpaired alpha
@@ -65,8 +65,8 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
 
     pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
-    for (auto iter = adapt.first.begin(); iter != adapt.first.end(); ++iter) {
-      out->data(oindex)->element(get<0>(*iter), get<1>(*iter)) = get<2>(*iter)*fac;
+    for (auto& i : adapt.first) {
+      out->data(oindex)->element(get<0>(i), get<1>(i)) = get<2>(i)*fac;
     }
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
@@ -93,13 +93,14 @@ vector<pair<int, int> > FCI::detseeds(const int ndet) {
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(0,0)));
 
   double* diter = denom_->data();
-  for (auto aiter = det()->stringa().begin(); aiter != det()->stringa().end(); ++aiter) {
-    for (auto biter = det()->stringb().begin(); biter != det()->stringb().end(); ++biter, ++diter) {
+  for (auto& a : det()->stringa()) {
+    for (auto& b : det()->stringb()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(*biter, *aiter)));
+        tmp.insert(make_pair(din, make_pair(b, a)));
         tmp.erase(tmp.begin());
       }
+      ++diter;
     }
   }
   assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
