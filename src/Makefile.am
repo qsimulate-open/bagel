@@ -4,10 +4,10 @@ INTLIBS = scf/libscf.a grad/libgrad.a rysint/librysint.a osint/libosint.a slater
 SUBDIRS = df opt grad mp2 wfn rysint osint scf slater pscf pmp2 util casscf smith prop molden dimer newfci fci rel
 bin_PROGRAMS = BAGEL
 BAGEL_SOURCES = main.cc
-BAGEL_LDADD = $(INTLIBS) -lboost_regex -lboost_filesystem -lboost_system -lboost_thread-mt $(FLIBS)
+BAGEL_LDADD = $(INTLIBS) $(FLIBS)
 AM_CXXFLAGS=-I$(top_srcdir)
 
 
 check_PROGRAMS = TestSuite
 TestSuite_SOURCES = test_main.cc
-TestSuite_LDADD = $(INTLIBS) -lboost_unit_test_framework -lboost_regex -lboost_filesystem -lboost_system -lboost_thread-mt $(FLIBS)
+TestSuite_LDADD = $(INTLIBS) $(FLIBS)

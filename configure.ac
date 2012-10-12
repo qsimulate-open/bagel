@@ -12,9 +12,44 @@ AC_F77_LIBRARY_LDFLAGS
 AC_PROG_CXX
 #AC_PROG_LIBTOOL
 AC_PROG_RANLIB
-AC_PROG_CC
 AC_PROG_FC
 AM_PROG_AR
+
+AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_regex-mt, main, , [
+        AC_CHECK_LIB(boost_regex, main, , [
+            AC_MSG_ERROR("Linking against boost::regex library failed.")
+        ])
+    ])
+])
+AC_CHECK_LIB(boost_thread-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_thread-mt, main, , [
+        AC_CHECK_LIB(boost_thread, main, , [
+            AC_MSG_ERROR("Linking against boost::thread library failed.")
+        ])
+    ])
+])
+AC_CHECK_LIB(boost_filesystem-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_filesystem-mt, main, , [
+        AC_CHECK_LIB(boost_filesystem, main, , [
+            AC_MSG_ERROR("Linking against boost::filesystem library failed.")
+        ])
+    ])
+])
+AC_CHECK_LIB(boost_system-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_system-mt, main, , [
+        AC_CHECK_LIB(boost_system, main, , [
+            AC_MSG_ERROR("Linking against boost::system library failed.")
+        ])
+    ])
+])
+AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_unit_test_framework-mt, main, , [
+        AC_CHECK_LIB(boost_unit_test_framework, main, , [
+            AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.")
+        ])
+    ])
+])
 
 #AC_CONFIG_MACRO_DIR([m4])
 
