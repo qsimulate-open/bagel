@@ -146,7 +146,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // Liq = 2 Gip(D) * (D|pq)
   unique_ptr<double[]> lia(new double[nocca*nvirt]);
   fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
-  unique_ptr<double[]> lif(new double[nocc*max(ncore,1lu)]);
+  unique_ptr<double[]> lif(new double[nocc*max(static_cast<unsigned long int>(ncore),1lu)]);
   const unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
   {
     dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
