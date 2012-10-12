@@ -56,7 +56,7 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
 
 void Determinants::const_string_lists_() {
   vector<int> data(norb_);
-  for (int i=0; i!=norb_; ++i)  data[i] = i;
+  iota(data.begin(), data.end(), 0);
 
   const int lengtha = comb.c(norb_, nelea_);
   const int lengthb = comb.c(norb_, neleb_);
@@ -112,16 +112,16 @@ void Determinants::print(const double* const civec, const double thr) const {
   const double* i = civec;
   // multimap sorts elements so that they will be shown in the descending order in magnitude
   multimap<double, tuple<double, int, int> > tmp;
-  for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
-    for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {
-      if (abs(*i) > thr) {
-        tmp.insert(make_pair(-abs(*i), make_tuple(*i, *ia, *ib)));
-      }
+  for (auto& ia : stringa_) {
+    for (auto& ib : stringb_) {
+      if (abs(*i) > thr)
+        tmp.insert(make_pair(-abs(*i), make_tuple(*i, ia, ib)));
+      ++i;
     }
   }
-  for (auto iter = tmp.begin(); iter != tmp.end(); ++iter) {
-    cout << "       " << print_bit(get<1>(iter->second), get<2>(iter->second))
-         << "  " << setprecision(10) << setw(15) << get<0>(iter->second) << endl;
+  for (auto& it : tmp) {
+    cout << "       " << print_bit(get<1>(it.second), get<2>(it.second))
+         << "  " << setprecision(10) << setw(15) << get<0>(it.second) << endl;
   }
 }
 
