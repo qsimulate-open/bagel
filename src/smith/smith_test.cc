@@ -27,6 +27,7 @@
 #include <src/smith/storage.h>
 
 #include <src/smith/MP2.h>
+#include <src/smith/CAS_all_active.h>
 
 using namespace bagel;
 using namespace bagel::SMITH;
@@ -42,6 +43,10 @@ void smith_test(shared_ptr<Reference> r) {
   {
     MP2::MP2<Storage_Incore> _mp2(r);
     _mp2.solve();
+  }
+  // in order to see if it compiles
+  if (false) {
+    CAS_all_active::CAS_all_active<Storage_Incore> cas(r);
   }
 }
 
