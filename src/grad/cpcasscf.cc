@@ -265,15 +265,15 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_
   shared_ptr<RDM<2> > rdm2 = rdm2t->clone();
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      rdm1->element(j,i) = 0.5*(rdm1t->element(j,i)+rdm1t->element(i,j));
+      rdm1->element({j,i}) = 0.5*(rdm1t->element({j,i})+rdm1t->element({i,j}));
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k)
         for (int l = 0; l != nact; ++l)
-//        rdm2->element(l,k,j,i) = 0.125*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j)
+//        rdm2->element({l,k,j,i}) = 0.125*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j)
 //                                      + rdm2t->element(j,i,l,k)+rdm2t->element(j,i,k,l)+rdm2t->element(i,j,l,k)+rdm2t->element(i,j,k,l));
-//        rdm2->element(l,k,j,i) = 0.25*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j));
-          rdm2->element(l,k,j,i) = 0.5*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i));
+//        rdm2->element({l,k,j,i}) = 0.25*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j));
+          rdm2->element({l,k,j,i}) = 0.5*(rdm2t->element({l,k,j,i})+rdm2t->element({k,l,j,i}));
 
   // prefactor
   const double prefactor = 2.0;

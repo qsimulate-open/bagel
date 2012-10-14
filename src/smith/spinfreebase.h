@@ -183,7 +183,7 @@ class SpinFreeMethod {
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                 // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element(j0, j1);
+                data[iall] = ref_->rdm1(0)->element({j0, j1});
             rdm1_->put_block(hash, data);
           }
         }
@@ -204,8 +204,37 @@ class SpinFreeMethod {
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                         // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element(j0, j1, j2, j3);
+                        data[iall] = ref_->rdm2(0)->element({j0, j1, j2, j3});
                  rdm2_->put_block(hash, data);
+              }
+            }
+          }
+        }
+      }
+      // generic function??
+      {
+        std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
+        rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        for (auto& i5 : active_) {
+          for (auto& i4 : active_) {
+            for (auto& i3 : active_) {
+              for (auto& i2 : active_) {
+                for (auto& i1 : active_) {
+                  for (auto& i0 : active_) {
+                    std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()};
+                    const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
+                    std::unique_ptr<double[]> data(new double[size]); 
+                    int iall = 0;
+                    for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                      for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                        for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                          for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                            for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                                // TODO for the time being we hardwire "0" here (but this should be fixed)
+                    rdm3_->put_block(hash, data);
+                  }
+                }
               }
             }
           }

@@ -32,61 +32,70 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
+#include <initializer_list>
+#include <src/scf/matrix1e.h>
 #include <src/util/f77.h>
 
 namespace bagel {
 
-template <int rank>
-class RDM {
+class RDM_base {
   protected:
     std::unique_ptr<double[]> data_;
     const int norb_;
     int dim_;
+    int rank_;
 
   public:
-    RDM(const int n) : norb_(n) {
-      assert(rank > 0);
-      dim_ = 1;
-      for (int i = 0; i != rank; ++i) dim_ *= n;
-      data_ = std::unique_ptr<double[]>(new double[dim_*dim_]);
-    };
-    RDM(const RDM& o) : norb_(o.norb_), dim_(o.dim_) {
-      data_ = std::unique_ptr<double[]>(new double[dim_*dim_]);
-      std::copy(o.data(), o.data()+dim_*dim_, data());
-    };
-    ~RDM() {  };
+    RDM_base(const int n, const int rank);
+    RDM_base(const RDM_base& o);
 
-    std::shared_ptr<RDM<rank> > clone() const {
-      return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_));
-    };
-
+    double* first() { return data(); };
     double* data() { return data_.get(); };
     const double* data() const { return data_.get(); };
-    double* first() { return data(); };
-    double& element(int i, int j) { assert(i<dim_ && j<dim_); return data_[i+j*dim_]; };
-    const double& element(int i, int j) const { assert(i<dim_ && j<dim_); return data_[i+j*dim_]; };
-    const double* element_ptr(int i, int j) const { assert(i<dim_ && j<dim_); return &element(i,j); };
-    // careful, this should not be called for those except for 2RDM.
-    double& element(int i, int j, int k, int l) { assert(rank == 2 && i<norb_ && j<norb_ && k<norb_ && l<norb_); return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
-    double* element_ptr(int i, int j, int k, int l) { return &element(i,j,k,l); };
-    const double& element(int i, int j, int k, int l) const { assert(rank == 2 && i<norb_ && j<norb_ && k<norb_ && l<norb_); return data_[i+norb_*(j+norb_*(k+norb_*l))]; };
-
-    double& element(int i, int j, int k, int l, int m, int n) { assert(rank == 3); return data_[i+norb_*(j+norb_*(k+norb_*(l+norb_*(m+norb_*n))))]; };
-    const double& element(int i, int j, int k, int l, int m, int n) const { assert(rank == 3); return data_[i+norb_*(j+norb_*(k+norb_*(l+norb_*(m+norb_*n))))]; };
 
     void zero() { std::fill(data(), data()+dim_*dim_, 0.0); };
-    void daxpy(const double a, const RDM& o) {
-      daxpy_(dim_*dim_, a, o.data(), 1, data(), 1);
-    };
-
-    void daxpy(const double a, const std::shared_ptr<RDM>& o) { this->daxpy(a, *o); };
+    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); };
+    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); };
     void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); };
+
+    double& element(const std::initializer_list<int>& list) {
+      assert(rank_*2 == list.size());
+      size_t address = 0;
+      size_t unit = 1LU;
+      for (auto& i : list) {
+        address += i*unit;
+        unit *= norb_;
+      }
+      return data_[address];
+    };
+    const double& element(const std::initializer_list<int>& list) const {
+      assert(rank_*2 == list.size());
+      size_t address = 0;
+      size_t unit = 1LU;
+      for (auto& i : list) {
+        address += i*unit;
+        unit *= norb_;
+      }
+      return data_[address];
+    };
 
     std::vector<double> diag() const {
       std::vector<double> out(dim_);
-      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
+      for (int i = 0; i != dim_; ++i) out[i] = element({i,i});
       return out;
     };
+
+};
+
+
+template <int rank>
+class RDM : public RDM_base {
+  public:
+    RDM(const int n) : RDM_base(n, rank) { };
+    RDM(const RDM& o) : RDM_base(o) {};
+    ~RDM() {  };
+
+    std::shared_ptr<RDM<rank> > clone() const { return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_)); };
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
@@ -104,7 +113,7 @@ class RDM {
         for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
       for (int i = 0; i != norb_; ++i)
         for (int j = 0; j != norb_; ++j)
-          out->element(j+nclosed, i+nclosed) = element(j,i);
+          out->element(j+nclosed, i+nclosed) = element({j,i});
       return out;
     };
 
@@ -151,7 +160,7 @@ class RDM {
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j)
-            std::cout << std::setw(12) << std::setprecision(7) << element(j,i);
+            std::cout << std::setw(12) << std::setprecision(7) << element({j,i});
           std::cout << std::endl;
         }
       } else if (rank == 2) {
@@ -159,9 +168,9 @@ class RDM {
           for (int j = 0; j != norb_; ++j) {
             for (int k = 0; k != norb_; ++k) {
               for (int l = 0; l != norb_; ++l) {
-                if (std::abs(element(l,k,j,i)) > thresh) std::cout << std::setw(3) << l << std::setw(3)
+                if (std::abs(element({l,k,j,i})) > thresh) std::cout << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << element(l,k,j,i) << std::endl;
+                      << std::setw(12) << std::setprecision(7) << element({l,k,j,i}) << std::endl;
         } } } }
       } else {
         assert(false);

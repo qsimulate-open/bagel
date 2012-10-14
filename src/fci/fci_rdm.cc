@@ -89,8 +89,8 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   unique_ptr<double[]> buf(new double[norb_*norb_]);
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
-      dcopy_(norb_*norb_, rdm2->element_ptr(0,0,k,i), 1, buf.get(), 1);
-      mytranspose4_(buf.get(), &norb_, &norb_, rdm2->element_ptr(0,0,k,i)); // sorting with stride 1 as norb_ is small
+      dcopy_(norb_*norb_, &rdm2->element({0,0,k,i}), 1, buf.get(), 1);
+      mytranspose4_(buf.get(), &norb_, &norb_, &rdm2->element({0,0,k,i})); // sorting with stride 1 as norb_ is small
     }
   }
 
@@ -104,7 +104,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   for (int i = 0; i != norb_; ++i)
     for (int k = 0; k != norb_; ++k)
       for (int j = 0; j != norb_; ++j)
-        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+        rdm2->element({j,k,k,i}) -= rdm1->element({j,i});
 
   return tie(rdm1, rdm2);
 }
@@ -243,10 +243,10 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
           // i4 and i5 correspond to m and n (they should be transposed here)
           for (int i5 = 0; i5 != norb_; ++i5) {
             for (int i4 = 0; i4 != norb_; ++i4) {
-              rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
+              rdm3->element({i5, i4, i3, i2, i1, i0}) = tmp3->element({i4, i5, i3, i2, i1, i0});
             }
-            rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
-            rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
+            rdm3->element({i5, i3, i3, i2, i1, i0}) -= rdm2_[ist]->element({i5, i2, i1, i0});
+            rdm3->element({i5, i1, i3, i2, i1, i0}) -= rdm2_[ist]->element({i3, i2, i5, i0});
           }
         }
       }
@@ -263,7 +263,7 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
         for (int i3 = 0; i3 != norb_; ++i3) {
           // i4 and i5 correspond to m and n (they should be transposed here)
           for (int i4 = 0; i4 != norb_; ++i4) {
-            tmp2->element(i3,i2,i1,i0) += 1.0/(nelea()+neleb()-2) * rdm3->element(i3, i2, i1, i0, i4, i4);
+            tmp2->element({i3,i2,i1,i0}) += 1.0/(nelea()+neleb()-2) * rdm3->element({i3, i2, i1, i0, i4, i4});
           }
         }
       }

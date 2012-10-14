@@ -166,7 +166,7 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
   if (!inactive_only) {
     for (int i = 0; i != nact_; ++i) {
       for (int j = 0; j != nact_; ++j) {
-        mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element(j,i);
+        mo_rdm1->element(nclosed_+j, nclosed_+i) = rdm1->element({j,i});
       }
     }
   }
