@@ -34,7 +34,7 @@
 #include <src/scf/overlap.h>
 #include <src/scf/coeff.h>
 #include <src/scf/geometry.h>
-#include <src/dimer/dimer.h>
+//#include <src/dimer/dimer.h>
 #include <src/scf/rohf.h>
 #include <src/molden/molden.h>
 #include <src/wfn/reference.h>
@@ -278,6 +278,7 @@ int main(int argc, char** argv) {
         fci->compute();
 
       }
+        #if 0 
         else if (method == "dimerize") {
 
         std::multimap<std::string,std::string> dimdata = iter->second;
@@ -302,6 +303,7 @@ int main(int argc, char** argv) {
         ref = dim->superref();
 
       }
+        #endif
       #if 0 // <---- Testing environment
       else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
