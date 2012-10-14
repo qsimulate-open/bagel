@@ -79,10 +79,12 @@ class SpinFreeMethod {
     };
 
 
+    // E0 is defined as Trace(f(x,x), gamma(x,x))
+    // For instance, E0 is 0 for MP2.
     double compute_e0() {
       assert(eig_);
+      if (ref_->nact() != 0) throw std::logic_error("SpinFreeMethod::compute_e0 not implemented for CASPT2 yet");
       double sum = 0.0;
-      for (int i = 0; i != ref_->nclosed(); ++i) sum += eig_[i] * 2.0;
       return sum;
     };
 
