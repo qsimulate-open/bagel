@@ -65,6 +65,14 @@ shared_ptr<Dvec> Reference::civectors() const {
 }
 
 
+// TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
+shared_ptr<RDM<3> > Reference::compute_rdm3(const int i) const {
+  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
+  fci->compute();
+  return get<0>(fci->compute_rdm34(i));
+}
+
+
 shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<const Reference> out;
 

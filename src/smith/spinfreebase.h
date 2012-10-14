@@ -215,6 +215,8 @@ class SpinFreeMethod {
       {
         std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
         rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        // TODO for the time being we hardwire "0" here (but this should be fixed)
+        std::shared_ptr<RDM<3> > rdm3source = ref_->compute_rdm3(0);
         for (auto& i5 : active_) {
           for (auto& i4 : active_) {
             for (auto& i3 : active_) {
@@ -232,6 +234,7 @@ class SpinFreeMethod {
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                                 // TODO for the time being we hardwire "0" here (but this should be fixed)
+                                data[iall] = rdm3source->element({j0, j1, j2, j3, j4, j5});
                     rdm3_->put_block(hash, data);
                   }
                 }

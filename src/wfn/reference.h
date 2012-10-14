@@ -124,6 +124,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); };
     std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
 
+    std::shared_ptr<RDM<3> > compute_rdm3(const int i) const;
+
     // function to return a CI vectors from orbital info
     std::shared_ptr<Dvec> civectors() const;
 
