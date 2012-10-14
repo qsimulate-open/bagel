@@ -155,10 +155,12 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
   assert((salpha^beta_without_common) == (salpha|beta_without_common));
 
   // the first bit pattern for alpha (to determine the sign) 
+#if 0
   int init_alpha = common_plus_alpha;
   for (int i=0; i!=nalpha; ++i) init_alpha ^= (1<<open[i]);
   int init_beta = common;
   for (int i=nalpha; i!=open.size(); ++i) init_beta ^= (1<<open[i]);
+#endif
 
   // take a linear combination to make a vector singlet coupled.
   // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals

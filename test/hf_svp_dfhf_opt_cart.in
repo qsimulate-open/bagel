@@ -1,6 +1,5 @@
 molecule {
   symmetry = C1;
-  nspin = 0;
   cartesian = true;
   basis = svp;
   df_basis = svp-jkfit;

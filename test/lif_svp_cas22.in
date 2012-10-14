@@ -1,6 +1,5 @@
 molecule {
   symmetry = C1;
-  nspin = 0;
   basis = svp;
   df_basis = qzvpp-jkfit;
   schwarz_thresh = 1.0e-12;
