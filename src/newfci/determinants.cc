@@ -58,7 +58,7 @@ NewDeterminants::NewDeterminants(const int _norb, const int _nelea, const int _n
 
 void NewDeterminants::const_string_lists_() {
   vector<int> data(norb_);
-  for (int i=0; i!=norb_; ++i)  data[i] = i;
+  iota(data.begin(), data.end(), 0);
 
   const int lengtha = comb.c(norb_, nelea_);
   const int lengthb = comb.c(norb_, neleb_);
@@ -134,8 +134,6 @@ void NewDeterminants::print(const double* const civec, const double thr) const {
 pair<vector<tuple<int, int, int> >, double> NewDeterminants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
   vector<tuple<int, int, int> > out;
 
-  int icnt = 0;
-
   // bit pattern for doubly occupied orbitals
   bitset<nbit__> common = (alpha & beta);
 
@@ -164,17 +162,22 @@ pair<vector<tuple<int, int, int> >, double> NewDeterminants::spin_adapt(const in
   // the first bit pattern for alpha (to determine the sign) 
   bitset<nbit__> init_alpha = common_plus_alpha;
   // There may be a better way to do this with bitset...?
-  for (int i=0; i!=nalpha; ++i) init_alpha &= bitset<nbit__>(1<<open[i]);
+  for (int i=0; i!=nalpha; ++i) init_alpha.flip(open[i]);
 
   // take a linear combination to make a vector singlet coupled.
   // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
   assert(nalpha*2 == open.size());
+  int icnt = 0;
   do {
     bitset<nbit__> ialpha = common_plus_alpha;
     bitset<nbit__> ibeta = common;
-    for (int i =0; i!=nalpha; ++i) ialpha ^= bitset<nbit__>(1<<open[i]);
-    for (int i=nalpha; i!=open.size(); ++i) ibeta  ^= bitset<nbit__>(1<<open[i]);
-    const double sign = 1.0 - ((((init_alpha^ialpha)>>1).count() & 1) << 1);
+    for (int i =0; i!=nalpha; ++i) ialpha.flip(open[i]);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta.flip(open[i]);
+
+    // sign is always compensated by moving alpha to the left and beta to the right
+    // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
+    const double sign = 1.0;
+
     out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
     ++icnt;
   } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));

@@ -129,8 +129,6 @@ void Determinants::print(const double* const civec, const double thr) const {
 pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int spin, const int alpha, const int beta) const {
   vector<tuple<int, int, int> > out;
 
-  int icnt = 0;
-
   // bit pattern for doubly occupied orbitals
   const int common = (alpha & beta);
 
@@ -158,17 +156,24 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
 
   // the first bit pattern for alpha (to determine the sign) 
   int init_alpha = common_plus_alpha;
-  for (int i=0; i!=nalpha; ++i) init_alpha &= (1<<open[i]);
+  for (int i=0; i!=nalpha; ++i) init_alpha ^= (1<<open[i]);
+  int init_beta = common;
+  for (int i=nalpha; i!=open.size(); ++i) init_beta ^= (1<<open[i]);
 
   // take a linear combination to make a vector singlet coupled.
   // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
   assert(nalpha*2 == open.size());
+  int icnt = 0;
   do {
     int ialpha = common_plus_alpha;
     int ibeta = common;
     for (int i =0; i!=nalpha; ++i) ialpha ^= (1<<open[i]);
-    for (int i=nalpha; i!=open.size(); ++i) ibeta  ^= (1<<open[i]);
-    const double sign = 1.0 - ((numofbits((init_alpha^ialpha)/2) & 1) << 1);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta ^= (1<<open[i]);
+
+    // sign is always compensated by moving alpha to the left and beta to the right
+    // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
+    const double sign = 1.0;
+
     out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
     ++icnt;
   } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
