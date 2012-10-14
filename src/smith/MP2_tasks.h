@@ -120,13 +120,13 @@ class Task2 : public Task<T> {
               {
                 std::vector<size_t> i0hash = {c1.key(), a4.key(), c3.key(), a2.key()};
                 std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
-                dscal_(c1.size()*a4.size()*c3.size()*a2.size(), -1*e0_, i0data.get(), 1);
+                dscal_(c1.size()*a4.size()*c3.size()*a2.size(), -e0_, i0data.get(), 1);
                 sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
               }
               {
                 std::vector<size_t> i1hash = {c1.key(), a2.key(), c3.key(), a4.key()};
                 std::unique_ptr<double[]> i1data = t2->get_block(i1hash);
-                dscal_(c1.size()*a2.size()*c3.size()*a4.size(), -1*e0_, i1data.get(), 1);
+                dscal_(c1.size()*a2.size()*c3.size()*a4.size(), -e0_, i1data.get(), 1);
                 sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a4.size());
               }
               {
