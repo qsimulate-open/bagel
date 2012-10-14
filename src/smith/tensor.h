@@ -86,7 +86,7 @@ class Tensor {
         std::shared_ptr<T> tmp(new T(hashmap, init));
         data_ = tmp;
       } else {
-        rank_ = 1;
+        rank_ = 0;
         std::map<size_t, size_t> hashmap;
         hashmap.insert(std::make_pair(0lu, 1lu));
         std::shared_ptr<T> tmp(new T(hashmap, init));
@@ -132,13 +132,13 @@ class Tensor {
     std::vector<IndexRange> indexrange() const { return range_; };
 
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
-      assert(p.size() == rank_);
+      assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
       if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
       return std::move(data_->get_block(generate_hash_key(p)));
     };
 
     std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
-      assert(p.size() == rank_);
+      assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
       return std::move(data_->move_block(generate_hash_key(p)));
     };
 

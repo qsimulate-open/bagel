@@ -45,7 +45,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
   protected:
     std::shared_ptr<Tensor<T> > t2;
     std::shared_ptr<Tensor<T> > r;
-    std::shared_ptr<Tensor<T> > Gamma;
+    double e0_;
 
     std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > make_queue_() {
       std::shared_ptr<Queue<T> > queue_(new Queue<T>());
@@ -62,13 +62,12 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task1->add_dep(task0);
       queue_->add_task(task1);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor2 = {I0, this->v2_};
-      std::shared_ptr<Task2<T> > task2(new Task2<T>(tensor2, index));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor2 = {I0, t2, this->v2_};
+      std::shared_ptr<Task2<T> > task2(new Task2<T>(tensor2, index, this->e0_));
       task1->add_dep(task2);
       task2->add_dep(task0);
       queue_->add_task(task2);
 
-#if 0
       std::vector<IndexRange> I1_index;
       std::shared_ptr<Tensor<T> > I1(new Tensor<T>(I1_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor3 = {I0, t2, I1};
@@ -77,13 +76,15 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task3->add_dep(task0);
       queue_->add_task(task3);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor4 = {I1, Gamma};
+      std::vector<IndexRange> Gamma0_index;
+      std::shared_ptr<Tensor<T> > Gamma0(new Tensor<T>(Gamma0_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor4 = {I1, Gamma0};
       std::shared_ptr<Task4<T> > task4(new Task4<T>(tensor4, index));
       task3->add_dep(task4);
       task4->add_dep(task0);
       queue_->add_task(task4);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor5 = {Gamma, rdm1_, f1_};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor5 = {Gamma0, this->rdm1_, this->f1_};
       std::shared_ptr<Task5<T> > task5(new Task5<T>(tensor5, index));
       task4->add_dep(task5);
       task5->add_dep(task0);
@@ -97,19 +98,20 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task6->add_dep(task0);
       queue_->add_task(task6);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {I3, Gamma};
+      std::vector<IndexRange> Gamma1_index;
+      std::shared_ptr<Tensor<T> > Gamma1(new Tensor<T>(Gamma1_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {I3, Gamma1};
       std::shared_ptr<Task7<T> > task7(new Task7<T>(tensor7, index));
       task6->add_dep(task7);
       task7->add_dep(task0);
       queue_->add_task(task7);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {Gamma, rdm1_, f1_};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {Gamma1, this->rdm1_, this->f1_};
       std::shared_ptr<Task8<T> > task8(new Task8<T>(tensor8, index));
       task7->add_dep(task8);
       task8->add_dep(task0);
       queue_->add_task(task8);
 
-#endif
       std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor9 = {r, I4};
@@ -146,15 +148,15 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       queue_->add_task(task13);
 
       std::shared_ptr<Queue<T> > energy_(new Queue<T>());
-      std::vector<IndexRange> I14_index;
-      std::shared_ptr<Tensor<T> > I14(new Tensor<T>(I14_index, false));
-      std::vector<IndexRange> I15_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor14 = {I14, t2, I15};
+      std::vector<IndexRange> I16_index;
+      std::shared_ptr<Tensor<T> > I16(new Tensor<T>(I16_index, false));
+      std::vector<IndexRange> I17_index = {this->closed_, this->virt_, this->closed_, this->virt_};
+      std::shared_ptr<Tensor<T> > I17(new Tensor<T>(I17_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor14 = {I16, t2, I17};
       std::shared_ptr<Task14<T> > task14(new Task14<T>(tensor14, index));
       energy_->add_task(task14);
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor15 = {I15, this->v2_, r};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor15 = {I17, this->v2_, r};
       std::shared_ptr<Task15<T> > task15(new Task15<T>(tensor15, index));
       task14->add_dep(task15);
       energy_->add_task(task15);
@@ -166,6 +168,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
     MP2(std::shared_ptr<const Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
+      e0_ = this->compute_e0();
 #if 1
       this->update_amplitude_start(t2, this->v2_);
       t2->scale(2.0);

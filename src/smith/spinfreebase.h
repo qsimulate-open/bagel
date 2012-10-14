@@ -79,6 +79,14 @@ class SpinFreeMethod {
     };
 
 
+    double compute_e0() {
+      assert(eig_);
+      double sum = 0.0;
+      for (int i = 0; i != ref_->nclosed(); ++i) sum += eig_[i] * 2.0;
+      return sum;
+    };
+
+
     void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r) {
 
       // ranks of t and r are assumed to be the same
