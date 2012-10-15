@@ -95,8 +95,6 @@ class Dvec {
     Dvec& operator+=(const Dvec& o) { daxpy(1.0, o); return *this; };
     Dvec& operator-=(const Dvec& o) { daxpy(-1.0, o); return *this; };
 
-    Dvec& operator=(const Dvec& o) { assert(size() == o.size()); std::copy(o.data_.get(), o.data_.get()+size(), data_.get()); return *this; };
-
     Dvec operator+(const Dvec& o) const { Dvec out(*this); return out += o; };
     Dvec operator-(const Dvec& o) const { Dvec out(*this); return out -= o; };
 

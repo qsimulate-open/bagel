@@ -24,7 +24,8 @@
 //
 
 
-#include <src/fci/fci.h>
+#include <src/fci/harrison.h>
+#include <src/fci/knowles.h>
 
 std::vector<double> fci_energy(std::string inp) {
 
@@ -48,7 +49,12 @@ std::vector<double> fci_energy(std::string inp) {
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (iter->first == "fci") {
-      std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
+      std::shared_ptr<FCI> fci;
+      std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+      if (algorithm == "harrison") fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+      else if (algorithm == "knowles") fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second,ref));
+      else assert(false);
+     
       fci->compute();
       std::cout.rdbuf(backup_stream);
       return fci->energy();
@@ -72,11 +78,13 @@ std::vector<double> reference_fci_energy2() {
 }
 
 
-BOOST_AUTO_TEST_SUITE(TEST_FCI)
+BOOST_AUTO_TEST_SUITE(TEST_NEWFCI)
 
-BOOST_AUTO_TEST_CASE(FCI_2STATE) {
-    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci2"), reference_fci_energy()));
-    BOOST_CHECK(compare(fci_energy("hhe_svp_fci2_trip"), reference_fci_energy2()));
+BOOST_AUTO_TEST_CASE(NEWFCI_2STATE) {
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_hz"), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_kh"), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hhe_svp_fci_hz_trip"), reference_fci_energy2()));
+    BOOST_CHECK(compare(fci_energy("hhe_svp_fci_kh_trip"), reference_fci_energy2()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -24,8 +24,8 @@
 //
 
 #include <stdexcept>
-#include <src/newfci/determinants.h>
-#include <src/newfci/space.h>
+#include <src/fci/determinants.h>
+#include <src/fci/space.h>
 #include <src/util/comb.h>
 #include <src/util/combination.hpp>
 
@@ -38,7 +38,7 @@ Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, 
   common_init();
 }
 
-Space::Space(shared_ptr<const NewDeterminants> det, int _M) : norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(det->compress_) {
+Space::Space(shared_ptr<const Determinants> det, int _M) : norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(det->compress_) {
 
   common_init();
 }
@@ -52,8 +52,8 @@ void Space::common_init() {
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
-      shared_ptr<NewDeterminants> tmpdet(new NewDeterminants(norb_, nelea_ + i, neleb_ + j, compress));
-      detmap_.insert(pair<int,shared_ptr<NewDeterminants> >(key_(i,j), tmpdet));
+      shared_ptr<Determinants> tmpdet(new Determinants(norb_, nelea_ + i, neleb_ + j, compress));
+      detmap_.insert(pair<int,shared_ptr<Determinants> >(key_(i,j), tmpdet));
     }
   }
   if (!mute) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;

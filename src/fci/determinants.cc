@@ -23,16 +23,18 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <cassert>
 #include <stdexcept>
 #include <src/fci/determinants.h>
 #include <src/util/comb.h>
 #include <src/util/combination.hpp>
+#include <src/util/constants.h>
+
+#include <bitset>
 
 using namespace std;
 using namespace bagel;
 
-const static Comb comb;
+static Comb comb;
 
 Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress)
   : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress) {
@@ -62,18 +64,18 @@ void Determinants::const_string_lists_() {
   const int lengthb = comb.c(norb_, neleb_);
   stringa_.resize(lengtha);
   stringb_.resize(lengthb);
-  fill(stringa_.begin(), stringa_.end(), 0);
-  fill(stringb_.begin(), stringb_.end(), 0);
+  fill(stringa_.begin(), stringa_.end(),bitset<nbit__>(0));
+  fill(stringb_.begin(), stringb_.end(),bitset<nbit__>(0));
 
-  auto sa = stringa_.begin();
+  vector<bitset<nbit__> >::iterator sa = stringa_.begin();
   do {
-    for (int i=0; i!=nelea_; ++i) *sa += (1 << data[i]);
+    for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
 
   sa = stringb_.begin();
   do {
-    for (int i=0; i!=neleb_; ++i) *sa += (1 << data[i]);
+    for (int i=0; i!=neleb_; ++i) sa->set(data[i]);
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+neleb_, data.end()));
 
@@ -87,23 +89,27 @@ void Determinants::const_lexical_mapping_() {
 
   // this part is 1 offset due to the convention of Knowles & Handy's paper.
   // Just a blind copy from the paper without understanding much, but the code below works.
-  for (int k = 1; k < nelea_; ++k) {
-    for (int l = k; l <= norb_-nelea_+k; ++l) {
-      for (int m = norb_-l+1; m <= norb_-k; ++m) {
-        zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
+  if( nelea_ != 0 ) { // There may be a better way to deal with zero electrons...
+    for (int k = 1; k < nelea_; ++k) {
+      for (int l = k; l <= norb_-nelea_+k; ++l) {
+        for (int m = norb_-l+1; m <= norb_-k; ++m) {
+          zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
+        }
       }
     }
+    for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
   }
-  for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
 
   if (nelea_ == neleb_) {
     copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
   } else {
-    for (int k = 1; k < neleb_; ++k)
-      for (int l = k; l <= norb_-neleb_+k; ++l)
-        for (int m = norb_-l+1; m <= norb_-k; ++m)
-          zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
-    for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
+    if( neleb_ != 0 ) {
+      for (int k = 1; k < neleb_; ++k)
+        for (int l = k; l <= norb_-neleb_+k; ++l)
+          for (int m = norb_-l+1; m <= norb_-k; ++m)
+            zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
+      for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
+    }
   }
 }
 
@@ -111,29 +117,28 @@ void Determinants::const_lexical_mapping_() {
 void Determinants::print(const double* const civec, const double thr) const {
   const double* i = civec;
   // multimap sorts elements so that they will be shown in the descending order in magnitude
-  multimap<double, tuple<double, int, int> > tmp;
+  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__> > > tmp;
   for (auto& ia : stringa_) {
     for (auto& ib : stringb_) {
-      if (abs(*i) > thr)
+      if (abs(*i) > thr) {
         tmp.insert(make_pair(-abs(*i), make_tuple(*i, ia, ib)));
-      ++i;
+      }
     }
   }
-  for (auto& it : tmp) {
-    cout << "       " << print_bit(get<1>(it.second), get<2>(it.second))
-         << "  " << setprecision(10) << setw(15) << get<0>(it.second) << endl;
+  for (auto& iter : tmp) {
+    cout << "       " << print_bit(get<1>(iter.second), get<2>(iter.second))
+         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
   }
 }
 
-
-pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int spin, const int alpha, const int beta) const {
+pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
   vector<tuple<int, int, int> > out;
 
   // bit pattern for doubly occupied orbitals
-  const int common = (alpha & beta);
+  bitset<nbit__> common = (alpha & beta);
 
-  const int alpha_without_common = alpha ^ common;
-  const int beta_without_common = beta ^ common;
+  bitset<nbit__> alpha_without_common = alpha ^ common;
+  bitset<nbit__> beta_without_common = beta ^ common;
 
   // alpha pattern without highest spin orbitals
   vector<int> salpha_array = bit_to_numbers(alpha_without_common);
@@ -143,23 +148,22 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
     ualpha_array.push_back(salpha_array.back());
     salpha_array.pop_back();
   }
-  const int salpha = numbers_to_bit(salpha_array); 
-  const int ualpha = numbers_to_bit(ualpha_array); 
-  const int common_plus_alpha = common + ualpha;
+  bitset<nbit__> salpha = numbers_to_bit(salpha_array); 
+  bitset<nbit__> ualpha = numbers_to_bit(ualpha_array); 
+  bitset<nbit__> common_plus_alpha(common.to_ulong() + ualpha.to_ulong());
 
   // number of unpaired alpha orbitals (minus Ms)
-  const int nalpha = numofbits(salpha);
+  const int nalpha = salpha.count();
 
   // a vector of number that specify open orbitals
   vector<int> open = bit_to_numbers(salpha^beta_without_common);
   assert((salpha^beta_without_common) == (salpha|beta_without_common));
 
-  // the first bit pattern for alpha (to determine the sign) 
 #if 0
-  int init_alpha = common_plus_alpha;
-  for (int i=0; i!=nalpha; ++i) init_alpha ^= (1<<open[i]);
-  int init_beta = common;
-  for (int i=nalpha; i!=open.size(); ++i) init_beta ^= (1<<open[i]);
+  // the first bit pattern for alpha (to determine the sign) 
+  bitset<nbit__> init_alpha = common_plus_alpha;
+  // There may be a better way to do this with bitset...?
+  for (int i=0; i!=nalpha; ++i) init_alpha.flip(open[i]);
 #endif
 
   // take a linear combination to make a vector singlet coupled.
@@ -167,10 +171,10 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
   assert(nalpha*2 == open.size());
   int icnt = 0;
   do {
-    int ialpha = common_plus_alpha;
-    int ibeta = common;
-    for (int i =0; i!=nalpha; ++i) ialpha ^= (1<<open[i]);
-    for (int i=nalpha; i!=open.size(); ++i) ibeta ^= (1<<open[i]);
+    bitset<nbit__> ialpha = common_plus_alpha;
+    bitset<nbit__> ibeta = common;
+    for (int i =0; i!=nalpha; ++i) ialpha.flip(open[i]);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta.flip(open[i]);
 
     // sign is always compensated by moving alpha to the left and beta to the right
     // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
@@ -184,4 +188,3 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
   return make_pair(out, factor);
 }
-

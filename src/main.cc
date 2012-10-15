@@ -38,9 +38,8 @@
 #include <src/scf/rohf.h>
 #include <src/molden/molden.h>
 #include <src/wfn/reference.h>
-#include <src/fci/fci.h>
-#include <src/newfci/harrison.h>
-#include <src/newfci/knowles.h>
+#include <src/fci/harrison.h>
+#include <src/fci/knowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
 #include <src/mp2/mp2grad.h>
@@ -213,12 +212,14 @@ int main(int argc, char** argv) {
 
         }
 
+      #if 0
       } else if (method == "fci") {
         if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
 
         std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
         fci->compute();
 
+      #endif
       } else if (method == "mp2") {
 
         std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
@@ -256,23 +257,23 @@ int main(int argc, char** argv) {
         if (orbitals) molden.write_mos(ref, out_file);
 
       }
-        else if (method == "newfci") {
+        else if (method == "fci") {
         if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
-        std::shared_ptr<NewFCI> fci;
+        std::shared_ptr<FCI> fci;
 
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         if (algorithm == "" || algorithm == "auto") {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
           const int norb = ref->geom()->nbasis();
-          if ( (nele) <= norb ) fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
-          else fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second, ref));
+          if ( (nele) <= norb ) fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+          else fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-          fci = std::shared_ptr<NewFCI>(new KnowlesHandy(iter->second, ref));
+          fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-          fci = std::shared_ptr<NewFCI>(new HarrisonZarrabian(iter->second, ref));
+          fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
         } else {
-          throw std::runtime_error("unknown NewFCI algorithm specified.");
+          throw std::runtime_error("unknown FCI algorithm specified.");
         }
 
         fci->compute();

@@ -1,4 +1,4 @@
-//
+
 // BAGEL - Parallel electron correlation program.
 // Filename: mofile.h
 // Copyright (C) 2011 Toru Shiozaki
@@ -24,6 +24,7 @@
 //
 
 
+
 #ifndef __NEWINT_FCI_MOFILE_H
 #define __NEWINT_FCI_MOFILE_H
 
@@ -46,6 +47,7 @@ class MOFile {
     int nbasis_;
 
     bool do_df_;
+    bool hz_; // If true, do hz stuff. This may be revisited if more algorithms are implemented
     double core_energy_;
 
     const std::shared_ptr<const Geometry> geom_;
@@ -84,8 +86,8 @@ class MOFile {
     std::shared_ptr<const Coeff> coeff_;
 
   public:
-    MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence);
-    MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>);
+    MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::string method = std::string("KH"));
+    MOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
     ~MOFile();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
@@ -93,8 +95,11 @@ class MOFile {
     int sizeij() const { return sizeij_; };
     double mo1e(const size_t i) const { return mo1e_[i]; };
     double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
+    // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l
-    double mo2e(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
+    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
+    // This is in <ij|kl> == (ik|jl) format
+    double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
     std::shared_ptr<const Matrix1e> core_fock() const { return core_fock_; };
     double* core_fock_ptr() { return core_fock_->data(); };
@@ -118,8 +123,8 @@ class Jop : public MOFile {
     std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
     std::unique_ptr<double[]> compute_mo2e(const int, const int);
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d) : MOFile(b,c,d) { core_energy_ = create_Jiiii(c, d); };
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e) : MOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH")) : MOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH")) : MOFile(b,c,d,e,f) { core_energy_ = create_Jiiii(c, d); };
     ~Jop() {};
 };
 
@@ -129,9 +134,9 @@ class Htilde : public MOFile {
     std::unique_ptr<double[]> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); };
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); }; 
     std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::move(h2_tmp_); };
-
+  
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)
       : MOFile(b,c,d), h1_tmp_(std::move(h1)), h2_tmp_(std::move(h2)) {

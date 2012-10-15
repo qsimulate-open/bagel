@@ -26,8 +26,8 @@
 // Desc :: The implementation closely follows Harrison and Zarrabian
 //
 
-#ifndef __NEWINT_NEWFCI_HARRISONZARRABIAN_H
-#define __NEWINT_NEWFCI_HARRISONZARRABIAN_H
+#ifndef __NEWINT_FCI_HARRISONZARRABIAN_H
+#define __NEWINT_FCI_HARRISONZARRABIAN_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -37,17 +37,17 @@
 #include <bitset>
 #include <src/util/input.h>
 #include <src/util/constants.h>
-#include <src/newfci/dvec.h>
-#include <src/newfci/mofile.h>
-#include <src/newfci/fci.h>
-#include <src/newfci/space.h>
+#include <src/fci/dvec.h>
+#include <src/fci/mofile.h>
+#include <src/fci/fci.h>
+#include <src/fci/space.h>
+#include <src/fci/determinants.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
-#include <src/newfci/determinants.h>
 
 namespace bagel {
 
-class HarrisonZarrabian : public NewFCI {
+class HarrisonZarrabian : public FCI {
 
   protected:
     //void create_Jiiii();
@@ -56,21 +56,21 @@ class HarrisonZarrabian : public NewFCI {
 
     void const_denom() override;
   
-    std::shared_ptr<NewDvec> form_sigma(std::shared_ptr<const NewDvec> c, std::shared_ptr<const NewMOFile> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
 
     // run-time functions
-    void sigma_1(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_3(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2aa  (std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2bb  (std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewCivec> sigma, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2ab_1(std::shared_ptr<const NewCivec> cc, std::shared_ptr<NewDvec> d) const;
-    void sigma_2ab_2(std::shared_ptr<NewDvec> d, std::shared_ptr<NewDvec> e, std::shared_ptr<const NewMOFile> jop) const;
-    void sigma_2ab_3(std::shared_ptr<NewCivec> sigma, std::shared_ptr<NewDvec> e) const;
+    void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2aa  (std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2bb  (std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
     HarrisonZarrabian(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : NewFCI(a, b, ncore, nocc, nstate) {
+        const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, b, ncore, nocc, nstate) {
       space_ = std::shared_ptr<Space>(new Space(det_, 1));
       update(ref_->coeff());
     };

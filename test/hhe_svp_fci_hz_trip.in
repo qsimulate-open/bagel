@@ -13,8 +13,8 @@ df-rohf {
   thresh = 1.0e-12;
 }
 
-newfci {
-  algorithm = knowles;
+fci {
+  algorithm = harrison;
   nspin = 1;
   nstate = 2;
   frozen = false;

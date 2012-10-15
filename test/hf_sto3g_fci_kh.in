@@ -12,7 +12,7 @@ df-hf {
   thresh = 1.0e-10;
 }
 
-newfci {
+fci {
   algorithm = knowles;
   nstate = 2;
 }

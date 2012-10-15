@@ -23,10 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Desc :: The implementation closely follows Knowles and Handy 1984 CPL.
-//         It is amazing how easy it is to implement FCI !!
-//
-
 #ifndef __NEWINT_FCI_FCI_H
 #define __NEWINT_FCI_FCI_H
 
@@ -35,13 +31,14 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
-#include <chrono>
+#include <bitset>
 #include <src/util/input.h>
+#include <src/util/constants.h>
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>
+#include <src/fci/determinants.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
-#include <src/fci/determinants.h>
 
 namespace bagel {
 
@@ -49,7 +46,7 @@ class FCI {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_;
+    std::multimap<std::string, std::string> idata_; 
     // reference
     std::shared_ptr<const Reference> ref_;
     // geometry file
@@ -80,12 +77,8 @@ class FCI {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1> > rdm1_av_;
     std::shared_ptr<RDM<2> > rdm2_av_;
-    // MO integrals
+    // MO integrals 
     std::shared_ptr<MOFile> jop_;
-
-    //
-    // Below here, internal private members
-    //
 
     // Determinant space
     std::shared_ptr<const Determinants> det_;
@@ -94,29 +87,21 @@ class FCI {
     std::shared_ptr<Civec> denom_;
 
     // some init functions
-    void common_init();
+    void common_init(); // may end up unnecessary
     void create_Jiiii();
-    // generate spin-adapted guess configurations
-    void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
-    // denominator
-    void const_denom();
     // obtain determinants for guess generation
-    std::vector<std::pair<int, int> > detseeds(const int ndet);
+    void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
+    // generate spin-adapted guess configurations
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__> > > detseeds(const int ndet);
 
-
-    // run-time functions
-    void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
-    void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
-    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
-    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
+    /* Virtual functions -- these MUST be defined in the derived class*/
+    // denominator
+    virtual void const_denom() = 0;
 
     // functions related to natural orbitals
-    void update_rdms(const std::vector<double>& coeff);
+    void update_rdms(const std::vector<double>& coeff); 
 
-    // internal function for RDM1 and RDM2 computations
+    // internal function for RDM1 and RDM2 computations 
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
       compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 
@@ -130,20 +115,22 @@ class FCI {
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
     ~FCI();
     void compute();
-    void update(std::shared_ptr<const Coeff> );
+
+    virtual void update(std::shared_ptr<const Coeff> ) = 0;
 
     // returns members
     int norb() const { return norb_; };
     int nelea() const { return nelea_; };
     int neleb() const { return neleb_; };
-    int nij() const { return norb_*(norb_+1)/2; };
     int ncore() const { return ncore_; };
     double core_energy() const { return jop_->core_energy(); };
 
+    virtual int nij() const { return norb_*(norb_+1)/2; };
+
     double weight(const int i) const { return weight_[i]; };
 
-    // application of Hamiltonian
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    // virtual application of Hamiltonian
+    virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
 
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
@@ -186,6 +173,9 @@ class FCI {
     // returns CI vectors
     std::shared_ptr<Dvec> civectors() const { return cc_; };
 
+    // These are needed for the RDM stuff, apparently
+    void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 };
 
 }

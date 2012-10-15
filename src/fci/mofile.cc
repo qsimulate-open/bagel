@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -35,21 +34,24 @@
 using namespace std;
 using namespace bagel;
 
-MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence)
+
+MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
 : geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
-
+  
+  hz_ = (method=="HZ");
 }
 
 
-MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c)
-: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(c) {
+MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
+: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 
+  hz_ = (method=="HZ"); 
 }
 
 
@@ -80,29 +82,49 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
 void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) {
 
-  // mo2e is compressed
+  // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
-  sizeij_ = nocc*(nocc+1)/2;
+  sizeij_ = hz_ ? nocc*nocc : nocc*(nocc+1)/2;
   mo2e_ = unique_ptr<double[]>(new double[sizeij_*sizeij_]);
 
-  int ijkl = 0;
-  for (int i = 0; i != nocc; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      const int ijo = (j + i*nocc)*nocc*nocc;
-      for (int k = 0; k != nocc; ++k)
-        for (int l = 0; l <= k; ++l, ++ijkl)
-          mo2e_[ijkl] = buf2e[l+k*nocc+ijo];
+  if (!hz_) {
+    int ijkl = 0;
+    for (int i = 0; i != nocc; ++i) {
+      for (int j = 0; j <= i; ++j) {
+        const int ijo = (j + i*nocc)*nocc*nocc;
+        for (int k = 0; k != nocc; ++k)
+          for (int l = 0; l <= k; ++l, ++ijkl)
+            mo2e_[ijkl] = buf2e[l+k*nocc+ijo];
+      }
+    }
+  }
+  else {
+    int ijkl = 0;
+    // In this case, there is no compression (this is actually necessary)
+    // Is currently ordered like (ij|kl), should be ordered like (ik|jl), with the last index moving the fastest
+    // Equivalent to             <ik|jl> --> <ij|kl>
+    for (int i = 0; i != nocc; ++i) {
+      for (int k = 0; k != nocc; ++k) {
+        for (int j = 0; j != nocc; ++j) {
+          for (int l = 0; l != nocc; ++l, ++ijkl) {
+            mo2e_[ijkl] = buf2e[l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc];
+          }
+        }
+      }
     }
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)
-  mo1e_ = unique_ptr<double[]>(new double[sizeij_]);
+  const int size1e = nocc*(nocc+1)/2;
+  mo1e_ = unique_ptr<double[]>(new double[size1e]);
   int ij = 0;
   for (int i=0; i!=nocc; ++i) {
     for (int j=0; j<=i; ++j, ++ij) {
       mo1e_[ij] = buf1e[j+i*nocc];
-      for (int k=0; k!=nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
+      if (!hz_) {
+        for (int k=0; k!=nocc; ++k)
+          mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
+      }
     }
   }
 }

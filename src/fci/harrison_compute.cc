@@ -27,8 +27,8 @@
 #include <iomanip>
 #include <string>
 #include <stdexcept>
-#include <src/newfci/harrison.h>
-#include <src/newfci/space.h>
+#include <src/fci/harrison.h>
+#include <src/fci/space.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
@@ -41,26 +41,26 @@ using namespace std::chrono;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<NewDvec> HarrisonZarrabian::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop,
+shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
   const int ij = norb_*norb_; 
 
   const int nstate = ccvec->ij();
 
-  shared_ptr<NewDvec> sigmavec(new NewDvec(ccvec->det(), nstate));
+  shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstate));
   sigmavec->zero();
 
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
-  shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  shared_ptr<NewDvec> d(new NewDvec(int_det, ij));
-  shared_ptr<NewDvec> e(new NewDvec(int_det, ij));
+  shared_ptr<Dvec> d(new Dvec(int_det, ij));
+  shared_ptr<Dvec> e(new Dvec(int_det, ij));
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
-    shared_ptr<const NewCivec> cc = ccvec->data(istate);  
-    shared_ptr<NewCivec> sigma = sigmavec->data(istate);  
+    shared_ptr<const Civec> cc = ccvec->data(istate);  
+    shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
     vector<pair<string, double> > timing;
     auto start = high_resolution_clock::now();
@@ -107,7 +107,7 @@ shared_ptr<NewDvec> HarrisonZarrabian::form_sigma(shared_ptr<const NewDvec> ccve
   return sigmavec;
 }
 
-void HarrisonZarrabian::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
   const int ij = nij(); 
   const int lb = cc->lenb();
@@ -120,7 +120,7 @@ void HarrisonZarrabian::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCiv
   }
 }
 
-void HarrisonZarrabian::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -137,8 +137,8 @@ void HarrisonZarrabian::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCiv
   }
 }
 
-void HarrisonZarrabian::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+void HarrisonZarrabian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const int norb = norb_;
 
@@ -173,8 +173,8 @@ void HarrisonZarrabian::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewC
   }
 }
 
-void HarrisonZarrabian::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+void HarrisonZarrabian::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const double* const source_base = cc->data();
   double* target_base = sigma->data();
@@ -209,11 +209,11 @@ void HarrisonZarrabian::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewC
   }
 }
 
-void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
+void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int norb = norb_;
 
-  shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const int lbt = int_det->lenb();
   const int lbs = base_det->lenb();
@@ -234,7 +234,7 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<Ne
   }
 }
 
-void HarrisonZarrabian::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
+void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
@@ -242,9 +242,9 @@ void HarrisonZarrabian::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }
 
-void HarrisonZarrabian::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDvec> e) const {
-  const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
-  const shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
+void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
+  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  const shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   const int norb = norb_;
   const int lbt = base_det->lenb();

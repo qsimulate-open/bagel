@@ -26,7 +26,7 @@
 
 #include <src/util/f77.h>
 #include <src/wfn/reference.h>
-#include <src/fci/fci.h>
+#include <src/fci/knowles.h>
 #include <src/osint/overlapbatch.h>
 #include <src/util/mixedbasis.h>
 
@@ -59,7 +59,8 @@ shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const
 
 
 shared_ptr<Dvec> Reference::civectors() const {
-  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
+  // Default to HarrisonZarrabian method
+  shared_ptr<FCI> fci(new KnowlesHandy(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();
   return fci->civectors();
 }
@@ -67,7 +68,8 @@ shared_ptr<Dvec> Reference::civectors() const {
 
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 shared_ptr<RDM<3> > Reference::compute_rdm3(const int i) const {
-  shared_ptr<FCI> fci(new FCI(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
+  // Default to HarrisonZarrabian method
+  shared_ptr<FCI> fci(new KnowlesHandy(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();
   return get<0>(fci->compute_rdm34(i));
 }

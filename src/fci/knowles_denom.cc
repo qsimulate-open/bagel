@@ -23,36 +23,45 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+
 #include <iomanip>
 #include <stdexcept>
-#include <bitset>
-#include <src/newfci/harrison.h>
-#include <src/newfci/mofile.h>
+#include <src/fci/knowles.h>
+#include <src/fci/mofile.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
-#include <src/util/constants.h>
 #include <iostream>
 
 using namespace std;
 using namespace std::chrono;
 using namespace bagel;
 
-void HarrisonZarrabian::const_denom() {
-  vector<double> jop, kop;
+//
+// averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
+//
+void KnowlesHandy::const_denom() {
+  vector<double> jop, kop, fk;
   jop.resize(norb_*norb_);
   kop.resize(norb_*norb_);
+  fk.resize(norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_kh(j, j, i, i);
     }
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_kh(j, i, j, i);
+    }
+  }
+  for (int i = 0; i != norb_; ++i) {
+    fk[i] = 0.0;
+    for (int j = 0; j != norb_; ++j) {
+      fk[i] += kop[i*norb_+j];
     }
   }
 
-  shared_ptr<NewCivec> tmp(new NewCivec(det()));
+  shared_ptr<Civec> tmp(new Civec(det()));
   denom_ = tmp;
   const int nspin = det()->nspin(); 
   const int nspin2 = nspin*nspin;
@@ -74,18 +83,18 @@ void HarrisonZarrabian::const_denom() {
           const int Nj = (nja ^ njb);
           const int addj = niab * (nja + njb); 
           *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
-        }
-        *iter += jop_->mo1e(i,i) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
+        }   
+        *iter += (jop_->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
       }
     }
   }
 }
 
-void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
+void KnowlesHandy::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   auto tp1 = high_resolution_clock::now();
-  jop_ = shared_ptr<NewMOFile>(new NewJop(ref_, ncore_, ncore_+norb_, c, string("HZ")));
+  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, string("KH")));
 
   // right now full basis is used. 
   auto tp2 = high_resolution_clock::now();

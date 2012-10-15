@@ -25,8 +25,8 @@
 //
 
 
-#ifndef __SRC_NEWFCI_SPACE_H
-#define __SRC_NEWFCI_SPACE_H
+#ifndef __SRC_FCI_SPACE_H
+#define __SRC_FCI_SPACE_H
 
 #include <memory>
 #include <tuple>
@@ -40,7 +40,7 @@
 #include <cassert>
 
 #include <src/util/constants.h>
-#include <src/newfci/determinants.h>
+#include <src/fci/determinants.h>
 
 namespace bagel {
 
@@ -63,13 +63,13 @@ class Space {
 
     const bool compress_;
 
-    std::map<int, std::shared_ptr<NewDeterminants> > detmap_; // For now, all access should be through NewDeterminants objects
+    std::map<int, std::shared_ptr<Determinants> > detmap_; // For now, all access should be through Determinants objects
 
     template <int spin>
-    void form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<NewDeterminants> nplusdet ); // links two NewDeterminants objects
+    void form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ); // links two Determinants objects
 
     const int key_(const int a, const int b) { return ( a*large__ + b ); }
-    const int key_(std::shared_ptr<NewDeterminants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
+    const int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
     const int sign(std::bitset<nbit__> bit, int i) {
       const std::bitset<nbit__> ii( (1 << (i)) - 1 );
@@ -78,7 +78,7 @@ class Space {
     }
 
   public:
-    Space(std::shared_ptr<const NewDeterminants>, const int M);
+    Space(std::shared_ptr<const Determinants>, const int M);
     Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = true);
     ~Space() {};
 
@@ -88,9 +88,9 @@ class Space {
 
     int nspin() const { return nelea_ - neleb_; }; 
 
-    std::shared_ptr<NewDeterminants> basedet() { return finddet(0, 0); };
+    std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
-    std::shared_ptr<NewDeterminants> finddet( const int i, const int j ) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
+    std::shared_ptr<Determinants> finddet( const int i, const int j ) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
 
   private:
     void common_init();
@@ -98,12 +98,12 @@ class Space {
 
 
 /************************************************************************************
-*  Template function that forms links between two NewDeterminants objects              *
+*  Template function that forms links between two Determinants objects              *
 *     - builds the phiup and phidown lists that connect the given Dets              *
 *     - assigns the proper detadd/rem links in the Det objects                      *
 ************************************************************************************/
 template <int spin>
-void Space::form_link_( std::shared_ptr<NewDeterminants> ndet, std::shared_ptr<NewDeterminants> nplusdet ) {
+void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ) {
   if (spin == Alpha) {
     assert((ndet->nelea()+1 == nplusdet->nelea()) && (ndet->neleb() == nplusdet->neleb()));
   }
