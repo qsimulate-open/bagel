@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "smith") {
 
-        std::string method = read_input<std::string>(iter->second, "method", "MP2");
+        std::string method = read_input<std::string>(iter->second, "method", "mp2");
         if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
         if (method == "mp2") {
           std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore> > mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
