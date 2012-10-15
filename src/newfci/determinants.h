@@ -37,6 +37,7 @@
 #include <vector>
 #include <map>
 #include <bitset>
+#include <algorithm>
 
 #include <src/util/constants.h>
 
@@ -142,8 +143,10 @@ class NewDeterminants {
 
     int sign(std::bitset<nbit__> bit, int i, int j) {
       // masking irrelevant bits
-      std::bitset<nbit__> ii(~((1 << (std::min(i,j)+1)) - 1));
-      std::bitset<nbit__> jj(((1 << (std::max(i,j))) - 1)); 
+      int min, max;
+      std::tie(min,max) = std::minmax(i,j);
+      std::bitset<nbit__> ii(~((1 << (min+1)) - 1));
+      std::bitset<nbit__> jj((1 << max) - 1); 
       bit = (bit & ii) & jj;
       return 1 - ((bit.count() & 1) << 1);
     };
@@ -207,8 +210,8 @@ void NewDeterminants::const_phis_(const std::vector<std::bitset<nbit__> >& strin
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
-            const int minij = std::min(i,j);
-            const int maxij = std::max(i,j);
+            int minij, maxij;
+            std::tie(minij, maxij) = std::minmax(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }

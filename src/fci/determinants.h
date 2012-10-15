@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <vector>
 #include <map>
+#include <algorithm>
 #ifdef USE_SSE42_INTRINSICS
 #include <nmmintrin.h>
 #endif
@@ -80,8 +81,10 @@ class Determinants {
 
     int sign(unsigned int bit, int i, int j) {
       // masking irrelevant bits
-      const unsigned int ii = ~((1 << (std::min(i,j)+1)) - 1);
-      const unsigned int jj = ((1 << (std::max(i,j))) - 1);
+      int min, max;
+      std::tie(min, max) = std::minmax(i,j);
+      const unsigned int ii = ~((1 << (min+1)) - 1);
+      const unsigned int jj = ((1 << max) - 1);
       bit = (bit & ii) & jj;
       return 1 - ((numofbits(bit) & 1) << 1);
     };
@@ -183,8 +186,8 @@ void Determinants::const_phis_(const std::vector<unsigned int>& string,
           const unsigned int jbit = (1 << j);
           if (!(jbit & nbit)) {
             const unsigned int mbit = jbit^nbit;
-            const int minij = std::min(i,j);
-            const int maxij = std::max(i,j);
+            int minij, maxij;
+            std::tie(minij, maxij) = std::minmax(i,j);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
