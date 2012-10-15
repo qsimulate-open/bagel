@@ -39,29 +39,31 @@ using namespace bagel;
 *  Dimer::Dimer(shared_ptr<Geometry> A, vector<double> displacement)                *
 *                                                                                   *
 ************************************************************************************/
-Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : nbasis_(2*A->nbasis()) {
+Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : dimerbasis_(2*A->nbasis()),
+ nbasis_(A->nbasis(), A->nbasis()), symmetric_(true) {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
    shared_ptr<const Geometry> geomB(new const Geometry((*A), displacement));
 
-   geompair_ = make_pair(A, geomB);
+   geoms_ = make_pair(A, geomB);
 
    cout << " ===== Constructing Dimer geometry ===== " << endl;
    construct_geometry();
 }
 
-Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : nbasis_(2*A->geom()->nbasis())
+Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : dimerbasis_(2*A->geom()->nbasis()),
+nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
 {
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
-   coeffs_.push_back(A->coeff());
+   coeffs_ = make_pair(A->coeff(), A->coeff());
 
    shared_ptr<const Geometry> geomA = A->geom();
    shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
 
-   geompair_ = make_pair(geomA, geomB);
+   geoms_ = make_pair(geomA, geomB);
 
    cout << " ===== Constructing Dimer geometry ===== " << endl;
    construct_geometry();
@@ -73,55 +75,111 @@ Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : nbas
    int nact = 2*A->nact();
    int nvirt = 2*A->nvirt();
 
-   superreference_ = shared_ptr<Reference>(new Reference(supergeometry_, supercoeff_, nclo, nact, nvirt ));
+   shared_ptr<const Reference> tmpref(new Reference(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
+            A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() ) );
+   refs_ = make_pair(A, tmpref);
+
+   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
 }
 
 void Dimer::construct_geometry() {
    vector<shared_ptr<const Geometry> > geo_vec;
-   geo_vec.push_back(geompair_.first);
-   geo_vec.push_back(geompair_.second);
+   geo_vec.push_back(geoms_.first);
+   geo_vec.push_back(geoms_.second);
 
-   supergeometry_ = shared_ptr<Geometry>(new Geometry(geo_vec));
+   nbasis_ = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
+
+   sgeom_ = shared_ptr<Geometry>(new Geometry(geo_vec));
 }
 
 /* Note to self: assuming everything is a homodimer so the MOs get striped */
 void Dimer::construct_coeff() {
-   assert( coeffs_.size() <= 2 );
+  const int nbasisA = nbasis_.first;
+  const int nbasisB = nbasis_.second;
 
-   if( coeffs_.empty() ) {
-      throw runtime_error("Attempting to concatenate coefficients on a Dimer with no defined coefficients");
-   }
+  if(static_cast<bool>(refs_.first)) {
+    ncore_.first  = refs_.first->nclosed();
+    ncore_.second = refs_.second->nclosed();
+    
+    nact_.first  = refs_.first->nact();
+    nact_.second = refs_.second->nact();
 
-   supercoeff_ = shared_ptr<Coeff>(new Coeff(supergeometry_));
+    nvirt_.first  = refs_.first->nvirt();
+    nvirt_.second = refs_.second->nvirt();
+  }
+  else {
+    // Round nele up for number of orbitals
+    ncore_.first  = (geoms_.first->nele() + 1)/2;
+    ncore_.second = (geoms_.second->nele() + 1)/2;
 
-   double *Adata = coeffs_.front()->data();
-   double *Bdata = coeffs_.back()->data();
-   double *Sdata = supercoeff_->data();
+    nact_.first  = 0;
+    nact_.second = 0;
 
-   int num_basis = coeffs_.front()->nbasis();
+    nvirt_.first = (nbasisA - ncore_.first);
+    nvirt_.second = (nbasisB - ncore_.second);
+  }
 
-   for(int ii = 0; ii != num_basis; ++ii) {
-      Sdata = copy(Adata, Adata + num_basis, Sdata);
-      /* Fill twice, one for trailing zeros of MO on A, then for leading zeros on MO of B */
-      fill(Sdata, Sdata + 2*num_basis, 0.0); Sdata += 2*num_basis; 
-      Sdata = copy(Bdata, Bdata + num_basis, Sdata);
-      Adata += num_basis; Bdata += num_basis;
-   }
-}
+  scoeff_ = shared_ptr<Coeff>(new Coeff(sgeom_));
+
+  double *Adata = coeffs_.first->data();
+  double *Bdata = coeffs_.second->data();
+  double *Sdata = scoeff_->data();
+
+  const int ncloA = ncore_.first;
+  const int ncloB = ncore_.second;
+
+  const int nactA = nact_.first;
+  const int nactB = nact_.second;
+
+  const int nvirtA = nvirt_.first;
+  const int nvirtB = nvirt_.second;
+
+  // Fill ncoreA first
+  for(int ii = 0; ii != ncloA; ++ii, Adata += nbasisA) {
+     Sdata = copy(Adata, Adata + nbasisA, Sdata);
+     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
+  }
+
+  // Fill ncoreB next
+  for(int ii = 0; ii != ncloB; ++ii, Bdata += nbasisB) {
+     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
+     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
+  }
+
+  // nactA
+  for(int ii = 0; ii != nactA; ++ii, Adata += nbasisA) {
+     Sdata = copy(Adata, Adata + nbasisA, Sdata);
+     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
+  }
+
+  // nactB
+  for(int ii = 0; ii != nactB; ++ii, Bdata += nbasisB) {
+     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
+     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
+  }
+
+  // nvirtA
+  for(int ii = 0; ii != nvirtA; ++ii, Adata += nbasisA) {
+     Sdata = copy(Adata, Adata + nbasisA, Sdata);
+     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
+  }
+
+  // nvirtB
+  for(int ii = 0; ii != nvirtB; ++ii, Bdata += nbasisB) {
+     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
+     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
+  }
+} // Done
 
 shared_ptr<Coeff> Dimer::overlap() {
-/* What I need to do is use a supergeo to make a big overlap matrix
-   and then transform it with supercoeffs into the MO basis */
+/* What I need to do is use a sgeo to make a big overlap matrix
+   and then transform it with scoeffs into the MO basis */
 
-   if(coeffs_.size() == 0) {
-      throw runtime_error("Attempting to compute overlaps in a Dimer without a coefficient matrix");
-   }
+   /* s overlap in AO basis */
+   Overlap ovlp(sgeom_);
 
-   /* super overlap in AO basis */
-   Overlap ovlp(supergeometry_);
-
-   /* transform to MO basis with supercoeff */
-   shared_ptr<Coeff> novlp(new Coeff( (*supercoeff_) % ovlp * (*supercoeff_) ));
+   /* transform to MO basis with scoeff */
+   shared_ptr<Coeff> novlp(new Coeff( (*scoeff_) % ovlp * (*scoeff_) ));
 
    return novlp;
 }
@@ -130,37 +188,36 @@ void Dimer::orthonormalize() {
    shared_ptr<Coeff> ovlp = overlap();
    Matrix1e S = *ovlp;
 
-   unique_ptr<double[]> eig(new double[nbasis_]);
+   unique_ptr<double[]> eig(new double[dimerbasis_]);
    S.diagonalize(eig.get());
 
    Matrix1e S_1_2(S);
    double *S12_data = S_1_2.data();
-   for( int ii = 0; ii != nbasis_; ++ii) {
+   for( int ii = 0; ii != dimerbasis_; ++ii) {
       double scale = 1.0/sqrt(eig[ii]);
-      for( int jj = 0; jj != nbasis_; ++jj) {
+      for( int jj = 0; jj != dimerbasis_; ++jj) {
          *S12_data++ *= scale;
       }
    }
 
    S_1_2 = S_1_2 * *(S.transpose());
 
-   supercoeff_ = shared_ptr<Coeff>(new Coeff(*supercoeff_ * S_1_2));
-   int nclo = superreference_->nclosed();
-   int nact =  superreference_->nact();
-   int nvirt = superreference_->nvirt();
+   scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
+   const int nclo = sref_->nclosed();
+   const int nact =  sref_->nact();
+   const int nvirt = sref_->nvirt();
 
-   superreference_ = shared_ptr<Reference>(new Reference(supergeometry_, supercoeff_, nclo, nact, nvirt ));
+   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
 }
 
-double Dimer::energy() {
-   shared_ptr<Matrix1e> ao_density = supercoeff_->form_density_rhf(superreference_->nclosed());
-   shared_ptr<Fock<1> > hcore(new Fock<1>(supergeometry_));
-   shared_ptr<Fock<1> > fock(new Fock<1>(supergeometry_, hcore, ao_density, supergeometry_->schwarz()));
+void Dimer::energy() {
+   shared_ptr<Matrix1e> ao_density = scoeff_->form_density_rhf(sref_->nclosed());
+   shared_ptr<Fock<1> > hcore(new Fock<1>(sgeom_));
+   shared_ptr<Fock<1> > fock(new Fock<1>(sgeom_, hcore, ao_density, sgeom_->schwarz()));
 
    Matrix1e hcore_fock = (*hcore + *fock);
    double energy = ao_density->ddot(*hcore_fock.transpose());
-   energy = 0.5*energy + supergeometry_->nuclear_repulsion();
+   energy = 0.5*energy + sgeom_->nuclear_repulsion();
 
-   return energy;
+   energy_ = energy;
 }
-
