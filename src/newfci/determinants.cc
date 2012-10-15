@@ -118,16 +118,16 @@ void NewDeterminants::print(const double* const civec, const double thr) const {
   const double* i = civec;
   // multimap sorts elements so that they will be shown in the descending order in magnitude
   multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__> > > tmp;
-  for (auto ia = stringa_.begin(); ia != stringa_.end(); ++ia) {
-    for (auto ib = stringb_.begin(); ib != stringb_.end(); ++ib, ++i) {
+  for (auto& ia : stringa_) {
+    for (auto& ib : stringb_) {
       if (abs(*i) > thr) {
-        tmp.insert(make_pair(-abs(*i), make_tuple(*i, *ia, *ib)));
+        tmp.insert(make_pair(-abs(*i), make_tuple(*i, ia, ib)));
       }
     }
   }
-  for (auto iter = tmp.begin(); iter != tmp.end(); ++iter) {
-    cout << "       " << print_bit(get<1>(iter->second), get<2>(iter->second))
-         << "  " << setprecision(10) << setw(15) << get<0>(iter->second) << endl;
+  for (auto& iter : tmp) {
+    cout << "       " << print_bit(get<1>(iter.second), get<2>(iter.second))
+         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
   }
 }
 

@@ -99,8 +99,8 @@ shared_ptr<NewDvec> HarrisonZarrabian::form_sigma(shared_ptr<const NewDvec> ccve
     if (tprint) {
       print_timing_("task3", start, timing);
       cout << "     timing info" << endl;
-      for (auto iter = timing.begin(); iter != timing.end(); ++iter)
-        cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
+      for (auto& iter : timing )
+        cout << "    " << setw(10) << iter.first << setw(10) << setprecision(2) << iter.second << endl;
     }
   }
 
@@ -113,9 +113,9 @@ void HarrisonZarrabian::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCiv
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
-    for (auto iter = cc->det()->phia(ip).begin();  iter != cc->det()->phia(ip).end(); ++iter) {
-      const double hc = h * get<1>(*iter);
-      daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
+    for (auto& iter : cc->det()->phia(ip)) {
+      const double hc = h * get<1>(iter);
+      daxpy_(lb, hc, cc->element_ptr(0, get<2>(iter)), 1, sigma->element_ptr(0, get<0>(iter)), 1); 
     }
   }
 }
@@ -129,9 +129,9 @@ void HarrisonZarrabian::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCiv
     const double* const source_array0 = cc->element_ptr(0, i);
     for (int ip = 0; ip != ij; ++ip) {
       const double h = jop->mo1e(ip);
-      for (auto iter = cc->det()->phib(ip).begin();  iter != cc->det()->phib(ip).end(); ++iter) {
-        const double hc = h * get<1>(*iter);
-        target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
+      for (auto& iter : cc->det()->phib(ip)) {
+        const double hc = h * get<1>(iter);
+        target_array0[get<0>(iter)] += hc * source_array0[get<2>(iter)];
       }
     }
   }
@@ -222,12 +222,12 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<Ne
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
       double* target_base = d->data(k*norb + l)->data();
-      for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
-        double *target = target_base + get<2>(*aiter)*lbt;
-        const double *source = source_base + get<0>(*aiter)*lbs;
-        for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
-          const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target[get<2>(*biter)] += sign * source[get<0>(*biter)];
+      for (auto& aiter : int_det->phiupa(k)) {
+        double *target = target_base + get<2>(aiter)*lbt;
+        const double *source = source_base + get<0>(aiter)*lbs;
+        for (auto& biter : int_det->phiupb(l)) {
+          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
+          target[get<2>(biter)] += sign * source[get<0>(biter)];
         }
       }
     }
@@ -254,12 +254,12 @@ void HarrisonZarrabian::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDv
   for (int i = 0; i < norb; ++i) {
     for (int j = 0; j < norb; ++j) {
       const double* source_base = e->data(i*norb + j)->data();
-      for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
-        double *target = target_base + get<0>(*aiter)*lbt;
-        const double *source = source_base + get<2>(*aiter)*lbs;
-        for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
-          const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target[get<0>(*biter)] += sign * source[get<2>(*biter)];
+      for (auto& aiter : int_det->phiupa(i)) {
+        double *target = target_base + get<0>(aiter)*lbt;
+        const double *source = source_base + get<2>(aiter)*lbs;
+        for (auto& biter : int_det->phiupb(j)) {
+          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
+          target[get<0>(biter)] += sign * source[get<2>(biter)];
         }
       } 
     }
