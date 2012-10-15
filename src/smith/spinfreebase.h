@@ -160,7 +160,12 @@ class SpinFreeMethod {
 
       // v2 tensor.
       {
-        std::vector<IndexRange> o = {closed_, virt_, closed_, virt_};
+        IndexRange occ(closed_);
+        occ.merge(active_);
+        IndexRange virt(active_);
+        virt.merge(virt_);
+
+        std::vector<IndexRange> o = {occ, virt, occ, virt};
         K2ext<T> v2k(ref_, o);
         v2_ = v2k.tensor();
       }

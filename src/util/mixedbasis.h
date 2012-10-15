@@ -70,7 +70,6 @@ class MixedBasis {
       const std::vector<std::vector<int> > offsets0 = g0->offsets();
       const std::vector<std::vector<int> > offsets1 = g1->offsets();
 
-      // only lower half will be stored
       for (int iatom0 = 0; iatom0 != g0->natom(); ++iatom0) {
         const std::shared_ptr<const Atom> catom0 = atoms0[iatom0];
         const int numshell0 = catom0->shells().size();
