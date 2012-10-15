@@ -312,21 +312,22 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    * data, pick the best ones, or make sure they all match     *
    ************************************************************/
    /* spherical_ should match across the vector*/
-   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      if (spherical_ != (*inmer)->spherical_) {
+   for(auto& inmer : nmer) {
+      if (spherical_ != (inmer)->spherical_) {
          throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
       }
    }
+
    /* symmetry_ should match across the vector*/
-   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      if (symmetry_ != (*inmer)->symmetry_) {
+   for(auto& inmer : nmer) {
+      if (symmetry_ != (inmer)->symmetry_) {
          throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
       }
    }
 
    /* external field would hopefully match, but for now, if it doesn't, just disable */
-   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      if(!(equal(external_.begin(), external_.end(), (*inmer)->external_.begin()))){
+   for(auto& inmer : nmer) {
+      if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
          external_.clear(); break;
       }
    }
@@ -334,9 +335,9 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    /* atoms_ and aux_atoms_ can be merged */
    vector<shared_ptr<const Atom> > new_atoms;
    vector<shared_ptr<const Atom> > new_aux_atoms;
-   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      auto iatoms = (*inmer)->atoms();
-      auto iaux = (*inmer)->aux_atoms();
+   for(auto& inmer : nmer) {
+      auto iatoms = inmer->atoms();
+      auto iaux = inmer->aux_atoms();
 
       new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
       new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
@@ -350,9 +351,9 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    gamma_ = nmer.front()->gamma();
 
    /* Use the strictest thresholds */
-   for(auto inmer = nmer.begin(); inmer != nmer.end(); ++inmer) {
-      schwarz_thresh_ = min(schwarz_thresh_, (*inmer)->schwarz_thresh_);
-      overlap_thresh_ = min(overlap_thresh_, (*inmer)->overlap_thresh_);
+   for(auto& inmer : nmer) {
+      schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
+      overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
    }
 
    /* Data is merged (crossed fingers), now finish */
