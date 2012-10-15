@@ -14,8 +14,6 @@ o perhaps the problem of WK CASSCF is the lack of orb-CI couplings. But then how
 
 o when input areas are empty, methods are not called 
 
-o merge FCI and NewFCI.
-
 o add test cases for molden jobs
 
 o there is a bug in Determinants::spin_adapt. If I fix it, I get wrong energies! Will fix it soon.
