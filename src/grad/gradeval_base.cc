@@ -70,8 +70,8 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e>
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          vector<int> atom = {{iatom0, iatom1}};
-          vector<int> offset_ = {{*o0, *o1}};
+          vector<int> atom = {iatom0, iatom1};
+          vector<int> offset_ = {*o0, *o1};
 
           GradTask task(input, atom, offset_, d, w, this);
           out.push_back(task);
@@ -112,8 +112,8 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o)
             auto o2 = oa2->begin();
             for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
               array<shared_ptr<const Shell>,4> input = {{b3, *b2, *b1, *b0}};
-              vector<int> atoms = {{iatom0, iatom1, iatom2}};
-              vector<int> offs = {{*o0, *o1, *o2}};
+              vector<int> atoms = {iatom0, iatom1, iatom2};
+              vector<int> offs = {*o0, *o1, *o2};
 
               GradTask task(input, atoms, offs, o, this);
               out.push_back(task);
@@ -156,8 +156,8 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]
 
 
           array<shared_ptr<const Shell>,4> input = {{*b1, b3, *b0, b3}};
-          vector<int> atoms = {{iatom0, iatom1}};
-          vector<int> offs = {{*o0, *o1}};
+          vector<int> atoms = {iatom0, iatom1};
+          vector<int> offs = {*o0, *o1};
 
           GradTask task(input, atoms, offs, den, this);
           out.push_back(task);

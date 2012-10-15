@@ -287,12 +287,12 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
   // first construct atoms using displacements
 
-  for (auto i = o.atoms_.begin(); i != o.atoms_.end(); ++i) {
-    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, displ)));
+  for (auto& i : o.atoms_) {
+    atoms_.push_back(shared_ptr<Atom>(new Atom(*i, displ)));
   }
 
-  for (auto j = o.aux_atoms_.begin(); j != o.aux_atoms_.end(); ++j) {
-    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, displ)));
+  for (auto& j : o.aux_atoms_) {
+    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(*j, displ)));
   }
 
   common_init1();

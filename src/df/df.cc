@@ -123,7 +123,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
             for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
               auto o2 = oa2->begin();
               for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
-                tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{b3, *b2, *b1, *b0}}, vector<int>{{*o0, *o1, *o2}}, this));
+                tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{b3, *b2, *b1, *b0}}, vector<int>{*o0, *o1, *o2}, this));
               }
             }
           }
@@ -145,7 +145,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = a0!=a1 ? oa1->begin() : o0;
         for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{{*o0, *o1}}, this));
+          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{*o0, *o1}, this));
         }
       }
     }
