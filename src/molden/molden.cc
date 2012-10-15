@@ -371,11 +371,8 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
    *  Set up offsets and order that I'm interested in here     *
    ************************************************************/
    vector<int> atom_offsets;
-   {
-      vector<vector<int> > offsets = geom->offsets();
-      for(vector<vector<int> >::const_iterator ioff = offsets.begin(); ioff != offsets.end(); ++ioff) {
-         atom_offsets.push_back(ioff->front());
-      }
+   for(auto& ioff : geom->offsets()) {
+      atom_offsets.push_back(ioff.front());
    }
    vector<int> gto_order;
    vector<vector<int> > shell_orders;
@@ -508,36 +505,33 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
    }
    else{
       double *idata = cdata;
-      for(auto imo = mo_coefficients.begin(); imo != mo_coefficients.end(); ++imo) {
-         auto icoeff = imo->begin();
+      for(auto& imo : mo_coefficients) {
+         auto icoeff = imo.begin();
          int ii = 0;
          for(auto iatom = shell_orders.begin(); iatom != shell_orders.end(); ++iatom, ++ii) {
             double* tmp_idata = idata + atom_offsets[gto_order[ii]-1];
-            for(auto ishell = iatom->begin(); ishell != iatom->end(); ++ishell) {
+            for(auto& ishell : *iatom) {
                if (cartesian) {
-                  vector<int> corder = m2n_cart_.at(*ishell);
-                  vector<double> scales = scaling_.at(*ishell);
+                  vector<int> corder = m2n_cart_.at(ishell);
+                  vector<double> scales = scaling_.at(ishell);
                      int jj = 0;
                   if (is_spherical_) {
                      vector<double> in;
-                     for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                        in.push_back(*(icoeff + *iorder) * scales.at(jj++));
-                     }
-                     vector<double> new_in = transform_cart(in, *ishell);
+                     for(auto& iorder : corder)
+                        in.push_back(*(icoeff + iorder) * scales.at(jj++));
+                     vector<double> new_in = transform_cart(in, ishell);
                      tmp_idata = copy(new_in.begin(), new_in.end(), tmp_idata);
                   }
                   else {
-                     for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                        *tmp_idata++ = *(icoeff + *iorder) * scales.at(jj++);
-                     }
+                     for(auto& iorder : corder)  
+                        *tmp_idata++ = *(icoeff + iorder) * scales.at(jj++);
                   }
                   icoeff += corder.size();
                }
                else {
-                  vector<int> corder = m2n_sph_.at(*ishell);
-                  for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                     *tmp_idata++ = *(icoeff + *iorder);
-                  }
+                  vector<int> corder = m2n_sph_.at(ishell);
+                  for(auto& iorder : corder) 
+                     *tmp_idata++ = *(icoeff + iorder);
                   tmp_idata += corder.size();
                }
             }
@@ -566,7 +560,6 @@ void Molden::write_geo(const shared_ptr<const Geometry> geo, const string molden
    }
 
    m_out << "[Molden Format]" << endl;
-
    m_out << "[Atoms] Angs" << endl;
 
    for(int i = 0; i < num_atoms; ++i) {
@@ -601,9 +594,8 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
    ofstream ofs;
    ofs.open(molden_file, ios::app);
 
-   if(!ofs.is_open()){
+   if(!ofs.is_open())
       throw runtime_error("MOs could not be written to molden file: file couldn't be opened");
-   }
 
    shared_ptr<const Geometry> geom = ref->geom();
    vector<shared_ptr<const Atom> > atoms = geom->atoms();
@@ -625,20 +617,20 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
          AtomMap am;
 
          vector<shared_ptr<const Shell> > shells = (*iatom)->shells();
-         for(auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
-            string ang_l = am.angular_string((*ishell)->angular_number());
-            vector<double> exponents = (*ishell)->exponents();
+         for(auto& ishell : shells) {
+            string ang_l = am.angular_string(ishell->angular_number());
+            vector<double> exponents = ishell->exponents();
 
-            int num_contracted = (*ishell)->contractions().size();
+            int num_contracted = ishell->contractions().size();
             for(int jj = 0; jj < num_contracted; ++jj) {
-               pair<int,int> range = (*ishell)->contraction_ranges(jj);
+               pair<int,int> range = ishell->contraction_ranges(jj);
                
                ofs << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
                for(int kk = range.first; kk < range.second; ++kk) {
                   ofs << setiosflags(ios_base::scientific)
                       << setw(20) << setprecision(8) << exponents[kk]
                       << setw(20) << setprecision(8) 
-                      << (*ishell)->contractions(jj)[kk]*denormalize((*ishell)->angular_number(), exponents[kk]) << endl;
+                      << ishell->contractions(jj)[kk]*denormalize(ishell->angular_number(), exponents[kk]) << endl;
                }
             }
          }
@@ -680,15 +672,14 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
 
          int j = 1;
 
-         for (auto iatom = atoms.begin(); iatom != atoms.end(); ++iatom) {
-            vector<shared_ptr<const Shell> > shells = (*iatom)->shells();
-            for (auto ishell = shells.begin(); ishell != shells.end(); ++ishell) {
-               for (int icont = 0; icont != (*ishell)->num_contracted(); ++icont) {
-                  vector<int> corder = (is_spherical_ ? n2m_sph_.at((*ishell)->angular_number()) : n2m_cart_.at((*ishell)->angular_number()));
+         for (auto& iatom : atoms) {
+            for (auto& ishell : iatom->shells()) {
+               for (int icont = 0; icont != ishell->num_contracted(); ++icont) {
+                  vector<int> corder = (is_spherical_ ? n2m_sph_.at(ishell->angular_number()) : n2m_cart_.at(ishell->angular_number()));
                   /* This below is probably temporary... I may need to scale the spherical components */
-                  vector<double> scales = (is_spherical_ ? vector<double>(corder.size(), 1.0) : scaling_.at((*ishell)->angular_number())) ;
-                  for(auto iorder = corder.begin(); iorder != corder.end(); ++iorder) {
-                     ofs << fixed << setw(4) << j++ << setw(22) << setprecision(16) << modata[*iorder] / scales.at(*iorder) << endl;
+                  vector<double> scales = (is_spherical_ ? vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number())) ;
+                  for(auto& iorder : corder) {
+                     ofs << fixed << setw(4) << j++ << setw(22) << setprecision(16) << modata[iorder] / scales.at(iorder) << endl;
                   }
                   modata += corder.size();
                }
@@ -710,14 +701,14 @@ vector<double> Molden::transform_cart(vector<double> carts, int ang_l) {
    vector<vector<pair<int,double> > > mtuv = lmtuv_.at(ang_l);
 
    vector<double> out;
-   for( auto im = mtuv.begin(); im != mtuv.end(); ++im ) {
-      double value = 0.0;
+   for(auto& im : mtuv) {
+     double value = 0.0;
 
-      for ( auto ituv = im->begin(); ituv != im->end(); ++ituv ) {
-         value += (ituv->second) * carts.at(ituv->first);
-      }
+     for(auto& ituv : im) {
+        value += (ituv.second) * carts.at(ituv.first);
+     }
 
-      out.push_back(value);
+     out.push_back(value);
    }
 
    return out;
