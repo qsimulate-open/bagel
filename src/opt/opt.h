@@ -73,7 +73,7 @@ class Opt {
   public:
     Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
       : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(new GradFile(geom->xyz())) {
-      std::shared_ptr<GradFile> denom(new GradFile(geom->natom(), 1.0));
+      std::shared_ptr<const GradFile> denom(new GradFile(geom->natom(), 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
       bmat_ = current_->compute_internal_coordinate();
 
@@ -90,12 +90,12 @@ class Opt {
         mute_stdcout();
       }
       // current geom and grad in the cartesian coordinate
-      std::shared_ptr<GradFile> cgrad = eval.compute();
-      std::shared_ptr<GradFile> cgeom(new GradFile(current_->xyz()));
+      std::shared_ptr<const GradFile> cgrad = eval.compute();
+      std::shared_ptr<const GradFile> cgeom(new GradFile(current_->xyz()));
       std::shared_ptr<GradFile> displ;
       if (internal_) {
-        std::shared_ptr<GradFile> dgeom = cgeom->transform(bmat_[0], false);
-        std::shared_ptr<GradFile> dgrad = cgrad->transform(bmat_[1], false);
+        std::shared_ptr<const GradFile> dgeom = cgeom->transform(bmat_[0], false);
+        std::shared_ptr<const GradFile> dgrad = cgrad->transform(bmat_[1], false);
         displ = bfgs_->extrapolate(dgrad, dgeom);
         // TODO  I haven't understood why this update (internal displacement to cartesian) can be iterative!!
 #if 0

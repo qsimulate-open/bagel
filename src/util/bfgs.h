@@ -55,7 +55,7 @@ class BFGS {
     BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {};
     ~BFGS() {};
 
-    std::shared_ptr<T> extrapolate(std::shared_ptr<T> _grad, std::shared_ptr<T> _value) {
+    std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       // to make sure, inputs are copied.
       std::shared_ptr<const T> grad(new T(*_grad));
       std::shared_ptr<T> value(new T(*_value));
