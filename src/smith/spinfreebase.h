@@ -212,7 +212,7 @@ class SpinFreeMethod {
         }
       }
       // generic function??
-      {
+      if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
         std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
         rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
         // TODO for the time being we hardwire "0" here (but this should be fixed)
