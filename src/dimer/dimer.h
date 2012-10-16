@@ -34,6 +34,7 @@
 #include <src/fci/mofile.h>
 #include <src/fci/dvec.h>
 #include <src/fci/space.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
