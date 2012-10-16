@@ -108,13 +108,12 @@ class Dimer {
       void construct_geometry();
       void construct_coeff();
 
-      void compute_closeclose();
-      void compute_closeactive();
-      void compute_activeactive();
+      std::shared_ptr<Matrix> compute_closeclose();
+      std::shared_ptr<Matrix> compute_closeactive();
+      std::shared_ptr<Matrix> compute_intra_activeactive();
+      std::shared_ptr<Matrix> compute_inter_activeactive();
 
-      std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > form_sigma_AB(std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > sigma);
-      double dot_product(std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > sigma,
-                         std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > ccp);
+      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop);
 };
 
 }

@@ -27,8 +27,8 @@
 #include <iomanip>
 #include <string>
 #include <stdexcept>
-#include <src/newfci/harrison.h>
-#include <src/newfci/space.h>
+#include <src/fci/harrison.h>
+#include <src/fci/space.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
