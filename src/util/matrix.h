@@ -34,7 +34,7 @@
 
 namespace bagel {
 
-class Matrix { // Not to be confused with Matrix... at least for the moment
+class Matrix { // Not to be confused with Matrix1e... at least for the moment
   protected:
     std::unique_ptr<double[]> data_;
     int ndim_;
