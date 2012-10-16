@@ -98,19 +98,12 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       task6->add_dep(task0);
       queue_->add_task(task6);
 
-      std::vector<IndexRange> Gamma1_index;
-      std::shared_ptr<Tensor<T> > Gamma1(new Tensor<T>(Gamma1_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {I3, Gamma1};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor7 = {I3, Gamma0};
       std::shared_ptr<Task7<T> > task7(new Task7<T>(tensor7, index));
       task6->add_dep(task7);
       task7->add_dep(task0);
+      task7->add_dep(task5);
       queue_->add_task(task7);
-
-      std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {Gamma1, this->rdm1_, this->f1_};
-      std::shared_ptr<Task8<T> > task8(new Task8<T>(tensor8, index));
-      task7->add_dep(task8);
-      task8->add_dep(task0);
-      queue_->add_task(task8);
 
       std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I4(new Tensor<T>(I4_index, false));
