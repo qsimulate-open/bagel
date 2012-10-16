@@ -31,53 +31,90 @@
 #include <src/scf/coeff.h>
 #include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
+#include <src/fci/mofile.h>
+#include <src/fci/dvec.h>
+#include <src/fci/space.h>
 
 namespace bagel {
 
 typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
+typedef std::shared_ptr<const Dvec> RefDvec;
 
 /************************************************************************************
 *  This class describes a homodimer.                                                *
-*************************************************************************************
-*  TODO: Extra functionality that would be nice later on:                           *
-*     - compute overlap from separate molecules                                     *
 ************************************************************************************/
 
 class Dimer {
    protected:
-      std::pair<RefGeometry,RefGeometry> geompair_;
-      std::vector<RefCoeff> coeffs_; // There should only be one or two in this.
-      std::shared_ptr<Geometry> supergeometry_;
-      std::shared_ptr<Reference> superreference_;
-      std::shared_ptr<Coeff> supercoeff_;
-      int nbasis_; // Basis size of both together
+      std::pair<RefGeometry,RefGeometry> geoms_;
+      std::pair<RefReference, RefReference> refs_;
+
+      std::pair<RefCoeff, RefCoeff> coeffs_;
+      std::pair<RefDvec, RefDvec> ccvecs_;
+
+      std::shared_ptr<Geometry>   sgeom_;
+      std::shared_ptr<Reference>  sref_;
+      std::shared_ptr<Coeff>      scoeff_;
+
+      std::shared_ptr<MOFile>     jop_;
+      std::pair<std::shared_ptr<MOFile>, std::shared_ptr<MOFile> > jops_; 
+
+      std::shared_ptr<Space>      space_;
+
+      double energy_;      
+      std::unique_ptr<double[]> hamiltonian_;
+
+      int dimerbasis_; // Basis size of both together
+      int dimerstates_;
+
+      std::pair<int, int> ncore_;
+      std::pair<int, int> nact_;
+      std::pair<int, int> nvirt_;
+      std::pair<int, int> nstates_;
+      std::pair<int, int> nbasis_;
       
+      const bool symmetric_;
    public:
+      // Constructors
       Dimer(RefGeometry a, RefGeometry b);
       Dimer(RefGeometry a, std::array<double,3> displacement);
       Dimer(RefReference a, std::array<double,3> displacement);
 
-      RefGeometry get_A() { return geompair_.first; } ;
-      RefGeometry get_B() { return geompair_.second; } ;
-      std::vector<RefCoeff> coeffs() { return coeffs_; }
+      // Return functions
+      std::pair<RefGeometry, RefGeometry> geoms() { return geoms_; } ;
+      std::pair<RefCoeff, RefCoeff> coeffs() { return coeffs_; } ;
+      std::pair<RefDvec, RefDvec> ccvec() { return ccvecs_; } ;
 
-      std::shared_ptr<Geometry> supergeom() { return supergeometry_; }
-      std::shared_ptr<Reference> superref() { return superreference_; }
-      std::shared_ptr<Coeff> supercoeff() { return supercoeff_; }
+      std::shared_ptr<Geometry> sgeom() { return sgeom_; }
+      std::shared_ptr<Reference> sref() { return sref_; }
+      std::shared_ptr<Coeff>   scoeff() { return scoeff_; }
 
-      int coeffsize() { return coeffs_.size(); }
-      int nbasis() {return nbasis_; }
+      std::pair<const int, const int> nbasis() {return nbasis_; }
 
+      template <int unit> int core(int i) { return (i + unit*ncore_.first); };
+      template <int unit> int act(int a)  { return (a + unit*nact_.first); };
+
+      // Utility functions
       std::shared_ptr<Coeff> overlap(); 
       void orthonormalize();
 
-      double energy(); // A rather naive, probably temporary, function for computing the energy
+      // Calculations
+      void hamiltonian();
+      void energy(); // A rather naive, probably temporary, function for computing the energy
 
    private:
       void construct_geometry();
       void construct_coeff();
+
+      void compute_closeclose();
+      void compute_closeactive();
+      void compute_activeactive();
+
+      std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > form_sigma_AB(std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > sigma);
+      double dot_product(std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > sigma,
+                         std::pair<std::shared_ptr<Civec>, std::shared_ptr<Civec> > ccp);
 };
 
 }
