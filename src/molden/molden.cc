@@ -532,7 +532,7 @@ shared_ptr<const Coeff> Molden::read_mos(shared_ptr<const Geometry> geom, string
                   vector<int> corder = m2n_sph_.at(ishell);
                   for(auto& iorder : corder) 
                      *tmp_idata++ = *(icoeff + iorder);
-                  tmp_idata += corder.size();
+                  icoeff += corder.size();
                }
             }
          }
@@ -644,23 +644,20 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
    {
       ofs << "[MO]" << endl;
 
-      shared_ptr<const Coeff> coeff = ref->coeff();
-      int nbasis = coeff->nbasis();
-      vector<double> eigvec = ref->eig();
-      double* modata = coeff->data();
-
+      const int nbasis = ref->coeff()->nbasis();
+      const int num_mos = ref->coeff()->mdim();
       int nocc = ref->nclosed();
 
-      vector<double>::iterator ieig;
-      vector<double> tmp_eigvec(nbasis,0.0);
-      if(eigvec.empty()) {
-         ieig = tmp_eigvec.begin();
-      }
-      else{
-         ieig = eigvec.begin();
-      }
-      int num_mos = coeff->mdim();
-      for(int i = 0; i < num_mos; ++i, ++ieig){
+      double* modata = ref->coeff()->data();
+      
+      vector<double> eigvec = ref->eig();
+      if(eigvec.empty()) eigvec = vector<double>(num_mos,0.0);
+
+      int i = 0;
+      auto ieig = eigvec.begin();
+
+      for(int i = 0; i < num_mos; ++ieig, ++i) {
+      
          ofs << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
 
          /* At the moment only thinking about RHF, so assume spin is Alpha */

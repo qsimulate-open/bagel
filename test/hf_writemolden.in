@@ -1,0 +1,18 @@
+molecule {
+  symmetry = C1;
+  basis = svp;
+  df_basis = svp-jkfit;
+  schwarz_thresh = 1.0e-12;
+  angstrom = false;
+  atom = ( F,     -0.000000,     -0.000000,      2.720616);
+  atom = ( H,      0.000000,      0.000000,      0.305956);
+}
+
+df-hf {
+  thresh = 1.0e-10;
+}
+
+print {
+  file = test.molden;
+  orbitals = true;
+}

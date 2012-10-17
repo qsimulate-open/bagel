@@ -211,15 +211,6 @@ int main(int argc, char** argv) {
 
 
         }
-
-      #if 0
-      } else if (method == "fci") {
-        if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
-
-        std::shared_ptr<FCI> fci(new FCI(iter->second, ref));
-        fci->compute();
-
-      #endif
       } else if (method == "mp2") {
 
         std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
@@ -246,18 +237,7 @@ int main(int argc, char** argv) {
           throw std::logic_error(ss.str());
         }
 
-      } else if (method == "print") {
-
-        std::multimap<std::string, std::string> pdata = iter->second;
-        bool orbitals = read_input<bool>(pdata, "orbitals", false);
-        std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
-
-        Molden molden(geom->spherical());
-        molden.write_geo(geom, out_file);
-        if (orbitals) molden.write_mos(ref, out_file);
-
-      }
-        else if (method == "fci") {
+      } else if (method == "fci") {
         if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
         std::shared_ptr<FCI> fci;
 
@@ -302,13 +282,41 @@ int main(int argc, char** argv) {
         geom = dim->sgeom();
         ref = dim->sref();
 
-      }
+      } else if (method == "print") {
+
+        std::multimap<std::string, std::string> pdata = iter->second;
+        bool orbitals = read_input<bool>(pdata, "orbitals", false);
+        std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
+
+        Molden molden(geom->spherical());
+        molden.write_geo(geom, out_file);
+        if (orbitals) molden.write_mos(ref, out_file);
+
       #if 0 // <---- Testing environment
-      else if (method == "testing") {
+      } else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        #if 1
+        ref->coeff()->print();
+        Molden mfs;
+        
+        std::shared_ptr<const Coeff> coeff = mfs.read_mos(geom, "test.molden");
+
+        coeff->print();
+
+        std::shared_ptr<Matrix1e> ao_density = coeff->form_density_rhf(geom->nele()/2);
+        std::shared_ptr<Fock<1> > hcore(new Fock<1>(geom));
+        std::shared_ptr<Fock<1> > fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
+
+        Matrix1e hcore_fock = (*hcore + *fock);
+        double energy = ((*ao_density)*(hcore_fock)).trace();//->ddot(*hcore_fock.transpose());
+        energy = 0.5*energy + geom->nuclear_repulsion();
+
+        std::cout << energy << std::endl;
+        std::cout << geom->nele() << std::endl;
+
+
+        #if 0
         std::shared_ptr<Space> space(new Space(16, 8, 8, 1));
 
 

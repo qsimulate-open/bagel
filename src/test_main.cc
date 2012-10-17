@@ -63,3 +63,5 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 #include <src/fci/test_fci.cc>
 
 #include <src/opt/test_opt.cc>
+
+#include <src/molden/test_molden.cc>
