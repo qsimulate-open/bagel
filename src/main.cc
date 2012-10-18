@@ -292,6 +292,7 @@ int main(int argc, char** argv) {
         molden.write_geo(geom, out_file);
         if (orbitals) molden.write_mos(ref, out_file);
 
+      }
       #if 0 // <---- Testing environment
       } else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
