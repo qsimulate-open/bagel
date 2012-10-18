@@ -69,7 +69,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
   if (basisfile_ == "") throw runtime_error("There is no basis specification");
   else if (basisfile_ == "molden") {
     Molden molden(spherical_);
-    string molden_file = read_input<string>(geominfo, "molden_in", "");
+    string molden_file = read_input<string>(geominfo, "molden_file", "");
     if (molden_file == "") throw runtime_error("No molden_in file provided");
     atoms_ = molden.read_geo(molden_file);
   }

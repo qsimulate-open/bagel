@@ -178,4 +178,3 @@ class Geometry {
 }
 
 #endif
-

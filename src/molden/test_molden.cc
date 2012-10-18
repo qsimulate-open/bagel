@@ -32,7 +32,6 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp1 + ".testout", std::ios::trunc));
     std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
-    // a bit ugly to hardwire an input file, but anyway...
   {
     std::shared_ptr<InputData> idata(new InputData("../../test/" + inp1 + ".in"));
     std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
@@ -49,7 +48,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
       else if (iter->first == "print") {
         std::multimap<std::string, std::string> pdata = iter->second;
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
-        std::string out_file = read_input<std::string>(pdata, "file", "test.molden");
+        std::string out_file = read_input<std::string>(pdata, "file", inp1 + ".molden");
      
         Molden molden(geom->spherical());
         molden.write_geo(geom, out_file);
@@ -59,7 +58,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     }
   }
 
-  // a bit ugly to hardwire an input file, but anyway...
+  double energy = 0.0;
   {
     std::shared_ptr<InputData> idata(new InputData("../../test/" + inp2 + ".in"));
     std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
@@ -67,27 +66,26 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
     Molden mfs;
 
-    std::shared_ptr<const Coeff> coeff = mfs.read_mos(geom, "test.molden");
+    std::shared_ptr<const Coeff> coeff = mfs.read_mos(geom, inp1 + ".molden");
 
     std::shared_ptr<Matrix1e> ao_density = coeff->form_density_rhf(geom->nele()/2);
     std::shared_ptr<Fock<1> > hcore(new Fock<1>(geom));
     std::shared_ptr<Fock<1> > fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
 
-    Matrix1e hcore_fock = (*hcore + *fock);
-    double energy = ((*ao_density)*(hcore_fock)).trace();//->ddot(*hcore_fock.transpose());
+    std::shared_ptr<Matrix1e> hcore_fock(new Matrix1e(*hcore + *fock));
+    energy = ((*ao_density)*(*hcore_fock)).trace();
     energy = 0.5*energy + geom->nuclear_repulsion();
 
-    std::cout << energy << std::endl;
-    std::cout << geom->nele() << std::endl;
-
-    return energy;
   }
+  std::cout.rdbuf(backup_stream);
+  return energy;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_MOLDEN)
 
-BOOST_AUTO_TEST_CASE(MOLDEN_OUTIN) {
-    BOOST_CHECK(compare(molden_out_energy("hf_writemolden", "hf_readmolden"),-99.84772354 ));
+BOOST_AUTO_TEST_CASE(MOLDEN) {
+    BOOST_CHECK(compare(molden_out_energy("hf_write_mol_sph", "hf_read_mol_sph"),   -99.84772354 ));
+    BOOST_CHECK(compare(molden_out_energy("hf_write_mol_cart", "hf_read_mol_cart"), -99.84911270 ));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

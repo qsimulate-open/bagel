@@ -13,6 +13,6 @@ df-hf {
 }
 
 print {
-  file = test.molden;
+  file = hf_write_mol_sph.molden;
   orbitals = true;
 }

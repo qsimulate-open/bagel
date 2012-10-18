@@ -684,6 +684,8 @@ void Molden::write_mos(const shared_ptr<const Reference> ref, const string molde
          }
       }
    }
+
+  ofs.close();
 }
 
 double Molden::denormalize(int l, double alpha) {

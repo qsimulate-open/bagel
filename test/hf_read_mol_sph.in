@@ -2,6 +2,6 @@ molecule {
   symmetry = C1;
   basis = molden;
   df_basis = svp-jkfit;
-  molden_file = test.molden;
+  molden_file = hf_write_mol_sph.molden;
   schwarz_thresh = 1.0e-12;
 }

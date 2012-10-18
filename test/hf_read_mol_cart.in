@@ -1,0 +1,8 @@
+molecule {
+  symmetry = C1;
+  basis = molden;
+  df_basis = svp-jkfit;
+  molden_file = hf_write_mol_cart.molden;
+  cartesian = true;
+  schwarz_thresh = 1.0e-12;
+}
