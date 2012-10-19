@@ -41,102 +41,46 @@ using namespace std::chrono;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<NewDvec> Dimer::form_sigma(shared_ptr<const NewDvec> ccvec, shared_ptr<const NewMOFile> jop) const {
+shared_ptr<Dvec> Dimer::form_sigma_2e(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop) const {
   const int ij = norb_*norb_; 
 
   const int nstate = ccvec->ij();
 
-  shared_ptr<NewDvec> sigmavec(new NewDvec(ccvec->det(), nstate));
+  shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstate));
   sigmavec->zero();
 
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
-  shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  shared_ptr<NewDvec> d(new NewDvec(int_det, ij));
-  shared_ptr<NewDvec> e(new NewDvec(int_det, ij));
+  shared_ptr<Dvec> d(new Dvec(int_det, ij));
+  shared_ptr<Dvec> e(new Dvec(int_det, ij));
 
   for (int istate = 0; istate != nstate; ++istate) { 
-    shared_ptr<const NewCivec> cc = ccvec->data(istate);  
-    shared_ptr<NewCivec> sigma = sigmavec->data(istate);  
+    shared_ptr<const Civec> cc = ccvec->data(istate);  
+    shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
     vector<pair<string, double> > timing;
     int start = ::clock();
 
-    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
-    sigma_1(cc, sigma, jop);
-    if (tprint) print_timing_("task1", start, timing);
-
-    // (task2) two electron contributions
-
     // (2aa) alpha-alpha contributions
     sigma_2aa(cc,sigma,jop);
-    if (tprint) print_timing_("task2aa", start, timing);
-    
     // (2bb) beta-beta contributions
-    /* Mostly the same as the alpha-alpha, except for data storage */
     sigma_2bb(cc, sigma, jop);
-    if (tprint) print_timing_("task2bb", start, timing);
 
     // (2ab) alpha-beta contributions
-    /* Resembles more the Knowles & Handy FCI terms */
     d->zero();
 
     sigma_2ab_1(cc, d);
-    if (tprint) print_timing_("task2ab-1", start, timing);
-
     sigma_2ab_2(d, e, jop);
-    if (tprint) print_timing_("task2ab-2", start, timing);
-
     sigma_2ab_3(sigma, e);
-    if (tprint) print_timing_("task2ab-3", start, timing);
-    
-    // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
-    sigma_3(cc, sigma, jop);
-
-    if (tprint) {
-      print_timing_("task3", start, timing);
-      cout << "     timing info" << endl;
-      for (auto iter = timing.begin(); iter != timing.end(); ++iter)
-        cout << "    " << setw(10) << iter->first << setw(10) << setprecision(2) << iter ->second << endl;
-    }
   }
 
   return sigmavec;
 }
 
-void Dimer::sigma_1(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  assert(cc->det() == sigma->det());
-  const int ij = nij(); 
-  const int lb = cc->lenb();
-  for (int ip = 0; ip != ij; ++ip) {
-    const double h = jop->mo1e(ip);
-    for (auto iter = cc->det()->phia(ip).begin();  iter != cc->det()->phia(ip).end(); ++iter) {
-      const double hc = h * get<1>(*iter);
-      daxpy_(lb, hc, cc->element_ptr(0, get<2>(*iter)), 1, sigma->element_ptr(0, get<0>(*iter)), 1); 
-    }
-  }
-}
-
-void Dimer::sigma_3(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  const int la = cc->lena();
-  const int ij = nij();
-
-  for (int i = 0; i < la; ++i) {
-    double* const target_array0 = sigma->element_ptr(0, i);
-    const double* const source_array0 = cc->element_ptr(0, i);
-    for (int ip = 0; ip != ij; ++ip) {
-      const double h = jop->mo1e(ip);
-      for (auto iter = cc->det()->phib(ip).begin();  iter != cc->det()->phib(ip).end(); ++iter) {
-        const double hc = h * get<1>(*iter);
-        target_array0[get<0>(*iter)] += hc * source_array0[get<2>(*iter)];
-      }
-    }
-  }
-}
-
-void Dimer::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const int norb = norb_;
 
@@ -171,8 +115,8 @@ void Dimer::sigma_2aa(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma,
   }
 }
 
-void Dimer::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma, shared_ptr<const NewMOFile> jop) const {
-  const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+void Dimer::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const double* const source_base = cc->data();
   double* target_base = sigma->data();
@@ -207,11 +151,11 @@ void Dimer::sigma_2bb(shared_ptr<const NewCivec> cc, shared_ptr<NewCivec> sigma,
   }
 }
 
-void Dimer::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) const {
+void Dimer::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int norb = norb_;
 
-  shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
-  shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
+  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
+  shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const int lbt = int_det->lenb();
   const int lbs = base_det->lenb();
@@ -232,7 +176,7 @@ void Dimer::sigma_2ab_1(shared_ptr<const NewCivec> cc, shared_ptr<NewDvec> d) co
   }
 }
 
-void Dimer::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr<const NewMOFile> jop) const {
+void Dimer::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
@@ -240,9 +184,9 @@ void Dimer::sigma_2ab_2(shared_ptr<NewDvec> d, shared_ptr<NewDvec> e, shared_ptr
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }
 
-void Dimer::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDvec> e) const {
-  const shared_ptr<NewDeterminants> base_det = space_->finddet(0,0);
-  const shared_ptr<NewDeterminants> int_det = space_->finddet(-1,-1);
+void Dimer::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
+  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  const shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   const int norb = norb_;
   const int lbt = base_det->lenb();
@@ -250,8 +194,7 @@ void Dimer::sigma_2ab_3(shared_ptr<NewCivec> sigma, shared_ptr<NewDvec> e) const
   double* target_base = sigma->data();
 
   for (int i = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      const double* source_base = e->data(i*norb + j)->data();
+
       for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
         double *target = target_base + get<0>(*aiter)*lbt;
         const double *source = source_base + get<2>(*aiter)*lbs;

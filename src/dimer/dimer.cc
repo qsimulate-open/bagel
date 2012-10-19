@@ -52,7 +52,7 @@ Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : dimer
    construct_geometry();
 }
 
-Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : dimerbasis_(2*A->geom()->nbasis()),
+Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement, shared_ptr<const Dvec> ccvec) : dimerbasis_(2*A->geom()->nbasis()),
 nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
 {
    /************************************************************
@@ -80,6 +80,8 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    refs_ = make_pair(A, tmpref);
 
    sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+
+   ccvecs_ = make_pair(ccvec, ccvec);
 }
 
 void Dimer::construct_geometry() {

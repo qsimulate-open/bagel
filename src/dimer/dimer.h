@@ -81,7 +81,7 @@ class Dimer {
       // Constructors
       Dimer(RefGeometry a, RefGeometry b);
       Dimer(RefGeometry a, std::array<double,3> displacement);
-      Dimer(RefReference a, std::array<double,3> displacement);
+      Dimer(RefReference a, std::array<double,3> displacement, RefDvec = NULL);
 
       // Return functions
       std::pair<RefGeometry, RefGeometry> geoms() { return geoms_; } ;
@@ -114,7 +114,14 @@ class Dimer {
       std::shared_ptr<Matrix> compute_intra_activeactive();
       std::shared_ptr<Matrix> compute_inter_activeactive();
 
-      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop);
+      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop);
+
+      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
+      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
+      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d);
+      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop);
+      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
+      
 };
 
 }
