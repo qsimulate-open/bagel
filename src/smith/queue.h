@@ -45,7 +45,7 @@ class Queue {
 
   public:
     Queue() {};
-    Queue(std::list<std::shared_ptr<Task<T> > > d) : tasklist_(d) { };
+    Queue(std::list<std::shared_ptr<Task<T> > > d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); };
     ~Queue() {};
 
     // TODO parallel version to be implemented (need to WAIT!)
