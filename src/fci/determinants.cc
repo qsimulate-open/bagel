@@ -122,8 +122,8 @@ void Determinants::print(const double* const civec, const double thr) const {
     for (auto& ib : stringb_) {
       if (abs(*i) > thr) {
         tmp.insert(make_pair(-abs(*i), make_tuple(*i, ia, ib)));
-      ++i;
       }
+      ++i;
     }
   }
   for (auto& iter : tmp) {
