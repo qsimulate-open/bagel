@@ -61,143 +61,7 @@ class Task0 : public Task<T> {
 };
 
 template <typename T>
-class Task1 : public Task<T> {
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > r;
-    std::shared_ptr<Tensor<T> > I0;
-
-    void compute_() {
-      for (auto& a1 : virt_) {
-        for (auto& x0 : active_) {
-          for (auto& a2 : virt_) {
-            for (auto& x1 : active_) {
-              std::vector<size_t> ohash = {x1.key(), a2.key(), x0.key(), a1.key()};
-              std::unique_ptr<double[]> odata = r->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x0.key(), x1.key(), a1.key(), a2.key()};
-                std::unique_ptr<double[]> i0data = I0->get_block(i0hash);
-                sort_indices<1,3,0,2,1,1,1,1>(i0data, odata, x0.size(), x1.size(), a1.size(), a2.size());
-              }
-              r->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };
-
-  public:
-    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      r = t[0];
-      I0 = t[1];
-    };
-    ~Task1() {};
-};
-
-template <typename T>
-class Task2 : public Task<T> {
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > I0;
-    std::shared_ptr<Tensor<T> > t2;
-    std::shared_ptr<Tensor<T> > I1;
-
-    void compute_() {
-      for (auto& a2 : virt_) {
-        for (auto& a1 : virt_) {
-          for (auto& x1 : active_) {
-            for (auto& x0 : active_) {
-              std::vector<size_t> ohash = {x0.key(), x1.key(), a1.key(), a2.key()};
-              std::unique_ptr<double[]> odata = I0->move_block(ohash);
-              std::unique_ptr<double[]> odata_sorted(new double[I0->get_size(ohash)]);
-              std::fill(odata_sorted.get(), odata_sorted.get()+I0->get_size(ohash), 0.0);
-
-              for (auto& x5 : active_) {
-                for (auto& x4 : active_) {
-                  std::vector<size_t> i0hash = {x5.key(), a1.key(), x4.key(), a2.key()};
-                  std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
-                  std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
-                  sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
-
-                  std::vector<size_t> i1hash = {x5.key(), x0.key(), x4.key(), x1.key()};
-                  std::unique_ptr<double[]> i1data = I1->get_block(i1hash);
-                  std::unique_ptr<double[]> i1data_sorted(new double[I1->get_size(i1hash)]);
-                  sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x5.size(), x0.size(), x4.size(), x1.size());
-
-                  dgemm_("T", "N", a1.size()*a2.size(), x0.size()*x1.size(), x5.size()*x4.size(),
-                         1.0, i0data_sorted, x5.size()*x4.size(), i1data_sorted, x5.size()*x4.size(),
-                         1.0, odata_sorted, a1.size()*a2.size());
-                }
-              }
-
-              sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), x0.size(), x1.size());
-              I0->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };
-
-  public:
-    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      I0 = t[0];
-      t2 = t[1];
-      I1 = t[2];
-    };
-    ~Task2() {};
-};
-
-template <typename T>
-class Task3 : public Task<T> {
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > I1;
-    std::shared_ptr<Tensor<T> > Gamma0;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x4 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x5 : active_) {
-              std::vector<size_t> ohash = {x5.key(), x0.key(), x4.key(), x1.key()};
-              std::unique_ptr<double[]> odata = I1->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x5.key(), x0.key(), x4.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = Gamma0->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x5.size(), x0.size(), x4.size(), x1.size());
-              }
-              I1->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };
-
-  public:
-    Task3(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      I1 = t[0];
-      Gamma0 = t[1];
-    };
-    ~Task3() {};
-};
-
-template <typename T>
-class Task4 : public Task<T> {  // associated with gamma
+class Task1 : public Task<T> {  // associated with gamma
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -247,7 +111,7 @@ class Task4 : public Task<T> {  // associated with gamma
 
 
   public:
-    Task4(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -255,11 +119,187 @@ class Task4 : public Task<T> {  // associated with gamma
       rdm3    = t[1];
       f1      = t[2];
     };
+    ~Task1() {};
+};
+
+template <typename T>
+class Task2 : public Task<T> {  // associated with gamma
+  protected:
+    IndexRange closed_;
+    IndexRange active_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > Gamma2;
+    std::shared_ptr<Tensor<T> > rdm2;
+
+    void compute_() {
+      for (auto& x1 : active_) {
+        for (auto& x2 : active_) {
+          for (auto& x0 : active_) {
+            for (auto& x3 : active_) {
+              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
+              std::unique_ptr<double[]> odata = Gamma2->move_block(ohash);
+              {
+                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
+                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
+                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+              }
+              Gamma2->put_block(ohash, odata);
+            }
+          }
+        }
+      }
+    };  
+
+
+  public:
+    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      active_ = i[1];
+      virt_   = i[2];
+      Gamma2  = t[0];
+      rdm2    = t[1];
+    };
+    ~Task2() {};
+};
+
+template <typename T>
+class Task3 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange active_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > r;
+    std::shared_ptr<Tensor<T> > I0;
+
+    void compute_() {
+      for (auto& a1 : virt_) {
+        for (auto& x0 : active_) {
+          for (auto& a2 : virt_) {
+            for (auto& x1 : active_) {
+              std::vector<size_t> ohash = {x1.key(), a2.key(), x0.key(), a1.key()};
+              std::unique_ptr<double[]> odata = r->move_block(ohash);
+              {
+                std::vector<size_t> i0hash = {x0.key(), x1.key(), a1.key(), a2.key()};
+                std::unique_ptr<double[]> i0data = I0->get_block(i0hash);
+                sort_indices<1,3,0,2,1,1,1,1>(i0data, odata, x0.size(), x1.size(), a1.size(), a2.size());
+              }
+              r->put_block(ohash, odata);
+            }
+          }
+        }
+      }
+    };
+
+  public:
+    Task3(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      active_ = i[1];
+      virt_   = i[2];
+      r = t[0];
+      I0 = t[1];
+    };
+    ~Task3() {};
+};
+
+template <typename T>
+class Task4 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange active_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I0;
+    std::shared_ptr<Tensor<T> > t2;
+    std::shared_ptr<Tensor<T> > I1;
+
+    void compute_() {
+      for (auto& a2 : virt_) {
+        for (auto& a1 : virt_) {
+          for (auto& x1 : active_) {
+            for (auto& x0 : active_) {
+              std::vector<size_t> ohash = {x0.key(), x1.key(), a1.key(), a2.key()};
+              std::unique_ptr<double[]> odata = I0->move_block(ohash);
+              std::unique_ptr<double[]> odata_sorted(new double[I0->get_size(ohash)]);
+              std::fill(odata_sorted.get(), odata_sorted.get()+I0->get_size(ohash), 0.0);
+
+              for (auto& x5 : active_) {
+                for (auto& x4 : active_) {
+                  std::vector<size_t> i0hash = {x5.key(), a1.key(), x4.key(), a2.key()};
+                  std::unique_ptr<double[]> i0data = t2->get_block(i0hash);
+                  std::unique_ptr<double[]> i0data_sorted(new double[t2->get_size(i0hash)]);
+                  sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
+
+                  std::vector<size_t> i1hash = {x5.key(), x0.key(), x4.key(), x1.key()};
+                  std::unique_ptr<double[]> i1data = I1->get_block(i1hash);
+                  std::unique_ptr<double[]> i1data_sorted(new double[I1->get_size(i1hash)]);
+                  sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x5.size(), x0.size(), x4.size(), x1.size());
+
+                  dgemm_("T", "N", a1.size()*a2.size(), x0.size()*x1.size(), x5.size()*x4.size(),
+                         1.0, i0data_sorted, x5.size()*x4.size(), i1data_sorted, x5.size()*x4.size(),
+                         1.0, odata_sorted, a1.size()*a2.size());
+                }
+              }
+
+              sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), x0.size(), x1.size());
+              I0->put_block(ohash, odata);
+            }
+          }
+        }
+      }
+    };
+
+  public:
+    Task4(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      active_ = i[1];
+      virt_   = i[2];
+      I0 = t[0];
+      t2 = t[1];
+      I1 = t[2];
+    };
     ~Task4() {};
 };
 
 template <typename T>
 class Task5 : public Task<T> {
+  protected:
+    IndexRange closed_;
+    IndexRange active_;
+    IndexRange virt_;
+    std::shared_ptr<Tensor<T> > I1;
+    std::shared_ptr<Tensor<T> > Gamma0;
+
+    void compute_() {
+      for (auto& x1 : active_) {
+        for (auto& x4 : active_) {
+          for (auto& x0 : active_) {
+            for (auto& x5 : active_) {
+              std::vector<size_t> ohash = {x5.key(), x0.key(), x4.key(), x1.key()};
+              std::unique_ptr<double[]> odata = I1->move_block(ohash);
+              {
+                std::vector<size_t> i0hash = {x5.key(), x0.key(), x4.key(), x1.key()};
+                std::unique_ptr<double[]> i0data = Gamma0->get_block(i0hash);
+                sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x5.size(), x0.size(), x4.size(), x1.size());
+              }
+              I1->put_block(ohash, odata);
+            }
+          }
+        }
+      }
+    };
+
+  public:
+    Task5(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+      closed_ = i[0];
+      active_ = i[1];
+      virt_   = i[2];
+      I1 = t[0];
+      Gamma0 = t[1];
+    };
+    ~Task5() {};
+};
+
+template <typename T>
+class Task6 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -305,7 +345,7 @@ class Task5 : public Task<T> {
     };
 
   public:
-    Task5(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task6(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -313,11 +353,11 @@ class Task5 : public Task<T> {
       t2 = t[1];
       I6 = t[2];
     };
-    ~Task5() {};
+    ~Task6() {};
 };
 
 template <typename T>
-class Task6 : public Task<T> {
+class Task7 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -347,53 +387,13 @@ class Task6 : public Task<T> {
     };
 
   public:
-    Task6(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i, const double e) : Task<T>() {
+    Task7(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i, const double e) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
       I6 = t[0];
       Gamma2 = t[1];
       e0_ = e; 
-    };
-    ~Task6() {};
-};
-
-template <typename T>
-class Task7 : public Task<T> {  // associated with gamma
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > Gamma2;
-    std::shared_ptr<Tensor<T> > rdm2;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x2 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x3 : active_) {
-              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
-              std::unique_ptr<double[]> odata = Gamma2->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-              }
-              Gamma2->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };  
-
-
-  public:
-    Task7(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      Gamma2  = t[0];
-      rdm2    = t[1];
     };
     ~Task7() {};
 };
@@ -463,7 +463,7 @@ class Task9 : public Task<T> {
     IndexRange active_;
     IndexRange virt_;
     std::shared_ptr<Tensor<T> > I8;
-    std::shared_ptr<Tensor<T> > Gamma3;
+    std::shared_ptr<Tensor<T> > Gamma2;
 
     void compute_() {
       for (auto& x1 : active_) {
@@ -474,7 +474,7 @@ class Task9 : public Task<T> {
               std::unique_ptr<double[]> odata = I8->move_block(ohash);
               {
                 std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = Gamma3->get_block(i0hash);
+                std::unique_ptr<double[]> i0data = Gamma2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
               }
               I8->put_block(ohash, odata);
@@ -490,53 +490,13 @@ class Task9 : public Task<T> {
       active_ = i[1];
       virt_   = i[2];
       I8 = t[0];
-      Gamma3 = t[1];
+      Gamma2 = t[1];
     };
     ~Task9() {};
 };
 
 template <typename T>
-class Task10 : public Task<T> {  // associated with gamma
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > Gamma3;
-    std::shared_ptr<Tensor<T> > rdm2;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x2 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x3 : active_) {
-              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
-              std::unique_ptr<double[]> odata = Gamma3->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-              }
-              Gamma3->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };  
-
-
-  public:
-    Task10(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      Gamma3  = t[0];
-      rdm2    = t[1];
-    };
-    ~Task10() {};
-};
-
-template <typename T>
-class Task11 : public Task<T> {
+class Task10 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -569,18 +529,18 @@ class Task11 : public Task<T> {
     };
 
   public:
-    Task11(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task10(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
       r = t[0];
       I2 = t[1];
     };
-    ~Task11() {};
+    ~Task10() {};
 };
 
 template <typename T>
-class Task12 : public Task<T> {
+class Task11 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -624,7 +584,7 @@ class Task12 : public Task<T> {
     };
 
   public:
-    Task12(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task11(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -632,11 +592,11 @@ class Task12 : public Task<T> {
       f1 = t[1];
       I3 = t[2];
     };
-    ~Task12() {};
+    ~Task11() {};
 };
 
 template <typename T>
-class Task13 : public Task<T> {
+class Task12 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -682,7 +642,7 @@ class Task13 : public Task<T> {
     };
 
   public:
-    Task13(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task12(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -690,17 +650,17 @@ class Task13 : public Task<T> {
       t2 = t[1];
       I4 = t[2];
     };
-    ~Task13() {};
+    ~Task12() {};
 };
 
 template <typename T>
-class Task14 : public Task<T> {
+class Task13 : public Task<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
     std::shared_ptr<Tensor<T> > I4;
-    std::shared_ptr<Tensor<T> > Gamma1;
+    std::shared_ptr<Tensor<T> > Gamma2;
 
     void compute_() {
       for (auto& x1 : active_) {
@@ -711,7 +671,7 @@ class Task14 : public Task<T> {
               std::unique_ptr<double[]> odata = I4->move_block(ohash);
               {
                 std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = Gamma1->get_block(i0hash);
+                std::unique_ptr<double[]> i0data = Gamma2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
               }
               I4->put_block(ohash, odata);
@@ -722,58 +682,18 @@ class Task14 : public Task<T> {
     };
 
   public:
-    Task14(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task13(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
       I4 = t[0];
-      Gamma1 = t[1];
+      Gamma2 = t[1];
     };
-    ~Task14() {};
+    ~Task13() {};
 };
 
 template <typename T>
-class Task15 : public Task<T> {  // associated with gamma
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > Gamma1;
-    std::shared_ptr<Tensor<T> > rdm2;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x2 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x3 : active_) {
-              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
-              std::unique_ptr<double[]> odata = Gamma1->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-              }
-              Gamma1->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };  
-
-
-  public:
-    Task15(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      Gamma1  = t[0];
-      rdm2    = t[1];
-    };
-    ~Task15() {};
-};
-
-template <typename T>
-class Task16 : public EnergyTask<T> {
+class Task14 : public EnergyTask<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -808,7 +728,7 @@ class Task16 : public EnergyTask<T> {
     };
 
   public:
-    Task16(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task14(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -816,11 +736,11 @@ class Task16 : public EnergyTask<T> {
       t2 = t[1];
       I10 = t[2];
     };
-    ~Task16() {};
+    ~Task14() {};
 };
 
 template <typename T>
-class Task17 : public EnergyTask<T> {
+class Task15 : public EnergyTask<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -867,7 +787,7 @@ class Task17 : public EnergyTask<T> {
     };
 
   public:
-    Task17(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task15(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -875,17 +795,17 @@ class Task17 : public EnergyTask<T> {
       v2 = t[1];
       I11 = t[2];
     };
-    ~Task17() {};
+    ~Task15() {};
 };
 
 template <typename T>
-class Task18 : public EnergyTask<T> {
+class Task16 : public EnergyTask<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
     std::shared_ptr<Tensor<T> > I11;
-    std::shared_ptr<Tensor<T> > Gamma4;
+    std::shared_ptr<Tensor<T> > Gamma2;
 
     void compute_() {
       this->energy_ = 0.0;
@@ -897,7 +817,7 @@ class Task18 : public EnergyTask<T> {
               std::unique_ptr<double[]> odata = I11->move_block(ohash);
               {
                 std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = Gamma4->get_block(i0hash);
+                std::unique_ptr<double[]> i0data = Gamma2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
               }
               I11->put_block(ohash, odata);
@@ -908,58 +828,18 @@ class Task18 : public EnergyTask<T> {
     };
 
   public:
-    Task18(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task16(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
       I11 = t[0];
-      Gamma4 = t[1];
+      Gamma2 = t[1];
     };
-    ~Task18() {};
+    ~Task16() {};
 };
 
 template <typename T>
-class Task19 : public EnergyTask<T> {  // associated with gamma
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > Gamma4;
-    std::shared_ptr<Tensor<T> > rdm2;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x2 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x3 : active_) {
-              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
-              std::unique_ptr<double[]> odata = Gamma4->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-              }
-              Gamma4->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };  
-
-
-  public:
-    Task19(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      Gamma4  = t[0];
-      rdm2    = t[1];
-    };
-    ~Task19() {};
-};
-
-template <typename T>
-class Task20 : public EnergyTask<T> {
+class Task17 : public EnergyTask<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
@@ -1006,7 +886,7 @@ class Task20 : public EnergyTask<T> {
     };
 
   public:
-    Task20(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task17(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
@@ -1014,17 +894,17 @@ class Task20 : public EnergyTask<T> {
       r = t[1];
       I14 = t[2];
     };
-    ~Task20() {};
+    ~Task17() {};
 };
 
 template <typename T>
-class Task21 : public EnergyTask<T> {
+class Task18 : public EnergyTask<T> {
   protected:
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
     std::shared_ptr<Tensor<T> > I14;
-    std::shared_ptr<Tensor<T> > Gamma5;
+    std::shared_ptr<Tensor<T> > Gamma2;
 
     void compute_() {
       this->energy_ = 0.0;
@@ -1036,7 +916,7 @@ class Task21 : public EnergyTask<T> {
               std::unique_ptr<double[]> odata = I14->move_block(ohash);
               {
                 std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = Gamma5->get_block(i0hash);
+                std::unique_ptr<double[]> i0data = Gamma2->get_block(i0hash);
                 sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
               }
               I14->put_block(ohash, odata);
@@ -1047,54 +927,14 @@ class Task21 : public EnergyTask<T> {
     };
 
   public:
-    Task21(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task18(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
       I14 = t[0];
-      Gamma5 = t[1];
+      Gamma2 = t[1];
     };
-    ~Task21() {};
-};
-
-template <typename T>
-class Task22 : public EnergyTask<T> {  // associated with gamma
-  protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > Gamma5;
-    std::shared_ptr<Tensor<T> > rdm2;
-
-    void compute_() {
-      for (auto& x1 : active_) {
-        for (auto& x2 : active_) {
-          for (auto& x0 : active_) {
-            for (auto& x3 : active_) {
-              std::vector<size_t> ohash = {x3.key(), x0.key(), x2.key(), x1.key()};
-              std::unique_ptr<double[]> odata = Gamma5->move_block(ohash);
-              {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-              }
-              Gamma5->put_block(ohash, odata);
-            }
-          }
-        }
-      }
-    };  
-
-
-  public:
-    Task22(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      Gamma5  = t[0];
-      rdm2    = t[1];
-    };
-    ~Task22() {};
+    ~Task18() {};
 };
 
 
