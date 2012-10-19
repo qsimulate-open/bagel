@@ -137,4 +137,3 @@ class Matrix1e {
 }
 
 #endif
-

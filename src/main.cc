@@ -36,7 +36,7 @@
 #include <src/scf/geometry.h>
 #include <src/dimer/dimer.h>
 #include <src/scf/rohf.h>
-#include <src/molden/molden.h>
+#include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
@@ -288,9 +288,11 @@ int main(int argc, char** argv) {
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
         std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
 
-        Molden molden(geom->spherical());
-        molden.write_geo(geom, out_file);
-        if (orbitals) molden.write_mos(ref, out_file);
+        MoldenOut mfs(out_file);
+        mfs << geom;
+        if(orbitals) mfs << ref;
+
+        mfs.close();
 
       }
       #if 0 // <---- Testing environment

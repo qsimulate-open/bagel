@@ -62,7 +62,6 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
 # Checks for library functions.
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 src/molden/Makefile
                  src/dimer/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
@@ -76,6 +75,7 @@ AC_CONFIG_FILES([Makefile
                  src/smith/Makefile
                  src/mp2/Makefile
                  src/util/Makefile
+                 src/io/Makefile
                  src/fci/Makefile
                  src/casscf/Makefile
                  src/pscf/Makefile

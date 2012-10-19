@@ -24,7 +24,8 @@
 //
 
 
-#include <src/molden/molden.h>
+#include <src/io/moldenout.h>
+#include <src/io/moldenin.h>
 #include <src/scf/fock.h>
 
 double molden_out_energy(std::string inp1, std::string inp2) {
@@ -50,9 +51,10 @@ double molden_out_energy(std::string inp1, std::string inp2) {
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
         std::string out_file = read_input<std::string>(pdata, "file", inp1 + ".molden");
      
-        Molden molden(geom->spherical());
-        molden.write_geo(geom, out_file);
-        if (orbitals) molden.write_mos(ref, out_file);
+        MoldenOut mfs(out_file);
+        mfs << geom;
+        mfs << ref;
+        mfs.close();
 
       }
     }
@@ -64,9 +66,12 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
-    Molden mfs;
+    std::shared_ptr<const Coeff> coeff(new Coeff(geom));
 
-    std::shared_ptr<const Coeff> coeff = mfs.read_mos(geom, inp1 + ".molden");
+    std::string filename = inp1 + ".molden";
+    MoldenIn mfs(filename, geom->spherical());
+    mfs.read();
+    mfs >> coeff;
 
     std::shared_ptr<Matrix1e> ao_density = coeff->form_density_rhf(geom->nele()/2);
     std::shared_ptr<Fock<1> > hcore(new Fock<1>(geom));

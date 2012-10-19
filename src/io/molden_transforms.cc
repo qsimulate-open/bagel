@@ -15,7 +15,7 @@
 #include <map>
 #include <cassert>
 
-#include <src/molden/molden.h>
+#include <src/io/moldenin.h>
 
 using namespace std;
 using namespace bagel;
@@ -24,7 +24,7 @@ using namespace bagel;
 #define LEND 5
 
 
-void Molden::compute_transforms() {
+void MoldenIn::compute_transforms() {
   struct Data {
     vector<double> factorial;
     Data() {
@@ -107,4 +107,21 @@ void Molden::compute_transforms() {
 
     lmtuv_.push_back(mtuv);
   }
+}
+
+vector<double> MoldenIn::transform_cart(vector<double> carts, int ang_l) {
+   vector<vector<pair<int,double> > > mtuv = lmtuv_.at(ang_l);
+
+   vector<double> out;
+   for(auto& im : mtuv) {
+     double value = 0.0;
+
+     for(auto& ituv : im) {
+        value += (ituv.second) * carts.at(ituv.first);
+     }
+
+     out.push_back(value);
+   }
+
+   return out;
 }

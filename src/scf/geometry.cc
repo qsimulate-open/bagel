@@ -36,7 +36,7 @@
 #include <boost/lexical_cast.hpp>
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
-#include <src/molden/molden.h>
+#include <src/io/moldenin.h>
 #include <src/util/constants.h>
 #include <src/util/quatern.h>
 #include <src/rysint/libint.h>
@@ -68,10 +68,13 @@ Geometry::Geometry(const multimap<string, string> geominfo)
   basisfile_ = read_input<string>(geominfo, "basis", "");
   if (basisfile_ == "") throw runtime_error("There is no basis specification");
   else if (basisfile_ == "molden") {
-    Molden molden(spherical_);
     string molden_file = read_input<string>(geominfo, "molden_file", "");
     if (molden_file == "") throw runtime_error("No molden_in file provided");
-    atoms_ = molden.read_geo(molden_file);
+
+    MoldenIn mfs(molden_file, spherical_);
+    mfs.read();
+    mfs >> atoms_;
+    mfs.close();
   }
   else {
     const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
