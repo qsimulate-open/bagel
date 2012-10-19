@@ -65,7 +65,7 @@ class Dimer {
       std::shared_ptr<Space>      space_;
 
       double energy_;      
-      std::unique_ptr<double[]> hamiltonian_;
+      std::shared_ptr<Matrix> hamiltonian_;
 
       int dimerbasis_; // Basis size of both together
       int dimerstates_;
@@ -84,18 +84,18 @@ class Dimer {
       Dimer(RefReference a, std::array<double,3> displacement, RefDvec = NULL);
 
       // Return functions
-      std::pair<RefGeometry, RefGeometry> geoms() { return geoms_; } ;
-      std::pair<RefCoeff, RefCoeff> coeffs() { return coeffs_; } ;
-      std::pair<RefDvec, RefDvec> ccvec() { return ccvecs_; } ;
+      std::pair<RefGeometry, RefGeometry> geoms() const { return geoms_; } ;
+      std::pair<RefCoeff, RefCoeff> coeffs() const { return coeffs_; } ;
+      std::pair<RefDvec, RefDvec> ccvec() const { return ccvecs_; } ;
 
-      std::shared_ptr<Geometry> sgeom() { return sgeom_; }
-      std::shared_ptr<Reference> sref() { return sref_; }
-      std::shared_ptr<Coeff>   scoeff() { return scoeff_; }
+      std::shared_ptr<Geometry> sgeom() const { return sgeom_; }
+      std::shared_ptr<Reference> sref() const { return sref_; }
+      std::shared_ptr<Coeff>   scoeff() const { return scoeff_; }
 
       std::pair<const int, const int> nbasis() {return nbasis_; }
 
-      template <int unit> int core(int i) { return (i + unit*ncore_.first); };
-      template <int unit> int act(int a)  { return (a + unit*nact_.first); };
+      template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
+      template <int unit> int act(int a) const { return (a + unit*nact_.first); };
 
       // Utility functions
       std::shared_ptr<Coeff> overlap(); 
@@ -114,14 +114,19 @@ class Dimer {
       std::shared_ptr<Matrix> compute_intra_activeactive();
       std::shared_ptr<Matrix> compute_inter_activeactive();
 
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop);
+      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata, const int ij) const;
+      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop, const int nact) const;
 
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop);
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d);
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop);
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e);
+      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop, const int nact) const;
+      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop, const int nact) const;
+      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
+      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
+      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
+      std::shared_ptr<Matrix> form_EFmatrices_alpha(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
+      std::shared_ptr<Matrix> form_EFmatrices_beta(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
+
+      std::shared_ptr<Matrix> form_Hmatrix(const int ijA, const int ijB) const;
 };
 
 }
