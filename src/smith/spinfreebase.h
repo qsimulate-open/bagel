@@ -51,6 +51,7 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T> > rdm1_;
     std::shared_ptr<Tensor<T> > rdm2_;
     std::shared_ptr<Tensor<T> > rdm3_;
+    std::shared_ptr<Tensor<T> > rdm4_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
