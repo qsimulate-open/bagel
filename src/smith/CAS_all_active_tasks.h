@@ -85,12 +85,12 @@ class Task1 : public Task<T> {  // associated with gamma
                   {
                     std::vector<size_t> i0hash = {x5.key(), x0.key(), x4.key(), x1.key(), x3.key(), x2.key()};
                     std::unique_ptr<double[]> data = rdm3->get_block(i0hash);
-                    for (int i1 = 0; i1 != x1.size(); ++i1) {
-                      for (int i4 = 0; i4 != x4.size(); ++i4) {
-                        for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i5 = 0; i5 != x5.size(); ++i5) {
-                            for (int i2 = 0; i2 != x2.size(); ++i2) {
-                              for (int i3 = 0; i3 != x3.size(); ++i3) {
+                    for (int i2 = 0; i2 != x2.size(); ++i2) {
+                      for (int i3 = 0; i3 != x3.size(); ++i3) {
+                        for (int i1 = 0; i1 != x1.size(); ++i1) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i0 = 0; i0 != x0.size(); ++i0) {
+                              for (int i5 = 0; i5 != x5.size(); ++i5) {
                                 odata[i5+x5.size()*(i0+x0.size()*(i4+x4.size()*(i1)))]
                                   += (1.0) * data[i5+x5.size()*(i0+x0.size()*(i4+x4.size()*(i1+x1.size()*(i3+x3.size()*(i2)))))] * fdata[i3+x3.size()*(i2)];
                               }
@@ -273,13 +273,13 @@ class Task4 : public Task<T> {  // associated with gamma
                       if (x1 == x6) {
                         std::vector<size_t> i0hash = {x7.key(), x0.key(), x5.key(), x2.key(), x4.key(), x3.key()};
                         std::unique_ptr<double[]> data = rdm3->get_block(i0hash);
-                        for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i5 = 0; i5 != x5.size(); ++i5) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    for (int i4 = 0; i4 != x4.size(); ++i4) {
+                        for (int i3 = 0; i3 != x3.size(); ++i3) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i2 = 0; i2 != x2.size(); ++i2) {
+                              for (int i5 = 0; i5 != x5.size(); ++i5) {
+                                for (int i0 = 0; i0 != x0.size(); ++i0) {
+                                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                    for (int i6 = 0; i6 != x6.size(); ++i6) {
                                       odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i6+x1.size()*(i0)))))]
                                         += (1.0) * data[i7+x7.size()*(i0+x0.size()*(i5+x5.size()*(i2+x2.size()*(i4+x4.size()*(i3)))))] * fdata[i4+x4.size()*(i3)];
                                     }
@@ -294,16 +294,13 @@ class Task4 : public Task<T> {  // associated with gamma
                         std::vector<size_t> i0hash = {x7.key(), x3.key(), x5.key(), x0.key()};
                         std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
                         for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i5 = 0; i5 != x5.size(); ++i5) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    for (int i4 = 0; i4 != x4.size(); ++i4) {
-                                  //    const int i4 = i6;
-                                      odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i2+x1.size()*(i0)))))]
-                                        += (1.0) * data[i7+x7.size()*(i3+x3.size()*(i5+x5.size()*(i0)))] * fdata[i4+x4.size()*(i3)];
-                                    }
+                          for (int i5 = 0; i5 != x5.size(); ++i5) {
+                            for (int i3 = 0; i3 != x3.size(); ++i3) {
+                              for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                for (int i2 = 0; i2 != x2.size(); ++i2) {
+                                  for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                    odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i2+x1.size()*(i0)))))]
+                                      += (1.0) * data[i7+x7.size()*(i3+x3.size()*(i5+x5.size()*(i0)))] * fdata[i6+x4.size()*(i3)];
                                   }
                                 }
                               }
@@ -314,15 +311,14 @@ class Task4 : public Task<T> {  // associated with gamma
                       if (x4 == x6 && x1 == x3) {
                         std::vector<size_t> i0hash = {x7.key(), x0.key(), x5.key(), x2.key()};
                         std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                        for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i5 = 0; i5 != x5.size(); ++i5) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
+                        for (int i2 = 0; i2 != x2.size(); ++i2) {
+                          for (int i5 = 0; i5 != x5.size(); ++i5) {
+                            for (int i0 = 0; i0 != x0.size(); ++i0) {
+                              for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                for (int i6 = 0; i6 != x6.size(); ++i6) {
                                   for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    const int i4 = i6;
                                     odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i3+x1.size()*(i0)))))]
-                                      += (-1.0) * data[i7+x7.size()*(i0+x0.size()*(i5+x5.size()*(i2)))] * fdata[i4+x4.size()*(i3)];
+                                      += (-1.0) * data[i7+x7.size()*(i0+x0.size()*(i5+x5.size()*(i2)))] * fdata[i6+x4.size()*(i3)];
                                   }
                                 }
                               }
@@ -337,12 +333,11 @@ class Task4 : public Task<T> {  // associated with gamma
                           for (int i1 = 0; i1 != x1.size(); ++i1) {
                             for (int i2 = 0; i2 != x2.size(); ++i2) {
                               for (int i5 = 0; i5 != x5.size(); ++i5) {
-                                for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                for (int i3 = 0; i3 != x3.size(); ++i3) {
                                   for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                    for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                      const int i4 = i6;
+                                    for (int i6 = 0; i6 != x6.size(); ++i6) {
                                       odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i1+x1.size()*(i0)))))]
-                                        += (-1.0) * data[i7+x7.size()*(i3+x3.size()*(i5+x5.size()*(i2+x2.size()*(i1+x1.size()*(i0)))))] * fdata[i4+x4.size()*(i3)];
+                                        += (-1.0) * data[i7+x7.size()*(i3+x3.size()*(i5+x5.size()*(i2+x2.size()*(i1+x1.size()*(i0)))))] * fdata[i6+x4.size()*(i3)];
                                     }
                                   }
                                 }
@@ -351,15 +346,15 @@ class Task4 : public Task<T> {  // associated with gamma
                           }
                         }
                       }
-                      if (x5 == x6 && x1 == x2) {
+                      if (x1 == x2 && x5 == x6) {
                         std::vector<size_t> i0hash = {x7.key(), x0.key(), x4.key(), x3.key()};
                         std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                        for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i6 = 0; i6 != x6.size(); ++i6) {
+                        for (int i3 = 0; i3 != x3.size(); ++i3) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i0 = 0; i0 != x0.size(); ++i0) {
                               for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                  for (int i4 = 0; i4 != x4.size(); ++i4) {
+                                for (int i2 = 0; i2 != x2.size(); ++i2) {
+                                  for (int i6 = 0; i6 != x6.size(); ++i6) {
                                     odata[i7+x7.size()*(i6+x6.size()*(i6+x5.size()*(i2+x2.size()*(i2+x1.size()*(i0)))))]
                                       += (-1.0) * data[i7+x7.size()*(i0+x0.size()*(i4+x4.size()*(i3)))] * fdata[i4+x4.size()*(i3)];
                                   }
@@ -372,13 +367,13 @@ class Task4 : public Task<T> {  // associated with gamma
                       if (x1 == x2) {
                         std::vector<size_t> i0hash = {x7.key(), x6.key(), x5.key(), x0.key(), x4.key(), x3.key()};
                         std::unique_ptr<double[]> data = rdm3->get_block(i0hash);
-                        for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i5 = 0; i5 != x5.size(); ++i5) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    for (int i4 = 0; i4 != x4.size(); ++i4) {
+                        for (int i3 = 0; i3 != x3.size(); ++i3) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i0 = 0; i0 != x0.size(); ++i0) {
+                              for (int i5 = 0; i5 != x5.size(); ++i5) {
+                                for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                    for (int i2 = 0; i2 != x2.size(); ++i2) {
                                       odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i2+x1.size()*(i0)))))]
                                         += (-1.0) * data[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i0+x0.size()*(i4+x4.size()*(i3)))))] * fdata[i4+x4.size()*(i3)];
                                     }
@@ -389,15 +384,15 @@ class Task4 : public Task<T> {  // associated with gamma
                           }
                         }
                       }
-                      if (x1 == x3 && x5 == x6) {
+                      if (x5 == x6 && x1 == x3) {
                         std::vector<size_t> i0hash = {x7.key(), x2.key(), x4.key(), x0.key()};
                         std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
                         for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i6 = 0; i6 != x6.size(); ++i6) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i2 = 0; i2 != x2.size(); ++i2) {
                               for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                  for (int i4 = 0; i4 != x4.size(); ++i4) {
+                                for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
                                     odata[i7+x7.size()*(i6+x6.size()*(i6+x5.size()*(i2+x2.size()*(i3+x1.size()*(i0)))))]
                                       += (1.0) * data[i7+x7.size()*(i2+x2.size()*(i4+x4.size()*(i0)))] * fdata[i4+x4.size()*(i3)];
                                   }
@@ -411,12 +406,12 @@ class Task4 : public Task<T> {  // associated with gamma
                         std::vector<size_t> i0hash = {x7.key(), x6.key(), x5.key(), x2.key(), x4.key(), x0.key()};
                         std::unique_ptr<double[]> data = rdm3->get_block(i0hash);
                         for (int i0 = 0; i0 != x0.size(); ++i0) {
-                          for (int i2 = 0; i2 != x2.size(); ++i2) {
-                            for (int i5 = 0; i5 != x5.size(); ++i5) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    for (int i4 = 0; i4 != x4.size(); ++i4) {
+                          for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i2 = 0; i2 != x2.size(); ++i2) {
+                              for (int i5 = 0; i5 != x5.size(); ++i5) {
+                                for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                    for (int i3 = 0; i3 != x3.size(); ++i3) {
                                       odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i3+x1.size()*(i0)))))]
                                         += (1.0) * data[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i4+x4.size()*(i0)))))] * fdata[i4+x4.size()*(i3)];
                                     }
@@ -432,11 +427,11 @@ class Task4 : public Task<T> {  // associated with gamma
                         std::unique_ptr<double[]> data = rdm3->get_block(i0hash);
                         for (int i0 = 0; i0 != x0.size(); ++i0) {
                           for (int i1 = 0; i1 != x1.size(); ++i1) {
-                            for (int i2 = 0; i2 != x2.size(); ++i2) {
-                              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                  for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                    for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i3 = 0; i3 != x3.size(); ++i3) {
+                              for (int i4 = 0; i4 != x4.size(); ++i4) {
+                                for (int i2 = 0; i2 != x2.size(); ++i2) {
+                                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                                    for (int i6 = 0; i6 != x6.size(); ++i6) {
                                       odata[i7+x7.size()*(i6+x6.size()*(i6+x5.size()*(i2+x2.size()*(i1+x1.size()*(i0)))))]
                                         += (1.0) * data[i7+x7.size()*(i2+x2.size()*(i4+x4.size()*(i3+x3.size()*(i1+x1.size()*(i0)))))] * fdata[i4+x4.size()*(i3)];
                                     }
@@ -452,12 +447,12 @@ class Task4 : public Task<T> {  // associated with gamma
                         std::unique_ptr<double[]> data = rdm4->get_block(i0hash);
                         for (int i0 = 0; i0 != x0.size(); ++i0) {
                           for (int i1 = 0; i1 != x1.size(); ++i1) {
-                            for (int i2 = 0; i2 != x2.size(); ++i2) {
-                              for (int i5 = 0; i5 != x5.size(); ++i5) {
-                                for (int i6 = 0; i6 != x6.size(); ++i6) {
-                                  for (int i7 = 0; i7 != x7.size(); ++i7) {
-                                    for (int i3 = 0; i3 != x3.size(); ++i3) {
-                                      for (int i4 = 0; i4 != x4.size(); ++i4) {
+                            for (int i3 = 0; i3 != x3.size(); ++i3) {
+                              for (int i4 = 0; i4 != x4.size(); ++i4) {
+                                for (int i2 = 0; i2 != x2.size(); ++i2) {
+                                  for (int i5 = 0; i5 != x5.size(); ++i5) {
+                                    for (int i6 = 0; i6 != x6.size(); ++i6) {
+                                      for (int i7 = 0; i7 != x7.size(); ++i7) {
                                         odata[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i1+x1.size()*(i0)))))]
                                           += (1.0) * data[i7+x7.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i4+x4.size()*(i3+x3.size()*(i1+x1.size()*(i0)))))))] * fdata[i4+x4.size()*(i3)];
                                       }
@@ -534,7 +529,7 @@ class Task5 : public Task<T> {  // associated with gamma
                     }
                   }
                   {
-                    if (x1 == x2 && x3 == x4) {
+                    if (x3 == x4 && x1 == x2) {
                       std::vector<size_t> i0hash = {x5.key(), x0.key()};
                       std::unique_ptr<double[]> data = rdm1->get_block(i0hash);
                       for (int i0 = 0; i0 != x0.size(); ++i0) {
