@@ -171,6 +171,9 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   shared_ptr<RDM<3> > rdm3(new RDM<3>(norb_));
   shared_ptr<RDM<4> > rdm4(new RDM<4>(norb_));
 
+  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
+  cc_->set_det(detex);
+
   shared_ptr<Civec> cbra = cc_->data(ist);
 
   // first make <I|E_ij|0>
@@ -252,6 +255,8 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   cout << "??" << endl;
   tmp2->print();
 #endif
+
+  cc_->set_det(det_);
 
   return make_tuple(rdm3, rdm4);
 }

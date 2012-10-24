@@ -71,6 +71,7 @@ shared_ptr<RDM<3> > Reference::compute_rdm3(const int i) const {
   // Default to HarrisonZarrabian method
   shared_ptr<FCI> fci(new KnowlesHandy(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();
+  fci->compute_rdm12();
   return get<0>(fci->compute_rdm34(i));
 }
 
