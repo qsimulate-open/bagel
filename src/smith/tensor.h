@@ -176,6 +176,7 @@ class Tensor {
       return std::move(buf);
     };
 
+
     std::shared_ptr<Tensor<T> > add_dagger() {
       std::shared_ptr<Tensor<T> > out = clone();
       std::vector<IndexRange> o = indexrange();
@@ -196,6 +197,33 @@ class Tensor {
       }
       return out;
     };
+
+
+    void print2(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 2);
+      for (auto& i1 : o[1].range()) {
+        for (auto& i0 : o[0].range()) {
+          std::vector<size_t> h = {i0.key(), i1.key()};
+          // if this block is not included in the current wave function, skip it
+          if (!this->get_size(h)) continue;
+          std::unique_ptr<double[]> data = this->get_block(h);
+          size_t iall = 0;
+          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+              if (fabs(data[iall]) > thresh) {
+                std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
+                               " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+              }
+            }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
+    };
+
 
     void print4(std::string label, const double thresh = 5.0e-2) {
       std::cout << std::endl << "======================================" << std::endl;

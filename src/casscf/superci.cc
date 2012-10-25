@@ -217,6 +217,10 @@ void SuperCI::compute() {
   // ============================
   resume_stdcout();
 
+  // this is not needed for energy, but for consistency we want to have this...
+  fci_->compute();
+  fci_->compute_rdm12();
+
 }
 
 

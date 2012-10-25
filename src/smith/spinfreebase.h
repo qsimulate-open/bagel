@@ -83,9 +83,20 @@ class SpinFreeMethod {
     // E0 is defined as Trace(f(x,x), gamma(x,x))
     // For instance, E0 is 0 for MP2.
     double compute_e0() {
-      assert(eig_);
-      if (ref_->nact() != 0) throw std::logic_error("SpinFreeMethod::compute_e0 not implemented for CASPT2 yet");
+      if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1_)))
+        throw std::logic_error("SpinFreeMethod::compute_e0 was called before f1_ or rdm1_ was computed. Strange.");
       double sum = 0.0;
+      // TODO parallelize?
+      for (auto& i1 : active_) {
+        for (auto& i0 : active_) {
+          std::vector<size_t> hash = {i0.key(), i1.key()};
+          const size_t size = i0.size() * i1.size();
+          std::unique_ptr<double[]> fdata = f1_->get_block(hash);
+          std::unique_ptr<double[]> rdata = rdm1_->get_block(hash);
+          sum += ddot_(size, fdata, 1, rdata, 1);
+        }
+      }
+      std::cout << "    - Zeroth order energy: " << sum << std::endl;
       return sum;
     };
 
