@@ -60,6 +60,9 @@ void Dimer::hamiltonian() {
 
   dimerstates_ = nstatesA*nstatesB;
 
+  cout << " ===== Starting construction of dimer hamiltonian ===== " << endl;
+
+  space_ = shared_ptr<Space>(new Space(ccvecs_.first->det(), 1));
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
   // create jop_ object (which effectively includes all closed-closed interactions)
@@ -84,6 +87,8 @@ void Dimer::hamiltonian() {
   // intermolecular active-active interactions
   cout << "  o Computing intermolecular active-active interactions" << endl;
   *hamiltonian_ += *compute_inter_activeactive();
+
+  hamiltonian_->print();
 }
 
 shared_ptr<Matrix> Dimer::compute_closeclose() {
@@ -107,7 +112,7 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
   const int nstatesB = nstates_.second;
 
   double *cdata_core = scoeff_->data();
-  double *cdata_act  = scoeff_->data() + nact*dimerbasis_;
+  double *cdata_act  = scoeff_->data() + ncore*dimerbasis_;
 
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
@@ -120,14 +125,14 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
   double *hdata = Hab.get();
   // Sort 1e data so only the intramolecular terms are included  
   for (int i = 0; i < nactA; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      *hdata++ = jop_->mo1e(j,i);
+    for (int j = 0; j <= i; ++j, ++hdata) {
+      *hdata = jop_->mo1e(j,i);
     }
   }
 
-  for (int i =0; i < nactB; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      *hdata++ = jop_->mo1e(j+nactA,i+nactA);
+  for (int i = 0; i < nactB; ++i) {
+    for (int j = 0; j <= i; ++j, ++hdata) {
+      *hdata = jop_->mo1e(j+nactA,i+nactA);
     }
   }
 
@@ -225,8 +230,13 @@ shared_ptr<Matrix> Dimer::compute_intra_activeactive() {
 //And now for the hard part
 shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   // ijA and ijB need to match the compression of the det
-  const int ijA = nact_.first*nact_.first; 
-  const int ijB = nact_.second*nact_.second; 
+  const int nactA = nact_.first;
+  //const int ijA = ((nactA+1)*nactA)/2;
+  const int ijA = nactA*nactA;
+
+  const int nactB = nact_.second;
+  //const int ijB = ((nactB+1)*nactB)/2;
+  const int ijB = nactB*nactB;
 
   // build <ab|cd> - <ab|dc> matrix
   shared_ptr<Matrix> H_abcd = form_Hmatrix(ijA, ijB);
@@ -274,15 +284,18 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   return out2;
 }
 
-shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const {
+shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, const int nstates, const int ij) const {
   shared_ptr<Matrix> out(new Matrix(nstates*nstates, ij));
 
   double *edata = out->data();
+  shared_ptr<Determinants> det = space_->finddet(0,0);
 
-  shared_ptr<Dvec> c(new Dvec(ccvec->det(), ij));
 
-  const int la = ccvec->det()->lena();
-  const int lb = ccvec->det()->lenb();
+  shared_ptr<Dvec> c(new Dvec(det, ij));
+
+  const int la = det->lena();
+  const int lb = det->lenb();
+  const int lab = la*lb;
 
   for(int state = 0; state < nstates; ++state) {
     const double* source_base = ccvec->data(state)->data();
@@ -293,18 +306,17 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, co
       double* target_base = c->data(ac)->data();
 
       // alpha-alpha
-      for(auto& iter : ccvec->det()->phia(ac) ) {
+      for(auto& iter : det->phia(ac) ) {
         const double sign = static_cast<double>(get<1>(iter));
-        double* target_array = target_base + get<2>(iter)*lb;
+        double* target = target_base + get<2>(iter)*lb;
         const double* source = source_base + get<0>(iter)*lb;
-        daxpy_(lb, sign, source, 1, target_array, 1);
+        daxpy_(lb, sign, source, 1, target, 1);
       }
     }
 
     // | C > ^A_ac is done
-    const int lab = la*lb;
     for(int statep = 0; statep < nstates; ++statep) {
-      const double *adata = ccvec->data(state)->data();
+      const double *adata = ccvec->data(statep)->data();
       for(int ac = 0; ac < ij; ++ac) {
         const double *cdata = c->data(ac)->data();
         *edata++ = ddot_(lab, adata, 1, cdata, 1);
@@ -315,15 +327,16 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, co
   return out;
 }
 
-shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const{
+shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, const int nstates, const int ij) const{
   shared_ptr<Matrix> out(new Matrix(nstates*nstates, ij));
 
   double *edata = out->data();
+  shared_ptr<Determinants> det = space_->finddet(0,0);
 
-  shared_ptr<Dvec> c(new Dvec(ccvec->det(), ij));
+  shared_ptr<Dvec> c(new Dvec(det, ij));
 
-  const int la = ccvec->det()->lena();
-  const int lb = ccvec->det()->lenb();
+  const int la = det->lena();
+  const int lb = det->lenb();
 
   for(int state = 0; state < nstates; ++state) {
     const double* source_base = ccvec->data(state)->data();
@@ -334,7 +347,7 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, con
       double *target_base = c->data(ac)->data();
 
       // beta-beta
-      for(auto& iter : ccvec->det()->phib(ac)) {
+      for(auto& iter : det->phib(ac)) {
         const double sign = static_cast<double>(get<1>(iter));
         double* target_array = target_base + get<2>(iter);
         const double* source = source_base + get<0>(iter);

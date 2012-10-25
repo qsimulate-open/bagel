@@ -160,6 +160,12 @@ void FCI::print_header() const {
   cout << "  ---------------------------" << endl << endl;
 }
 
+shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
+  shared_ptr<const CIWfn> out(new const CIWfn(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_));
+  return out;
+};  
+
+
 void FCI::compute() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 

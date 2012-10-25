@@ -31,6 +31,7 @@
 #include <src/scf/coeff.h>
 #include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
+#include <src/wfn/ciwfn.h>
 #include <src/fci/mofile.h>
 #include <src/fci/dvec.h>
 #include <src/fci/space.h>
@@ -42,6 +43,7 @@ typedef std::shared_ptr<const Geometry> RefGeometry;
 typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
 typedef std::shared_ptr<const Dvec> RefDvec;
+typedef std::shared_ptr<const CIWfn> RefCIWfn;
 
 /************************************************************************************
 *  This class describes a homodimer.                                                *
@@ -54,6 +56,7 @@ class Dimer {
 
       std::pair<RefCoeff, RefCoeff> coeffs_;
       std::pair<RefDvec, RefDvec> ccvecs_;
+      std::pair<RefCIWfn, RefCIWfn> ci_;
 
       std::shared_ptr<Geometry>   sgeom_;
       std::shared_ptr<Reference>  sref_;
@@ -81,7 +84,8 @@ class Dimer {
       // Constructors
       Dimer(RefGeometry a, RefGeometry b);
       Dimer(RefGeometry a, std::array<double,3> displacement);
-      Dimer(RefReference a, std::array<double,3> displacement, RefDvec = NULL);
+      Dimer(RefReference a, std::array<double,3> displacement);
+      Dimer(RefCIWfn a, std::array<double,3> displacement);
 
       // Return functions
       std::pair<RefGeometry, RefGeometry> geoms() const { return geoms_; } ;

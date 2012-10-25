@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __NEWINT_FCI_FCI_H
-#define __NEWINT_FCI_FCI_H
+#ifndef __BAGEL_FCI_FCI_H
+#define __BAGEL_FCI_FCI_H
 
 #include <tuple>
 #include <src/scf/scf.h>
@@ -39,6 +39,7 @@
 #include <src/fci/determinants.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
+#include <src/wfn/ciwfn.h>
 
 namespace bagel {
 
@@ -176,6 +177,8 @@ class FCI {
     // These are needed for the RDM stuff, apparently
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+
+    std::shared_ptr<const CIWfn> conv_to_ciwfn();
 };
 
 }

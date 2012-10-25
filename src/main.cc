@@ -38,6 +38,7 @@
 #include <src/scf/rohf.h>
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
+#include <src/wfn/ciwfn.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
 #include <src/casscf/superci.h>
@@ -291,7 +292,6 @@ int main(int argc, char** argv) {
         MoldenOut mfs(out_file);
         mfs << geom;
         if(orbitals) mfs << ref;
-
         mfs.close();
 
       }
@@ -300,94 +300,14 @@ int main(int argc, char** argv) {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        ref->coeff()->print();
-        Molden mfs;
-        
-        std::shared_ptr<const Coeff> coeff = mfs.read_mos(geom, "test.molden");
+        std::shared_ptr<FCI> fci(new HarrisonZarrabian(iter->second, ref));
+        fci->compute();
+        std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
 
-        coeff->print();
-
-        std::shared_ptr<Matrix1e> ao_density = coeff->form_density_rhf(geom->nele()/2);
-        std::shared_ptr<Fock<1> > hcore(new Fock<1>(geom));
-        std::shared_ptr<Fock<1> > fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
-
-        Matrix1e hcore_fock = (*hcore + *fock);
-        double energy = ((*ao_density)*(hcore_fock)).trace();//->ddot(*hcore_fock.transpose());
-        energy = 0.5*energy + geom->nuclear_repulsion();
-
-        std::cout << energy << std::endl;
-        std::cout << geom->nele() << std::endl;
-
-
-        #if 0
-        std::shared_ptr<Space> space(new Space(16, 8, 8, 1));
-
-
-        #endif
-
-        #if 0 // Dimer overlap testing
-        double dx = read_input<double>(testdata, "dx", 0.0) * ang2bohr__;
-        double dy = read_input<double>(testdata, "dy", 0.0) * ang2bohr__;
-        double dz = read_input<double>(testdata, "dz", 0.0) * ang2bohr__;
-        std::array<double,3> disp = {{dx,dy,dz}};
-
-         #if 0
-          Molden mf(geom->spherical());
-          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
-          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
-          ref = shared_ptr<const Reference>(new Reference(geom, coeff, geom->nele()/2,0,geom->nbasis() - (geom->nele()/2) ));
-         #endif
-
-        std::shared_ptr<Dimer> methane_dimer(new Dimer(ref, disp));
-        std::vector<std::shared_ptr<const Geometry> > tmp_geom(1, methane_dimer->supergeom());
-        //geom = std::shared_ptr<Geometry>(new Geometry(tmp_geom));
-        geom = methane_dimer->supergeom();
-        Molden mf(methane_dimer->supergeom()->spherical());
-
-        methane_dimer->overlap()->print(); // <--- print non-orthogonal MOs
-        mf.write_geo(methane_dimer->supergeom(), "nonortho.molden");
-        mf.write_mos(methane_dimer->superref(), "nonortho.molden");
-
-        methane_dimer->orthonormalize();
-        methane_dimer->overlap()->print(); // <--- print orthogonal MOs
-        mf.write_geo(methane_dimer->supergeom(), "ortho.molden");
-        mf.write_mos(methane_dimer->superref(), "ortho.molden");
-
-#if 1
-        ref = methane_dimer->superref();
-#endif
-
-        double energy = methane_dimer->energy();
-        cout << "Dimer Energy is " << std::setprecision(16) << std::setw(22) << energy << endl;
-        #endif
-
-        #if 0 // Fock matrix testing for methane
-        // For Fock_base I need geom, Hcore, density matrix, and schwarz vector (kind of)
-        std::shared_ptr<Fock<0> > hcore(new Fock<0>(geom));
-
-         // Turn on one of the following two "if 0" statements
-          #if 0 // get test coeff from molden file
-          Molden mf(geom->spherical());
-          std::string moldenfile = read_input<std::string>(geominfo, "molden_in", "");
-          std::shared_ptr<const Coeff> coeff = mf.read_mos(geom,moldenfile);
-          #endif
-
-          #if 0 // Get test coeff from SCF
-          scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom));
-          scf->compute();
-          ref = scf->conv_to_ref();
-          std::shared_ptr<const Coeff> coeff = ref->coeff();
-          #endif
-
-        std::shared_ptr<Fock<0> > fock(new Fock<0>(geom, hcore, coeff->form_density_rhf(5), geom->schwarz()));
-
-        //mf.write_mos(ref, "methane.out");
-
-        fock->print("fockao", 10);
-        Matrix1e fockmo = *coeff % *fock * *coeff;
-        fockmo.print("fockmo",10);
-
-        #endif
+        std::array<double,3> disp = {{0,0,100.0}};
+        std::shared_ptr<Dimer> dim(new Dimer(ci, disp));
+        std::cout << "Now calling hamiltonian" << std::endl;
+        dim->hamiltonian();
       }
       #endif
     }

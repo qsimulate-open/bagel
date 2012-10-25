@@ -24,8 +24,8 @@
 //
 
 
-#ifndef NEWINT_FCI_DVEC_H
-#define NEWINT_FCI_DVEC_H
+#ifndef BAGEL_FCI_DVEC_H
+#define BAGEL_FCI_DVEC_H
 
 #include <src/fci/civec.h>
 

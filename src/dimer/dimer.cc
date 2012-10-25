@@ -52,7 +52,7 @@ Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : dimer
    construct_geometry();
 }
 
-Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement, shared_ptr<const Dvec> ccvec) : dimerbasis_(2*A->geom()->nbasis()),
+Dimer::Dimer(shared_ptr<const Reference> A, array<double,3> displacement) : dimerbasis_(2*A->geom()->nbasis()),
 nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
 {
    /************************************************************
@@ -80,8 +80,39 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    refs_ = make_pair(A, tmpref);
 
    sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+}
 
-   ccvecs_ = make_pair(ccvec, ccvec);
+Dimer::Dimer(shared_ptr<const CIWfn> A, array<double,3> displacement) : dimerbasis_(2*A->geom()->nbasis()),
+nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
+{
+   /************************************************************
+   *  Set up variables that will contain the organized info    *
+   ************************************************************/
+   coeffs_ = make_pair(A->coeff(), A->coeff());
+
+   shared_ptr<const Geometry> geomA = A->geom();
+   shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
+
+   geoms_ = make_pair(geomA, geomB);
+
+   ci_ = make_pair(A, A);
+   ccvecs_ = make_pair(A->civectors(), A->civectors());
+
+   cout << " ===== Constructing Dimer geometry ===== " << endl;
+   construct_geometry();
+
+   cout << " ===== Constructing Dimer reference ===== " << endl;
+   construct_coeff();
+
+   int nclo = 2*A->ncore();
+   int nact = 2*A->nact();
+   int nvirt = 2*A->nvirt();
+
+   shared_ptr<Reference> Aref(new Reference(geomA, coeffs_.first, ncore_.first, nact_.first, nvirt_.first));
+   shared_ptr<Reference> Bref(new Reference(geomB, coeffs_.second, ncore_.second, nact_.second, nvirt_.second));
+   refs_ = make_pair(Aref, Bref);
+
+   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
 }
 
 void Dimer::construct_geometry() {
@@ -108,6 +139,16 @@ void Dimer::construct_coeff() {
 
     nvirt_.first  = refs_.first->nvirt();
     nvirt_.second = refs_.second->nvirt();
+  }
+  else if (static_cast<bool>(ci_.first)) {
+    ncore_.first  = ci_.first->ncore();
+    ncore_.second = ci_.second->ncore();
+    
+    nact_.first  = ci_.first->nact();
+    nact_.second = ci_.second->nact();
+
+    nvirt_.first  = ci_.first->nvirt();
+    nvirt_.second = ci_.second->nvirt();
   }
   else {
     // Round nele up for number of orbitals

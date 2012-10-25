@@ -41,8 +41,8 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
  : geom_(g), coeff_(c), energy_(en), hcore_(new Hcore(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
-  if (nact_ && rdm1_.empty())
-    throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
+  //if (nact_ && rdm1_.empty())
+  //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
 }
 
