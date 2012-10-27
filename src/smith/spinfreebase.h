@@ -46,6 +46,8 @@ class SpinFreeMethod {
     IndexRange all_;
     std::shared_ptr<const Reference> ref_;
 
+    double e0_;
+
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
     std::shared_ptr<Tensor<T> > rdm1_;
@@ -101,7 +103,7 @@ class SpinFreeMethod {
     };
 
 
-    void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r) {
+    void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r, const bool put = false) {
 
       // ranks of t and r are assumed to be the same
 
@@ -126,37 +128,46 @@ class SpinFreeMethod {
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-              t->add_block(h,data0);
+              if (!put) {
+                t->add_block(h,data0);
+              } else {
+                t->put_block(h,data0);
+              }
             }
           }
         }
       }
-    };
-
-    void update_amplitude_start(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r) {
-      // ranks of t and r are assumed to be the same
       for (auto& i3 : virt_) {
-        for (auto& i2 : closed_) {
+        for (auto& i2 : active_) {
           for (auto& i1 : virt_) {
-            for (auto& i0 : closed_) {
+            for (auto& i0 : active_) {
               std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
+
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
               std::unique_ptr<double[]> data0 = r->get_block(h);
+              std::unique_ptr<double[]> data1 = r->get_block(g);
+
               // this is an inverse of the overlap.
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
               size_t iall = 0;
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                      data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-              t->put_block(h,data0);
+                      data0[iall] /= eig_[j3] + eig_[j1];
+//                    data0[iall] /= -(eig_[j0] + eig_[j2] + eig_[j3] + eig_[j1] - e0_);
+              if (!put) {
+                t->add_block(h,data0);
+              } else {
+                t->put_block(h,data0);
+              }
             }
           }
         }
       }
     };
-
 
   public:
     SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
@@ -260,6 +271,9 @@ class SpinFreeMethod {
           }
         }
       }
+
+      // set e0
+      e0_ = compute_e0();
     };
 
     IndexRange& virt() { return virt_; };
@@ -267,6 +281,8 @@ class SpinFreeMethod {
     IndexRange& closed() { return closed_; };
 
     std::shared_ptr<const Reference>& ref() { return ref_; };;
+
+    double e0() const { return e0_; };
 
     virtual void solve() = 0;
 

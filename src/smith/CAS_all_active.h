@@ -77,6 +77,7 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
       queue_->add_task(task3);
 
 
+#if 0
       std::vector<IndexRange> I1_index = {this->active_, this->active_, this->active_, this->active_};
       std::shared_ptr<Tensor<T> > I1(new Tensor<T>(I1_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor4 = {I0, t2, I1};
@@ -110,6 +111,7 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
       queue_->add_task(task7);
 
       task7->add_dep(task2);
+#endif
 
       std::vector<IndexRange> I8_index = {this->active_, this->active_, this->active_, this->active_};
       std::shared_ptr<Tensor<T> > I8(new Tensor<T>(I8_index, false));
@@ -209,9 +211,9 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
     CAS_all_active(std::shared_ptr<const Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
-      e0_ = this->compute_e0();
+      e0_ = this->e0();
 #if 1
-      this->update_amplitude_start(t2, this->v2_);
+      this->update_amplitude(t2, this->v2_, true);
       t2->scale(2.0);
 #endif
       r = t2->clone();

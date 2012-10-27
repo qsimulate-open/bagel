@@ -174,9 +174,9 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
     MP2(std::shared_ptr<const Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
-      e0_ = this->compute_e0();
+      e0_ = this->e0();
 #if 1
-      this->update_amplitude_start(t2, this->v2_);
+      this->update_amplitude(t2, this->v2_, true);
       t2->scale(2.0);
 #endif
       r = t2->clone();
