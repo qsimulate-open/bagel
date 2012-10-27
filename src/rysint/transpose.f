@@ -312,7 +312,6 @@ c      quick return if possible
       do i=1,n
        do j=1,m
         vec(i,j)=h(j,i)
-        vec(i,j)=h(j,i)
        enddo
       enddo
       return
