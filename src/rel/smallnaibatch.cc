@@ -45,10 +45,12 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
   ovl1_ = stack_->get(aux_[1]->nbasis()*aux_[1]->nbasis());
   {
     OverlapBatch ovl0(array<shared_ptr<const Shell>,2>{{aux_[0], aux_[0]}}, stack_);
+    ovl0.compute();
     copy(ovl0.data(), ovl0.data()+ovl0.size_block(), ovl0_);
   }
   {
     OverlapBatch ovl1(array<shared_ptr<const Shell>,2>{{aux_[1], aux_[1]}}, stack_);
+    ovl1.compute();
     copy(ovl1.data(), ovl1.data()+ovl1.size_block(), ovl1_);
   }
   data_ = stack_->get(size_block_*4);
@@ -64,8 +66,12 @@ SmallNAIBatch::~SmallNAIBatch() {
 
 void SmallNAIBatch::compute() {
   // first compute uncontracted NAI with auxiliary basis (cartesian)
-//OverlapBatch nai(aux_, stack_);
+#define LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
+  OverlapBatch nai(aux_, stack_);
+#else
   NAIBatch nai(aux_, geom_, stack_);
+#endif
   nai.compute();
 
   // then we need to have momentum integrals
@@ -74,7 +80,6 @@ void SmallNAIBatch::compute() {
   const int a0size = aux_[0]->nbasis();
   const int a1size = aux_[1]->nbasis();
   double* ints = stack_->get(3 * s0size * a1size);
-cout << "ca" << s0size << " " << s1size << " " << a0size << " " << a1size << endl;
   {
     // first half transformation
     // momentum integrals (x,y,z)
@@ -97,18 +102,15 @@ cout << "ca" << s0size << " " << s1size << " " << a0size << " " << a1size << end
 
       mytranspose_(tmparea, &s0size, &a0size, tmparea2);
       {
-//      double* const ipiv = stack_->get(a0size);
+        double* const ipiv = stack_->get(a0size);
         double* const tmp = stack_->get(a0size*a0size);
         copy(ovl0_, ovl0_+a0size*a0size, tmp);
-//      int* const ipivi = reinterpret_cast<int* const>(ipiv);
-        int* ipivi = new int[a0size];
         int info = 0;
-//      dgesv_(a0size, s0size, tmp, a0size, ipivi, tmparea2, a0size, info); 
+        dgesv_(a0size, s0size, tmp, a0size, (int*)ipiv, tmparea2, a0size, info); 
         if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
         stack_->release(a0size*a0size, tmp);
-//      stack_->release(a0size, ipiv);
+        stack_->release(a0size, ipiv);
       }
-cout << "done " << i << endl;
 
       dgemm_("T", "N", s0size, a1size, a0size, 1.0, tmparea2, a0size, nai.data(), a0size, 0.0, ints+i*s0size*a1size, s0size);
       stack_->release(s0size*a0size, tmparea2);
@@ -116,7 +118,6 @@ cout << "done " << i << endl;
     }
     }
   }
-cout << "cb" << endl;
   {
     // second half transformation
     MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_[1]}}, stack_);

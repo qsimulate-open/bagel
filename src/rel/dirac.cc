@@ -32,11 +32,16 @@ using namespace bagel;
 
 void Dirac::compute() {
 
-  kinetic_->print();
-  nai_->print();
+  kinetic_->print("kinetic");
+  nai_->print("nai");
 
+#if 1
   SmallNAI snai(geom_);
   snai.print();
+#else
+  SmallNAI* p = new SmallNAI(geom_);
+  p->print();
+#endif
 
 }
 

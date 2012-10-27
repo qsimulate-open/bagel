@@ -44,8 +44,11 @@ SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 
 
 void SmallNAI::print() const {
-  for (auto i = data_.begin(); i != data_.end(); ++i) {
-    (*i)->print();
+  int j = 0;
+  for (auto i = data_.begin(); i != data_.end(); ++i, ++j) {
+    stringstream ss;
+    ss << "SmallNAI " << j;
+    (*i)->print(ss.str());
   }
 }
 
@@ -79,7 +82,7 @@ void SmallNAI::init() {
   // only lower half will be stored
   auto o0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
-    // iatom1 = iatom1;
+    // iatom0 = iatom1;
     auto offset0 = o0->begin();
     for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
       auto offset1 = o0->begin();
