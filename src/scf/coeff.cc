@@ -37,7 +37,7 @@ Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
 
   ndim_ = inp.ndim();
   mdim_ = inp.mdim();
-  dcopy_(nbasis_*nbasis_, inp.data(), 1, data(), 1);
+  copy_n(inp.data(), nbasis_*nbasis_, data());
 
 }
 

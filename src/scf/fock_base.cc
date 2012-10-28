@@ -77,7 +77,7 @@ void Fock_base::fock_one_electron_part() {
 Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
  : Matrix1e(geom) {
 
-  dcopy_(nbasis_*nbasis_, hcore->data(), 1, data(), 1);
+  copy_n(hcore->data(), nbasis_*nbasis_, data());
 
   fill_upper();
 }
@@ -87,7 +87,7 @@ Fock_base::Fock_base(const RefGeometry geom)
  : Matrix1e(geom) {
 
   Hcore hcore(geom);
-  dcopy_(nbasis_*nbasis_, hcore.data(), 1, data(), 1);
+  copy_n(hcore.data(), nbasis_*nbasis_, data());
 
   fill_upper();
 }
@@ -106,7 +106,7 @@ void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0,
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i * nbasis_ + j] = 0.0;
+      data_[i*nbasis_+j] = 0.0;
     }
   }
 }
