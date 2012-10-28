@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel::SMITH;
 
 SMITH_info::SMITH_info() {
-  maxiter_ = 5;
+  maxiter_ = 50;
   thresh_residual_ = 1.0e-8;
 }
 

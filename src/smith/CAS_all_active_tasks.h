@@ -141,7 +141,7 @@ class Task2 : public Task<T> {  // associated with gamma
               {
                 std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
                 std::unique_ptr<double[]> data = rdm2->get_block(i0hash);
-                sort_indices<0,1,2,3,1,1,-1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+                sort_indices<0,1,2,3,1,1,1,1>(data, odata, x3.size(), x0.size(), x2.size(), x1.size());
               }
               Gamma2->put_block(ohash, odata);
             }
