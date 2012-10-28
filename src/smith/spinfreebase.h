@@ -156,8 +156,8 @@ class SpinFreeMethod {
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                      data0[iall] /= eig_[j3] + eig_[j1];
-//                    data0[iall] /= -(eig_[j0] + eig_[j2] + eig_[j3] + eig_[j1] - e0_);
+//                    data0[iall] /= (eig_[j0] + eig_[j2] + eig_[j3] + eig_[j1] - e0_);
+                      data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               if (!put) {
                 t->add_block(h,data0);
               } else {
