@@ -74,7 +74,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   unique_ptr<double[]> buf(new double[norb_*norb_]);
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
-      dcopy_(norb_*norb_, &rdm2->element({0,0,k,i}), 1, buf.get(), 1);
+      copy_n(&rdm2->element({0,0,k,i}), norb_*norb_, buf.get());
       mytranspose1_(buf.get(), &norb_, &norb_, &rdm2->element({0,0,k,i})); // sorting with stride 1 as norb_ is small
     }
   }

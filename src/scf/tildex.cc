@@ -46,7 +46,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
 
   unique_ptr<double[]> eig(new double[nbasis_]);
 
-  dcopy_(size, olp->data(), 1, data(), 1);
+  *this = *olp;
 
   {
     int info;
@@ -81,7 +81,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
   mdim_ = ndim_ - cnt;
   if (cnt != 0) {
     for (int i = 0; i != mdim_; ++i) {
-      dcopy_(ndim_, data()+(i+cnt)*ndim_, 1, data()+i*ndim_, 1);
+      copy_n(data()+(i+cnt)*ndim_, ndim_, data()+i*ndim_);
     }
   }
 #else
@@ -89,7 +89,7 @@ TildeX::TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix
     mdim_ = ndim_;
     unique_ptr<double[]> tmp(new double[size]);
     dgemm_("N", "T", ndim_, ndim_, ndim_-cnt, 1.0, data()+cnt*ndim_, ndim_, data()+cnt*ndim_, ndim_, 0.0, tmp.get(), ndim_);
-    dcopy_(size, tmp, 1, data_, 1);
+    copy_n(tmp.get(), size, data_.get());
   }
 #endif
 
