@@ -96,6 +96,11 @@ class Matrix1e {
     Matrix1e& operator/=(const Matrix1e&);
     Matrix1e operator/(const Matrix1e&) const;
 
+    double& operator[](const size_t& i) { return data_[i]; };
+    const double& operator[](const size_t& i) const { return data_[i]; };
+    double& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; };
+    const double& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; };
+
     std::shared_ptr<Matrix1e> clone() const { return std::shared_ptr<Matrix1e>(new Matrix1e(geom_, ndim_, mdim_)); };
 
     // returns exp(*this)

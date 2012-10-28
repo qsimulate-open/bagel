@@ -85,6 +85,11 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
 
+    double& operator[](const size_t& i) { return data_[i]; };
+    const double& operator[](const size_t& i) const { return data_[i]; };
+    double& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; };
+    const double& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; };
+
     std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_)); };
 
     // returns exp(*this)

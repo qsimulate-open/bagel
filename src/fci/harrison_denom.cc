@@ -58,25 +58,26 @@ void HarrisonZarrabian::const_denom() {
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
-  for (auto ia = det()->stringa().begin(); ia != det()->stringa().end(); ++ia) {
-    for (auto ib = det()->stringb().begin(); ib != det()->stringb().end(); ++ib, ++iter) {
-      const int nopen = ((*ia)^(*ib)).count();
+  for (auto& ia : det()->stringa()) {
+    for (auto& ib : det()->stringb()) {
+      const int nopen = (ia^ib).count();
       const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
       *iter = 0.0;
       for (int i = 0; i != norb_; ++i) {
-        const int nia = (*ia)[i];
-        const int nib = (*ib)[i];
+        const int nia = ia[i];
+        const int nib = ib[i];
         const int niab = nia + nib;
         const int Ni = (nia ^ nib);
         for (int j = 0; j != i; ++j) {
-          const int nja = (*ia)[j];
-          const int njb = (*ib)[j];
+          const int nja = ia[j];
+          const int njb = ib[j];
           const int Nj = (nja ^ njb);
           const int addj = niab * (nja + njb); 
           *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
         }
         *iter += jop_->mo1e(i,i) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
       }
+      ++iter;
     }
   }
 }
@@ -85,7 +86,7 @@ void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   auto tp1 = high_resolution_clock::now();
-  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, string("HZ")));
+  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
 
   // right now full basis is used. 
   auto tp2 = high_resolution_clock::now();

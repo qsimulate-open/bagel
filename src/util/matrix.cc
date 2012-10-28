@@ -371,6 +371,16 @@ shared_ptr<Matrix> Matrix::transpose() const {
   return out;
 }
 
+
+void Matrix::symmetrize() {
+  assert(ndim_ == mdim_);
+  const int n = mdim_;
+  for (int i = 0; i != n; ++i)
+    for (int j = i+1; j != n; ++j)
+      data_[i+j*n] = data_[j+i*n] = 0.5*(data_[i+j*n]+data_[j+i*n]);
+}
+
+
 void Matrix::antisymmetrize() {
   assert(ndim_ == mdim_);
 

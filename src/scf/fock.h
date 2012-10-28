@@ -244,28 +244,27 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
     assert(nbasis_ == df->nbasis0());
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
-    std::unique_ptr<double[]> coeff(new double[nbasis_ * nbasis_]);
+    std::shared_ptr<Matrix1e> coeff(new Matrix1e(*den_ex));
+    *coeff *= -1.0;
     int nocc = 0;
     {
       const int lwork = nbasis_*5;
       std::unique_ptr<double[]> work4(new double[lwork]);
       std::unique_ptr<double[]> vec(new double[nbasis_]);
-      std::copy(den_ex->data(), den_ex->data()+nbasis_*nbasis_, coeff.get());
-      dscal_(nbasis_*nbasis_, -1.0, coeff, 1);
       int info;
-      dsyev_("V", "U", nbasis_, coeff, nbasis_, vec, work4, lwork, info);
+      dsyev_("V", "U", nbasis_, coeff->data(), nbasis_, vec.get(), work4.get(), lwork, info);
       if (info) throw std::runtime_error("dsyev failed in DF Fock builder 2");
       for (int i = 0; i != nbasis_; ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
-          dscal_(nbasis_, std::sqrt(-vec[i]), coeff.get()+i*nbasis_, 1);
+          dscal_(nbasis_, std::sqrt(-vec[i]), coeff->data()+i*nbasis_, 1);
         } else { break; }
       }
     }
     if (nocc == 0) return;
 
     // first half transformation and multiplying J^-1/2 from the front.
-    std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff.get(), nocc)->apply_J();
+    std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
     half->form_2index(data_, -0.5);
 
     std::unique_ptr<double[]> jop = df->compute_Jop(density_->data());

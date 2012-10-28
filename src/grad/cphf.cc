@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <src/grad/cphf.h>
+#include <src/util/matrix.h>
 #include <cassert>
 
 #define CPHF_MAX_ITER 100
@@ -49,17 +50,20 @@ shared_ptr<Matrix1e> CPHF::solve() const {
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const ocoeff = ref_->coeff()->data();
-  const double* const vcoeff = ocoeff + nocca*nbasis;
+  Matrix ocoeff(nbasis, nocca);
+  copy_n(ref_->coeff()->data(), nbasis*nocca, ocoeff.data());
+  
+  Matrix vcoeff(nbasis, nvirt);
+  copy_n(ref_->coeff()->data()+nocca*nbasis, nbasis*nvirt, vcoeff.data());
 
   shared_ptr<Matrix1e> t(new Matrix1e(geom_));
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
 
-  unique_ptr<double[]> jri(new double[nbasis*nocca]);
-  unique_ptr<double[]> jai(new double[nvirt*nocca]);
-  unique_ptr<double[]> kia(new double[nvirt*nocca]);
+  Matrix jri(nbasis, nocca);
+  Matrix jai(nvirt, nocca);
+  Matrix kia(nocca, nvirt);
 
   cout << "  === CPHF iteration ===" << endl << endl;
 
@@ -71,31 +75,33 @@ shared_ptr<Matrix1e> CPHF::solve() const {
     // one electron part
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nocca+nvirt; ++a)
-        sigma->element(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
+        (*sigma)(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
 
     // J part
-    shared_ptr<Matrix1e> pbmao(new Matrix1e(geom_));
+    Matrix pbmao(nbasis, nbasis);
     {
-      unique_ptr<double[]> pms(new double[nbasis*nocca]);
-      dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff, nbasis, 0.0, pms.get(), nocca);
-      dgemm_("N", "N", nbasis, nbasis, nocca, 1.0, ocoeff, nbasis, pms.get(), nocca, 0.0, pbmao->data(), nbasis);
+      Matrix pms(nocca, nbasis);
+      dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff.data(), nbasis, 0.0, pms.data(), nocca);
+      pbmao = ocoeff * pms;
     }
-    pbmao->symmetrize();
+    pbmao.symmetrize();
     {
-      unique_ptr<double[]> jrs = geom_->df()->compute_Jop(pbmao->data());
-      dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
+      Matrix jrs(nbasis, nbasis);
+      copy_n(geom_->df()->compute_Jop(pbmao.data()).get(), nbasis*nbasis, jrs.data());
+      jri = jrs * ocoeff;
     }
-    dgemm_("T", "N", nvirt, nocca, nbasis, 4.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt);
+    jai = (vcoeff % jri) * 4.0;
 
     // K part
     {
       // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
-      unique_ptr<double[]> kir = halfjj_->compute_Kop_1occ(pbmao->data());
-      dgemm_("N", "N", nocca, nvirt, nbasis, -2.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
+      Matrix kir(nocca, nbasis);
+      copy_n(halfjj_->compute_Kop_1occ(pbmao.data()).get(), nocca*nbasis, kir.data());
+      kia = (kir * vcoeff) * (-2.0);
     }
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)
-        sigma->element(a+nocca,i) += jai[a+nvirt*i] + kia[i+nocca*a];
+        (*sigma)(a+nocca,i) += jai[a+nvirt*i] + kia[i+nocca*a];
 
     t = solver_->compute_residual(t, sigma);
 

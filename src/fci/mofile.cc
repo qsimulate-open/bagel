@@ -118,11 +118,11 @@ void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) 
   const int size1e = nocc*(nocc+1)/2;
   mo1e_ = unique_ptr<double[]>(new double[size1e]);
   int ij = 0;
-  for (int i=0; i!=nocc; ++i) {
-    for (int j=0; j<=i; ++j, ++ij) {
+  for (int i = 0; i != nocc; ++i) {
+    for (int j = 0; j <= i; ++j, ++ij) {
       mo1e_[ij] = buf1e[j+i*nocc];
       if (!hz_) {
-        for (int k=0; k!=nocc; ++k)
+        for (int k = 0; k != nocc; ++k)
           mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
       }
     }

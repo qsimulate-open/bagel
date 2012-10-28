@@ -118,19 +118,16 @@ class K2ext {
               df01->form_4index(target, df23);
 
               // move in place
-              std::vector<size_t> hash = {j0, j1, j2, j3};
-
               if (hashkey23 != hashkey01) {
                 std::unique_ptr<double[]> target2(new double[size]);
                 const int s01 = i0->size() * i1->size();
                 const int s23 = i2->size() * i3->size();
                 mytranspose_(target.get(), &s01, &s23, target2.get());
-                std::vector<size_t> hash2 = {j2, j3, j0, j1};
 
-                data_->put_block(hash2, target2);
+                data_->put_block({j2, j3, j0, j1}, target2);
               }
 
-              data_->put_block(hash, target);
+              data_->put_block({j0, j1, j2, j3}, target);
             }
           }
         }
@@ -194,8 +191,7 @@ class MOFock {
               target[iall] = f.element(k1, k0);
             }
           }
-          std::vector<size_t> hash = {j1, j0};
-          data_->put_block(hash, target);
+          data_->put_block({j1, j0}, target);
           ++j1;
         }
         ++j0;
