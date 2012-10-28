@@ -137,18 +137,34 @@ class Tensor {
       return std::move(data_->get_block(generate_hash_key(p)));
     };
 
+    std::unique_ptr<double[]> get_block(const std::initializer_list<size_t>& p) const {
+      return get_block(std::vector<size_t>(p.begin(), p.end()));
+    };
+
     std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
       assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
       return std::move(data_->move_block(generate_hash_key(p)));
+    };
+
+    std::unique_ptr<double[]> move_block(const std::initializer_list<size_t>& p) const {
+      return move_block(std::vector<size_t>(p.begin(), p.end()));
     };
 
     void put_block(const std::vector<size_t>& p, std::unique_ptr<double[]>& o) {
       data_->put_block(generate_hash_key(p), o);
     };
 
+    void put_block(const std::initializer_list<size_t>& p, std::unique_ptr<double[]>& o) {
+      put_block(std::vector<size_t>(p.begin(), p.end()), o);
+    };
+
     void add_block(const std::vector<size_t>& p, const std::unique_ptr<double[]>& o) {
       if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
       data_->add_block(generate_hash_key(p), o);
+    };
+
+    void add_block(const std::initializer_list<size_t>& p, std::unique_ptr<double[]>& o) {
+      add_block(std::vector<size_t>(p.begin(), p.end()), o);
     };
 
     size_t get_size(const std::vector<size_t>& p) {

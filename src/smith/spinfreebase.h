@@ -103,6 +103,11 @@ class SpinFreeMethod {
     };
 
 
+    // S^-1/2 for aa/xx blocks
+    std::unique_ptr<double[]> shalf_xx_;
+    std::unique_ptr<double[]> denom_xx_;
+
+
     void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r, const bool put = false) {
 
       // ranks of t and r are assumed to be the same
@@ -142,27 +147,29 @@ class SpinFreeMethod {
           for (auto& i1 : virt_) {
             for (auto& i0 : active_) {
               std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
 
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
+              // first sort
               std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1 = r->get_block(g);
+              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+#if 0
+              sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
 
-              // this is an inverse of the overlap.
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+              // move to orthogonal basis
+
               size_t iall = 0;
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-//                    data0[iall] /= (eig_[j0] + eig_[j2] + eig_[j3] + eig_[j1] - e0_);
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               if (!put) {
                 t->add_block(h,data0);
               } else {
                 t->put_block(h,data0);
               }
+#endif
             }
           }
         }
@@ -261,7 +268,6 @@ class SpinFreeMethod {
                           for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                // TODO for the time being we hardwire "0" here (but this should be fixed)
                                 data[iall] = rdm3source->element({j0, j1, j2, j3, j4, j5});
                     rdm3_->put_block(hash, data);
                   }
@@ -270,6 +276,49 @@ class SpinFreeMethod {
             }
           }
         }
+      }
+
+      // aa/xx blocks 
+      if (!ref_->rdm2().empty()) {
+        // metric inverse
+        const int nact = ref_->nact();
+        const int nclosed = ref_->nclosed();
+        const size_t dim = nact*nact;
+        const size_t size = dim*dim;
+        std::unique_ptr<double[]> work2(new double[size]); 
+        std::unique_ptr<double[]> work(new double[std::max(size, dim*5)]);
+        // TODO hardwired 0
+        std::copy(ref_->rdm2(0)->data(), ref_->rdm2(0)->data()+size, work.get()); 
+        sort_indices<0,2,1,3,0,1,1,1>(work, work2, nact, nact, nact, nact);
+        int info;
+        std::unique_ptr<double[]> eig(new double[dim]);
+        dsyev_("V", "L", dim, work2.get(), dim, eig.get(), work.get(), dim*5, info);
+        if (info) throw std::runtime_error("DSYEV solved");
+        for (int i = 0; i != dim; ++i)
+          dscal_(dim, std::pow(eig[i], -0.25), work2.get()+i*dim, 1); 
+        dgemm_("N", "T", dim, dim, dim, 1.0, work2, dim, work2, dim, 0.0, work, dim); 
+        shalf_xx_ = std::move(work);
+
+        // denominator Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) * S(x2,x4; D) * S(x3, x5; D)
+        // first compute Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) 
+        // form f(x0,x1) <- this is not so simple...
+        std::unique_ptr<double[]> work3(new double[dim*dim]);
+        for (auto& i1 : active_) {
+          for (auto& i0 : active_) {
+            std::unique_ptr<double[]> dat = this->f1_->get_block({i0.key(), i1.key()});
+            for (int j1 = i1.offset(), iall = 0; j1 != i1.offset()+i1.size(); ++j1)
+              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                work3[j0-nclosed+nact*(j1-nclosed)] = dat[iall]; 
+          }
+        }
+        // TODO hardwired 0
+        dgemv_("N", size, dim, 1.0, ref_->compute_rdm3(0)->data(), size, work3.get(), 1, 0.0, work2.get(), 1);  
+        // GammaF(x2,x3, x4,x5) * S(x2,x4; D) * S(x3, x5; D)
+        sort_indices<0,2,1,3,0,1,1,1>(work2, work3, nact, nact, nact, nact);
+        dgemm_("N", "N", dim, dim, dim, 1.0, work3, dim, shalf_xx_, dim, 0.0, work2, dim);
+        dgemm_("T", "N", dim, dim, dim, 1.0, shalf_xx_, dim, work2, dim, 0.0, work3, dim);
+        for (int i = 0; i != dim; ++i) eig[i] = work3[i+i*dim];
+        denom_xx_ = std::move(eig);
       }
 
       // set e0
