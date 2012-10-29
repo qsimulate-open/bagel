@@ -128,6 +128,8 @@ void SmallNAIBatch::compute() {
     array<int,3> b = {{2,0,1}};
 
     double* tmparea = stack_->get(s1size * a1size);
+    double* const tmparea2 = stack_->get(s1size * a1size);
+
     const double* carea = coeff1.data();
     for (int i = 0; i != 3; ++i, carea += coeff1.size_block()) {
       if (shells_[1]->spherical()) {
@@ -138,16 +140,31 @@ void SmallNAIBatch::compute() {
         assert(coeff1.size_block() == a1size*s1size);
         copy(carea, carea + coeff1.size_block(), tmparea); 
       }
+
+    mytranspose_(tmparea, &s1size, &a1size, tmparea2);
+      {
+        double* const ipiv = stack_->get(a1size);
+        double* const tmp = stack_->get(a1size*a1size);
+        copy(ovl1_, ovl1_+a1size*a1size, tmp);
+        int info = 0;
+        dgesv_(a1size, s1size, tmp, a1size, (int*)ipiv, tmparea2, a1size, info); 
+        if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
+        stack_->release(a1size*a1size, tmp);
+        stack_->release(a1size, ipiv);
+      }
+
       // slot in appropriate blocks
       // four blocks are needed.
       // 0) x^x + y^y + z^z
-      dgemm_("N", "T", s0size, s1size, a1size, 1.0, ints+i*s0size*a1size, s0size, tmparea, s1size, 1.0, data_, s0size);
+      dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints+i*s0size*a1size, s0size, tmparea2, a1size, 1.0, data_, s0size);
       // 1) x^y - y^x
       // 2) y^z - z^y
       // 3) z^x - x^z
-      dgemm_("N", "T", s0size, s1size, a1size, 1.0, ints+b[i]*s0size*a1size, s0size, tmparea, s1size, 1.0, data[b[i]], s0size);
-      dgemm_("N", "T", s0size, s1size, a1size, -1.0, ints+f[i]*s0size*a1size, s0size, tmparea, s1size, 1.0, data[i], s0size);
+      dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints+b[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[b[i]], s0size);
+      dgemm_("N", "N", s0size, s1size, a1size, -1.0, ints+f[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[i], s0size);
+      std::cout << data[i] << endl;
     }
+    stack_->release(s1size*a1size, tmparea2);
     stack_->release(s1size*a1size, tmparea);
   }
 
