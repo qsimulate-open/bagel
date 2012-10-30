@@ -84,6 +84,7 @@ void SmallNAIBatch::compute() {
     // first half transformation
     // momentum integrals (x,y,z)
     MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_[0]}}, stack_); 
+    coeff0.compute();
 
     // shell[0] runs faster 
     {
@@ -121,6 +122,7 @@ void SmallNAIBatch::compute() {
   {
     // second half transformation
     MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_[1]}}, stack_);
+    coeff1.compute();
     fill(data_, data_+size_block_*4, 0.0);
 
     array<double* const,3> data = {{data_+size_block_, data_+size_block_*2, data_+size_block_*3}};
@@ -141,7 +143,7 @@ void SmallNAIBatch::compute() {
         copy(carea, carea + coeff1.size_block(), tmparea); 
       }
 
-    mytranspose_(tmparea, &s1size, &a1size, tmparea2);
+      mytranspose_(tmparea, &s1size, &a1size, tmparea2);
       {
         double* const ipiv = stack_->get(a1size);
         double* const tmp = stack_->get(a1size*a1size);
@@ -162,7 +164,6 @@ void SmallNAIBatch::compute() {
       // 3) z^x - x^z
       dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints+b[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[b[i]], s0size);
       dgemm_("N", "N", s0size, s1size, a1size, -1.0, ints+f[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[i], s0size);
-      std::cout << data[i] << endl;
     }
     stack_->release(s1size*a1size, tmparea2);
     stack_->release(s1size*a1size, tmparea);
