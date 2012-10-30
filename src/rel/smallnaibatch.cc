@@ -79,7 +79,7 @@ void SmallNAIBatch::compute() {
   const int s1size = shells_[1]->nbasis();
   const int a0size = aux_[0]->nbasis();
   const int a1size = aux_[1]->nbasis();
-  double* ints = stack_->get(3 * s0size * a1size);
+  double* const ints = stack_->get(3 * s0size * a1size);
   {
     // first half transformation
     // momentum integrals (x,y,z)
@@ -87,7 +87,6 @@ void SmallNAIBatch::compute() {
     coeff0.compute();
 
     // shell[0] runs faster 
-    {
     const double* carea = coeff0.data();
     for (int i = 0; i != 3; ++i, carea += coeff0.size_block()) {
       double* const tmparea = stack_->get(s0size * a0size);
@@ -116,7 +115,6 @@ void SmallNAIBatch::compute() {
       dgemm_("T", "N", s0size, a1size, a0size, 1.0, tmparea2, a0size, nai.data(), a0size, 0.0, ints+i*s0size*a1size, s0size);
       stack_->release(s0size*a0size, tmparea2);
       stack_->release(s0size*a0size, tmparea);
-    }
     }
   }
   {

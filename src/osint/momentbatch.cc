@@ -81,12 +81,15 @@ void MomentBatch::compute() {
   }
   stack_->release(prim0_*prim1_*asize_intermediate_*3, intermediate_p);
 
+// TODO not sure if this is needed
   if (swap01_) dscal_(size_alloc_, -1.0, data_, 1);
 
 }
 
 
 void MomentBatch::perform_VRR(double* intermediate) {
+  const int size_b = prim0_*prim1_*asize_intermediate_;
+
   const int dim = amax1_+1;
   const int worksize = dim;
   double* worktx = stack_->get(worksize * worksize);
@@ -149,9 +152,9 @@ void MomentBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_ - jz; ++jy) {
               const int jx = ang1_ - jy - jz;
               if (jx >= 0) {
-                current_data[cnt              ] = worktx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz];
-                current_data[cnt+size_block_  ] = worksx[ix + dim * jx] * workty[iy + dim * jy] * worksz[iz + dim * jz];
-                current_data[cnt+size_block_*2] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worktz[iz + dim * jz];
+                current_data[cnt         ] = worktx[ix + dim * jx] * worksy[iy + dim * jy] * worksz[iz + dim * jz];
+                current_data[cnt+size_b  ] = worksx[ix + dim * jx] * workty[iy + dim * jy] * worksz[iz + dim * jz];
+                current_data[cnt+size_b*2] = worksx[ix + dim * jx] * worksy[iy + dim * jy] * worktz[iz + dim * jz];
                 ++cnt;
               }
             }
