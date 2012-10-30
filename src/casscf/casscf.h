@@ -89,7 +89,7 @@ class CASSCF {
            const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     virtual ~CASSCF();
 
-    virtual void compute() { assert(false); };
+    virtual void compute() = 0;
 
     std::shared_ptr<Reference> ref() { return ref_; };
     std::shared_ptr<const Reference> ref() const { return ref_; };

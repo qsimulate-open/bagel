@@ -27,7 +27,6 @@
 #include <stddef.h>
 #include <src/grad/cphf.h>
 #include <src/util/matrix.h>
-#include <cassert>
 
 #define CPHF_MAX_ITER 100
 #define CPHF_THRESH 1.0e-8

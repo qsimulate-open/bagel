@@ -53,7 +53,7 @@ class SCF : public SCF_base {
 
     ~SCF() {};
 
-    void compute() {
+    void compute() override {
       std::string indent = "  ";
       std::shared_ptr<Fock<DF> > previous_fock;
       std::shared_ptr<Fock<DF> > hcore_fock;

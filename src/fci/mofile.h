@@ -74,12 +74,9 @@ class MOFile {
     double create_Jiiii(const int, const int);
 
     // this sets mo1e_, core_fock_ and returns a core energy
-    virtual std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) {
-      assert(false);
-      std::unique_ptr<double[]> a; double b = 0.0; return std::make_tuple(std::move(a),b);
-    };
+    virtual std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) = 0;
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::unique_ptr<double[]>(); };
+    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int) = 0;
 
     void compress(std::unique_ptr<double[]>& buf1e, std::unique_ptr<double[]>& buf2e);
 
@@ -120,11 +117,13 @@ class MOFile {
 
 class Jop : public MOFile {
   protected:
-    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int);
-    std::unique_ptr<double[]> compute_mo2e(const int, const int);
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) override;
+    std::unique_ptr<double[]> compute_mo2e(const int, const int) override;
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH")) : MOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH")) : MOFile(b,c,d,e,f) { core_energy_ = create_Jiiii(c, d); };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
+      : MOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
+      : MOFile(b,c,d,e,f) { core_energy_ = create_Jiiii(c, d); };
     ~Jop() {};
 };
 
@@ -134,8 +133,8 @@ class Htilde : public MOFile {
     std::unique_ptr<double[]> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) { return std::make_tuple(std::move(h1_tmp_), 0.0); }; 
-    std::unique_ptr<double[]> compute_mo2e(const int, const int) { return std::move(h2_tmp_); };
+    std::tuple<std::unique_ptr<double[]>, double> compute_mo1e(const int, const int) override { return std::make_tuple(std::move(h1_tmp_), 0.0); }; 
+    std::unique_ptr<double[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
   
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::unique_ptr<double[]> h1, std::unique_ptr<double[]> h2)

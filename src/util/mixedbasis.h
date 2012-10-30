@@ -47,7 +47,6 @@ class MixedBasis {
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, const int ndim) {
       // input = [b1, b0]
-      assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
       T batch(input);

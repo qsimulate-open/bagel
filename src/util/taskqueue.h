@@ -53,8 +53,8 @@ class TaskQueue {
       std::list<std::shared_ptr<boost::thread> > threads;
       for (int i = 0; i != num_threads; ++i)
         threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(boost::bind(&TaskQueue<T>::compute_one_thread, this))));
-      for (auto i = threads.begin(); i != threads.end(); ++i)
-        (*i)->join();
+      for (auto& i : threads)
+        i->join();
 #else
       const size_t n = task_.size();
       #pragma omp parallel for schedule(dynamic,chunck_)

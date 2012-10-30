@@ -107,7 +107,7 @@ class RDM : public RDM_base {
 
 
     std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
-      assert(rank == 1);
+      static_assert(rank == 1, "RDM::rdm1_mat is only implemented for rank == 1");
       std::shared_ptr<Matrix1e> out(new Matrix1e(g, nclosed+norb_, nclosed+norb_));
       if (all)
         for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
@@ -118,7 +118,7 @@ class RDM : public RDM_base {
     };
 
     std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
-      assert(rank == 1);
+      static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
       std::vector<double> buf(dim_*dim_);
       std::vector<double> vec(dim_);
       for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0;
@@ -157,6 +157,7 @@ class RDM : public RDM_base {
     };
 
     void print(const double thresh = 1.0e-3) const {
+      static_assert(rank <= 2, "RDM::print is so far only implemented for RDM1 and 2");
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j)
@@ -172,8 +173,6 @@ class RDM : public RDM_base {
                       << k << std::setw(3) << j << std::setw(3) << i
                       << std::setw(12) << std::setprecision(7) << element({l,k,j,i}) << std::endl;
         } } } }
-      } else {
-        assert(false);
       }
     };
 };

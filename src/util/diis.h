@@ -29,7 +29,6 @@
 
 #include <list>
 #include <src/util/f77.h>
-#include <cassert>
 #include <memory>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
