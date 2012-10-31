@@ -31,6 +31,7 @@
 #include <src/util/matrix.h>
 #include <cassert>
 #include <cmath>
+#include <stdexcept>
 
 using namespace std;
 using namespace bagel;
@@ -344,6 +345,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
   }
   return out;
 }
+#endif
 
 
 unique_ptr<double[]> Matrix::diag() const {
@@ -354,7 +356,6 @@ unique_ptr<double[]> Matrix::diag() const {
   }
   return move(out);
 }
-#endif
 
 
 shared_ptr<Matrix> Matrix::transpose() const {
