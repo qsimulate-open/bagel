@@ -76,29 +76,6 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 }
 
 
-// CAUTION :: I have changed the convention from that in mpqc.
-template<int i, int j, int k, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                         const int d,const int c,const int b) { // according to unsorted
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
-  int id[3];
-  int jd[3] = {d, c, b};
-
-  long iall=0;
-  for(int j1=0;j1<b;++j1){
-    id[2]=j1;
-    for(int j2=0;j2<c;++j2){
-      id[1]=j2;
-      for (int j3=0;j3<d;++j3,++iall){
-        id[0]=j3;
-        long ib=id[i]+jd[i]*(id[j]+jd[j]*id[k]);
-        sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
-      }
-    }
-  }
-}
-
 template<int i, int j, int k, int an, int ad, int fn, int fd>
 static void sort_indices(const double* const unsorted, double* const sorted,
                          const int d,const int c,const int b) { // according to unsorted
@@ -122,9 +99,16 @@ static void sort_indices(const double* const unsorted, double* const sorted,
 };
 
 
+template<int i, int j, int k, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int d,const int c,const int b) { // according to unsorted
+  sort_indices<i,j,k,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b);
+};
+
+
 // CAUTION :: I have changed the convention from that in mpqc.
 template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+static void sort_indices(const double* unsorted, double* sorted,
                          const int d,const int c,const int b,const int a) { // according to unsorted
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
@@ -147,6 +131,14 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
     }
   }
 };
+
+
+template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int d,const int c,const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b, a);
+};
+
 
 template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,

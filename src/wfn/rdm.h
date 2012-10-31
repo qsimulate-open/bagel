@@ -157,7 +157,7 @@ class RDM : public RDM_base {
     };
 
     void print(const double thresh = 1.0e-3) const {
-      static_assert(rank <= 2, "RDM::print is so far only implemented for RDM1 and 2");
+      static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j)
@@ -173,6 +173,17 @@ class RDM : public RDM_base {
                       << k << std::setw(3) << j << std::setw(3) << i
                       << std::setw(12) << std::setprecision(7) << element({l,k,j,i}) << std::endl;
         } } } }
+      } else if (rank == 3) {
+        for (int i = 0; i != norb_; ++i) {
+          for (int j = 0; j != norb_; ++j) {
+            for (int k = 0; k != norb_; ++k) {
+              for (int l = 0; l != norb_; ++l) {
+              for (int m = 0; m != norb_; ++m) {
+              for (int n = 0; n != norb_; ++n) {
+                if (std::abs(element({n,m,l,k,j,i})) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
+                      << k << std::setw(3) << j << std::setw(3) << i
+                      << std::setw(12) << std::setprecision(7) << element({n,m,l,k,j,i}) << std::endl;
+        } } } } } }
       }
     };
 };
