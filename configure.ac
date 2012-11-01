@@ -11,7 +11,6 @@ AC_F77_LIBRARY_LDFLAGS
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_FC
-AM_PROG_AR
 
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
