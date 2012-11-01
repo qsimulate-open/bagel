@@ -304,10 +304,18 @@ int main(int argc, char** argv) {
         fci->compute();
         std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
 
-        std::array<double,3> disp = {{0,0,100.0}};
+        double dz = read_input<double>(testdata, "dz", 100.0);
+        std::array<double,3> disp = {{0,0,dz}};
         std::shared_ptr<Dimer> dim(new Dimer(ci, disp));
         std::cout << "Now calling hamiltonian" << std::endl;
         dim->hamiltonian();
+
+        // Check overlap
+        //dim->orthonormalize();
+        //MoldenOut mfs("dimer.molden");
+        //mfs << dim->sgeom() << dim->sref();
+        //mfs.close();
+      
       }
       #endif
     }

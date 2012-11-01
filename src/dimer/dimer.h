@@ -130,7 +130,8 @@ class Dimer {
       std::shared_ptr<Matrix> form_EFmatrices_alpha(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
       std::shared_ptr<Matrix> form_EFmatrices_beta(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
 
-      std::shared_ptr<Matrix> form_Hmatrix(const int ijA, const int ijB) const;
+      std::shared_ptr<Matrix> form_JKmatrix(const int ijA, const int ijB) const;
+      std::shared_ptr<Matrix> form_Jmatrix(const int ijA, const int ijB) const;
 };
 
 }
