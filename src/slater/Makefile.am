@@ -1,6 +1,5 @@
-#SUBDIRS = vrr_gen vrr_driver_gen
-lib_LIBRARIES = libslater.a
-libslater_a_SOURCES = module.f90 slaterbatch.cc srootlist.cc scompute.cc svrrlist.cc svrr.cc usvrr.cc svrr_template.cc usvrr_template.cc \
+lib_LTLIBRARIES = libslater.la
+libslater_la_SOURCES = module.f90 slaterbatch.cc srootlist.cc scompute.cc svrrlist.cc svrr.cc usvrr.cc svrr_template.cc usvrr_template.cc \
 _svrr_0000.cc _svrr_0010.cc _svrr_0020.cc _svrr_0030.cc _svrr_0040.cc _svrr_0050.cc \
 _svrr_0060.cc _svrr_0070.cc _svrr_0080.cc _svrr_0090.cc _svrr_00a0.cc _svrr_00b0.cc _svrr_00c0.cc \
 _svrr_1000.cc _svrr_1010.cc _svrr_1020.cc _svrr_1030.cc _svrr_1040.cc _svrr_1050.cc \

@@ -2,6 +2,8 @@ BAGEL -- Freshly leavened quantum chemistry       by NU Theory
 
 In order to compile this package:
 // first do the standard automake sequence
+
+glibtoolize    (in Linux, "libtoolize" instead)
 aclocal
 autoconf
 autoheader

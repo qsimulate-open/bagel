@@ -10,8 +10,6 @@ AC_F77_LIBRARY_LDFLAGS
 
 # Checks for programs.
 AC_PROG_CXX
-#AC_PROG_LIBTOOL
-AC_PROG_RANLIB
 AC_PROG_FC
 AM_PROG_AR
 
@@ -51,15 +49,10 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     ])
 ])
 
-#AC_CONFIG_MACRO_DIR([m4])
+LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
 
-# Checks for libraries.
 
-# Checks for header files.
-
-# Checks for typedefs, structures, and compiler characteristics.
-
-# Checks for library functions.
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/dimer/Makefile
