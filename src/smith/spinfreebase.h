@@ -151,7 +151,7 @@ class SpinFreeMethod {
           std::unique_ptr<double[]> trans(new double[i0.size()*i2.size()*nact*nact]);
           for (int j2 = i2.offset(), k = 0; j2 != i2.offset()+i2.size(); ++j2)
             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++k)
-              std::copy_n(shalf_xx_->element_ptr(0,(j0-nclosed)+(j2-nclosed)*nact), nact*nact, trans.get()+nact*nact*k);
+              std::copy_n(shalf_xx_->element_ptr(0,(j0-ref_->nclosed())+(j2-ref_->nclosed())*nact), nact*nact, trans.get()+nact*nact*k);
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
