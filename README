@@ -30,8 +30,8 @@ cd obj
 // ** important **
 // For developers: please make sure that your code can be compiled with
 
-../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g'
-../configure 'CXX=icpc' 'CXXFLAGS=-std=c++0x -O0 -gcc-name=gcc-mp-4.5 -Werror -I/opt/local/include' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FFLAGS=-O0' 'FCFLAGS=-O0'
+../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g' --enable-shared --disable-static
+../configure 'CXX=icpc' 'CXXFLAGS=-std=c++0x -O0 -gcc-name=gcc-mp-4.5 -Werror -I/opt/local/include' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FFLAGS=-O0' 'FCFLAGS=-O0' --enable-shared --disable-static
 
 // My Release build is compiled by (on mac; note that -ipo works, but it takes a lot to compile)
 //
@@ -39,7 +39,7 @@ cd obj
 
 ../configure 'CXX=icpc' 'CXXFLAGS=-std=c++0x -O3 -parallel -xavx -gcc-name=gcc-mp-4.5 -Werror -I/opt/local/include -DNDEBUG' \
              'LDFLAGS=-L/opt/intel/composerxe/lib -L/opt/intel/composerxe/mkl/lib -L/opt/local/lib' \
-             'LIBS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm' 'FFLAGS=-O3' 'FCFLAGS=-O3' 'AR=xiar'
+             'LIBS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm' 'FFLAGS=-O3' 'FCFLAGS=-O3' 'AR=xiar' --enable-shared --disable-static
 
 // make
 make -j4
