@@ -64,7 +64,7 @@ class DavidsonDiag {
     double& mat(int i, int j) { return mat_[i+j*max_]; };
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m), size_(0) {
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0) {
       mat_.resize(max_*max_);
       scr_.resize(max_*max_);
       vec_.resize(max_);
