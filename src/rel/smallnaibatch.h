@@ -41,12 +41,15 @@ namespace bagel {
 class SmallNAIBatch {
   protected:
     double* data_;
-    double* ovl0_;
-    double* ovl1_;
+    double* ovl0_inc_;
+    double* ovl1_inc_;
+    double* ovl0_dec_;
+    double* ovl1_dec_;
 
     const std::shared_ptr<const Geometry> geom_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
-    const std::array<std::shared_ptr<const Shell>,2> aux_;
+    const std::array<std::shared_ptr<const Shell>,2> aux_inc_;
+    std::array<std::shared_ptr<const Shell>,2> aux_dec_;
 
     const size_t size_block_;
 

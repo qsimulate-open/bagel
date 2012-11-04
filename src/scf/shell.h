@@ -88,7 +88,7 @@ class Shell {
     bool operator==(const Shell& o) const;
 
     // generates a shell that satisfy kinetic balance at the primitive level.
-    std::shared_ptr<const Shell> kinetic_balance_uncont() const;
+    std::shared_ptr<const Shell> kinetic_balance_uncont(int) const;
 
     std::shared_ptr<const Shell> cartesian_shell() const;
 };

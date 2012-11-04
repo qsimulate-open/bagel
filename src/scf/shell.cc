@@ -118,8 +118,9 @@ bool Shell::operator==(const Shell& o) const {
 }
 
 
-// returns uncontracted cartesian shell with one higher angular number 
-shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
+// returns uncontracted cartesian shell with one higher or lower angular number if inc is + or - 1 respectively
+shared_ptr<const Shell> Shell::kinetic_balance_uncont(int inc) const {
+  assert(abs(inc)==1);
   int i = 0;
   vector<vector<double> > conts;
   vector<pair<int, int> > ranges;
@@ -129,7 +130,7 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     conts.push_back(cont);
     ranges.push_back(make_pair(i,i+1));
   }
-  return shared_ptr<const Shell>(new Shell(false, position_, angular_number_+1, exponents_, conts, ranges));
+  return angular_number_+inc < 0 ? shared_ptr<const Shell>() : shared_ptr<const Shell>(new Shell(false, position_, angular_number_+inc, exponents_, conts, ranges));
 }
 
 
