@@ -456,23 +456,6 @@ void Matrix::purify_idempotent(const Matrix& s) {
 }
 
 
-// in-place matrix inverse (practically we use buffer area)
-void Matrix::inverse() {
-  assert(ndim_ == mdim_);
-  shared_ptr<Matrix> buf = this->clone();
-  buf->unit();
-
-  const int lwork = 3*ndim_;
-  int info;
-  unique_ptr<int[]> ipiv(new int[ndim_]);
-  dgesv_(&ndim_, &ndim_, data(), &ndim_, ipiv.get(), buf->data(), &ndim_, &info);
-  if (info) throw runtime_error("dsysv failed in Matrix::inverse()");
-
-  copy(buf->data(), buf->data()+nbasis_*nbasis_, data());
-
-}
-
-
 double Matrix::orthog(const std::list<std::shared_ptr<const Matrix> > o) {
   for (auto& it : o) {
     const double m = this->ddot(it);
@@ -483,6 +466,23 @@ double Matrix::orthog(const std::list<std::shared_ptr<const Matrix> > o) {
   return n;
 }
 #endif
+
+
+// in-place matrix inverse (practically we use buffer area)
+void Matrix::inverse() {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  shared_ptr<Matrix> buf = this->clone();
+  buf->unit();
+
+  int info;
+  unique_ptr<int[]> ipiv(new int[n]);
+  dgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
+  if (info) throw runtime_error("dsysv failed in Matrix::inverse()");
+
+  copy_n(buf->data(), n*n, data());
+}
+
 
 void Matrix::print(const string name, const int size) const {
 
