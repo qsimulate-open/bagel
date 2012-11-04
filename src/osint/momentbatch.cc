@@ -81,7 +81,7 @@ void MomentBatch::compute() {
   }
   stack_->release(prim0_*prim1_*asize_intermediate_*3, intermediate_p);
 
-  if (swap01_) dscal_(size_alloc_, -1.0, data_, 1);
+  if (swap01_) dscal_(size_alloc_*3, -1.0, data_, 1);
 
 }
 
