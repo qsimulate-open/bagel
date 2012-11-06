@@ -295,8 +295,8 @@ int main(int argc, char** argv) {
         mfs.close();
 
       }
-      #if 0 // <---- Testing environment
-      } else if (method == "testing") {
+      #if 1 // <---- Testing environment
+      else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
@@ -304,18 +304,30 @@ int main(int argc, char** argv) {
         fci->compute();
         std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
 
-        double dz = read_input<double>(testdata, "dz", 100.0);
-        std::array<double,3> disp = {{0,0,dz}};
+        double dx = read_input<double>(testdata, "dx", 0.0);
+        double dy = read_input<double>(testdata, "dy", 0.0);
+        double dz = read_input<double>(testdata, "dz", 0.0);
+        std::array<double,3> disp = {{dx,dy,dz}};
         std::shared_ptr<Dimer> dim(new Dimer(ci, disp));
-        std::cout << "Now calling hamiltonian" << std::endl;
-        dim->hamiltonian();
+        //dim->hamiltonian();
 
-        // Check overlap
-        //dim->orthonormalize();
-        //MoldenOut mfs("dimer.molden");
-        //mfs << dim->sgeom() << dim->sref();
-        //mfs.close();
+        std::shared_ptr<Coeff> ovlp = dim->overlap();
+        ovlp->print("overlap", 12);
+        double max = 0.0;
+        const int n = ovlp->ndim();
+        const int m = ovlp->mdim();
+        
+        for(int i = 0; i < m; ++i) {
+          for(int j = 0; j < n; ++j) {
+            if (i==j) continue;
+            double value = abs(ovlp->element(i,j));
+            if (value > max) max = value;
+          }
+        }
+        std::cout << std::setprecision(12) << "max: " << max << std::endl;
       
+        //dim->orthonormalize();
+        dim->hamiltonian();
       }
       #endif
     }

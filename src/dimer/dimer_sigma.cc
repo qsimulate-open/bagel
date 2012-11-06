@@ -45,6 +45,7 @@ shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdat
   const int nstates = ccvec->ij();
 
   shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstates));
+  shared_ptr<Determinants> det = space_->finddet(0,0);
 
   for (int istate = 0; istate < nstates; ++istate) {
     shared_ptr<const Civec> cc = ccvec->data(istate);
@@ -54,23 +55,23 @@ shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdat
     const int la = cc->lena();
     for (int ip = 0; ip != ij; ++ip) {
       const double h = hdata[ip];
-      for (auto& iter : cc->det()->phia(ip)) {
+      for (auto& iter : det->phia(ip)) {
         const double hc = h * get<1>(iter);
         daxpy_(lb, hc, cc->element_ptr(0, get<2>(iter)), 1, sigma->element_ptr(0, get<0>(iter)), 1); 
       }
-    }     
+    }
 
     for (int i = 0; i < la; ++i) {
       double* const target_array0 = sigma->element_ptr(0, i);
       const double* const source_array0 = cc->element_ptr(0, i);
       for (int ip = 0; ip != ij; ++ip) {
         const double h = hdata[ip];
-        for (auto& iter : cc->det()->phib(ip)) {
+        for (auto& iter : det->phib(ip)) {
           const double hc = h * get<1>(iter);
           target_array0[get<0>(iter)] += hc * source_array0[get<2>(iter)];
-        }     
-      }     
-    }     
+        }
+      }
+    }
   }
 
   return sigmavec;
