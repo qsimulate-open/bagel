@@ -177,14 +177,15 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
+
   // Fill ncoreA first
-  for(int ii = 0; ii != ncloA; ++ii, Adata += nbasisA) {
+  for(int ii = 0; ii < ncloA; ++ii, Adata += nbasisA) {
      Sdata = copy(Adata, Adata + nbasisA, Sdata);
      fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
   }
 
   // Fill ncoreB next
-  for(int ii = 0; ii != ncloB; ++ii, Bdata += nbasisB) {
+  for(int ii = 0; ii < ncloB; ++ii, Bdata += nbasisB) {
      fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
      Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
   }

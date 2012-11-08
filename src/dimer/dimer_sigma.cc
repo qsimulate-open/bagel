@@ -78,7 +78,7 @@ shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdat
 }
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<Dvec> Dimer::form_sigma_2e(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop, const int nact) const {
+shared_ptr<Dvec> Dimer::form_sigma_2e(shared_ptr<const Dvec> ccvec, double* mo2e_ptr, const int nact) const {
   const int nstate = ccvec->ij();
   const int ij = nact*nact;
 
@@ -100,22 +100,22 @@ shared_ptr<Dvec> Dimer::form_sigma_2e(shared_ptr<const Dvec> ccvec, shared_ptr<c
     int start = ::clock();
 
     // (2aa) alpha-alpha contributions
-    sigma_2aa(cc, sigma, jop, nact);
+    sigma_2aa(cc, sigma, mo2e_ptr, nact);
     // (2bb) beta-beta contributions
-    sigma_2bb(cc, sigma, jop, nact);
+    sigma_2bb(cc, sigma, mo2e_ptr, nact);
 
     // (2ab) alpha-beta contributions
     d->zero();
 
     sigma_2ab_1(cc, d, nact);
-    sigma_2ab_2(d, e, jop);
+    sigma_2ab_2(d, e, mo2e_ptr);
     sigma_2ab_3(sigma, e, nact);
   }
 
   return sigmavec;
 }
 
-void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop, const int nact) const {
+void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const {
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const double* const source_base = cc->data();
@@ -128,6 +128,7 @@ void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, share
       if (!nstring[i]) continue;
       for (int j = 0; j < i; ++j) {
         if(!nstring[j]) continue;
+        double* mo2e_ij = mo2e_ptr + nact*nact*j + nact*nact*nact*i;
         const int ij_phase = base_det->sign(nstring,i,j);
         bitset<nbit__> string_ij = nstring; 
         string_ij.reset(i); string_ij.reset(j);
@@ -139,7 +140,7 @@ void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, share
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
+            const double temp = phase * ( mo2e_ij[l + nact*k] - mo2e_ij[k + nact*l] );
             const double* source = source_base + base_det->lexical<0>(string_ijkl)*lb;
             daxpy_(lb, temp, source, 1, target_base, 1);
           }
@@ -149,7 +150,7 @@ void Dimer::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, share
   }
 }
 
-void Dimer::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop, const int nact) const {
+void Dimer::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const {
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const double* const source_base = cc->data();
@@ -164,6 +165,7 @@ void Dimer::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, share
       for (int j = 0; j < i; ++j) {
         if(!nstring[j]) continue;
         const int ij_phase = base_det->sign(nstring,i,j);
+        double* mo2e_ij = mo2e_ptr + nact*nact*j + nact*nact*nact*i;
         bitset<nbit__> string_ij = nstring;
         string_ij.reset(i); string_ij.reset(j);
         for (int l = 0; l != nact; ++l) {
@@ -174,7 +176,7 @@ void Dimer::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, share
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
+            const double temp = phase * ( mo2e_ij[l + nact*k] - mo2e_ij[k + nact*l] );
             const double* source = source_base + base_det->lexical<1>(string_ijkl);
             daxpy_(la, temp, source, lb, target_base, lb);
           }
@@ -208,12 +210,12 @@ void Dimer::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d, const in
   }
 }
 
-void Dimer::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
+void Dimer::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, double* mo2e_ptr) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
+  dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, mo2e_ptr, ij, 0.0, e->data(), lenab);
 }
 
 void Dimer::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e, const int nact) const {

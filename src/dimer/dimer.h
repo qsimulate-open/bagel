@@ -32,7 +32,7 @@
 #include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
-#include <src/fci/mofile.h>
+#include <src/dimer/dimer_jop.h>
 #include <src/fci/dvec.h>
 #include <src/fci/space.h>
 #include <src/util/matrix.h>
@@ -62,8 +62,7 @@ class Dimer {
       std::shared_ptr<Reference>  sref_;
       std::shared_ptr<Coeff>      scoeff_;
 
-      std::shared_ptr<MOFile>     jop_;
-      std::pair<std::shared_ptr<MOFile>, std::shared_ptr<MOFile> > jops_; 
+      std::shared_ptr<DimerJop> jop_;
 
       std::shared_ptr<Space>      space_;
 
@@ -119,12 +118,12 @@ class Dimer {
       std::shared_ptr<Matrix> compute_inter_activeactive();
 
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata, const int ij) const;
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop, const int nact) const;
+      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr, const int nact) const;
 
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop, const int nact) const;
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop, const int nact) const;
+      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
+      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
       void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
+      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, double* mo2e_ptr) const;
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
       std::shared_ptr<Matrix> form_EFmatrices_alpha(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
