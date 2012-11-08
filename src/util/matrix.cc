@@ -244,21 +244,19 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 }
 
 
-#if 0 // All the following may not be needed just yet
 void Matrix::diagonalize(double* eig) {
+  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diagonalize(double*)"); 
+  const int n = ndim_;
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
-
   int info;
-  const int lwork = nbasis_*6;
-  unique_ptr<double[]> work(new double[lwork]);
-  dsyev_("V", "L", ndim_, data(), nbasis_, eig, work.get(), lwork, info);
-
+  unique_ptr<double[]> work(new double[n*6]);
+  dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
   if(info) throw runtime_error("diagonalize failed");
-
 }
 
 
+#if 0 // All the following may not be needed just yet
 void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
   assert(V->ndim() == mdim_ && V->mdim() == mdim_);
