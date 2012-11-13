@@ -24,10 +24,11 @@
 //
 
 
-#ifndef __NEWINT_SRC_SCF_SCF_H
-#define __NEWINT_SRC_SCF_SCF_H
+#ifndef __BAGEL_SRC_SCF_SCF_H
+#define __BAGEL_SRC_SCF_SCF_H
 
 #include <src/scf/scf_base.h>
+#include <src/scf/levelshift.h>
 #include <src/util/diis.h>
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
@@ -39,12 +40,23 @@ namespace bagel {
 
 template<int DF>
 class SCF : public SCF_base {
+  protected:
+    std::shared_ptr<LevelShift> levelshift_;
 
   public:
     SCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re) {
 
+      // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
+      // In the future, this should probably be moved to SCF_base and designed to work properly there
+      double lshift = read_input<double>(idata_, "levelshift", 0.0);
+      if (lshift == 0.0) {
+        levelshift_ = std::shared_ptr<LevelShift>(new LevelShift());
+      }
+      else {
+        levelshift_ = std::shared_ptr<LevelShift>(new ShiftVirtual(nocc_, lshift));
+      }
 
       if (DF == 1) {
         // TODO init schwarz for auxiliary basis
@@ -90,6 +102,7 @@ class SCF : public SCF_base {
 
 // TODO level shift - needed?
 //      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
+        levelshift_->shift(intermediate);
 
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
