@@ -172,6 +172,44 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 };
 
 
+template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int h, const int g, const int f, const int e, const int d, const int c, 
+                         const int b, const int a) { // according to unsorted
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
+  int id[8];
+  int jd[8] = {g, h, f, e, d, c, b, a};
+
+  long iall=0;
+  for(int j0=0;j0<a;++j0){
+    id[7]=j0;
+    for(int j1=0;j1<b;++j1){
+      id[6]=j1;
+      for(int j2=0;j2<c;++j2){
+        id[5]=j2;
+        for(int j3=0;j3<d;++j3){
+          id[4]=j3;
+          for(int j4=0;j4<e;++j4){
+            id[3]=j4;
+            for (int j5=0;j5<f;++j5){
+              id[2]=j5;
+              for (int j6=0;j6<g;++j6){
+                id[1]=j6;
+                for (int j7=0;j7<h;++j7,++iall){
+                  id[0]=j7;
+                  long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*(id[m]+jd[m]*(id[n]+jd[n]*(id[o]+jd[o]*(id[p])))))));
+                  sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
 
 }
 }
