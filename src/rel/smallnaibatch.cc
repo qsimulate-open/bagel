@@ -25,6 +25,7 @@
 
 
 #include <iostream>
+#include <iomanip>
 #include <src/rel/smallnaibatch.h>
 #include <src/osint/momentbatch.h>
 #include <src/osint/overlapbatch.h>
@@ -41,170 +42,143 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
     size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()), stack_(resources__->get()) {
 
   aux_dec_ = array<shared_ptr<const Shell>,2>{{shells_[0]->kinetic_balance_uncont(-1), shells_[1]->kinetic_balance_uncont(-1)}};
-  if (aux_dec_[0]) {
-    ovl0_dec_ = stack_->get(aux_dec_[0]->nbasis()*aux_dec_[0]->nbasis());
-    OverlapBatch ovl0_dec(array<shared_ptr<const Shell>,2>{{aux_dec_[0], aux_dec_[0]}}, stack_);
-    ovl0_dec.compute();
-    copy(ovl0_dec.data(), ovl0_dec.data()+ovl0_dec.size_block(), ovl0_dec_);
-  }
-  if (aux_dec_[1]) {
-    ovl1_dec_ = stack_->get(aux_dec_[1]->nbasis()*aux_dec_[1]->nbasis());
-    OverlapBatch ovl1_dec(array<shared_ptr<const Shell>,2>{{aux_dec_[1], aux_dec_[1]}}, stack_);
-    ovl1_dec.compute();
-    copy(ovl1_dec.data(), ovl1_dec.data()+ovl1_dec.size_block(), ovl1_dec_);
-  }
+  const std::array<const int,2> a{{aux_inc_[0]->nbasis() + (aux_dec_[0] ? aux_dec_[0]->nbasis() : 0), aux_inc_[1]->nbasis() + (aux_dec_[1] ? aux_dec_[1]->nbasis() : 0)}};
+  ovl_[0] = stack_->get(a[0]*a[0]);
+  ovl_[1] = stack_->get(a[1]*a[1]);
 
   // TODO this can be done outside
-  ovl0_inc_ = stack_->get(aux_inc_[0]->nbasis()*aux_inc_[0]->nbasis());
-  ovl1_inc_ = stack_->get(aux_inc_[1]->nbasis()*aux_inc_[1]->nbasis());
-  {
-    OverlapBatch ovl0_inc(array<shared_ptr<const Shell>,2>{{aux_inc_[0], aux_inc_[0]}}, stack_);
-    ovl0_inc.compute();
-    copy(ovl0_inc.data(), ovl0_inc.data()+ovl0_inc.size_block(), ovl0_inc_);
-  }
-  {
-    OverlapBatch ovl1_inc(array<shared_ptr<const Shell>,2>{{aux_inc_[1], aux_inc_[1]}}, stack_);
-    ovl1_inc.compute();
-    copy(ovl1_inc.data(), ovl1_inc.data()+ovl1_inc.size_block(), ovl1_inc_);
-  }
+  ovl_compute(a);
 
+//make matrix
   data_ = stack_->get(size_block_*4);
   fill(data_, data_+size_block_*4, 0.0);
 }
 
 
 SmallNAIBatch::~SmallNAIBatch() {
+  const std::array<const int,2> a{{aux_inc_[0]->nbasis() + (aux_dec_[0] ? aux_dec_[0]->nbasis() : 0), aux_inc_[1]->nbasis() + (aux_dec_[1] ? aux_dec_[1]->nbasis() : 0)}};
   stack_->release(size_block_*4, data_);
-  stack_->release(aux_inc_[1]->nbasis()*aux_inc_[1]->nbasis(), ovl1_inc_);
-  stack_->release(aux_inc_[0]->nbasis()*aux_inc_[0]->nbasis(), ovl0_inc_);
-  if (aux_dec_[1]) stack_->release(aux_dec_[1]->nbasis()*aux_dec_[1]->nbasis(), ovl1_dec_);
-  if (aux_dec_[0]) stack_->release(aux_dec_[0]->nbasis()*aux_dec_[0]->nbasis(), ovl0_dec_);
+  stack_->release(a[1]*a[1], ovl_[1]);
+  stack_->release(a[0]*a[0], ovl_[0]);
   resources__->release(stack_);
 }
 
 void SmallNAIBatch::compute() {
+  // then we need to have momentum integrals
+  const int s0size = shells_[0]->nbasis();
+  const int s1size = shells_[1]->nbasis();
+  const int a0size_inc = aux_inc_[0]->nbasis();
+  const int a1size_inc = aux_inc_[1]->nbasis();
+  const int a0size_dec = aux_dec_[0] ? aux_dec_[0]->nbasis() : 0;
+  const int a1size_dec = aux_dec_[1] ? aux_dec_[1]->nbasis() : 0;
+  const int a0 = a0size_inc + a0size_dec;
+  const int a1 = a1size_inc + a1size_dec;
+
+/*
+  //Matrix nai
+  const std::shared_ptr<Matrix> nai(new Matrix(a0,a1));
+  nai->zero();
+*/
+  // current nai array
+  double* const nai = stack_->get(a0*a1);
+
   // first compute uncontracted NAI with auxiliary basis (cartesian)
 #define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
-  shared_ptr<OverlapBatch> nai_inc_inc, nai_dec_dec, nai_dec_inc, nai_inc_dec;
-  nai_inc_inc = shared_ptr<OverlapBatch>(new OverlapBatch(aux_inc_, stack_));
-  nai_inc_inc->compute();
-  if (aux_dec_[0] && aux_dec_[1]) {
-    nai_dec_dec = shared_ptr<OverlapBatch>(new OverlapBatch(aux_dec_, stack_));
-    nai_dec_dec->compute();
+  //make nai_compute function
+ // nai_compute();
+
+  {
+    {
+      shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
+      naic->compute();
+      for (int i = 0; i != a1size_inc; ++i)
+        copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
+    }
+    if (aux_dec_[0] && aux_dec_[1]) {
+      shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_dec_, stack_));
+      naic->compute();
+      for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+        copy_n(naic->data() + j*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+    }
+    if (aux_dec_[0]) {
+      shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
+      naic->compute();
+      for (int i = 0; i != a1size_inc; ++i)
+        copy_n(naic->data() + i*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+    }
+    if (aux_dec_[1]) {
+      shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
+      naic->compute();
+      for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+        copy_n(naic->data() + j*a0size_inc, a0size_inc, nai + i*a0); 
+    }
   }
-  if (aux_dec_[0]) {
-    nai_dec_inc = shared_ptr<OverlapBatch>(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
-    nai_dec_inc->compute();
-  }
-  if (aux_dec_[1]) {
-    nai_inc_dec = shared_ptr<OverlapBatch>(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
-    nai_inc_dec->compute();
-  }
+
 #else
   assert(false);
 //NAIBatch nai(aux_, geom_, stack_);
 #endif
-
-  // then we need to have momentum integrals
-  const int s0size = shells_[0]->nbasis();
-  const int s1size = shells_[1]->nbasis();
-  const int a0size = aux_inc_[0]->nbasis();
-  const int a1size = aux_inc_[1]->nbasis();
-  const int a0size_dec = aux_dec_[0] ? aux_dec_[0]->nbasis() : 0;
-  const int a1size_dec = aux_dec_[1] ? aux_dec_[1]->nbasis() : 0;
-
-  double* const ints_dec = stack_->get(3 * s0size * a1size_dec);
-  double* const ints_inc = stack_->get(3 * s0size * a1size);
-  fill(ints_inc, ints_inc+(3 * s0size * a1size), 0.0);
-  fill(ints_dec, ints_dec+(3 * s0size * a1size_dec), 0.0);
+  double* const ints = stack_->get(3 * s0size * a1);
+  fill(ints, ints+(3 * s0size * a1), 0.0);
 
   {
     // first half transformation
     // momentum integrals (x,y,z)
-    MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_inc_[0]}}, stack_); 
-    coeff0.compute();
+    shared_ptr<MomentBatch> coeff0(new MomentBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_inc_[0]}}, stack_));
+    coeff0->compute();
+
+    shared_ptr<MomentBatch> coeff1;
+    if (aux_dec_[0]) {
+      coeff1 = shared_ptr<MomentBatch>(new MomentBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_dec_[0]}}, stack_));
+      coeff1->compute();
+    } else {
+      // TODO just to run
+      coeff1 = coeff0;
+    }
 
     // shell[0] runs faster 
-    const double* carea = coeff0.data();
-    for (int i = 0; i != 3; ++i, carea += coeff0.size_block()) {
-      double* const tmparea = stack_->get(s0size * a0size);
-      double* const tmparea2 = stack_->get(s0size * a0size);
+    const double* carea0 = coeff0->data();
+    const double* carea1 = coeff1->data();
+    for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
+      double* const tmparea = stack_->get(s0size * a0);
+      double* const tmparea2 = stack_->get(s0size * a0);
       if (shells_[0]->spherical()) {
         const int carsphindex = shells_[0]->angular_number() * ANG_HRR_END + 0; // only transform shell
-        const int nloop = shells_[0]->num_contracted() * a0size; 
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea, tmparea);
+        const int nloop = shells_[0]->num_contracted() * a0size_inc; 
+        carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea);
       } else {
-        assert(coeff0.size_block() == a0size*s0size);
-        copy(carea, carea+coeff0.size_block(), tmparea);
+        assert(coeff0->size_block() == a0size_inc*s0size);
+        copy(carea0, carea0+coeff0->size_block(), tmparea);
       }
-
-      mytranspose_(tmparea, &s0size, &a0size, tmparea2);
-      {
-        double* const ipiv = stack_->get(a0size);
-        double* const tmp = stack_->get(a0size*a0size);
-        copy(ovl0_inc_, ovl0_inc_+a0size*a0size, tmp);
-        int info = 0;
-        dgesv_(a0size, s0size, tmp, a0size, (int*)ipiv, tmparea2, a0size, info); 
-        if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
-        stack_->release(a0size*a0size, tmp);
-        stack_->release(a0size, ipiv);
-      }
-
-      if (nai_inc_dec) {
-        dgemm_("T", "N", s0size, a1size_dec, a0size, 1.0, tmparea2, a0size, nai_inc_dec->data(), a0size, 1.0, ints_dec+i*s0size*a1size_dec, s0size);
-      }
-      dgemm_("T", "N", s0size, a1size, a0size, 1.0, tmparea2, a0size, nai_inc_inc->data(), a0size, 1.0, ints_inc+i*s0size*a1size, s0size);
-      stack_->release(s0size*a0size, tmparea2);
-      stack_->release(s0size*a0size, tmparea);
-    }
-  }
-
-//NEW STUFF!!!
-
-  if (aux_dec_[0]) {
-//if (nai_dec_inc) {
-    {
-      // first half transformation
-      // momentum integrals (x,y,z)
-      MomentBatch coeff0(array<shared_ptr<const Shell>,2>{{shells_[0]->cartesian_shell(), aux_dec_[0]}}, stack_); 
-      coeff0.compute();
-  
-      // shell[0] runs faster 
-      const double* carea = coeff0.data();
-      for (int i = 0; i != 3; ++i, carea += coeff0.size_block()) {
-        double* const tmparea = stack_->get(s0size * a0size_dec);
-        double* const tmparea2 = stack_->get(s0size * a0size_dec);
+      if (aux_dec_[0]) {
         if (shells_[0]->spherical()) {
           const int carsphindex = shells_[0]->angular_number() * ANG_HRR_END + 0; // only transform shell
           const int nloop = shells_[0]->num_contracted() * a0size_dec; 
-          carsphlist.carsphfunc_call(carsphindex, nloop, carea, tmparea);
+          carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea+a0size_inc*s0size);
         } else {
-          assert(coeff0.size_block() == a0size_dec*s0size);
-          copy(carea, carea+coeff0.size_block(), tmparea);
+          assert(coeff1->size_block() == a0size_dec*s0size);
+          copy(carea1, carea1+coeff1->size_block(), tmparea+a0size_inc*s0size);
         }
-  
-        mytranspose_(tmparea, &s0size, &a0size_dec, tmparea2);
-        {
-          double* const ipiv = stack_->get(a0size_dec);
-          double* const tmp = stack_->get(a0size_dec*a0size_dec);
-          copy(ovl0_dec_, ovl0_dec_+a0size_dec*a0size_dec, tmp);
-          int info = 0;
-          dgesv_(a0size_dec, s0size, tmp, a0size_dec, (int*)ipiv, tmparea2, a0size_dec, info); 
-          if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
-          stack_->release(a0size_dec*a0size_dec, tmp);
-          stack_->release(a0size_dec, ipiv);
-        }
-  
-        if (nai_dec_dec) {
-          dgemm_("T", "N", s0size, a1size_dec, a0size_dec, 1.0, tmparea2, a0size_dec, nai_dec_dec->data(), a0size_dec, 1.0, ints_dec+i*s0size*a1size_dec, s0size);
-        } 
-
-        dgemm_("T", "N", s0size, a1size, a0size_dec, 1.0, tmparea2, a0size_dec, nai_dec_inc->data(), a0size_dec, 1.0, ints_inc+i*s0size*a1size, s0size);
-      
-        stack_->release(s0size*a0size_dec, tmparea2);
-        stack_->release(s0size*a0size_dec, tmparea);
       }
+
+//util/matrix.h inverse() 
+      mytranspose_(tmparea, &s0size, &a0, tmparea2);
+      {
+        double* const ipiv = stack_->get(a0);
+        double* const tmp = stack_->get(a0*a0);
+        copy(ovl_[0], ovl_[0]+a0*a0, tmp);
+        int info = 0;
+        dgesv_(a0, s0size, tmp, a0, (int*)ipiv, tmparea2, a0, info); 
+        if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
+        stack_->release(a0*a0, tmp);
+        stack_->release(a0, ipiv);
+      }
+
+      // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
+      dgemm_("T", "N", s0size, a1, a0, -1.0, tmparea2, a0, nai, a0, 1.0, ints+i*s0size*a1, s0size);
+      stack_->release(s0size*a0, tmparea2);
+      stack_->release(s0size*a0, tmparea);
     }
   }
 
@@ -214,110 +188,126 @@ void SmallNAIBatch::compute() {
 
   {
     // second half transformation
-    MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_inc_[1]}}, stack_);
-    coeff1.compute();
+    shared_ptr<MomentBatch> coeff0(new MomentBatch(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_inc_[1]}}, stack_));
+    coeff0->compute();
 
-    double* tmparea = stack_->get(s1size * a1size);
-    double* const tmparea2 = stack_->get(s1size * a1size);
+    shared_ptr<MomentBatch> coeff1;
+    if (aux_dec_[1]) {
+      coeff1 = shared_ptr<MomentBatch>(new MomentBatch(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_dec_[1]}}, stack_));
+      coeff1->compute();
+    } else {
+      // TODO just to run
+      coeff1 = coeff0;
+    }
 
-    const double* carea = coeff1.data();
-    for (int i = 0; i != 3; ++i, carea += coeff1.size_block()) {
+    double* tmparea = stack_->get(s1size * a1);
+    double* const tmparea2 = stack_->get(s1size * a1);
+
+    const double* carea0 = coeff0->data();
+    const double* carea1 = coeff1->data();
+    for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
       if (shells_[1]->spherical()) {
         const int carsphindex = shells_[1]->angular_number() * ANG_HRR_END + 0; // only transform shell
-        const int nloop = shells_[1]->num_contracted() * a1size; 
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea, tmparea);
+        const int nloop = shells_[1]->num_contracted() * a1size_inc;
+        carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea);
       } else {
-        assert(coeff1.size_block() == a1size*s1size);
-        copy(carea, carea + coeff1.size_block(), tmparea); 
+        assert(coeff0->size_block() == a1size_inc*s1size);
+        copy(carea0, carea0 + coeff0->size_block(), tmparea); 
       }
-
-      mytranspose_(tmparea, &s1size, &a1size, tmparea2);
-      {
-        double* const ipiv = stack_->get(a1size);
-        double* const tmp = stack_->get(a1size*a1size);
-        copy(ovl1_inc_, ovl1_inc_+a1size*a1size, tmp);
-        int info = 0;
-        dgesv_(a1size, s1size, tmp, a1size, (int*)ipiv, tmparea2, a1size, info); 
-        if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
-        stack_->release(a1size*a1size, tmp);
-        stack_->release(a1size, ipiv);
-      }
-      
-#if 0
-      if (nai_dec_inc) {
-        dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints_inc+i*s0size*a1size, s0size, tmparea2, a1size, 1.0, data_, s0size);
-        dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints_inc+b[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[b[i]], s0size);
-        dgemm_("N", "N", s0size, s1size, a1size, -1.0, ints_inc+f[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[i], s0size);
-      }
-#endif
-      // slot in appropriate blocks
-      // four blocks are needed.
-      // 0) x^x + y^y + z^z
-      dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints_inc+i*s0size*a1size, s0size, tmparea2, a1size, 1.0, data_, s0size);
-      // 1) x^y - y^x
-      // 2) y^z - z^y
-      // 3) z^x - x^z
-      dgemm_("N", "N", s0size, s1size, a1size, 1.0, ints_inc+b[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[b[i]], s0size);
-      dgemm_("N", "N", s0size, s1size, a1size, -1.0, ints_inc+f[i]*s0size*a1size, s0size, tmparea2, a1size, 1.0, data[i], s0size);
-    }
-    stack_->release(s1size*a1size, tmparea2);
-    stack_->release(s1size*a1size, tmparea);
-  }
-
-  if (aux_dec_[1]) {
-    {
-      // second half transformation
-      MomentBatch coeff1(array<shared_ptr<const Shell>,2>{{shells_[1]->cartesian_shell(), aux_dec_[1]}}, stack_);
-      coeff1.compute();
-  
-      double* tmparea = stack_->get(s1size * a1size_dec);
-      double* const tmparea2 = stack_->get(s1size * a1size_dec);
-  
-      const double* carea = coeff1.data();
-      for (int i = 0; i != 3; ++i, carea += coeff1.size_block()) {
+      if (aux_dec_[1]) {
         if (shells_[1]->spherical()) {
           const int carsphindex = shells_[1]->angular_number() * ANG_HRR_END + 0; // only transform shell
           const int nloop = shells_[1]->num_contracted() * a1size_dec; 
-          carsphlist.carsphfunc_call(carsphindex, nloop, carea, tmparea);
+          carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea+a1size_inc*s1size);
         } else {
-          assert(coeff1.size_block() == a1size_dec*s1size);
-          copy(carea, carea + coeff1.size_block(), tmparea); 
+          assert(coeff1->size_block() == a1size_dec*s1size);
+          copy(carea1, carea1+coeff1->size_block(), tmparea+a1size_inc*s1size);
         }
-  
-        mytranspose_(tmparea, &s1size, &a1size_dec, tmparea2);
-        {
-          double* const ipiv = stack_->get(a1size_dec);
-          double* const tmp = stack_->get(a1size_dec*a1size_dec);
-          copy(ovl1_dec_, ovl1_dec_+a1size_dec*a1size_dec, tmp);
-          int info = 0;
-          dgesv_(a1size_dec, s1size, tmp, a1size_dec, (int*)ipiv, tmparea2, a1size_dec, info); 
-          if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
-          stack_->release(a1size_dec*a1size_dec, tmp);
-          stack_->release(a1size_dec, ipiv);
-        }
-        
-#if 0 
-        if (nai_dec_dec) {
-          dgemm_("N", "N", s0size, s1size, a1size_dec, 1.0, ints_dec+i*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data_, s0size);
-          dgemm_("N", "N", s0size, s1size, a1size_dec, 1.0, ints_dec+b[i]*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data[b[i]], s0size);
-          dgemm_("N", "N", s0size, s1size, a1size_dec, -1.0, ints_dec+f[i]*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data[i], s0size);
-        }
-#endif
-        // slot in appropriate blocks
-        // four blocks are needed.
-        // 0) x^x + y^y + z^z
-        dgemm_("N", "N", s0size, s1size, a1size_dec, 1.0, ints_dec+i*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data_, s0size);
-        // 1) x^y - y^x
-        // 2) y^z - z^y
-        // 3) z^x - x^z
-        dgemm_("N", "N", s0size, s1size, a1size_dec, 1.0, ints_dec+b[i]*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data[b[i]], s0size);
-        dgemm_("N", "N", s0size, s1size, a1size_dec, -1.0, ints_dec+f[i]*s0size*a1size_dec, s0size, tmparea2, a1size_dec, 1.0, data[i], s0size);
       }
-      stack_->release(s1size*a1size_dec, tmparea2);
-      stack_->release(s1size*a1size_dec, tmparea);
+
+      mytranspose_(tmparea, &s1size, &a1, tmparea2);
+      {
+        double* const ipiv = stack_->get(a1);
+        double* const tmp = stack_->get(a1*a1);
+        copy(ovl_[1], ovl_[1]+a1*a1, tmp);
+        int info = 0;
+        dgesv_(a1, s1size, tmp, a1, (int*)ipiv, tmparea2, a1, info); 
+        if (info) throw runtime_error("DGESV failed in SmallNAIBatch::compute");
+        stack_->release(a1*a1, tmp);
+        stack_->release(a1, ipiv);
+      }
+      
+      // slot in appropriate blocks
+      // four blocks are needed.
+      // 0) x^x + y^y + z^z
+      dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+i*s0size*a1, s0size, tmparea2, a1, 1.0, data_, s0size);
+      // 1) x^y - y^x
+      // 2) y^z - z^y
+      // 3) z^x - x^z
+      dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+b[i]*s0size*a1, s0size, tmparea2, a1, 1.0, data[b[i]], s0size);
+      dgemm_("N", "N", s0size, s1size, a1, -1.0, ints+f[i]*s0size*a1, s0size, tmparea2, a1, 1.0, data[i], s0size);
+    }
+    stack_->release(s1size*a1, tmparea2);
+    stack_->release(s1size*a1, tmparea);
+  }
+
+  stack_->release(3*s0size*a1, ints);
+  stack_->release(a0*a1, nai);
+}
+
+
+void SmallNAIBatch::ovl_compute(const std::array<const int,2> a) {
+
+  for (int i = 0; i < 2; i++) {
+    {
+      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_[i], aux_inc_[i]}}, stack_);
+      ovl.compute();
+      for (int k = 0; k != aux_inc_[i]->nbasis(); ++k)
+        copy_n(ovl.data() + k*(aux_inc_[i]->nbasis()), aux_inc_[i]->nbasis(), ovl_[i] + k*a[i]);
+    }
+    if (aux_dec_[i]) {
+      {
+        OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_dec_[i], aux_dec_[i]}}, stack_);
+        ovl.compute();
+        for (int k = aux_inc_[i]->nbasis(), j = 0; k != a[i]; ++k, ++j) 
+          copy_n(ovl.data() + j*(aux_dec_[i]->nbasis()), aux_dec_[i]->nbasis(), ovl_[i] + k*a[i] + aux_inc_[i]->nbasis());
+      }
+      {
+        OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_[i], aux_dec_[i]}}, stack_);
+        ovl.compute();
+        for (int k = aux_inc_[i]->nbasis(); k != a[i]; ++k)
+          for (int j = 0; j != aux_inc_[i]->nbasis(); ++j)
+            *(ovl_[i]+j + k*a[i]) = *(ovl_[i]+k + j*a[i]) = *(ovl.data()+j+aux_inc_[i]->nbasis()*(k-aux_inc_[i]->nbasis()));
+      }
     }
   }
-  stack_->release(3 * s0size * a1size, ints_inc);
-  stack_->release(3 * s0size * a1size_dec, ints_dec);
-
 }
+
+#if 0
+void SmallNAIBatch::nai_compute() {
+  {
+    shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
+    naic->compute();
+    for (int i = 0; i != a1size_inc; ++i)
+      copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
+  }
+  if (aux_dec_[0] && aux_dec_[1]) {
+    shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_dec_, stack_));
+    naic->compute();
+    for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+      copy_n(naic->data() + j*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+  }
+  if (aux_dec_[0]) {
+    shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
+    naic->compute();
+    for (int i = 0; i != a1size_inc; ++i)
+      copy_n(naic->data() + i*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+  }
+  if (aux_dec_[1]) {
+    shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
+    naic->compute();
+    for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+      copy_n(naic->data() + j*a0size_inc, a0size_inc, nai + i*a0); 
+  }
+}
+#endif

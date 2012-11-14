@@ -41,10 +41,7 @@ namespace bagel {
 class SmallNAIBatch {
   protected:
     double* data_;
-    double* ovl0_inc_;
-    double* ovl1_inc_;
-    double* ovl0_dec_;
-    double* ovl1_dec_;
+    std::array<double*,2> ovl_;
 
     const std::shared_ptr<const Geometry> geom_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
@@ -55,11 +52,15 @@ class SmallNAIBatch {
 
     std::shared_ptr<StackMem> stack_;
 
+    void do_nothing();
+
   public:
     SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom);
     ~SmallNAIBatch();
 
     void compute();
+
+    void ovl_compute(const std::array<const int,2>);
 
     size_t size_block() const { return size_block_; };
 
