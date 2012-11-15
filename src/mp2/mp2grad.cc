@@ -32,8 +32,6 @@
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
-#include <src/grad/gradeval_base.h>
-#include <src/util/linear.h>
 #include <src/grad/gradeval.h>
 
 using namespace std;
