@@ -30,6 +30,7 @@
 #include <src/osint/momentbatch.h>
 #include <src/osint/overlapbatch.h>
 #include <src/rysint/carsphlist.h>
+#include <src/util/matrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -74,11 +75,11 @@ void SmallNAIBatch::compute() {
   const int a0 = a0size_inc + a0size_dec;
   const int a1 = a1size_inc + a1size_dec;
 
-/*
+
   //Matrix nai
-  const std::shared_ptr<Matrix> nai(new Matrix(a0,a1));
-  nai->zero();
-*/
+  //const std::shared_ptr<Matrix> nai(new Matrix(a0,a1));
+  //nai->zero();
+
   // current nai array
   double* const nai = stack_->get(a0*a1);
 
@@ -86,7 +87,7 @@ void SmallNAIBatch::compute() {
 #define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
   //make nai_compute function
- // nai_compute();
+  //nai_compute(nai);
 
   {
     {
@@ -284,10 +285,13 @@ void SmallNAIBatch::ovl_compute(const std::array<const int,2> a) {
 }
 
 #if 0
-void SmallNAIBatch::nai_compute() {
+void SmallNAIBatch::nai_compute(const std::shared_ptr<Matrix>& nai) {
   {
     shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
     naic->compute();
+
+    nai->copy_block(0, a0size_inc, 0, a1size_inc, naic->data(), a0size_inc*a1size_inc)
+
     for (int i = 0; i != a1size_inc; ++i)
       copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
   }
