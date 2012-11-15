@@ -65,4 +65,6 @@ class ShiftVirtual : public LevelShift {
     void shift(Matrix1e& coeff) override;
 };
 
+}
+
 #endif
