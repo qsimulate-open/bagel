@@ -65,20 +65,4 @@ class ShiftVirtual : public LevelShift {
     void shift(Matrix1e& coeff) override;
 };
 
-
-// Dimer level shift
-class ShiftDimer : public LevelShift {
-  protected:
-    std::shared_ptr<const Coeff> subspace_;
-
-  public:
-    // monomer_coeff should be monomer coefficients projected onto dimer orbitals
-    ShiftDimer(std::shared_ptr<const Coeff> monomer_coeff, const double shift_parameter);
-
-    void shift(Matrix1e& coeff) override;
-};
-
-}
-
 #endif
-

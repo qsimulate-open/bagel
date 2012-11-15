@@ -35,6 +35,7 @@
 #include <src/scf/coeff.h>
 #include <src/scf/geometry.h>
 #include <src/dimer/dimer.h>
+#include <src/dimer/dimer_scf.h>
 #include <src/scf/rohf.h>
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
@@ -300,19 +301,24 @@ int main(int argc, char** argv) {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        std::shared_ptr<FCI> fci(new HarrisonZarrabian(iter->second, ref));
-        fci->compute();
-        std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
+        //std::shared_ptr<FCI> fci(new HarrisonZarrabian(iter->second, ref));
+        //fci->compute();
+        //std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
 
         double dx = read_input<double>(testdata, "dx", 0.0);
         double dy = read_input<double>(testdata, "dy", 0.0);
         double dz = read_input<double>(testdata, "dz", 0.0);
         std::array<double,3> disp = {{dx,dy,dz}};
-        std::shared_ptr<Dimer> dim(new Dimer(ci, disp));
+        std::shared_ptr<Dimer> dim(new Dimer(ref, disp));
         //dim->hamiltonian();
+        dim->orthonormalize();
 
+        std::shared_ptr<DimerSCF<1> > dimer_scf(new DimerSCF<1>(testdata, dim));
+        dimer_scf->compute();
+
+        #if 0
         std::shared_ptr<Coeff> ovlp = dim->overlap();
-        ovlp->print("overlap", 12);
+        //ovlp->print("overlap", 12);
         double max = 0.0;
         const int n = ovlp->ndim();
         const int m = ovlp->mdim();
@@ -325,9 +331,8 @@ int main(int argc, char** argv) {
           }
         }
         std::cout << std::setprecision(12) << "max: " << max << std::endl;
+        #endif
       
-        //dim->orthonormalize();
-        dim->hamiltonian();
       }
       #endif
     }
