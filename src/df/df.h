@@ -43,6 +43,8 @@ class DF_Full;
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
   friend class DFIntTask;
+  friend class DF_Half;
+  friend class DF_Full;
   protected:
     // #orbital basis
     const size_t nbasis0_; // outer
@@ -75,8 +77,9 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-    const double* data_3index() const { return data(); };
-    const double* data_2index() const { return data2(); };
+//  const double* data_3index() const { return data(); };
+//  const double* data_2index() const { return data2(); };
+    bool has_2index() const { return data2() != nullptr; };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
@@ -228,6 +231,7 @@ class DF_Full {
 
     // contract ii and form (D|E)
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
+    std::unique_ptr<double[]> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
 
     void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);

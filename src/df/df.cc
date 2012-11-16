@@ -229,17 +229,17 @@ shared_ptr<DF_Half> DF_Half::copy() const {
 
 
 shared_ptr<DF_Half> DF_Half::apply_J(shared_ptr<const DensityFit> d) const {
-  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
+  if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
   unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
-  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
+  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data2_.get(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
 }
 
 
 shared_ptr<DF_Half> DF_Half::apply_JJ(shared_ptr<const DensityFit> d) const {
-  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
+  if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
   unique_ptr<double[]> jj(new double[naux_*naux_]);
-  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data_2index(), naux_, d->data_2index(), naux_, 0.0, jj.get(), naux_);
+  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_.get(), naux_, d->data2_.get(), naux_, 0.0, jj.get(), naux_);
 
   unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
   dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, jj, naux_, data_, naux_, 0.0, out, naux_);
@@ -281,7 +281,7 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DF_Full
 void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DensityFit> o, const double a) const {
   fill(target.get(), target.get()+nocc_*nbasis_, 0.0);
   for (size_t i = 0; i != nbasis_; ++i)
-    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_.get()+i*naux_*nocc_, naux_, o->data_3index()+i*naux_*nbasis_, naux_,
+    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_.get()+i*naux_*nocc_, naux_, o->data_.get()+i*naux_*nbasis_, naux_,
                                             1.0, target.get(), nocc_);
 }
 unique_ptr<double[]> DF_Half::form_2index(shared_ptr<const DensityFit> o, const double a) const {
@@ -332,17 +332,17 @@ shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
 
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
-  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
+  if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data_2index(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data2_.get(), naux_, data_.get(), naux_, 0.0, out.get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
 
 shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
-  if (!d->data_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
+  if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
   unique_ptr<double[]> jj(new double[naux_*naux_]);
-  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data_2index(), naux_, d->data_2index(), naux_, 0.0, jj.get(), naux_);
+  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_.get(), naux_, d->data2_.get(), naux_, 0.0, jj.get(), naux_);
 
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
   dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj, naux_, data_, naux_, 0.0, out, naux_);
@@ -465,7 +465,7 @@ void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const D
   const size_t dim = nocc1_ * nocc2_;
   const size_t odim = o->nbasis0() * o->nbasis1();
   shared_ptr<DF_Full> tmp = this->apply_J();
-  dgemm_("T", "N", odim, dim, naux_, 1.0, o->data_3index(), naux_, tmp->data(), naux_, 0.0, target.get(), odim);
+  dgemm_("T", "N", odim, dim, naux_, 1.0, o->data_.get(), naux_, tmp->data(), naux_, 0.0, target.get(), odim);
 }
 
 unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) const {
@@ -482,6 +482,16 @@ unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o)
   unique_ptr<double[]> out(new double[naux_*naux_]);
   if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
   dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data(), naux_, o->data(), naux_, 0.0, out.get(), naux_);
+  return out;
+}
+
+
+unique_ptr<double[]> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o) const {
+  unique_ptr<double[]> tmp(new double[naux_*naux_]);
+  if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
+  dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data(), naux_, o->data(), naux_, 0.0, tmp.get(), naux_);
+  unique_ptr<double[]> out(new double[naux_*naux_]);
+  dgemm_("N", "N", naux_, naux_, naux_, 1.0, tmp.get(), naux_, df_->data2_.get(), naux_, 0.0, out.get(), naux_);
   return out;
 }
 

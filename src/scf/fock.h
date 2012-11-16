@@ -236,8 +236,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix1e> den_ex) {
   } else if (DF == 1) {
 
     std::shared_ptr<const DensityFit> df = geom_->df();
-    const double* const buf1 = df->data_3index();
-    const double* const buf2 = df->data_2index();
 
     // some constants
     const int naux = df->naux();

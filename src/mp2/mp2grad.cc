@@ -238,8 +238,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
   {
-    unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
-    dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
+    unique_ptr<double[]> sep22 = gia->form_aux_2index_apply_J(full);
+    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
   }
 
 
