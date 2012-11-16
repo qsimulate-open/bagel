@@ -115,7 +115,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux);
+    // BV and gia are DF_Full 
+    const size_t offset = i*nocc*naux;
+    gia->set_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);

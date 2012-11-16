@@ -121,6 +121,7 @@ class DF_AO : public DensityFit {
 
 
 class DF_Half {
+  friend class DF_Full;
 
   protected:
     const std::shared_ptr<const DensityFit> df_;
@@ -142,8 +143,6 @@ class DF_Half {
     size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
 
     std::shared_ptr<DF_Half> clone() const;
@@ -181,6 +180,7 @@ class DF_Half {
 
 
 class DF_Full {
+  friend class DF_Half;
 
   protected:
     const std::shared_ptr<const DensityFit> df_;
@@ -200,6 +200,7 @@ class DF_Full {
 
     int nocc1() const { return nocc1_; };
     int nocc2() const { return nocc2_; };
+    int naux() const { return naux_; };
     size_t size() const { return nocc1_*nocc2_*naux_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
@@ -239,9 +240,10 @@ class DF_Full {
     void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a);
 
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
+
+    // compute (D|ia)(ia|j) and set to the location specified by the offset
+    void set_product(const std::shared_ptr<const DF_Full>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
 
     std::shared_ptr<DF_Full> clone() const;
     std::shared_ptr<DF_Full> copy() const;
