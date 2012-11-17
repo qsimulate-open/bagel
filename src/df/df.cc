@@ -44,7 +44,7 @@ using namespace bagel;
 
 namespace bagel {
 
-class DFIntTask {
+class DFIntTask_OLD {
   protected:
     array<shared_ptr<const Shell>,4> shell_;
     array<int,3> offset_; // at most 3 elements
@@ -52,11 +52,11 @@ class DFIntTask {
     DensityFit* df_;
 
   public:
-    DFIntTask(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), rank_(b.size()), df_(df) {
+    DFIntTask_OLD(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), rank_(b.size()), df_(df) {
       int j = 0;
       for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
     }
-    DFIntTask() {};
+    DFIntTask_OLD() {};
 
     void compute() {
       pair<const double*, shared_ptr<RysInt> > p = df_->compute_batch(shell_);
@@ -66,7 +66,9 @@ class DFIntTask {
       const size_t naux = df_->naux();
       // all slot in
       if (rank_ == 3) {
-        double* const data = df_->data_.get();
+        assert(false);
+#if 0
+        double* const data = df_->data_->get();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
             for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
@@ -74,6 +76,7 @@ class DFIntTask {
             }
           }
         }
+#endif
       } else if (rank_ == 2) {
         double* const data = df_->data2_.get();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
@@ -97,13 +100,19 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   // this will be distributed in the future.
   auto tp0 = high_resolution_clock::now();
-  data_ = unique_ptr<double[]>(new double[nbasis0_*nbasis1_*naux_]);
-
   const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
 
-  // generates a task of integral evaluations
-  vector<DFIntTask> tasks;
+  // 3index Integral is now made in DFBlock.
+  vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
+  for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
+  for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
+  for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
+  data_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
 
+  // generates a task of integral evaluations
+  vector<DFIntTask_OLD> tasks;
+
+#if 0
   if (atoms0 == atoms1) {
     size_t nshell = 0;
     for (auto& a0 : atoms0) nshell += a0->shells().size();
@@ -133,6 +142,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   } else {
     throw logic_error("Dual basis DF builder has not been implemented yet. See src/df/df.cc");
   }
+#endif
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   data2_ = unique_ptr<double[]>(new double[naux_*naux_]);
@@ -145,13 +155,13 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = a0!=a1 ? oa1->begin() : o0;
         for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{*o0, *o1}, this));
+          tasks.push_back(DFIntTask_OLD(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{*o0, *o1}, this));
         }
       }
     }
   }
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask> tq(tasks);
+  TaskQueue<DFIntTask_OLD> tq(tasks);
   tq.compute(resources__->max_num_threads());
   auto tp1 = high_resolution_clock::now();
   cout << "       - time spent for integral evaluation  " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl;
@@ -185,7 +195,7 @@ unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
   unique_ptr<double[]> tmp0 = compute_cd(den);
   unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_, naux_, tmp0, 1, 0.0, out, 1);
+  dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, tmp0.get(), 1, 0.0, out.get(), 1);
   return out;
 }
 
@@ -193,10 +203,20 @@ unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
 unique_ptr<double[]> DensityFit::compute_cd(const double* den) const {
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
-  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_.get(), naux_, den, 1, 0.0, tmp0.get(), 1);
+  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, den, 1, 0.0, tmp0.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp0, 1, 0.0, tmp1, 1);
   dgemv_("N", naux_, naux_, 1.0, data2_, naux_, tmp1, 1, 0.0, tmp0, 1);
   return tmp0;
+}
+
+
+shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
+  // it starts with DGEMM of inner index (for some reasons)...
+  unique_ptr<double[]> tmp(new double[naux_*nbasis0_*nocc]);
+  for (size_t i = 0; i != nbasis0_; ++i) {
+    dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_->get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
+  }
+  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
 }
 
 
@@ -211,7 +231,7 @@ DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<cons
   for (auto citer = cd.begin(), diter = dd.begin(); citer != cd.end(); ++citer, ++diter) {
     dger_(naux_, nbasis0_*nbasis1_, 1.0, *citer, 1, *diter, 1, buf.get(), naux_);
   }
-  data_ = move(buf);
+  data_ = shared_ptr<DFBlock>(new DFBlock(buf));
 }
 
 
@@ -247,16 +267,6 @@ shared_ptr<DF_Half> DF_Half::apply_JJ(shared_ptr<const DensityFit> d) const {
 }
 
 
-shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
-  // it starts with DGEMM of inner index (for some reasons)...
-  unique_ptr<double[]> tmp(new double[naux_*nbasis0_*nocc]);
-  for (size_t i = 0; i != nbasis0_; ++i) {
-    dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_.get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
-  }
-  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
-}
-
-
 void DF_Half::form_2index(unique_ptr<double[]>& target, const double a, const double b) const {
   const int common = nocc_ * naux_;
   dgemm_("T", "N", nbasis_, nbasis_, common, a, data_.get(), common, data_.get(), common, b, target.get(), nbasis_);
@@ -281,7 +291,7 @@ void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DF_Full
 void DF_Half::form_2index(unique_ptr<double[]>& target, shared_ptr<const DensityFit> o, const double a) const {
   fill(target.get(), target.get()+nocc_*nbasis_, 0.0);
   for (size_t i = 0; i != nbasis_; ++i)
-    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_.get()+i*naux_*nocc_, naux_, o->data_.get()+i*naux_*nbasis_, naux_,
+    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_.get()+i*naux_*nocc_, naux_, o->data_->get()+i*naux_*nbasis_, naux_,
                                             1.0, target.get(), nocc_);
 }
 unique_ptr<double[]> DF_Half::form_2index(shared_ptr<const DensityFit> o, const double a) const {
@@ -474,7 +484,7 @@ void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const D
   const size_t dim = nocc1_ * nocc2_;
   const size_t odim = o->nbasis0() * o->nbasis1();
   shared_ptr<DF_Full> tmp = this->apply_J();
-  dgemm_("T", "N", odim, dim, naux_, 1.0, o->data_.get(), naux_, tmp->data_.get(), naux_, 0.0, target.get(), odim);
+  dgemm_("T", "N", odim, dim, naux_, 1.0, o->data_->get(), naux_, tmp->data_.get(), naux_, 0.0, target.get(), odim);
 }
 
 unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) const {

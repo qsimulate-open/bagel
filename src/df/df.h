@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include <stddef.h>
+#include <src/df/dfblock.h>
 #include <src/scf/atom.h>
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
@@ -42,7 +43,7 @@ class DF_Full;
 
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
-  friend class DFIntTask;
+  friend class DFIntTask_OLD;
   friend class DF_Half;
   friend class DF_Full;
 
@@ -52,14 +53,14 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     const size_t nbasis1_; // inner
     // #auxiliary basis
     const size_t naux_;
-    // AO three-index integrals (naux, nbasis1, nbasis0);
-    std::unique_ptr<double[]> data_;
+    // AO three-index integrals
+    std::shared_ptr<DFBlock> data_;
     // AO two-index integrals ^ -1/2
     std::unique_ptr<double[]> data2_;
 
-    void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
+    virtual void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
 
     // returns a pointer to a stack memory area
     virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) = 0;
@@ -71,19 +72,19 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-    bool has_2index() const { return data2_.get() != nullptr; };
+    virtual bool has_2index() const { return data2_.get() != nullptr; };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
     size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
+    virtual std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
     // compute a J operator, given density matrices in AO basis
-    std::unique_ptr<double[]> compute_Jop(const double* den) const;
+    virtual std::unique_ptr<double[]> compute_Jop(const double* den) const;
 
-    std::unique_ptr<double[]> compute_cd(const double* den) const;
+    virtual std::unique_ptr<double[]> compute_cd(const double* den) const;
 
 };
 
@@ -96,19 +97,21 @@ class DF_AO : public DensityFit {
     };
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
-      data_ = std::move(dat);
+      data_ = std::shared_ptr<DFBlock>(new DFBlock(dat));
     };
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
 
-    double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
-    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_.get()+i+naux_*(j+nbasis1_*k); };
+    double* ptr(const size_t i, const size_t j, const size_t k) { return data_->get()+i+naux_*(j+nbasis1_*k); };
+    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_->get()+i+naux_*(j+nbasis1_*k); };
 
+#if 0
     std::unique_ptr<double[]>& data_ptr() { return data_; };
     const std::unique_ptr<double[]>& data_ptr() const { return data_; };
+#endif
 
-    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); };
+    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_->get(), 1, data_->get(), 1); };
 };
 
 
