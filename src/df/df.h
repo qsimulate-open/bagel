@@ -176,6 +176,8 @@ class DF_Half {
     // AO back transformation
     std::shared_ptr<DF_AO> back_transform(const double*) const;
 
+    void rotate_occ(const double*); 
+
 };
 
 
