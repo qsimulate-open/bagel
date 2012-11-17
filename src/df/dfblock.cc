@@ -38,26 +38,26 @@ void DFBlock::common_init() {
   // allocation of the data area
   data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
 
-  auto sum_basis = [](const int& s, const shared_ptr<const Shell>& v) { return s+v->nbasis(); };
-
-  size_t nauxs = accumulate(aux_.begin(), aux_.end(), 0, sum_basis);
-  size_t nb1s  = accumulate(b1_.begin(), b1_.end(), 0, sum_basis);
-  size_t nb2s  = accumulate(b2_.begin(), b2_.end(), 0, sum_basis);
-
   const shared_ptr<const Shell> i3(new Shell(b1_.front()->spherical()));
 
   // making a task list
   vector<DFIntTask> tasks;
-  tasks.reserve(nb1s*nb2s*nauxs);
+  tasks.reserve(b1_.size()*b2_.size()*aux_.size());
+
+  // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
+  assert(b1_ == b2_);
   
   auto j2 = b2off_.begin();
   for (auto& i2 : b2_) { 
     auto j1 = b1off_.begin();
     for (auto& i1 : b1_) { 
-      auto j0 = aoff_.begin();
-      for (auto& i0 : aux_) { 
-        tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, vector<int>{*j2, *j1, *j0}, this));
-        ++j0;
+      // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
+      if (*j1 <= *j2) {
+        auto j0 = aoff_.begin();
+        for (auto& i0 : aux_) { 
+          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, vector<int>{*j2, *j1, *j0}, this));
+          ++j0;
+        }
       }
       ++j1;
     }

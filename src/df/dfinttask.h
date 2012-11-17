@@ -51,6 +51,7 @@ class DFIntTask {
       std::pair<const double*, std::shared_ptr<RysInt> > p = dfblock_->compute_batch(shell_);
       const double* ppt = p.first;
 
+      assert(dfblock_->b1size_ == dfblock_->b2size_);
       const size_t nbin = dfblock_->b1size_;
       const size_t naux = dfblock_->asize_;
 
@@ -60,7 +61,7 @@ class DFIntTask {
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
             for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
-              data[j2+naux*(j1+nbin*j0)] = *ppt;
+              data[j2+naux*(j1+nbin*j0)] = data[j2+naux*(j0+nbin*j1)] = *ppt;
             }
           }
         }
