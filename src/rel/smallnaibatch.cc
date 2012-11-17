@@ -94,6 +94,7 @@ void SmallNAIBatch::compute() {
 //NAIBatch nai(aux_, geom_, stack_);
 #endif
 
+#if 0
   double* const ints = stack_->get(3 * s0size * a1);
   fill(ints, ints+(3 * s0size * a1), 0.0);
 
