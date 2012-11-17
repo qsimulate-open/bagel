@@ -26,6 +26,7 @@
 
 #include <src/scf/atom.h>
 #include <fstream>
+#include <numeric>
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -199,15 +200,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const doub
 
 void Atom::common_init() {
   // counting the number of basis functions belonging to this atom
-  nbasis_ = 0;
-  for (auto& s : shells_) {
-    const int ang = s->angular_number();
-    if (spherical_) {
-      nbasis_ += s->num_contracted() * (2 * ang + 1);
-    } else {
-      nbasis_ += s->num_contracted() * (ang + 1) * (ang + 2) / 2;
-    }
-  }
+  nbasis_ = accumulate(shells_.begin(), shells_.end(), 0, [](const int& i, const shared_ptr<const Shell>& j) { return i+j->nbasis(); });
   atom_charge_ = static_cast<double>(atom_number_);
 }
 

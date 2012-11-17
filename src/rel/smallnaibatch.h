@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_REL_SMALL_NAI_H
-#define __SRC_REL_SMALL_NAI_H
+#ifndef __SRC_REL_SMALLNAIBATCH_H
+#define __SRC_REL_SMALLNAIBATCH_H
 
 #include <stddef.h>
 #include <src/scf/shell.h>

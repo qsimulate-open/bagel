@@ -131,15 +131,8 @@ void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) 
 
 
 void MOFile::update_1ext_ints(const vector<double>& coeff) {
-  // in the case of no DF
-  shared_ptr<DF_Half> buf = mo2e_1ext_->clone();
-
-  // half transformed DF is rotated.
-  const int naux = geom_->df()->naux();
-  for (int i = 0; i != nbasis_; ++i)
-    dgemm_("N", "N", naux, nocc_, nocc_, 1.0, mo2e_1ext_->data()+i*naux*nocc_, naux, &(coeff[0]), nocc_, 0.0, buf->data()+i*naux*nocc_, naux);
-  mo2e_1ext_ = buf;
-
+  assert(mo2e_1ext_->nocc() == nocc_);
+  mo2e_1ext_->rotate_occ(&(coeff[0]));
 }
 
 

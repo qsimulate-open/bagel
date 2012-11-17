@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include <stddef.h>
+#include <src/df/dfblock.h>
 #include <src/scf/atom.h>
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
@@ -42,28 +43,24 @@ class DF_Full;
 
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
-  friend class DFIntTask;
+  friend class DFIntTask_OLD;
+  friend class DF_Half;
+  friend class DF_Full;
+
   protected:
     // #orbital basis
     const size_t nbasis0_; // outer
     const size_t nbasis1_; // inner
     // #auxiliary basis
     const size_t naux_;
-    // AO three-index integrals (naux, nbasis1, nbasis0);
-    std::unique_ptr<double[]> data_;
+    // AO three-index integrals
+    std::shared_ptr<DFBlock> data_;
     // AO two-index integrals ^ -1/2
     std::unique_ptr<double[]> data2_;
 
-    // returns three-index integrals
-    double* data() { return data_.get(); };
-    // returns two-index integrals ^-1/2
-    double* data2() { return data2_.get(); };
-    const double* data() const { return data_.get(); };
-    const double* data2() const { return data2_.get(); };
-
-    void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                     const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
+    virtual void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
 
     // returns a pointer to a stack memory area
     virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) = 0;
@@ -75,20 +72,19 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-    const double* data_3index() const { return data(); };
-    const double* data_2index() const { return data2(); };
+    virtual bool has_2index() const { return data2_.get() != nullptr; };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
     size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
+    virtual std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
     // compute a J operator, given density matrices in AO basis
-    std::unique_ptr<double[]> compute_Jop(const double* den) const;
+    virtual std::unique_ptr<double[]> compute_Jop(const double* den) const;
 
-    std::unique_ptr<double[]> compute_cd(const double* den) const;
+    virtual std::unique_ptr<double[]> compute_cd(const double* den) const;
 
 };
 
@@ -101,23 +97,26 @@ class DF_AO : public DensityFit {
     };
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
-      data_ = std::move(dat);
+      data_ = std::shared_ptr<DFBlock>(new DFBlock(dat));
     };
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
 
-    double* ptr(const size_t i, const size_t j, const size_t k) { return data_.get()+i+naux_*(j+nbasis1_*k); };
-    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_.get()+i+naux_*(j+nbasis1_*k); };
+    double* ptr(const size_t i, const size_t j, const size_t k) { return data_->get()+i+naux_*(j+nbasis1_*k); };
+    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_->get()+i+naux_*(j+nbasis1_*k); };
 
+#if 0
     std::unique_ptr<double[]>& data_ptr() { return data_; };
     const std::unique_ptr<double[]>& data_ptr() const { return data_; };
+#endif
 
-    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_, 1, data_, 1); };
+    void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_->get(), 1, data_->get(), 1); };
 };
 
 
 class DF_Half {
+  friend class DF_Full;
 
   protected:
     const std::shared_ptr<const DensityFit> df_;
@@ -139,8 +138,6 @@ class DF_Half {
     size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
 
     std::shared_ptr<DF_Half> clone() const;
@@ -174,10 +171,13 @@ class DF_Half {
     // AO back transformation
     std::shared_ptr<DF_AO> back_transform(const double*) const;
 
+    void rotate_occ(const double*); 
+
 };
 
 
 class DF_Full {
+  friend class DF_Half;
 
   protected:
     const std::shared_ptr<const DensityFit> df_;
@@ -197,6 +197,7 @@ class DF_Full {
 
     int nocc1() const { return nocc1_; };
     int nocc2() const { return nocc2_; };
+    int naux() const { return naux_; };
     size_t size() const { return nocc1_*nocc2_*naux_; };
 
     std::shared_ptr<DF_Full> apply_J() const { return apply_J(df_); };
@@ -228,6 +229,7 @@ class DF_Full {
 
     // contract ii and form (D|E)
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
+    std::unique_ptr<double[]> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
 
     void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);
@@ -235,9 +237,10 @@ class DF_Full {
     void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a);
 
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
     const std::shared_ptr<const DensityFit> df() const { return df_; };
+
+    // compute (D|ia)(ia|j) and set to the location specified by the offset
+    void set_product(const std::shared_ptr<const DF_Full>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
 
     std::shared_ptr<DF_Full> clone() const;
     std::shared_ptr<DF_Full> copy() const;

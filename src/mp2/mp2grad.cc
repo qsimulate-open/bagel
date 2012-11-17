@@ -32,8 +32,6 @@
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
-#include <src/grad/gradeval_base.h>
-#include <src/util/linear.h>
 #include <src/grad/gradeval.h>
 
 using namespace std;
@@ -117,7 +115,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux);
+    // BV and gia are DF_Full 
+    const size_t offset = i*nocc*naux;
+    gia->set_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);
@@ -240,8 +240,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
   {
-    unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
-    dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
+    unique_ptr<double[]> sep22 = gia->form_aux_2index_apply_J(full);
+    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
   }
 
 

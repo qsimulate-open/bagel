@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: levelshift.cc
+// Filename: dimer_levelshift.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -34,14 +34,12 @@
 using namespace bagel;
 using namespace std;
 
-ShiftVirtual::ShiftVirtual(const int nocc, const int shift_parameter) : LevelShift(nocc, shift_parameter) {
-
+ShiftDimer::ShiftDimer(shared_ptr<const Coeff> monomer_coeff, const double shift_parameter) : LevelShift(monomer_coeff->mdim(), shift_parameter) {
+  // Do I actually need to do anything here?
+  subspace_ = monomer_coeff;
 }
 
-void ShiftVirtual::shift(Matrix1e& coeff) {
-  const int nbasis = coeff.geom()->nbasis();
+void ShiftDimer::shift(Matrix1e& coeff) {
 
-  coeff.add_diag(shift_parameter_, nocc_, nbasis);
-
-  // Done
+  
 }

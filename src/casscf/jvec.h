@@ -45,8 +45,6 @@ class Jvec {
 
     const std::shared_ptr<const DF_Half> half() const { return half_; };
     const std::shared_ptr<const DF_Full> jvec() const { return jvec_; };
-    const double* half_ptr() const { return half_->data(); };
-    const double* jvec_ptr() const { return jvec_->data(); };
     const double* rdm2_all() const { return rdm2_all_.get(); };
 
 };

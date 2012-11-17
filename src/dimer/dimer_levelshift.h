@@ -1,6 +1,6 @@
-//
+
 // BAGEL - Parallel electron correlation program.
-// Filename: levelshift.cc
+// Filename: dimer_levelshift.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,24 +24,37 @@
 //
 
 
+#ifndef __BAGEL_DIMER_DIMER_LEVELSHIFT_H
+#define __BAGEL_DIMER_DIMER_LEVELSHIFT_H
+
 #include <array>
 #include <vector>
 #include <string>
 #include <memory>
-#include <src/scf/levelshift.h>
+
 #include <src/scf/coeff.h>
 
-using namespace bagel;
-using namespace std;
+/************************************************************************************
+* Class of functions to level shift the Fock operator in SCF. Matrices are shifted  *
+*   using the shift(coeff) function, where coeff should be expressed in the         *
+*   molecular basis                                                                 *
+************************************************************************************/
 
-ShiftVirtual::ShiftVirtual(const int nocc, const int shift_parameter) : LevelShift(nocc, shift_parameter) {
+namespace bagel {
+
+// Dimer level shift
+class ShiftDimer : public LevelShift {
+  protected:
+    std::shared_ptr<const Coeff> subspace_;
+
+  public:
+    // monomer_coeff should be monomer coefficients projected onto dimer orbitals
+    ShiftDimer(std::shared_ptr<const Coeff> monomer_coeff, const double shift_parameter);
+
+    void shift(Matrix1e& coeff) override;
+};
 
 }
 
-void ShiftVirtual::shift(Matrix1e& coeff) {
-  const int nbasis = coeff.geom()->nbasis();
+#endif
 
-  coeff.add_diag(shift_parameter_, nocc_, nbasis);
-
-  // Done
-}
