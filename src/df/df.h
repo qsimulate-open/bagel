@@ -45,6 +45,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
   friend class DFIntTask;
   friend class DF_Half;
   friend class DF_Full;
+
   protected:
     // #orbital basis
     const size_t nbasis0_; // outer
@@ -55,13 +56,6 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     std::unique_ptr<double[]> data_;
     // AO two-index integrals ^ -1/2
     std::unique_ptr<double[]> data2_;
-
-    // returns three-index integrals
-    double* data() { return data_.get(); };
-    // returns two-index integrals ^-1/2
-    double* data2() { return data2_.get(); };
-    const double* data() const { return data_.get(); };
-    const double* data2() const { return data2_.get(); };
 
     void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
                      const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
@@ -77,9 +71,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-//  const double* data_3index() const { return data(); };
-//  const double* data_2index() const { return data2(); };
-    bool has_2index() const { return data2() != nullptr; };
+    bool has_2index() const { return data2_.get() != nullptr; };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };

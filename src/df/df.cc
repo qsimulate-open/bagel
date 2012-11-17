@@ -66,7 +66,7 @@ class DFIntTask {
       const size_t naux = df_->naux();
       // all slot in
       if (rank_ == 3) {
-        double* const data = df_->data();
+        double* const data = df_->data_.get();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
             for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
@@ -75,7 +75,7 @@ class DFIntTask {
           }
         }
       } else if (rank_ == 2) {
-        double* const data = df_->data2();
+        double* const data = df_->data2_.get();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
             data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
@@ -171,7 +171,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
       dscal_(naux_, vec[i], data2_.get()+i*naux_, 1);
     // work now contains -1/2
     dgemm_("N", "T", naux_, naux_, naux_, 1.0, data2_, naux_, data2_, naux_, 0.0, work, naux_);
-    copy(work.get(), work.get()+naux_*naux_, data2());
+    copy_n(work.get(), naux_*naux_, data2_.get());
   }
 
   auto tp2 = high_resolution_clock::now();
