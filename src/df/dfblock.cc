@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <numeric>
 #include <src/df/dfinttask.h>
 #include <src/util/taskqueue.h>
 #include <src/df/dfblock.h>
@@ -37,12 +38,11 @@ void DFBlock::common_init() {
   // allocation of the data area
   data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
 
-  size_t nauxs = 0;
-  for (auto& i : aux_) nauxs += i->nbasis();
-  size_t nb1s = 0;
-  for (auto& i : b1_) nb1s += i->nbasis();
-  size_t nb2s = 0;
-  for (auto& i : b2_) nb2s += i->nbasis();
+  auto sum_basis = [](const int& s, const shared_ptr<const Shell>& v) { return s+v->nbasis(); };
+
+  size_t nauxs = accumulate(aux_.begin(), aux_.end(), 0, sum_basis);
+  size_t nb1s  = accumulate(b1_.begin(), b1_.end(), 0, sum_basis);
+  size_t nb2s  = accumulate(b2_.begin(), b2_.end(), 0, sum_basis);
 
   const shared_ptr<const Shell> i3(new Shell(b1_.front()->spherical()));
 
