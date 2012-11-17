@@ -67,6 +67,7 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void diagonalize(double*);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     void inverse();
+    void copy_block(const int, const int, const int, const int, const double*);
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);

@@ -494,3 +494,8 @@ void Matrix::print(const string name, const int size) const {
 
 }
 
+void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    copy_n(data + j*ndim, ndim, data_.get() + ndim_i + i*ndim_);
+}
+

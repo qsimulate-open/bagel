@@ -33,6 +33,7 @@
 #include <memory>
 #include <src/rysint/naibatch.h>
 #include <src/util/resources.h>
+#include <src/util/matrix.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 
@@ -61,6 +62,8 @@ class SmallNAIBatch {
     void compute();
 
     void ovl_compute(const std::array<const int,2>);
+
+    void nai_compute(const std::shared_ptr<Matrix>&);
 
     size_t size_block() const { return size_block_; };
 
