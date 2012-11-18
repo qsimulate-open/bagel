@@ -46,21 +46,10 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 template <int i, int j, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
-  if (i==0) {
-    if (an == ad) {
-      daxpy_(a*b, factor, unsorted, 1, sorted, 1);
-    } else if (an == 0) {
-      dcopy_(a*b, unsorted, 1, sorted, 1);
-    } else {
-      for (int j0 = 0; j0 != a*b; ++j0) {
-        sorted[j0] = sorted[j0] * afac +  unsorted[j0] *factor;
-      }
-//    dscal_(a*b, afac, sorted, 1);
-//    daxpy_(a*b, factor, unsorted, 1, sorted, 1);
-    }
-  } else {
+  {
     int id[2];
     int jd[2] = {b, a};
     long iall=0;
@@ -79,6 +68,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 template<int i, int j, int k, int an, int ad, int fn, int fd>
 static void sort_indices(const double* const unsorted, double* const sorted,
                          const int d,const int c,const int b) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   int id[3];
@@ -110,6 +100,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
 static void sort_indices(const double* unsorted, double* sorted,
                          const int d,const int c,const int b,const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   int id[4];
@@ -143,6 +134,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   int id[6];
@@ -176,6 +168,7 @@ template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad,
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int h, const int g, const int f, const int e, const int d, const int c, 
                          const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   int id[8];
