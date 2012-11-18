@@ -153,6 +153,8 @@ class DF_Half {
 
     std::shared_ptr<DF_Full> compute_second_transform(const double* c, const size_t nocc) const;
 
+    std::shared_ptr<DFBlock> data() const { return data_; };
+
     void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
     // form 2 index quantities
     void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;

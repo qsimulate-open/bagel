@@ -178,9 +178,9 @@ shared_ptr<DF_Half> DF_Half::copy() const {
 
 
 shared_ptr<DF_Half> DF_Half::apply_J(shared_ptr<const DensityFit> d) const {
+  shared_ptr<DFBlock> out = data_->clone();
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
-  unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
-  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
+  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
 }
 
@@ -190,8 +190,8 @@ shared_ptr<DF_Half> DF_Half::apply_JJ(shared_ptr<const DensityFit> d) const {
   unique_ptr<double[]> jj(new double[naux_*naux_]);
   dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_->data(), naux_, d->data2_->data(), naux_, 0.0, jj.get(), naux_);
 
-  unique_ptr<double[]> out(new double[nocc_*naux_*nbasis_]);
-  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
+  shared_ptr<DFBlock> out = data_->clone();
+  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
 }
 
@@ -262,8 +262,8 @@ unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o)
 
 
 shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
-  unique_ptr<double[]> buf(new double[naux_*nbasis_*nocc_]);
-  dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, data_->get(), naux_*nocc_, den, nbasis_, 0.0, buf.get(), naux_*nocc_);
+  shared_ptr<DFBlock> buf = data_->clone();
+  dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, data_->get(), naux_*nocc_, den, nbasis_, 0.0, buf->get(), naux_*nocc_);
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, buf));
 }
 
@@ -279,8 +279,8 @@ void DF_Half::rotate_occ(const double* d) {
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
-  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
+  shared_ptr<DFBlock> out = data_->clone();
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
@@ -290,15 +290,15 @@ shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
   unique_ptr<double[]> jj(new double[naux_*naux_]);
   dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_->data(), naux_, d->data2_->data(), naux_, 0.0, jj.get(), naux_);
 
-  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
+  shared_ptr<DFBlock> out = data_->clone();
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
 
 shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm) const {
-  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-  dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_->get(), naux_, rdm, nocc1_*nocc2_, 0.0, out.get(), naux_);
+  shared_ptr<DFBlock> out = data_->clone();
+  dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_->get(), naux_, rdm, nocc1_*nocc2_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
@@ -312,20 +312,20 @@ shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm, const double* rdm1, c
     for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
     if (fabs(a-sum) > numerical_zero__) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
   }
-  unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
-  fill(out.get(), out.get()+nocc1_*nocc2_*naux_, 0.0);
+  shared_ptr<DFBlock> out = data_->clone();
+  fill(out->get(), out->get()+nocc1_*nocc2_*naux_, 0.0);
   // closed-closed part
   // exchange contribution
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nclosed; ++j)
-      daxpy_(naux_, -2.0, data_->get()+naux_*(j+nocc1_*i), 1, out.get()+naux_*(j+nocc1_*i), 1);
+      daxpy_(naux_, -2.0, data_->get()+naux_*(j+nocc1_*i), 1, out->get()+naux_*(j+nocc1_*i), 1);
   // coulomb contribution
   unique_ptr<double[]> diagsum(new double[naux_]);
   fill(diagsum.get(), diagsum.get()+naux_, 0.0);
   for (int i = 0; i != nclosed; ++i)
     daxpy_(naux_, 1.0, data_->get()+naux_*(i+nocc1_*i), 1, diagsum.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(naux_, 4.0, diagsum.get(), 1, out.get()+naux_*(i+nocc1_*i), 1);
+    daxpy_(naux_, 4.0, diagsum.get(), 1, out->get()+naux_*(i+nocc1_*i), 1);
 
   // act-act part
   // compress
@@ -339,22 +339,22 @@ shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm, const double* rdm1, c
   // slot in
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      dcopy_(naux_, buf2.get()+naux_*(j+nact*i),1, out.get()+naux_*(j+nclosed+nocc1_*(i+nclosed)), 1);
+      dcopy_(naux_, buf2.get()+naux_*(j+nact*i),1, out->get()+naux_*(j+nclosed+nocc1_*(i+nclosed)), 1);
 
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab
   // ASSUMING natural orbitals
   for (int i = 0; i != nact; ++i)
-    daxpy_(naux_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out.get()+naux_*(i+nclosed+nocc1_*(i+nclosed)), 1);
+    daxpy_(naux_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+naux_*(i+nclosed+nocc1_*(i+nclosed)), 1);
   unique_ptr<double[]> diagsum2(new double[naux_]);
   dgemv_("N", naux_, nact*nact, 1.0, buf.get(), naux_, rdm1, 1, 0.0, diagsum2.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(naux_, 2.0, diagsum2.get(), 1, out.get()+naux_*(i+nocc1_*i), 1);
+    daxpy_(naux_, 2.0, diagsum2.get(), 1, out->get()+naux_*(i+nocc1_*i), 1);
   // exchange contribution
   for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nclosed; ++j) {
-      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(j+nocc1_*(i+nclosed)), 1, out.get()+naux_*(j+nocc1_*(i+nclosed)), 1);
-      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(i+nclosed+nocc1_*j), 1, out.get()+naux_*(i+nclosed+nocc1_*j), 1);
+      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(j+nocc1_*(i+nclosed)), 1, out->get()+naux_*(j+nocc1_*(i+nclosed)), 1);
+      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(i+nclosed+nocc1_*j), 1, out->get()+naux_*(i+nclosed+nocc1_*j), 1);
     }
   }
 

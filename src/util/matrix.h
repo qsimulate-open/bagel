@@ -39,8 +39,8 @@ namespace bagel {
 class Matrix { // Not to be confused with Matrix1e... at least for the moment
   protected:
     std::unique_ptr<double[]> data_;
-    int ndim_;
-    int mdim_;
+    const int ndim_;
+    const int mdim_;
 
   public:
     Matrix() : ndim_(0), mdim_(0) {};
@@ -66,7 +66,7 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     std::shared_ptr<Matrix> resize(const int, const int) const;
     std::shared_ptr<Matrix> slice(const int, const int) const;
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
-    void diagonalize(double*);
+    void diagonalize(double* vec);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();

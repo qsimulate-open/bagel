@@ -67,8 +67,7 @@ class K2ext {
       // closed loop
       size_t cnt = blocks_[0].keyoffset();
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DF_Half> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size()
-                                                                      )->apply_J();
+        std::shared_ptr<DF_Half> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size())->apply_J();
         // virtual loop
         size_t cnt2 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {

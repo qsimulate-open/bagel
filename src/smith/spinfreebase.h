@@ -309,14 +309,8 @@ class SpinFreeMethod {
           shalf_xx_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
           std::copy_n(ref_->rdm2(0)->data(), size, shalf_xx_->data()); 
           sort_indices<0,2,1,3,0,1,1,1>(shalf_xx_->data(), work2->data(), nact, nact, nact, nact);
-          int info;
-          std::unique_ptr<double[]> eig(new double[dim]);
-          std::unique_ptr<double[]> work(new double[dim*5]);
-          dsyev_("V", "L", dim, work2->data(), dim, eig.get(), work.get(), dim*5, info);
-          if (info) throw std::runtime_error("DSYEV solved");
-          for (int i = 0; i != dim; ++i)
-            dscal_(dim, std::pow(eig[i], -0.25), work2->element_ptr(0,i), 1); 
-          *shalf_xx_ = *work2 ^ *work2;
+          work2->inverse_half(1.0e-9);
+          *shalf_xx_ = *work2;
 //#define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
           Matrix r(dim, dim);
