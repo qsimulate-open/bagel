@@ -31,6 +31,7 @@
 #include <list>
 #include <cassert>
 #include <vector>
+#include <src/util/matrix.h>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
 
@@ -122,7 +123,7 @@ class DFBlock {
     // Form 2- and 4-index integrals
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
-    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
+    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
 };
 

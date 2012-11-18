@@ -47,6 +47,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
   friend class DFIntTask_OLD;
   friend class DF_Half;
   friend class DF_Full;
+  friend class DFFullDist;
 
   protected:
     // #orbital basis
@@ -159,12 +160,12 @@ class DF_Half {
     std::shared_ptr<DFBlock> data() const { return data_; };
 
     // form 2 index quantities
-    std::unique_ptr<double[]> form_2index(const double a) const;
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a) const;
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a) const;
     // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DensityFit> o, const double a) const;
 
-    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Half> o) const;
+    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Half> o) const;
 
     // form K^ij_rs operator
     std::unique_ptr<double[]> form_4index() const;
@@ -234,8 +235,8 @@ class DF_Full {
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
 
     // contract ii and form (D|E)
-    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
-    std::unique_ptr<double[]> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
+    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
+    std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
 
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);
 

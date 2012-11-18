@@ -232,17 +232,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   }
 
   // two-index derivatives (seperable part)..
-  unique_ptr<double[]> sep2(new double[naux*naux]);
-  fill(sep2.get(), sep2.get()+naux*naux, 0.0);
-  dger_(naux, naux, 2.0, cd0, 1, cdbar, 1, sep2, naux);
-  {
-    unique_ptr<double[]> sep22 = halfjj->form_aux_2index(sepd);
-    daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
-  }
-  {
-    unique_ptr<double[]> sep22 = gia->form_aux_2index_apply_J(full);
-    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
-  }
+  shared_ptr<Matrix> sep2(new Matrix(naux, naux));
+  dger_(naux, naux, 2.0, cd0.get(), 1, cdbar.get(), 1, sep2->data(), naux);
+  *sep2 -= *halfjj->form_aux_2index(sepd) * 2.0;
+  *sep2 += *gia->form_aux_2index_apply_J(full) * 4.0;
 
 
   // energy weighted density

@@ -92,7 +92,7 @@ class GradEval_base {
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DF_AO> o);
 
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
-    std::vector<GradTask> contract_grad2e_2index(const std::unique_ptr<double[]>& o);
+    std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o);
 
     // the results will be stored in grad_ and grad2_ (seperate area for multi-threading);
     std::shared_ptr<GradFile> grad_;
@@ -104,7 +104,7 @@ class GradEval_base {
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
-                                                const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2);
+                                                const std::shared_ptr<const DF_AO> o, const std::shared_ptr<const Matrix> o2);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };

@@ -264,21 +264,19 @@ unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, con
 }
 
 
-unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const { return data_->form_aux_2index(o->data_, 1.0); }
-unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const { return data_->form_aux_2index(o->data_, 1.0); }
+shared_ptr<Matrix> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const { return data_->form_aux_2index(o->data_, 1.0); }
+shared_ptr<Matrix> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const { return data_->form_aux_2index(o->data_, 1.0); }
 
-unique_ptr<double[]> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o) const {
-  unique_ptr<double[]> tmp = data_->form_aux_2index(o->data_, 1.0);
-  unique_ptr<double[]> out(new double[naux_*naux_]);
-  dgemm_("N", "N", naux_, naux_, naux_, 1.0, tmp.get(), naux_, df_->data2_->data(), naux_, 0.0, out.get(), naux_);
-  return out;
+shared_ptr<Matrix> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o) const {
+  shared_ptr<Matrix> tmp = data_->form_aux_2index(o->data_, 1.0);
+  return shared_ptr<Matrix>(new Matrix(*tmp * *df_->data2_));
 }
 
 
 
 unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Half> o, const double a) { return data_->form_2index(o->data_, a); }
 unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Full> o, const double a) { return data_->form_2index(o->data_, a); }
-unique_ptr<double[]> DF_Half::form_2index(const double a) const { return data_->form_2index(data_, a); }
+unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DF_Half> o, const double a) const { return data_->form_2index(o->data_, a); }
 unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DF_Full> o, const double a) const { return data_->form_2index(o->data_, a); }
 unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DensityFit> o, const double a) const { return data_->form_2index(o->data_, a); }
 

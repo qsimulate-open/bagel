@@ -27,6 +27,7 @@
 #define __SRC_DF_DFDIST_H
 
 #include <src/df/df.h>
+#include <src/util/matrix.h>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/libint.h>
 
@@ -46,6 +47,7 @@ class ParallelDF {
 
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
+    std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const; 
 
 };
 
@@ -130,6 +132,9 @@ class DFFullDist : public DF_Full, public ParallelDF {
     std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
+
+    // utility functions
+    std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o) const;
 };
 
 }

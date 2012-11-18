@@ -33,7 +33,7 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
-                                                      const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {
+                                                      const shared_ptr<const DF_AO> o, const shared_ptr<const Matrix> o2) {
 
   vector<GradTask> task  = contract_grad1e(d, w);
   vector<GradTask> task2 = contract_grad2e(o);
@@ -128,15 +128,13 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o)
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]>& o) {
+vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den) {
   vector<GradTask> out;
   size_t nshell2 = 0;
   for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0) nshell2 += (*a0)->shells().size();
   out.reserve(nshell2*(nshell2+1)/2);
 
   shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
-  shared_ptr<Matrix> den(new Matrix(geom_->naux(), geom_->naux()));
-  copy(o.get(), o.get()+geom_->naux()*geom_->naux(), den->data());
 
   // using symmetry (b0 <-> b1)
   int iatom0 = 0;

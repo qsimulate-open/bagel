@@ -73,6 +73,20 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 }
 
 
+shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
+  // first allocate memory...
+  const size_t idim = blocks_.back()->astart() + blocks_.back()->asize();
+  const size_t jdim = o->blocks_.back()->astart() + o->blocks_.back()->asize();
+  shared_ptr<Matrix> out(new Matrix(idim, jdim));
+
+  // TODO to be distributed
+  for (auto& j : o->blocks_)
+    for (auto& i : blocks_)
+      out->copy_block(i->astart(), j->astart(), i->asize(), j->asize(), i->form_aux_2index(j, a));
+  return out;
+}
+
+
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 
@@ -308,6 +322,12 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
   for (auto& i : blocks_)
     out->add_block(i->apply_2RDM(rdm));
   return out;
+}
+
+
+shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DFFullDist> o) const {
+  shared_ptr<Matrix> tmp = ParallelDF::form_aux_2index(o, 1.0);
+  return shared_ptr<Matrix>(new Matrix(*tmp * *df_->data2_));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
