@@ -145,6 +145,38 @@ shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, con
 }
 
 
+shared_ptr<DFHalfDist> DFHalfDist::copy() const {
+  shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_));
+  for (auto& i : blocks_)
+    out->add_block(i->copy());
+  return out;
+}
+
+
+shared_ptr<DFHalfDist> DFHalfDist::clone() const {
+  shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_));
+  for (auto& i : blocks_)
+    out->add_block(i->clone());
+  return out;
+}
+
+
+shared_ptr<DFFullDist> DFFullDist::copy() const {
+  shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
+  for (auto& i : blocks_)
+    out->add_block(i->copy());
+  return out;
+}
+
+
+shared_ptr<DFFullDist> DFFullDist::clone() const {
+  shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
+  for (auto& i : blocks_)
+    out->add_block(i->clone());
+  return out;
+}
+
+
 
 #if 0
 DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd)

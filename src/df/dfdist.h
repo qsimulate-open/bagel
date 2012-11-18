@@ -35,10 +35,20 @@ namespace bagel {
 class DFHalfDist;
 class DFFullDist;
 
-class DFDist : public DensityFit {
+
+class ParallelDF {
   protected:
     std::list<std::shared_ptr<DFBlock> > blocks_;
+  public:
+    ParallelDF() {};
 
+    void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
+
+};
+
+
+class DFDist : public DensityFit, public ParallelDF {
+  protected:
     std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
 
     void common_init(const std::vector<std::shared_ptr<const Atom> >&,
@@ -51,7 +61,6 @@ class DFDist : public DensityFit {
                                            const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse)
       : DensityFit(nbas, naux) {
       common_init(atoms, atoms, aux_atoms, thr, inverse);
-
       assert(data_ == nullptr);
     }
 
@@ -66,32 +75,31 @@ class DFDist : public DensityFit {
 };
 
 
-class DFHalfDist : public DF_Half {
+class DFHalfDist : public DF_Half, public ParallelDF {
   protected:
-    std::list<std::shared_ptr<DFBlock> > blocks_;
 
   public:
     DFHalfDist(const std::shared_ptr<const DensityFit> df, const int nocc) : DF_Half(df, nocc) {
       assert(data_ == nullptr);
     }
 
-    void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
-
     std::shared_ptr<DFFullDist> compute_second_transform(const double* c, const size_t nocc) const;
+
+    std::shared_ptr<DFHalfDist> copy() const; 
+    std::shared_ptr<DFHalfDist> clone() const; 
 };
 
 
-class DFFullDist : public DF_Full {
+class DFFullDist : public DF_Full, public ParallelDF {
   protected:
-    std::list<std::shared_ptr<DFBlock> > blocks_;
 
   public:
     DFFullDist(const std::shared_ptr<const DensityFit> df, const int nocc0, const int nocc1) : DF_Full(df, nocc0, nocc1) {
       assert(data_ == nullptr);
     }
 
-    void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
-
+    std::shared_ptr<DFFullDist> copy() const; 
+    std::shared_ptr<DFFullDist> clone() const; 
 };
 
 }
