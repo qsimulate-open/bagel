@@ -129,6 +129,10 @@ class DF_Half {
   public:
     DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
      : df_(df), nocc_(nocc), data_(new DFBlock(in, naux_, nocc, nbasis_, 0,0,0)), nbasis_(df->nbasis0()), naux_(df->naux()) {};
+    DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::shared_ptr<DFBlock> in)
+     : df_(df), nocc_(nocc), data_(in), nbasis_(df->nbasis0()), naux_(df->naux()) {};
+    DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc)
+     : df_(df), nocc_(nocc), nbasis_(df->nbasis0()), naux_(df->naux()) {};
 
     ~DF_Half() {};
 

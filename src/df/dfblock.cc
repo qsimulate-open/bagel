@@ -29,6 +29,7 @@
 #include <src/df/dfblock.h>
 #include <src/rysint/libint.h>
 #include <src/rysint/eribatch.h>
+#include <src/util/f77.h>
 
 using namespace bagel;
 using namespace std;
@@ -98,4 +99,29 @@ pair<const double*, shared_ptr<RysInt> > DFBlock::compute_batch(array<shared_ptr
 #endif
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
+}
+
+
+shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int nocc) const {
+  // so far I only consider the following case
+  assert(b1start_ == 0 && b2start_ == 0);
+  unique_ptr<double[]> tmp(new double[asize_*nocc*b2size_]);
+
+  for (size_t i = 0; i != b2size_; ++i)
+    dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, tmp.get()+i*asize_*nocc, asize_);
+
+  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, nocc, b2size_, astart_, 0, 0));
+}
+
+
+shared_ptr<DFBlock> DFBlock::clone() const {
+  unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
+  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
+}
+
+
+shared_ptr<DFBlock> DFBlock::copy() const {
+  unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
+  copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
+  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
 }

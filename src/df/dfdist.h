@@ -50,6 +50,8 @@ class DFDist : public DensityFit {
                                            const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse)
       : DensityFit(nbas, naux) {
       common_init(atoms, atoms, aux_atoms, thr, inverse);
+
+      assert(data_ == nullptr);
     }
 
     // compute half transforms; c is dimensioned by nbasis_;
@@ -63,7 +65,16 @@ class DFDist : public DensityFit {
 };
 
 
-class DFHalfDist {
+class DFHalfDist : public DF_Half {
+  protected:
+    std::list<std::shared_ptr<DFBlock> > blocks_;
+
+  public:
+    DFHalfDist(const std::shared_ptr<const DensityFit> df, const int nocc) : DF_Half(df, nocc) {
+      assert(data_ == nullptr);
+    }
+
+    void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
 
 };
 

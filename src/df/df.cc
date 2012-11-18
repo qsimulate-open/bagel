@@ -148,12 +148,7 @@ unique_ptr<double[]> DensityFit::compute_cd(const double* den) const {
 
 
 shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
-  // it starts with DGEMM of inner index (for some reasons)...
-  unique_ptr<double[]> tmp(new double[naux_*nbasis0_*nocc]);
-  for (size_t i = 0; i != nbasis0_; ++i) {
-    dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_->get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
-  }
-  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
+  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, data_->transform_second(c, nocc)));
 }
 
 
@@ -173,15 +168,12 @@ DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<cons
 
 
 shared_ptr<DF_Half> DF_Half::clone() const {
-  unique_ptr<double[]> dat(new double[size()]);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, data_->clone()));
 }
 
 
 shared_ptr<DF_Half> DF_Half::copy() const {
-  unique_ptr<double[]> dat(new double[size()]);
-  copy_n(data_->get(), size(), dat.get());
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, data_->copy()));
 }
 
 

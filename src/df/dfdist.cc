@@ -133,16 +133,14 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
 
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
-#if 0
-  // it starts with DGEMM of inner index (for some reasons)...
-  unique_ptr<double[]> tmp(new double[naux_*nbasis0_*nocc]);
-  for (size_t i = 0; i != nbasis0_; ++i) {
-    dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_->get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
-  }
-  return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
-#else
-  return shared_ptr<DFHalfDist>();
-#endif
+
+  shared_ptr<const DensityFit> df = shared_from_this();
+  shared_ptr<DFHalfDist> out(new DFHalfDist(df, nocc));
+
+  for (auto& i : blocks_)
+    out->add_block(i->transform_second(c, nocc));
+
+  return out;
 }
 
 
