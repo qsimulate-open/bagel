@@ -275,7 +275,6 @@ int main(int argc, char** argv) {
         std::shared_ptr<Dimer> dim;
         if (static_cast<bool>(ref)) {
           dim = std::shared_ptr<Dimer>(new Dimer(ref,disp));
-          dim->orthonormalize();
         }
         else {
           dim = std::shared_ptr<Dimer>(new Dimer(geom,disp));
@@ -311,7 +310,6 @@ int main(int argc, char** argv) {
         std::array<double,3> disp = {{dx,dy,dz}};
         std::shared_ptr<Dimer> dim(new Dimer(ref, disp));
         //dim->hamiltonian();
-        dim->orthonormalize();
 
         std::shared_ptr<DimerSCF<1> > dimer_scf(new DimerSCF<1>(testdata, dim));
         dimer_scf->compute();

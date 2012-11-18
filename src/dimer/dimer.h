@@ -61,6 +61,7 @@ class Dimer {
       std::shared_ptr<Geometry>   sgeom_;
       std::shared_ptr<Reference>  sref_;
       std::shared_ptr<Coeff>      scoeff_;
+      std::shared_ptr<Coeff>      proj_coeff_; // Basically the same thing as scoeff_, except purposefully non-orthogonal
 
       std::shared_ptr<DimerJop> jop_;
 
@@ -87,22 +88,22 @@ class Dimer {
       Dimer(RefCIWfn a, std::array<double,3> displacement);
 
       // Return functions
-      std::pair<RefGeometry, RefGeometry> geoms() const { return geoms_; } ;
-      std::pair<RefCoeff, RefCoeff> coeffs() const { return coeffs_; } ;
-      std::pair<RefDvec, RefDvec> ccvec() const { return ccvecs_; } ;
+      std::pair<RefGeometry, RefGeometry> geoms() const { return geoms_; };
+      std::pair<RefCoeff, RefCoeff> coeffs() const { return coeffs_; };
+      std::pair<RefDvec, RefDvec> ccvec() const { return ccvecs_; };
 
-      std::shared_ptr<Geometry> sgeom() const { return sgeom_; }
-      std::shared_ptr<Reference> sref() const { return sref_; }
-      std::shared_ptr<Coeff>   scoeff() const { return scoeff_; }
+      std::shared_ptr<Geometry> sgeom() const { return sgeom_; };
+      std::shared_ptr<Reference> sref() const { return sref_; };
+      std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
+      std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
-      std::pair<const int, const int> nbasis() {return nbasis_; }
+      std::pair<const int, const int> nbasis() {return nbasis_; };
 
       template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
       template <int unit> int act(int a) const { return (a + unit*nact_.first); };
 
       // Utility functions
       std::shared_ptr<Coeff> overlap(); 
-      void orthonormalize();
 
       // Calculations
       void hamiltonian();
@@ -111,6 +112,7 @@ class Dimer {
    private:
       void construct_geometry();
       void construct_coeff();
+      void orthonormalize();
 
       std::shared_ptr<Matrix> compute_closeclose();
       std::shared_ptr<Matrix> compute_closeactive();

@@ -69,7 +69,8 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    construct_geometry();
 
    cout << " ===== Constructing Dimer reference ===== " << endl;
-   construct_coeff();
+   construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+   orthonormalize();  // Orthogonalizes projected coefficients and stores them in scoeff_;
 
    int nclo = 2*A->nclosed();
    int nact = 2*A->nact();
@@ -102,7 +103,8 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    construct_geometry();
 
    cout << " ===== Constructing Dimer reference ===== " << endl;
-   construct_coeff();
+   construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+   orthonormalize();  // Orthogonalizes projected coefficients and stores them in scoeff_;
 
    int nclo = 2*A->ncore();
    int nact = 2*A->nact();
@@ -125,7 +127,6 @@ void Dimer::construct_geometry() {
    sgeom_ = shared_ptr<Geometry>(new Geometry(geo_vec));
 }
 
-/* Note to self: assuming everything is a homodimer so the MOs get striped */
 void Dimer::construct_coeff() {
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
@@ -162,11 +163,12 @@ void Dimer::construct_coeff() {
     nvirt_.second = (nbasisB - ncore_.second);
   }
 
-  scoeff_ = shared_ptr<Coeff>(new Coeff(sgeom_));
+  proj_coeff_ = shared_ptr<Coeff>(new Coeff(sgeom_));
+  // TODO - Ideally, these would all be projections onto the new basis.
 
   double *Adata = coeffs_.first->data();
   double *Bdata = coeffs_.second->data();
-  double *Sdata = scoeff_->data();
+  double *Sdata = proj_coeff_->data();
 
   const int ncloA = ncore_.first;
   const int ncloB = ncore_.second;
@@ -213,7 +215,7 @@ void Dimer::construct_coeff() {
      fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
      Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
   }
-} // Done
+} 
 
 shared_ptr<Coeff> Dimer::overlap() {
 /* What I need to do is use a sgeo to make a big overlap matrix
@@ -222,36 +224,28 @@ shared_ptr<Coeff> Dimer::overlap() {
    /* s overlap in AO basis */
    Overlap ovlp(sgeom_);
 
-   /* transform to MO basis with scoeff */
-   shared_ptr<Coeff> novlp(new Coeff( (*scoeff_) % ovlp * (*scoeff_) ));
+   /* transform to MO basis with proj_coeff */
+   shared_ptr<Coeff> novlp(new Coeff( (*proj_coeff_) % ovlp * (*proj_coeff_) ));
 
    return novlp;
 }
 
 void Dimer::orthonormalize() {
-   shared_ptr<Coeff> ovlp = overlap();
-   Matrix1e S = *ovlp;
+   shared_ptr<Coeff> S = overlap();
 
    unique_ptr<double[]> eig(new double[dimerbasis_]);
-   S.diagonalize(eig.get());
+   S->diagonalize(eig.get());
 
-   Matrix1e S_1_2(S);
+   Matrix1e S_1_2(*S);
    double *S12_data = S_1_2.data();
-   for( int ii = 0; ii != dimerbasis_; ++ii) {
-      double scale = 1.0/sqrt(eig[ii]);
-      for( int jj = 0; jj != dimerbasis_; ++jj) {
-         *S12_data++ *= scale;
-      }
+   for( int ii = 0; ii < dimerbasis_; ++ii) {
+      dscal_(dimerbasis_, 1.0/sqrt(eig[ii]), S12_data, 1);
+      S12_data += dimerbasis_;
    }
 
-   S_1_2 = S_1_2 * *(S.transpose());
+   S_1_2 *= *(S->transpose());
 
-   scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
-   const int nclo = sref_->nclosed();
-   const int nact =  sref_->nact();
-   const int nvirt = sref_->nvirt();
-
-   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+   scoeff_ = shared_ptr<Coeff>(new Coeff(*proj_coeff_ * S_1_2));
 }
 
 void Dimer::energy() {
