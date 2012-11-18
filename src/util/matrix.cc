@@ -262,7 +262,6 @@ void Matrix::diagonalize(double* eig) {
 }
 
 
-#if 0 // All the following may not be needed just yet
 void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
   assert(V->ndim() == mdim_ && V->mdim() == mdim_);
@@ -280,7 +279,6 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   dgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S.get(), ublock, &ndim_, vblock, &mdim_, work.get(), &lwork, &info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
 }
-#endif
 
 
 void Matrix::daxpy(const double a, const Matrix& o) {
