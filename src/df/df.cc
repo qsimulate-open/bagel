@@ -206,22 +206,13 @@ unique_ptr<double[]> DF_Half::compute_Kop_1occ(const double* den) const {
 }
 
 
-unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const {
-  unique_ptr<double[]> out(new double[naux_*naux_]);
-  if (nocc_*nbasis_ != o->nocc_*o->nbasis_) throw logic_error("wrong call to DF_Full::form_aux_2index");
-  dgemm_("N", "T", naux_, naux_, nocc_*nbasis_, 1.0, data_->get(), naux_, o->data_->get(), naux_, 0.0, out.get(), naux_);
-  return out;
-}
-
 
 shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
   return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, data_->transform_third(den, nbasis_)));
 }
 
 
-void DF_Half::rotate_occ(const double* d) {
-  data_ = data_->transform_second(d, nocc_);
-}
+void DF_Half::rotate_occ(const double* d) { data_ = data_->transform_second(d, nocc_); }
 
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
@@ -273,19 +264,11 @@ unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, con
 }
 
 
-
-unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const {
-  unique_ptr<double[]> out(new double[naux_*naux_]);
-  if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
-  dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data_->get(), naux_, o->data_->get(), naux_, 0.0, out.get(), naux_);
-  return out;
-}
-
+unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const { return data_->form_aux_2index(o->data_, 1.0); }
+unique_ptr<double[]> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const { return data_->form_aux_2index(o->data_, 1.0); }
 
 unique_ptr<double[]> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o) const {
-  unique_ptr<double[]> tmp(new double[naux_*naux_]);
-  if (nocc1_*nocc2_ != o->nocc1_*o->nocc2_) throw logic_error("wrong call to DF_Full::form_aux_2index");
-  dgemm_("N", "T", naux_, naux_, nocc1_*nocc2_, 1.0, data_->get(), naux_, o->data_->get(), naux_, 0.0, tmp.get(), naux_);
+  unique_ptr<double[]> tmp = data_->form_aux_2index(o->data_, 1.0);
   unique_ptr<double[]> out(new double[naux_*naux_]);
   dgemm_("N", "N", naux_, naux_, naux_, 1.0, tmp.get(), naux_, df_->data2_->data(), naux_, 0.0, out.get(), naux_);
   return out;
@@ -300,57 +283,30 @@ unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DF_Full> o, con
 unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DensityFit> o, const double a) const { return data_->form_2index(o->data_, a); }
 
 
-
-
 void DF_Full::set_product(const shared_ptr<const DF_Full> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
   dgemm_("N", "N", naux(), jdim, nocc1()*nocc2(), 1.0, o->data_->get(), naux(), c.get(), nocc1()*nocc2(), 0.0, data_->get()+off, naux());
 }
 
 
-shared_ptr<DF_Full> DF_Full::clone() const {
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->clone()));
-}
+shared_ptr<DF_Full> DF_Full::clone() const { return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->clone())); }
+shared_ptr<DF_Full> DF_Full::copy() const { return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->copy())); }
 
 
-shared_ptr<DF_Full> DF_Full::copy() const {
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->copy()));
-}
-
-
-void DF_Full::daxpy(const double a, const DF_Full& o) {
-  data_->daxpy(a, o.data_);
-}
-
-
-void DF_Full::daxpy(const double a, const DF_Half& o) {
-  data_->daxpy(a, o.data_);
-}
-
-
-void DF_Full::scale(const double a) {
-  data_->scale(a);
-}
-
-
-// TODO THIS FUNCTION IS VERY INEFFICIENT
-// note that this function symmetrizes but not divides by 2
-void DF_Full::symmetrize() {
-  data_->symmetrize();
-}
+void DF_Full::daxpy(const double a, const DF_Full& o) { data_->daxpy(a, o.data_); }
+void DF_Full::daxpy(const double a, const DF_Half& o) { data_->daxpy(a, o.data_); }
+void DF_Full::scale(const double a) { data_->scale(a); }
+void DF_Full::symmetrize() { data_->symmetrize(); }
 
 
 shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_rhf_2RDM()));
 }
 
-
 // Caution
 //   o strictly assuming that we are using natural orbitals.
-//
 shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bmat) const {
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_uhf_2RDM(amat, bmat)));
 }
-
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{

@@ -122,6 +122,7 @@ class DFBlock {
     // Form 2- and 4-index integrals
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
+    std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
 };
 

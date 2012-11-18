@@ -310,3 +310,10 @@ unique_ptr<double[]> DFBlock::form_4index(const shared_ptr<const DFBlock> o, con
   return target;
 }
 
+
+unique_ptr<double[]> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
+  if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::form_aux_2index");
+  unique_ptr<double[]> target(new double[asize_*o->asize_]);
+  dgemm_("N", "T", asize_, o->asize_, b1size_*b2size_, 1.0, data_.get(), asize_, o->data_.get(), o->asize_, 0.0, target.get(), asize_);
+  return target;
+}
