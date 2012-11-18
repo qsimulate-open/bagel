@@ -81,9 +81,12 @@ shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coe
   return out;
 }
 #endif
+
+
 int Coeff::num_basis(vector<shared_ptr<const Coeff> > coeff_vec) const {
   return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff>& b) { return a+b->ndim(); });
 }
+
 
 shared_ptr<Matrix> Coeff::form_density_rhf(const int n, const int offset) const {
   const int nb = ndim_;

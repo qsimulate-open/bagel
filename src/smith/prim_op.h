@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <memory>
 #include <vector>
+#include <cassert>
 #include <src/util/f77.h>
 
 namespace bagel {
@@ -40,7 +41,10 @@ template <int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted) {
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
-  sorted[0] = sorted[0]*afac + unsorted[0]*factor;
+  if (an != 0)
+    sorted[0] = sorted[0]*afac + unsorted[0]*factor;
+  else
+    sorted[0] = unsorted[0]*factor;
 }
 
 template <int i, int j, int an, int ad, int fn, int fd>
@@ -58,9 +62,13 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
       for(int j1=0;j1<(int)b;++j1,++iall){
         id[0]=j1;
         long ib=id[i]+jd[i]*id[j];
-        sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+        if (an != 0)
+          sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+        else
+          sorted[ib]=unsorted[iall]*factor;
       }
     }
+    assert(iall == b*a);
   }
 }
 
@@ -82,7 +90,10 @@ static void sort_indices(const double* const unsorted, double* const sorted,
       for (int j3=0;j3<d;++j3,++iall){
         id[0]=j3;
         long ib=id[i]+jd[i]*(id[j]+jd[j]*id[k]);
-        sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+        if (an != 0)
+          sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+        else
+          sorted[ib]=unsorted[iall]*factor;
       }
     }
   }
@@ -116,7 +127,10 @@ static void sort_indices(const double* unsorted, double* sorted,
         for (int j3=0;j3<d;++j3,++iall){
           id[0]=j3;
           long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*id[l]));
-          sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+          if (an != 0)
+            sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+          else
+            sorted[ib]=unsorted[iall]*factor;
         }
       }
     }
@@ -154,7 +168,10 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
             for (int j5=0;j5<f;++j5,++iall){
               id[0]=j5;
               long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*(id[m]+jd[m]*(id[n])))));
-              sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+              if (an != 0)
+                sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+              else
+                sorted[ib]=unsorted[iall]*factor;
             }
           }
         }
@@ -192,7 +209,10 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
                 for (int j7=0;j7<h;++j7,++iall){
                   id[0]=j7;
                   long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*(id[m]+jd[m]*(id[n]+jd[n]*(id[o]+jd[o]*(id[p])))))));
-                  sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+                  if (an != 0)
+                    sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+                  else
+                    sorted[ib]=unsorted[iall]*factor;
                 }
               }
             }
