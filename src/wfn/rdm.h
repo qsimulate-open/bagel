@@ -106,9 +106,9 @@ class RDM : public RDM_base {
     };
 
 
-    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
+    std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
       static_assert(rank == 1, "RDM::rdm1_mat is only implemented for rank == 1");
-      std::shared_ptr<Matrix1e> out(new Matrix1e(g, nclosed+norb_, nclosed+norb_));
+      std::shared_ptr<Matrix> out(new Matrix(nclosed+norb_, nclosed+norb_));
       if (all)
         for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
       for (int i = 0; i != norb_; ++i)

@@ -64,7 +64,7 @@ void WernerKnowles::compute() {
     // denominator
 
     // start with U=1
-    shared_ptr<Matrix1e> U(new Matrix1e(geom_));
+    shared_ptr<Matrix> U(new Matrix(geom_->nbasis(), geom_->nbasis()));
     U->unit();
 
 
@@ -73,10 +73,10 @@ void WernerKnowles::compute() {
     for (miter = 0; miter != max_micro_iter_; ++miter) {
 
       // compute initial B (Eq. 19)
-      shared_ptr<Matrix1e> bvec = compute_bvec(jvec, U, coeff_);
+      shared_ptr<Matrix> bvec = compute_bvec(jvec, U, coeff_);
 
       // compute gradient
-      shared_ptr<Matrix1e> grad(new Matrix1e(*U%*bvec-*bvec%*U));
+      shared_ptr<Matrix> grad(new Matrix(*U%*bvec-*bvec%*U));
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
 
       const double error_micro = grad->ddot(*grad)/grad->size();
@@ -86,17 +86,17 @@ void WernerKnowles::compute() {
       if (error_micro < thresh_micro_) break;
 
       // initializing a linear solver (SOLVER is defined above in this file)
-      SOLVER<Matrix1e> solver(max_mmicro_iter_+1, grad);
+      SOLVER<Matrix> solver(max_mmicro_iter_+1, grad);
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
-      shared_ptr<Matrix1e> C(new Matrix1e((*U % *bvec + *bvec % *U)*0.5));
+      shared_ptr<Matrix> C(new Matrix((*U % *bvec + *bvec % *U)*0.5));
 
       // initial dR value.
-      shared_ptr<Matrix1e> dR(new Matrix1e(*grad));
-      shared_ptr<const Matrix1e> denom = compute_denom(C);
+      shared_ptr<Matrix> dR(new Matrix(*grad));
+      shared_ptr<const Matrix> denom = compute_denom(C);
       *dR /= *denom;
 
-      BFGS<Matrix1e> bfgs(denom);
+      BFGS<Matrix> bfgs(denom);
 
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
@@ -104,8 +104,8 @@ void WernerKnowles::compute() {
         auto mstart = high_resolution_clock::now();
         // first need to orthonomalize
         solver.orthog(dR);
-        shared_ptr<Matrix1e> sigma = compute_sigma_R(jvec, dR, C, U);
-        shared_ptr<Matrix1e> residual = solver.compute_residual(dR, sigma);
+        shared_ptr<Matrix> sigma = compute_sigma_R(jvec, dR, C, U);
+        shared_ptr<Matrix> residual = solver.compute_residual(dR, sigma);
 
         const double error_mmicro = ::pow(residual->norm(),2.0) / residual->size();
         print_iteration(iter, miter, tcount, zero, error_mmicro, duration_cast<milliseconds>(high_resolution_clock::now() - mstart).count()*0.001);
@@ -118,7 +118,7 @@ void WernerKnowles::compute() {
 
       // update U
       dR = solver.civec();
-      shared_ptr<Matrix1e> dU = dR->exp();
+      shared_ptr<Matrix> dU = dR->exp();
       dU->purify_unitary();
       *U *= *dU;
 

@@ -35,7 +35,7 @@ namespace bagel {
 
 class ROHF : public UHF {
   protected:
-    void symmetrize_cv(std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>);
+    void symmetrize_cv(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
 
   public:
     ROHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,

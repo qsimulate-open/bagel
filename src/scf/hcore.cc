@@ -67,7 +67,7 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis_ + j] = kdata[cnt];
+        data_[i*ndim_ + j] = kdata[cnt];
       }
     }
   }
@@ -78,7 +78,7 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis_ + j] += ndata[cnt];
+        data_[i*ndim_ + j] += ndata[cnt];
       }
     }
   }
@@ -91,9 +91,9 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*nbasis_ + j] += dip[cnt        ]*geom_->external(0);
-        data_[i*nbasis_ + j] += dip[cnt+block  ]*geom_->external(1);
-        data_[i*nbasis_ + j] += dip[cnt+block*2]*geom_->external(2);
+        data_[i*ndim_ + j] += dip[cnt        ]*geom_->external(0);
+        data_[i*ndim_ + j] += dip[cnt+block  ]*geom_->external(1);
+        data_[i*ndim_ + j] += dip[cnt+block*2]*geom_->external(2);
       }
     }
   }

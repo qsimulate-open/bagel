@@ -34,14 +34,14 @@
 using namespace std;
 using namespace bagel;
 
-CPHF::CPHF(const shared_ptr<const Matrix1e> grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
+CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const shared_ptr<const DF_Half> h,
            const shared_ptr<const Reference> r)
-: solver_(new LinearRM<Matrix1e>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
+: solver_(new LinearRM<Matrix>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
 }
 
 
-shared_ptr<Matrix1e> CPHF::solve() const {
+shared_ptr<Matrix> CPHF::solve() const {
 
   const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
@@ -55,7 +55,7 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   Matrix vcoeff(nbasis, nvirt);
   copy_n(ref_->coeff()->data()+nocca*nbasis, nbasis*nvirt, vcoeff.data());
 
-  shared_ptr<Matrix1e> t(new Matrix1e(geom_));
+  shared_ptr<Matrix> t(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
@@ -70,7 +70,7 @@ shared_ptr<Matrix1e> CPHF::solve() const {
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     solver_->orthog(t);
 
-    shared_ptr<Matrix1e> sigma(new Matrix1e(geom_));
+    shared_ptr<Matrix> sigma(new Matrix(nbasis, nbasis));
     // one electron part
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nocca+nvirt; ++a)

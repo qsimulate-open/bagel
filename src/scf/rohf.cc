@@ -37,7 +37,7 @@ void ROHF::compute() {
   shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    Matrix1e intermediate = *tildex_ % *hcore_fock * *tildex_;
+    Matrix intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -54,8 +54,8 @@ void ROHF::compute() {
   // starting SCF iteration
   eigB_ = unique_ptr<double[]>(new double[coeff_->mdim()]);
 
-  DIIS<Matrix1e> diis(5);
-  DIIS<Matrix1e> diisB(5);
+  DIIS<Matrix> diis(5);
+  DIIS<Matrix> diisB(5);
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
@@ -64,8 +64,8 @@ void ROHF::compute() {
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
-    shared_ptr<Matrix1e> intermediateA(new Matrix1e(*natorb % *fockA * *natorb));
-    shared_ptr<Matrix1e> intermediateB(new Matrix1e(*natorb % *fockB * *natorb));
+    shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *fockA * *natorb));
+    shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *fockB * *natorb));
 
     // Specific to ROHF:
     //   here we want to symmetrize closed-virtual blocks
@@ -74,11 +74,11 @@ void ROHF::compute() {
     intermediateA->diagonalize(eig());
     intermediateB->diagonalize(eigB());
 
-    shared_ptr<Matrix1e> new_density, new_densityA, new_densityB;
+    shared_ptr<Matrix> new_density, new_densityA, new_densityB;
     if (density_change_)
       tie(new_density, new_densityA, new_densityB) = form_density_uhf();
 
-    shared_ptr<Matrix1e> error_vector(new Matrix1e(
+    shared_ptr<Matrix> error_vector(new Matrix(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                                        +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
 
@@ -102,10 +102,10 @@ void ROHF::compute() {
     }
 
     if (iter >= diis_start_) {
-      shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-      shared_ptr<Matrix1e> intermediateA(new Matrix1e(*natorb % *tmp_fock * *natorb));
+      shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
+      shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *tmp_fock * *natorb));
                            tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-      shared_ptr<Matrix1e> intermediateB(new Matrix1e(*natorb % *tmp_fock * *natorb));
+      shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *tmp_fock * *natorb));
 
       // Specific to ROHF:
       //   here we want to symmetrize closed-virtual blocks
@@ -131,7 +131,7 @@ void ROHF::compute() {
 }
 
 
-void ROHF::symmetrize_cv(shared_ptr<Matrix1e> fockA, shared_ptr<Matrix1e> fockB) {
+void ROHF::symmetrize_cv(shared_ptr<Matrix> fockA, shared_ptr<Matrix> fockB) {
   assert(noccB_ <= nocc_);
   for (int i = 0; i != noccB_; ++i) {
     for (int j = nocc_; j != geom_->nbasis(); ++j) {

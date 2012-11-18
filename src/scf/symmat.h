@@ -28,17 +28,16 @@
 #define __src_scf_symmat_h
 
 #include <src/scf/geometry.h>
-#include <src/scf/matrix1e.h>
+#include <src/util/matrix.h>
 #include <src/scf/petite.h>
 #include <src/scf/symrot.h>
 
 namespace bagel {
 
-class SymMat : public Matrix1e {
+class SymMat : public Matrix {
   protected:
     std::shared_ptr<SymRotAbel> symrot_;
     std::shared_ptr<Petite> petite_;
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override {};
 
   public:
     SymMat(const std::shared_ptr<const Geometry>, const int);

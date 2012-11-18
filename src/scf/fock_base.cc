@@ -37,7 +37,7 @@ using namespace bagel;
 
 typedef shared_ptr<const Geometry> RefGeometry;
 typedef shared_ptr<const Hcore> RefHcore;
-typedef shared_ptr<Matrix1e> RefAODensity;
+typedef shared_ptr<Matrix> RefAODensity;
 typedef shared_ptr<const Shell> RefShell;
 typedef shared_ptr<const Fock_base> RefFock_base;
 
@@ -52,15 +52,18 @@ Fock_base::Fock_base(const RefGeometry geom, const RefFock_base previous, const 
 
 void Fock_base::fock_one_electron_part() {
 
+  const int nbasis = ndim_;
+  assert(ndim_ == mdim_);
+
   const int nirrep = geom_->nirrep();
   const int unit = 1;
   const double one = 1.0;
-  const int size = nbasis_ * nbasis_;
+  const int size = nbasis * nbasis;
   if (nirrep != 1) {
-    Matrix1e intermediate(geom_);
+    Matrix intermediate(nbasis, nbasis);
     for (int i = 1; i != nirrep; ++i) {
       SymMat symm(geom_, i);
-      Matrix1e tmp = symm % (*this) * symm;
+      Matrix tmp = symm % (*this) * symm;
       intermediate += tmp;
     }
     double* idata = intermediate.data();
@@ -77,7 +80,9 @@ void Fock_base::fock_one_electron_part() {
 Fock_base::Fock_base(const RefGeometry geom, const RefHcore hcore)
  : Matrix1e(geom) {
 
-  copy_n(hcore->data(), nbasis_*nbasis_, data());
+  const int nbasis = ndim_;
+  assert(ndim_ == mdim_);
+  copy_n(hcore->data(), nbasis*nbasis, data());
 
   fill_upper();
 }
@@ -87,7 +92,10 @@ Fock_base::Fock_base(const RefGeometry geom)
  : Matrix1e(geom) {
 
   Hcore hcore(geom);
-  copy_n(hcore.data(), nbasis_*nbasis_, data());
+
+  const int nbasis = ndim_;
+  assert(ndim_ == mdim_);
+  copy_n(hcore.data(), nbasis*nbasis, data());
 
   fill_upper();
 }
@@ -106,7 +114,7 @@ void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0,
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i*nbasis_+j] = 0.0;
+      data_[i*ndim_+j] = 0.0;
     }
   }
 }

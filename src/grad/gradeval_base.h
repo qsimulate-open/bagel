@@ -31,7 +31,7 @@
 #include <tuple>
 #include <src/grad/gradfile.h>
 #include <src/scf/geometry.h>
-#include <src/scf/matrix1e.h>
+#include <src/util/matrix.h>
 #include <boost/thread/mutex.hpp>
 
 namespace bagel {
@@ -45,8 +45,8 @@ class GradTask {
     std::array<int,4> atomindex_;
     std::array<int,4> offset_;
     std::shared_ptr<const DF_AO> den_;
-    std::shared_ptr<const Matrix1e> den2_;
-    std::shared_ptr<const Matrix1e> eden_;
+    std::shared_ptr<const Matrix> den2_;
+    std::shared_ptr<const Matrix> eden_;
     GradEval_base* ge_;
     int rank_;
 
@@ -56,11 +56,11 @@ class GradTask {
       : shell_(s), den_(d), ge_(p), rank_(3) { common_init(a,o); }
 
     GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
-             const std::shared_ptr<const Matrix1e> d, GradEval_base* p)
+             const std::shared_ptr<const Matrix> d, GradEval_base* p)
       : shell_(s), den2_(d), ge_(p), rank_(2) { common_init(a,o); }
 
     GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
-             const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w, GradEval_base* p)
+             const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w, GradEval_base* p)
       : shell2_(s), den2_(d), eden_(w), ge_(p), rank_(1) { common_init(a,o); }
 
     ~GradTask() {};
@@ -86,7 +86,7 @@ class GradEval_base {
     const std::shared_ptr<const Geometry> geom_;
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
-    std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w);
+    std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DF_AO> o);
@@ -103,7 +103,7 @@ class GradEval_base {
     ~GradEval_base() {};
 
     /// compute gradient given density matrices
-    std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix1e> d, const std::shared_ptr<const Matrix1e> w,
+    std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
                                                 const std::shared_ptr<const DF_AO> o, const std::unique_ptr<double[]>& o2);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 

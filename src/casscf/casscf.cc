@@ -159,9 +159,9 @@ void CASSCF::resume_stdcout() {
 }
 
 
-shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive_only) const {
+shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
-  shared_ptr<Matrix1e> mo_rdm1(new Matrix1e(geom_));
+  shared_ptr<Matrix> mo_rdm1(new Matrix(geom_->nbasis(), geom_->nbasis()));
   for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 2.0;
   if (!inactive_only) {
     for (int i = 0; i != nact_; ++i) {
@@ -171,15 +171,15 @@ shared_ptr<Matrix1e> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inacti
     }
   }
   // transform into AO basis
-  return shared_ptr<Matrix1e>(new Matrix1e(*coeff_ * *mo_rdm1 ^ *coeff_));
+  return shared_ptr<Matrix>(new Matrix(*coeff_ * *mo_rdm1 ^ *coeff_));
 }
 
 
 
-void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact, shared_ptr<QFile>& factp, shared_ptr<QFile>& gaa,
+void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<QFile>& fact, shared_ptr<QFile>& factp, shared_ptr<QFile>& gaa,
                                 shared_ptr<RotFile>& d, const bool superci) const {
 
-  shared_ptr<Matrix1e> finact;
+  shared_ptr<Matrix> finact;
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
@@ -188,21 +188,21 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
   {
     // Fock operators
     if (nclosed_) {
-      shared_ptr<Matrix1e> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-      shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
+      shared_ptr<Matrix> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
+      shared_ptr<Matrix> f_inactao(new Matrix(geom_->nbasis(), geom_->nbasis()));
       dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
-      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *f_inactao * *coeff_));
+      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_inactao * *coeff_));
 
-      shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Matrix1e> denact(new Matrix1e(*denall-*deninact));
+      shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
+      shared_ptr<Matrix> denact(new Matrix(*denall-*deninact));
       shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
-      f = shared_ptr<Matrix1e>(new Matrix1e(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_));
+      f = shared_ptr<Matrix>(new Matrix(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_));
     } else {
-      shared_ptr<Matrix1e> denall = ao_rdm1(fci_->rdm1_av());
+      shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
-      f = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *f_ao * *coeff_));
+      f = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_ao * *coeff_));
 
-      finact = shared_ptr<Matrix1e>(new Matrix1e(*coeff_ % *hcore_ * *coeff_));
+      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *hcore_ * *coeff_));
     }
   }
   {
@@ -266,7 +266,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix1e>& f, shared_ptr<QFile>& fact
 
 
 shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold, vector<double> mat) const {
-  shared_ptr<const Matrix1e> cnew(new const Matrix1e(*dynamic_cast<const Matrix1e*>(cold.get())));
+  shared_ptr<const Matrix> cnew(new const Matrix(*dynamic_cast<const Matrix*>(cold.get())));
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
@@ -294,7 +294,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
 
   // TODO
   // compute one-boedy operators
-  shared_ptr<Matrix1e> f;
+  shared_ptr<Matrix> f;
   shared_ptr<QFile>    fact, factp, gaa;
   shared_ptr<RotFile>  denom;
   one_body_operators(f, fact, factp, gaa, denom);
@@ -313,7 +313,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     }
   }
 
-  shared_ptr<Matrix1e> erdm(new Matrix1e(*coeff_ * *f ^ *coeff_));
+  shared_ptr<Matrix> erdm(new Matrix(*coeff_ * *f ^ *coeff_));
 
   out->set_erdm1(erdm);
   out->set_nstate(nstate_);

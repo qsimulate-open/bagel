@@ -33,7 +33,7 @@
 using namespace std;
 using namespace bagel;
 
-Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix1e> d) : geom_(g), den_(d) {
+Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d) : geom_(g), den_(d) {
 
 }
 

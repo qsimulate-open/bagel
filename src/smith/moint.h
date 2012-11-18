@@ -167,18 +167,20 @@ class MOFock {
       // TODO parallel not considered yet at all...
       std::shared_ptr<const Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
 
-      std::shared_ptr<Matrix1e> den;
+      std::shared_ptr<Matrix> den;
       if (ref_->nact() == 0) {
         den = ref_->coeff()->form_density_rhf(ref_->nclosed());
       } else {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
-        den = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true)->expand();
+        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
+        // slince of coeff
+        std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nclosed()+ref_->nact());
         // transforming to AO basis
-        *den = *ref_->coeff() * *den ^ *ref_->coeff();
+        den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
       }
 
       std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
-      Matrix1e f = *r->coeff() % *fock1 * *r->coeff();
+      Matrix f = *r->coeff() % *fock1 * *r->coeff();
       size_t j0 = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
         size_t j1 = blocks_[1].keyoffset();

@@ -36,7 +36,7 @@ using namespace bagel;
 
 
 // <a/i|H|0> = 2f_ai /sqrt(2)
-void SuperCI::grad_vc(const shared_ptr<Matrix1e> f, shared_ptr<RotFile> sigma) {
+void SuperCI::grad_vc(const shared_ptr<Matrix> f, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nclosed_) return;
   double* target = sigma->ptr_vc();
   for (int i = 0; i != nclosed_; ++i, target += nvirt_)
@@ -56,7 +56,7 @@ void SuperCI::grad_va(const shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
 
 
 // <r/i|H|0> = (2f_ri - f^act_ri)/sqrt(2-nr)
-void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
+void SuperCI::grad_ca(const shared_ptr<Matrix> f, shared_ptr<QFile> fact, shared_ptr<RotFile> sigma) {
   if (!nclosed_ || !nact_) return;
   double* target = sigma->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
@@ -74,7 +74,7 @@ void SuperCI::grad_ca(const shared_ptr<Matrix1e> f, shared_ptr<QFile> fact, shar
 
 
 // sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab
-void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f) {
+void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix> f) {
   if (!nact_ || !nvirt_) return;
   shared_ptr<QFile> gtup(new QFile(*gaa));
   for (int i = 0; i != nact_; ++i) {
@@ -89,7 +89,7 @@ void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
 
 
 // sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
-void SuperCI::sigma_ai_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<Matrix1e> f) {
+void SuperCI::sigma_ai_ai_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<Matrix> f) {
   if (!nact_ || !nvirt_) return;
   dgemm_("N", "N", nvirt_, nclosed_, nclosed_, -1.0, cc->ptr_vc(), nvirt_, f->data(), nbasis_, 1.0, sigma->ptr_vc(), nvirt_);
   dgemm_("N", "N", nvirt_, nclosed_, nvirt_, 1.0, f->element_ptr(nocc_, nocc_), nbasis_, cc->ptr_vc(), nvirt_, 1.0, sigma->ptr_vc(), nvirt_);
@@ -126,7 +126,7 @@ void SuperCI::sigma_ai_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
 
 
 // sigma_ti_ti = - delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij
-void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix1e> f,
+void SuperCI::sigma_ti_ti_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<QFile> gaa, const shared_ptr<Matrix> f,
                            const shared_ptr<QFile> factp) {
   if (!nact_ || !nclosed_) return;
   QFile tmp(nact_, nact_);

@@ -36,7 +36,7 @@ using namespace bagel;
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
-: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(ref_->coeff()) {
+: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -46,7 +46,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
-: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(c) {
+: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -131,15 +131,8 @@ void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) 
 
 
 void MOFile::update_1ext_ints(const vector<double>& coeff) {
-  // in the case of no DF
-  shared_ptr<DF_Half> buf = mo2e_1ext_->clone();
-
-  // half transformed DF is rotated.
-  const int naux = geom_->df()->naux();
-  for (int i = 0; i != nbasis_; ++i)
-    dgemm_("N", "N", naux, nocc_, nocc_, 1.0, mo2e_1ext_->data()+i*naux*nocc_, naux, &(coeff[0]), nocc_, 0.0, buf->data()+i*naux*nocc_, naux);
-  mo2e_1ext_ = buf;
-
+  assert(mo2e_1ext_->nocc() == nocc_);
+  mo2e_1ext_->rotate_occ(&(coeff[0]));
 }
 
 
@@ -153,7 +146,7 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
   const double* cdata = coeff_->data() + nstart*nbasis_;
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
-    shared_ptr<Matrix1e> den = coeff_->form_density_rhf(ncore);
+    shared_ptr<Matrix> den = coeff_->form_density_rhf(ncore);
     fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
     *core_fock_ = *fock0;

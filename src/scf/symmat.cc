@@ -38,7 +38,7 @@ typedef shared_ptr<const Shell> RefShell;
 typedef shared_ptr<Petite> RefPetite;
 typedef shared_ptr<SymRotAbel> RefSymRotAbel;
 
-SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix1e(gm), petite_(gm->plist()) {
+SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix(gm->nbasis(), gm->nbasis()), petite_(gm->plist()) {
 
   symrot_ = RefSymRotAbel(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
 
@@ -72,7 +72,7 @@ SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix1e(gm), petite_(gm->
         int index = 0;
         for (int ic = coffset; ic != coffset + size; ++ic) {
           for (int it = toffset; it != toffset + size; ++it, ++index)
-            data_[ic * nbasis_ + it] = block[index];
+            data_[ic * ndim_ + it] = block[index];
         }
         coffset += size;
         toffset += size;

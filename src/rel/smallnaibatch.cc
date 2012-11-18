@@ -77,49 +77,24 @@ void SmallNAIBatch::compute() {
 
 
   //Matrix nai
-  //const std::shared_ptr<Matrix> nai(new Matrix(a0,a1));
-  //nai->zero();
+  const std::shared_ptr<Matrix> nai(new Matrix(a0,a1));
+  nai->zero();
 
   // current nai array
-  double* const nai = stack_->get(a0*a1);
+  //double* const nai = stack_->get(a0*a1);
 
   // first compute uncontracted NAI with auxiliary basis (cartesian)
 #define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
   //make nai_compute function
-  //nai_compute(nai);
-
-  {
-    {
-      shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
-      naic->compute();
-      for (int i = 0; i != a1size_inc; ++i)
-        copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
-    }
-    if (aux_dec_[0] && aux_dec_[1]) {
-      shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_dec_, stack_));
-      naic->compute();
-      for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
-        copy_n(naic->data() + j*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
-    }
-    if (aux_dec_[0]) {
-      shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
-      naic->compute();
-      for (int i = 0; i != a1size_inc; ++i)
-        copy_n(naic->data() + i*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
-    }
-    if (aux_dec_[1]) {
-      shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
-      naic->compute();
-      for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
-        copy_n(naic->data() + j*a0size_inc, a0size_inc, nai + i*a0); 
-    }
-  }
+  nai_compute(nai);
 
 #else
   assert(false);
 //NAIBatch nai(aux_, geom_, stack_);
 #endif
+
+#if 0
   double* const ints = stack_->get(3 * s0size * a1);
   fill(ints, ints+(3 * s0size * a1), 0.0);
 
@@ -163,7 +138,7 @@ void SmallNAIBatch::compute() {
         }
       }
 
-//util/matrix.h inverse() 
+ //util/matrix.h inverse() 
       mytranspose_(tmparea, &s0size, &a0, tmparea2);
       {
         double* const ipiv = stack_->get(a0);
@@ -254,6 +229,7 @@ void SmallNAIBatch::compute() {
 
   stack_->release(3*s0size*a1, ints);
   stack_->release(a0*a1, nai);
+#endif
 }
 
 
@@ -284,34 +260,51 @@ void SmallNAIBatch::ovl_compute(const std::array<const int,2> a) {
   }
 }
 
-#if 0
 void SmallNAIBatch::nai_compute(const std::shared_ptr<Matrix>& nai) {
+
+  const int s0size = shells_[0]->nbasis();
+  const int s1size = shells_[1]->nbasis();
+  const int a0size_inc = aux_inc_[0]->nbasis();
+  const int a1size_inc = aux_inc_[1]->nbasis();
+  const int a0size_dec = aux_dec_[0] ? aux_dec_[0]->nbasis() : 0;
+  const int a1size_dec = aux_dec_[1] ? aux_dec_[1]->nbasis() : 0;
+  const int a0 = a0size_inc + a0size_dec;
+  const int a1 = a1size_inc + a1size_dec;
+
   {
     shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
     naic->compute();
 
-    nai->copy_block(0, a0size_inc, 0, a1size_inc, naic->data(), a0size_inc*a1size_inc)
+    nai->copy_block(0, 0, a0size_inc, a1size_inc, naic->data());
 
-    for (int i = 0; i != a1size_inc; ++i)
-      copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
+    //for (int i = 0; i != a1size_inc; ++i)
+    //  copy_n(naic->data() + i*a0size_inc, a0size_inc, nai + i*a0); 
   }
   if (aux_dec_[0] && aux_dec_[1]) {
     shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_dec_, stack_));
     naic->compute();
-    for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
-      copy_n(naic->data() + j*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+
+    nai->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, naic->data());
+    //for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+    //  copy_n(naic->data() + j*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
   }
   if (aux_dec_[0]) {
     shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
     naic->compute();
-    for (int i = 0; i != a1size_inc; ++i)
-      copy_n(naic->data() + i*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
+
+    nai->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, naic->data());
+
+    //for (int i = 0; i != a1size_inc; ++i)
+    //  copy_n(naic->data() + i*a0size_dec, a0size_dec, nai + i*a0 + a0size_inc); 
   }
   if (aux_dec_[1]) {
     shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
     naic->compute();
-    for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
-      copy_n(naic->data() + j*a0size_inc, a0size_inc, nai + i*a0); 
+
+    nai->copy_block(0, a1size_inc, a0size_inc, a1size_dec, naic->data());
+
+    //for (int i = a1size_inc, j = 0; i != a1; ++i, ++j)
+    //  copy_n(naic->data() + j*a0size_inc, a0size_inc, nai + i*a0); 
   }
 }
-#endif
+

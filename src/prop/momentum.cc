@@ -41,11 +41,12 @@ Momentum::~Momentum() {
 }
 
 
-array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
+array<shared_ptr<Matrix>, 3> Momentum::compute() const {
 
-  const shared_ptr<Matrix1e> mat0(new Matrix1e(geom_));
-  const shared_ptr<Matrix1e> mat1(new Matrix1e(geom_));
-  const shared_ptr<Matrix1e> mat2(new Matrix1e(geom_));
+  const int nbasis = geom_->nbasis();
+  const shared_ptr<Matrix> mat0(new Matrix(nbasis, nbasis));
+  const shared_ptr<Matrix> mat1(new Matrix(nbasis, nbasis));
+  const shared_ptr<Matrix> mat2(new Matrix(nbasis, nbasis));
 
   // TODO perhaps we could reduce operation by a factor of 2
   auto o0 = geom_->offsets().begin();
@@ -78,5 +79,5 @@ array<shared_ptr<Matrix1e>, 3> Momentum::compute() const {
     }
   }
 
-  return array<shared_ptr<Matrix1e>,3>{{mat0, mat1, mat2}};
+  return array<shared_ptr<Matrix>,3>{{mat0, mat1, mat2}};
 }

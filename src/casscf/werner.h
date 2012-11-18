@@ -39,14 +39,14 @@ class WernerKnowles : public CASSCF {
       std::cout << "    * Using the two-step Werner-Knowles algorithm (see JCP 1985)" << std::endl << std::endl;
     };
 
-    std::shared_ptr<Matrix1e> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix1e>, std::shared_ptr<const Coeff>);
-    std::shared_ptr<Matrix1e> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix1e>,
-                                           std::shared_ptr<Matrix1e>, const std::shared_ptr<const Coeff>);
-    std::shared_ptr<Matrix1e> compute_bvec2(std::shared_ptr<Jvec>, std::shared_ptr<Matrix1e>,
-                                           std::shared_ptr<Matrix1e>, const std::shared_ptr<const Coeff>);
-    std::shared_ptr<const Matrix1e> compute_denom(const std::shared_ptr<const Matrix1e>);
-    std::shared_ptr<Matrix1e> compute_sigma_R(const std::shared_ptr<const Jvec>, const std::shared_ptr<const Matrix1e>,
-                                              const std::shared_ptr<const Matrix1e>, const std::shared_ptr<const Matrix1e>);
+    std::shared_ptr<Matrix> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix>, std::shared_ptr<const Coeff>);
+    std::shared_ptr<Matrix> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix>,
+                                           std::shared_ptr<Matrix>, const std::shared_ptr<const Coeff>);
+    std::shared_ptr<Matrix> compute_bvec2(std::shared_ptr<Jvec>, std::shared_ptr<Matrix>,
+                                           std::shared_ptr<Matrix>, const std::shared_ptr<const Coeff>);
+    std::shared_ptr<const Matrix> compute_denom(const std::shared_ptr<const Matrix>);
+    std::shared_ptr<Matrix> compute_sigma_R(const std::shared_ptr<const Jvec>, const std::shared_ptr<const Matrix>,
+                                              const std::shared_ptr<const Matrix>, const std::shared_ptr<const Matrix>);
 
     double thresh_mmicro_;
     int max_mmicro_iter_;

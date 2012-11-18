@@ -69,7 +69,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<2> > rdm2_av_;
 
     // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
-    std::shared_ptr<const Matrix1e> erdm1_;
+    std::shared_ptr<const Matrix> erdm1_;
 
   public:
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
@@ -89,8 +89,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     void set_eig(const std::vector<double>& eig) { eig_ = eig; };
     const std::vector<double>& eig() const { return eig_; };
-    void set_erdm1(const std::shared_ptr<const Matrix1e> o) { erdm1_ = o; };
-    std::shared_ptr<const Matrix1e> erdm1() const { return erdm1_; };
+    void set_erdm1(const std::shared_ptr<const Matrix> o) { erdm1_ = o; };
+    std::shared_ptr<const Matrix> erdm1() const { return erdm1_; };
 
     int nclosed() const { return nclosed_; };
     int nact() const { return nact_; };
@@ -117,9 +117,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
 
     // returns an occ-occ sized 1RDM
-    std::shared_ptr<Matrix1e> rdm1_mat(std::shared_ptr<const RDM<1> > o) const;
-    std::shared_ptr<Matrix1e> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
-    std::shared_ptr<Matrix1e> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
+    std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const RDM<1> > o) const;
+    std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
+    std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
 
     std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); };
     std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };

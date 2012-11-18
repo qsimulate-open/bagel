@@ -87,7 +87,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<double> eig_tm = ref_->eig();
   vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
 
-  shared_ptr<Matrix1e> dmp2(new Matrix1e(geom_));
+  shared_ptr<Matrix> dmp2(new Matrix(nbasis, nbasis));
   double* optr = dmp2->element_ptr(ncore, ncore);
   double* vptr = dmp2->element_ptr(nocca, nocca);
 
@@ -115,7 +115,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    dgemm_("N", "N", naux, nocc, nvirt*nocc, 1.0, bv->data(), naux, buf.get(), nocc*nvirt, 0.0, gia->data()+i*nocc*naux, naux);
+    // BV and gia are DF_Full 
+    const size_t offset = i*nocc*naux;
+    gia->set_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);
@@ -158,7 +160,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
-  shared_ptr<Matrix1e> dmp2ao_part(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  shared_ptr<Matrix> dmp2ao_part(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
   unique_ptr<double[]> jai(new double[nvirt*nocca]);
   {
     unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
@@ -173,7 +175,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
   }
 
-  shared_ptr<Matrix1e> grad(new Matrix1e(geom_));
+  shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
     for (int a = 0; a != nvirt; ++a)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
@@ -185,15 +187,15 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // solving CPHF
   shared_ptr<CPHF> cphf(new CPHF(grad, ref_->eig(), halfjj, ref_));
-  shared_ptr<Matrix1e> dia = cphf->solve();
+  shared_ptr<Matrix> dia = cphf->solve();
   *dmp2 += *dia;
 
   // total density matrix
-  shared_ptr<Matrix1e> dtot(new Matrix1e(*dmp2));
+  shared_ptr<Matrix> dtot(new Matrix(*dmp2));
   for (int i = 0; i != nocca; ++i) dtot->element(i,i) += 2.0;
 
   // computes dipole mements
-  shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
+  shared_ptr<Matrix> dtotao(new Matrix(*ref_->coeff() * *dtot ^ *ref_->coeff()));
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 
@@ -204,9 +206,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << dr4.count()*0.001 << endl;
 
   // one electron matrices
-  shared_ptr<Matrix1e> dmp2ao(new Matrix1e(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
-  shared_ptr<Matrix1e> d0ao(new Matrix1e(*dtotao - *dmp2ao));
-  shared_ptr<Matrix1e> dbarao(new Matrix1e(*dtotao - *d0ao*0.5));
+  shared_ptr<Matrix> dmp2ao(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  shared_ptr<Matrix> d0ao(new Matrix(*dtotao - *dmp2ao));
+  shared_ptr<Matrix> dbarao(new Matrix(*dtotao - *d0ao*0.5));
 
   // size of naux
   unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data());
@@ -238,13 +240,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     daxpy_(naux*naux, -2.0, sep22, 1, sep2, 1);
   }
   {
-    unique_ptr<double[]> sep22 = gia->form_aux_2index(full);
-    dgemm_("N", "N", naux, naux, naux, 4.0, sep22.get(), naux, geom_->df()->data_2index(), naux, 1.0, sep2.get(), naux);
+    unique_ptr<double[]> sep22 = gia->form_aux_2index_apply_J(full);
+    daxpy_(naux*naux, 4.0, sep22, 1, sep2, 1);
   }
 
 
   // energy weighted density
-  shared_ptr<Matrix1e> wd(new Matrix1e(geom_));
+  shared_ptr<Matrix> wd(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nocca; ++j)
       wd->element(j,i) += dtot->element(j,i) * eig_tm[j];
@@ -267,7 +269,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
 
   wd->symmetrize();
-  shared_ptr<Matrix1e> wdao(new Matrix1e(*ref_->coeff() * *wd ^ *ref_->coeff()));
+  shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
   auto tp6 = chrono::high_resolution_clock::now();
   auto dr5 = chrono::duration_cast<chrono::milliseconds>(tp6-tp5);

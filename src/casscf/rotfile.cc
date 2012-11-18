@@ -57,11 +57,11 @@ RotFile RotFile::operator-(const RotFile& o) const {
 RotFile& RotFile::operator+=(const RotFile& o) { daxpy(1.0, o); return *this; }
 RotFile& RotFile::operator-=(const RotFile& o) { daxpy(-1.0, o); return *this; }
 
-shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
+shared_ptr<Matrix> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix1e> out(new Matrix1e(geom, nbasis_, nbasis_));
+  shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
   fill(out->data(), out->data()+out->size(), a);
 
   for (int i = 0; i != nact_; ++i) {
@@ -86,11 +86,11 @@ shared_ptr<Matrix1e> RotFile::unpack(shared_ptr<const Geometry> geom, const doub
 }
 
 
-shared_ptr<Matrix1e> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const double a) const {
+shared_ptr<Matrix> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix1e> out(new Matrix1e(geom, nbasis_, nbasis_));
+  shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
   fill(out->data(), out->data()+out->size(), a);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {

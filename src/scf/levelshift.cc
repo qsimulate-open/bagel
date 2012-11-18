@@ -38,10 +38,9 @@ ShiftVirtual::ShiftVirtual(const int nocc, const int shift_parameter) : LevelShi
 
 }
 
-void ShiftVirtual::shift(Matrix1e& coeff) {
-  const int nbasis = coeff.geom()->nbasis();
+void ShiftVirtual::shift(Matrix& coeff) {
 
-  coeff.add_diag(shift_parameter_, nocc_, nbasis);
+  coeff.add_diag(shift_parameter_, nocc_, coeff.ndim());
 
   // Done
 }

@@ -47,7 +47,7 @@ void SuperCI::compute() {
   // DIIS: will be turned on at iter = diis_start_ (>1),
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC
-  shared_ptr<HPW_DIIS<Matrix1e> > diis;
+  shared_ptr<HPW_DIIS<Matrix> > diis;
 
   // BFGS: optional quasi-second-order MCSCF
 //shared_ptr<BFGS<RotFile> > bfgs;
@@ -61,8 +61,8 @@ void SuperCI::compute() {
     auto start = high_resolution_clock::now();
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
-      shared_ptr<Matrix1e> tmp(new Matrix1e(*coeff_));
-      diis = shared_ptr<HPW_DIIS<Matrix1e> >(new HPW_DIIS<Matrix1e>(10, tmp));
+      shared_ptr<Matrix> tmp(new Matrix(*coeff_));
+      diis = shared_ptr<HPW_DIIS<Matrix> >(new HPW_DIIS<Matrix>(10, tmp));
     }
 
     // first perform CASCI to obtain RDMs
@@ -85,7 +85,7 @@ void SuperCI::compute() {
 
 
     // compute one-boedy operators
-    shared_ptr<Matrix1e> f;
+    shared_ptr<Matrix> f;
     shared_ptr<QFile>    fact, factp, gaa;
     shared_ptr<RotFile> denom_;
     one_body_operators(f, fact, factp, gaa, denom_);
@@ -171,7 +171,7 @@ void SuperCI::compute() {
     cc_ = davidson.civec().front();
     dscal_(cc_->size()-1, 1.0/cc_->ele_ref(), cc_->data(), 1);
     // unitary matrix
-    shared_ptr<Matrix1e> rot = cc_->unpack(coeff_->geom())->exp();
+    shared_ptr<Matrix> rot = cc_->unpack(geom_)->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
@@ -179,18 +179,18 @@ void SuperCI::compute() {
       coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *rot));
     } else {
       // including natorb.first to rot so that they can be processed at once
-      shared_ptr<Matrix1e> tmp(new Matrix1e(*rot));
+      shared_ptr<Matrix> tmp(new Matrix(*rot));
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                         tmp->element_ptr(nclosed_, 0), nbasis_);
-      shared_ptr<const Matrix1e> tmp2(new Matrix1e(*tailor_rotation(tmp)));
-      shared_ptr<Matrix1e> mcc = diis->extrapolate(tmp2);
+      shared_ptr<const Matrix> tmp2(new Matrix(*tailor_rotation(tmp)));
+      shared_ptr<Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
     }
 
 #ifndef NDEBUG
     // checking orthonormaligy of orbitals.
     shared_ptr<Overlap> o(new Overlap(geom_));
-    shared_ptr<Matrix1e> m(new Matrix1e(*coeff_ % *o * *coeff_));
+    shared_ptr<Matrix> m(new Matrix(*coeff_ % *o * *coeff_));
     assert(fabs(m->trace() - m->ddot(m)) < 1.0e-10);
 #endif
 
@@ -225,9 +225,9 @@ void SuperCI::compute() {
 
 
 // rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
-shared_ptr<Matrix1e> SuperCI::tailor_rotation(const shared_ptr<Matrix1e> seed) {
+shared_ptr<Matrix> SuperCI::tailor_rotation(const shared_ptr<Matrix> seed) {
 
-  shared_ptr<Matrix1e> out = seed->clone();
+  shared_ptr<Matrix> out = seed->clone();
   for (int i = 0; i != nclosed_; ++i)
     for (int j = 0; j != nclosed_; ++j)
       out->element(j,i) = seed->element(j,i);

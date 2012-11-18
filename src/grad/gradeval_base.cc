@@ -32,7 +32,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w,
+shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DF_AO> o, const unique_ptr<double[]>& o2) {
 
   vector<GradTask> task  = contract_grad1e(d, w);
@@ -50,7 +50,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 }
 
 
-vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix1e> d, const shared_ptr<const Matrix1e> w) {
+vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
   vector<GradTask> out;
   size_t nshell = 0;
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();
@@ -135,7 +135,7 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const unique_ptr<double[]
   out.reserve(nshell2*(nshell2+1)/2);
 
   shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
-  shared_ptr<Matrix1e> den(new Matrix1e(auxgeom));
+  shared_ptr<Matrix> den(new Matrix(geom_->naux(), geom_->naux()));
   copy(o.get(), o.get()+geom_->naux()*geom_->naux(), den->data());
 
   // using symmetry (b0 <-> b1)

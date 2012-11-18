@@ -33,31 +33,22 @@
 using namespace std;
 using namespace bagel;
 
-Coeff::Coeff(const Matrix1e& inp) : Matrix1e(inp.geom()) {
-
-  ndim_ = inp.ndim();
-  mdim_ = inp.mdim();
-  copy_n(inp.data(), nbasis_*nbasis_, data());
-
+Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
+  copy_n(inp.data(), ndim_*mdim_, data());
 }
 
-Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix1e(supergeom(coeff_vec)) {
-  /* Force ndim_ = nbasis_ to avoid any unexpected behavior */
-  ndim_ = nbasis_; mdim_ = 0;
-  for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
-    mdim_ += (*icoeff)->mdim();
-  }
+Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
   double* cdata = data();
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
     double* cur_data = (*icoeff)->data();
 
     int cur_nstart = 0;
-    for(auto iz0 = coeff_vec.begin(); iz0 != icoeff; ++iz0) { cur_nstart += (*iz0)->nbasis(); }
+    for(auto iz0 = coeff_vec.begin(); iz0 != icoeff; ++iz0) { cur_nstart += (*iz0)->ndim(); }
 
-    int cur_nbasis = (*icoeff)->nbasis();
+    int cur_nbasis = (*icoeff)->ndim();
 
-    int cur_nend = nbasis_ - (cur_nstart + cur_nbasis);
+    int cur_nend = ndim_ - (cur_nstart + cur_nbasis);
 
     int cur_mdim = (*icoeff)->mdim();
 
@@ -78,6 +69,7 @@ Coeff::~Coeff() {
 
 }
 
+#if 0
 shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coeff_vec) {
   vector<shared_ptr<const Geometry> > geovec;
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
@@ -88,31 +80,35 @@ shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coe
 
   return out;
 }
+#endif
+int Coeff::num_basis(vector<shared_ptr<const Coeff> > coeff_vec) const {
+  return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff>& b) { return a+b->ndim(); });
+}
 
-shared_ptr<Matrix1e> Coeff::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
-  double* out_data = out->data() + offset*nbasis_;
-
-  dgemm_("N", "T", nbasis_, nbasis_, n, 2.0, data(), nbasis_, data(), nbasis_, 0.0, out_data, nbasis_);
-
+shared_ptr<Matrix> Coeff::form_density_rhf(const int n, const int offset) const {
+  const int nb = ndim_;
+  shared_ptr<Matrix> out(new Matrix(nb, nb));
+  double* out_data = out->data() + offset*nb;
+  dgemm_("N", "T", nb, nb, n, 2.0, data(), nb, data(), nb, 0.0, out_data, nb);
   return out;
 }
 
 
-shared_ptr<Matrix1e> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
-  shared_ptr<Matrix1e> out(new Matrix1e(geom_));
-  double* out_data = out->data() + offset*nbasis_;
+shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
+  assert(ndim_ == mdim_);
+  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
+  double* out_data = out->data() + offset*ndim_;
   double* cdata = data();
-  for (int i = 0; i != n; ++i, cdata += nbasis_) {
-    dgemm_("N", "T", nbasis_, nbasis_, 1, 2.0*e[i], cdata, nbasis_, cdata, nbasis_, 1.0, out_data, nbasis_);
+  for (int i = 0; i != n; ++i, cdata += ndim_) {
+    dgemm_("N", "T", ndim_, mdim_, 1, 2.0*e[i], cdata, ndim_, cdata, ndim_, 1.0, out_data, ndim_);
   }
   return out;
 }
 
 
-pair<shared_ptr<Coeff>, shared_ptr<Coeff> > Coeff::split(const int nrow1, const int nrow2) const {
-  shared_ptr<Coeff> out1(new Coeff(geom_, nrow1, mdim_));
-  shared_ptr<Coeff> out2(new Coeff(geom_, nrow2, mdim_));
+pair<shared_ptr<Matrix>, shared_ptr<Matrix> > Coeff::split(const int nrow1, const int nrow2) const {
+  shared_ptr<Matrix> out1(new Matrix(nrow1, mdim_));
+  shared_ptr<Matrix> out2(new Matrix(nrow2, mdim_));
 
   assert(nrow1+nrow2 == ndim_);
 
@@ -120,7 +116,7 @@ pair<shared_ptr<Coeff>, shared_ptr<Coeff> > Coeff::split(const int nrow1, const 
   double* data1 = out1->data();
   double* data2 = out2->data();
 
-  for (int m = 0; m != mdim_; ++m, data1+=out1->nbasis(), data2+=out2->nbasis(), source+=nbasis_) {
+  for (int m = 0; m != mdim_; ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim_) {
     copy(source,       source+nrow1,       data1);
     copy(source+nrow1, source+nrow1+nrow2, data2);
   }
