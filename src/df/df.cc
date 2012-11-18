@@ -86,7 +86,6 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
 
   // this will be distributed in the future.
   auto tp0 = high_resolution_clock::now();
-  const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
 
   // 3index Integral is now made in DFBlock.
   vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
@@ -102,19 +101,22 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0,  con
   vector<DFIntTask_OLD> tasks;
   data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
 
-  auto oa0 = aux_offsets.begin();
-  for (auto a0 = aux_atoms.begin(); a0 != aux_atoms.end(); ++a0, ++oa0) {
-    auto oa1 = oa0;
-    for (auto a1 = a0; a1 != aux_atoms.end(); ++a1, ++oa1) {
-      auto o0 = oa0->begin();
-      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
-        auto o1 = a0!=a1 ? oa1->begin() : o0;
-        for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-          tasks.push_back(DFIntTask_OLD(array<shared_ptr<const Shell>,4>{{*b1, b3, *b0, b3}}, vector<int>{*o0, *o1}, this));
-        }
-      }
+  int tmpa = 0;
+  vector<int> aof;
+  for (auto& i : ashell) { aof.push_back(tmpa); tmpa += i->nbasis(); }
+  const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
+
+  auto o0 = aof.begin();
+  for (auto& b0 : ashell) {
+    auto o1 = aof.begin();
+    for (auto& b1 : ashell) {
+      if (*o0 <= *o1)
+        tasks.push_back(DFIntTask_OLD(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
+      ++o1;
     }
+    ++o0;
   }
+
   // these shell loops will be distributed across threads
   TaskQueue<DFIntTask_OLD> tq(tasks);
   tq.compute(resources__->max_num_threads());
