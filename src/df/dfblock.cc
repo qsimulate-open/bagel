@@ -136,3 +136,28 @@ shared_ptr<DFBlock> DFBlock::copy() const {
   copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
   return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
 }
+
+
+DFBlock& DFBlock::operator+=(const DFBlock& o) { daxpy( 1.0, o); return *this; }
+DFBlock& DFBlock::operator-=(const DFBlock& o) { daxpy(-1.0, o); return *this; }
+
+void DFBlock::daxpy(const double a, const DFBlock& o) {
+  if (size() != o.size()) throw logic_error("DFBlock::daxpy called illegally");
+  daxpy_(size(), a, o.data_.get(), 1, data_.get(), 1);
+}
+
+
+void DFBlock::scale(const double a) {
+  dscal_(size(), a, data_, 1);
+}
+
+
+// TODO not efficient
+void DFBlock::symmetrize() {
+  if (b1size_ != b2size_) throw logic_error("illegal call of DFBlock::symmetrize()");
+  const int n = b1size_;
+  for (int i = 0; i != n; ++i)
+    for (int j = i; j != n; ++j)
+      for (int k = 0; k != asize_; ++k)
+        data_[k+asize_*(j+n*i)] = data_[k+asize_*(i+n*j)] = (data_[k+asize_*(j+n*i)] + data_[k+asize_*(i+n*j)]);
+}

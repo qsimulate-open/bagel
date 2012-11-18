@@ -85,16 +85,28 @@ class DFBlock {
     size_t b1size() const { return b1size_; }
     size_t b2size() const { return b2size_; }
 
+    size_t size() const { return asize_*b1size_*b2size_; };
+
     // a set of offsets of this block in the entire DF integrals
     size_t astart() const { return astart_; }
     size_t b1start() const { return b1start_; }
     size_t b2start() const { return b2start_; }
 
+    // some math functions
+    DFBlock& operator+=(const DFBlock& o);
+    DFBlock& operator-=(const DFBlock& o);
+    void daxpy(const double a, const DFBlock& o);
+    void daxpy(const double a, const std::shared_ptr<const DFBlock> o) { daxpy(a, *o); }
+    void scale(const double a);
+
+    // some additional functions
+    // symmetrize b1 and b2 (assuming b1size_ == b2size_)
+    void symmetrize();
 
     // TODO direct access to data will be disabled once implementation is done
-    double* get() { return data_.get(); };
-    const double* get() const { return data_.get(); };
-    double& operator[](const size_t i) { return data_[i]; };
+    double* get() { return data_.get(); }
+    const double* get() const { return data_.get(); }
+    double& operator[](const size_t i) { return data_[i]; }
 };
 
 }

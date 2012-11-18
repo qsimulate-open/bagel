@@ -474,47 +474,34 @@ void DF_Full::set_product(const shared_ptr<const DF_Full> o, const unique_ptr<do
 
 
 shared_ptr<DF_Full> DF_Full::clone() const {
-  unique_ptr<double[]> d(new double[size()]);
-  fill(d.get(), d.get()+size(), 0.0);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->clone()));
 }
 
 
 shared_ptr<DF_Full> DF_Full::copy() const {
-  unique_ptr<double[]> d(new double[size()]);
-  copy_n(data_->get(), size(), d.get());
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->copy()));
 }
 
 
 void DF_Full::daxpy(const double a, const DF_Full& o) {
-  daxpy_(size(), a, o.data_->get(), 1, data_->get(), 1);
+  data_->daxpy(a, o.data_);
 }
 
 
 void DF_Full::daxpy(const double a, const DF_Half& o) {
-  if (o.size() != size()) throw logic_error("DF_Full::daxpy was called in a wrong way...");
-  daxpy_(size(), a, o.data_->get(), 1, data_->get(), 1);
+  data_->daxpy(a, o.data_);
 }
 
 
 void DF_Full::scale(const double a) {
-  dscal_(size(), a, data_->get(), 1);
+  data_->scale(a);
 }
 
 
 // TODO THIS FUNCTION IS VERY INEFFICIENT
 // note that this function symmetrizes but not divides by 2
 void DF_Full::symmetrize() {
-  assert(nocc1_ == nocc2_);
-  const int n = nocc1_;
-  for (int i = 0; i != n; ++i) {
-    for (int j = i; j != n; ++j) {
-      for (int k = 0; k != naux_; ++k) {
-        (*data_)[k+naux_*(j+n*i)] = (*data_)[k+naux_*(i+n*j)] = ((*data_)[k+naux_*(j+n*i)] + (*data_)[k+naux_*(i+n*j)]);
-      }
-    }
-  }
+  data_->symmetrize();
 }
 
 

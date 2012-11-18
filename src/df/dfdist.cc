@@ -137,6 +137,9 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const siz
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc_, nocc));
   for (auto& i : blocks_)
@@ -161,6 +164,9 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 shared_ptr<DFFullDist> DFFullDist::copy() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
   for (auto& i : blocks_)
@@ -177,6 +183,39 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
+void DFFullDist::daxpy(const double a, const DFFullDist& o) {
+  if (blocks_.size() != o.blocks_.size()) throw logic_error("illegal call of DFFullDist::daxpy");
+  auto ob = o.blocks_.begin();
+  for (auto& i : blocks_) {
+    i->daxpy(a, *ob);
+    ++ob;
+  }
+}
+
+
+void DFFullDist::daxpy(const double a, const DFHalfDist& o) {
+  if (blocks_.size() != o.blocks_.size()) throw logic_error("illegal call of DFFullDist::daxpy");
+  auto ob = o.blocks_.begin();
+  for (auto& i : blocks_) {
+    i->daxpy(a, *ob);
+    ++ob;
+  }
+}
+
+
+void DFFullDist::scale(const double a) {
+  for (auto& i : blocks_)
+    i->scale(a);
+}
+
+
+void DFFullDist::symmetrize() {
+  for (auto& i : blocks_)
+    i->symmetrize();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
 DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd)
@@ -191,19 +230,6 @@ DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<cons
     dger_(naux_, nbasis0_*nbasis1_, 1.0, *citer, 1, *diter, 1, buf.get(), naux_);
   }
   data_ = shared_ptr<DFBlock>(new DFBlock(buf, naux, nbas1, nbas0, 0,0,0));
-}
-
-
-shared_ptr<DF_Half> DF_Half::clone() const {
-  unique_ptr<double[]> dat(new double[size()]);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
-}
-
-
-shared_ptr<DF_Half> DF_Half::copy() const {
-  unique_ptr<double[]> dat(new double[size()]);
-  copy_n(data_->get(), size(), dat.get());
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, dat));
 }
 
 
@@ -498,50 +524,6 @@ void DF_Full::set_product(const shared_ptr<const DF_Full> o, const unique_ptr<do
   dgemm_("N", "N", naux(), jdim, nocc1()*nocc2(), 1.0, o->data_->get(), naux(), c.get(), nocc1()*nocc2(), 0.0, data_->get()+off, naux());
 }
 
-
-shared_ptr<DF_Full> DF_Full::clone() const {
-  unique_ptr<double[]> d(new double[size()]);
-  fill(d.get(), d.get()+size(), 0.0);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
-}
-
-
-shared_ptr<DF_Full> DF_Full::copy() const {
-  unique_ptr<double[]> d(new double[size()]);
-  copy_n(data_->get(), size(), d.get());
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
-}
-
-
-void DF_Full::daxpy(const double a, const DF_Full& o) {
-  daxpy_(size(), a, o.data_->get(), 1, data_->get(), 1);
-}
-
-
-void DF_Full::daxpy(const double a, const DF_Half& o) {
-  if (o.size() != size()) throw logic_error("DF_Full::daxpy was called in a wrong way...");
-  daxpy_(size(), a, o.data_->get(), 1, data_->get(), 1);
-}
-
-
-void DF_Full::scale(const double a) {
-  dscal_(size(), a, data_->get(), 1);
-}
-
-
-// TODO THIS FUNCTION IS VERY INEFFICIENT
-// note that this function symmetrizes but not divides by 2
-void DF_Full::symmetrize() {
-  assert(nocc1_ == nocc2_);
-  const int n = nocc1_;
-  for (int i = 0; i != n; ++i) {
-    for (int j = i; j != n; ++j) {
-      for (int k = 0; k != naux_; ++k) {
-        (*data_)[k+naux_*(j+n*i)] = (*data_)[k+naux_*(i+n*j)] = ((*data_)[k+naux_*(j+n*i)] + (*data_)[k+naux_*(i+n*j)]);
-      }
-    }
-  }
-}
 
 
 shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {

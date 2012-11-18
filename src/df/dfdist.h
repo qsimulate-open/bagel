@@ -76,6 +76,7 @@ class DFDist : public DensityFit, public ParallelDF {
 
 
 class DFHalfDist : public DF_Half, public ParallelDF {
+  friend class DFFullDist;
   protected:
 
   public:
@@ -100,6 +101,12 @@ class DFFullDist : public DF_Full, public ParallelDF {
 
     std::shared_ptr<DFFullDist> copy() const; 
     std::shared_ptr<DFFullDist> clone() const; 
+
+    void daxpy(const double a, const DFHalfDist& o);
+    void daxpy(const double a, const DFFullDist& o);
+    void scale(const double a);
+
+    void symmetrize();
 };
 
 }
