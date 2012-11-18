@@ -164,6 +164,14 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
+shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
+  shared_ptr<DFDist> out(new DFDist(df_));
+  for (auto& i : blocks_)
+    out->add_block(i->transform_second(c, df_->nbasis1(), true));
+  return out;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -214,6 +222,14 @@ void DFFullDist::symmetrize() {
     i->symmetrize();
 }
 
+
+// AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
+shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
+  shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc1_));
+  for (auto& i : blocks_)
+    out->add_block(i->transform_third(c, df_->nbasis0(), true));
+  return out;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -581,22 +597,6 @@ shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bm
 }
 
 
-// AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
-shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{
-  const int nbas = df_->nbasis1();
-  unique_ptr<double[]> d(new double[nbas*nocc1_*naux_]);
-  dgemm_("N", "T", naux_*nocc1_, nbas, nocc2_, 1.0, data_->get(), naux_*nocc1_, c, nbas, 0.0, d.get(), naux_*nocc1_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc1_, d));
-}
-
-
-shared_ptr<DF_AO> DF_Half::back_transform(const double* c) const{
-  const int nbas = df_->nbasis0();
-  unique_ptr<double[]> d(new double[nbas*nbasis_*naux_]);
-  for (int i = 0; i != nbasis_; ++i)
-    dgemm_("N", "T", naux_, nbas, nocc_, 1.0, data_->get()+i*naux_*nocc_, naux_, c, nbas, 0.0, d.get()+i*naux_*nbas, naux_);
-  return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d));
-}
 #endif
 
 

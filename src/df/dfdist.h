@@ -64,6 +64,10 @@ class DFDist : public DensityFit, public ParallelDF {
       assert(data_ == nullptr);
     }
 
+    DFDist(const std::shared_ptr<const DensityFit> df) : DensityFit(df->nbasis1(), df->naux()) {
+      assert(df->nbasis0() == df->nbasis1());
+    }
+
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
 
@@ -85,6 +89,7 @@ class DFHalfDist : public DF_Half, public ParallelDF {
     }
 
     std::shared_ptr<DFFullDist> compute_second_transform(const double* c, const size_t nocc) const;
+    std::shared_ptr<DFDist> back_transform(const double* c) const;
 
     std::shared_ptr<DFHalfDist> copy() const; 
     std::shared_ptr<DFHalfDist> clone() const; 
@@ -101,6 +106,8 @@ class DFFullDist : public DF_Full, public ParallelDF {
 
     std::shared_ptr<DFFullDist> copy() const; 
     std::shared_ptr<DFFullDist> clone() const; 
+
+    std::shared_ptr<DFHalfDist> back_transform(const double* c) const;
 
     void daxpy(const double a, const DFHalfDist& o);
     void daxpy(const double a, const DFFullDist& o);
