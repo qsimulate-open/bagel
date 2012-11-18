@@ -247,12 +247,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     *coeff *= -1.0;
     int nocc = 0;
     {
-      const int lwork = ndim_*5;
-      std::unique_ptr<double[]> work4(new double[lwork]);
       std::unique_ptr<double[]> vec(new double[ndim_]);
-      int info;
-      dsyev_("V", "U", ndim_, coeff->data(), ndim_, vec.get(), work4.get(), lwork, info);
-      if (info) throw std::runtime_error("dsyev failed in DF Fock builder 2");
+      coeff->diagonalize(vec.get());
       for (int i = 0; i != ndim_; ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
