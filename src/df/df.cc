@@ -508,10 +508,10 @@ void DF_Full::symmetrize() {
 shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
   assert(nocc1_ == nocc2_);
   const int nocc = nocc1_;
-  unique_ptr<double[]> d(new double[size()]);
-  fill(d.get(), d.get()+size(), 0.0);
+  shared_ptr<DFBlock> d = data_->clone();
+  fill(d->get(), d->get()+size(), 0.0);
   // exchange contributions
-  daxpy_(size(), -2.0, data_->get(), 1, d.get(), 1);
+  daxpy_(size(), -2.0, data_->get(), 1, d->get(), 1);
   // coulomb contributions (diagonal to diagonal)
   unique_ptr<double[]> diagsum(new double[naux_]);
   fill(diagsum.get(), diagsum.get()+naux_, 0.0);
@@ -519,7 +519,7 @@ shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
     daxpy_(naux_, 1.0, data_->get()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
   }
   for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, 4.0, diagsum.get(), 1, d.get()+naux_*(i+nocc*i), 1);
+    daxpy_(naux_, 4.0, diagsum.get(), 1, d->get()+naux_*(i+nocc*i), 1);
   }
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
 }
@@ -531,17 +531,17 @@ shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
 shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bmat) const {
   assert(nocc1_ == nocc2_);
   const int nocc = nocc1_;
-  unique_ptr<double[]> d(new double[size()]);
+  shared_ptr<DFBlock> d = data_->clone();
   {
     unique_ptr<double[]> d2(new double[size()]);
     // exchange contributions
     dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data_->get(), naux_*nocc, amat, nocc, 0.0, d2.get(), naux_*nocc);
     for (int i = 0; i != nocc; ++i) {
-      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, amat, nocc, 0.0, d.get()+naux_*nocc*i, naux_);
+      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, amat, nocc, 0.0, d->get()+naux_*nocc*i, naux_);
     }
     dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data_->get(), naux_*nocc, bmat, nocc, 0.0, d2.get(), naux_*nocc);
     for (int i = 0; i != nocc; ++i) {
-      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, bmat, nocc, 1.0, d.get()+naux_*nocc*i, naux_);
+      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, bmat, nocc, 1.0, d->get()+naux_*nocc*i, naux_);
     }
   }
 
@@ -554,7 +554,7 @@ shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bm
     daxpy_(naux_, sum[i], data_->get()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
   }
   for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, sum[i], diagsum.get(), 1, d.get()+naux_*(i+nocc*i), 1);
+    daxpy_(naux_, sum[i], diagsum.get(), 1, d->get()+naux_*(i+nocc*i), 1);
   }
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
 }
@@ -562,19 +562,12 @@ shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bm
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DF_Half> DF_Full::back_transform(const double* c) const{
-  const int nbas = df_->nbasis1();
-  unique_ptr<double[]> d(new double[nbas*nocc1_*naux_]);
-  dgemm_("N", "T", naux_*nocc1_, nbas, nocc2_, 1.0, data_->get(), naux_*nocc1_, c, nbas, 0.0, d.get(), naux_*nocc1_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc1_, d));
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc1_, data_->transform_third(c, df_->nbasis0(), true)));
 }
 
 
 shared_ptr<DF_AO> DF_Half::back_transform(const double* c) const{
-  const int nbas = df_->nbasis0();
-  unique_ptr<double[]> d(new double[nbas*nbasis_*naux_]);
-  for (int i = 0; i != nbasis_; ++i)
-    dgemm_("N", "T", naux_, nbas, nocc_, 1.0, data_->get()+i*naux_*nocc_, naux_, c, nbas, 0.0, d.get()+i*naux_*nbas, naux_);
-  return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d));
+  return shared_ptr<DF_AO>(new DF_AO(nbasis_, df_->nbasis1(), naux_, data_->transform_second(c, df_->nbasis1(), true)));
 }
 
 

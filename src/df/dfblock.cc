@@ -102,24 +102,31 @@ pair<const double*, shared_ptr<RysInt> > DFBlock::compute_batch(array<shared_ptr
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int nocc) const {
+shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int nocc, const bool trans) const {
   // so far I only consider the following case
   assert(b1start_ == 0);
   unique_ptr<double[]> tmp(new double[asize_*nocc*b2size_]);
 
-  for (size_t i = 0; i != b2size_; ++i)
-    dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, tmp.get()+i*asize_*nocc, asize_);
+  for (size_t i = 0; i != b2size_; ++i) {
+    if (!trans)
+      dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, tmp.get()+i*asize_*nocc, asize_);
+    else
+      dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
+  }
 
   return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, nocc, b2size_, astart_, 0, b2start_));
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int nocc) const {
+shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int nocc, const bool trans) const {
   // so far I only consider the following case
   assert(b2start_ == 0);
   unique_ptr<double[]> tmp(new double[asize_*b1size_*nocc]);
 
-  dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, tmp.get(), asize_*b1size_);
+  if (!trans)
+    dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, tmp.get(), asize_*b1size_);
+  else  // trans -> back transform
+    dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
 
   return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, nocc, astart_, b1start_, 0));
 }

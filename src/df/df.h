@@ -100,7 +100,10 @@ class DF_AO : public DensityFit {
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
       data_ = std::shared_ptr<DFBlock>(new DFBlock(dat, naux, nbas1, nbas0, 0,0,0));
-    };
+    }
+    DF_AO(const int nbas0, const int nbas1, const int naux, std::shared_ptr<DFBlock> dat) : DensityFit(nbas0, nbas1, naux) {
+      data_ = dat;
+    }
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
