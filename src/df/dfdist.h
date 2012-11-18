@@ -44,6 +44,9 @@ class ParallelDF {
 
     void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
 
+    std::unique_ptr<double[]> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
+    std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
+
 };
 
 

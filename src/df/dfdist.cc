@@ -42,6 +42,37 @@ using namespace chrono;
 using namespace bagel;
 
 
+
+unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
+  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
+  const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size();
+  unique_ptr<double[]> out(new double[size]);
+
+  // loop over blocks
+  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
+    unique_ptr<double[]> tmp = (!swap) ? (*i)->form_2index(*j, a) : (*j)->form_2index(*i, a);
+    // accumulate
+    daxpy_(size, 1.0, tmp, 1, out, 1);
+  }
+  return out;
+}
+
+
+unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
+  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_4index");
+  const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size() * blocks_.front()->b1size()*o->blocks_.front()->b1size();
+  unique_ptr<double[]> out(new double[size]);
+
+  // loop over blocks
+  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
+    unique_ptr<double[]> tmp = (!swap) ? (*i)->form_4index(*j, a) : (*j)->form_4index(*i, a);
+    // accumulate
+    daxpy_(size, 1.0, tmp, 1, out, 1);
+  }
+  return out;
+}
+
+
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 

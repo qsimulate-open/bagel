@@ -297,18 +297,7 @@ unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Half> o, con
 unique_ptr<double[]> DF_Full::form_2index(const shared_ptr<const DF_Full> o, const double a) { return data_->form_2index(o->data_, a); }
 unique_ptr<double[]> DF_Half::form_2index(const double a) const { return data_->form_2index(data_, a); }
 unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DF_Full> o, const double a) const { return data_->form_2index(o->data_, a); }
-
-
-//unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DensityFit> o, const double a) const { return data_->form_2index(o->data_, a); }
-unique_ptr<double[]> DF_Half::form_2index(shared_ptr<const DensityFit> o, const double a) const {
-  unique_ptr<double[]> out(new double[nocc_*nbasis_]);
-  fill_n(out.get(), nocc_*nbasis_, 0.0);
-  for (size_t i = 0; i != nbasis_; ++i)
-    dgemm_("T", "N", nocc_, nbasis_, naux_, a, data_->get()+i*naux_*nocc_, naux_, o->data_->get()+i*naux_*nbasis_, naux_,
-                                            1.0, out.get(), nocc_);
-  return move(out);
-}
-
+unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DensityFit> o, const double a) const { return data_->form_2index(o->data_, a); }
 
 
 
