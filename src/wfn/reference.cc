@@ -47,11 +47,11 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-shared_ptr<Matrix1e> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const {
+shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const {
   if (nact_)
     return active->rdm1_mat(geom_, nclosed_);
   else {
-    shared_ptr<Matrix1e> out(new Matrix1e(geom_, nocc(), nocc()));
+    shared_ptr<Matrix> out(new Matrix(nocc(), nocc()));
     for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
     return out;
   }
@@ -98,7 +98,7 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
 
 #if 1
     unique_ptr<double[]> diag(new double[nnew]);
-    Matrix1e m = *c % *snew2 * *c;
+    Matrix m = *c % *snew2 * *c;
     for (int i = nold; i < nnew; ++i) m.element(i,i) = 1.0;
     m.diagonalize(diag.get());
     for (int i = 0; i != nnew; ++i) dscal_(nnew, 1.0/sqrt(sqrt(diag[i])), m.data()+i*nnew, 1);

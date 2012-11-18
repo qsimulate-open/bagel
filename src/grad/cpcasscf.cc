@@ -37,8 +37,8 @@
 using namespace std;
 using namespace bagel;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const shared_ptr<const Dvec> civ,
-                   const shared_ptr<const Matrix1e> eig, const shared_ptr<const DF_Half> h,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec> > grad, const shared_ptr<const Dvec> civ,
+                   const shared_ptr<const Matrix> eig, const shared_ptr<const DF_Half> h,
                    const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
@@ -48,7 +48,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const
 }
 
 
-shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
+shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
 
   // RI determinant space
   shared_ptr<Determinants> detex(new Determinants(fci_->norb(), fci_->nelea(), fci_->neleb(), false));
@@ -73,10 +73,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   shared_ptr<const DF_Full> fullb = half->compute_second_transform(ocoeff, nocca);
 
   // making denominator...
-  shared_ptr<PairFile<Matrix1e, Dvec> > denom;
+  shared_ptr<PairFile<Matrix, Dvec> > denom;
   const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
   {
-    shared_ptr<Matrix1e> d0(new Matrix1e(*eig_));
+    shared_ptr<Matrix> d0(new Matrix(*eig_));
     for (int i = 0; i != d0->size(); ++i)
       if (::fabs(d0->data(i)) < 1.0e-10) d0->data(i) = 1.0;
     shared_ptr<const Civec> d1_tmp(new Civec(*fci_->denom()));
@@ -87,19 +87,19 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     // TODO understand this factor of 2
     *d1 *= 2;
 #endif
-    denom = shared_ptr<PairFile<Matrix1e, Dvec> >(new PairFile<Matrix1e, Dvec>(d0, d1));
+    denom = shared_ptr<PairFile<Matrix, Dvec> >(new PairFile<Matrix, Dvec>(d0, d1));
   }
 
   // BFGS update of the denominator above
 #if 0
-  shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom, false));
+  shared_ptr<BFGS<PairFile<Matrix, Dvec> > > bfgs(new BFGS<PairFile<Matrix, Dvec> >(denom, false));
 #else
-  shared_ptr<BFGS<PairFile<Matrix1e, Dvec> > > bfgs(new BFGS<PairFile<Matrix1e, Dvec> >(denom));
+  shared_ptr<BFGS<PairFile<Matrix, Dvec> > > bfgs(new BFGS<PairFile<Matrix, Dvec> >(denom));
 #endif
 
 
   // CI vector
-  shared_ptr<PairFile<Matrix1e, Dvec> > source(new PairFile<Matrix1e, Dvec>(*grad_));
+  shared_ptr<PairFile<Matrix, Dvec> > source(new PairFile<Matrix, Dvec>(*grad_));
   // antisymmetrize
   source->first()->antisymmetrize();
 
@@ -109,10 +109,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
-  shared_ptr<LinearRM<PairFile<Matrix1e, Dvec> > > solver(new LinearRM<PairFile<Matrix1e, Dvec> >(CPHF_MAX_ITER, source));
+  shared_ptr<LinearRM<PairFile<Matrix, Dvec> > > solver(new LinearRM<PairFile<Matrix, Dvec> >(CPHF_MAX_ITER, source));
 
   // initial guess
-  shared_ptr<PairFile<Matrix1e, Dvec> > z = source->clone();
+  shared_ptr<PairFile<Matrix, Dvec> > z = source->clone();
   z->zero();
 
   z = bfgs->extrapolate(source, z);
@@ -120,10 +120,10 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 //z->second()->project_out(civector_);
 
   // inverse matrix of C
-  shared_ptr<Matrix1e> cinv(new Matrix1e(*ref_->coeff())); cinv->inverse();
+  shared_ptr<Matrix> cinv(new Matrix(*ref_->coeff())); cinv->inverse();
 
   // State averaged density matrix
-  shared_ptr<const Matrix1e> dsa = ref_->rdm1_mat();
+  shared_ptr<const Matrix> dsa = ref_->rdm1_mat();
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -136,17 +136,17 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     const double norm = sqrt(z->ddot(*z));
     cout << setw(4) <<  iter << " " << setprecision(14) << norm << endl;
 
-    shared_ptr<const Matrix1e> z0 = z->first();
+    shared_ptr<const Matrix> z0 = z->first();
     shared_ptr<const Dvec>     z1 = z->second();
 
     // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
     // only here we need to have det_ instead of detex
-    shared_ptr<Matrix1e> sigmaorb = compute_amat(z1, civector_, detex);
+    shared_ptr<Matrix> sigmaorb = compute_amat(z1, civector_, detex);
 
     // computation of Atilde. Will be separated.
     // TODO index transformation can be skipped by doing so at the very end...
-    shared_ptr<Matrix1e> cz0(new Matrix1e(*ref_->coeff() * *z0));
-    shared_ptr<Matrix1e> cz0cinv(new Matrix1e(*ref_->coeff() * *z0 * *cinv));
+    shared_ptr<Matrix> cz0(new Matrix(*ref_->coeff() * *z0));
+    shared_ptr<Matrix> cz0cinv(new Matrix(*ref_->coeff() * *z0 * *cinv));
 
     // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
     // (D|jx) -> (D|jS)
@@ -169,7 +169,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
     }
 
     // one electron part...
-    shared_ptr<Matrix1e> htilde(new Matrix1e(*cz0 % *ref_->hcore() * *ref_->coeff()));
+    shared_ptr<Matrix> htilde(new Matrix(*cz0 % *ref_->hcore() * *ref_->coeff()));
     htilde->symmetrize();
     *htilde *= 2.0;
     dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
@@ -227,7 +227,7 @@ shared_ptr<PairFile<Matrix1e, Dvec> > CPCASSCF::solve() const {
 
     sigmaci->project_out(civector_);
 
-    shared_ptr<PairFile<Matrix1e, Dvec> > sigma(new PairFile<Matrix1e, Dvec>(sigmaorb, sigmaci));
+    shared_ptr<PairFile<Matrix, Dvec> > sigma(new PairFile<Matrix, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
 
@@ -245,10 +245,10 @@ solver->civec()->second()->print(-1);
 
 
 // computes A matrix (scaled by 2 here)
-shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec, shared_ptr<const Determinants> o) const {
-  shared_ptr<Matrix1e> amat(new Matrix1e(ref_->geom()));
+shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec, shared_ptr<const Determinants> o) const {
 
   const size_t nbasis = geom_->nbasis();
+  shared_ptr<Matrix> amat(new Matrix(nbasis, nbasis));
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
@@ -279,7 +279,7 @@ shared_ptr<Matrix1e> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_
   const double prefactor = 2.0;
 
   // core Fock operator
-  shared_ptr<const Matrix1e> core_fock = fci_->jop()->core_fock();
+  shared_ptr<const Matrix> core_fock = fci_->jop()->core_fock();
   unique_ptr<double[]> buf(new double[nbasis*nact]);
   unique_ptr<double[]> buf2(new double[nbasis*nact]);
   dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff, nbasis, 0.0, buf.get(), nbasis);

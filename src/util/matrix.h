@@ -31,6 +31,8 @@
 #include <string>
 #include <algorithm>
 #include <memory>
+#include <list>
+#include <src/util/f77.h>
 
 namespace bagel {
 
@@ -60,9 +62,9 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void fill_upper();
     void symmetrize();
     void antisymmetrize();
+    std::shared_ptr<Matrix> cut(const int) const;
     std::shared_ptr<Matrix> resize(const int, const int) const;
     std::shared_ptr<Matrix> slice(const int, const int) const;
-    std::shared_ptr<Matrix> expand() const;
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
     void diagonalize(double*);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
@@ -127,13 +129,11 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);};
     // purify a (near unitary) matrix to be unitary
 
-    #if 0
     void purify_unitary();
     void purify_idempotent(const Matrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     double orthog(const std::list<std::shared_ptr<const Matrix> > o);
-    #endif
 
     void print(const std::string in = "", const int size = 10) const;
 };

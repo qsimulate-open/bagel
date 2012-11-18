@@ -130,8 +130,8 @@ class JKop {
     };
     ~JKop() {};
 
-    std::shared_ptr<Matrix1e> contract(const std::shared_ptr<Matrix1e> in) {
-      std::shared_ptr<Matrix1e> out(new Matrix1e(fci_->geom()));
+    std::shared_ptr<Matrix> contract(const std::shared_ptr<Matrix> in) {
+      std::shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
       const int nocc = nocc_;
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
@@ -143,12 +143,12 @@ class JKop {
       return out;
     };
 
-    std::shared_ptr<Matrix1e> denom() const {
-      std::shared_ptr<Matrix1e> out(new Matrix1e(fci_->geom()));
+    std::shared_ptr<Matrix> denom() const {
       const size_t nbasis = nbasis_;
+      std::shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
       const int nocc = nocc_;
       const int nclosed = nclosed_;
-      std::shared_ptr<Matrix1e> tmp(new Matrix1e(fci_->geom(), nbasis, nocc));
+      std::shared_ptr<Matrix> tmp(new Matrix(nbasis, nocc));
       // TODO this is an awful code.
       // first transform to MO
       {

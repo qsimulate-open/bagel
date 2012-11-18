@@ -28,19 +28,17 @@
 #define __src_scf_tildex_h
 
 #include <src/scf/overlap.h>
-#include <src/scf/matrix1e.h>
 #include <memory>
 
 namespace bagel {
 
-class TildeX : public Matrix1e {
+class TildeX : public Matrix {
   protected:
 
   public:
     TildeX(const std::shared_ptr<Overlap>, const double thresh);
-    ~TildeX();
 
-    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+nbasis_*nbasis_, this->data()); return *this; };
+    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+ndim_*mdim_, this->data()); return *this; };
 
 };
 

@@ -29,7 +29,8 @@
 
 #include <memory>
 #include <array>
-#include <src/scf/matrix1e.h>
+#include <src/scf/geometry.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
@@ -41,7 +42,7 @@ class Momentum {
     Momentum(std::shared_ptr<const Geometry>);
     ~Momentum();
 
-    std::array<std::shared_ptr<Matrix1e>,3> compute() const;
+    std::array<std::shared_ptr<Matrix>,3> compute() const;
 };
 
 }

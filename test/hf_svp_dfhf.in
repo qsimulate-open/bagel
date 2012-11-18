@@ -10,4 +10,5 @@ molecule {
 
 df-hf {
   thresh = 1.0e-10;
+  diis_start = 100;
 }

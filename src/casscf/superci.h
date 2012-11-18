@@ -48,20 +48,20 @@ class SuperCI : public CASSCF {
       std::cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << std::endl << std::endl;
     };
 
-    void grad_vc(const std::shared_ptr<Matrix1e> fock, std::shared_ptr<RotFile> sigma);
+    void grad_vc(const std::shared_ptr<Matrix> fock, std::shared_ptr<RotFile> sigma);
     void grad_va(const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
-    void grad_ca(const std::shared_ptr<Matrix1e> fock, const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
+    void grad_ca(const std::shared_ptr<Matrix> fock, const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
 
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f);
-    void sigma_ai_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix1e> f);
+                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix> f);
+    void sigma_ai_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> f);
     void sigma_at_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<QFile> fact);
     void sigma_ai_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<QFile> fact);
     void sigma_ti_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix1e> f, const std::shared_ptr<QFile> factp);
+                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix> f, const std::shared_ptr<QFile> factp);
 
     void update_orbitals(std::shared_ptr<RotFile> rot);
-    std::shared_ptr<Matrix1e> tailor_rotation(const std::shared_ptr<Matrix1e> seed);
+    std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
 
   public:
     SuperCI(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom)

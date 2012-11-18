@@ -27,7 +27,7 @@
 #ifndef __SRC_GRAD_CPCASSCF_H
 #define __SRC_GRAD_CPCASSCF_H
 
-#include <src/scf/matrix1e.h>
+#include <src/util/matrix.h>
 #include <memory>
 #include <src/wfn/reference.h>
 #include <src/fci/civec.h>
@@ -41,9 +41,9 @@ namespace bagel {
 
 class CPCASSCF {
   protected:
-    const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad_;
+    const std::shared_ptr<const PairFile<Matrix, Dvec> > grad_;
     const std::shared_ptr<const Dvec> civector_;
-    const std::shared_ptr<const Matrix1e> eig_;
+    const std::shared_ptr<const Matrix> eig_;
     const std::shared_ptr<const DF_Half> half_;
     const std::shared_ptr<const DF_Half> halfjj_;
     const std::shared_ptr<const Reference> ref_;
@@ -51,15 +51,15 @@ class CPCASSCF {
     const std::shared_ptr<const FCI> fci_;
 
 
-    std::shared_ptr<Matrix1e> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
+    std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
 
   public:
-    CPCASSCF(const std::shared_ptr<const PairFile<Matrix1e, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix1e> eig,
+    CPCASSCF(const std::shared_ptr<const PairFile<Matrix, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix> eig,
              const std::shared_ptr<const DF_Half> half, const std::shared_ptr<const DF_Half> halfjj,
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
     ~CPCASSCF() {};
 
-    std::shared_ptr<PairFile<Matrix1e, Dvec> > solve() const;
+    std::shared_ptr<PairFile<Matrix, Dvec> > solve() const;
 
 };
 

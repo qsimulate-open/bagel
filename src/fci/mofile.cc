@@ -36,7 +36,7 @@ using namespace bagel;
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
-: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(ref_->coeff()) {
+: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -46,7 +46,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
-: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix1e(geom_)), coeff_(c) {
+: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -146,7 +146,7 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
   const double* cdata = coeff_->data() + nstart*nbasis_;
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
-    shared_ptr<Matrix1e> den = coeff_->form_density_rhf(ncore);
+    shared_ptr<Matrix> den = coeff_->form_density_rhf(ncore);
     fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
     *core_fock_ = *fock0;

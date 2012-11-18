@@ -43,7 +43,7 @@ std::array<double,3> dipole(std::string filename) {
     if (iter->first == "df-hf") {
       std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
       scf->compute();
-      std::shared_ptr<const Matrix1e> dtot = scf->coeff()->form_density_rhf(scf->nocc());
+      std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 
       Dipole dipole(geom, dtot);
       std::array<double,3> d = dipole.compute();

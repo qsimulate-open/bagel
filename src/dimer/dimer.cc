@@ -230,12 +230,12 @@ shared_ptr<Coeff> Dimer::overlap() {
 
 void Dimer::orthonormalize() {
    shared_ptr<Coeff> ovlp = overlap();
-   Matrix1e S = *ovlp;
+   Matrix S = *ovlp;
 
    unique_ptr<double[]> eig(new double[dimerbasis_]);
    S.diagonalize(eig.get());
 
-   Matrix1e S_1_2(S);
+   Matrix S_1_2(S);
    double *S12_data = S_1_2.data();
    for( int ii = 0; ii != dimerbasis_; ++ii) {
       double scale = 1.0/sqrt(eig[ii]);
@@ -255,11 +255,11 @@ void Dimer::orthonormalize() {
 }
 
 void Dimer::energy() {
-   shared_ptr<Matrix1e> ao_density = scoeff_->form_density_rhf(sref_->nclosed());
+   shared_ptr<Matrix> ao_density = scoeff_->form_density_rhf(sref_->nclosed());
    shared_ptr<Fock<1> > hcore(new Fock<1>(sgeom_));
    shared_ptr<Fock<1> > fock(new Fock<1>(sgeom_, hcore, ao_density, sgeom_->schwarz()));
 
-   Matrix1e hcore_fock = (*hcore + *fock);
+   Matrix hcore_fock = (*hcore + *fock);
    double energy = ao_density->ddot(*hcore_fock.transpose());
    energy = 0.5*energy + sgeom_->nuclear_repulsion();
 

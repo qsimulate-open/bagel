@@ -56,20 +56,20 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // related to denominators
   const int nbasis = ref_->geom()->nbasis();
-  shared_ptr<Matrix1e> eig(new Matrix1e(ref_->geom()));
+  shared_ptr<Matrix> eig(new Matrix(nbasis, nbasis));
   {
     // as in Theor Chem Acc (1997) 97:88-95
     vector<double> occup_ = task_->fci()->rdm1(target)->diag();
 
-    shared_ptr<Matrix1e> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
-    shared_ptr<Matrix1e> f_inactao(new Matrix1e(geom_));
+    shared_ptr<Matrix> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
+    shared_ptr<Matrix> f_inactao(new Matrix(nbasis, nbasis));
     dcopy_(nbasis*nbasis, task_->fci()->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
-    shared_ptr<Matrix1e> finact (new Matrix1e(*coeff % *f_inactao * *coeff));
+    shared_ptr<Matrix> finact (new Matrix(*coeff % *f_inactao * *coeff));
 
-    shared_ptr<Matrix1e> denall = task_->ao_rdm1(task_->fci()->rdm1(target));
-    shared_ptr<Matrix1e> denact (new Matrix1e(*denall-*deninact));
+    shared_ptr<Matrix> denall = task_->ao_rdm1(task_->fci()->rdm1(target));
+    shared_ptr<Matrix> denact (new Matrix(*denall-*deninact));
     shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, task_->hcore(), denact, ref_->schwarz()));
-    shared_ptr<Matrix1e> f      (new Matrix1e(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff));
+    shared_ptr<Matrix> f      (new Matrix(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff));
 
     shared_ptr<Qvec> fact(new Qvec(nbasis, nact, ref_->geom()->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target)));
     for (int i = 0; i != nact; ++i)
@@ -100,12 +100,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DF_Half> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
-  shared_ptr<Matrix1e> g0(new Matrix1e(ref_->geom()));
+  shared_ptr<Matrix> g0(new Matrix(nbasis, nbasis));
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
-  shared_ptr<const Matrix1e> hmo(new Matrix1e(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
-  shared_ptr<const Matrix1e> rdm1 = ref_->rdm1_mat(target);
+  shared_ptr<const Matrix> hmo(new Matrix(*ref_->coeff() % *ref_->hcore() * *ref_->coeff()));
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
   dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
   // 2) two-electron contribution
   shared_ptr<const DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
@@ -119,19 +119,19 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(task_->fci()->det(), ref_->nstate()));
   // combine gradient file
-  shared_ptr<PairFile<Matrix1e, Dvec> > grad(new PairFile<Matrix1e, Dvec>(g0, g1));
+  shared_ptr<PairFile<Matrix, Dvec> > grad(new PairFile<Matrix, Dvec>(g0, g1));
 
   // solve CP-CASSCF
   shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, civ, eig, half, halfjj, ref_, task_->fci()));
-  shared_ptr<PairFile<Matrix1e, Dvec> > zvec = cp->solve();
+  shared_ptr<PairFile<Matrix, Dvec> > zvec = cp->solve();
 
   // form Zd + dZ^+
-  shared_ptr<Matrix1e> dsa = ref_->rdm1_mat()->expand();
-  shared_ptr<Matrix1e> zslice = zvec->first();
-  shared_ptr<Matrix1e> dm(new Matrix1e(*zslice * *dsa + (*dsa ^ *zslice)));
+  shared_ptr<Matrix> dsa = ref_->rdm1_mat()->resize(nbasis, nbasis);
+  shared_ptr<Matrix> zslice = zvec->first();
+  shared_ptr<Matrix> dm(new Matrix(*zslice * *dsa + (*dsa ^ *zslice)));
 
   // compute dipole...
-  shared_ptr<Matrix1e> dtot = ref_->rdm1_mat(target)->expand();
+  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nbasis, nbasis);
   dtot->daxpy(1.0, dm);
 
   // form zdensity
@@ -140,12 +140,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const RDM<2> > zrdm2;
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
-  shared_ptr<Matrix1e> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->expand();
+  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->resize(nbasis, nbasis);
   zrdm1_mat->symmetrize();
   dtot->daxpy(1.0, zrdm1_mat);
 
   // computes dipole mements
-  shared_ptr<Matrix1e> dtotao(new Matrix1e(*ref_->coeff() * *dtot ^ *ref_->coeff()));
+  shared_ptr<Matrix> dtotao(new Matrix(*ref_->coeff() * *dtot ^ *ref_->coeff()));
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 

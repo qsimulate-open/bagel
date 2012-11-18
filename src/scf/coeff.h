@@ -33,23 +33,25 @@
 
 namespace bagel {
 
-class Coeff : public Matrix1e {
+class Coeff : public Matrix {
   protected:
+    std::shared_ptr<const Geometry> geom_;
 
   private:
-    std::shared_ptr<const Geometry> supergeom(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
+//  std::shared_ptr<const Geometry> supergeom(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
+    int num_basis(std::vector<std::shared_ptr<const Coeff> > coeff_vec) const;
 
   public:
-    Coeff() : Matrix1e() {};
-    Coeff(const Matrix1e&);
+    Coeff(const Matrix&);
     Coeff(std::vector<std::shared_ptr<const Coeff> > coeff_vec);
-    Coeff(const std::shared_ptr<const Geometry> g) : Matrix1e(g) {};
-    Coeff(std::shared_ptr<const Geometry> g, const int i, const int j) : Matrix1e(g,i,j) {};
+    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {};
     ~Coeff();
 
-    std::shared_ptr<Matrix1e> form_density_rhf(const int n, const int offset = 0) const;
-    std::shared_ptr<Matrix1e> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
-    std::pair<std::shared_ptr<Coeff>, std::shared_ptr<Coeff> > split(const int, const int) const;
+    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; };
+
+    std::shared_ptr<Matrix> form_density_rhf(const int n, const int offset = 0) const;
+    std::shared_ptr<Matrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
+    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix> > split(const int, const int) const;
 };
 
 }

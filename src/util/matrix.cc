@@ -36,16 +36,12 @@
 using namespace std;
 using namespace bagel;
 
-Matrix::Matrix(const int n, const int m)
- : data_(new double[n*m]) {
-  ndim_ = n;
-  mdim_ = m;
+Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m) {
   zero();
 }
 
 
-Matrix::Matrix(const Matrix& o)
- : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_) {
+Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_) {
   copy(o.data(), o.data() + ndim_*mdim_, data());
 }
 
@@ -53,7 +49,19 @@ Matrix::~Matrix() {
 }
 
 
+shared_ptr<Matrix> Matrix::cut(const int n) const {
+  assert(n <= ndim_);
+  shared_ptr<Matrix> out(new Matrix(n, mdim_));
+  for (int i = 0; i != mdim_; ++i)
+    for (int j = 0; j != n; ++j)
+      out->data_[j+i*n] = data_[j+i*ndim_];
+  return out;
+}
+
+
+
 shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
+  assert(n >= ndim_ && m >= mdim_);
   shared_ptr<Matrix> out(new Matrix(n, m));
   for (int i = 0; i != mdim_; ++i) {
     for (int j = 0; j != ndim_; ++j) {
@@ -92,7 +100,6 @@ Matrix Matrix::operator+(const Matrix& o) const {
   const double* odata = o.data();
   double* outdata = out.data();
 
-  daxpy_(size, 1.0, data(), 1, outdata, 1);
   daxpy_(size, 1.0, odata, 1, outdata, 1);
 
   return out;
@@ -117,7 +124,7 @@ Matrix& Matrix::operator-=(const Matrix& o) {
 
 Matrix& Matrix::operator=(const Matrix& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  dcopy_(ndim_*mdim_, o.data(), 1, data(), 1);
+  copy_n(o.data(), ndim_*mdim_, data());
   return *this;
 }
 
@@ -130,7 +137,6 @@ Matrix Matrix::operator-(const Matrix& o) const {
 
   const double* odata = o.data();
   double* outdata = out.data();
-  daxpy_(size, 1.0, data(), 1, outdata, 1);
   daxpy_(size, -1.0, odata, 1, outdata, 1);
 
   return out;
@@ -310,9 +316,8 @@ double Matrix::trace() const {
 }
 
 
-#if 0 // Only makes sense for square matrices
 shared_ptr<Matrix> Matrix::exp(const int deg) const {
-  shared_ptr<Matrix> out(new Matrix(geom_, ndim_, mdim_));
+  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
   Matrix buf(*this);
   assert(ndim_ == mdim_);
 
@@ -329,7 +334,7 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
 
 
 shared_ptr<Matrix> Matrix::log(const int deg) const {
-  shared_ptr<Matrix> out(new Matrix(geom_, ndim_, mdim_));
+  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
   Matrix buf(*this);
   for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
   assert(ndim_ == mdim_);
@@ -343,7 +348,6 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
   }
   return out;
 }
-#endif
 
 
 unique_ptr<double[]> Matrix::diag() const {
@@ -375,6 +379,14 @@ shared_ptr<Matrix> Matrix::transpose() const {
 }
 
 
+void Matrix::fill_upper() {
+  assert(ndim_ == mdim_);
+  for (int i = 0; i != mdim_; ++i)
+    for (int j = i+1; j != ndim_; ++j)
+      data_[i+j*ndim_] = data_[j+i*ndim_];
+}
+
+
 void Matrix::symmetrize() {
   assert(ndim_ == mdim_);
   const int n = mdim_;
@@ -393,7 +405,6 @@ void Matrix::antisymmetrize() {
 }
 
 
-#if 0
 void Matrix::purify_unitary() {
   assert(ndim_ == mdim_);
 #if 0
@@ -439,7 +450,7 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
   for (int g = 0; g != nvirt; ++g)
     for (int h = 0; h != nvirt; ++h)
       element(h+nclosed+nact,g+nclosed+nact)=0.0;
-  for (int i = 0; i != nbasis_; ++i) {
+  for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
       const double ele = (element(j,i) - element(i,j)) * 0.5;
       element(j,i) = ele;
@@ -449,10 +460,8 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
 #endif
 
 }
-#endif
 
 
-#if 0 // not sure I need all of this
 void Matrix::purify_idempotent(const Matrix& s) {
   *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0;
 }
@@ -467,7 +476,6 @@ double Matrix::orthog(const std::list<std::shared_ptr<const Matrix> > o) {
   *this /= n;
   return n;
 }
-#endif
 
 
 // in-place matrix inverse (practically we use buffer area)

@@ -37,7 +37,7 @@ void UHF::compute() {
   shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    Matrix1e intermediate = *tildex_ % *hcore_fock * *tildex_;
+    Matrix intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -54,26 +54,26 @@ void UHF::compute() {
   // starting SCF iteration
   eigB_ = unique_ptr<double[]>(new double[coeff_->mdim()]);
 
-  DIIS<Matrix1e> diis(5);
-  DIIS<Matrix1e> diisB(5);
+  DIIS<Matrix> diis(5);
+  DIIS<Matrix> diisB(5);
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
     shared_ptr<Fock<1> > fockA(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityA_, schwarz_));
     shared_ptr<Fock<1> > fockB(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityB_, schwarz_));
 
-    Matrix1e intermediateA = *coeff_ % *fockA * *coeff_;
-    Matrix1e intermediateB = *coeffB_ % *fockB * *coeffB_;
+    Matrix intermediateA = *coeff_ % *fockA * *coeff_;
+    Matrix intermediateB = *coeffB_ % *fockB * *coeffB_;
 
     intermediateA.diagonalize(eig());
     intermediateB.diagonalize(eigB());
     coeff_  = shared_ptr<Coeff>(new Coeff((*coeff_)  * intermediateA));
     coeffB_ = shared_ptr<Coeff>(new Coeff((*coeffB_) * intermediateB));
 
-    shared_ptr<Matrix1e> new_density, new_densityA, new_densityB;
+    shared_ptr<Matrix> new_density, new_densityA, new_densityB;
     tie(new_density, new_densityA, new_densityB) = form_density_uhf();
 
-    shared_ptr<Matrix1e> error_vector(new Matrix1e(
+    shared_ptr<Matrix> error_vector(new Matrix(
       density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                                        +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
 
@@ -98,13 +98,13 @@ void UHF::compute() {
 
     if (iter >= diis_start_) {
       {
-        shared_ptr<Matrix1e> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-        shared_ptr<Matrix1e> intermediate(new Matrix1e(*tildex_ % *tmp_fock * *tildex_));
+        shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
+        shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *tmp_fock * *tildex_));
         intermediate->diagonalize(eig());
         coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
       } {
-        shared_ptr<Matrix1e> tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-        shared_ptr<Matrix1e> intermediate(new Matrix1e(*tildex_ % *tmp_fock * *tildex_));
+        shared_ptr<Matrix> tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
+        shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *tmp_fock * *tildex_));
         intermediate->diagonalize(eigB());
         coeffB_ = shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
       }
@@ -134,15 +134,15 @@ void UHF::print_S2(const string tag) const {
 
 
 tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
-  shared_ptr<Matrix1e> cinv(new Matrix1e(*coeff_));
+  shared_ptr<Matrix> cinv(new Matrix(*coeff_));
   cinv->inverse(); // TODO maybe unnecessary
-  shared_ptr<Matrix1e> intermediate(new Matrix1e(*cinv * *aodensity_ ^ *cinv));
+  shared_ptr<Matrix> intermediate(new Matrix(*cinv * *aodensity_ ^ *cinv));
   *intermediate *= -1.0;
   unique_ptr<double[]> occup(new double[geom_->nbasis()]);
   intermediate->diagonalize(occup.get());
 
-  shared_ptr<Matrix1e> amat(new Matrix1e(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate));
-  shared_ptr<Matrix1e> bmat(new Matrix1e(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate));
+  shared_ptr<Matrix> amat(new Matrix(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate));
+  shared_ptr<Matrix> bmat(new Matrix(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate));
 
   int nocc = 0;
   // TODO adjust?
@@ -183,7 +183,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
   // compute an energy weighted 1RDM and store
   vector<double> ea(eig_.get(), eig_.get()+nocc_);
   vector<double> eb(eigB_.get(), eigB_.get()+nocc_);
-  shared_ptr<Matrix1e> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
+  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
   *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
   *erdm *= 0.5;
   out->set_erdm1(erdm);
@@ -195,10 +195,10 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
 }
 
 
-tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e> > UHF::form_density_uhf() const {
-  shared_ptr<Matrix1e> outA = coeff_->form_density_rhf(nocc_);
-  shared_ptr<Matrix1e> outB = coeffB_->form_density_rhf(noccB_);
-  shared_ptr<Matrix1e> out(new Matrix1e(*outA+*outB));
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix> > UHF::form_density_uhf() const {
+  shared_ptr<Matrix> outA = coeff_->form_density_rhf(nocc_);
+  shared_ptr<Matrix> outB = coeffB_->form_density_rhf(noccB_);
+  shared_ptr<Matrix> out(new Matrix(*outA+*outB));
   *out *= 0.5;
   return make_tuple(out, outA, outB);
 }

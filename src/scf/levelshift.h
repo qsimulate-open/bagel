@@ -52,7 +52,7 @@ class LevelShift {
     LevelShift() {};
     LevelShift(const int nocc, const double shift_parameter) : nocc_(nocc), shift_parameter_(shift_parameter) {};
 
-    virtual void shift(Matrix1e& coeff) {};
+    virtual void shift(Matrix& coeff) {};
 };
 
 // Standard shifting of virtual orbitals
@@ -62,7 +62,7 @@ class ShiftVirtual : public LevelShift {
   public:
     ShiftVirtual(const int nocc, const int shift_parameter);
 
-    void shift(Matrix1e& coeff) override;
+    void shift(Matrix& coeff) override;
 };
 
 }

@@ -64,7 +64,7 @@ void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const 
   int cnt = 0;
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[i*nbasis_ + j] = kdata[cnt];
+      data_[i*ndim_ + j] = kdata[cnt];
     }
   }
 }

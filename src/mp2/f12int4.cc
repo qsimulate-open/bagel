@@ -52,7 +52,7 @@ void F12Ref::compute() {
 
     start_up_slater_();
 
-    shared_ptr<Matrix1e> caom, cxxm, callm;
+    shared_ptr<Matrix> caom, cxxm, callm;
     int ncabs;
     tie(caom, cxxm, callm, ncabs) = generate_cabs();
     double *cao, *cxx, *call;
@@ -270,7 +270,7 @@ v->print();
 
 #define thresh 1.0e-8
 
-tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12Ref::generate_cabs() const {
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::generate_cabs() const {
 
   // Form RI space which is a union of OBS and CABS.
   shared_ptr<Geometry> newgeom(new Geometry(*geom_));
@@ -278,24 +278,24 @@ tuple<shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, shared_ptr<Matrix1e>, int> F12
 
   shared_ptr<Overlap> union_overlap(new Overlap(newgeom));
   shared_ptr<TildeX> ri_coeff(new TildeX(union_overlap, thresh));
-  shared_ptr<Matrix1e> ri_reshaped = ref_->coeff()->resize(newgeom, ri_coeff->ndim());
+  shared_ptr<Matrix> ri_reshaped = ref_->coeff()->cut(ri_coeff->ndim());
 
   // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
-  shared_ptr<Matrix1e> tmp(new Matrix1e(*ri_coeff % *union_overlap * *ri_reshaped));
+  shared_ptr<Matrix> tmp(new Matrix(*ri_coeff % *union_overlap * *ri_reshaped));
 
   const int tmdim = tmp->mdim();
   const int tndim = tmp->ndim();
 
-  shared_ptr<Matrix1e> U(new Matrix1e(newgeom, tndim, tndim));
-  shared_ptr<Matrix1e> V(new Matrix1e(newgeom, tmdim, tmdim));
+  shared_ptr<Matrix> U(new Matrix(tndim, tndim));
+  shared_ptr<Matrix> V(new Matrix(tmdim, tmdim));
   tmp->svd(U, V);
 
-  shared_ptr<Matrix1e> Ured = U->slice(tmdim, tndim); //(new Matrix1e(U, make_pair(tmdim, tndim)));
+  shared_ptr<Matrix> Ured = U->slice(tmdim, tndim); //(new Matrix(U, make_pair(tmdim, tndim)));
   shared_ptr<Coeff> coeff_cabs = shared_ptr<Coeff>(new Coeff(*ri_coeff * *Ured));
 
-  shared_ptr<Matrix1e> coeff_entire = ri_reshaped->merge(coeff_cabs);
+  shared_ptr<Matrix> coeff_entire = ri_reshaped->merge(coeff_cabs);
 
-  pair<shared_ptr<Coeff>, shared_ptr<Coeff> > t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
+  pair<shared_ptr<Matrix>, shared_ptr<Matrix> > t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
 
   // TODO check
   int ncabs = ri_coeff->mdim();

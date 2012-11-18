@@ -57,7 +57,7 @@ class F12Ref {
 
     void compute();
 
-    std::tuple<std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e>, int> generate_cabs() const;
+    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, int> generate_cabs() const;
 };
 
 

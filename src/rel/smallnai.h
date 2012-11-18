@@ -36,7 +36,7 @@ namespace bagel {
 
 class SmallNAI {
   protected:
-    std::array<std::shared_ptr<Matrix1e>, 4> data_;
+    std::array<std::shared_ptr<Matrix>, 4> data_;
     const std::shared_ptr<const Geometry> geom_;
 
     void init();
@@ -45,7 +45,7 @@ class SmallNAI {
     SmallNAI(const std::shared_ptr<const Geometry> geom);
     ~SmallNAI() {};
   
-    const std::shared_ptr<Matrix1e>& operator[](const int i) const { return data_[i]; }; 
+    const std::shared_ptr<Matrix>& operator[](const int i) const { return data_[i]; }; 
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
 

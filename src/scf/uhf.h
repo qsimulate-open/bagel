@@ -37,8 +37,8 @@ namespace bagel {
 
 class UHF : public SCF_base {
   protected:
-    std::shared_ptr<Matrix1e> aodensityA_;
-    std::shared_ptr<Matrix1e> aodensityB_;
+    std::shared_ptr<Matrix> aodensityA_;
+    std::shared_ptr<Matrix> aodensityB_;
     std::shared_ptr<const Coeff> coeffB_;
 
     std::unique_ptr<double[]> eigB_;
@@ -60,7 +60,7 @@ class UHF : public SCF_base {
 
     ~UHF() {};
 
-    std::tuple<std::shared_ptr<Matrix1e>,std::shared_ptr<Matrix1e>, std::shared_ptr<Matrix1e> > form_density_uhf() const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>, std::shared_ptr<Matrix> > form_density_uhf() const;
 
     virtual void compute() override;
 

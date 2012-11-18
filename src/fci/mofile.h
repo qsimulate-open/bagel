@@ -59,7 +59,7 @@ class MOFile {
     std::vector<std::shared_ptr<Shell> > basis_;
     std::vector<int> offset_;
 
-    std::shared_ptr<Matrix1e> core_fock_;
+    std::shared_ptr<Matrix> core_fock_;
     std::unique_ptr<double[]> mo1e_;
     std::unique_ptr<double[]> mo2e_;
     std::shared_ptr<DF_Half> mo2e_1ext_;
@@ -98,7 +98,7 @@ class MOFile {
     // This is in <ij|kl> == (ik|jl) format
     double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
-    std::shared_ptr<const Matrix1e> core_fock() const { return core_fock_; };
+    std::shared_ptr<const Matrix> core_fock() const { return core_fock_; };
     double* core_fock_ptr() { return core_fock_->data(); };
     double* mo1e_ptr() { return mo1e_.get(); };
     double* mo2e_ptr() { return mo2e_.get(); };

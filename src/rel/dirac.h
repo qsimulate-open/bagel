@@ -33,7 +33,7 @@
 #include <src/wfn/reference.h>
 #include <src/scf/geometry.h>
 #include <src/scf/kinetic.h>
-#include <src/scf/matrix1e.h>
+#include <src/util/matrix.h>
 #include <src/scf/scf_base.h>
 
 namespace bagel {
@@ -41,13 +41,13 @@ namespace bagel {
 class Dirac : public SCF_base {
   protected:
     // nonrelativistic integrals
-    const std::shared_ptr<const Matrix1e> kinetic_;
-    const std::shared_ptr<const Matrix1e> nai_;
+    const std::shared_ptr<const Matrix> kinetic_;
+    const std::shared_ptr<const Matrix> nai_;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix1e(*hcore_ - *kinetic_)) {
+     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)) {
     }
     ~Dirac() {};
 
