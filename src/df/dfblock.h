@@ -26,6 +26,7 @@
 #ifndef __SRC_DF_DFBLOCK_H
 #define __SRC_DF_DFBLOCK_H
 
+#include <numeric>
 #include <memory>
 #include <list>
 #include <cassert>
@@ -51,39 +52,44 @@ class DFBlock {
     std::vector<int> b2off_;
 
     // dimensions of the block
-    size_t asize_;
-    size_t b1size_;
-    size_t b2size_;
+    const size_t asize_;
+    const size_t b1size_;
+    const size_t b2size_;
 
     // a set of offsets of this block in the entire DF integrals
-    size_t astart_; 
-    size_t b1start_; 
-    size_t b2start_; 
+    const size_t astart_; 
+    const size_t b1start_; 
+    const size_t b2start_; 
 
-    void common_init();
+    void ao_init();
 
     std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
   public:
+    // construction of a block from AO integrals
     DFBlock(std::vector<std::shared_ptr<const Shell> > a,
             std::vector<std::shared_ptr<const Shell> > b1,
             std::vector<std::shared_ptr<const Shell> > b2,
             const int as, const int b1s, const int b2s)
-     : aux_(a), b1_(b1), b2_(b2), asize_(0lu), b1size_(0lu), b2size_(0lu), astart_(as), b1start_(b1s), b2start_(b2s) {
+     : aux_(a), b1_(b1), b2_(b2),
+       asize_(std::accumulate(a.begin(), a.end(),    0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
+       b1size_(std::accumulate(b1.begin(), b1.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
+       b2size_(std::accumulate(b2.begin(), b2.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
+       astart_(as), b1start_(b1s), b2start_(b2s) {
 
-      for (auto& i : aux_) { aoff_.push_back(asize_); asize_ += i->nbasis(); }
-      for (auto& i : b1_)  { b1off_.push_back(b1size_); b1size_ += i->nbasis(); }
-      for (auto& i : b2_)  { b2off_.push_back(b2size_); b2size_ += i->nbasis(); }
-
-      common_init();
+      ao_init();
     };
 
 
-    DFBlock(std::unique_ptr<double[]>& d) : data_(std::move(d)) { };
+    // construction of a block from data (unique_ptr<double[]>)
+    DFBlock(std::unique_ptr<double[]>& d, const size_t a, const size_t b1, const size_t b2,
+                                          const int as, const int b1s, const int b2s)
+     : data_(std::move(d)), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { };
 
-    // direct access to data will be disabled once implementation is done
+    // TODO direct access to data will be disabled once implementation is done
     double* get() { return data_.get(); };
     const double* get() const { return data_.get(); };
+    double& operator[](const size_t i) { return data_[i]; };
 };
 
 }

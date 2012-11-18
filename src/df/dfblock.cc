@@ -34,7 +34,7 @@ using namespace bagel;
 using namespace std;
 
 // protected functions
-void DFBlock::common_init() {
+void DFBlock::ao_init() {
   // allocation of the data area
   data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
 

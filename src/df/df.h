@@ -97,18 +97,16 @@ class DF_AO : public DensityFit {
     };
   public:
     DF_AO(const int nbas0, const int nbas1, const int naux, std::unique_ptr<double[]>& dat) : DensityFit(nbas0, nbas1, naux) {
-      data_ = std::shared_ptr<DFBlock>(new DFBlock(dat));
+      data_ = std::shared_ptr<DFBlock>(new DFBlock(dat, naux, nbas1, nbas0, 0,0,0));
     };
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
 
+// TODO this will be removed.
+#if 1
     double* ptr(const size_t i, const size_t j, const size_t k) { return data_->get()+i+naux_*(j+nbasis1_*k); };
     const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_->get()+i+naux_*(j+nbasis1_*k); };
-
-#if 0
-    std::unique_ptr<double[]>& data_ptr() { return data_; };
-    const std::unique_ptr<double[]>& data_ptr() const { return data_; };
 #endif
 
     void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_->get(), 1, data_->get(), 1); };
@@ -122,13 +120,14 @@ class DF_Half {
     const std::shared_ptr<const DensityFit> df_;
     const size_t nocc_;
 
-    std::unique_ptr<double[]> data_;
+//  std::unique_ptr<double[]> data_;
+    std::shared_ptr<DFBlock> data_;
     const size_t nbasis_;
     const size_t naux_;
 
   public:
     DF_Half(const std::shared_ptr<const DensityFit> df, const int nocc, std::unique_ptr<double[]>& in)
-     : df_(df), nocc_(nocc), data_(std::move(in)), nbasis_(df->nbasis0()), naux_(df->naux()) {};
+     : df_(df), nocc_(nocc), data_(new DFBlock(in, naux_, nocc, nbasis_, 0,0,0)), nbasis_(df->nbasis0()), naux_(df->naux()) {};
 
     ~DF_Half() {};
 
@@ -138,7 +137,9 @@ class DF_Half {
     size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
+#if 0
     std::unique_ptr<double[]> move_data() { return std::move(data_); };
+#endif
 
     std::shared_ptr<DF_Half> clone() const;
     std::shared_ptr<DF_Half> copy() const;
@@ -184,14 +185,14 @@ class DF_Full {
     const size_t nocc1_; // inner
     const size_t nocc2_; // outer
 
-    std::unique_ptr<double[]> data_;
+    std::shared_ptr<DFBlock> data_;
     const size_t naux_;
 
   public:
     DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::unique_ptr<double[]>& in)
-      : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(std::move(in)), naux_(df->naux()) {};
+      : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(new DFBlock(in, naux_, nocc1_, nocc2_, 0,0,0)), naux_(df->naux()) {};
 
-    DF_Full(std::shared_ptr<DF_Half> o) : df_(o->df()), nocc1_(o->nocc()), nocc2_(o->nbasis()), data_(o->move_data()), naux_(o->naux()) {};
+    DF_Full(std::shared_ptr<DF_Half> o) : df_(o->df()), nocc1_(o->nocc()), nocc2_(o->nbasis()), data_(o->data_), naux_(o->naux()) {};
 
     ~DF_Full() {};
 
