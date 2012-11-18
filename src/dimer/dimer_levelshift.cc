@@ -34,12 +34,24 @@
 using namespace bagel;
 using namespace std;
 
-ShiftDimer::ShiftDimer(shared_ptr<const Coeff> monomer_coeff, const double shift_parameter) : LevelShift(monomer_coeff->mdim(), shift_parameter) {
-  // Do I actually need to do anything here?
-  subspace_ = monomer_coeff;
+ShiftDimer::ShiftDimer(shared_ptr<const Dimer> dimer, const double shift_parameter) : LevelShift(dimer->nbasis().first, shift_parameter) {
+  subspace_ = dimer->proj_coeff()->slice(dimer->nbasis().first, dimer->nbasis().first + dimer->nbasis().second);
+
+  S_ = shared_ptr<const Matrix>(new const Overlap(dimer->sgeom()));
+  shared_ptr<Matrix> S_1(new Matrix(S_));
+  S_1->inverse();
+
+  subspace_projector_ = shared_ptr<const Matrix>(new const Matrix1e( (*subspace_) * (*S_1) * (*(subspace_->transpose())) ));
 }
 
-void ShiftDimer::shift(Matrix1e& coeff) {
+void ShiftDimer::shift(Matrix& fock_mo, shared_ptr<const Coeff> coeff) {
 
-  
+  // Project onto subspace
+  // Btilde = P_A * B
+
+  // Compute norm
+  // norm = Btilde^dagger * S * Btilde
+
+  // Rank according to overlap with subspace
+  // Shift the highest
 }
