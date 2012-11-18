@@ -158,19 +158,16 @@ class DF_Half {
 
     std::shared_ptr<DFBlock> data() const { return data_; };
 
-    void form_2index(std::unique_ptr<double[]>& target, const double a = 1.0, const double b = 0.0) const;
     // form 2 index quantities
-    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
-    std::unique_ptr<double[]> form_2index(std::shared_ptr<const DF_Full> o, const double a = 1.0, const double b = 0.0) const;
+    std::unique_ptr<double[]> form_2index(const double a) const;
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a) const;
     // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
-    void form_2index(std::unique_ptr<double[]>& target, std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
-    std::unique_ptr<double[]> form_2index(std::shared_ptr<const DensityFit> o, const double a = 1.0) const;
+    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DensityFit> o, const double a) const;
 
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Half> o) const;
 
     // form K^ij_rs operator
     std::unique_ptr<double[]> form_4index() const;
-    void form_4index(std::unique_ptr<double[]>& target) const;
 
     // compute a K operator with one occupied index K_rj(D_tu), given an AO density matrix.
     std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
@@ -227,27 +224,21 @@ class DF_Full {
     std::shared_ptr<DF_Full> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
 
     // forming all internal 4-index MO integrals
-    void form_4index(std::unique_ptr<double[]>& target) const;
     std::unique_ptr<double[]> form_4index() const;
-    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o) const;
 
     // the same as above, but with one index fixed at n (of nocc2).
-    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const size_t n) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o, const size_t n) const;
 
     // forming two-external K operators
-    void form_4index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DensityFit> o) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
 
     // contract ii and form (D|E)
     std::unique_ptr<double[]> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
     std::unique_ptr<double[]> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
 
-    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Half> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);
 
-    void form_2index(std::unique_ptr<double[]>& target, const std::shared_ptr<const DF_Full> o, const double);
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Full> o, const double a);
 
     const std::shared_ptr<const DensityFit> df() const { return df_; };

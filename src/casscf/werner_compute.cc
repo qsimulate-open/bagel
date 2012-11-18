@@ -125,19 +125,20 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
     dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);
   }
 
-  unique_ptr<double[]> tmp(new double[nbas*nbas]);
+  unique_ptr<double[]> tmp;
   // second term
   {
     Matrix Umat(*cc * *u);
     shared_ptr<DF_Half> half = df->compute_half_transform(Umat.data(), nocc_);
-    half->form_2index(tmp, jvec->jvec(), 2.0, 0.0);
+    tmp = move(half->form_2index(jvec->jvec(), 2.0));
   }
 
   // third term
   if (t->norm() > 1.0e-15) {
     Matrix Tmat(*cc * *t);
     shared_ptr<DF_Full> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
-    jvec->half()->form_2index(tmp, full, 4.0, 1.0);
+    unique_ptr<double[]> tmp2 = jvec->half()->form_2index(full, 4.0);
+    daxpy_(nbas*nbas, 1.0, tmp2.get(), 1, tmp.get(), 1);
   }
 
   dgemm_("T", "N", nbasis_, nocc_, nbas, 1.0, cc->data(), nbas, tmp.get(), nbas, 1.0, out->data(), nbasis_);

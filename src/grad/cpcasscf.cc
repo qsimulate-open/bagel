@@ -294,7 +294,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 #endif
   shared_ptr<const DF_Full> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
   shared_ptr<const DF_Full> fulld = full->apply_2rdm(rdm2->data());
-  unique_ptr<double[]> jd = half->form_2index(fulld);
+  unique_ptr<double[]> jd = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);
 
   return amat;

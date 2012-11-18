@@ -113,8 +113,7 @@ class K2ext {
               const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 
               // contract
-              std::unique_ptr<double[]> target(new double[size]);
-              df01->form_4index(target, df23);
+              std::unique_ptr<double[]> target = df01->form_4index(df23);
 
               // move in place
               if (hashkey23 != hashkey01) {

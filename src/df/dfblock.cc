@@ -286,3 +286,19 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
 }
 
 
+unique_ptr<double[]> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const double a) const {
+  if (asize_ != o->asize_ || b1size_ != o->b1size_) throw logic_error("illegal call of DFBlock::form_2index");
+
+  unique_ptr<double[]> target(new double[b2size_*o->b2size_]);
+  dgemm_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target.get(), b2size_);
+  return target;
+}
+
+
+unique_ptr<double[]> DFBlock::form_4index(const shared_ptr<const DFBlock> o, const double a) const {
+  if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index");
+  unique_ptr<double[]> target(new double[b2size_*o->b2size_*b1size_*o->b1size_]);
+  dgemm_("T", "N", b1size_*b2size_, o->b1size_*o->b2size_, asize_, a, data_.get(), asize_, o->data_.get(), asize_, 0.0, target.get(), b1size_*b2size_);
+  return target;
+}
+

@@ -42,8 +42,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr
 
   shared_ptr<const DF_Full> prdm = full->apply_2rdm(rdm->data());
 
-  unique_ptr<double[]> tmp(new double[nbasis*m]);
-  half->form_2index(tmp, prdm);
+  unique_ptr<double[]> tmp = half->form_2index(prdm, 1.0);
   dgemm_("T", "N", n, m, nbasis, 1.0, coeff->data(), nbasis, tmp.get(), nbasis, 0.0, data(), n);
 
 }
