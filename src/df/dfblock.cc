@@ -284,3 +284,5 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
   dgemm_("N", "T", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data_.get(), asize_, rdm, b1size_*b2size_, 0.0, out->get(), asize_);
   return out;
 }
+
+

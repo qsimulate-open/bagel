@@ -260,20 +260,13 @@ unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o)
 }
 
 
-
 shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
-  shared_ptr<DFBlock> buf = data_->clone();
-  dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, data_->get(), naux_*nocc_, den, nbasis_, 0.0, buf->get(), naux_*nocc_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, buf));
+  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, data_->transform_third(den, nbasis_)));
 }
 
 
 void DF_Half::rotate_occ(const double* d) {
-  unique_ptr<double[]> buf(new double[naux_*nocc_]);
-  for (int i = 0; i != nbasis_; ++i) {
-    dgemm_("N", "N", naux_, nocc_, nocc_, 1.0, data_->get()+i*naux_*nocc_, naux_, d, nocc_, 0.0, buf.get(), naux_);
-    copy_n(buf.get(), naux_*nocc_, data_->get()+i*naux_*nocc_); 
-  }
+  data_ = data_->transform_second(d, nocc_);
 }
 
 

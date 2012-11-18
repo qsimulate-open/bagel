@@ -117,6 +117,7 @@ class DFBlock {
     std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const; 
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
+
 };
 
 }

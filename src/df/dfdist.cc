@@ -172,6 +172,21 @@ shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
 }
 
 
+void DFHalfDist::rotate_occ(const double* d) {
+  for (auto& i : blocks_)
+    i = i->transform_second(d, nocc_);
+}
+
+
+shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
+  shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_)); 
+  for (auto& i : blocks_)
+    out->add_block(i->transform_third(den, nbasis_));
+  return out;
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -264,7 +279,6 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
   return out;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -348,22 +362,6 @@ unique_ptr<double[]> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o)
   return out;
 }
 
-
-
-shared_ptr<DF_Half> DF_Half::apply_density(const double* den) const {
-  unique_ptr<double[]> buf(new double[naux_*nbasis_*nocc_]);
-  dgemm_("N", "N", naux_*nocc_, nbasis_, nbasis_, 1.0, data_->get(), naux_*nocc_, den, nbasis_, 0.0, buf.get(), naux_*nocc_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, buf));
-}
-
-
-void DF_Half::rotate_occ(const double* d) {
-  unique_ptr<double[]> buf(new double[naux_*nocc_]);
-  for (int i = 0; i != nbasis_; ++i) {
-    dgemm_("N", "N", naux_, nocc_, nocc_, 1.0, data_->get()+i*naux_*nocc_, naux_, d, nocc_, 0.0, buf.get(), naux_);
-    copy_n(buf.get(), naux_*nocc_, data_->get()+i*naux_*nocc_); 
-  }
-}
 
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
