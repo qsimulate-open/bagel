@@ -486,6 +486,23 @@ void Matrix::inverse() {
 }
 
 
+// compute S^{-1/2}
+void Matrix::inverse_half(const double thresh) {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  unique_ptr<double[]> vec(new double[n]);
+  diagonalize(vec.get());
+
+  for (int i = 0; i != n; ++i)
+    vec[i] = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+  for (int i = 0; i != n; ++i)
+    dscal_(n, vec[i], data_.get()+i*n, 1);
+
+  *this = *this ^ *this;
+
+}
+
+
 void Matrix::print(const string name, const int size) const {
 
   cout << "++++ " + name + " ++++" << endl;

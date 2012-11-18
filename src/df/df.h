@@ -34,6 +34,7 @@
 #include <src/scf/atom.h>
 #include <src/util/f77.h>
 #include <src/rysint/eribatch.h>
+#include <src/util/matrix.h>
 #include <stdexcept>
 
 namespace bagel {
@@ -56,7 +57,7 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     // AO three-index integrals
     std::shared_ptr<DFBlock> data_;
     // AO two-index integrals ^ -1/2
-    std::unique_ptr<double[]> data2_;
+    std::shared_ptr<Matrix> data2_;
 
     virtual void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
                              const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
@@ -120,7 +121,6 @@ class DF_Half {
     const std::shared_ptr<const DensityFit> df_;
     const size_t nocc_;
 
-//  std::unique_ptr<double[]> data_;
     std::shared_ptr<DFBlock> data_;
     const size_t nbasis_;
     const size_t naux_;

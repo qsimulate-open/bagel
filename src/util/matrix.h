@@ -66,7 +66,10 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
     void diagonalize(double*);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
+    // compute S^-1. Assumes positive definite matrix
     void inverse();
+    // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
+    void inverse_half(const double thresh = 1.0e-8);
     void copy_block(const int, const int, const int, const int, const double*);
 
     Matrix operator*(const Matrix&) const;
