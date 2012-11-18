@@ -137,10 +137,6 @@ class DF_Half {
     size_t size() const { return naux_*nbasis_*nocc_; };
     const std::shared_ptr<const DensityFit> df() { return df_; };
 
-#if 0
-    std::unique_ptr<double[]> move_data() { return std::move(data_); };
-#endif
-
     std::shared_ptr<DF_Half> clone() const;
     std::shared_ptr<DF_Half> copy() const;
 
