@@ -45,7 +45,6 @@ class DFBlock {
     std::vector<std::shared_ptr<const Shell> > aux_;
     std::vector<std::shared_ptr<const Shell> > b1_;
     std::vector<std::shared_ptr<const Shell> > b2_;
-
     // offset within the block
     std::vector<int> aoff_;
     std::vector<int> b1off_;
@@ -67,19 +66,8 @@ class DFBlock {
 
   public:
     // construction of a block from AO integrals
-    DFBlock(std::vector<std::shared_ptr<const Shell> > a,
-            std::vector<std::shared_ptr<const Shell> > b1,
-            std::vector<std::shared_ptr<const Shell> > b2,
-            const int as, const int b1s, const int b2s)
-     : aux_(a), b1_(b1), b2_(b2),
-       asize_(std::accumulate(a.begin(), a.end(),    0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-       b1size_(std::accumulate(b1.begin(), b1.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-       b2size_(std::accumulate(b2.begin(), b2.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-       astart_(as), b1start_(b1s), b2start_(b2s) {
-
-      ao_init();
-    };
-
+    DFBlock(std::vector<std::shared_ptr<const Shell> > a, std::vector<std::shared_ptr<const Shell> > b1, std::vector<std::shared_ptr<const Shell> > b2,
+            const int as, const int b1s, const int b2s);
 
     // construction of a block from data (unique_ptr<double[]>)
     DFBlock(std::unique_ptr<double[]>& d, const size_t a, const size_t b1, const size_t b2,
