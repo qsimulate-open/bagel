@@ -359,6 +359,7 @@ unique_ptr<double[]> Matrix::diag() const {
 shared_ptr<Matrix> Matrix::transpose() const {
   shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
 
+#if 0
   double *data = data_.get();
   double *odata = out->data();
   for(int i = 0; i < ndim_; ++i) {
@@ -366,6 +367,9 @@ shared_ptr<Matrix> Matrix::transpose() const {
       odata[i*mdim_ + j] = data[i + j*ndim_];
     }
   }
+#else
+  mytranspose_(data_.get(), &ndim_, &mdim_, out->data()); 
+#endif
 
   return out;
 }
