@@ -46,14 +46,14 @@ namespace bagel {
 class ShiftDimer : public LevelShift {
   protected:
     std::shared_ptr<const Coeff> subspace_;
-    std::shared_ptr<const Matrix1e> subspace_projector_;
-    std::shared_ptr<const Matrix1e> S_;
+    std::shared_ptr<const Matrix> subspace_projector_;
+    std::shared_ptr<const Matrix> S_;
 
   public:
     // monomer_coeff should be monomer coefficients projected onto dimer orbitals
     ShiftDimer(std::shared_ptr<const Dimer> dimer, const double shift_parameter);
 
-    void shift(Matrix1e& coeff) override;
+    void shift(Matrix& coeff) override;
 };
 
 }
