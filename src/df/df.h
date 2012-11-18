@@ -54,14 +54,15 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     const size_t nbasis1_; // inner
     // #auxiliary basis
     const size_t naux_;
-    // AO three-index integrals
+
+    // AO three-index integrals (not set in DFDist).
     std::shared_ptr<DFBlock> data_;
     // AO two-index integrals ^ -1/2
     std::shared_ptr<Matrix> data2_;
 
-    virtual void common_init(const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&,
-                             const std::vector<std::shared_ptr<const Atom> >&, const std::vector<std::vector<int> >&, const double, const bool);
+    virtual void common_init(const std::vector<std::shared_ptr<const Atom> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&,
+                             const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv);
 
     // returns a pointer to a stack memory area
     virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) = 0;
@@ -73,14 +74,14 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
     DensityFit(const int nbas0, const int nbas1, const int naux) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {};
     ~DensityFit() {};
 
-    virtual bool has_2index() const { return data2_.get() != nullptr; };
+    bool has_2index() const { return data2_.get() != nullptr; };
 
     size_t nbasis0() const { return nbasis0_; };
     size_t nbasis1() const { return nbasis1_; };
     size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
-    virtual std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
+    std::shared_ptr<DF_Half> compute_half_transform(const double* c, const size_t nocc) const;
 
     // compute a J operator, given density matrices in AO basis
     virtual std::unique_ptr<double[]> compute_Jop(const double* den) const;

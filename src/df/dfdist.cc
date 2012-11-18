@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: df.cc
+// Filename: dfdist.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -28,8 +28,7 @@
 #include <src/util/taskqueue.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
-#include <src/df/df.h>
-#include <src/rysint/eribatch.h>
+#include <src/df/dfdist.h>
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
@@ -42,45 +41,11 @@ using namespace std;
 using namespace chrono;
 using namespace bagel;
 
-namespace bagel {
 
-class DFIntTask_OLD {
-  protected:
-    array<shared_ptr<const Shell>,4> shell_;
-    array<int,3> offset_; // at most 3 elements
-    int rank_;
-    DensityFit* df_;
+void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
+                         const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 
-  public:
-    DFIntTask_OLD(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), rank_(b.size()), df_(df) {
-      int j = 0;
-      for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
-    }
-    DFIntTask_OLD() {};
-
-    void compute() {
-      pair<const double*, shared_ptr<RysInt> > p = df_->compute_batch(shell_);
-      const double* ppt = p.first;
-
-      const size_t naux = df_->naux();
-      // all slot in
-      if (rank_ == 2) {
-        double* const data = df_->data2_->data();
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt)
-            data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
-      } else {
-        assert(false);
-      }
-    };
-};
-
-}
-
-
-void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
-                             const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
-
+#if 0
   // this will be distributed in the future.
   auto tp0 = high_resolution_clock::now();
 
@@ -90,8 +55,8 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, cons
   for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
   for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
 
-  // TODO in the future DFBlock should be devided into pieces that are to be distributed
-  //      ... DFBlock only takes care of intra-node parallelization
+  // Decide how we distribute (dynamic distribution).
+  // TODO we need a parallel queue server!
   data_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
 
   // generates a task of integral evaluations
@@ -123,40 +88,65 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, cons
   if (compute_inverse) data2_->inverse_half(throverlap);
   auto tp2 = high_resolution_clock::now();
   cout << "       - time spent for computing inverse    " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
+#endif
 
 }
 
 
-unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
+pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
+#ifdef LIBINT_INTERFACE
+  shared_ptr<Libint> eribatch(new Libint(input));
+#else
+  shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 2.0));
+#endif
+  eribatch->compute();
+  return make_pair(eribatch->data(), eribatch);
+}
+
+
+unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
+#if 0
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
   unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
   // then compute J operator J_{rs} = |E*) (E|rs)
   dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, tmp0.get(), 1, 0.0, out.get(), 1);
   return out;
+#else
+  return unique_ptr<double[]>();
+#endif
 }
 
 
-unique_ptr<double[]> DensityFit::compute_cd(const double* den) const {
+unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
+#if 0
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
   dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, den, 1, 0.0, tmp0.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
   return tmp0;
+#else
+  return unique_ptr<double[]>();
+#endif
 }
 
 
-shared_ptr<DF_Half> DensityFit::compute_half_transform(const double* c, const size_t nocc) const {
+shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
+#if 0
   // it starts with DGEMM of inner index (for some reasons)...
   unique_ptr<double[]> tmp(new double[naux_*nbasis0_*nocc]);
   for (size_t i = 0; i != nbasis0_; ++i) {
     dgemm_("N", "N", naux_, nocc, nbasis1_, 1.0, data_->get()+i*naux_*nbasis1_, naux_, c, nbasis1_, 0.0, tmp.get()+i*naux_*nocc, naux_);
   }
   return shared_ptr<DF_Half>(new DF_Half(shared_from_this(), nocc, tmp));
+#else
+  return shared_ptr<DFHalfDist>();
+#endif
 }
 
 
+#if 0
 DF_AO::DF_AO(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd)
  : DensityFit(nbas0, nbas1, naux) {
   assert(cd.size() == dd.size());
@@ -599,5 +589,6 @@ shared_ptr<DF_AO> DF_Half::back_transform(const double* c) const{
     dgemm_("N", "T", naux_, nbas, nocc_, 1.0, data_->get()+i*naux_*nocc_, naux_, c, nbas, 0.0, d.get()+i*naux_*nbas, naux_);
   return shared_ptr<DF_AO>(new DF_AO(nbas, nbasis_, naux_, d));
 }
+#endif
 
 
