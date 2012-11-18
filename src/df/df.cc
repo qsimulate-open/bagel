@@ -297,68 +297,12 @@ shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
 
 
 shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm) const {
-  shared_ptr<DFBlock> out = data_->clone();
-  dgemm_("N", "T", naux_, nocc1_*nocc2_, nocc1_*nocc2_, 1.0, data_->get(), naux_, rdm, nocc1_*nocc2_, 0.0, out->get(), naux_);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_2RDM(rdm)));
 }
 
 
 shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
-  assert(nclosed+nact == nocc1_ && nocc1_ == nocc2_);
-  // checking if natural orbitals...
-  {
-    const double a = ddot_(nact*nact, rdm1, 1, rdm1, 1);
-    double sum = 0.0;
-    for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
-    if (fabs(a-sum) > numerical_zero__) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
-  }
-  shared_ptr<DFBlock> out = data_->clone();
-  fill(out->get(), out->get()+nocc1_*nocc2_*naux_, 0.0);
-  // closed-closed part
-  // exchange contribution
-  for (int i = 0; i != nclosed; ++i)
-    for (int j = 0; j != nclosed; ++j)
-      daxpy_(naux_, -2.0, data_->get()+naux_*(j+nocc1_*i), 1, out->get()+naux_*(j+nocc1_*i), 1);
-  // coulomb contribution
-  unique_ptr<double[]> diagsum(new double[naux_]);
-  fill(diagsum.get(), diagsum.get()+naux_, 0.0);
-  for (int i = 0; i != nclosed; ++i)
-    daxpy_(naux_, 1.0, data_->get()+naux_*(i+nocc1_*i), 1, diagsum.get(), 1);
-  for (int i = 0; i != nclosed; ++i)
-    daxpy_(naux_, 4.0, diagsum.get(), 1, out->get()+naux_*(i+nocc1_*i), 1);
-
-  // act-act part
-  // compress
-  unique_ptr<double[]> buf(new double[nact*nact*naux_]);
-  unique_ptr<double[]> buf2(new double[nact*nact*naux_]);
-  for (int i = 0; i != nact; ++i)
-    for (int j = 0; j != nact; ++j)
-      dcopy_(naux_, data_->get()+naux_*(j+nclosed+nocc1_*(i+nclosed)), 1, buf.get()+naux_*(j+nact*i),1);
-  // multiply
-  dgemm_("N", "N", naux_, nact*nact, nact*nact, 1.0, buf.get(), naux_, rdm, nact*nact, 0.0, buf2.get(), naux_);
-  // slot in
-  for (int i = 0; i != nact; ++i)
-    for (int j = 0; j != nact; ++j)
-      dcopy_(naux_, buf2.get()+naux_*(j+nact*i),1, out->get()+naux_*(j+nclosed+nocc1_*(i+nclosed)), 1);
-
-  // closed-act part
-  // coulomb contribution G^ia_ia = 2*gamma_ab
-  // ASSUMING natural orbitals
-  for (int i = 0; i != nact; ++i)
-    daxpy_(naux_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+naux_*(i+nclosed+nocc1_*(i+nclosed)), 1);
-  unique_ptr<double[]> diagsum2(new double[naux_]);
-  dgemv_("N", naux_, nact*nact, 1.0, buf.get(), naux_, rdm1, 1, 0.0, diagsum2.get(), 1);
-  for (int i = 0; i != nclosed; ++i)
-    daxpy_(naux_, 2.0, diagsum2.get(), 1, out->get()+naux_*(i+nocc1_*i), 1);
-  // exchange contribution
-  for (int i = 0; i != nact; ++i) {
-    for (int j = 0; j != nclosed; ++j) {
-      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(j+nocc1_*(i+nclosed)), 1, out->get()+naux_*(j+nocc1_*(i+nclosed)), 1);
-      daxpy_(naux_, -rdm1[i+nact*i], data_->get()+naux_*(i+nclosed+nocc1_*j), 1, out->get()+naux_*(i+nclosed+nocc1_*j), 1);
-    }
-  }
-
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_2RDM(rdm, rdm1, nclosed, nact)));
 }
 
 
@@ -506,22 +450,7 @@ void DF_Full::symmetrize() {
 
 
 shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
-  assert(nocc1_ == nocc2_);
-  const int nocc = nocc1_;
-  shared_ptr<DFBlock> d = data_->clone();
-  fill(d->get(), d->get()+size(), 0.0);
-  // exchange contributions
-  daxpy_(size(), -2.0, data_->get(), 1, d->get(), 1);
-  // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[naux_]);
-  fill(diagsum.get(), diagsum.get()+naux_, 0.0);
-  for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, 1.0, data_->get()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
-  }
-  for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, 4.0, diagsum.get(), 1, d->get()+naux_*(i+nocc*i), 1);
-  }
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_rhf_2RDM()));
 }
 
 
@@ -529,34 +458,7 @@ shared_ptr<DF_Full> DF_Full::apply_closed_2RDM() const {
 //   o strictly assuming that we are using natural orbitals.
 //
 shared_ptr<DF_Full> DF_Full::apply_uhf_2RDM(const double* amat, const double* bmat) const {
-  assert(nocc1_ == nocc2_);
-  const int nocc = nocc1_;
-  shared_ptr<DFBlock> d = data_->clone();
-  {
-    unique_ptr<double[]> d2(new double[size()]);
-    // exchange contributions
-    dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data_->get(), naux_*nocc, amat, nocc, 0.0, d2.get(), naux_*nocc);
-    for (int i = 0; i != nocc; ++i) {
-      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, amat, nocc, 0.0, d->get()+naux_*nocc*i, naux_);
-    }
-    dgemm_("N", "N", naux_*nocc, nocc, nocc, 1.0, data_->get(), naux_*nocc, bmat, nocc, 0.0, d2.get(), naux_*nocc);
-    for (int i = 0; i != nocc; ++i) {
-      dgemm_("N", "N", naux_, nocc, nocc, -1.0, d2.get()+naux_*nocc*i, naux_, bmat, nocc, 1.0, d->get()+naux_*nocc*i, naux_);
-    }
-  }
-
-  unique_ptr<double[]> sum(new double[nocc]);
-  for (int i = 0; i != nocc; ++i) sum[i] = amat[i+i*nocc] + bmat[i+i*nocc];
-  // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[naux_]);
-  fill(diagsum.get(), diagsum.get()+naux_, 0.0);
-  for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, sum[i], data_->get()+naux_*(i+nocc*i), 1, diagsum.get(), 1);
-  }
-  for (int i = 0; i != nocc; ++i) {
-    daxpy_(naux_, sum[i], diagsum.get(), 1, d->get()+naux_*(i+nocc*i), 1);
-  }
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, d));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, data_->apply_uhf_2RDM(amat, bmat)));
 }
 
 

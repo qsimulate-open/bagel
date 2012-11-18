@@ -36,6 +36,10 @@
 
 namespace bagel {
 
+/*
+    DFBlock is a slice of 3-index DF integrals. Distributed by the first index
+*/
+
 class DFBlock {
   friend class DFIntTask;
   protected:
@@ -79,6 +83,7 @@ class DFBlock {
 
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
+    void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
     // dimensions of the block
     size_t asize() const { return asize_; }
@@ -107,6 +112,11 @@ class DFBlock {
     double* get() { return data_.get(); }
     const double* get() const { return data_.get(); }
     double& operator[](const size_t i) { return data_[i]; }
+
+    std::shared_ptr<DFBlock> apply_rhf_2RDM() const; 
+    std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const; 
+    std::shared_ptr<DFBlock> apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
 };
 
 }

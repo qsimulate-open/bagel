@@ -29,6 +29,7 @@
 #include <src/df/dfblock.h>
 #include <src/rysint/libint.h>
 #include <src/rysint/eribatch.h>
+#include <src/util/constants.h>
 #include <src/util/f77.h>
 
 using namespace bagel;
@@ -167,4 +168,119 @@ void DFBlock::symmetrize() {
     for (int j = i; j != n; ++j)
       for (int k = 0; k != asize_; ++k)
         data_[k+asize_*(j+n*i)] = data_[k+asize_*(i+n*j)] = (data_[k+asize_*(j+n*i)] + data_[k+asize_*(i+n*j)]);
+}
+
+
+shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM() const {
+  assert(b1size_ == b2size_);
+  const int nocc = b1size_;
+  shared_ptr<DFBlock> out = clone();
+  out->zero();
+  // exchange contributions
+  out->daxpy(-2.0, *this); 
+  // coulomb contributions (diagonal to diagonal)
+  unique_ptr<double[]> diagsum(new double[asize_]);
+  fill_n(diagsum.get(), asize_, 0.0);
+  for (int i = 0; i != nocc; ++i)
+    daxpy_(asize_, 1.0, data_.get()+asize_*(i+nocc*i), 1, diagsum.get(), 1);
+  for (int i = 0; i != nocc; ++i)
+    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+nocc*i), 1);
+  return out;
+}
+
+
+// Caution
+//   o strictly assuming that we are using natural orbitals.
+//
+shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const double* amat, const double* bmat) const {
+  assert(b1size_ == b2size_);
+  const int nocc = b1size_;
+  shared_ptr<DFBlock> out = clone();
+  {
+    unique_ptr<double[]> d2(new double[size()]);
+    // exchange contributions
+    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data_.get(), asize_*nocc, amat, nocc, 0.0, d2.get(), asize_*nocc);
+    for (int i = 0; i != nocc; ++i)
+      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, amat, nocc, 0.0, out->get()+asize_*nocc*i, asize_);
+    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data_.get(), asize_*nocc, bmat, nocc, 0.0, d2.get(), asize_*nocc);
+    for (int i = 0; i != nocc; ++i)
+      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, bmat, nocc, 1.0, out->get()+asize_*nocc*i, asize_);
+  }
+
+  unique_ptr<double[]> sum(new double[nocc]);
+  for (int i = 0; i != nocc; ++i) sum[i] = amat[i+i*nocc] + bmat[i+i*nocc];
+  // coulomb contributions (diagonal to diagonal)
+  unique_ptr<double[]> diagsum(new double[asize_]);
+  fill_n(diagsum.get(), asize_, 0.0);
+  for (int i = 0; i != nocc; ++i)
+    daxpy_(asize_, sum[i], data_.get()+asize_*(i+nocc*i), 1, diagsum.get(), 1);
+  for (int i = 0; i != nocc; ++i)
+    daxpy_(asize_, sum[i], diagsum.get(), 1, out->get()+asize_*(i+nocc*i), 1);
+  return out;
+}
+
+
+
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
+  assert(nclosed+nact == b1size_ && b1size_ == b2size_);
+  // checking if natural orbitals...
+  {
+    const double a = ddot_(nact*nact, rdm1, 1, rdm1, 1);
+    double sum = 0.0;
+    for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
+    if (fabs(a-sum) > numerical_zero__) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
+  }
+  shared_ptr<DFBlock> out = clone();
+  out->zero();
+  // closed-closed part
+  // exchange contribution
+  for (int i = 0; i != nclosed; ++i)
+    for (int j = 0; j != nclosed; ++j)
+      daxpy_(asize_, -2.0, data_.get()+asize_*(j+b1size_*i), 1, out->get()+asize_*(j+b1size_*i), 1);
+  // coulomb contribution
+  unique_ptr<double[]> diagsum(new double[asize_]);
+  fill_n(diagsum.get(), asize_, 0.0);
+  for (int i = 0; i != nclosed; ++i)
+    daxpy_(asize_, 1.0, data_.get()+asize_*(i+b1size_*i), 1, diagsum.get(), 1);
+  for (int i = 0; i != nclosed; ++i)
+    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+
+  // act-act part
+  // compress
+  unique_ptr<double[]> buf(new double[nact*nact*asize_]);
+  unique_ptr<double[]> buf2(new double[nact*nact*asize_]);
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      dcopy_(asize_, data_.get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1, buf.get()+asize_*(j+nact*i),1);
+  // multiply
+  dgemm_("N", "N", asize_, nact*nact, nact*nact, 1.0, buf.get(), asize_, rdm, nact*nact, 0.0, buf2.get(), asize_);
+  // slot in
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      dcopy_(asize_, buf2.get()+asize_*(j+nact*i),1, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1);
+
+  // closed-act part
+  // coulomb contribution G^ia_ia = 2*gamma_ab
+  // ASSUMING natural orbitals
+  for (int i = 0; i != nact; ++i)
+    daxpy_(asize_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)), 1);
+  unique_ptr<double[]> diagsum2(new double[asize_]);
+  dgemv_("N", asize_, nact*nact, 1.0, buf.get(), asize_, rdm1, 1, 0.0, diagsum2.get(), 1);
+  for (int i = 0; i != nclosed; ++i)
+    daxpy_(asize_, 2.0, diagsum2.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+  // exchange contribution
+  for (int i = 0; i != nact; ++i) {
+    for (int j = 0; j != nclosed; ++j) {
+      daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), 1, out->get()+asize_*(j+b1size_*(i+nclosed)), 1);
+      daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), 1, out->get()+asize_*(i+nclosed+b1size_*j), 1);
+    }
+  }
+  return out;
+}
+
+
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
+  shared_ptr<DFBlock> out = clone();
+  dgemm_("N", "T", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data_.get(), asize_, rdm, b1size_*b2size_, 0.0, out->get(), asize_);
+  return out;
 }
