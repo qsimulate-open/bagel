@@ -75,7 +75,7 @@ class DFBlock {
      : data_(std::move(d)), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { };
 
     std::shared_ptr<DFBlock> transform_second(const double* const c, const int nocc) const;
-
+    std::shared_ptr<DFBlock> transform_third(const double* const c, const int nocc) const;
 
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;

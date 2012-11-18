@@ -193,6 +193,12 @@ class DF_Full {
     DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::unique_ptr<double[]>& in)
       : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(new DFBlock(in, naux_, nocc1_, nocc2_, 0,0,0)), naux_(df->naux()) {};
 
+    DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2, std::shared_ptr<DFBlock> in)
+      : df_(df), nocc1_(nocc1), nocc2_(nocc2), data_(in), naux_(df->naux()) {};
+
+    DF_Full(const std::shared_ptr<const DensityFit> df, const size_t nocc1, const size_t nocc2)
+      : df_(df), nocc1_(nocc1), nocc2_(nocc2), naux_(df->naux()) {};
+
     DF_Full(std::shared_ptr<DF_Half> o) : df_(o->df()), nocc1_(o->nocc()), nocc2_(o->nbasis()), data_(o->data_), naux_(o->naux()) {};
 
     ~DF_Full() {};

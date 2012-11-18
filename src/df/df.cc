@@ -243,9 +243,7 @@ unique_ptr<double[]> DF_Half::form_4index() const {
 }
 
 shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) const {
-  unique_ptr<double[]> tmp(new double[naux_*nocc_*nocc]);
-  dgemm_("N", "N", naux_*nocc_, nocc, nbasis_, 1.0, data_->get(), naux_*nocc_, c, nbasis_, 0.0, tmp.get(), naux_*nocc_);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc_, nocc, tmp));
+  return shared_ptr<DF_Full>(new DF_Full(df_, nocc_, nocc, data_->transform_third(c, nocc)));
 }
 
 

@@ -133,15 +133,20 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
 
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
-
-  shared_ptr<const DensityFit> df = shared_from_this();
-  shared_ptr<DFHalfDist> out(new DFHalfDist(df, nocc));
-
+  shared_ptr<DFHalfDist> out(new DFHalfDist(shared_from_this(), nocc));
   for (auto& i : blocks_)
     out->add_block(i->transform_second(c, nocc));
-
   return out;
 }
+
+
+shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
+  shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc_, nocc));
+  for (auto& i : blocks_)
+    out->add_block(i->transform_third(c, nocc));
+  return out;
+}
+
 
 
 #if 0
@@ -236,12 +241,6 @@ unique_ptr<double[]> DF_Half::form_4index() const {
   unique_ptr<double[]> out(new double[ndim*ndim]);
   form_4index(out);
   return move(out);
-}
-
-shared_ptr<DF_Full> DF_Half::compute_second_transform(const double* c, const size_t nocc) const {
-  unique_ptr<double[]> tmp(new double[naux_*nocc_*nocc]);
-  dgemm_("N", "N", naux_*nocc_, nocc, nbasis_, 1.0, data_->get(), naux_*nocc_, c, nbasis_, 0.0, tmp.get(), naux_*nocc_);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc_, nocc, tmp));
 }
 
 
