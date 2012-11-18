@@ -105,30 +105,27 @@ pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<
 
 
 unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
-#if 0
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
   unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
+  fill(out.get(), out.get()+nbasis0_*nbasis1_, 0.0);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, tmp0.get(), 1, 0.0, out.get(), 1);
+  for (auto& i : blocks_)
+    dgemv_("T", i->asize(), nbasis0_*nbasis1_, 1.0, data_->get(), i->asize(), tmp0.get()+i->astart(), 1, 1.0, out.get(), 1);
   return out;
-#else
-  return unique_ptr<double[]>();
-#endif
 }
 
 
 unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
-#if 0
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
-  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, den, 1, 0.0, tmp0.get(), 1);
+  // D = (D|rs)*d_rs
+  for (auto& i : blocks_)
+    dgemv_("N", i->asize(), nbasis0_*nbasis1_, 1.0, data_->get(), i->asize(), den, 1, 0.0, tmp0.get()+i->astart(), 1);
+  // C = S^-1_CD D 
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
   return tmp0;
-#else
-  return unique_ptr<double[]>();
-#endif
 }
 
 

@@ -80,6 +80,17 @@ class DFBlock {
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 
+    // dimensions of the block
+    size_t asize() const { return asize_; }
+    size_t b1size() const { return b1size_; }
+    size_t b2size() const { return b2size_; }
+
+    // a set of offsets of this block in the entire DF integrals
+    size_t astart() const { return astart_; }
+    size_t b1start() const { return b1start_; }
+    size_t b2start() const { return b2start_; }
+
+
     // TODO direct access to data will be disabled once implementation is done
     double* get() { return data_.get(); };
     const double* get() const { return data_.get(); };
