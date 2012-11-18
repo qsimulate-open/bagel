@@ -114,6 +114,16 @@ class DFFullDist : public DF_Full, public ParallelDF {
     void scale(const double a);
 
     void symmetrize();
+
+    // 2RDM contractions
+    // special function for RHF
+    std::shared_ptr<DFFullDist> apply_closed_2RDM() const;
+    // special function for UHF
+    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
+    // general case with closed orbitals
+    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    // general case without closed orbitals
+    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
 };
 
 }
