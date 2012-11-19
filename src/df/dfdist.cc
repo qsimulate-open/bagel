@@ -153,10 +153,12 @@ unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
   unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
-  fill(out.get(), out.get()+nbasis0_*nbasis1_, 0.0);
+  fill_n(out.get(), nbasis0_*nbasis1_, 0.0);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  for (auto& i : blocks_)
-    dgemv_("T", i->asize(), nbasis0_*nbasis1_, 1.0, data_->get(), i->asize(), tmp0.get()+i->astart(), 1, 1.0, out.get(), 1);
+  for (auto& i : blocks_) {
+    unique_ptr<double[]> tmp = i->form_mat(tmp0.get());
+    daxpy_(nbasis0_*nbasis1_, 1.0, tmp, 1, out, 1);
+  }
   return out;
 }
 
@@ -165,8 +167,10 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
   // D = (D|rs)*d_rs
-  for (auto& i : blocks_)
-    dgemv_("N", i->asize(), nbasis0_*nbasis1_, 1.0, data_->get(), i->asize(), den, 1, 0.0, tmp0.get()+i->astart(), 1);
+  for (auto& i : blocks_) {
+    unique_ptr<double[]> tmp = i->form_vec(den);
+    copy_n(tmp.get(), i->asize(), tmp0.get()+i->astart());
+  }
   // C = S^-1_CD D 
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
@@ -230,6 +234,10 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
   return out;
 }
 
+
+unique_ptr<double[]> DFHalfDist::compute_Kop_1occ(const double* den) const {
+  return apply_density(den)->form_2index(df_, 1.0);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -330,6 +338,7 @@ shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DF
   return shared_ptr<Matrix>(new Matrix(*tmp * *df_->data2_));
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -354,9 +363,6 @@ shared_ptr<DF_Half> DF_Half::apply_JJ(shared_ptr<const DensityFit> d) const {
 }
 
 
-unique_ptr<double[]> DF_Half::compute_Kop_1occ(const double* den) const {
-  return apply_density(den)->form_2index(df_);
-}
 
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {

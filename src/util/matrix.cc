@@ -42,7 +42,7 @@ Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdi
 
 
 Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_) {
-  copy(o.data(), o.data() + ndim_*mdim_, data());
+  copy_n(o.data(), ndim_*mdim_, data());
 }
 
 Matrix::~Matrix() {
@@ -499,10 +499,15 @@ void Matrix::inverse_half(const double thresh) {
   unique_ptr<double[]> vec(new double[n]);
   diagonalize(vec.get());
 
+  for (int i = 0; i != n; ++i) {
+    double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+    dscal_(n, s, data_.get()+i*n, 1);
+  }
+
+#ifndef NDEBUG
   for (int i = 0; i != n; ++i)
-    vec[i] = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
-  for (int i = 0; i != n; ++i)
-    dscal_(n, vec[i], data_.get()+i*n, 1);
+    if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
+#endif
 
   *this = *this ^ *this;
 

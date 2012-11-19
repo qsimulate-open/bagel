@@ -47,7 +47,6 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
   friend class DFIntTask_OLD;
   friend class DF_Half;
   friend class DF_Full;
-  friend class DFFullDist;
 
   protected:
     // #orbital basis
@@ -171,7 +170,7 @@ class DF_Half {
     std::unique_ptr<double[]> form_4index() const;
 
     // compute a K operator with one occupied index K_rj(D_tu), given an AO density matrix.
-    std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
+    virtual std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
 
     // AO back transformation
     std::shared_ptr<DF_AO> back_transform(const double*) const;

@@ -52,46 +52,65 @@ class ParallelDF {
 };
 
 
-class DFDist : public DensityFit, public ParallelDF {
+class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
+  friend class DFFullDist;
   protected:
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
+    // #orbital basis
+    const size_t nbasis0_; // outer
+    const size_t nbasis1_; // inner
+    // #auxiliary basis
+    const size_t naux_;
+
+    // AO two-index integrals ^ -1/2
+    std::shared_ptr<Matrix> data2_;
+
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
     void common_init(const std::vector<std::shared_ptr<const Atom> >&,
                      const std::vector<std::shared_ptr<const Atom> >&,
-                     const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv) override;
+                     const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv);
 
   public:
     // construction of a block from AO integrals
     DFDist(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms,
                                            const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse)
-      : DensityFit(nbas, naux) {
+      : nbasis0_(nbas), nbasis1_(nbas), naux_(naux)  {
       common_init(atoms, atoms, aux_atoms, thr, inverse);
-      assert(data_ == nullptr);
     }
 
-    DFDist(const std::shared_ptr<const DensityFit> df) : DensityFit(df->nbasis1(), df->naux()) {
-      assert(df->nbasis0() == df->nbasis1());
-    }
+    DFDist(const std::shared_ptr<const DFDist> df) : nbasis0_(df->nbasis0_), nbasis1_(df->nbasis1_), naux_(df->naux_) { }
+
+    bool has_2index() const { return data2_.get() != nullptr; };
+    size_t nbasis0() const { return nbasis0_; };
+    size_t nbasis1() const { return nbasis1_; };
+    size_t naux() const { return naux_; };
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
 
     // compute a J operator, given density matrices in AO basis
-    std::unique_ptr<double[]> compute_Jop(const double* den) const override;
+    std::unique_ptr<double[]> compute_Jop(const double* den) const;
 
-    std::unique_ptr<double[]> compute_cd(const double* den) const override;
+    std::unique_ptr<double[]> compute_cd(const double* den) const;
 
 };
 
 
-class DFHalfDist : public DF_Half, public ParallelDF {
+class DFHalfDist : public ParallelDF {
   friend class DFFullDist;
   protected:
+    const std::shared_ptr<const DFDist> df_;
+    const size_t nocc_; // inner
+    const size_t nbasis_; // outer
+    const size_t naux_;
 
   public:
-    DFHalfDist(const std::shared_ptr<const DensityFit> df, const int nocc) : DF_Half(df, nocc) {
-      assert(data_ == nullptr);
-    }
+    DFHalfDist(const std::shared_ptr<const DFDist> df, const int nocc) : df_(df), nocc_(nocc), nbasis_(df_->nbasis0()), naux_(df_->naux()) { }
+
+    size_t nocc() const { return nocc_; };
+    size_t nbasis() const { return nbasis_; };
+    size_t naux() const { return naux_; };
+    size_t size() const { return naux_*nbasis_*nocc_; };
 
     std::shared_ptr<DFFullDist> compute_second_transform(const double* c, const size_t nocc) const;
     std::shared_ptr<DFDist> back_transform(const double* c) const;
@@ -101,16 +120,24 @@ class DFHalfDist : public DF_Half, public ParallelDF {
 
     void rotate_occ(const double* d);
     std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
+
+    std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
 };
 
 
-class DFFullDist : public DF_Full, public ParallelDF {
+class DFFullDist : public ParallelDF {
   protected:
+    const std::shared_ptr<const DFDist> df_;
+    const size_t nocc1_; // inner
+    const size_t nocc2_; // outer
+    const size_t naux_;
 
   public:
-    DFFullDist(const std::shared_ptr<const DensityFit> df, const int nocc0, const int nocc1) : DF_Full(df, nocc0, nocc1) {
-      assert(data_ == nullptr);
-    }
+    DFFullDist(const std::shared_ptr<const DFDist> df, const int nocc1, const int nocc2) : df_(df), nocc1_(nocc1), nocc2_(nocc2), naux_(df_->naux()) { }
+
+    int nocc1() const { return nocc1_; }
+    int nocc2() const { return nocc2_; }
+    int naux() const { return naux_; }
 
     std::shared_ptr<DFFullDist> copy() const; 
     std::shared_ptr<DFFullDist> clone() const; 

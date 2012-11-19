@@ -129,18 +129,15 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, cons
 
 unique_ptr<double[]> DensityFit::compute_Jop(const double* den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  unique_ptr<double[]> tmp0 = compute_cd(den);
-  unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
+  unique_ptr<double[]> tmp = compute_cd(den);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  dgemv_("T", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, tmp0.get(), 1, 0.0, out.get(), 1);
-  return out;
+  return data_->form_mat(tmp.get());
 }
 
 
 unique_ptr<double[]> DensityFit::compute_cd(const double* den) const {
-  unique_ptr<double[]> tmp0(new double[naux_]);
+  unique_ptr<double[]> tmp0 = data_->form_vec(den);
   unique_ptr<double[]> tmp1(new double[naux_]);
-  dgemv_("N", naux_, nbasis0_*nbasis1_, 1.0, data_->get(), naux_, den, 1, 0.0, tmp0.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
   return tmp0;
@@ -225,11 +222,10 @@ shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
 
 shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
-  unique_ptr<double[]> jj(new double[naux_*naux_]);
-  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_->data(), naux_, d->data2_->data(), naux_, 0.0, jj.get(), naux_);
+  Matrix jj = *d->data2_ * *d->data2_;
 
   shared_ptr<DFBlock> out = data_->clone();
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
+  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
 
@@ -254,14 +250,7 @@ unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) 
 
 
 // for MP2-like quantities
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const size_t n) const {
-  unique_ptr<double[]> target(new double[o->nocc1_*nocc1_*nocc2_]);
-  const int dim = nocc1_ * nocc2_;
-  const int odim = o->nocc1_; // o->nocc2_ is fixed at n;
-  const int naux = df_->naux();
-  dgemm_("T", "N", dim, odim, naux, 1.0, data_->get(), naux, o->data_->get()+naux*odim*n, naux, 0.0, target.get(), dim);
-  return move(target);
-}
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const size_t n) const { return data_->form_4index_1fixed(o->data_, 1.0, n); }
 
 
 shared_ptr<Matrix> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const { return data_->form_aux_2index(o->data_, 1.0); }
