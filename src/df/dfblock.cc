@@ -347,3 +347,15 @@ void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_pt
   dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data_.get(), o->asize_,
                                                         1.0, data_.get(), asize_); 
 }
+
+
+void DFBlock::copy_block(const std::unique_ptr<double[]>& o, const int jdim, const size_t offset) {
+  copy_n(o.get(), asize_*jdim, data_.get()+offset);
+}
+
+
+unique_ptr<double[]> DFBlock::form_Dj(const unique_ptr<double[]>& o, const int jdim) const {
+  unique_ptr<double[]> out(new double[asize_*jdim]); 
+  dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o.get(), b1size_*b2size_, 0.0, out.get(), asize_);
+  return out;
+}

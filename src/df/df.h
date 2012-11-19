@@ -252,12 +252,8 @@ class DF_Full {
     void daxpy(const double a, const DF_Full& o);
     void daxpy(const double a, std::shared_ptr<const DF_Half> o) { daxpy(a, *o); };
     void daxpy(const double a, const DF_Half& o);
-    DF_Full& operator+=(const DF_Full& o) { daxpy(1.0, o); return *this; };
-    DF_Full& operator-=(const DF_Full& o) { daxpy(-1.0, o); return *this; };
 
     void scale(const double a);
-    DF_Full& operator*=(const double a) { scale(a); return *this; };
-    DF_Full& operator/=(const double a) { scale(1.0/a); return *this; };
 
     void symmetrize();
 

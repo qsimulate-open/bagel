@@ -240,6 +240,16 @@ unique_ptr<double[]> DFHalfDist::compute_Kop_1occ(const double* den) const {
 }
 
 
+shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
+  shared_ptr<DFHalfDist> out = clone();
+  for (auto& i : out->blocks_) {
+    i->zero();
+    for (auto& j : blocks_)
+      i->contrib_apply_J(j, d);
+  }
+  return out; 
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -353,6 +363,25 @@ unique_ptr<double[]> DFFullDist::form_4index(const shared_ptr<const DFFullDist> 
 }
 
 
+void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
+  auto j = o->blocks_.begin();
+  for (auto& i : blocks_) {
+    i->copy_block((*j)->form_Dj(c, jdim), jdim, off);
+    ++j;
+  }
+}
+
+
+shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
+  shared_ptr<DFFullDist> out = clone();
+  for (auto& i : out->blocks_) {
+    i->zero();
+    for (auto& j : blocks_)
+      i->contrib_apply_J(j, d);
+  }
+  return out; 
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -396,12 +425,6 @@ shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
   dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
 }
-
-
-void DF_Full::set_product(const shared_ptr<const DF_Full> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
-  dgemm_("N", "N", naux(), jdim, nocc1()*nocc2(), 1.0, o->data_->get(), naux(), c.get(), nocc1()*nocc2(), 0.0, data_->get()+off, naux());
-}
-
 
 #endif
 

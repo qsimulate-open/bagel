@@ -132,6 +132,10 @@ class DFBlock {
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
 
+    void copy_block(const std::unique_ptr<double[]>& o, const int jdim, const size_t offset);
+    // compute (D|ia)(ia|j) and set to the location specified by the offset
+    std::unique_ptr<double[]> form_Dj(const std::unique_ptr<double[]>& o, const int jdim) const;
+
 };
 
 }

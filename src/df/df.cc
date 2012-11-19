@@ -272,7 +272,7 @@ unique_ptr<double[]> DF_Half::form_2index(const shared_ptr<const DensityFit> o, 
 
 
 void DF_Full::set_product(const shared_ptr<const DF_Full> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
-  dgemm_("N", "N", naux(), jdim, nocc1()*nocc2(), 1.0, o->data_->get(), naux(), c.get(), nocc1()*nocc2(), 0.0, data_->get()+off, naux());
+  data_->copy_block(o->data_->form_Dj(c, jdim), jdim, off);
 }
 
 

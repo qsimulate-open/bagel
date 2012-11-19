@@ -54,6 +54,7 @@ class ParallelDF {
 
 class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
   friend class DFFullDist;
+  friend class DFHalfDist;
   protected:
     // #orbital basis
     const size_t nbasis0_; // outer
@@ -104,6 +105,8 @@ class DFHalfDist : public ParallelDF {
     const size_t nbasis_; // outer
     const size_t naux_;
 
+    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
+
   public:
     DFHalfDist(const std::shared_ptr<const DFDist> df, const int nocc) : df_(df), nocc_(nocc), nbasis_(df_->nbasis0()), naux_(df_->naux()) { }
 
@@ -122,6 +125,11 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
 
     std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
+
+    std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2_); }
+    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2_**df_->data2_))); }
+    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2_); }
+    std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2_**d->data2_))); }
 };
 
 
@@ -131,6 +139,8 @@ class DFFullDist : public ParallelDF {
     const size_t nocc1_; // inner
     const size_t nocc2_; // outer
     const size_t naux_;
+
+    std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
   public:
     DFFullDist(const std::shared_ptr<const DFDist> df, const int nocc1, const int nocc2) : df_(df), nocc1_(nocc1), nocc2_(nocc2), naux_(df_->naux()) { }
@@ -164,6 +174,12 @@ class DFFullDist : public ParallelDF {
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o) const;
+    void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
+
+    std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2_); }
+    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2_**df_->data2_))); }
+    std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2_); }
+    std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2_**d->data2_))); }
 };
 
 }
