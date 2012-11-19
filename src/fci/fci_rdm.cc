@@ -70,7 +70,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
   dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
   // sorting... a bit stupid but cheap anyway
-  // This is since we stupspose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
+  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
   unique_ptr<double[]> buf(new double[norb_*norb_]);
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
