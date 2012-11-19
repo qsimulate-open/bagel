@@ -30,7 +30,11 @@ cd obj
 // ** important **
 // For developers: please make sure that your code can be compiled with
 
-../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g' --enable-shared --disable-static
+../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0 -g' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g' --enable-shared --disable-static
+
+// If you have MKL, the following would be useful. Furthermore, you could use -mavx on Linux (instead of -msse4.2).
+
+../configure 'CXXFLAGS=-DNDEBUG -std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O3 -msse4.2' 'LDFLAGS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -L/opt/local/lib' 'FCFLAGS=-O2' 'FFLAGS=-O2 -I/opt/intel/composer_xe_2013.0.088/mkl/include/ -fno-range-check -DMKL_TRANSPOSE' '--enable-shared' '--disable-static'
 
 // make
 make -j4

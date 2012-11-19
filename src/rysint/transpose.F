@@ -9,6 +9,10 @@ c
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim
       double precision h(m,n),vec(n,m)
+#ifdef MKL_TRANSPOSE 
+#include <mkl.fi>
+      call mkl_domatcopy("c","t",m,n,1.0d0,h,m,vec,n)
+#else
       if((m.eq.1).or.(n.eq.1)) then
 c      quick return if possible
        call dcopy(m*n,h,1,vec,1)
@@ -151,6 +155,7 @@ c      quick return if possible
         vec(i  ,j  )=h(j  ,i  )
        enddo
       enddo
+#endif
       return
       end
 c
@@ -158,6 +163,10 @@ c
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim
       double precision h(m,n),vec(n,m),factor
+#ifdef MKL_TRANSPOSE 
+#include <mkl.fi>
+      call mkl_domatcopy("c","t",m,n,factor,h,m,vec,n)
+#else
       if((m.eq.1).or.(n.eq.1)) then
 c      quick return if possible
        call dcopy(m*n,0.0d0,0,vec,1)
@@ -301,6 +310,7 @@ c      quick return if possible
         vec(i  ,j  )=h(j  ,i  )*factor
        enddo
       enddo
+#endif
       return
       end
 
@@ -308,12 +318,16 @@ c      quick return if possible
       implicit none
       integer i,j,m,n
       double precision h(m,n),vec(n,m)
-
+#ifdef MKL_TRANSPOSE 
+#include <mkl.fi>
+      call mkl_domatcopy("c","t",m,n,1.0d0,h,m,vec,n)
+#else
       do i=1,n
        do j=1,m
         vec(i,j)=h(j,i)
        enddo
       enddo
+#endif
       return
       end
 
@@ -321,6 +335,10 @@ c      quick return if possible
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim
       double precision h(m,n),vec(n,m)
+#ifdef MKL_TRANSPOSE 
+#include <mkl.fi>
+      call mkl_domatcopy("c","t",m,n,1.0d0,h,m,vec,n)
+#else
       if((m.eq.1).or.(n.eq.1)) then
 c      quick return if possible
        call dcopy(m*n,h,1,vec,1)
@@ -367,5 +385,6 @@ c      quick return if possible
         vec(i  ,j  )=h(j  ,i  )
        enddo
       enddo
+#endif
       return
       end

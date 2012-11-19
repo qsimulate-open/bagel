@@ -38,12 +38,7 @@
 #include <map>
 #include <bitset>
 #include <algorithm>
-
 #include <src/util/constants.h>
-
-#ifdef USE_SSE42_INTRINSICS
-#include <nmmintrin.h>
-#endif
 
 namespace bagel {
 
