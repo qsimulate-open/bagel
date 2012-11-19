@@ -340,3 +340,10 @@ unique_ptr<double[]> DFBlock::form_mat(const double* fit) const {
   dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out.get(), 1);
   return out;
 }
+
+
+void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
+  if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::contrib_apply_J");
+  dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data_.get(), o->asize_,
+                                                        1.0, data_.get(), asize_); 
+}

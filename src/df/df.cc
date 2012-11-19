@@ -175,21 +175,21 @@ shared_ptr<DF_Half> DF_Half::copy() const {
 
 
 shared_ptr<DF_Half> DF_Half::apply_J(shared_ptr<const DensityFit> d) const {
-  shared_ptr<DFBlock> out = data_->clone();
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
-  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
+  shared_ptr<DF_Half> out = clone();
+  out->data_->zero();
+  out->data_->contrib_apply_J(data_, d->data2_);
+  return out;
 }
 
 
 shared_ptr<DF_Half> DF_Half::apply_JJ(shared_ptr<const DensityFit> d) const {
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Half)");
-  unique_ptr<double[]> jj(new double[naux_*naux_]);
-  dgemm_("N", "N", naux_, naux_, naux_, 1.0, d->data2_->data(), naux_, d->data2_->data(), naux_, 0.0, jj.get(), naux_);
-
-  shared_ptr<DFBlock> out = data_->clone();
-  dgemm_("N", "N", naux_, nocc_*nbasis_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
-  return shared_ptr<DF_Half>(new DF_Half(df_, nocc_, out));
+  shared_ptr<DF_Half> out = clone();
+  out->data_->zero();
+  shared_ptr<const Matrix> jj(new Matrix(*d->data2_ * *d->data2_));
+  out->data_->contrib_apply_J(data_, jj);
+  return out;
 }
 
 
@@ -214,19 +214,20 @@ void DF_Half::rotate_occ(const double* d) { data_ = data_->transform_second(d, n
 
 shared_ptr<DF_Full> DF_Full::apply_J(shared_ptr<const DensityFit> d) const {
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
-  shared_ptr<DFBlock> out = data_->clone();
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, d->data2_->data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+  shared_ptr<DF_Full> out = clone();
+  out->data_->zero();
+  out->data_->contrib_apply_J(data_, d->data2_);
+  return out;
 }
 
 
 shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
   if (!d->has_2index()) throw logic_error("apply_J called from an object without a 2 index integral (DF_Full)");
-  Matrix jj = *d->data2_ * *d->data2_;
-
-  shared_ptr<DFBlock> out = data_->clone();
-  dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.data(), naux_, data_->get(), naux_, 0.0, out->get(), naux_);
-  return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
+  shared_ptr<DF_Full> out = clone();
+  out->data_->zero();
+  shared_ptr<const Matrix> jj(new Matrix(*d->data2_ * *d->data2_));
+  out->data_->contrib_apply_J(data_, jj);
+  return out;
 }
 
 

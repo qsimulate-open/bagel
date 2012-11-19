@@ -130,6 +130,8 @@ class DFBlock {
     std::unique_ptr<double[]> form_vec(const double* den) const;
     std::unique_ptr<double[]> form_mat(const double* fit) const;
 
+    void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
+
 };
 
 }
