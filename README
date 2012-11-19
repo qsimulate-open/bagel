@@ -34,7 +34,7 @@ cd obj
 
 // If you have MKL, the following would be useful. Furthermore, you could use -mavx on Linux (instead of -msse4.2).
 
-../configure 'CXXFLAGS=-DNDEBUG -std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O3 -msse4.2' 'LDFLAGS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -L/opt/local/lib' 'FCFLAGS=-O2' 'FFLAGS=-O2 -I/opt/intel/composer_xe_2013.0.088/mkl/include/ -fno-range-check -DMKL_TRANSPOSE' '--enable-shared' '--disable-static'
+../configure 'CXXFLAGS=-DNDEBUG -DMKL_EXTENSION -std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O3 -msse4.2' 'LDFLAGS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -L/opt/local/lib' 'FCFLAGS=-O2' 'FFLAGS=-O2 -I/opt/intel/composer_xe_2013.0.088/mkl/include/ -fno-range-check -DMKL_EXTENSION' '--enable-shared' '--disable-static'
 
 // make
 make -j4

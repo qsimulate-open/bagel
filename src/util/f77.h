@@ -31,13 +31,15 @@
 #include <complex>
 #include <memory>
 
+#ifdef MKL_EXTENSION
+// TODO is there any better way of doing this?
+#define zgemm_ zgemm3m_
+#endif
+
 extern "C" {
 
  // transposition
  void mytranspose_(const double*, const int*, const int*, double*);
- void mytranspose_with_factor_(const double*, const int*, const int*, double*, const double*);
- void mytranspose1_(const double*, const int*, const int*, double*);
- void mytranspose4_(const double*, const int*, const int*, double*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
 
  void dcopy_(const int*, const double*, const int*, double*, const int*);
