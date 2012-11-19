@@ -359,3 +359,23 @@ unique_ptr<double[]> DFBlock::form_Dj(const unique_ptr<double[]>& o, const int j
   dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o.get(), b1size_*b2size_, 0.0, out.get(), asize_);
   return out;
 }
+
+
+unique_ptr<double[]> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+  const int ista = ist - astart_;
+  const int jsta = jst - b1start_;
+  const int ksta = kst - b2start_;
+  const int ifen = ist + i - astart_;
+  const int jfen = jst + j - b1start_;
+  const int kfen = kst + k - b2start_;
+  if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize_ || jfen > b1size_ || kfen > b2size_) 
+    throw logic_error("illegal call of DFBlock::get_block");
+
+  unique_ptr<double[]> out(new double[i*j*k]);
+  double* d = out.get();
+  for (int kk = ksta; kk != kfen; ++kk)
+    for (int jj = jsta; jj != jfen; ++jj, d += i)
+      copy_n(data_.get()+ista+asize_*(jj+b1size_*kk), i, d); 
+
+  return out;
+}

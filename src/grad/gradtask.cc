@@ -31,6 +31,7 @@
 #include <src/grad/gnaibatch.h>
 #include <src/grad/goverlapbatch.h>
 #include <src/grad/gkineticbatch.h>
+#include <src/smith/prim_op.h>
 #ifdef LIBINT_INTERFACE
   #include <src/grad/glibint.h>
 #endif
@@ -99,7 +100,6 @@ void GradTask::compute() {
     }
 
   } else if (rank_ == 3) {
-
 #ifdef LIBINT_INTERFACE
     GLibint gradbatch(shell_);
 #else
@@ -107,7 +107,8 @@ void GradTask::compute() {
 #endif
     gradbatch.compute();
     const size_t block = gradbatch.size_block();
-
+    const size_t sblock = shell_[1]->nbasis()*shell_[2]->nbasis()*shell_[3]->nbasis(); 
+    assert(sblock <= block);
 
     // unfortunately the convention is different...
     array<int,4> jatom = {{-1, atomindex_[2], atomindex_[1], atomindex_[0]}};
@@ -115,28 +116,29 @@ void GradTask::compute() {
     if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
     if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
+    const unique_ptr<double[]> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
+    const unique_ptr<double[]> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
+    unique_ptr<double[]> db3(new double[sblock]);
+    SMITH::sort_indices<0,2,1,0,1,1,1>(db2, db3, shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
+
     for (int iatom = 0; iatom != 4; ++iatom) {
       if (jatom[iatom] < 0) continue;
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
         const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
-            for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
-              // first we need to have a scheme to receive blocks before accessing the elements
-              sum[icart] += *ppt * *den_->ptr(j2, j1, j0);
-              sum[icart] += *ppt * *den_->ptr(j2, j0, j1);
-            }
-          }
-        }
+        sum[icart] += ddot_(sblock, ppt, 1, db1.get(), 1);
+        sum[icart] += ddot_(sblock, ppt, 1, db3.get(), 1);
       }
       boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
         ge_->grad_->data(jatom[iatom], icart) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
   } else if (rank_ == 2) {
-    // pointer to stack
+#ifdef LIBINT_INTERFACE
+    GLibint gradbatch(shell_);
+#else
     GradBatch gradbatch(shell_, 0.0);
+#endif
     gradbatch.compute();
     const size_t block = gradbatch.size_block();
 

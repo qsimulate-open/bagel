@@ -91,6 +91,8 @@ class DensityFit : public std::enable_shared_from_this<DensityFit> {
 
     virtual std::unique_ptr<double[]> compute_cd(const double* den) const;
 
+    std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const { return data_->get_block(i,id,j,jd,k,kd); }
+
 };
 
 
@@ -110,12 +112,6 @@ class DF_AO : public DensityFit {
     // contructor for a seperable part of nuclear gradients
     DF_AO(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
     ~DF_AO() {};
-
-// TODO this will be removed.
-#if 1
-    double* ptr(const size_t i, const size_t j, const size_t k) { return data_->get()+i+naux_*(j+nbasis1_*k); };
-    const double* ptr(const size_t i, const size_t j, const size_t k) const { return data_->get()+i+naux_*(j+nbasis1_*k); };
-#endif
 
     void daxpy(const double a, const std::shared_ptr<const DF_AO> o) { daxpy_(size(), a, o->data_->get(), 1, data_->get(), 1); };
 };
