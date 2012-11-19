@@ -339,6 +339,20 @@ shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DF
 }
 
 
+unique_ptr<double[]> DFFullDist::form_4index(const shared_ptr<const DFFullDist> o, const size_t n) const {
+  const size_t size = blocks_.front()->b1size() * blocks_.front()->b2size() * o->blocks_.front()->b1size();
+  unique_ptr<double[]> out(new double[size]);
+  fill_n(out.get(), size, 0.0);
+
+  // TODO will be distributed
+  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
+    unique_ptr<double[]> tmp = (*i)->form_4index_1fixed(*j, 1.0, n);
+    daxpy_(size, 1.0, tmp, 1, out, 1);
+  }
+  return out;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -381,21 +395,6 @@ shared_ptr<DF_Full> DF_Full::apply_JJ(shared_ptr<const DensityFit> d) const {
   unique_ptr<double[]> out(new double[nocc1_*nocc2_*naux_]);
   dgemm_("N", "N", naux_, nocc1_*nocc2_, naux_, 1.0, jj.get(), naux_, data_->get(), naux_, 0.0, out.get(), naux_);
   return shared_ptr<DF_Full>(new DF_Full(df_, nocc1_, nocc2_, out));
-}
-
-
-// for MP2-like quantities
-void DF_Full::form_4index(unique_ptr<double[]>& target, const shared_ptr<const DF_Full> o, const size_t n) const {
-  const int dim = nocc1_ * nocc2_;
-  const int odim = o->nocc1_; // o->nocc2_ is fixed at n;
-  const int naux = df_->naux();
-  dgemm_("T", "N", dim, odim, naux, 1.0, data_->get(), naux, o->data_->get()+naux*odim*n, naux, 0.0, target.get(), dim);
-}
-
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const size_t n) const {
-  unique_ptr<double[]> target(new double[o->nocc1_*nocc1_*nocc2_]);
-  form_4index(target, o, n);
-  return move(target);
 }
 
 
