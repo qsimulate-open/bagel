@@ -38,44 +38,13 @@
 #include <iomanip>
 #include <list>
 
+#include <src/df/dfinttask_old.h>
+
 using namespace std;
 using namespace chrono;
 using namespace bagel;
 
-namespace bagel {
-
-class DFIntTask_OLD {
-  protected:
-    array<shared_ptr<const Shell>,4> shell_;
-    array<int,3> offset_; // at most 3 elements
-    int rank_;
-    DensityFit* df_;
-
-  public:
-    DFIntTask_OLD(array<shared_ptr<const Shell>,4>&& a, vector<int>&& b, DensityFit* df) : shell_(a), rank_(b.size()), df_(df) {
-      int j = 0;
-      for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
-    }
-    DFIntTask_OLD() {};
-
-    void compute() {
-      pair<const double*, shared_ptr<RysInt> > p = df_->compute_batch(shell_);
-      const double* ppt = p.first;
-
-      const size_t naux = df_->naux();
-      // all slot in
-      if (rank_ == 2) {
-        double* const data = df_->data2_->data();
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt)
-            data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
-      } else {
-        assert(false);
-      }
-    };
-};
-
-}
+#ifndef USE_DFDIST
 
 
 void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
@@ -95,7 +64,7 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, cons
   data_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
 
   // generates a task of integral evaluations
-  vector<DFIntTask_OLD> tasks;
+  vector<DFIntTask_OLD<DensityFit> > tasks;
   data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
 
   int tmpa = 0;
@@ -108,14 +77,14 @@ void DensityFit::common_init(const vector<shared_ptr<const Atom> >& atoms0, cons
     auto o1 = aof.begin();
     for (auto& b1 : ashell) {
       if (*o0 <= *o1)
-        tasks.push_back(DFIntTask_OLD(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
+        tasks.push_back(DFIntTask_OLD<DensityFit>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
       ++o1;
     }
     ++o0;
   }
 
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask_OLD> tq(tasks);
+  TaskQueue<DFIntTask_OLD<DensityFit> > tq(tasks);
   tq.compute(resources__->max_num_threads());
   auto tp1 = high_resolution_clock::now();
   cout << "       - time spent for integral evaluation  " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl;
@@ -242,23 +211,23 @@ shared_ptr<DF_Full> DF_Full::apply_2rdm(const double* rdm, const double* rdm1, c
 
 
 
-unique_ptr<double[]> DF_Half::form_4index() const { return data_->form_4index(data_, 1.0); }
-unique_ptr<double[]> DF_Full::form_4index() const { return data_->form_4index(data_, 1.0); }
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o) const { return data_->form_4index(o->data_, 1.0); }
+unique_ptr<double[]> DF_Half::form_4index(const shared_ptr<const DF_Half> o, const double a) const { return data_->form_4index(o->data_, a); }
+unique_ptr<double[]> DF_Full::form_4index(const double a) const { return data_->form_4index(data_, a); }
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const double a) const { return data_->form_4index(o->data_, a); }
 // !! CAUTION !!
 // Joperator. Note that (r,s) runs first; i.e., in the operator form
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o) const { return o->data_->form_4index(data_, 1.0); };
+unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DensityFit> o, const double a) const { return o->data_->form_4index(data_, a); };
 
 
 // for MP2-like quantities
-unique_ptr<double[]> DF_Full::form_4index(const shared_ptr<const DF_Full> o, const size_t n) const { return data_->form_4index_1fixed(o->data_, 1.0, n); }
+unique_ptr<double[]> DF_Full::form_4index_1fixed(const shared_ptr<const DF_Full> o, const double a, const size_t n) const { return data_->form_4index_1fixed(o->data_, a, n); }
 
 
-shared_ptr<Matrix> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o) const { return data_->form_aux_2index(o->data_, 1.0); }
-shared_ptr<Matrix> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o) const { return data_->form_aux_2index(o->data_, 1.0); }
+shared_ptr<Matrix> DF_Half::form_aux_2index(const shared_ptr<const DF_Half> o, const double a) const { return data_->form_aux_2index(o->data_, a); }
+shared_ptr<Matrix> DF_Full::form_aux_2index(const shared_ptr<const DF_Full> o, const double a) const { return data_->form_aux_2index(o->data_, a); }
 
-shared_ptr<Matrix> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o) const {
-  shared_ptr<Matrix> tmp = data_->form_aux_2index(o->data_, 1.0);
+shared_ptr<Matrix> DF_Full::form_aux_2index_apply_J(const shared_ptr<const DF_Full> o, const double a) const {
+  shared_ptr<Matrix> tmp = data_->form_aux_2index(o->data_, a);
   return shared_ptr<Matrix>(new Matrix(*tmp * *df_->data2_));
 }
 
@@ -307,3 +276,4 @@ shared_ptr<DF_AO> DF_Half::back_transform(const double* c) const{
 }
 
 
+#endif

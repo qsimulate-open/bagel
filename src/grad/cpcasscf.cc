@@ -186,7 +186,7 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
 
     // TODO this is a reference implementation
     // first form 4 index
-    unique_ptr<double[]> buf = fullz->form_4index(fullb);
+    unique_ptr<double[]> buf = fullz->form_4index(fullb, 1.0);
     // TODO Awful code. To be updated. making the code that works in the quickest possible way
     // index swap
     unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);

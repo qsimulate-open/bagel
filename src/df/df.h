@@ -27,6 +27,9 @@
 #ifndef __NEWINT_DF_DensityFit_H
 #define __NEWINT_DF_DensityFit_H
 
+#if 1
+
+#include <src/df/dfinttask_old.h>
 #include <vector>
 #include <memory>
 #include <stddef.h>
@@ -44,7 +47,7 @@ class DF_Full;
 
 
 class DensityFit : public std::enable_shared_from_this<DensityFit> {
-  friend class DFIntTask_OLD;
+  friend class DFIntTask_OLD<DensityFit>;
   friend class DF_Half;
   friend class DF_Full;
 
@@ -164,10 +167,10 @@ class DF_Half {
     // form 2 index quantities by contracting Naux and Nao (targeting an nocc*nbasis matrix)
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DensityFit> o, const double a) const;
 
-    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Half> o) const;
+    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Half> o, const double a) const;
 
     // form K^ij_rs operator
-    std::unique_ptr<double[]> form_4index() const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Half> o, const double a) const;
 
     // compute a K operator with one occupied index K_rj(D_tu), given an AO density matrix.
     virtual std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
@@ -224,18 +227,18 @@ class DF_Full {
     std::shared_ptr<DF_Full> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
 
     // forming all internal 4-index MO integrals
-    std::unique_ptr<double[]> form_4index() const;
-    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o) const;
+    std::unique_ptr<double[]> form_4index(const double a) const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o, const double a) const;
 
     // the same as above, but with one index fixed at n (of nocc2).
-    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DF_Full> o, const size_t n) const;
+    std::unique_ptr<double[]> form_4index_1fixed(const std::shared_ptr<const DF_Full> o, const double a, const size_t n) const;
 
     // forming two-external K operators
-    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o) const;
+    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DensityFit> o, const double a) const;
 
     // contract ii and form (D|E)
-    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Full> o) const;
-    std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o) const;
+    std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DF_Full> o, const double a) const;
+    std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DF_Full> o, const double a) const;
 
     std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DF_Half> o, const double a);
 
@@ -263,6 +266,15 @@ class DF_Full {
 };
 
 }
+
+#else
+#include <src/df/dfdist.h>
+#define DF_Full     DFFullDist
+#define DF_Half     DFHalfDist
+#define DensityFit  DFDist
+#define DF_AO       DFDist
+#define USE_DFDIST
+#endif
 
 #endif
 

@@ -30,6 +30,8 @@
 using namespace std;
 using namespace bagel;
 
+#ifndef USE_DFDIST
+
 pair<const double*, shared_ptr<RysInt> > ERIFit::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
   shared_ptr<Libint> eribatch(new Libint(input));
@@ -54,3 +56,5 @@ pair<const double*, shared_ptr<RysInt> > SlaterFit::compute_batch(array<shared_p
   return make_pair(slaterbatch->data(), slaterbatch);
 }
 
+
+#endif

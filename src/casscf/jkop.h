@@ -54,11 +54,11 @@ class JKop {
       assert(df->nbasis0() == df->nbasis1());
       // K operator // (ai|ai)
       std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff_->data(), nocc)->apply_J();
-      data_ = std::move(half->form_4index());
+      data_ = std::move(half->form_4index(half, 1.0));
 
       // J operator // (aa|ii)
       std::shared_ptr<DF_Full> full = half->compute_second_transform(coeff_->data(), nocc);
-      jdata_ = std::move(full->form_4index(df));
+      jdata_ = std::move(full->form_4index(df, 1.0));
 
       // contruct 2RDM
       std::shared_ptr<RDM<1> > rdm1_av = fci->rdm1_av();

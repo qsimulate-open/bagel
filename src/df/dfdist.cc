@@ -37,6 +37,8 @@
 #include <iomanip>
 #include <list>
 
+#include <src/df/dfinttask_old.h>
+
 using namespace std;
 using namespace chrono;
 using namespace bagel;
@@ -87,11 +89,31 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 }
 
 
+void ParallelDF::daxpy(const double a, const shared_ptr<const ParallelDF> o) {
+  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::daxpy");
+  auto ob = o->blocks_.begin();
+  for (auto& i : blocks_) {
+    i->daxpy(a, *ob);
+    ++ob;
+  }
+}
+
+
+void ParallelDF::scale(const double a) {
+  for (auto& i : blocks_)
+    i->scale(a);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+DFDist::DFDist(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {
+  assert(false);
+}
+
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 
-#if 0
-  // this will be distributed in the future.
   auto tp0 = high_resolution_clock::now();
 
   // 3index Integral is now made in DFBlock.
@@ -102,10 +124,12 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 
   // Decide how we distribute (dynamic distribution).
   // TODO we need a parallel queue server!
-  data_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
+
+  // construction of DFBlock computes integrals
+  blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
 
   // generates a task of integral evaluations
-  vector<DFIntTask_OLD> tasks;
+  vector<DFIntTask_OLD<DFDist> > tasks;
   data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
 
   int tmpa = 0;
@@ -118,22 +142,22 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
     auto o1 = aof.begin();
     for (auto& b1 : ashell) {
       if (*o0 <= *o1)
-        tasks.push_back(DFIntTask_OLD(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
+        tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
       ++o1;
     }
     ++o0;
   }
 
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask_OLD> tq(tasks);
+  TaskQueue<DFIntTask_OLD<DFDist> > tq(tasks);
   tq.compute(resources__->max_num_threads());
+
   auto tp1 = high_resolution_clock::now();
   cout << "       - time spent for integral evaluation  " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl;
 
   if (compute_inverse) data2_->inverse_half(throverlap);
   auto tp2 = high_resolution_clock::now();
   cout << "       - time spent for computing inverse    " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
-#endif
 
 }
 
@@ -269,32 +293,6 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::daxpy(const double a, const DFFullDist& o) {
-  if (blocks_.size() != o.blocks_.size()) throw logic_error("illegal call of DFFullDist::daxpy");
-  auto ob = o.blocks_.begin();
-  for (auto& i : blocks_) {
-    i->daxpy(a, *ob);
-    ++ob;
-  }
-}
-
-
-void DFFullDist::daxpy(const double a, const DFHalfDist& o) {
-  if (blocks_.size() != o.blocks_.size()) throw logic_error("illegal call of DFFullDist::daxpy");
-  auto ob = o.blocks_.begin();
-  for (auto& i : blocks_) {
-    i->daxpy(a, *ob);
-    ++ob;
-  }
-}
-
-
-void DFFullDist::scale(const double a) {
-  for (auto& i : blocks_)
-    i->scale(a);
-}
-
-
 void DFFullDist::symmetrize() {
   for (auto& i : blocks_)
     i->symmetrize();
@@ -343,20 +341,20 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
 }
 
 
-shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DFFullDist> o) const {
-  shared_ptr<Matrix> tmp = ParallelDF::form_aux_2index(o, 1.0);
+shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DFFullDist> o, const double a) const {
+  shared_ptr<Matrix> tmp = ParallelDF::form_aux_2index(o, a);
   return shared_ptr<Matrix>(new Matrix(*tmp * *df_->data2_));
 }
 
 
-unique_ptr<double[]> DFFullDist::form_4index(const shared_ptr<const DFFullDist> o, const size_t n) const {
+unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullDist> o, const double a, const size_t n) const {
   const size_t size = blocks_.front()->b1size() * blocks_.front()->b2size() * o->blocks_.front()->b1size();
   unique_ptr<double[]> out(new double[size]);
   fill_n(out.get(), size, 0.0);
 
   // TODO will be distributed
   for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
-    unique_ptr<double[]> tmp = (*i)->form_4index_1fixed(*j, 1.0, n);
+    unique_ptr<double[]> tmp = (*i)->form_4index_1fixed(*j, a, n);
     daxpy_(size, 1.0, tmp, 1, out, 1);
   }
   return out;

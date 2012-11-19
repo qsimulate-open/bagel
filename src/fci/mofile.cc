@@ -178,7 +178,7 @@ unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
   mo2e_1ext_ = half;
 
   // assembles (ii|ii) = (ii|D)(D|ii)
-  return buf->form_4index();
+  return buf->form_4index(buf, 1.0);
 
 }
 

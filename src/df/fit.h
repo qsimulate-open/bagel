@@ -34,6 +34,8 @@
 #include <src/grad/gradbatch.h>
 #include <src/slater/slaterbatch.h>
 
+#ifndef USE_DFDIST
+
 namespace bagel {
 
 class ERIFit : public DensityFit {
@@ -89,6 +91,15 @@ class SlaterFit : public DensityFit {
 };
 
 }
+
+#else
+
+#define ERIFit DFDist
+// just to make it compiled
+#define SlaterFit DFDist
+#define YukawaFit DFDist
+
+#endif
 
 #endif
 

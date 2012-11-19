@@ -44,7 +44,7 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
   shared_ptr<const DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
   shared_ptr<const DF_Full> qijd = qij->apply_closed_2RDM();
-  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
@@ -72,7 +72,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
   shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
   shared_ptr<const DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
   shared_ptr<const DF_Full> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
-  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
@@ -99,7 +99,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
   shared_ptr<const DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
   shared_ptr<const DF_Full> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
-  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
@@ -125,7 +125,7 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
   shared_ptr<const DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
   shared_ptr<const DF_Full> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
-  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
@@ -155,7 +155,7 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(coeff_occ->data(), ref_->nocc());
   shared_ptr<const DF_Full> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_J()->apply_J();
   shared_ptr<const DF_Full> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
-  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd);
+  shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DF_AO> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);

@@ -79,7 +79,7 @@ class MP2AssemTask {
       vector<double> eig(mp2_->ref_->eig().begin()+mp2_->ncore_, mp2_->ref_->eig().end());
 
       // nocc * nvirt * nocc
-      unique_ptr<double[]> data = full_->form_4index(full_, ivirt_);
+      unique_ptr<double[]> data = full_->form_4index_1fixed(full_, 1.0, ivirt_);
       copy(data.get(), data.get()+nocc_*nvirt_*nocc_, buf);
 
       // using SMITH's symmetrizer (src/smith/prim_op.h)

@@ -94,7 +94,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   double ecorr = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
     // nocc * nvirt * nocc
-    unique_ptr<double[]> data = full->form_4index(full, i);
+    unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
     copy(data.get(), data.get()+nocc*nvirt*nocc, buf.get());
     copy(data.get(), data.get()+nocc*nvirt*nocc, buf2.get());
 
@@ -234,8 +234,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // two-index derivatives (seperable part)..
   shared_ptr<Matrix> sep2(new Matrix(naux, naux));
   dger_(naux, naux, 2.0, cd0.get(), 1, cdbar.get(), 1, sep2->data(), naux);
-  *sep2 -= *halfjj->form_aux_2index(sepd) * 2.0;
-  *sep2 += *gia->form_aux_2index_apply_J(full) * 4.0;
+  *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
+  *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
 
 
   // energy weighted density

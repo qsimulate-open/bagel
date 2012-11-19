@@ -126,12 +126,12 @@ shared_ptr<F12Mat> F12Int::robust_fitting(shared_ptr<const DF_Full> doo, shared_
   const int nocc = yoo->nocc1();
   assert(nocc == yoo->nocc2());
 
-  shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo)));
+  shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo, 1.0)));
   ddot_to_amp(*ym0, nocc, gamma_, "Y matrix orig");
 
   shared_ptr<const DF_Full> doo_J = doo->apply_J();
   shared_ptr<const DF_Full> doo_JS = doo_J->apply_J(yoo->df());
-  shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_JS->form_4index(doo_J)));
+  shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_JS->form_4index(doo_J, 1.0)));
   ddot_to_amp(*ym1, nocc, gamma_, "Y matrix orig");
   shared_ptr<F12Mat> ym(new F12Mat(*ym0*2.0 - *ym1));
   return ym;
