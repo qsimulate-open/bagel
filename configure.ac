@@ -6,11 +6,32 @@ AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.cc])
 AM_CONFIG_HEADER([config.h])
-AC_F77_LIBRARY_LDFLAGS
 
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_FC
+AC_PROG_CXX([g++])
+AC_PROG_F77([gfortran])
+AC_PROG_FC([gfortran])
+
+AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
+if test x${use_mpi} = xyes; then
+    AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
+    AC_CHECK_PROGS(MPICXX, mpic++ mpiCC mpicxx mpCC hcp mpxlC mpxlC_r cmpic++, $CXX)
+
+    AC_ARG_VAR(MPIF77,[MPI Fortran 77 compiler command])
+    AC_CHECK_PROGS(MPIF77, mpif77 hf77 mpxlf mpf77 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c, $F77)
+
+    AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
+    AC_CHECK_PROGS(MPIFC, mpif90 hf90 mpxlf mpf90 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c, $F90)
+
+    CXX="${MPICXX}"
+    F77="${MPIF77}"
+    FC="${MPIFC}"
+    LIBS="${MPILIBS} ${LIBS}"
+    CXXFLAGS="${CXXFLAGS}"
+    FFLAGS="${FFLAGS}"
+    FCFLAGS="${FCFLAGS}"
+fi
+
+AC_F77_LIBRARY_LDFLAGS
 
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
@@ -48,7 +69,7 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     ])
 ])
 
-LT_INIT
+LT_INIT([disable-static])
 AC_CONFIG_MACRO_DIR([m4])
 
 
