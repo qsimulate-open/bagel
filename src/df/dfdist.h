@@ -108,6 +108,8 @@ class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
     size_t nbasis1() const { return nbasis1_; };
     size_t naux() const { return naux_; };
 
+    void add_direct_product(std::vector<const double*> a, std::vector<const double*> b, const double fac);
+
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
 

@@ -160,6 +160,11 @@ void DFBlock::scale(const double a) {
 }
 
 
+void DFBlock::add_direct_product(const double* a, const double* b, const double fac) {
+  dger_(asize_, b1size_*b2size_, fac, a, 1, b, 1, data_.get(), asize_);
+}
+
+
 // TODO not efficient
 void DFBlock::symmetrize() {
   if (b1size_ != b2size_) throw logic_error("illegal call of DFBlock::symmetrize()");

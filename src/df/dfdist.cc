@@ -144,9 +144,13 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-DFDist::DFDist(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {
-  assert(false);
+void DFDist::add_direct_product(const vector<const double*> cd, const vector<const double*> dd, const double a) {
+  if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
+  for (auto& i : blocks_)
+    for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
+      i->add_direct_product(*c+i->astart(), *d, a);
 }
+
 
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {

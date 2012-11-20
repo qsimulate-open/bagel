@@ -105,6 +105,9 @@ class DFBlock {
     void daxpy(const double a, const std::shared_ptr<const DFBlock> o) { daxpy(a, *o); }
     void scale(const double a);
 
+    // add ab^+  to this.
+    void add_direct_product(const double* a, const double* b, const double fac);
+
     // some additional functions
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)
     void symmetrize();

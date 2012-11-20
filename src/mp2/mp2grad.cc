@@ -216,27 +216,24 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
 
   // three-index derivatives (seperable part)...
-  vector<const double*> cd; cd.push_back(cd0.get());      cd.push_back(cdbar.get());
-  vector<const double*> dd; dd.push_back(dbarao->data()); dd.push_back(d0ao->data());
-  shared_ptr<DF_AO> sep3(new DF_AO(nbasis, nbasis, naux, cd, dd));
+  vector<const double*> cd = {cd0.get(), cdbar.get()};
+  vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
   shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
-  {
-    shared_ptr<DF_AO> sep32 = sepd->back_transform(ocoeff);
-    sep3->daxpy(-2.0, sep32);
-  }
+  shared_ptr<DF_AO> sep3 = sepd->back_transform(ocoeff);
+  sep3->scale(-2.0);
   /// mp2 two body part ----------------
   {
     shared_ptr<DF_AO> sep32 = gip->back_transform(coeff);
     sep3->daxpy(4.0, sep32);
   }
+  sep3->add_direct_product(cd, dd, 1.0);
 
   // two-index derivatives (seperable part)..
   shared_ptr<Matrix> sep2(new Matrix(naux, naux));
   dger_(naux, naux, 2.0, cd0.get(), 1, cdbar.get(), 1, sep2->data(), naux);
   *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
   *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
-
 
   // energy weighted density
   shared_ptr<Matrix> wd(new Matrix(nbasis, nbasis));
