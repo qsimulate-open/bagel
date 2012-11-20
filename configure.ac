@@ -54,6 +54,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/parallel/Makefile
                  src/dimer/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
