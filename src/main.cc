@@ -57,6 +57,7 @@
 #ifdef _OPENMP
   #include <omp.h>
 #endif
+#include <src/parallel/mpi_interface.h>
 
 
 using namespace bagel;
@@ -74,10 +75,9 @@ using std::endl;
 
 int main(int argc, char** argv) {
 
+  // testing MPI.
 #if 0
-  stack = new StackMem();
-  test_mp2f12();
-  abort();
+  MPI_Interface mpi_;
 #endif
 
   try {
