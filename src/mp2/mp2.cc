@@ -64,13 +64,13 @@ namespace bagel {
 
 class MP2AssemTask {
   protected:
-    shared_ptr<const DF_Full> full_;
+    shared_ptr<const DFFullDist> full_;
     const size_t ivirt_;
     const size_t nvirt_;
     const size_t nocc_;
     MP2* mp2_;
   public:
-    MP2AssemTask(shared_ptr<const DF_Full> f, const int iv, const int nv, const int no, MP2* m)
+    MP2AssemTask(shared_ptr<const DFFullDist> f, const int iv, const int nv, const int no, MP2* m)
       : full_(f), ivirt_(iv), nvirt_(nv), nocc_(no), mp2_(m) {};
 
     void compute() {
@@ -115,10 +115,10 @@ void MP2::compute() {
   auto tp1 = chrono::high_resolution_clock::now();
 
   // first compute half transformed integrals
-  shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
 
   cout << "    * 3-index integral transformation done" << endl;
 

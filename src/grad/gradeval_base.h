@@ -44,7 +44,7 @@ class GradTask {
     std::array<std::shared_ptr<const Shell>,2> shell2_;
     std::array<int,4> atomindex_;
     std::array<int,4> offset_;
-    std::shared_ptr<const DF_AO> den_;
+    std::shared_ptr<const DFDist> den_;
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Matrix> eden_;
     GradEval_base* ge_;
@@ -52,7 +52,7 @@ class GradTask {
 
   public:
     GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
-             const std::shared_ptr<const DF_AO> d, GradEval_base* p)
+             const std::shared_ptr<const DFDist> d, GradEval_base* p)
       : shell_(s), den_(d), ge_(p), rank_(3) { common_init(a,o); }
 
     GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
@@ -89,7 +89,7 @@ class GradEval_base {
     std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
-    std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DF_AO> o);
+    std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o);
 
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o);
@@ -104,7 +104,7 @@ class GradEval_base {
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
-                                                const std::shared_ptr<const DF_AO> o, const std::shared_ptr<const Matrix> o2);
+                                                const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };

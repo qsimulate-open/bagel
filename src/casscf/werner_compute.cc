@@ -104,7 +104,7 @@ shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec
 
 shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec,
                                                  shared_ptr<Matrix> u, shared_ptr<Matrix> t, const shared_ptr<const Coeff> cc) {
-  shared_ptr<const DensityFit> df = geom_->df();
+  shared_ptr<const DFDist> df = geom_->df();
   const int naux = df->naux();
   const int nbas = df->nbasis0();
   assert(df->nbasis0() == df->nbasis1());
@@ -129,14 +129,14 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
   // second term
   {
     Matrix Umat(*cc * *u);
-    shared_ptr<DF_Half> half = df->compute_half_transform(Umat.data(), nocc_);
+    shared_ptr<DFHalfDist> half = df->compute_half_transform(Umat.data(), nocc_);
     tmp = move(half->form_2index(jvec->jvec(), 2.0));
   }
 
   // third term
   if (t->norm() > 1.0e-15) {
     Matrix Tmat(*cc * *t);
-    shared_ptr<DF_Full> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
+    shared_ptr<DFFullDist> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
     unique_ptr<double[]> tmp2 = jvec->half()->form_2index(full, 4.0);
     daxpy_(nbas*nbas, 1.0, tmp2.get(), 1, tmp.get(), 1);
   }

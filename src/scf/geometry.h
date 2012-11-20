@@ -81,7 +81,7 @@ class Geometry {
     double overlap_thresh_;
 
     // for DF calculations
-    std::shared_ptr<DensityFit> df_;
+    std::shared_ptr<DFDist> df_;
 
     // external field
     std::vector<double> external_;
@@ -148,7 +148,7 @@ class Geometry {
     std::shared_ptr<Petite> plist() const { return plist_; };
 
     // Rerurns DF data
-    const std::shared_ptr<const DensityFit> df() const { return df_; };
+    const std::shared_ptr<const DFDist> df() const { return df_; };
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
@@ -156,7 +156,7 @@ class Geometry {
     // Not undo-able.
     void merge_obs_aux();
 
-    // type T should be a derived class of DensityFit
+    // type T should be a derived class of DFDist
     template<typename T>
     std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0) const {
       return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam));

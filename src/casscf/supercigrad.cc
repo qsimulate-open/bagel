@@ -96,8 +96,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   // TODO they are redundant, though...
-  shared_ptr<DF_Half> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
-  shared_ptr<DF_Half> halfjj = half->apply_J();
+  shared_ptr<DFHalfDist> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->data(), nocc)->apply_J();
+  shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
   shared_ptr<Matrix> g0(new Matrix(nbasis, nbasis));
@@ -108,8 +108,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
   dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
   // 2) two-electron contribution
-  shared_ptr<const DF_Full> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
-  shared_ptr<const DF_Full> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ref_->coeff()->data(), nocc);
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
   unique_ptr<double[]> buf = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nbasis, nocc, nbasis, 2.0, ref_->coeff()->data(), nbasis, buf.get(), nbasis, 1.0, g0->data(), nbasis);
 

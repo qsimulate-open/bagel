@@ -33,7 +33,7 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
-                                                      const shared_ptr<const DF_AO> o, const shared_ptr<const Matrix> o2) {
+                                                      const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2) {
 
   vector<GradTask> task  = contract_grad1e(d, w);
   vector<GradTask> task2 = contract_grad2e(o);
@@ -83,7 +83,7 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DF_AO> o) {
+vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o) {
   vector<GradTask> out;
   size_t nshell = 0;
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();

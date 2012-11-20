@@ -51,13 +51,13 @@ class K2ext {
     std::shared_ptr<Tensor<T> > data_;
 
     // some handwritten drivers
-    std::map<size_t, std::shared_ptr<DF_Full> > generate_list() {
-      std::shared_ptr<const DensityFit> df = ref_->geom()->df();
+    std::map<size_t, std::shared_ptr<DFFullDist> > generate_list() {
+      std::shared_ptr<const DFDist> df = ref_->geom()->df();
       std::shared_ptr<const Coeff> coeff = ref_->coeff();
 
       // It is the easiest to do integral transformation for each blocks.
       assert(blocks_.size() == 4);
-      std::map<size_t, std::shared_ptr<DF_Full> > dflist;
+      std::map<size_t, std::shared_ptr<DFFullDist> > dflist;
       // AO dimension
       const size_t nbasis = df->nbasis0();
       assert(df->nbasis0() == df->nbasis1());
@@ -67,11 +67,11 @@ class K2ext {
       // closed loop
       size_t cnt = blocks_[0].keyoffset();
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DF_Half> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size())->apply_J();
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size())->apply_J();
         // virtual loop
         size_t cnt2 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
-          std::shared_ptr<DF_Full> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1->offset(), i1->size());
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1->offset(), i1->size());
 
           std::vector<size_t> h = {{cnt, cnt2}};
           dflist.insert(make_pair(generate_hash_key(h), df_full));
@@ -80,7 +80,7 @@ class K2ext {
       return dflist;
     };
 
-    void form_4index(const std::map<size_t, std::shared_ptr<DF_Full> >& dflist) {
+    void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist> >& dflist) {
       // form four-index integrals
       // TODO this part should be heavily parallelized
       // TODO i01 < i23 symmetry should be used.
@@ -93,7 +93,7 @@ class K2ext {
 
           auto iter01 = dflist.find(generate_hash_key(i01));
           assert(iter01 != dflist.end());
-          std::shared_ptr<DF_Full> df01 = iter01->second;
+          std::shared_ptr<DFFullDist> df01 = iter01->second;
           size_t hashkey01 = generate_hash_key(i01);
 
           size_t j2 = blocks_[2].keyoffset();
@@ -108,7 +108,7 @@ class K2ext {
 
               auto iter23 = dflist.find(generate_hash_key(i23));
               assert(iter23 != dflist.end());
-              std::shared_ptr<const DF_Full> df23 = iter23->second;
+              std::shared_ptr<const DFFullDist> df23 = iter23->second;
 
               const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 

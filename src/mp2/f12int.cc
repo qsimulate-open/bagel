@@ -101,16 +101,16 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   const double* const oc = ref_->coeff()->data() + ncore*nbasis;
   const double* const vc = oc + nocc*nbasis;
 
-  const shared_ptr<const DensityFit> df = geom_->df();
-  const shared_ptr<const DF_Half> dxo = df->compute_half_transform(oc, nocc)->apply_J();
-  const shared_ptr<const DF_Full> doo = dxo->compute_second_transform(oc, nocc);
+  const shared_ptr<const DFDist> df = geom_->df();
+  const shared_ptr<const DFHalfDist> dxo = df->compute_half_transform(oc, nocc)->apply_J();
+  const shared_ptr<const DFFullDist> doo = dxo->compute_second_transform(oc, nocc);
 
   shared_ptr<F12Mat> ymat;
   {
   // Yukawa integral can be thrown right away
-  shared_ptr<DensityFit> yukawa = geom->form_fit<YukawaFit>(0.0, false, gamma_);
-  const shared_ptr<const DF_Half> yxo = yukawa->compute_half_transform(oc, nocc);
-  const shared_ptr<const DF_Full> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
+  shared_ptr<DFDist> yukawa = geom->form_fit<YukawaFit>(0.0, false, gamma_);
+  const shared_ptr<const DFHalfDist> yxo = yukawa->compute_half_transform(oc, nocc);
+  const shared_ptr<const DFFullDist> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
   ymat = robust_fitting(doo, yoo);
   }
 
@@ -122,15 +122,15 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
 
 
 // df and slater are supposed to be J-applied.
-shared_ptr<F12Mat> F12Int::robust_fitting(shared_ptr<const DF_Full> doo, shared_ptr<const DF_Full> yoo) {
+shared_ptr<F12Mat> F12Int::robust_fitting(shared_ptr<const DFFullDist> doo, shared_ptr<const DFFullDist> yoo) {
   const int nocc = yoo->nocc1();
   assert(nocc == yoo->nocc2());
 
   shared_ptr<F12Mat> ym0(new F12Mat(nocc, yoo->form_4index(doo, 1.0)));
   ddot_to_amp(*ym0, nocc, gamma_, "Y matrix orig");
 
-  shared_ptr<const DF_Full> doo_J = doo->apply_J();
-  shared_ptr<const DF_Full> doo_JS = doo_J->apply_J(yoo->df());
+  shared_ptr<const DFFullDist> doo_J = doo->apply_J();
+  shared_ptr<const DFFullDist> doo_JS = doo_J->apply_J(yoo->df());
   shared_ptr<F12Mat> ym1(new F12Mat(nocc, doo_JS->form_4index(doo_J, 1.0)));
   ddot_to_amp(*ym1, nocc, gamma_, "Y matrix orig");
   shared_ptr<F12Mat> ym(new F12Mat(*ym0*2.0 - *ym1));

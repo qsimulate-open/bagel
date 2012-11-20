@@ -39,13 +39,13 @@ class CPHF {
     const std::shared_ptr<LinearRM<Matrix> > solver_;
     const std::shared_ptr<const Matrix> grad_;
     const std::vector<double> eig_;
-    const std::shared_ptr<const DF_Half> halfjj_;
+    const std::shared_ptr<const DFHalfDist> halfjj_;
     const std::shared_ptr<const Reference> ref_;
     const std::shared_ptr<const Geometry> geom_;
 
   public:
     CPHF(const std::shared_ptr<const Matrix> grad, const std::vector<double>& eig,
-         const std::shared_ptr<const DF_Half> half, const std::shared_ptr<const Reference> g);
+         const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const Reference> g);
     ~CPHF() {};
 
     std::shared_ptr<Matrix> solve() const;

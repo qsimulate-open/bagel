@@ -30,17 +30,17 @@ using namespace std;
 using namespace bagel;
 
 
-Qvec::Qvec(const int n, const int m, shared_ptr<const DensityFit> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2> > rdm)
+Qvec::Qvec(const int n, const int m, shared_ptr<const DFDist> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2> > rdm)
  : QFile(n,m) {
 
   const int nbasis = df->nbasis0();
   assert(df->nbasis0() == df->nbasis1());
 
-  shared_ptr<const DF_Half> half = fci->jop()->mo2e_1ext();
+  shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
 
-  shared_ptr<const DF_Full> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ();
 
-  shared_ptr<const DF_Full> prdm = full->apply_2rdm(rdm->data());
+  shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm->data());
 
   unique_ptr<double[]> tmp = half->form_2index(prdm, 1.0);
   dgemm_("T", "N", n, m, nbasis, 1.0, coeff->data(), nbasis, tmp.get(), nbasis, 0.0, data(), n);

@@ -68,14 +68,14 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const double* const vcoeff = coeff + nocc*nbasis;
 
   // first compute half transformed integrals
-  shared_ptr<const DF_Half> half = geom_->df()->compute_half_transform(coeff, nocc);
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
   // TODO this is a waste...
-  shared_ptr<const DF_Half> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
+  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<const DF_Full> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
-  shared_ptr<const DF_Full> bv = full->apply_J();
-  shared_ptr<DF_Full> gia = bv->clone();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<const DFFullDist> bv = full->apply_J();
+  shared_ptr<DFFullDist> gia = bv->clone();
 
   auto tp2 = chrono::high_resolution_clock::now();
   auto dr1 = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
@@ -115,7 +115,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    // BV and gia are DF_Full 
+    // BV and gia are DFFullDist 
     const size_t offset = i*nocc;
     gia->set_product(bv, buf, nocc, offset);
 
@@ -142,7 +142,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   }
 
   // Gip = Gia(D|ia) C+_ap
-  shared_ptr<DF_Half> gip = gia->back_transform(vcoeff);
+  shared_ptr<DFHalfDist> gip = gia->back_transform(vcoeff);
   // Liq = 2 Gip(D) * (D|pq)
   unique_ptr<double[]> lia(new double[nocca*nvirt]);
   fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
@@ -219,12 +219,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<const double*> cd = {cd0.get(), cdbar.get()};
   vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
-  shared_ptr<DF_Half> sepd = halfjj->apply_density(dbarao->data());
-  shared_ptr<DF_AO> sep3 = sepd->back_transform(ocoeff);
+  shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
+  shared_ptr<DFDist> sep3 = sepd->back_transform(ocoeff);
   sep3->scale(-2.0);
   /// mp2 two body part ----------------
   {
-    shared_ptr<DF_AO> sep32 = gip->back_transform(coeff);
+    shared_ptr<DFDist> sep32 = gip->back_transform(coeff);
     sep3->daxpy(4.0, sep32);
   }
   sep3->add_direct_product(cd, dd, 1.0);

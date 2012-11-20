@@ -46,18 +46,18 @@ class JKop {
     const size_t nbasis_;
 
   public:
-    JKop(const std::shared_ptr<const DensityFit> df, const std::shared_ptr<const Coeff> c, const std::shared_ptr<Fock<1> > hcore,
+    JKop(const std::shared_ptr<const DFDist> df, const std::shared_ptr<const Coeff> c, const std::shared_ptr<Fock<1> > hcore,
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
     : fci_(fci), coeff_(c), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
 
       assert(nclosed+nact == nocc);
       assert(df->nbasis0() == df->nbasis1());
       // K operator // (ai|ai)
-      std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff_->data(), nocc)->apply_J();
+      std::shared_ptr<DFHalfDist> half = df->compute_half_transform(coeff_->data(), nocc)->apply_J();
       data_ = std::move(half->form_4index(half, 1.0));
 
       // J operator // (aa|ii)
-      std::shared_ptr<DF_Full> full = half->compute_second_transform(coeff_->data(), nocc);
+      std::shared_ptr<DFFullDist> full = half->compute_second_transform(coeff_->data(), nocc);
       jdata_ = std::move(full->form_4index(df, 1.0));
 
       // contruct 2RDM

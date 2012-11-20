@@ -236,7 +236,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {
 
-    std::shared_ptr<const DensityFit> df = geom_->df();
+    std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
     const int naux = df->naux();
@@ -259,7 +259,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     if (nocc == 0) return;
 
     // first half transformation and multiplying J^-1/2 from the front.
-    std::shared_ptr<DF_Half> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
+    std::shared_ptr<DFHalfDist> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
     std::unique_ptr<double[]> kop = half->form_2index(half, -0.5);
     std::unique_ptr<double[]> jop = df->compute_Jop(density_->data());
     daxpy_(ndim_*ndim_, 1.0, kop, 1, data_, 1);

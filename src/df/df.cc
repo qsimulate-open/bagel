@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfdist.cc
+// Filename: df.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -28,7 +28,7 @@
 #include <src/util/taskqueue.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
-#include <src/df/dfdist.h>
+#include <src/df/df.h>
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>

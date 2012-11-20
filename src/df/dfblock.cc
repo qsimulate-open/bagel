@@ -233,7 +233,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
     const double a = ddot_(nact*nact, rdm1, 1, rdm1, 1);
     double sum = 0.0;
     for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
-    if (fabs(a-sum) > numerical_zero__) throw logic_error("DF_Full::apply_2rdm should be called with natural orbitals");
+    if (fabs(a-sum) > numerical_zero__) throw logic_error("DFFullDist::apply_2rdm should be called with natural orbitals");
   }
   shared_ptr<DFBlock> out = clone();
   out->zero();

@@ -31,7 +31,7 @@ using namespace bagel;
 
 Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
 
-  shared_ptr<const DensityFit> df = fci->geom()->df();
+  shared_ptr<const DFDist> df = fci->geom()->df();
   const double* const cc = coeff->data();
   const size_t nocc = nclosed+nact;
 
@@ -43,7 +43,7 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
 
   // jvec_ = J^{-1/2} (D|ij) Gamma_ij,kl
   {
-    shared_ptr<DF_Full> in = half_->compute_second_transform(cc,nocc);
+    shared_ptr<DFFullDist> in = half_->compute_second_transform(cc,nocc);
 
     // TODO this is not a very efficient implementation, obviously
     // for the time being, I form the entire 2RDM

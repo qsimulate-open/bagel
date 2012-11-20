@@ -38,8 +38,8 @@ using namespace std;
 using namespace bagel;
 
 CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec> > grad, const shared_ptr<const Dvec> civ,
-                   const shared_ptr<const Matrix> eig, const shared_ptr<const DF_Half> h,
-                   const shared_ptr<const DF_Half> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
+                   const shared_ptr<const Matrix> eig, const shared_ptr<const DFHalfDist> h,
+                   const shared_ptr<const DFHalfDist> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
   cout << "   CI vectors:" << endl;
@@ -68,9 +68,9 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
   const double* const vcoeff = ocoeff + nocca*nbasis;
 
   // some DF vectors
-  shared_ptr<const DensityFit> df = ref_->geom()->df();
-  shared_ptr<const DF_Half> half = df->compute_half_transform(ocoeff, nocca)->apply_J();
-  shared_ptr<const DF_Full> fullb = half->compute_second_transform(ocoeff, nocca);
+  shared_ptr<const DFDist> df = ref_->geom()->df();
+  shared_ptr<const DFHalfDist> half = df->compute_half_transform(ocoeff, nocca)->apply_J();
+  shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff, nocca);
 
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec> > denom;
@@ -151,18 +151,18 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
     // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
     // (D|jx) -> (D|jS)
     {
-      shared_ptr<DF_Full> tmp0 = half->compute_second_transform(cz0cinv->data(), nbasis);
-      shared_ptr<const DF_Half> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
+      shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv->data(), nbasis);
+      shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
       tmp0->daxpy(1.0, tmp1);
-      shared_ptr<const DF_Full> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+      shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       unique_ptr<double[]> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
       dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis);
     }
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
-    shared_ptr<DF_Full> fullz = half->compute_second_transform(cz0->data(), nocca);
+    shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->data(), nocca);
     fullz->symmetrize();
     {
-      shared_ptr<const DF_Full> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+      shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       unique_ptr<double[]> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
       dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis);
@@ -288,12 +288,12 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 
   // Half transformed DF vector
 #if 0
-  shared_ptr<const DF_Half> half = fci_->jop()->mo2e_1ext();
+  shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
 #else
-  shared_ptr<const DF_Half> half = ref_->geom()->df()->compute_half_transform(acoeff, nact);
+  shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(acoeff, nact);
 #endif
-  shared_ptr<const DF_Full> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
-  shared_ptr<const DF_Full> fulld = full->apply_2rdm(rdm2->data());
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
   unique_ptr<double[]> jd = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);
 

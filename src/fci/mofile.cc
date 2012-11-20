@@ -168,10 +168,10 @@ unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
   double* cdata = coeff_->data() + nstart*nbasis_;
 
   // first half transformation
-  shared_ptr<DF_Half> half = geom_->df()->compute_half_transform(cdata, nocc);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata, nocc);
 
   // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
-  shared_ptr<DF_Full> buf = half->compute_second_transform(cdata, nocc)->apply_J();
+  shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata, nocc)->apply_J();
 
   // we want to store half-transformed quantity for latter convenience
   mo2e_1ext_size_ = nocc*geom_->df()->naux()*nbasis_;

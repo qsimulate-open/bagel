@@ -52,7 +52,7 @@ class F12Int {
            const double, const int);
     ~F12Int() {};
 
-    std::shared_ptr<F12Mat> robust_fitting(std::shared_ptr<const DF_Full> doo, std::shared_ptr<const DF_Full> yoo);
+    std::shared_ptr<F12Mat> robust_fitting(std::shared_ptr<const DFFullDist> doo, std::shared_ptr<const DFFullDist> yoo);
 
 };
 

@@ -62,7 +62,7 @@ class MOFile {
     std::shared_ptr<Matrix> core_fock_;
     std::unique_ptr<double[]> mo1e_;
     std::unique_ptr<double[]> mo2e_;
-    std::shared_ptr<DF_Half> mo2e_1ext_;
+    std::shared_ptr<DFHalfDist> mo2e_1ext_;
 
     size_t mo2e_1ext_size_;
 
@@ -108,8 +108,8 @@ class MOFile {
 
     double core_energy() const { return core_energy_; };
 
-    std::shared_ptr<DF_Half> mo2e_1ext() { return mo2e_1ext_; };
-    std::shared_ptr<const DF_Half> mo2e_1ext() const { return mo2e_1ext_; };
+    std::shared_ptr<DFHalfDist> mo2e_1ext() { return mo2e_1ext_; };
+    std::shared_ptr<const DFHalfDist> mo2e_1ext() const { return mo2e_1ext_; };
     void update_1ext_ints(const std::vector<double>& coeff);
 
 };
