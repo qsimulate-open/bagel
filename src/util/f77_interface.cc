@@ -27,6 +27,11 @@
 #include <config.h>
 
 #ifndef HAVE_MKL_H
+extern "C" {
+  void zgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
+              const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,
+              const std::complex<double>* beta, std::complex<double>* c, const int* ldc);
+}
 void zgemm3m_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
               const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,
               const std::complex<double>* beta, std::complex<double>* c, const int* ldc) { zgemm_(transa, transb, m,n,k, alpha, a, lda, b, ldb, beta, c, ldc); }
