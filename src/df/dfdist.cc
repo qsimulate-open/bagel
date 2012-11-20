@@ -169,7 +169,15 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   const int inode = 0;
 
   // construction of DFBlock computes integrals
+#if 1
   blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
+#else
+  int cnt = 0;
+  for (auto& i : ashell) {
+    blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(vector<shared_ptr<const Shell> >{i}, b1shell, b2shell, cnt, 0, 0)));
+    cnt += i->nbasis();
+  }
+#endif
 
   // make a global hash table
   make_table(inode);
@@ -226,7 +234,7 @@ unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
   fill_n(out.get(), nbasis0_*nbasis1_, 0.0);
   // then compute J operator J_{rs} = |E*) (E|rs)
   for (auto& i : blocks_) {
-    unique_ptr<double[]> tmp = i->form_mat(tmp0.get());
+    unique_ptr<double[]> tmp = i->form_mat(tmp0.get()+i->astart());
     daxpy_(nbasis0_*nbasis1_, 1.0, tmp, 1, out, 1);
   }
   return out;
@@ -410,7 +418,7 @@ unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFul
 void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
   auto j = o->blocks_.begin();
   for (auto& i : blocks_) {
-    i->copy_block((*j)->form_Dj(c, jdim), jdim, off);
+    i->copy_block((*j)->form_Dj(c, jdim), jdim, off*i->asize());
     ++j;
   }
 }

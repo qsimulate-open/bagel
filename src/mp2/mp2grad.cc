@@ -116,7 +116,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
     // BV and gia are DF_Full 
-    const size_t offset = i*nocc*naux;
+    const size_t offset = i*nocc;
     gia->set_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
