@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/f77.cc>
+#include <src/util/f77.h>
 #include <config.h>
 
 #ifndef HAVE_MKL_H
