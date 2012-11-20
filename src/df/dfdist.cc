@@ -53,6 +53,7 @@ unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, con
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
   const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size();
   unique_ptr<double[]> out(new double[size]);
+  fill_n(out.get(), size, 0.0);
 
   // loop over blocks
   for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
@@ -68,6 +69,7 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_4index");
   const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size() * blocks_.front()->b1size()*o->blocks_.front()->b1size();
   unique_ptr<double[]> out(new double[size]);
+  fill_n(out.get(), size, 0.0);
 
   // loop over blocks
   for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
@@ -117,13 +119,13 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 void ParallelDF::make_table(const int inode) {
   // TODO need to broadcast
   for (auto& i : blocks_)
-    global_table_.insert(make_pair(i->astart(), inode));
+    global_table_.insert(make_pair(i->astart()+i->asize(), inode));
 }
 
 
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   // first thing is to find the node
-  const int inode = (--global_table_.upper_bound(i))->first;
+  const int inode = global_table_.upper_bound(i)->first;
   // now we still have only inode == 0 in the table
   const int mynode = 0;
 
