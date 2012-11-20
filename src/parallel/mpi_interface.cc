@@ -23,10 +23,28 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <config.h>
 #include <src/parallel/mpi_interface.h>
+
+#ifdef HAVE_MPI_H
+  #include <mpi.h>
+#endif
 
 using namespace std;
 using namespace bagel;
 
 MPI_Interface::MPI_Interface() {
+#ifdef HAVE_MPI_H
+  MPI::Init();
+  const int size = MPI::COMM_WORLD.Get_size();
+  const int rank = MPI::COMM_WORLD.Get_rank();
+  cout << "hello world " << rank << " " << size << endl; 
+#endif
+}
+
+
+MPI_Interface::~MPI_Interface() {
+#ifdef HAVE_MPI_H
+  MPI::Finalize();
+#endif
 }

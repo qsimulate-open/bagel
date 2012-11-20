@@ -59,6 +59,8 @@
 #endif
 #include <src/parallel/mpi_interface.h>
 
+#include <config.h>
+
 
 using namespace bagel;
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
@@ -76,7 +78,7 @@ using std::endl;
 int main(int argc, char** argv) {
 
   // testing MPI.
-#if 0
+#ifdef HAVE_MPI_H
   MPI_Interface mpi_;
 #endif
 

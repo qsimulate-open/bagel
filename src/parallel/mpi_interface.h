@@ -33,6 +33,7 @@ class MPI_Interface {
 
   public:
     MPI_Interface();
+    ~MPI_Interface();
 
 };
 

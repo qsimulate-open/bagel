@@ -14,7 +14,7 @@ AC_PROG_FC([gfortran])
 
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 if test x${use_mkl} = xyes; then
-    AC_CHECK_HEADER([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])])
+    AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])])
     AC_CHECK_LIB(mkl_intel_lp64, main)
     AC_CHECK_LIB(mkl_intel_thread, main)
     AC_CHECK_LIB(mkl_core, main)
@@ -52,7 +52,7 @@ if test "x${with_include}" != xno; then
 fi
 
 if test x${use_mpi} = xyes; then
-    AC_CHECK_HEADER([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])])
+    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])])
     AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
     AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
 fi
