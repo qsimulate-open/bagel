@@ -35,6 +35,9 @@ class MPI_Interface {
     MPI_Interface();
     ~MPI_Interface();
 
+    int rank() const;
+    int size() const;
+
 };
 
 }

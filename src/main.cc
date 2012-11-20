@@ -77,11 +77,6 @@ using std::endl;
 
 int main(int argc, char** argv) {
 
-  // testing MPI.
-#ifdef HAVE_MPI_H
-  MPI_Interface mpi_;
-#endif
-
   try {
     print_header();
 

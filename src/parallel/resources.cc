@@ -65,7 +65,7 @@ void StackMem::release(const size_t size, double* p) {
 
 
 
-Resources::Resources(const int n) : max_num_threads_(n) {
+Resources::Resources(const int n) : proc_(new Process()), max_num_threads_(n) {
   for (int i = 0; i != max_num_threads_; ++i) {
     flag_.push_back(shared_ptr<atomic_flag>(new atomic_flag(ATOMIC_FLAG_INIT)));
     stackmem_.push_back(shared_ptr<StackMem>(new StackMem()));

@@ -38,6 +38,9 @@ class Process {
   public:
     Process();
 
+    int rank() const { return mpi_->rank(); }
+    int size() const { return mpi_->size(); }
+
 };
 
 }

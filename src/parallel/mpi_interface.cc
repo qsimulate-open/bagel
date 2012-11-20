@@ -48,3 +48,21 @@ MPI_Interface::~MPI_Interface() {
   MPI::Finalize();
 #endif
 }
+
+
+int MPI_Interface::rank() const {
+#ifdef HAVE_MPI_H
+  return MPI::COMM_WORLD.Get_rank(); 
+#else
+  return 0;
+#endif
+}
+
+
+int MPI_Interface::size() const {
+#ifdef HAVE_MPI_H
+  return MPI::COMM_WORLD.Get_size(); 
+#else
+  return 1;
+#endif
+}

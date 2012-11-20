@@ -36,6 +36,7 @@
 #ifdef LIBINT_INTERFACE
   #include <libint2.h>
 #endif
+#include <src/parallel/process.h>
 
 namespace bagel {
 
@@ -67,6 +68,7 @@ class StackMem {
 
 class Resources {
   private:
+    std::shared_ptr<Process> proc_;
     std::vector<std::shared_ptr<StackMem> > stackmem_;
     std::vector<std::shared_ptr<std::atomic_flag> > flag_;
     size_t max_num_threads_;
