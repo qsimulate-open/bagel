@@ -378,7 +378,7 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > o
               other->get_block2(km, kn, ka, kb, buffer2);
               const T one = 1.0;
               const T prefac = one / static_cast<T>(k2);
-              zgemm_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
+              zgemm3m_("C", "N", &ijsize, &mnsize, &absize, &prefac, buffer1, &absize, buffer2, &absize, &one, target, &ijsize);
             }
           }
           out->put_block2(km, kn, ki, kj, target);

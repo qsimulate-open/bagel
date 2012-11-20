@@ -626,7 +626,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii < nbasis_j_; ++ii) {
             const int offset1 = cn2 * nbasis_b_ * ii;
             const int offset2 = cn2 * bsize * ii;
-            zgemm_("N", "N", &cn2, &bsize, &nbasis_b_, &prefac, data + offset1, &cn2,
+            zgemm3m_("N", "N", &cn2, &bsize, &nbasis_b_, &prefac, data + offset1, &cn2,
                                            coeff_b->bp(nkb) + nbasis_b_ * bstart, &nbasis_b_, &cone,
                                            datas + offset2, &cn2);
           }
@@ -652,7 +652,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           const std::complex<double>* jdata = coeff_j->bp(nkj) + nbasis_j_ * jstart;
           for (int ii = 0; ii != nbasis_j_ * jsize; ++ii) conjc2[ii] = conj(jdata[ii]);
           const int nsize = nbasis_a_ * nbasis_i_ * bsize;
-          zgemm_("N", "N", &nsize, &jsize, &nbasis_j_, &prefac, data, &nsize,
+          zgemm3m_("N", "N", &nsize, &jsize, &nbasis_j_, &prefac, data, &nsize,
                                                                 conjc2, &nbasis_j_, &cone,
                                                                 datas, &nsize);
           delete[] conjc2;
@@ -680,7 +680,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
           for (int ii = 0; ii < nbasis_i_; ++ii) {
             const size_t offset1 = nsize * nbasis_a_ * ii;
             const size_t offset2 = nsize * asize * ii;
-            zgemm_("N", "N", &nsize, &asize, &nbasis_a_, &prefac, data + offset1, &nsize,
+            zgemm3m_("N", "N", &nsize, &asize, &nbasis_a_, &prefac, data + offset1, &nsize,
                                                                 coeff_a->bp(nka) + nbasis_a_ * astart, &nbasis_a_, &czero,
                                                                 datas + offset2, &nsize);
           }
@@ -713,7 +713,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
         const std::complex<double>* idata = coeff_i->bp(nki) + nbasis_i_ * istart;
         for (int ii = 0; ii != nbasis_i_ * isize; ++ii) conjc2[ii] = conj(idata[ii]);
         const int nsize = jsize * asize * bsize;
-        zgemm_("N", "N", &nsize, &isize, &nbasis_i_, &cone, intermediate_novv, &nsize,
+        zgemm3m_("N", "N", &nsize, &isize, &nbasis_i_, &cone, intermediate_novv, &nsize,
                                                             conjc2, &nbasis_i_, &czero,
                                                             datas, &nsize);
         delete[] conjc2;

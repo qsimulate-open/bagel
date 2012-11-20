@@ -287,7 +287,7 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
     const Complex* cdata = data_->pointer(boffset1);
     const Complex* codata = odata->pointer(boffset2);
     Complex* coutdata = outdata->pointer(boffset3);
-    zgemm_("N", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &mdim_, &zero, coutdata, &ndim_);
+    zgemm3m_("N", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &mdim_, &zero, coutdata, &ndim_);
   }
 
   return out;
@@ -316,7 +316,7 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
     const Complex* cdata = data_->pointer(boffset1);
     const Complex* codata = odata->pointer(boffset2);
     Complex* coutdata = outdata->pointer(boffset3);
-    zgemm_("C", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &ndim_, &zero, coutdata, &mdim_);
+    zgemm3m_("C", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &ndim_, &zero, coutdata, &mdim_);
   }
 
   return out;
@@ -653,11 +653,11 @@ shared_ptr<PMatrix1e> PMatrix1e::mo_transform(shared_ptr<PMatrix1e> coeff,
     int iall = 0;
     for (int i = istart*ndim_; i != ifence*ndim_; ++i, ++iall) tmp[iall] = std::conj(co[i]);
 
-    zgemm_("N", "N", &ndim_, &isize, &ndim_, &one, data, &ndim_, tmp, &ndim_, &zero, tmp2, &ndim_);
+    zgemm3m_("N", "N", &ndim_, &isize, &ndim_, &one, data, &ndim_, tmp, &ndim_, &zero, tmp2, &ndim_);
 
     const int unit = 1;
     for (int i = 0; i != isize; ++i) {
-      zgemm_("C", "N", &unit, &jsize, &ndim_, &one, tmp2+i*ndim_, &unit, co+jstart*ndim_, &ndim_, &zero, outdata+i*jsize, &unit);
+      zgemm3m_("C", "N", &unit, &jsize, &ndim_, &one, tmp2+i*ndim_, &unit, co+jstart*ndim_, &ndim_, &zero, outdata+i*jsize, &unit);
     }
   }
   delete[] tmp;

@@ -5,11 +5,12 @@ c
 c Assuming 16kB L1 cache or more
 c The arrays will occupy 12.8kB
 c
+#include <config.h>
       subroutine mytranspose(h,m,n,vec)
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim
       double precision h(m,n),vec(n,m)
-#ifdef MKL_EXTENSION
+#ifdef HAVE_MKL_H
 #include <mkl.fi>
       call mkl_domatcopy("c","t",m,n,1.0d0,h,m,vec,n)
 #else

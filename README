@@ -32,9 +32,9 @@ cd obj
 
 ../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0 -g' 'LDFLAGS=-L/opt/local/lib -lblas -llapack' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g'
 
-// If you have MKL, the following would be useful. Furthermore, you could use -mavx on Linux (instead of -msse4.2).
+// If you have MKL and MPI, the following would be useful. Furthermore, you could use -mavx on Linux (instead of -msse4.2). Note parallel version is experimental.
 
-../configure 'CXXFLAGS=-DNDEBUG -DMKL_EXTENSION -std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O3 -msse4.2' 'LDFLAGS=-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -L/opt/local/lib' 'FCFLAGS=-O2' 'FFLAGS=-O2 -I/opt/intel/composer_xe_2013.0.088/mkl/include/ -fno-range-check -DMKL_EXTENSION'
+../configure 'CXXFLAGS=-std=c++11 -Wall -Wno-sign-compare -Wno-unused -Werror -O0 -g' 'FCFLAGS=-O0 -g' 'FFLAGS=-O0 -g' '--prefix=/usr/local/BAGEL_mpi' '--enable-mpi' '--enable-mkl' '--with-include=-I/usr/local/include -I/opt/intel/composerxe/mkl/include'
 
 // make
 make -j4

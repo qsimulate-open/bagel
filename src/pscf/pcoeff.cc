@@ -63,7 +63,7 @@ PMatrix1e PCoeff::form_density_rhf(const bool return_ao) const {
   int kcount = 0;
   for (int k = -K(); k <= K(); ++k, ++kcount) {
     const int koffset = kcount * blocksize_;
-    zgemm_("N", "C", &nbasis_, &nbasis_, &nocc, &one, data()->pointer(koffset), &nbasis_,
+    zgemm3m_("N", "C", &nbasis_, &nbasis_, &nocc, &one, data()->pointer(koffset), &nbasis_,
                                                       data()->pointer(koffset), &nbasis_,
                                      &zero, k_density.data()->pointer(koffset), &nbasis_);
   }
