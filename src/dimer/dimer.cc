@@ -170,6 +170,16 @@ void Dimer::construct_coeff() {
   double *Bdata = coeffs_.second->data();
   double *Sdata = proj_coeff_->data();
 
+  for(int i = 0; i < nbasisA; ++i, Adata += nbasisA) {
+    Sdata = copy(Adata, Adata + nbasisA, Sdata);
+    fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
+  }
+
+  for(int i = 0; i < nbasisB; ++i, Bdata += nbasisB) {
+    fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
+    Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
+  }
+
   const int ncloA = ncore_.first;
   const int ncloB = ncore_.second;
 
@@ -179,42 +189,16 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
+  shared_ptr<Matrix> tmpcoeff = proj_coeff_->slice(0,ncloA);
+  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA, nbasisA+ncloB));
 
-  // Fill ncoreA first
-  for(int ii = 0; ii < ncloA; ++ii, Adata += nbasisA) {
-     Sdata = copy(Adata, Adata + nbasisA, Sdata);
-     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
-  }
+  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(ncloA, ncloA+nactA));
+  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB, nbasisA+ncloB+nactB));
 
-  // Fill ncoreB next
-  for(int ii = 0; ii < ncloB; ++ii, Bdata += nbasisB) {
-     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
-     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
-  }
+  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(ncloA+nactA, ncloA+nactA+nvirtA));
+  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
 
-  // nactA
-  for(int ii = 0; ii != nactA; ++ii, Adata += nbasisA) {
-     Sdata = copy(Adata, Adata + nbasisA, Sdata);
-     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
-  }
-
-  // nactB
-  for(int ii = 0; ii != nactB; ++ii, Bdata += nbasisB) {
-     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
-     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
-  }
-
-  // nvirtA
-  for(int ii = 0; ii != nvirtA; ++ii, Adata += nbasisA) {
-     Sdata = copy(Adata, Adata + nbasisA, Sdata);
-     fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
-  }
-
-  // nvirtB
-  for(int ii = 0; ii != nvirtB; ++ii, Bdata += nbasisB) {
-     fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
-     Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
-  }
+  scoeff_ = shared_ptr<Coeff>(new Coeff(*tmpcoeff));
 } 
 
 shared_ptr<Coeff> Dimer::overlap() {
@@ -225,7 +209,7 @@ shared_ptr<Coeff> Dimer::overlap() {
    Overlap ovlp(sgeom_);
 
    /* transform to MO basis with proj_coeff */
-   shared_ptr<Coeff> novlp(new Coeff( (*proj_coeff_) % ovlp * (*proj_coeff_) ));
+   shared_ptr<Coeff> novlp(new Coeff( (*scoeff_) % ovlp * (*scoeff_) ));
 
    return novlp;
 }
@@ -244,9 +228,9 @@ void Dimer::orthonormalize() {
       S12_data += dimerbasis_;
    }
 
-   S_1_2 = S_1_2 * *(S.transpose());
+   S_1_2 = S_1_2 ^ S;
 
-   scoeff_ = shared_ptr<Coeff>(new Coeff(*proj_coeff_ * S_1_2));
+   scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
 }
 
 void Dimer::energy() {

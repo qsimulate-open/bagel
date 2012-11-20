@@ -97,7 +97,8 @@ class Dimer {
       std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
-      std::pair<const int, const int> nbasis() {return nbasis_; };
+      std::pair<const int, const int> nbasis() const {return nbasis_; };
+      int dimerbasis() const { return dimerbasis_; };
 
       template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
       template <int unit> int act(int a) const { return (a + unit*nact_.first); };

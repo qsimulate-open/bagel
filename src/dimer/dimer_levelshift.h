@@ -33,6 +33,7 @@
 #include <memory>
 
 #include <src/scf/coeff.h>
+#include <src/dimer/dimer.h>
 
 /************************************************************************************
 * Class of functions to level shift the Fock operator in SCF. Matrices are shifted  *
@@ -45,15 +46,18 @@ namespace bagel {
 // Dimer level shift
 class ShiftDimer : public LevelShift {
   protected:
-    std::shared_ptr<const Coeff> subspace_;
+    std::shared_ptr<const Matrix> subspace_;
     std::shared_ptr<const Matrix> subspace_projector_;
     std::shared_ptr<const Matrix> S_;
+
+    std::pair<int,int> nbasis_;
+    int dimerbasis_;
 
   public:
     // monomer_coeff should be monomer coefficients projected onto dimer orbitals
     ShiftDimer(std::shared_ptr<const Dimer> dimer, const double shift_parameter);
 
-    void shift(Matrix& coeff) override;
+    void shift(Matrix& fock_mo, std::shared_ptr<const Coeff> coeff);
 };
 
 }

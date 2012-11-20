@@ -29,7 +29,7 @@
 #define __BAGEL_DIMER_DIMER_SCF_H
 
 #include <src/scf/scf_base.h>
-#include <src/scf/levelshift.h>
+#include <src/dimer/dimer_levelshift.h>
 #include <src/util/diis.h>
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
@@ -42,7 +42,7 @@ namespace bagel {
 template<int DF>
 class DimerSCF : public SCF_base {
   protected:
-    std::shared_ptr<LevelShift> levelshift_;
+    std::shared_ptr<ShiftDimer> levelshift_;
 
   public:
     DimerSCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Dimer> dimer)
@@ -50,10 +50,9 @@ class DimerSCF : public SCF_base {
 
       // Need to build stuff somewhere around here, probably...
 
-      #if 0
-      levelshift_ = std::shared_ptr<LevelShift>(new ShiftDimer());
+      #if 1
+      levelshift_ = std::shared_ptr<ShiftDimer>(new ShiftDimer(dimer, 1.0e6));
       #endif
-      levelshift_ = std::shared_ptr<LevelShift>(new LevelShift());
 
       if (DF == 0) std::cout << "   Warning, DimerSCF with no DF is basically pointless." << std::endl;
 
@@ -97,7 +96,7 @@ class DimerSCF : public SCF_base {
 
         Matrix intermediate = *coeff_ % *fock * *coeff_;
 
-        levelshift_->shift(intermediate);
+        levelshift_->shift(intermediate, coeff_);
 
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
