@@ -44,6 +44,10 @@ using namespace chrono;
 using namespace bagel;
 
 
+ParallelDF::ParallelDF() {
+
+}
+
 
 unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
@@ -105,6 +109,37 @@ void ParallelDF::scale(const double a) {
 }
 
 
+void ParallelDF::add_block(shared_ptr<DFBlock> o) {
+  blocks_.push_back(o);
+}
+
+
+void ParallelDF::make_table(const int inode) {
+  // TODO need to broadcast
+  for (auto& i : blocks_)
+    global_table_.insert(make_pair(i->astart(), inode));
+}
+
+
+unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
+  // first thing is to find the node
+  const int inode = (--global_table_.upper_bound(i))->first;
+  // now we still have only inode == 0 in the table
+  const int mynode = 0;
+
+  // ask for the data to inode
+  if (inode == mynode) {
+    for (auto& b : blocks_)
+      if (b->astart() <= i && i < b->astart()+b->asize())
+        return b->get_block(i, id, j, jd, k, kd);
+    assert(false);
+  } else {
+    throw logic_error("not yet implemented ParallelDF::get_block");
+  }
+  return unique_ptr<double[]>();
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 DFDist::DFDist(const int nbas0, const int nbas1, const int naux, const vector<const double*> cd, const vector<const double*> dd) : nbasis0_(nbas0), nbasis1_(nbas1), naux_(naux) {
@@ -125,8 +160,13 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   // Decide how we distribute (dynamic distribution).
   // TODO we need a parallel queue server!
 
+  const int inode = 0;
+
   // construction of DFBlock computes integrals
   blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
+
+  // make a global hash table
+  make_table(inode);
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;

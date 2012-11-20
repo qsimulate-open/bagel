@@ -29,6 +29,7 @@
 #include <vector>
 #include <memory>
 #include <list>
+#include <map>
 #include <stdexcept>
 #include <stddef.h>
 #include <src/df/dfblock.h>
@@ -46,11 +47,16 @@ class DFFullDist;
 
 class ParallelDF {
   protected:
+    // blocks that this process has
     std::list<std::shared_ptr<DFBlock> > blocks_;
-  public:
-    ParallelDF() {};
+    // hash key and process number
+    std::map<int, int> global_table_;
 
-    void add_block(std::shared_ptr<DFBlock> o) { blocks_.push_back(o); }
+  public:
+    ParallelDF();
+
+    void add_block(std::shared_ptr<DFBlock> o);
+    void make_table(const int inode);
 
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
@@ -58,6 +64,8 @@ class ParallelDF {
 
     void daxpy(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
+
+    std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
 };
 
