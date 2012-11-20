@@ -34,72 +34,10 @@
 #include <src/grad/gradbatch.h>
 #include <src/slater/slaterbatch.h>
 
-#ifndef USE_DFDIST
-
-namespace bagel {
-
-class ERIFit : public DensityFit {
-  protected:
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
-
-  public:
-    ERIFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<const Atom> >& atoms,
-       const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr,
-       const bool inverse, const double gam = 0.0) // gam is dummy
-     : DensityFit(nbas, naux) {
-       common_init(atoms, atoms, aux_atoms, thr, inverse);
-    };
-    ~ERIFit() {};
-
-};
-
-
-
-class YukawaFit : public DensityFit {
-  protected:
-    const double gamma_;
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
-
-  public:
-    YukawaFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<const Atom> >& atoms,
-       const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr,
-       const bool inverse, const double gam)
-     : DensityFit(nbas, naux), gamma_(gam) {
-       common_init(atoms, atoms, aux_atoms, thr, inverse);
-    };
-    ~YukawaFit() {};
-
-};
-
-class SlaterFit : public DensityFit {
-  protected:
-    const double gamma_;
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override;
-
-  public:
-    SlaterFit(const int nbas, const int naux,
-       const std::vector<std::shared_ptr<const Atom> >& atoms,
-       const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr,
-       const bool inverse, const double gam)
-     : DensityFit(nbas, naux), gamma_(gam) {
-       common_init(atoms, atoms, aux_atoms, thr, inverse);
-    };
-    ~SlaterFit() {};
-
-};
-
-}
-
-#else
-
 #define ERIFit DFDist
 // just to make it compiled
 #define SlaterFit DFDist
 #define YukawaFit DFDist
-
-#endif
 
 #endif
 
