@@ -32,7 +32,7 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 #include <boost/test/unit_test.hpp>
 
 using namespace bagel;
