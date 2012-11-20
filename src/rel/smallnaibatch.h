@@ -32,7 +32,7 @@
 #include <src/scf/geometry.h>
 #include <memory>
 #include <src/rysint/naibatch.h>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 #include <src/util/matrix.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data

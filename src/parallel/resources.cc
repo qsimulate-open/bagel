@@ -29,7 +29,7 @@
 #include <vector>
 #include <iostream>
 #include <src/rysint/macros.h>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;

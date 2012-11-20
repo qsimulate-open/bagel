@@ -26,7 +26,7 @@
 
 #include <src/grad/gradeval_base.h>
 #include <src/util/taskqueue.h>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 #include <array>
 
 using namespace std;

@@ -46,7 +46,7 @@
 #include <src/casscf/werner.h>
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>

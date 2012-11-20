@@ -34,7 +34,7 @@
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 #include <tuple>
 #include <array>
 #include <vector>

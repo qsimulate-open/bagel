@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: stackmem.h
+// Filename: resources.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_UTIL_RESOURCES_H
-#define __SRC_UTIL_RESOURCES_H
+#ifndef __SRC_PARALLEL_RESOURCES_H
+#define __SRC_PARALLEL_RESOURCES_H
 
 // CAUTION last-in-first-out stack to avoid the overhead of new'ing every time
 

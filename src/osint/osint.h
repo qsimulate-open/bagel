@@ -34,7 +34,7 @@
 #include <src/rysint/sortlist.h>
 #include <array>
 #include <memory>
-#include <src/util/resources.h>
+#include <src/parallel/resources.h>
 
 namespace bagel {
 
