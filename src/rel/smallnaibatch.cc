@@ -226,8 +226,7 @@ array<shared_ptr<Matrix>,3>  SmallNAIBatch::moment_compute(const int num, const 
         }
     }
 
-    //Mytranspose
-    out[i] = shared_ptr<Matrix>(new Matrix(*overlap * *tmparea->transpose()));
+    out[i] = shared_ptr<Matrix>(new Matrix(*overlap ^ *tmparea));
   }
   return out;
 }
