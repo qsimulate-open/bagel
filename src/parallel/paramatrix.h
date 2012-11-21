@@ -39,7 +39,8 @@ class ParaMatrix : public Matrix {
     ParaMatrix(const int n, const int m) : Matrix(n,m) {}
     ParaMatrix(const ParaMatrix& o) : Matrix(o) { }
 
-    void sum_reduce();
+    void allreduce();
+    void broadcast(const int root = 0);
 };
 
 }

@@ -26,15 +26,15 @@
 
 #include <src/parallel/paramatrix.h>
 #include <config.h>
-#ifdef HAVE_MPI_H
-  #include <mpi.h>
-#endif
+#include <src/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;
 
-void ParaMatrix::sum_reduce() {
-#ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, static_cast<void*>(data_.get()), size(), MPI_DOUBLE, MPI::SUM);
-#endif
+void ParaMatrix::allreduce() {
+  resources__->proc()->mpi()->allreduce(data_.get(), size());
+}
+
+void ParaMatrix::broadcast(const int root) {
+  resources__->proc()->mpi()->broadcast(data_.get(), size(), root);
 }

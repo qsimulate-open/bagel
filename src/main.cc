@@ -78,7 +78,6 @@ using std::endl;
 int main(int argc, char** argv) {
 
   try {
-    print_header();
 
     {
       // TODO will be interfaced to input
@@ -87,9 +86,9 @@ int main(int argc, char** argv) {
       omp_set_num_threads(num_threads);
 #endif
       resources__ = new Resources(num_threads);
-      cout << std::endl << "  " <<  num_threads << " thread" << (num_threads == 1 ? "" : "s") << " will be used" << std::endl << std::endl;
     }
 
+    print_header();
     const bool input_provided = argc == 2;
     if (!input_provided) {
       throw std::runtime_error("no input file provided");

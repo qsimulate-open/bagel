@@ -35,7 +35,9 @@ namespace bagel {
 
 class Process {
   protected:
-    const std::shared_ptr<MPI_Interface> mpi_;
+    // interface to MPI
+    const std::shared_ptr<const MPI_Interface> mpi_;
+    // original stream
     std::streambuf* cout_orig;
     // dummy stream
     std::stringstream ss_;
@@ -47,6 +49,7 @@ class Process {
     int rank() const { return mpi_->rank(); }
     int size() const { return mpi_->size(); }
 
+    std::shared_ptr<const MPI_Interface> mpi() const { return mpi_; }
 };
 
 }

@@ -36,9 +36,6 @@ using namespace bagel;
 MPI_Interface::MPI_Interface() {
 #ifdef HAVE_MPI_H
   MPI::Init();
-  const int size = MPI::COMM_WORLD.Get_size();
-  const int rank = MPI::COMM_WORLD.Get_rank();
-  cout << "hello world " << rank << " " << size << endl; 
 #endif
 }
 
@@ -64,5 +61,32 @@ int MPI_Interface::size() const {
   return MPI::COMM_WORLD.Get_size(); 
 #else
   return 1;
+#endif
+}
+
+
+void MPI_Interface::barrier() const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Barrier();
+#endif
+}
+
+void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root);
+#endif
+}
+
+
+void MPI_Interface::allreduce(double* a, const size_t size) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM);
+#endif
+}
+
+
+void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root);
 #endif
 }

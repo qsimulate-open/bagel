@@ -26,6 +26,8 @@
 #ifndef __SRC_PARALLEL_MPI_INTERFACE_H
 #define __SRC_PARALLEL_MPI_INTERFACE_H
 
+#include <stddef.h>
+
 namespace bagel {
 
 class MPI_Interface {
@@ -38,6 +40,10 @@ class MPI_Interface {
     int rank() const;
     int size() const;
 
+    void barrier() const;
+    void reduce(double*, const size_t size, const int root) const;
+    void allreduce(double*, const size_t size) const;
+    void broadcast(double*, const size_t size, const int root) const;
 };
 
 }
