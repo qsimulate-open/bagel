@@ -62,18 +62,22 @@
 #include <config.h>
 
 
-using namespace bagel;
+// TODO they are ugly
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources* bagel::resources__;
+namespace bagel {
+  Resources* resources__;
+  MPI_Interface* mpi__;
+}
 
 // debugging
-extern void smith_test(std::shared_ptr<Reference>);
-extern void test_solvers(std::shared_ptr<Geometry>);
+extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
-extern void test_grad(std::shared_ptr<Reference>);
 
 using std::cout;
 using std::endl;
+using namespace bagel;
+
+#include <src/parallel/paramatrix.h>
 
 int main(int argc, char** argv) {
 
@@ -89,6 +93,10 @@ int main(int argc, char** argv) {
     }
 
     print_header();
+
+    // setup MPI interface. It does nothing for serial runs
+    mpi__ = new MPI_Interface();
+
     const bool input_provided = argc == 2;
     if (!input_provided) {
       throw std::runtime_error("no input file provided");
@@ -332,11 +340,9 @@ int main(int argc, char** argv) {
     }
     print_footer();
 
-    /////////////////////////////////////
-    //smith_test(ref);
-    /////////////////////////////////////
     //test_solvers(geom);
 
+    delete mpi__;
     delete resources__;
 
   } catch (const std::exception &e) {

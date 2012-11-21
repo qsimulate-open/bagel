@@ -28,6 +28,10 @@
 
 #include <stddef.h>
 #include <config.h>
+#ifdef HAVE_MPI_H
+ #include <mpi.h>
+#endif
+#include <cassert>
 
 namespace bagel {
 
@@ -52,7 +56,10 @@ class MPI_Interface {
     void free_window() const;
 };
 
+extern MPI_Interface* mpi__; 
+
 }
+
 
 #endif
 

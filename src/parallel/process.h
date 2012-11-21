@@ -26,17 +26,13 @@
 #ifndef __SRC_PARALLEL_PROCESS_H
 #define __SRC_PARALLEL_PROCESS_H
 
-#include <memory>
 #include <iostream>
 #include <sstream>
-#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 
 class Process {
   protected:
-    // interface to MPI
-    const std::shared_ptr<const MPI_Interface> mpi_;
     // original stream
     std::streambuf* cout_orig;
     // dummy stream
@@ -46,10 +42,6 @@ class Process {
     Process();
     ~Process();
 
-    int rank() const { return mpi_->rank(); }
-    int size() const { return mpi_->size(); }
-
-    std::shared_ptr<const MPI_Interface> mpi() const { return mpi_; }
 };
 
 }

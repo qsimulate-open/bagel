@@ -25,16 +25,15 @@
 
 
 #include <src/parallel/paramatrix.h>
-#include <config.h>
-#include <src/parallel/resources.h>
+#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
 void ParaMatrix::allreduce() {
-  resources__->proc()->mpi()->allreduce(data_.get(), size());
+  mpi__->allreduce(data_.get(), size());
 }
 
 void ParaMatrix::broadcast(const int root) {
-  resources__->proc()->mpi()->broadcast(data_.get(), size(), root);
+  mpi__->broadcast(data_.get(), size(), root);
 }

@@ -23,12 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <config.h>
 #include <src/parallel/mpi_interface.h>
-
-#ifdef HAVE_MPI_H
-  #include <mpi.h>
-#endif
 
 using namespace std;
 using namespace bagel;
