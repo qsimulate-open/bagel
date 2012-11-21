@@ -25,10 +25,6 @@
 
 
 #include <memory>
-#include <src/util/taskqueue.h>
-#include <src/util/constants.h>
-#include <src/util/f77.h>
-#include <src/df/df.h>
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
@@ -36,6 +32,12 @@
 #include <chrono>
 #include <iomanip>
 #include <list>
+#include <src/rysint/eribatch.h>
+#include <src/rysint/libint.h>
+#include <src/util/taskqueue.h>
+#include <src/util/constants.h>
+#include <src/util/f77.h>
+#include <src/df/df.h>
 
 #include <src/df/dfinttask_old.h>
 

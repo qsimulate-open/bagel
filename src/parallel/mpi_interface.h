@@ -27,6 +27,7 @@
 #define __SRC_PARALLEL_MPI_INTERFACE_H
 
 #include <stddef.h>
+#include <config.h>
 
 namespace bagel {
 
@@ -40,10 +41,15 @@ class MPI_Interface {
     int rank() const;
     int size() const;
 
+    // collective functions
     void barrier() const;
     void reduce(double*, const size_t size, const int root) const;
     void allreduce(double*, const size_t size) const;
     void broadcast(double*, const size_t size, const int root) const;
+
+    // one sided communication
+    void create_window(const double*, const size_t size) const;
+    void free_window() const;
 };
 
 }
