@@ -350,8 +350,8 @@ int main(int argc, char** argv) {
   } catch (...) {
     throw;
   }
-  delete mpi__;
   delete resources__;
+  delete mpi__;
 
 
   return 0;

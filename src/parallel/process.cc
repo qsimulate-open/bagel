@@ -34,11 +34,12 @@ using namespace bagel;
 Process::Process() {
   if (mpi__->rank() != 0) {
     cout_orig = cout.rdbuf(); 
-    cout.rdbuf(ss_.rdbuf()); // redirect 'cout' to a 'fout'
+    cout.rdbuf(ss_.rdbuf());
   }
 }
 
 Process::~Process() {
-  cout.rdbuf(cout_orig);
+  if (mpi__->rank() != 0)
+    cout.rdbuf(cout_orig);
 }
 
