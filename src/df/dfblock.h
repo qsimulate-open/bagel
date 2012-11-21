@@ -34,6 +34,7 @@
 #include <src/util/matrix.h>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
+#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 
@@ -46,6 +47,9 @@ class DFBlock {
   protected:
     // aux_ runs fastest, b2_ runs slowest
     std::unique_ptr<double[]> data_;
+ 
+    // Window for one-sided communication;
+    std::shared_ptr<Window> window_;
 
     std::vector<std::shared_ptr<const Shell> > aux_;
     std::vector<std::shared_ptr<const Shell> > b1_;

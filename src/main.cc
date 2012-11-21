@@ -81,21 +81,20 @@ using namespace bagel;
 
 int main(int argc, char** argv) {
 
-  try {
-
-    {
-      // TODO will be interfaced to input
-      int num_threads = 8;
+  // setup MPI interface. It does nothing for serial runs
+  mpi__ = new MPI_Interface();
+  {
+    // TODO will be interfaced to input
+    int num_threads = 8;
 #ifdef _OPENMP
-      omp_set_num_threads(num_threads);
+    omp_set_num_threads(num_threads);
 #endif
-      resources__ = new Resources(num_threads);
-    }
+    resources__ = new Resources(num_threads);
+  }
 
-    print_header();
+  print_header();
 
-    // setup MPI interface. It does nothing for serial runs
-    mpi__ = new MPI_Interface();
+  try {
 
     const bool input_provided = argc == 2;
     if (!input_provided) {
@@ -342,15 +341,15 @@ int main(int argc, char** argv) {
 
     //test_solvers(geom);
 
-    delete mpi__;
-    delete resources__;
-
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
     throw;
   } catch (...) {
     throw;
   }
+  delete mpi__;
+  delete resources__;
+
 
   return 0;
 }
