@@ -23,12 +23,22 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <fstream>
+#include <sstream>
 #include <src/parallel/process.h>
+#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-Process::Process() : mpi_(new MPI_Interface()) {
+Process::Process() {
+  if (mpi__->rank() != 0) {
+    cout_orig = cout.rdbuf(); 
+    cout.rdbuf(ss_.rdbuf()); // redirect 'cout' to a 'fout'
+  }
+}
 
+Process::~Process() {
+  cout.rdbuf(cout_orig);
 }
 

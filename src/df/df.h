@@ -35,8 +35,6 @@
 #include <src/df/dfblock.h>
 #include <src/scf/atom.h>
 #include <src/util/matrix.h>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/libint.h>
 #include <src/df/dfinttask_old.h>
 
 namespace bagel {

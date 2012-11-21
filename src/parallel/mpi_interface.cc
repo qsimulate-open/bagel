@@ -23,12 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <config.h>
 #include <src/parallel/mpi_interface.h>
-
-#ifdef HAVE_MPI_H
-  #include <mpi.h>
-#endif
 
 using namespace std;
 using namespace bagel;
@@ -36,9 +31,6 @@ using namespace bagel;
 MPI_Interface::MPI_Interface() {
 #ifdef HAVE_MPI_H
   MPI::Init();
-  const int size = MPI::COMM_WORLD.Get_size();
-  const int rank = MPI::COMM_WORLD.Get_rank();
-  cout << "hello world " << rank << " " << size << endl; 
 #endif
 }
 
@@ -66,3 +58,41 @@ int MPI_Interface::size() const {
   return 1;
 #endif
 }
+
+
+void MPI_Interface::barrier() const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Barrier();
+#endif
+}
+
+void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root);
+#endif
+}
+
+
+void MPI_Interface::allreduce(double* a, const size_t size) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM);
+#endif
+}
+
+
+void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root);
+#endif
+}
+
+
+shared_ptr<Window> MPI_Interface::create_window(const double* a, const size_t size) const {
+#ifdef HAVE_MPI_H
+  shared_ptr<Window> win(new Window(a, size, MPI::Win::Create(static_cast<const void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI::COMM_WORLD)));
+#else
+  shared_ptr<Window> win(new Window(a, size));
+#endif
+  return win;
+}
+

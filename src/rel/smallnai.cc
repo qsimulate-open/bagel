@@ -61,16 +61,14 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   const int dimb0 = input[1]->nbasis();
   SmallNAIBatch batch(input, geom_);
   batch.compute();
-  const double* const odata = batch.data();
-  const size_t bsize = batch.size_block();
 
   int cnt = 0;
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[0]->element(j,i) = odata[cnt];
-      data_[1]->element(j,i) = odata[cnt+bsize];
-      data_[2]->element(j,i) = odata[cnt+bsize*2];
-      data_[3]->element(j,i) = odata[cnt+bsize*3];
+      data_[0]->element(j,i) = batch[0]->data(cnt);
+      data_[1]->element(j,i) = batch[1]->data(cnt);
+      data_[2]->element(j,i) = batch[2]->data(cnt);
+      data_[3]->element(j,i) = batch[3]->data(cnt);
     }
   }
 }

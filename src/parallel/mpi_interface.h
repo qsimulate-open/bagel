@@ -26,7 +26,35 @@
 #ifndef __SRC_PARALLEL_MPI_INTERFACE_H
 #define __SRC_PARALLEL_MPI_INTERFACE_H
 
+#include <stddef.h>
+#include <config.h>
+#include <memory>
+#ifdef HAVE_MPI_H
+ #include <mpi.h>
+#endif
+
 namespace bagel {
+
+// Read only window for one-sided communication
+class Window {
+  protected:
+    const double* const data_;
+    const size_t size_;
+#ifdef HAVE_MPI_H
+    MPI::Win window_;
+#endif
+
+  public:
+#ifdef HAVE_MPI_H
+    Window(const double* a, const size_t size, MPI::Win w) : data_(a), size_(size), window_(w) { }
+    ~Window() { window_.Free(); }
+#else
+    Window(const double* a, const size_t size) : data_(a), size_(size) { }
+#endif
+    size_t size() { return size_; }
+    const double* data() { return data_; }
+};
+
 
 class MPI_Interface {
   protected:
@@ -38,9 +66,20 @@ class MPI_Interface {
     int rank() const;
     int size() const;
 
+    // collective functions
+    void barrier() const;
+    void reduce(double*, const size_t size, const int root) const;
+    void allreduce(double*, const size_t size) const;
+    void broadcast(double*, const size_t size, const int root) const;
+
+    // one sided communication
+    std::shared_ptr<Window> create_window(const double*, const size_t size) const;
 };
 
+extern MPI_Interface* mpi__; 
+
 }
+
 
 #endif
 

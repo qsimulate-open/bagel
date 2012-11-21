@@ -62,23 +62,26 @@
 #include <config.h>
 
 
-using namespace bagel;
+// TODO they are ugly
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-Resources* bagel::resources__;
+namespace bagel {
+  Resources* resources__;
+  MPI_Interface* mpi__;
+}
 
 // debugging
-extern void smith_test(std::shared_ptr<Reference>);
-extern void test_solvers(std::shared_ptr<Geometry>);
+extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
-extern void test_grad(std::shared_ptr<Reference>);
 
 using std::cout;
 using std::endl;
+using namespace bagel;
+
+#include <src/parallel/paramatrix.h>
 
 int main(int argc, char** argv) {
 
   try {
-    print_header();
 
     {
       // TODO will be interfaced to input
@@ -87,8 +90,12 @@ int main(int argc, char** argv) {
       omp_set_num_threads(num_threads);
 #endif
       resources__ = new Resources(num_threads);
-      cout << std::endl << "  " <<  num_threads << " thread" << (num_threads == 1 ? "" : "s") << " will be used" << std::endl << std::endl;
     }
+
+    print_header();
+
+    // setup MPI interface. It does nothing for serial runs
+    mpi__ = new MPI_Interface();
 
     const bool input_provided = argc == 2;
     if (!input_provided) {
@@ -336,11 +343,9 @@ int main(int argc, char** argv) {
     }
     print_footer();
 
-    /////////////////////////////////////
-    //smith_test(ref);
-    /////////////////////////////////////
     //test_solvers(geom);
 
+    delete mpi__;
     delete resources__;
 
   } catch (const std::exception &e) {

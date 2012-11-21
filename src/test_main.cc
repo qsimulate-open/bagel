@@ -32,13 +32,16 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
-#include <src/parallel/resources.h>
 #include <boost/test/unit_test.hpp>
+#include <src/parallel/resources.h>
+#include <src/parallel/mpi_interface.h>
 
 using namespace bagel;
 
 Resources b(8);
 Resources* bagel::resources__ = &b;
+MPI_Interface c;
+MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
 

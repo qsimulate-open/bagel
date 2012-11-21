@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: process.h
+// Filename: paramatrix.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,28 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_PARALLEL_PROCESS_H
-#define __SRC_PARALLEL_PROCESS_H
 
-#include <iostream>
-#include <sstream>
+#include <src/parallel/paramatrix.h>
+#include <src/parallel/mpi_interface.h>
 
-namespace bagel {
+using namespace std;
+using namespace bagel;
 
-class Process {
-  protected:
-    // original stream
-    std::streambuf* cout_orig;
-    // dummy stream
-    std::stringstream ss_;
-
-  public:
-    Process();
-    ~Process();
-
-};
-
+void ParaMatrix::allreduce() {
+  mpi__->allreduce(data_.get(), size());
 }
 
-#endif
-
+void ParaMatrix::broadcast(const int root) {
+  mpi__->broadcast(data_.get(), size(), root);
+}

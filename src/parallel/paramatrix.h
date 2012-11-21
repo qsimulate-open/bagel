@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: process.h
+// Filename: paramatrix.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,28 +23,26 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_PARALLEL_PROCESS_H
-#define __SRC_PARALLEL_PROCESS_H
+#ifndef __SRC_PARALLEL_PARAMATRIX_H
+#define __SRC_PARALLEL_PARAMATRIX_H
 
-#include <iostream>
-#include <sstream>
+// parallel matrix, a derived class of Matrix
+#include <src/parallel/process.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
-class Process {
+class ParaMatrix : public Matrix {
   protected:
-    // original stream
-    std::streambuf* cout_orig;
-    // dummy stream
-    std::stringstream ss_;
 
   public:
-    Process();
-    ~Process();
+    ParaMatrix(const int n, const int m) : Matrix(n,m) {}
+    ParaMatrix(const ParaMatrix& o) : Matrix(o) { }
 
+    void allreduce();
+    void broadcast(const int root = 0);
 };
 
 }
 
 #endif
-
