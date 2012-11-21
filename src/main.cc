@@ -308,8 +308,11 @@ int main(int argc, char** argv) {
         std::shared_ptr<Dimer> dim(new Dimer(ref, disp));
         //dim->hamiltonian();
 
-        std::shared_ptr<DimerSCF<1> > dimer_scf(new DimerSCF<1>(testdata, dim));
+        std::shared_ptr<DimerSCF> dimer_scf(new DimerSCF(testdata, dim));
         dimer_scf->compute();
+
+        ref = dimer_scf->conv_to_ref();
+        geom = dim->sgeom();
 
         #if 0
         std::shared_ptr<Coeff> ovlp = dim->overlap();

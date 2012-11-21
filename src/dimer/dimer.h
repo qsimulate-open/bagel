@@ -98,13 +98,15 @@ class Dimer {
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
       std::pair<const int, const int> nbasis() const {return nbasis_; };
+      std::pair<const int, const int> ncore() const { return ncore_; };
       int dimerbasis() const { return dimerbasis_; };
 
       template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
       template <int unit> int act(int a) const { return (a + unit*nact_.first); };
 
       // Utility functions
-      std::shared_ptr<Coeff> overlap(); 
+      std::shared_ptr<Coeff> overlap() const; 
+      std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const;
 
       // Calculations
       void hamiltonian();
