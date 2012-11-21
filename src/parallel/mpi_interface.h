@@ -28,12 +28,33 @@
 
 #include <stddef.h>
 #include <config.h>
+#include <memory>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
-#include <cassert>
 
 namespace bagel {
+
+// Read only window for one-sided communication
+class Window {
+  protected:
+    const double* const data_;
+    const size_t size_;
+#ifdef HAVE_MPI_H
+    MPI::Win window_;
+#endif
+
+  public:
+#ifdef HAVE_MPI_H
+    Window(const double* a, const size_t size, MPI::Win w) : data_(a), size_(size), window_(w) { }
+    ~Window() { window_.Free(); }
+#else
+    Window(const double* a, const size_t size) : data_(a), size_(size) { }
+#endif
+    size_t size() { return size_; }
+    const double* data() { return data_; }
+};
+
 
 class MPI_Interface {
   protected:
@@ -52,8 +73,7 @@ class MPI_Interface {
     void broadcast(double*, const size_t size, const int root) const;
 
     // one sided communication
-    void create_window(const double*, const size_t size) const;
-    void free_window() const;
+    std::shared_ptr<Window> create_window(const double*, const size_t size) const;
 };
 
 extern MPI_Interface* mpi__; 

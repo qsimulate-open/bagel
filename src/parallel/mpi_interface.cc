@@ -87,17 +87,12 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 }
 
 
-#if 0
-int MPI_Interface::create_window(const double* a, const size_t size) const {
+shared_ptr<Window> MPI_Interface::create_window(const double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI::Win window = MPI::Win::Create(static_cast<void*> a, size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI::COMM_WORLD);
+  shared_ptr<Window> win(new Window(a, size, MPI::Win::Create(static_cast<const void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI::COMM_WORLD)));
+#else
+  shared_ptr<Window> win(new Window(a, size));
 #endif
+  return win;
 }
 
-
-int MPI_Interface::free_window() const {
-#ifdef HAVE_MPI_H
-  window.Free();
-#endif
-}
-#endif
