@@ -189,6 +189,7 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
+  #if 0
   shared_ptr<Matrix> tmpcoeff = proj_coeff_->slice(0,ncloA);
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA, nbasisA+ncloB));
 
@@ -199,9 +200,12 @@ void Dimer::construct_coeff() {
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
 
   scoeff_ = shared_ptr<Coeff>(new Coeff(*tmpcoeff));
+  #else
+  scoeff_ = shared_ptr<Coeff>(new Coeff(*proj_coeff_));
+  #endif
 } 
 
-shared_ptr<Coeff> Dimer::overlap() {
+shared_ptr<Coeff> Dimer::overlap() const {
 /* What I need to do is use a sgeo to make a big overlap matrix
    and then transform it with scoeffs into the MO basis */
 
@@ -212,6 +216,14 @@ shared_ptr<Coeff> Dimer::overlap() {
    shared_ptr<Coeff> novlp(new Coeff( (*scoeff_) % ovlp * (*scoeff_) ));
 
    return novlp;
+}
+
+shared_ptr<Matrix> Dimer::form_density_rhf(shared_ptr<const Coeff> coeff) const {
+  shared_ptr<Matrix> out = coeff->form_density_rhf(ncore_.first);
+  shared_ptr<Coeff> tmp = shared_ptr<Coeff>(new Coeff(*coeff->slice(nbasis_.first, nbasis_.first + nbasis_.second)));
+  *out += *(tmp->form_density_rhf(ncore_.second));
+
+  return out;
 }
 
 void Dimer::orthonormalize() {
