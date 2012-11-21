@@ -24,11 +24,20 @@
 //
 
 #include <src/parallel/process.h>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 using namespace bagel;
 
 Process::Process() : mpi_(new MPI_Interface()) {
+  if (rank() != 0) {
+    cout_orig = cout.rdbuf(); 
+    cout.rdbuf(ss_.rdbuf()); // redirect 'cout' to a 'fout'
+  }
+}
 
+Process::~Process() {
+  cout.rdbuf(cout_orig);
 }
 
