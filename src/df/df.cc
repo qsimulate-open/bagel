@@ -238,15 +238,14 @@ void DFDist::make_table(const int nblock) {
     ++n;
   }
 
-  mpi__->allgather(send.get(), naux_, rec.get(), naux_); 
+  mpi__->allgather(send.get(), nblock, rec.get(), nblock); 
 
   // reformatting to map
   int* buf = rec.get();
-  for (int inode = 0; inode != mpi__->size(); ++inode, buf += naux_) {
-    for (int m = 0; m != naux_; ++m) {
-      if (buf[m] == 0.0) break;
+  for (int inode = 0; inode != mpi__->size(); ++inode, buf += nblock) {
+    for (int m = 0; m != nblock; ++m) {
+      if (buf[m] == 0) break;
       global_table_.insert(make_pair(buf[m], inode));
-      cout << buf[m] << " " << inode << endl;
     }
   }
 }

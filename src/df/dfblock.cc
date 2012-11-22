@@ -53,8 +53,6 @@ DFBlock::DFBlock(vector<shared_ptr<const Shell> > a, vector<shared_ptr<const She
 
 
   ao_init();
-
-  window_ = mpi__->create_window(data_.get(), size()); 
 }
 
 

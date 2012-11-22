@@ -48,9 +48,6 @@ class DFBlock {
     // aux_ runs fastest, b2_ runs slowest
     std::unique_ptr<double[]> data_;
  
-    // Window for one-sided communication;
-    std::shared_ptr<Window> window_;
-
     std::vector<std::shared_ptr<const Shell> > aux_;
     std::vector<std::shared_ptr<const Shell> > b1_;
     std::vector<std::shared_ptr<const Shell> > b2_;
@@ -94,10 +91,6 @@ class DFBlock {
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
-
-    // MPI::Win for one-sided communication
-    std::shared_ptr<Window> window() { return window_; }
-    std::shared_ptr<const Window> window() const { return window_; }
 
     // dimensions of the block
     size_t asize() const { return asize_; }
