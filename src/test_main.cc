@@ -40,7 +40,9 @@ using namespace bagel;
 
 Resources b(8);
 Resources* bagel::resources__ = &b;
-MPI_Interface c;
+static int argc = 0;
+static char** argv;
+MPI_Interface c(argc, argv);
 MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
