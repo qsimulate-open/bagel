@@ -53,7 +53,6 @@ class ParallelDF {
     ParallelDF();
 
     void add_block(std::shared_ptr<DFBlock> o);
-    void make_table(const int inode);
 
     std::unique_ptr<double[]> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
@@ -86,6 +85,7 @@ class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
     void common_init(const std::vector<std::shared_ptr<const Atom> >&,
                      const std::vector<std::shared_ptr<const Atom> >&,
                      const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv);
+    void make_table(const int nmax);
 
   public:
     // construction of a block from AO integrals

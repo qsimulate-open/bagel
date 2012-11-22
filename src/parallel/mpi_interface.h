@@ -71,6 +71,8 @@ class MPI_Interface {
     void reduce(double*, const size_t size, const int root) const;
     void allreduce(double*, const size_t size) const;
     void broadcast(double*, const size_t size, const int root) const;
+    void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
+    void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one sided communication
     std::shared_ptr<Window> create_window(const double*, const size_t size) const;

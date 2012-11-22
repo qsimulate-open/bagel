@@ -87,6 +87,20 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 }
 
 
+void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Allgather(static_cast<const void*>(send), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE);
+#endif
+} 
+
+
+void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  MPI::COMM_WORLD.Allgather(static_cast<const void*>(send), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT);
+#endif
+} 
+
+
 shared_ptr<Window> MPI_Interface::create_window(const double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
   shared_ptr<Window> win(new Window(a, size, MPI::Win::Create(static_cast<const void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI::COMM_WORLD)));

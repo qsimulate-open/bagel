@@ -81,7 +81,7 @@ class DFBlock {
     // construction of a block from data (unique_ptr<double[]>)
     DFBlock(std::unique_ptr<double[]>& d, const size_t a, const size_t b1, const size_t b2,
                                           const int as, const int b1s, const int b2s)
-     : data_(std::move(d)), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { };
+     : data_(std::move(d)), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { }
 
     std::shared_ptr<DFBlock> transform_second(const double* const c, const int nocc, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(const double* const c, const int nocc, const bool trans = false) const;
@@ -90,12 +90,16 @@ class DFBlock {
     std::shared_ptr<DFBlock> copy() const;
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
+    // MPI::Win for one-sided communication
+    std::shared_ptr<Window> window() { return window_; }
+    std::shared_ptr<const Window> window() const { return window_; }
+
     // dimensions of the block
     size_t asize() const { return asize_; }
     size_t b1size() const { return b1size_; }
     size_t b2size() const { return b2size_; }
 
-    size_t size() const { return asize_*b1size_*b2size_; };
+    size_t size() const { return asize_*b1size_*b2size_; }
 
     // a set of offsets of this block in the entire DF integrals
     size_t astart() const { return astart_; }

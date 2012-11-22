@@ -118,13 +118,6 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 }
 
 
-void ParallelDF::make_table(const int inode) {
-  // TODO need to broadcast
-  for (auto& i : blocks_)
-    global_table_.insert(make_pair(i->astart()+i->asize(), inode));
-}
-
-
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   // first thing is to find the node
   const int inode = global_table_.upper_bound(i)->first;
@@ -168,21 +161,33 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   // Decide how we distribute (dynamic distribution).
   // TODO we need a parallel queue server!
 
-  const int inode = 0;
-
   // construction of DFBlock computes integrals
 #if 1
   blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
 #else
+  // TODO this is just for debugging
+#ifndef HAVE_MPI_H
+  assert(false);
+#endif
+  int batchsize = ashell.size() / mpi__->size();
   int cnt = 0;
-  for (auto& i : ashell) {
-    blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(vector<shared_ptr<const Shell> >{i}, b1shell, b2shell, cnt, 0, 0)));
-    cnt += i->nbasis();
+  int c = 0;
+  for (int i = 0; i != mpi__->size(); ++i) {
+    vector<shared_ptr<const Shell> > tmp;
+    const int astart = cnt;
+    for (int j = 0; j != ((i != mpi__->size()-1) ? batchsize : ashell.size()-batchsize*i); ++j) {
+      tmp.push_back(ashell[c]);
+      cnt += ashell[c]->nbasis();
+      ++c;
+    }
+    assert(!tmp.empty());
+    if (i != mpi__->rank()) continue;
+    blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(tmp, b1shell, b2shell, astart, 0, 0)));
   }
 #endif
 
   // make a global hash table
-  make_table(inode);
+  make_table(ashell.size());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
@@ -215,6 +220,32 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   auto tp2 = high_resolution_clock::now();
   cout << "       - time spent for computing inverse    " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
 
+}
+
+
+void DFDist::make_table(const int nblock) {
+  unique_ptr<int[]> send(new int[nblock]);
+  unique_ptr<int[]> rec(new int[nblock*mpi__->size()]);
+  fill_n(send.get(), nblock, 0);
+  fill_n(rec.get(), nblock*mpi__->size(), 0);
+
+  int n = 0;
+  for (auto& i : blocks_) {
+    send[n] = i->astart()+i->asize();
+    ++n;
+  }
+
+  mpi__->allgather(send.get(), naux_, rec.get(), naux_); 
+
+  // reformatting to map
+  int* buf = rec.get();
+  for (int inode = 0; inode != mpi__->size(); ++inode, buf += naux_) {
+    for (int m = 0; m != naux_; ++m) {
+      if (buf[m] == 0.0) break;
+      global_table_.insert(make_pair(buf[m], inode));
+      cout << buf[m] << " " << inode << endl;
+    }
+  }
 }
 
 
