@@ -51,7 +51,6 @@ ParallelDF::ParallelDF() {
 }
 
 
-// TODO
 unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
   const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size();
@@ -64,6 +63,9 @@ unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, con
     // accumulate
     daxpy_(size, 1.0, tmp, 1, out, 1);
   }
+
+  // all reduce
+  mpi__->allreduce(out.get(), size);
   return out;
 }
 
@@ -281,6 +283,7 @@ unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
 unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
+  fill_n(tmp0.get(), naux_, 0.0);
   // D = (D|rs)*d_rs
   for (auto& i : blocks_) {
     unique_ptr<double[]> tmp = i->form_vec(den);
