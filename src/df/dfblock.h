@@ -70,11 +70,6 @@ class DFBlock {
 
     std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
-    // TODO direct access to data will be disabled once implementation is done
-    double* get() { return data_.get(); }
-    const double* get() const { return data_.get(); }
-    double& operator[](const size_t i) { return data_[i]; }
-
   public:
     // construction of a block from AO integrals
     DFBlock(std::vector<std::shared_ptr<const Shell> > a, std::vector<std::shared_ptr<const Shell> > b1, std::vector<std::shared_ptr<const Shell> > b2,
@@ -103,6 +98,11 @@ class DFBlock {
     size_t astart() const { return astart_; }
     size_t b1start() const { return b1start_; }
     size_t b2start() const { return b2start_; }
+
+    // TODO direct access to data will be disabled once implementation is done
+    double* get() { return data_.get(); }
+    const double* get() const { return data_.get(); }
+    double& operator[](const size_t i) { return data_[i]; }
 
     // some math functions
     DFBlock& operator+=(const DFBlock& o);
@@ -142,6 +142,9 @@ class DFBlock {
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k 
     std::unique_ptr<double[]> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const; 
+
+    // use with caution
+    std::unique_ptr<double[]> release_data() { return std::move(data_); }
 };
 
 }

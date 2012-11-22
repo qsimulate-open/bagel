@@ -35,29 +35,14 @@
 
 namespace bagel {
 
-// Read only window for one-sided communication
-class Window {
-  protected:
-    const double* const data_;
-    const size_t size_;
-#ifdef HAVE_MPI_H
-    MPI::Win window_;
-#endif
-
-  public:
-#ifdef HAVE_MPI_H
-    Window(const double* a, const size_t size, MPI::Win w) : data_(a), size_(size), window_(w) { }
-    ~Window() { window_.Free(); }
-#else
-    Window(const double* a, const size_t size) : data_(a), size_(size) { }
-#endif
-    size_t size() { return size_; }
-    const double* data() { return data_; }
-};
-
 
 class MPI_Interface {
   protected:
+    int cnt_;
+#ifdef HAVE_MPI_H
+    // request handles
+    std::map<int, MPI_Request> request_; 
+#endif
 
   public:
     MPI_Interface(int argc, char** argv);
@@ -74,9 +59,9 @@ class MPI_Interface {
     void allgather(double* send, const size_t ssize, double* rec, const size_t rsize) const; 
     void allgather(int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
-    // one sided communication
-    std::shared_ptr<Window> create_window(double*, const size_t size) const;
-    void get(double*, double*, const size_t, std::shared_ptr<Window>) const; 
+    int request_send(double* sbuf, const size_t size, const int dest);
+    int request_recv(double* rbuf, const size_t size, const int source);
+    void wait(const int rq);
 };
 
 extern MPI_Interface* mpi__; 

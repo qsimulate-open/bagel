@@ -38,6 +38,7 @@
 #include <src/util/constants.h>
 #include <src/util/f77.h>
 #include <src/df/df.h>
+#include <src/parallel/paramatrix.h>
 
 #include <src/df/dfinttask_old.h>
 
@@ -52,73 +53,50 @@ ParallelDF::ParallelDF() {
 
 
 unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
-  const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size();
-  unique_ptr<double[]> out(new double[size]);
-  fill_n(out.get(), size, 0.0);
-
-  // loop over blocks
-  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
-    unique_ptr<double[]> tmp = (!swap) ? (*i)->form_2index(*j, a) : (*j)->form_2index(*i, a);
-    // accumulate
-    daxpy_(size, 1.0, tmp, 1, out, 1);
-  }
+  unique_ptr<double[]> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
 
   // all reduce
+  const size_t size = block_->b2size()*o->block_->b2size();
   mpi__->allreduce(out.get(), size);
   return out;
 }
 
 
-// TODO
 unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_4index");
-  const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size() * blocks_.front()->b1size()*o->blocks_.front()->b1size();
-  unique_ptr<double[]> out(new double[size]);
-  fill_n(out.get(), size, 0.0);
+  unique_ptr<double[]> out = (!swap) ? block_->form_4index(o->block_, a) : o->block_->form_4index(block_, a);
 
-  // loop over blocks
-  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
-    unique_ptr<double[]> tmp = (!swap) ? (*i)->form_4index(*j, a) : (*j)->form_4index(*i, a);
-    // accumulate
-    daxpy_(size, 1.0, tmp, 1, out, 1);
-  }
+  // all reduce
+  const size_t size = block_->b2size()*o->block_->b2size() * block_->b1size()*o->block_->b1size();
+  mpi__->allreduce(out.get(), size);
   return out;
 }
 
 
-// TODO
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
-  // first allocate memory...
-  const size_t idim = blocks_.back()->astart() + blocks_.back()->asize();
-  const size_t jdim = o->blocks_.back()->astart() + o->blocks_.back()->asize();
-  shared_ptr<Matrix> out(new Matrix(idim, jdim));
+  const size_t idim = block_->astart() + block_->asize();
+  const size_t jdim = block_->astart() + o->block_->asize();
+  shared_ptr<ParaMatrix> out(new ParaMatrix(idim, jdim));
+  out->copy_block(block_->astart(), block_->astart(), block_->asize(), block_->asize(), block_->form_aux_2index(o->block_, a));
 
-  for (auto& j : o->blocks_)
-    for (auto& i : blocks_)
-      out->copy_block(i->astart(), j->astart(), i->asize(), j->asize(), i->form_aux_2index(j, a));
+  // all reduce
+  out->allreduce();
   return out;
 }
 
 
 void ParallelDF::daxpy(const double a, const shared_ptr<const ParallelDF> o) {
-  if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::daxpy");
-  auto ob = o->blocks_.begin();
-  for (auto& i : blocks_) {
-    i->daxpy(a, *ob);
-    ++ob;
-  }
+  block_->daxpy(a, o->block_);
 }
 
 
 void ParallelDF::scale(const double a) {
-  for (auto& i : blocks_)
-    i->scale(a);
+  block_->scale(a);
 }
 
 
 void ParallelDF::add_block(shared_ptr<DFBlock> o) {
-  blocks_.push_back(o);
+  assert(block_ == nullptr);
+  block_ = o;
 }
 
 
@@ -131,10 +109,7 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
   // ask for the data to inode
   if (inode == mynode) {
-    for (auto& b : blocks_)
-      if (b->astart() <= i && i < b->astart()+b->asize())
-        return b->get_block(i, id, j, jd, k, kd);
-    assert(false);
+    return block_->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("not yet implemented ParallelDF::get_block");
   }
@@ -146,9 +121,9 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
 void DFDist::add_direct_product(const vector<const double*> cd, const vector<const double*> dd, const double a) {
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
-  for (auto& i : blocks_)
-    for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
-      i->add_direct_product(*c+i->astart(), *d, a);
+
+  for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
+    block_->add_direct_product(*c+block_->astart(), *d, a);
 }
 
 
@@ -167,7 +142,7 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   // TODO we need a parallel queue server!
 
   // construction of DFBlock computes integrals
-#if 1
+#if 0
   blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
 #else
   // TODO this is just for debugging
@@ -187,12 +162,12 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
     }
     assert(!tmp.empty());
     if (i != mpi__->rank()) continue;
-    blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(tmp, b1shell, b2shell, astart, 0, 0)));
+    block_ = shared_ptr<DFBlock>(new DFBlock(tmp, b1shell, b2shell, astart, 0, 0));
   }
 #endif
 
   // make a global hash table
-  make_table(ashell.size());
+  make_table(mpi__->size());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
@@ -229,26 +204,21 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 
 
 void DFDist::make_table(const int nblock) {
-  unique_ptr<int[]> send(new int[nblock]);
-  unique_ptr<int[]> rec(new int[nblock*mpi__->size()]);
-  fill_n(send.get(), nblock, 0);
-  fill_n(rec.get(), nblock*mpi__->size(), 0);
+  unique_ptr<int[]> send(new int[2]);
+  unique_ptr<int[]> rec(new int[2*mpi__->size()]);
+  fill_n(rec.get(), 2*mpi__->size(), 0);
 
-  int n = 0;
-  for (auto& i : blocks_) {
-    send[n] = i->astart()+i->asize();
-    ++n;
-  }
-
-  mpi__->allgather(send.get(), nblock, rec.get(), nblock); 
+  send[0] = block_->astart();
+  send[1] = block_->asize();
+  mpi__->allgather(send.get(), 2, rec.get(), 2); 
 
   // reformatting to map
   int* buf = rec.get();
-  for (int inode = 0; inode != mpi__->size(); ++inode, buf += nblock) {
-    for (int m = 0; m != nblock; ++m) {
-      if (buf[m] == 0) break;
-      global_table_.insert(make_pair(buf[m], inode));
-    }
+  maxasize_ = 0;
+  for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2) {
+    global_table_.insert(make_pair(*buf+*(buf+1), inode));
+    atable_.push_back(make_pair(*buf, *(buf+1)));
+    maxasize_ = max(maxasize_, static_cast<size_t>(*(buf+1))); 
   }
 }
 
@@ -267,15 +237,10 @@ pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<
 unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
-  unique_ptr<double[]> out(new double[nbasis0_*nbasis1_]);
-  fill_n(out.get(), nbasis0_*nbasis1_, 0.0);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  for (auto& i : blocks_) {
-    unique_ptr<double[]> tmp = i->form_mat(tmp0.get()+i->astart());
-    daxpy_(nbasis0_*nbasis1_, 1.0, tmp, 1, out, 1);
-  }
+  unique_ptr<double[]> out = block_->form_mat(tmp0.get()+block_->astart());
   // all reduce
-  mpi__->allreduce(out.get(), nbasis0_*nbasis1_); 
+  mpi__->allreduce(out.get(), nbasis0_*nbasis1_);
   return out;
 }
 
@@ -285,12 +250,10 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
   unique_ptr<double[]> tmp1(new double[naux_]);
   fill_n(tmp0.get(), naux_, 0.0);
   // D = (D|rs)*d_rs
-  for (auto& i : blocks_) {
-    unique_ptr<double[]> tmp = i->form_vec(den);
-    copy_n(tmp.get(), i->asize(), tmp0.get()+i->astart());
-  }
+  unique_ptr<double[]> tmp = block_->form_vec(den);
+  copy_n(tmp.get(), block_->asize(), tmp0.get()+block_->astart());
   // All reduce
-  mpi__->allreduce(tmp0.get(), naux_); 
+  mpi__->allreduce(tmp0.get(), naux_);
   // C = S^-1_CD D 
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
@@ -300,8 +263,7 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(shared_from_this(), nocc));
-  for (auto& i : blocks_)
-    out->add_block(i->transform_second(c, nocc));
+  out->add_block(block_->transform_second(c, nocc));
   return out;
 }
 
@@ -311,46 +273,40 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const siz
 
 shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc_, nocc));
-  for (auto& i : blocks_)
-    out->add_block(i->transform_third(c, nocc));
+  out->add_block(block_->transform_third(c, nocc));
   return out;
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::copy() const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_));
-  for (auto& i : blocks_)
-    out->add_block(i->copy());
+  out->add_block(block_->copy());
   return out;
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::clone() const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_));
-  for (auto& i : blocks_)
-    out->add_block(i->clone());
+  out->add_block(block_->clone());
   return out;
 }
 
 
 shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
   shared_ptr<DFDist> out(new DFDist(df_));
-  for (auto& i : blocks_)
-    out->add_block(i->transform_second(c, df_->nbasis1(), true));
+  out->add_block(block_->transform_second(c, df_->nbasis1(), true));
   return out;
 }
 
 
 void DFHalfDist::rotate_occ(const double* d) {
-  for (auto& i : blocks_)
-    i = i->transform_second(d, nocc_);
+  block_ = block_->transform_second(d, nocc_);
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc_)); 
-  for (auto& i : blocks_)
-    out->add_block(i->transform_third(den, nbasis_));
+  out->add_block(block_->transform_third(den, nbasis_));
   return out;
 }
 
@@ -360,47 +316,33 @@ unique_ptr<double[]> DFHalfDist::compute_Kop_1occ(const double* den) const {
 }
 
 
-// TODO
-shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
-  shared_ptr<DFHalfDist> out = clone();
-  for (auto& i : out->blocks_) {
-    i->zero();
-    for (auto& j : blocks_)
-      i->contrib_apply_J(j, d);
-  }
-  return out; 
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 shared_ptr<DFFullDist> DFFullDist::copy() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->copy());
+  out->add_block(block_->copy());
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::clone() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->clone());
+  out->add_block(block_->clone());
   return out;
 }
 
 
 void DFFullDist::symmetrize() {
-  for (auto& i : blocks_)
-    i->symmetrize();
+  block_->symmetrize();
 }
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nocc1_));
-  for (auto& i : blocks_)
-    out->add_block(i->transform_third(c, df_->nbasis0(), true));
+  out->add_block(block_->transform_third(c, df_->nbasis0(), true));
   return out;
 }
 
@@ -408,32 +350,28 @@ shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
 // 2RDM contractions
 shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->apply_rhf_2RDM());
+  out->add_block(block_->apply_rhf_2RDM());
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const double* bmat) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->apply_uhf_2RDM(amat, bmat));
+  out->add_block(block_->apply_uhf_2RDM(amat, bmat));
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->apply_2RDM(rdm, rdm1, nclosed, nact));
+  out->add_block(block_->apply_2RDM(rdm, rdm1, nclosed, nact));
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nocc1_, nocc2_));
-  for (auto& i : blocks_)
-    out->add_block(i->apply_2RDM(rdm));
+  out->add_block(block_->apply_2RDM(rdm));
   return out;
 }
 
@@ -445,36 +383,79 @@ shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DF
 
 
 unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullDist> o, const double a, const size_t n) const {
-  const size_t size = blocks_.front()->b1size() * blocks_.front()->b2size() * o->blocks_.front()->b1size();
-  unique_ptr<double[]> out(new double[size]);
-  fill_n(out.get(), size, 0.0);
-
-  // TODO will be distributed
-  for (auto i = blocks_.begin(), j = o->blocks_.begin(); i != blocks_.end(); ++i, ++j) { 
-    unique_ptr<double[]> tmp = (*i)->form_4index_1fixed(*j, a, n);
-    daxpy_(size, 1.0, tmp, 1, out, 1);
-  }
+  unique_ptr<double[]> out = block_->form_4index_1fixed(o->block_, a, n);
+  const size_t size = block_->b1size() * block_->b2size() * o->block_->b1size();
+  mpi__->allreduce(out.get(), size);
   return out;
 }
 
 
 void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
-  auto j = o->blocks_.begin();
-  for (auto& i : blocks_) {
-    i->copy_block((*j)->form_Dj(c, jdim), jdim, off*i->asize());
-    ++j;
-  }
+  block_->copy_block(o->block_->form_Dj(c, jdim), jdim, off*block_->asize());
 }
 
 
-//TODO
+//////// apply J functions ////////
+
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
-  for (auto& i : out->blocks_) {
-    i->zero();
-    for (auto& j : blocks_)
-      i->contrib_apply_J(j, d);
+  out->block_->zero();
+
+  vector<int> request;
+  // first issue all the send requests
+  for (int i = 0; i != mpi__->size(); ++i) {
+    if (i == mpi__->rank()) continue;
+    request.push_back(mpi__->request_send(block_->get(), block_->size(), i));
   }
+
+  // then receive data and do the job
+  // receive buffer
+  const size_t size = df()->maxasize()*nocc1_*nocc2_;
+  unique_ptr<double[]> buf(new double[size]);
+  for (int i = 0; i != mpi__->size(); ++i) {
+    if (i == mpi__->rank()) {
+      out->block_->contrib_apply_J(block_, d);
+    } else {
+      request.push_back(mpi__->request_recv(buf.get(), size, i)); 
+
+      shared_ptr<DFBlock> db(new DFBlock(buf, df()->atable(i).first, df()->atable(i).second, block_->b1start(), block_->b1size(), block_->b2start(), block_->b2size()));
+      out->block_->contrib_apply_J(db, d);
+      buf = db->release_data();
+    }
+  }
+
+  for (auto& i : request) mpi__->wait(i);
   return out; 
 }
 
+
+shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
+  shared_ptr<DFHalfDist> out = clone();
+  out->block_->zero();
+
+  vector<int> request;
+  // first issue all the send requests
+  for (int i = 0; i != mpi__->size(); ++i) {
+    if (i == mpi__->rank()) continue;
+    request.push_back(mpi__->request_send(block_->get(), block_->size(), i));
+  }
+
+  // then receive data and do the job
+  // receive buffer
+  const size_t size = df()->maxasize()*nocc_*nbasis_;
+  unique_ptr<double[]> buf(new double[size]);
+  for (int i = 0; i != mpi__->size(); ++i) {
+    if (i == mpi__->rank()) {
+      out->block_->contrib_apply_J(block_, d);
+    } else {
+      request.push_back(mpi__->request_recv(buf.get(), size, i)); 
+
+      shared_ptr<DFBlock> db(new DFBlock(buf, df()->atable(i).first, df()->atable(i).second, block_->b1start(), block_->b1size(), block_->b2start(), block_->b2size()));
+      out->block_->contrib_apply_J(db, d);
+      buf = db->release_data();
+    }
+  }
+
+  for (auto& i : request) mpi__->wait(i);
+  return out; 
+}

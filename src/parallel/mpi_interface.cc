@@ -23,13 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <cassert>
 #include <stdexcept>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-MPI_Interface::MPI_Interface(int argc, char** argv) {
+MPI_Interface::MPI_Interface(int argc, char** argv) : cnt_(0) {
 #ifdef HAVE_MPI_H
   MPI_Init(&argc, &argv);
 #endif
@@ -106,24 +107,32 @@ void MPI_Interface::allgather(int* send, const size_t ssize, int* rec, const siz
 } 
 
 
-shared_ptr<Window> MPI_Interface::create_window(double* a, const size_t size) const {
+int MPI_Interface::request_send(double* sbuf, const size_t size, const int dest) {
 #ifdef HAVE_MPI_H
-  MPI_Win w;
-  MPI_Win_create(static_cast<void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &w);
-  shared_ptr<Window> win(new Window(a, size, w));
-#else
-  shared_ptr<Window> win(new Window(a, size));
+  MPI_Request rq;
+  MPI_Isend(sbuf, size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq); 
+  request_.insert(make_pair(cnt_, rq));
 #endif
-  return win;
+  ++cnt_;
+  return cnt_-1;
 }
 
 
-void MPI_Interface::get(double* a, double* b, const size_t size, shared_ptr<Window> win) const {
-#if 0
+int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin) {
 #ifdef HAVE_MPI_H
-  win->Get(static_cast<void*>(b), size, MPI_DOUBLE,  
-#else
-  throw logic_error("MPI_Interface::get should not be called without MPI");
+  MPI_Request rq;
+  MPI_Irecv(rbuf, size, MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &rq); 
+  request_.insert(make_pair(cnt_, rq));
 #endif
+  ++cnt_;
+  return cnt_-1;
+}
+
+
+void MPI_Interface::wait(const int rq) {
+#ifdef HAVE_MPI_H
+  auto i = request_.find(rq);
+  assert(i != request_.end());
+  MPI_Wait(&i->second, MPI_STATUS_IGNORE);
 #endif
 }

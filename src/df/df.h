@@ -45,9 +45,11 @@ class DFFullDist;
 class ParallelDF {
   protected:
     // blocks that this process has
-    std::list<std::shared_ptr<DFBlock> > blocks_;
+    std::shared_ptr<DFBlock> block_;
     // hash key and process number
     std::map<int, int> global_table_;
+    std::vector<std::pair<int, int> > atable_;
+    size_t maxasize_;
 
   public:
     ParallelDF();
@@ -62,6 +64,9 @@ class ParallelDF {
     void scale(const double a);
 
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+
+    size_t maxasize() const { return maxasize_; }
+    const std::pair<int, int> atable(const int i) const { return atable_[i]; }
 
 };
 
