@@ -73,6 +73,11 @@ class DFBlock {
 
     std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
+    // TODO direct access to data will be disabled once implementation is done
+    double* get() { return data_.get(); }
+    const double* get() const { return data_.get(); }
+    double& operator[](const size_t i) { return data_[i]; }
+
   public:
     // construction of a block from AO integrals
     DFBlock(std::vector<std::shared_ptr<const Shell> > a, std::vector<std::shared_ptr<const Shell> > b1, std::vector<std::shared_ptr<const Shell> > b2,
@@ -119,11 +124,6 @@ class DFBlock {
     // some additional functions
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)
     void symmetrize();
-
-    // TODO direct access to data will be disabled once implementation is done
-    double* get() { return data_.get(); }
-    const double* get() const { return data_.get(); }
-    double& operator[](const size_t i) { return data_[i]; }
 
     // 2RDM contractions
     std::shared_ptr<DFBlock> apply_rhf_2RDM() const; 
