@@ -57,10 +57,10 @@ class MPI_Interface {
     void reduce(double*, const size_t size, const int root) const;
     void allreduce(double*, const size_t size) const;
     void broadcast(double*, const size_t size, const int root) const;
-    void allgather(double* send, const size_t ssize, double* rec, const size_t rsize) const; 
-    void allgather(int* send, const size_t ssize, int* rec, const size_t rsize) const; 
+    void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
+    void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
-    int request_send(double* sbuf, const size_t size, const int dest);
+    int request_send(const double* sbuf, const size_t size, const int dest);
     int request_recv(double* rbuf, const size_t size, const int source);
     void wait(const int rq);
 };

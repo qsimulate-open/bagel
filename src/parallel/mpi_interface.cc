@@ -93,24 +93,27 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 }
 
 
-void MPI_Interface::allgather(double* send, const size_t ssize, double* rec, const size_t rsize) const {
+void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
-  MPI_Allgather(static_cast<void*>(send), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
 } 
 
 
-void MPI_Interface::allgather(int* send, const size_t ssize, int* rec, const size_t rsize) const {
+void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
-  MPI_Allgather(static_cast<void*>(send), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
 #endif
 } 
 
 
-int MPI_Interface::request_send(double* sbuf, const size_t size, const int dest) {
+int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest) {
 #ifdef HAVE_MPI_H
   MPI_Request rq;
-  MPI_Isend(sbuf, size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq); 
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Isend(const_cast<double*>(sbuf), size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq); 
   request_.insert(make_pair(cnt_, rq));
 #endif
   ++cnt_;

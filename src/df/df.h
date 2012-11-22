@@ -50,6 +50,9 @@ class ParallelDF {
     std::map<int, int> global_table_;
     std::vector<std::pair<int, int> > atable_;
 
+    void apply_J_prim_(std::shared_ptr<const DFBlock> source, std::shared_ptr<DFBlock> target, std::shared_ptr<const Matrix> mat,
+                       const std::vector<std::pair<int, int> >& atab, const int naux, const int ndim) const;
+
   public:
     ParallelDF();
 
@@ -65,6 +68,7 @@ class ParallelDF {
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::pair<int, int> atable(const int i) const { return atable_[i]; }
+    const std::vector<std::pair<int, int> >& atable() const { return atable_; }
 
 };
 
