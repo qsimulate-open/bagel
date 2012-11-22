@@ -114,6 +114,10 @@ void UHF::compute() {
       aodensityB_ = new_densityB;
       aodensity_  = new_density;
     }
+    // need to make all the node consistent
+    mpi__->broadcast(aodensityA_->data(), aodensityA_->size(), 0);
+    mpi__->broadcast(aodensityB_->data(), aodensityB_->size(), 0);
+    mpi__->broadcast(aodensity_->data(), aodensity_->size(), 0);
   }
   // now computes S^2 to see the spin contamination
   print_S2("UHF");

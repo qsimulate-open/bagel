@@ -97,6 +97,8 @@ class SCF : public SCF_base {
 
         std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, (DF==0?previous_fock:hcore_fock), (DF==0?densitychange:aodensity_), schwarz_));
         previous_fock = fock;
+        // Need to share exactly the same between MPI processes
+        if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
 
         Matrix intermediate = *coeff_ % *fock * *coeff_;
 
@@ -142,6 +144,9 @@ class SCF : public SCF_base {
 
         densitychange = std::shared_ptr<Matrix>(new Matrix(*diis_density - *aodensity_));
         aodensity_ = diis_density;
+
+        // need to make all the node consistent
+        mpi__->broadcast(DF == 1 ? aodensity_->data() : densitychange->data(), aodensity_->size(), 0);
       }
       // by default we compute dipoles
       if (!geom_->external()) {

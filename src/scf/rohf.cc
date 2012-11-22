@@ -120,6 +120,11 @@ void ROHF::compute() {
       coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb * *intermediateB));
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+
+    // need to make all the node consistent
+    mpi__->broadcast(aodensityA_->data(), aodensityA_->size(), 0);
+    mpi__->broadcast(aodensityB_->data(), aodensityB_->size(), 0);
+    mpi__->broadcast(aodensity_->data(), aodensity_->size(), 0);
   }
 
   print_S2("ROHF");
