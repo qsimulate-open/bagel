@@ -50,6 +50,7 @@ class MPI_Interface {
 
     int rank() const;
     int size() const;
+    bool last() const { return rank() == size()-1; }
 
     // collective functions
     void barrier() const;
