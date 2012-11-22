@@ -436,17 +436,17 @@ assert(false);
 
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
-  out->block_->zero();
 
 #ifdef HAVE_MPI_H
   // first make a buffer area
-  const size_t dim = nbasis_*nocc_;
+  const int dim = nbasis_*nocc_;
   const size_t stride = dim / mpi__->size();
   vector<int> start, size;
   for (int i = 0; i != mpi__->size(); ++i) {
     start.push_back(stride*i);
-    size.push_back(i+1 == mpi__->size() ? dim-start[i] : stride);
+    size.push_back((i+1 == mpi__->size()) ? dim-start[i] : stride);
   }
+  assert(size.back() >= 0);
   const size_t mysize = size[mpi__->rank()];
   unique_ptr<double[]> buf(new double[naux_*mysize]);
   unique_ptr<double[]> buf2(new double[naux_*mysize]);
@@ -458,6 +458,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
       srequest.push_back(mpi__->request_send(block_->get()+block_->asize()*start[i], block_->asize()*size[i], i));
       rrequest.push_back(mpi__->request_recv(buf.get()+df()->atable(i).first*mysize, df()->atable(i).second*mysize, i));
     } else {
+      assert(block_->asize()*size[i] == df()->atable(i).second*mysize);
       copy_n(block_->get()+block_->asize()*start[i], block_->asize()*size[i], buf.get()+df()->atable(i).first*mysize); 
     }
   }
@@ -495,7 +496,9 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
   }
   for (auto& i : rrequest) mpi__->wait(i);
   for (auto& i : srequest) mpi__->wait(i);
+  mpi__->barrier();
 #else
+  out->block_->zero();
   out->block_->contrib_apply_J(block_, d);
 #endif
 
