@@ -214,11 +214,9 @@ void DFDist::make_table(const int nblock) {
 
   // reformatting to map
   int* buf = rec.get();
-  maxasize_ = 0;
   for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2) {
     global_table_.insert(make_pair(*buf+*(buf+1), inode));
     atable_.push_back(make_pair(*buf, *(buf+1)));
-    maxasize_ = max(maxasize_, static_cast<size_t>(*(buf+1))); 
   }
 }
 
@@ -446,30 +444,31 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
   const size_t stride = dim / mpi__->size();
   vector<int> start, size;
   for (int i = 0; i != mpi__->size(); ++i) {
-    start.push_back(stride*(mpi__->size()-1));
+    start.push_back(stride*i);
     size.push_back(i+1 == mpi__->size() ? dim-start[i] : stride);
   }
   const size_t mysize = size[mpi__->rank()];
   unique_ptr<double[]> buf(new double[naux_*mysize]);
   unique_ptr<double[]> buf2(new double[naux_*mysize]);
 
-  vector<int> request;
+  vector<int> srequest, rrequest;
   // first issue all the send and receive requests
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
-      request.push_back(mpi__->request_send(block_->get()+block_->asize()*start[i], block_->asize()*size[i], i));
-      request.push_back(mpi__->request_recv(buf.get()+df()->atable(i).first*mysize, df()->atable(i).second*mysize, i));
+      srequest.push_back(mpi__->request_send(block_->get()+block_->asize()*start[i], block_->asize()*size[i], i));
+      rrequest.push_back(mpi__->request_recv(buf.get()+df()->atable(i).first*mysize, df()->atable(i).second*mysize, i));
     } else {
       copy_n(block_->get()+block_->asize()*start[i], block_->asize()*size[i], buf.get()+df()->atable(i).first*mysize); 
     }
   }
-  for (auto& i : request) mpi__->wait(i);
+  for (auto& i : rrequest) mpi__->wait(i);
 
   // second transpose each block
   for (int i = 0; i != mpi__->size(); ++i) {
     const int n = df()->atable(i).second;
     const int m = mysize;
-    mytranspose_(buf.get()+df()->atable(i).first*m, &n, &m, buf2.get()+df()->atable(i).first*m);
+    const int o = df()->atable(i).first*m;
+    mytranspose_(buf.get()+o, &n, &m, buf2.get()+o);
   }
 
   // apply J
@@ -479,24 +478,26 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
   for (int i = 0; i != mpi__->size(); ++i) {
     const int n = df()->atable(i).second;
     const int m = mysize;
-    mytranspose_(buf.get()+df()->atable(i).first*m, &m, &n, buf2.get()+df()->atable(i).first*m);
+    const int o = df()->atable(i).first*m;
+    mytranspose_(buf.get()+o, &m, &n, buf2.get()+o);
   }
 
   // last, issue all the send and receive requests
-  request.clear();
+  rrequest.clear();
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
-      request.push_back(mpi__->request_recv(out->block_->get()+block_->asize()*start[i], block_->asize()*size[i], i));
-      request.push_back(mpi__->request_send(buf.get()+df()->atable(i).first*mysize, df()->atable(i).second*mysize, i));
+      rrequest.push_back(mpi__->request_recv(out->block_->get()+block_->asize()*start[i], block_->asize()*size[i], i));
+      srequest.push_back(mpi__->request_send(buf2.get()+df()->atable(i).first*mysize, df()->atable(i).second*mysize, i));
     } else {
-      copy_n(buf.get()+df()->atable(i).first*mysize, block_->asize()*size[i], out->block_->get()+block_->asize()*start[i]);
+      assert(block_->asize()*size[i] == df()->atable(i).second*mysize);
+      copy_n(buf2.get()+df()->atable(i).first*mysize, block_->asize()*size[i], out->block_->get()+block_->asize()*start[i]);
     }
   }
-  for (auto& i : request) mpi__->wait(i);
+  for (auto& i : rrequest) mpi__->wait(i);
+  for (auto& i : srequest) mpi__->wait(i);
 #else
   out->block_->contrib_apply_J(block_, d);
 #endif
 
-  mpi__->barrier();
   return out; 
 }
