@@ -51,6 +51,7 @@ ParallelDF::ParallelDF() {
 }
 
 
+// TODO
 unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_2index");
   const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size();
@@ -67,6 +68,7 @@ unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, con
 }
 
 
+// TODO
 unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (blocks_.size() != o->blocks_.size()) throw logic_error("illegal call of ParallelDF::form_4index");
   const size_t size = blocks_.front()->b2size()*o->blocks_.front()->b2size() * blocks_.front()->b1size()*o->blocks_.front()->b1size();
@@ -83,13 +85,13 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 }
 
 
+// TODO
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
   // first allocate memory...
   const size_t idim = blocks_.back()->astart() + blocks_.back()->asize();
   const size_t jdim = o->blocks_.back()->astart() + o->blocks_.back()->asize();
   shared_ptr<Matrix> out(new Matrix(idim, jdim));
 
-  // TODO to be distributed
   for (auto& j : o->blocks_)
     for (auto& i : blocks_)
       out->copy_block(i->astart(), j->astart(), i->asize(), j->asize(), i->form_aux_2index(j, a));
@@ -118,6 +120,7 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 }
 
 
+// TODO
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   // first thing is to find the node
   const int inode = global_table_.upper_bound(i)->first;
@@ -270,6 +273,8 @@ unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
     unique_ptr<double[]> tmp = i->form_mat(tmp0.get()+i->astart());
     daxpy_(nbasis0_*nbasis1_, 1.0, tmp, 1, out, 1);
   }
+  // all reduce
+  mpi__->allreduce(out.get(), nbasis0_*nbasis1_); 
   return out;
 }
 
@@ -282,6 +287,8 @@ unique_ptr<double[]> DFDist::compute_cd(const double* den) const {
     unique_ptr<double[]> tmp = i->form_vec(den);
     copy_n(tmp.get(), i->asize(), tmp0.get()+i->astart());
   }
+  // All reduce
+  mpi__->allreduce(tmp0.get(), naux_); 
   // C = S^-1_CD D 
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
   dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
@@ -351,6 +358,7 @@ unique_ptr<double[]> DFHalfDist::compute_Kop_1occ(const double* den) const {
 }
 
 
+// TODO
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
   for (auto& i : out->blocks_) {
@@ -457,6 +465,7 @@ void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_
 }
 
 
+//TODO
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
   for (auto& i : out->blocks_) {

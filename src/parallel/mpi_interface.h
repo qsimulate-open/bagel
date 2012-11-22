@@ -60,7 +60,7 @@ class MPI_Interface {
   protected:
 
   public:
-    MPI_Interface();
+    MPI_Interface(int argc, char** argv);
     ~MPI_Interface();
 
     int rank() const;
@@ -71,11 +71,12 @@ class MPI_Interface {
     void reduce(double*, const size_t size, const int root) const;
     void allreduce(double*, const size_t size) const;
     void broadcast(double*, const size_t size, const int root) const;
-    void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
-    void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
+    void allgather(double* send, const size_t ssize, double* rec, const size_t rsize) const; 
+    void allgather(int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one sided communication
-    std::shared_ptr<Window> create_window(const double*, const size_t size) const;
+    std::shared_ptr<Window> create_window(double*, const size_t size) const;
+    void get(double*, double*, const size_t, std::shared_ptr<Window>) const; 
 };
 
 extern MPI_Interface* mpi__; 

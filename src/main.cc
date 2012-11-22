@@ -82,7 +82,7 @@ using namespace bagel;
 int main(int argc, char** argv) {
 
   // setup MPI interface. It does nothing for serial runs
-  mpi__ = new MPI_Interface();
+  mpi__ = new MPI_Interface(argc, argv);
   {
     // TODO will be interfaced to input
     int num_threads = 8;

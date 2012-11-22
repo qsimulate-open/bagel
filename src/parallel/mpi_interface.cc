@@ -23,28 +23,31 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <stdexcept>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-MPI_Interface::MPI_Interface() {
+MPI_Interface::MPI_Interface(int argc, char** argv) {
 #ifdef HAVE_MPI_H
-  MPI::Init();
+  MPI_Init(&argc, &argv);
 #endif
 }
 
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
-  MPI::Finalize();
+  MPI_Finalize();
 #endif
 }
 
 
 int MPI_Interface::rank() const {
 #ifdef HAVE_MPI_H
-  return MPI::COMM_WORLD.Get_rank(); 
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+  return rank;
 #else
   return 0;
 #endif
@@ -53,7 +56,9 @@ int MPI_Interface::rank() const {
 
 int MPI_Interface::size() const {
 #ifdef HAVE_MPI_H
-  return MPI::COMM_WORLD.Get_size(); 
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  return size;
 #else
   return 1;
 #endif
@@ -62,51 +67,63 @@ int MPI_Interface::size() const {
 
 void MPI_Interface::barrier() const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Barrier();
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
 
 void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root);
+  MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::allreduce(double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM);
+  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root);
+  MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
 #endif
 }
 
 
-void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
+void MPI_Interface::allgather(double* send, const size_t ssize, double* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Allgather(static_cast<const void*>(send), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE);
+  MPI_Allgather(static_cast<void*>(send), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
 } 
 
 
-void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
+void MPI_Interface::allgather(int* send, const size_t ssize, int* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
-  MPI::COMM_WORLD.Allgather(static_cast<const void*>(send), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT);
+  MPI_Allgather(static_cast<void*>(send), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
 #endif
 } 
 
 
-shared_ptr<Window> MPI_Interface::create_window(const double* a, const size_t size) const {
+shared_ptr<Window> MPI_Interface::create_window(double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  shared_ptr<Window> win(new Window(a, size, MPI::Win::Create(static_cast<const void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI::COMM_WORLD)));
+  MPI_Win w;
+  MPI_Win_create(static_cast<void*>(a), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &w);
+  shared_ptr<Window> win(new Window(a, size, w));
 #else
   shared_ptr<Window> win(new Window(a, size));
 #endif
   return win;
 }
 
+
+void MPI_Interface::get(double* a, double* b, const size_t size, shared_ptr<Window> win) const {
+#if 0
+#ifdef HAVE_MPI_H
+  win->Get(static_cast<void*>(b), size, MPI_DOUBLE,  
+#else
+  throw logic_error("MPI_Interface::get should not be called without MPI");
+#endif
+#endif
+}
