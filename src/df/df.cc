@@ -100,17 +100,15 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 }
 
 
-// TODO
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   // first thing is to find the node
-  const int inode = global_table_.upper_bound(i)->first;
+  const int inode = get_node(i); 
 
   // ask for the data to inode
   if (inode == mpi__->rank()) {
     return block_->get_block(i, id, j, jd, k, kd);
   } else {
-assert(false);
-//  throw logic_error("not yet implemented ParallelDF::get_block");
+    throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
   return unique_ptr<double[]>();
 }

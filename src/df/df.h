@@ -88,6 +88,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
+
+    const int get_node(const int shelloffset) const { return df_ == nullptr ? global_table_.upper_bound(shelloffset)->second : df_->get_node(shelloffset); }
 };
 
 
@@ -112,9 +114,6 @@ class DFDist : public ParallelDF {
     }
 
     DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df->df(); }
-
-    // This might not be beautiful - for historical reasons. Will remove later TODO
-    DFDist(const int nbas0, const int nbas1, const int naux, const std::vector<const double*> cd, const std::vector<const double*> dd);
 
     bool has_2index() const { return data2_.get() != nullptr; };
     size_t nbasis0() const { return nindex2_; };

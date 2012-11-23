@@ -35,14 +35,20 @@ using namespace bagel;
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2) {
 
-  vector<GradTask> task  = contract_grad1e(d, w);
-  vector<GradTask> task2 = contract_grad2e(o);
-  vector<GradTask> task3 = contract_grad2e_2index(o2);
-  task.insert(task.end(), task2.begin(), task2.end());
-  task.insert(task.end(), task3.begin(), task3.end());
+  vector<GradTask> task  = contract_grad2e(o);
+
+  // TODO will be distributed
+  if (mpi__->rank() == 0) {
+    vector<GradTask> task2 = contract_grad1e(d, w);
+    vector<GradTask> task3 = contract_grad2e_2index(o2);
+    task.insert(task.end(), task2.begin(), task2.end());
+    task.insert(task.end(), task3.begin(), task3.end());
+  }
 
   TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
+
+  mpi__->allreduce(grad_->data(), grad_->size());
 
   vector<double> gnuc = geom_->compute_grad_vnuc();
   GradFile nuc(gnuc);
@@ -101,7 +107,6 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
       int iatom2 = 0;
       auto oa2 = geom_->aux_offsets().begin();
       for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
-
         // dummy shell
         const shared_ptr<const Shell> b3(new Shell((*a0)->shells().front()->spherical()));
 
@@ -111,6 +116,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
           for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
             auto o2 = oa2->begin();
             for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
+              if (o->get_node(*o2) != mpi__->rank()) continue;
               array<shared_ptr<const Shell>,4> input = {{b3, *b2, *b1, *b0}};
               vector<int> atoms = {iatom0, iatom1, iatom2};
               vector<int> offs = {*o0, *o1, *o2};
