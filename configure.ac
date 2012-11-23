@@ -80,7 +80,7 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 if test x${use_mkl} = xyes; then
     AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])
-    AC_CHECK_LIB([mkl_intel_lp64], main, LIBS="-lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS",
+    AC_CHECK_LIB([mkl_intel_lp64], main, LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS",
         AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
 fi
 
