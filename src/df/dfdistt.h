@@ -28,30 +28,37 @@
 #define __SRC_DF_DFBLOCKT_H
 
 #include <map>
-#include <src/df/dfblock.h>
+#include <src/df/df.h>
 
 namespace bagel {
 
 /*
-    DFBlockT is a slice of 3-index DF integrals. Distributed by the second and third index.
+    DFDistT is a slice of 3-index DF integrals. Distributed by the second and third index.
     Note that the date is tranposed!
 */
 
-class DFBlockT {
+class DFDistT {
   protected:
     std::unique_ptr<double[]> data_;
 
     // first dimension is naux_ (global)
     const size_t naux_;
+    // original dimensions
+    const size_t nindex1_;
+    const size_t nindex2_;
+
     // second and third dimension
-    const size_t bstart_;
-    const size_t bsize_;
+    const int start_;
+    const int size_;
 
     // map between an index number and b1 and b2 number
-    const std::map<size_t, std::pair<size_t, size_t> > index_;
+    std::map<size_t, std::pair<size_t, size_t> > index_;
+
+    const std::shared_ptr<const ParallelDF> df_;
 
   public:
-    DFBlockT(std::shared_ptr<const DFBlock> in, const size_t naux, const size_t bstart, const size_t bsize, const std::map<size_t, std::pair<size_t, size_t> >& index);
+    // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
+    DFDistT(const DFDist& in, const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize);
 
 }; 
     
