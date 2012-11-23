@@ -75,9 +75,7 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 
 
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
-  const size_t idim = block_->astart() + block_->asize();
-  const size_t jdim = block_->astart() + o->block_->asize();
-  shared_ptr<ParaMatrix> out(new ParaMatrix(idim, jdim));
+  shared_ptr<ParaMatrix> out(new ParaMatrix(naux_, naux_));
   out->copy_block(block_->astart(), block_->astart(), block_->asize(), block_->asize(), block_->form_aux_2index(o->block_, a));
 
   // all reduce
@@ -106,14 +104,13 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   // first thing is to find the node
   const int inode = global_table_.upper_bound(i)->first;
-  // now we still have only inode == 0 in the table
-  const int mynode = 0;
 
   // ask for the data to inode
-  if (inode == mynode) {
+  if (inode == mpi__->rank()) {
     return block_->get_block(i, id, j, jd, k, kd);
   } else {
-    throw logic_error("not yet implemented ParallelDF::get_block");
+assert(false);
+//  throw logic_error("not yet implemented ParallelDF::get_block");
   }
   return unique_ptr<double[]>();
 }
