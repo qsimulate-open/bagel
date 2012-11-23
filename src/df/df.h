@@ -58,7 +58,7 @@ class ParallelDF {
     const size_t nindex1_;
     const size_t nindex2_;
 
-    std::weak_ptr<const ParallelDF> df_;
+    std::shared_ptr<const ParallelDF> df_;
     // data2_ is usually empty (except for the original DFDist)
     // AO two-index integrals ^ -1/2
     std::shared_ptr<Matrix> data2_;
@@ -88,7 +88,7 @@ class ParallelDF {
     const std::pair<int, int> atable(const int i) const { return atable_[i]; }
     const std::vector<std::pair<int, int> >& atable() const { return atable_; }
 
-    const std::shared_ptr<const ParallelDF> df() const { return df_.lock(); }
+    const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
 };
 
@@ -110,7 +110,6 @@ class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
     DFDist(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms,
                                            const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse, const double dum)
       : ParallelDF(naux, nbas, nbas) {
-      df_ = shared_from_this();
       common_init(atoms, atoms, aux_atoms, thr, inverse);
     }
 
@@ -159,8 +158,8 @@ class DFHalfDist : public ParallelDF {
 
     std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
 
-    std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(data2()); }
-    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*data2()**data2()))); }
+    std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
+    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2()**d->data2()))); }
 
@@ -200,8 +199,8 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
     void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
 
-    std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_.lock()->data2()); }
-    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_.lock()->data2()**df_.lock()->data2()))); }
+    std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
+    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }
     std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const ParallelDF> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2()**d->data2()))); }
 
