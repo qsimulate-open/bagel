@@ -1,3 +1,3 @@
 lib_LTLIBRARIES = libdf.la
-libdf_la_SOURCES = dfblock.cc df.cc
+libdf_la_SOURCES = dfblock.cc dfblockt.cc df.cc
 AM_CXXFLAGS=-I$(top_srcdir)
