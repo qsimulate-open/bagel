@@ -404,7 +404,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
     size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
   }
   assert(size.back() >= 0);
-  shared_ptr<DFDistT> work(new DFDistT(ParallelDF::shared_from_this(), naux_, start, size));
+  shared_ptr<DFDistT> work(new DFDistT(shared_from_this(), naux_, start, size));
   work = work->apply_J(d);
   work->get_paralleldf(out);
 #else
@@ -426,7 +426,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
     size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
   }
   assert(size.back() >= 0);
-  shared_ptr<DFDistT> work(new DFDistT(ParallelDF::shared_from_this(), naux_, start, size));
+  shared_ptr<DFDistT> work(new DFDistT(shared_from_this(), naux_, start, size));
   work = work->apply_J(d);
   work->get_paralleldf(out);
 #else
