@@ -60,44 +60,6 @@ MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> 
 
 }
 
-namespace bagel {
-
-class MP2AssemTask {
-  protected:
-    shared_ptr<const DFFullDist> full_;
-    const size_t ivirt_;
-    const size_t nvirt_;
-    const size_t nocc_;
-    MP2* mp2_;
-  public:
-    MP2AssemTask(shared_ptr<const DFFullDist> f, const int iv, const int nv, const int no, MP2* m)
-      : full_(f), ivirt_(iv), nvirt_(nv), nocc_(no), mp2_(m) {};
-
-    void compute() {
-      shared_ptr<StackMem> stack = resources__->get();
-      double* const buf = stack->get(nocc_*nvirt_*nocc_);
-      vector<double> eig(mp2_->ref_->eig().begin()+mp2_->ncore_, mp2_->ref_->eig().end());
-
-      // nocc * nvirt * nocc
-      unique_ptr<double[]> data = full_->form_4index_1fixed(full_, 1.0, ivirt_);
-      copy(data.get(), data.get()+nocc_*nvirt_*nocc_, buf);
-
-      // using SMITH's symmetrizer (src/smith/prim_op.h)
-      SMITH::sort_indices<2,1,0,2,1,-1,1>(data.get(), buf, nocc_, nvirt_, nocc_);
-      double* tdata = buf;
-      for (size_t j = 0; j != nocc_; ++j)
-        for (size_t k = 0; k != nvirt_; ++k)
-          for (size_t l = 0; l != nocc_; ++l, ++tdata)
-            *tdata /= -eig[ivirt_+nocc_]+eig[j]-eig[k+nocc_]+eig[l];
-
-      boost::lock_guard<boost::mutex> lock(mp2_->mut_);
-      mp2_->energy_ += ddot_(nocc_*nvirt_*nocc_, data.get(), 1, buf, 1);
-      stack->release(nocc_*nvirt_*nocc_, buf);
-      resources__->release(stack);
-    }
-};
-
-}
 
 void MP2::compute() {
   // TODO this factor of 2 is very much error-prone..
@@ -123,15 +85,22 @@ void MP2::compute() {
   cout << "    * 3-index integral transformation done" << endl;
 
   // assemble
+  vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
+  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
+  unique_ptr<double[]> buf2(new double[nocc*nvirt*nocc]);
   energy_ = 0.0;
-  vector<MP2AssemTask> task;
   for (size_t i = 0; i != nvirt; ++i) {
-    MP2AssemTask tmp(full, i, nvirt, nocc, this);
-    task.push_back(tmp);
+    unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
+    copy_n(data.get(), nocc*nvirt*nocc, buf.get());
+    // using SMITH's symmetrizer (src/smith/prim_op.h)
+    SMITH::sort_indices<2,1,0,2,1,-1,1>(data.get(), buf.get(), nocc, nvirt, nocc);
+    double* tdata = buf.get();
+    for (size_t j = 0; j != nocc; ++j)
+      for (size_t k = 0; k != nvirt; ++k)
+        for (size_t l = 0; l != nocc; ++l, ++tdata)
+          *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l];
+    energy_ += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
   }
-
-  TaskQueue<MP2AssemTask> tq(task);
-  tq.compute(resources__->max_num_threads());
 
   auto tp2 = chrono::high_resolution_clock::now();
   cout << "    * assembly done" << endl << endl;
