@@ -7,10 +7,25 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.cc])
 AM_CONFIG_HEADER([config.h])
 
-AC_PROG_CC([gcc])
-AC_PROG_CXX([g++])
-AC_PROG_F77([gfortran])
-AC_PROG_FC([gfortran])
+m4_include([m4/acx_mpi.m4])
+
+AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
+if test x${use_mpi} = xyes; then
+    ACX_MPI
+    AC_PROG_CC([$MPICC])
+    AC_PROG_CXX([$MPICXX])
+    AC_PROG_F77([$MPIF77])
+    AC_PROG_FC([$MPIFC])
+    LIBS="${MPILIBS} ${LIBS}"
+    CXXFLAGS="${CXXFLAGS}"
+    FFLAGS="${FFLAGS}"
+    FCFLAGS="${FCFLAGS}"
+else
+    AC_PROG_CC([gcc])
+    AC_PROG_CXX([g++])
+    AC_PROG_F77([gfortran])
+    AC_PROG_FC([gfortran])
+fi
 
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 if test x${use_mkl} = xyes; then
@@ -23,25 +38,6 @@ if test x${use_mkl} = xyes; then
     AC_CHECK_LIB(m, main)
 fi
 
-AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
-if test x${use_mpi} = xyes; then
-    AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-    AC_CHECK_PROGS(MPICXX, mpic++ mpiCC mpicxx mpCC hcp mpxlC mpxlC_r cmpic++, [AC_MSG_ERROR([mpic++ not found or not working])])
-
-    AC_ARG_VAR(MPIF77,[MPI Fortran 77 compiler command])
-    AC_CHECK_PROGS(MPIF77, mpif77 hf77 mpxlf mpf77 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c, [AC_MSG_ERROR([mpif77 not found or not working])])
-
-    AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-    AC_CHECK_PROGS(MPIFC, mpif90 hf90 mpxlf mpf90 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c, [AC_MSG_ERROR([mpif90 not found or not working])])
-
-    CXX="${MPICXX}"
-    F77="${MPIF77}"
-    FC="${MPIFC}"
-    LIBS="${MPILIBS} ${LIBS}"
-    CXXFLAGS="${CXXFLAGS}"
-    FFLAGS="${FFLAGS}"
-    FCFLAGS="${FCFLAGS}"
-fi
 
 AC_ARG_WITH([include], [AS_HELP_STRING([--with-include],[include flags])], [with_include=$withval], [with_include=no])
 if test "x${with_include}" != xno; then
@@ -49,12 +45,6 @@ if test "x${with_include}" != xno; then
     CXXFLAGS="${with_include} ${CXXFLAGS}"
     FFLAGS="${with_include} ${FFLAGS}"
     FCFLAGS="${with_include} ${FCFLAGS}"
-fi
-
-if test x${use_mpi} = xyes; then
-    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])])
-    AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-    AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
 fi
 
 AC_F77_LIBRARY_LDFLAGS
