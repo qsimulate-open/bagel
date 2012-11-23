@@ -21,7 +21,7 @@ if test x${use_mpi} = xyes; then
     AC_PROG_CXX([$MPICXX])
     AC_PROG_F77([$MPIF77])
     AC_PROG_FC([$MPIFC])
-    LIBS="${MPILIBS} ${LIBS} ${LD_LIBRARY_PATH}"
+    LIBS="${MPILIBS} ${LIBS}"
     CXXFLAGS="${CXXFLAGS}"
     FFLAGS="${FFLAGS}"
     FCFLAGS="${FCFLAGS}"

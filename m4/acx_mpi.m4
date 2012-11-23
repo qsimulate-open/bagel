@@ -19,8 +19,8 @@ AC_DEFUN([ACX_MPI], [
 
   AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
   AC_CHECK_PROGS(MPIFC, mpif90, $FC)
-  acx_mpi_save_F77="$F77"
-  F77="$MPIF77"
-  AC_SUBST(MPIF77)
+  acx_mpi_save_FC="$FC"
+  FC="$MPIFC"
+  AC_SUBST(MPIFC)
 ])
 
