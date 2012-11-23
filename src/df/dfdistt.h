@@ -39,7 +39,7 @@ namespace bagel {
 
 class DFDistT {
   protected:
-    const std::unique_ptr<double[]> data_;
+    std::unique_ptr<double[]> data_;
 
     // first dimension is naux_ (global)
     const size_t naux_;
@@ -48,11 +48,11 @@ class DFDistT {
     const size_t nindex2_;
 
     // second and third dimension
-    const int start_;
-    const int size_;
+    int start_;
+    int size_;
 
-    const std::vector<int> tabstart_;
-    const std::vector<int> tabsize_;
+    std::vector<int> tabstart_;
+    std::vector<int> tabsize_;
 
     // map between an index number and b1 and b2 number
     std::map<size_t, std::pair<size_t, size_t> > index_;
@@ -61,7 +61,7 @@ class DFDistT {
 
   public:
     // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
-    DFDistT(std::shared_ptr<const ParallelDF> in, const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize);
+    DFDistT(std::shared_ptr<const ParallelDF> in);
 
     DFDistT(const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize, const size_t n1, const size_t n2,
             const std::map<size_t, std::pair<size_t, size_t> >, const std::shared_ptr<const ParallelDF>);

@@ -396,15 +396,7 @@ void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
 #ifdef HAVE_MPI_H
-  // TODO this is not so nice
-  const size_t stride = nindex1_*nindex2_ / mpi__->size();
-  vector<int> start, size;
-  for (int i = 0; i != mpi__->size(); ++i) {
-    start.push_back(stride*i);
-    size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
-  }
-  assert(size.back() >= 0);
-  shared_ptr<DFDistT> work(new DFDistT(shared_from_this(), naux_, start, size));
+  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
   work = work->apply_J(d);
   work->get_paralleldf(out);
 #else
@@ -418,15 +410,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
 #ifdef HAVE_MPI_H
-  // TODO this is not so nice
-  const size_t stride = nindex1_*nindex2_ / mpi__->size();
-  vector<int> start, size;
-  for (int i = 0; i != mpi__->size(); ++i) {
-    start.push_back(stride*i);
-    size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
-  }
-  assert(size.back() >= 0);
-  shared_ptr<DFDistT> work(new DFDistT(shared_from_this(), naux_, start, size));
+  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
   work = work->apply_J(d);
   work->get_paralleldf(out);
 #else

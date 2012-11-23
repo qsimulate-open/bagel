@@ -30,13 +30,24 @@
 using namespace std;
 using namespace bagel;
 
-DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, const size_t naux, const vector<int> start, const vector<int> size)
- : data_(new double[naux*size[mpi__->rank()]]), naux_(naux), nindex1_(in->nindex2()), nindex2_(in->nindex2()), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
-   tabstart_(start), tabsize_(size), df_(in->df()) {
+DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
+ : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()), df_(in->df()) {
 
 #ifndef HAVE_MPI_H
   assert(false); // this class should be used with MPI (it works without MPI, but it just transposition of data...)
 #endif
+
+  // determine how to distribute...
+  const size_t stride = nindex1_*nindex2_ / mpi__->size();
+  for (int i = 0; i != mpi__->size(); ++i) {
+    tabstart_.push_back(stride*i);
+    tabsize_.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-tabstart_[i] : stride);
+  }
+  assert(tabsize_.back() >= 0);
+  start_ = tabstart_[mpi__->rank()];
+  size_ = tabsize_[mpi__->rank()];
+
+  data_ = unique_ptr<double[]>(new double[naux_*size_]);
 
   // first make index mapping (for MP2 like operations)
   for (size_t i = 0lu; i != nindex2_; ++i)
@@ -56,11 +67,11 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, const size_t naux, const 
   // first issue all the send and receive requests
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
-      srequest.push_back(mpi__->request_send(source->get()+source->asize()*start[i], source->asize()*size[i], i));
+      srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i));
       rrequest.push_back(mpi__->request_recv(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
-      assert(source->asize()*size[i] == atab[i].second*size_);
-      copy_n(source->get()+source->asize()*start[i], source->asize()*size[i], buf.get()+atab[i].first*size_); 
+      assert(source->asize()*tabsize_[i] == atab[i].second*size_);
+      copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf.get()+atab[i].first*size_); 
     }
   }
   for (auto& i : rrequest) mpi__->wait(i);
