@@ -42,16 +42,13 @@ namespace bagel {
 class DFHalfDist;
 class DFFullDist;
 
-class ParallelDF {
+class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
   protected:
     // blocks that this process has
     std::shared_ptr<DFBlock> block_;
     // hash key and process number
     std::map<int, int> global_table_;
     std::vector<std::pair<int, int> > atable_;
-
-    void apply_J_prim_(std::shared_ptr<const DFBlock> source, std::shared_ptr<DFBlock> target, std::shared_ptr<const Matrix> mat,
-                       const std::vector<std::pair<int, int> >& atab, const int naux, const int ndim) const;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -72,6 +69,7 @@ class ParallelDF {
     size_t nindex2() const { return nindex2_; }
     size_t size() const { return naux_*nindex1_*nindex2_; }
 
+    std::shared_ptr<DFBlock> block() { return block_; }
     std::shared_ptr<const DFBlock> block() const { return block_; }
 
     void add_block(std::shared_ptr<DFBlock> o);
@@ -93,7 +91,7 @@ class ParallelDF {
 };
 
 
-class DFDist : public ParallelDF, public std::enable_shared_from_this<DFDist> {
+class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
   friend class DFFullDist;
   friend class DFHalfDist;

@@ -41,6 +41,7 @@
 #include <src/parallel/paramatrix.h>
 
 #include <src/df/dfinttask_old.h>
+#include <src/df/dfdistt.h>
 
 using namespace std;
 using namespace chrono;
@@ -395,7 +396,17 @@ void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
 #ifdef HAVE_MPI_H
-  apply_J_prim_(block_, out->block_, d, df()->atable(), naux_, nindex1_*nindex2_); 
+  // TODO this is not so nice
+  const size_t stride = nindex1_*nindex2_ / mpi__->size();
+  vector<int> start, size;
+  for (int i = 0; i != mpi__->size(); ++i) {
+    start.push_back(stride*i);
+    size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
+  }
+  assert(size.back() >= 0);
+  shared_ptr<DFDistT> work(new DFDistT(ParallelDF::shared_from_this(), naux_, start, size));
+  work = work->apply_J(d);
+  work->get_paralleldf(out);
 #else
   out->block_->zero();
   out->block_->contrib_apply_J(block_, d);
@@ -407,7 +418,17 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
 #ifdef HAVE_MPI_H
-  apply_J_prim_(block_, out->block_, d, df()->atable(), naux_, nindex1_*nindex2_); 
+  // TODO this is not so nice
+  const size_t stride = nindex1_*nindex2_ / mpi__->size();
+  vector<int> start, size;
+  for (int i = 0; i != mpi__->size(); ++i) {
+    start.push_back(stride*i);
+    size.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-start[i] : stride);
+  }
+  assert(size.back() >= 0);
+  shared_ptr<DFDistT> work(new DFDistT(ParallelDF::shared_from_this(), naux_, start, size));
+  work = work->apply_J(d);
+  work->get_paralleldf(out);
 #else
   out->block_->zero();
   out->block_->contrib_apply_J(block_, d);
@@ -416,64 +437,3 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
 }
 
 
-// to avoid repetition (I know thsi interface is not beatiful!)
-void ParallelDF::apply_J_prim_(shared_ptr<const DFBlock> source, shared_ptr<DFBlock> target, shared_ptr<const Matrix> mat,
-                               const vector<pair<int, int> >& atab, const int naux, const int dim) const { 
-  // first make a buffer area
-  const size_t stride = dim / mpi__->size();
-  vector<int> start, size;
-  for (int i = 0; i != mpi__->size(); ++i) {
-    start.push_back(stride*i);
-    size.push_back((i+1 == mpi__->size()) ? dim-start[i] : stride);
-  }
-  assert(size.back() >= 0);
-  const size_t mysize = size[mpi__->rank()];
-  unique_ptr<double[]> buf(new double[naux*mysize]);
-  unique_ptr<double[]> buf2(new double[naux*mysize]);
-
-  vector<int> srequest, rrequest;
-  // first issue all the send and receive requests
-  for (int i = 0; i != mpi__->size(); ++i) {
-    if (i != mpi__->rank()) {
-      srequest.push_back(mpi__->request_send(source->get()+source->asize()*start[i], source->asize()*size[i], i));
-      rrequest.push_back(mpi__->request_recv(buf.get()+atab[i].first*mysize, atab[i].second*mysize, i));
-    } else {
-      assert(source->asize()*size[i] == atab[i].second*mysize);
-      copy_n(source->get()+source->asize()*start[i], source->asize()*size[i], buf.get()+atab[i].first*mysize); 
-    }
-  }
-  for (auto& i : rrequest) mpi__->wait(i);
-
-  // second transpose each block
-  for (int i = 0; i != mpi__->size(); ++i) {
-    const int n = atab[i].second;
-    const int m = mysize;
-    const int o = atab[i].first*m;
-    mytranspose_(buf.get()+o, &n, &m, buf2.get()+o);
-  }
-
-  // apply J
-  dgemm_("N", "N", mysize, naux, naux, 1.0, buf2.get(), mysize, mat->data(), naux, 0.0, buf.get(), mysize); 
-
-  // transpose each block back
-  for (int i = 0; i != mpi__->size(); ++i) {
-    const int n = atab[i].second;
-    const int m = mysize;
-    const int o = atab[i].first*m;
-    mytranspose_(buf.get()+o, &m, &n, buf2.get()+o);
-  }
-
-  // last, issue all the send and receive requests
-  rrequest.clear();
-  for (int i = 0; i != mpi__->size(); ++i) {
-    if (i != mpi__->rank()) {
-      rrequest.push_back(mpi__->request_recv(target->get()+source->asize()*start[i], source->asize()*size[i], i));
-      srequest.push_back(mpi__->request_send(buf2.get()+atab[i].first*mysize, atab[i].second*mysize, i));
-    } else {
-      assert(source->asize()*size[i] == atab[i].second*mysize);
-      copy_n(buf2.get()+atab[i].first*mysize, source->asize()*size[i], target->get()+source->asize()*start[i]);
-    }
-  }
-  for (auto& i : rrequest) mpi__->wait(i);
-  for (auto& i : srequest) mpi__->wait(i);
-}

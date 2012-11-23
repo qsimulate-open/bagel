@@ -39,7 +39,7 @@ namespace bagel {
 
 class DFDistT {
   protected:
-    std::unique_ptr<double[]> data_;
+    const std::unique_ptr<double[]> data_;
 
     // first dimension is naux_ (global)
     const size_t naux_;
@@ -51,6 +51,9 @@ class DFDistT {
     const int start_;
     const int size_;
 
+    const std::vector<int> tabstart_;
+    const std::vector<int> tabsize_;
+
     // map between an index number and b1 and b2 number
     std::map<size_t, std::pair<size_t, size_t> > index_;
 
@@ -58,7 +61,15 @@ class DFDistT {
 
   public:
     // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
-    DFDistT(const DFDist& in, const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize);
+    DFDistT(std::shared_ptr<const ParallelDF> in, const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize);
+
+    DFDistT(const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize, const size_t n1, const size_t n2,
+            const std::map<size_t, std::pair<size_t, size_t> >, const std::shared_ptr<const ParallelDF>);
+
+    std::shared_ptr<DFDistT> clone() const;
+    std::shared_ptr<DFDistT> apply_J(std::shared_ptr<const Matrix> d) const;
+
+    void get_paralleldf(std::shared_ptr<ParallelDF>) const;
 
 }; 
     
