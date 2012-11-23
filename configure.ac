@@ -9,6 +9,11 @@ AM_CONFIG_HEADER([config.h])
 
 m4_include([m4/acx_mpi.m4])
 
+AC_PROG_CC([gcc])
+AC_PROG_CXX([g++])
+AC_PROG_F77([gfortran])
+AC_PROG_FC([gfortran])
+
 AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
 if test x${use_mpi} = xyes; then
     ACX_MPI
@@ -20,11 +25,6 @@ if test x${use_mpi} = xyes; then
     CXXFLAGS="${CXXFLAGS}"
     FFLAGS="${FFLAGS}"
     FCFLAGS="${FCFLAGS}"
-else
-    AC_PROG_CC([gcc])
-    AC_PROG_CXX([g++])
-    AC_PROG_F77([gfortran])
-    AC_PROG_FC([gfortran])
 fi
 
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
