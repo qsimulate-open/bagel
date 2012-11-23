@@ -17,6 +17,7 @@ AC_PROG_FC([gfortran])
 AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
 if test x${use_mpi} = xyes; then
     ACX_MPI
+    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
     AC_PROG_CC([$MPICC])
     AC_PROG_CXX([$MPICXX])
     AC_PROG_F77([$MPIF77])
