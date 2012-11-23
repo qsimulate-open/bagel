@@ -17,7 +17,6 @@ AC_PROG_FC([gfortran])
 AC_ARG_ENABLE(mpi, [AS_HELP_STRING([--enable-mpi],[enable MPI. Please make sure mpicxx and mpif90 are in $PATH [default=no]])], [use_mpi=yes], [use_mpi=no])
 if test x${use_mpi} = xyes; then
     ACX_MPI
-    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
     AC_PROG_CC([$MPICC])
     AC_PROG_CXX([$MPICXX])
     AC_PROG_F77([$MPIF77])
@@ -83,6 +82,9 @@ if test x${use_mkl} = xyes; then
     AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])
     AC_CHECK_LIB([mkl_intel_lp64], main, LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS",
         AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+fi
+if test x${use_mpi} = xyes; then
+    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
 
 
