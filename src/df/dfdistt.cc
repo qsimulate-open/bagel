@@ -49,11 +49,6 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 
   data_ = unique_ptr<double[]>(new double[naux_*size_]);
 
-  // first make index mapping (for MP2 like operations)
-  for (size_t i = 0lu; i != nindex2_; ++i)
-    for (size_t j = 0lu; j != nindex1_; ++j)
-      index_.insert(make_pair(j+nindex1_*i, make_pair(j,i)));
-
   // second form a matrix
   unique_ptr<double[]> buf(new double[naux_*size_]);
 
@@ -90,15 +85,15 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 
 
 DFDistT::DFDistT(const size_t naux, const vector<int> start, const vector<int> size, const size_t nindex1, const size_t nindex2,
-                 const map<size_t, pair<size_t, size_t> > ind, const shared_ptr<const ParallelDF> p)
+                 const shared_ptr<const ParallelDF> p)
  : data_(new double[naux*size[mpi__->rank()]]), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
-   tabstart_(start), tabsize_(size), index_(ind), df_(p) {
+   tabstart_(start), tabsize_(size), df_(p) {
 
 }
 
 
 shared_ptr<DFDistT> DFDistT::clone() const {
-  shared_ptr<DFDistT> out(new DFDistT(naux_, tabstart_, tabsize_, nindex1_, nindex2_, index_, df_)); 
+  shared_ptr<DFDistT> out(new DFDistT(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_)); 
   return out;
 }
 

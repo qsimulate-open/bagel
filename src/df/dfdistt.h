@@ -28,6 +28,7 @@
 #define __SRC_DF_DFBLOCKT_H
 
 #include <map>
+#include <cassert>
 #include <src/df/df.h>
 
 namespace bagel {
@@ -54,9 +55,6 @@ class DFDistT {
     std::vector<int> tabstart_;
     std::vector<int> tabsize_;
 
-    // map between an index number and b1 and b2 number
-    std::map<size_t, std::pair<size_t, size_t> > index_;
-
     const std::shared_ptr<const ParallelDF> df_;
 
   public:
@@ -64,10 +62,11 @@ class DFDistT {
     DFDistT(std::shared_ptr<const ParallelDF> in);
 
     DFDistT(const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize, const size_t n1, const size_t n2,
-            const std::map<size_t, std::pair<size_t, size_t> >, const std::shared_ptr<const ParallelDF>);
+            const std::shared_ptr<const ParallelDF>);
 
     std::shared_ptr<DFDistT> clone() const;
     std::shared_ptr<DFDistT> apply_J(std::shared_ptr<const Matrix> d) const;
+    std::shared_ptr<DFDistT> apply_J() const { return apply_J(df_->data2()); }
 
     void get_paralleldf(std::shared_ptr<ParallelDF>) const;
 
