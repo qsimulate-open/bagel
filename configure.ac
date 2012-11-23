@@ -21,23 +21,14 @@ if test x${use_mpi} = xyes; then
     AC_PROG_CXX([$MPICXX])
     AC_PROG_F77([$MPIF77])
     AC_PROG_FC([$MPIFC])
-    LIBS="${MPILIBS} ${LIBS}"
+    LIBS="${MPILIBS} ${LIBS} ${LD_LIBRARY_PATH}"
     CXXFLAGS="${CXXFLAGS}"
     FFLAGS="${FFLAGS}"
     FCFLAGS="${FCFLAGS}"
 fi
 
-AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
-if test x${use_mkl} = xyes; then
-    AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])])
-    AC_CHECK_LIB(mkl_intel_lp64, main)
-    AC_CHECK_LIB(mkl_intel_thread, main)
-    AC_CHECK_LIB(mkl_core, main)
-    AC_CHECK_LIB(iomp5, main)
-    AC_CHECK_LIB(pthread, main)
-    AC_CHECK_LIB(m, main)
-fi
-
+LT_INIT([disable-static])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_ARG_WITH([include], [AS_HELP_STRING([--with-include],[include flags])], [with_include=$withval], [with_include=no])
 if test "x${with_include}" != xno; then
@@ -85,8 +76,14 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     ])
 ])
 
-LT_INIT([disable-static])
-AC_CONFIG_MACRO_DIR([m4])
+
+AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
+if test x${use_mkl} = xyes; then
+    AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])
+    AC_CHECK_LIB([mkl_intel_lp64], main, LIBS="-lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS",
+        AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+fi
+
 
 
 AC_CONFIG_FILES([Makefile
