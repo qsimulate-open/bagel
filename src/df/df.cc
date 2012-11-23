@@ -142,8 +142,8 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   // TODO we need a parallel queue server!
 
   // construction of DFBlock computes integrals
-#if 0
-  blocks_.push_back(shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0)));
+#if 1
+  block_= shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
 #else
   // TODO this is just for debugging
 #ifndef HAVE_MPI_H
