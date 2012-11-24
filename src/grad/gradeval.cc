@@ -36,6 +36,10 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//
+#if 1
+  mpi__->broadcast(ref_->coeff()->data(), ref_->coeff()->size(), 0);
+#endif
+
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
@@ -45,6 +49,7 @@ shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_JJ();
   shared_ptr<const DFFullDist> qijd = qij->apply_closed_2RDM();
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
+qq->print();
   shared_ptr<const DFDist> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
