@@ -80,49 +80,49 @@ class Reference : public std::enable_shared_from_this<Reference> {
               std::shared_ptr<const RDM<1> > rdm1_av = std::shared_ptr<RDM<1> >(),
               std::shared_ptr<const RDM<2> > rdm2_av = std::shared_ptr<RDM<2> >());
 
-    ~Reference() {};
+    ~Reference() {}
 
-    std::shared_ptr<const Geometry> geom() const { return geom_; };
-    const std::vector<double> schwarz() const { return geom_->schwarz(); };
-    std::shared_ptr<const Hcore> hcore() const { return hcore_; };
-    const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
+    const std::vector<double> schwarz() const { return geom_->schwarz(); }
+    std::shared_ptr<const Hcore> hcore() const { return hcore_; }
+    const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
-    void set_eig(const std::vector<double>& eig) { eig_ = eig; };
-    const std::vector<double>& eig() const { return eig_; };
-    void set_erdm1(const std::shared_ptr<const Matrix> o) { erdm1_ = o; };
-    std::shared_ptr<const Matrix> erdm1() const { return erdm1_; };
+    void set_eig(const std::vector<double>& eig);
+    const std::vector<double>& eig() const { return eig_; }
+    void set_erdm1(const std::shared_ptr<const Matrix> o);
+    std::shared_ptr<const Matrix> erdm1() const { return erdm1_; }
 
-    int nclosed() const { return nclosed_; };
-    int nact() const { return nact_; };
-    int nvirt() const { return nvirt_; };
-    int nocc() const { return nclosed_ + nact_; };
-    int ncore() const { return ncore_; };
-    void set_ncore(const int i) { ncore_ = i; };
+    int nclosed() const { return nclosed_; }
+    int nact() const { return nact_; }
+    int nvirt() const { return nvirt_; }
+    int nocc() const { return nclosed_ + nact_; }
+    int ncore() const { return ncore_; }
+    void set_ncore(const int i) { ncore_ = i; }
 
     // used in SA-CASSCF
-    void set_nstate(const int i) { nstate_ = i; };
-    int nstate() const { return nstate_; };
+    void set_nstate(const int i) { nstate_ = i; }
+    int nstate() const { return nstate_; }
 
     // used in UHF
-    void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b) { coeffA_ = a; coeffB_ = b; };
-    const std::shared_ptr<const Coeff> coeffA() const { return coeffA_; };
-    const std::shared_ptr<const Coeff> coeffB() const { return coeffB_; };
+    void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
+    const std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
+    const std::shared_ptr<const Coeff> coeffB() const { return coeffB_; }
 
-    double energy() const { return energy_; };
+    double energy() const { return energy_; }
 
-    const std::vector<std::shared_ptr<RDM<1> > >& rdm1() const { return rdm1_; };
-    const std::vector<std::shared_ptr<RDM<2> > >& rdm2() const { return rdm2_; };
+    const std::vector<std::shared_ptr<RDM<1> > >& rdm1() const { return rdm1_; }
+    const std::vector<std::shared_ptr<RDM<2> > >& rdm2() const { return rdm2_; }
 
-    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); };
-    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
+    std::shared_ptr<const RDM<1> > rdm1(const int irdm) const { return rdm1_.at(irdm); }
+    std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; }
 
     // returns an occ-occ sized 1RDM
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const RDM<1> > o) const;
-    std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); };
-    std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); };
+    std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); }
+    std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 
-    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); };
-    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
+    std::shared_ptr<const RDM<2> > rdm2(const int irdm) const { return rdm2_.at(irdm); }
+    std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; }
 
     std::shared_ptr<RDM<3> > compute_rdm3(const int i) const;
 

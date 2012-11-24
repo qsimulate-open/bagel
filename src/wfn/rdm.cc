@@ -31,7 +31,7 @@ using namespace std;
 
 RDM_base::RDM_base(const int n, const int rank) : norb_(n), rank_(rank) {
   assert(rank > 0);
-  dim_ = 1;
+  dim_ = 1lu;
   for (int i = 0; i != rank; ++i) dim_ *= n;
   data_ = unique_ptr<double[]>(new double[dim_*dim_]);
 }

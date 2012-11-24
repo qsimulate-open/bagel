@@ -41,6 +41,17 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
  : geom_(g), coeff_(c), energy_(en), hcore_(new Hcore(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
+  // we need to make sure that all the quantities are consistent in every MPI process
+  mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+  for (auto& i : rdm1_)
+    mpi__->broadcast(i->data(), i->size(), 0);
+  for (auto& i : rdm2_)
+    mpi__->broadcast(i->data(), i->size(), 0);
+  if (rdm1_av_)
+    mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
+  if (rdm2_av_)
+    mpi__->broadcast_force(rdm2_av_->data(), rdm2_av_->size(), 0);
+
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
@@ -109,4 +120,24 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
   }
 
   return out;
+}
+
+
+void Reference::set_eig(const std::vector<double>& eig) {
+  eig_ = eig;
+  mpi__->broadcast(&eig_[0], eig_.size(), 0);
+}
+
+
+void Reference::set_erdm1(const shared_ptr<const Matrix> o) {
+  mpi__->broadcast(o->data(), o->size(), 0);
+  erdm1_ = o;
+}
+
+
+void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<const Coeff> b) {
+  mpi__->broadcast(a->data(), a->size(), 0);
+  mpi__->broadcast(b->data(), b->size(), 0);
+  coeffA_ = a;
+  coeffB_ = b;
 }

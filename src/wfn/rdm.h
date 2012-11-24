@@ -42,7 +42,7 @@ class RDM_base {
   protected:
     std::unique_ptr<double[]> data_;
     const int norb_;
-    int dim_;
+    size_t dim_;
     int rank_;
 
   public:
@@ -57,6 +57,7 @@ class RDM_base {
     void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); };
     void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); };
     void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); };
+    size_t size() const { return dim_*dim_; }
 
     double& element(const std::initializer_list<int>& list) {
       assert(rank_*2 == list.size());
@@ -126,7 +127,7 @@ class RDM : public RDM_base {
       int lwork = 5*dim_;
       std::unique_ptr<double[]> work(new double[lwork]);
       int info;
-      dsyev_("V", "U", &dim_, &(buf[0]), &dim_, &(vec[0]), work.get(), &lwork, &info);
+      dsyev_("V", "U", dim_, &(buf[0]), dim_, &(vec[0]), work.get(), lwork, info);
       assert(!info);
       for (auto& i : vec) i = 2.0-i;
       return std::make_pair(buf, vec);
@@ -144,13 +145,13 @@ class RDM : public RDM_base {
         for (int i = 0; i != norb_; ++i)
           dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf.get()+i*dim_*norb_, dim_, start, norb_, 0.0, data()+i*dim_*norb_, dim_);
         // then tranpose
-        mytranspose_(data(), &dim_, &dim_, buf.get());
+        mytranspose_(data(), dim_, dim_, buf.get());
         // and do it again
         dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf.get(), dim_*norb_, start, norb_, 0.0, data(), dim_*norb_);
         for (int i = 0; i != norb_; ++i)
           dgemm_("N", "N", dim_, norb_, norb_, 1.0, data()+i*dim_*norb_, dim_, start, norb_, 0.0, buf.get()+i*dim_*norb_, dim_);
         // to make sure for non-symmetric density matrices (and anyway this should be cheap).
-        mytranspose_(buf.get(), &dim_, &dim_, data());
+        mytranspose_(buf.get(), dim_, dim_, data());
       } else {
         assert(false);
       }

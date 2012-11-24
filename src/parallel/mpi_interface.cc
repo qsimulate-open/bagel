@@ -93,6 +93,15 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 }
 
 
+void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  // sometimes we need to broadcast const objects for consistency...
+  double* aa = const_cast<double*>(a);
+  MPI_Bcast(static_cast<void*>(aa), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
+#endif
+}
+
+
 void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding

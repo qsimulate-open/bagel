@@ -53,10 +53,16 @@ class MPI_Interface {
     bool last() const { return rank() == size()-1; }
 
     // collective functions
+    // barrier
     void barrier() const;
+    // sum reduce to the root process
     void reduce(double*, const size_t size, const int root) const;
+    // sum reduce and broadcast to each process
     void allreduce(double*, const size_t size) const;
+    // broadcast
     void broadcast(double*, const size_t size, const int root) const;
+    // broadcast of const objects. Use with caution...
+    void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
