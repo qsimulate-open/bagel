@@ -194,6 +194,8 @@ void SuperCI::compute() {
     assert(fabs(m->trace() - m->ddot(m)) < 1.0e-10);
 #endif
 
+    mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+
     // print out...
     auto end = high_resolution_clock::now();
     resume_stdcout();
