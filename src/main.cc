@@ -109,6 +109,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<Geometry> geom;
     std::shared_ptr<SCF_base> scf;
     std::shared_ptr<const Reference> ref;
+    std::shared_ptr<Dimer> dimer;
 
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
@@ -263,8 +264,7 @@ int main(int argc, char** argv) {
 
         fci->compute();
 
-      }
-        else if (method == "dimerize") {
+      } else if (method == "dimerize") {
 
         std::multimap<std::string,std::string> dimdata = iter->second;
 
@@ -275,16 +275,23 @@ int main(int argc, char** argv) {
         double dz = read_input<double>(dimdata,"dz",0.0) * scale;
         std::array<double,3> disp = {{dx,dy,dz}};
 
-        std::shared_ptr<Dimer> dim;
         if (static_cast<bool>(ref)) {
-          dim = std::shared_ptr<Dimer>(new Dimer(ref,disp));
+          dimer = std::shared_ptr<Dimer>(new Dimer(ref,disp));
         }
         else {
-          dim = std::shared_ptr<Dimer>(new Dimer(geom,disp));
+          dimer = std::shared_ptr<Dimer>(new Dimer(geom,disp));
         }
 
-        geom = dim->sgeom();
-        ref = dim->sref();
+        geom = dimer->sgeom();
+        ref = dimer->sref();
+
+      } else if (method == "dimer-scf") {
+        
+        if(!static_cast<bool>(dimer)) throw std::runtime_error("dimerize section must appear before dimer-scf.");
+
+        scf = std::shared_ptr<DimerSCF>(new DimerSCF(iter->second, dimer));
+        scf->compute();
+        ref = scf->conv_to_ref();
 
       } else if (method == "print") {
 
@@ -298,7 +305,7 @@ int main(int argc, char** argv) {
         mfs.close();
 
       }
-      #if 1 // <---- Testing environment
+      #if 0 // <---- Testing environment
       else if (method == "testing") {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
