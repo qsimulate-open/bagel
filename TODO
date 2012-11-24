@@ -25,3 +25,5 @@ o Make sure that MoldenIO is MPI-safe.
 o FCI is not parallelized yet 
 
 o Shell distribution to MPI processes (src/df/df.cc) should be optimized
+
+o Matrix diagonalization and linear solver should be parallelized
