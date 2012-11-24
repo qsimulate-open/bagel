@@ -84,7 +84,7 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 #ifdef HAVE_MPI_H
   shared_ptr<ParaMatrix> out(new ParaMatrix(naux_, naux_));
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
-  dgemm_("T", "N", naux_, naux_, work->size(), 1.0, work->data(), work->size(), work->data(), work->size(), 0.0, out->data(), naux_); 
+  dgemm_("T", "N", naux_, naux_, work->size(), a, work->data(), work->size(), work->data(), work->size(), 0.0, out->data(), naux_); 
   out->allreduce();
   return out;
 #else
