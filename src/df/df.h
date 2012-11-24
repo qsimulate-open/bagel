@@ -89,7 +89,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
 
-    const int get_node(const int shelloffset) const { return df_ == nullptr ? global_table_.upper_bound(shelloffset)->second : df_->get_node(shelloffset); }
+    int get_node(const int shelloffset) const;
 };
 
 
@@ -113,7 +113,7 @@ class DFDist : public ParallelDF {
       common_init(atoms, atoms, aux_atoms, thr, inverse);
     }
 
-    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df->df(); }
+    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df; }
 
     bool has_2index() const { return data2_.get() != nullptr; };
     size_t nbasis0() const { return nindex2_; };

@@ -54,6 +54,12 @@ ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2)
 }
 
 
+int ParallelDF::get_node(const int off) const {
+  int out = df_->global_table_.upper_bound(off)->second;
+  return out;
+}
+
+
 unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   unique_ptr<double[]> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
 
