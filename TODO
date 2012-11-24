@@ -17,3 +17,11 @@ o when input areas are empty, methods are not called
 o Stack size is hardwired now
 
 o F12 DF factory is disabled now (see "#define SlaterFit DFDist" in src/df/fit.h). It is easy to make it again, though. 
+
+o MP2 can be improved significantly 
+
+o Make sure that MoldenIO is MPI-safe.
+
+o FCI is not parallelized yet 
+
+o Shell distribution to MPI processes (src/df/df.cc) should be optimized
