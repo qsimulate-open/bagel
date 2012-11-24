@@ -81,12 +81,15 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 
 
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
+#ifdef HAVE_MPI_H
   shared_ptr<ParaMatrix> out(new ParaMatrix(naux_, naux_));
-  out->copy_block(block_->astart(), block_->astart(), block_->asize(), block_->asize(), block_->form_aux_2index(o->block_, a));
-
-  // all reduce
+  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+  dgemm_("T", "N", naux_, naux_, work->size(), 1.0, work->data(), work->size(), work->data(), work->size(), 0.0, out->data(), naux_); 
   out->allreduce();
   return out;
+#else
+  return block_->form_aux_2index(o->block_, a);
+#endif
 }
 
 

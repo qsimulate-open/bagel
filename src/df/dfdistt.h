@@ -70,6 +70,9 @@ class DFDistT {
 
     void get_paralleldf(std::shared_ptr<ParallelDF>) const;
 
+    int size() const { return size_; }
+    int start() const { return start_; }
+    const double* data() const { return data_.get(); } 
 }; 
     
 }
