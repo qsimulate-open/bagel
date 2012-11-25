@@ -34,6 +34,7 @@
 #include <stddef.h>
 #include <src/df/dfblock.h>
 #include <src/scf/atom.h>
+#include <src/parallel/paramatrix.h>
 #include <src/util/matrix.h>
 #include <src/df/dfinttask_old.h>
 
@@ -58,7 +59,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<const ParallelDF> df_;
     // data2_ is usually empty (except for the original DFDist)
     // AO two-index integrals ^ -1/2
-    std::shared_ptr<Matrix> data2_;
+    std::shared_ptr<ParaMatrix> data2_;
 
 
   public:
@@ -87,7 +88,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     const std::vector<std::pair<int, int> >& atable() const { return atable_; }
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
-    std::shared_ptr<const Matrix> data2() const { return data2_; }
+    std::shared_ptr<const ParaMatrix> data2() const { return data2_; }
 
     int get_node(const int shelloffset) const;
 };

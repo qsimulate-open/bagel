@@ -175,7 +175,7 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
-  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
+  data2_ = shared_ptr<ParaMatrix>(new ParaMatrix(naux_, naux_));
 
   int tmpa = 0;
   vector<int> aof;

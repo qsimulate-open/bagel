@@ -146,8 +146,10 @@ class SCF : public SCF_base {
         densitychange = std::shared_ptr<Matrix>(new Matrix(*diis_density - *aodensity_));
         aodensity_ = diis_density;
 
-        // need to make all the node consistent
+#if 0
+        // need to make all the node consistent (TODO it seems to be that if I sync every time after diagonalization, it looks fine)
         mpi__->broadcast(DF == 1 ? aodensity_->data() : densitychange->data(), aodensity_->size(), 0);
+#endif
       }
       // by default we compute dipoles
       if (!geom_->external()) {

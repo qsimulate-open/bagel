@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
@@ -259,6 +260,9 @@ void Matrix::diagonalize(double* eig) {
   unique_ptr<double[]> work(new double[n*6]);
   dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
   if(info) throw runtime_error("diagonalize failed");
+
+  // in order to be consistent with signs
+  mpi__->broadcast(data(), n*n, 0);
 }
 
 

@@ -122,10 +122,12 @@ void ROHF::compute() {
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
-    // need to make all the node consistent
+#if 0
+    // need to make all the node consistent (TODO it seems to be that if I sync every time after diagonalization, it looks fine)
     mpi__->broadcast(aodensityA_->data(), aodensityA_->size(), 0);
     mpi__->broadcast(aodensityB_->data(), aodensityB_->size(), 0);
     mpi__->broadcast(aodensity_->data(), aodensity_->size(), 0);
+#endif
   }
 
   print_S2("ROHF");

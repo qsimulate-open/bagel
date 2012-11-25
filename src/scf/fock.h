@@ -38,6 +38,7 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/matrix.h>
 #include <src/scf/fock_base.h>
+#include <src/parallel/paramatrix.h>
 
 namespace bagel {
 
@@ -243,7 +244,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     assert(ndim_ == df->nbasis0());
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
-    std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));
+    std::shared_ptr<ParaMatrix> coeff(new ParaMatrix(*den_ex));
     *coeff *= -1.0;
     int nocc = 0;
     {
@@ -257,10 +258,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
       }
     }
     if (nocc == 0) return;
-    // this is strictly needed for parallel runs. Wonder what is the best way to syncronize
-    // TODO
-    mpi__->broadcast(coeff->data(), nocc*ndim_, 0);
-
 
     // first half transformation and multiplying J^-1/2 from the front.
     std::shared_ptr<DFHalfDist> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
