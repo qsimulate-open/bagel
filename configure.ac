@@ -40,11 +40,17 @@ fi
 
 AC_F77_LIBRARY_LDFLAGS
 
+
+#lapack and blas
+AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--enable-scalapack],[enable scalapack - used for parallel diagonalization])], [use_scalapack=yes], [use_scalapack=no])
+
 if test "x${use_scalapack}" = xyes; then
     if test x${use_mpi} = xyes; then
         AH_TEMPLATE([HAVE_SCALAPACK], [a scalapack library will be linked.])
-        AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack"], [AC_MSG_ERROR("Linking against scalapack library failed.")])
+        if test x${use_mkl} = xno; then
+            AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack $LIBS"], [AC_MSG_ERROR("Linking against scalapack library failed.")])
+        fi
     else
         AC_MSG_ERROR("scalapack should be used with mpi")
     fi
@@ -87,11 +93,16 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
 ])
 
 
-AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 if test x${use_mkl} = xyes; then
     AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])
     AC_CHECK_LIB([mkl_intel_lp64], main, LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS",
-        AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+        AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+
+    if test "x${use_scalapack}" = xyes; then
+        AC_CHECK_LIB([mkl_scalapack_lp64], main, LIBS="-lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 $LIBS",
+            [AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack $LIBS"], [AC_MSG_ERROR("Linking against scalapack library failed.")])],
+            [-lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+    fi
 fi
 if test x${use_mpi} = xyes; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
