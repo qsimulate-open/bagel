@@ -18,12 +18,11 @@ o Stack size is hardwired now
 
 o F12 DF factory is disabled now (see "#define SlaterFit DFDist" in src/df/fit.h). It is easy to make it again, though. 
 
-o MP2 can be improved significantly 
+o Parallelization needs more work
 
-o Make sure that MoldenIO is MPI-safe.
-
-o FCI is not parallelized yet 
-
-o Shell distribution to MPI processes (src/df/df.cc) should be optimized
-
-o Matrix diagonalization and linear solver should be parallelized
+  - get and set functions in src/parallel/paramatrix.cc should be rewritten 
+  - MP2 parallelism can be improved significantly 
+  - Make sure that MoldenIO is MPI-safe.
+  - FCI is not parallelized yet 
+  - Shell distribution to MPI processes (src/df/df.cc) should be optimized
+  - linear solver should be parallelized
