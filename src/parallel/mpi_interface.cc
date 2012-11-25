@@ -25,6 +25,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
@@ -33,13 +34,22 @@ using namespace bagel;
 MPI_Interface::MPI_Interface(int argc, char** argv) : cnt_(0) {
 #ifdef HAVE_MPI_H
   MPI_Init(&argc, &argv);
+#ifdef HAVE_SCALAPACK
+  tie(nprow_, npcol_) = numgrid(mpi__->size());
+  sl_init_(context_, nprow_, npcol_);
+#endif
 #endif
 }
 
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
+#ifndef SCALAPACK
   MPI_Finalize();
+#else
+  blacs_gridexit_(context_);
+  blacs_exit_(0);
+#endif
 #endif
 }
 

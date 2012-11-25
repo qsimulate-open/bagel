@@ -42,6 +42,11 @@ class MPI_Interface {
 #ifdef HAVE_MPI_H
     // request handles
     std::map<int, MPI_Request> request_; 
+#ifdef HAVE_SCALAPACK
+    int nprow_; 
+    int npcol_;
+    int context_;
+#endif
 #endif
 
   public:
