@@ -27,6 +27,8 @@
 #define __SRC_PARALLEL_SCALAPACK_H
 
 #include <config.h>
+#include <memory>
+#include <cassert>
 #include <cmath>
 #ifdef HAVE_SCALAPACK
 
@@ -67,6 +69,10 @@ static std::pair<int, int> numgrid(int numproc) {
     if (numproc%i == 0) return std::make_pair(i, numproc/i); 
   assert(false);
   return std::make_pair(0,0);
+}
+
+namespace bagel {
+  const static int blocksize__ = 16; 
 }
 
 #endif

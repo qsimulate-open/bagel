@@ -24,6 +24,7 @@
 //
 
 
+#include <stdexcept>
 #include <src/parallel/paramatrix.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -34,6 +35,32 @@ void ParaMatrix::allreduce() {
   mpi__->allreduce(data_.get(), size());
 }
 
+
 void ParaMatrix::broadcast(const int root) {
   mpi__->broadcast(data_.get(), size(), root);
 }
+
+#ifdef HAVE_SCALAPACK
+void ParaMatrix::diagonalize(double* eig) {
+assert(false);
+  if (ndim_ != mdim_) throw logic_error("illegal call of ParaMatrix::diagonalize");
+  const int n = ndim_;
+  int localrow, localcol;
+  tie(localrow, localcol) = mpi__->numroc(n, n);
+  unique_ptr<double[]> local(new double[localrow*localcol]);
+  unique_ptr<double[]> coeff(new double[localrow*localcol]);
+
+  unique_ptr<int[]> desc = mpi__->descinit(n, n);
+
+  for (int i = 0; i != n; ++i)
+    for (int j = 0; j != n; ++j)
+      pdelset_(local.get(), j+1, i+1, desc.get(), data_[j+n*i]); 
+
+  int info;
+  int lwork = n*n;
+  unique_ptr<double[]> work(new double[lwork]);
+  pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), work.get(), lwork, info);
+
+  if (info) throw runtime_error("pdsyev failed in paramatrix");
+}
+#endif

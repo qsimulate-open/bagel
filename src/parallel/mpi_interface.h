@@ -42,12 +42,12 @@ class MPI_Interface {
 #ifdef HAVE_MPI_H
     // request handles
     std::map<int, MPI_Request> request_; 
-#ifdef HAVE_SCALAPACK
+#endif
     int nprow_; 
     int npcol_;
     int context_;
-#endif
-#endif
+    int myprow_;
+    int mypcol_;
 
   public:
     MPI_Interface(int argc, char** argv);
@@ -74,6 +74,16 @@ class MPI_Interface {
     int request_send(const double* sbuf, const size_t size, const int dest);
     int request_recv(double* rbuf, const size_t size, const int source);
     void wait(const int rq);
+
+    // scalapack
+    int nprow() const { return nprow_; }
+    int npcol() const { return npcol_; }
+    int context() const { return context_; }
+    int myprow() const { return myprow_; }
+    int mypcol() const { return mypcol_; }
+
+    std::pair<int,int> numroc(const int, const int) const;
+    std::unique_ptr<int[]> descinit(const int, const int) const;
 };
 
 extern MPI_Interface* mpi__; 

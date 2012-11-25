@@ -27,6 +27,7 @@
 #define __SRC_PARALLEL_PARAMATRIX_H
 
 // parallel matrix, a derived class of Matrix
+#include <src/parallel/scalapack.h>
 #include <src/parallel/process.h>
 #include <src/util/matrix.h>
 
@@ -41,6 +42,10 @@ class ParaMatrix : public Matrix {
 
     void allreduce();
     void broadcast(const int root = 0);
+
+#ifdef HAVE_SCALAPACK
+    void diagonalize(double* eig) override;
+#endif
 };
 
 }

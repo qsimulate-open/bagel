@@ -31,12 +31,14 @@
 using namespace std;
 using namespace bagel;
 
-MPI_Interface::MPI_Interface(int argc, char** argv) : cnt_(0) {
+MPI_Interface::MPI_Interface(int argc, char** argv)
+ : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0) {
 #ifdef HAVE_MPI_H
   MPI_Init(&argc, &argv);
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(mpi__->size());
   sl_init_(context_, nprow_, npcol_);
+  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
 #endif
 #endif
 }
@@ -57,7 +59,7 @@ MPI_Interface::~MPI_Interface() {
 int MPI_Interface::rank() const {
 #ifdef HAVE_MPI_H
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   return rank;
 #else
   return 0;
@@ -117,7 +119,7 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
-} 
+}
 
 
 void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
@@ -125,14 +127,14 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
 #endif
-} 
+}
 
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest) {
 #ifdef HAVE_MPI_H
   MPI_Request rq;
   // I hate const_cast. Blame the MPI C binding
-  MPI_Isend(const_cast<double*>(sbuf), size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq); 
+  MPI_Isend(const_cast<double*>(sbuf), size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq);
   request_.insert(make_pair(cnt_, rq));
 #endif
   ++cnt_;
@@ -143,7 +145,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin) {
 #ifdef HAVE_MPI_H
   MPI_Request rq;
-  MPI_Irecv(rbuf, size, MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &rq); 
+  MPI_Irecv(rbuf, size, MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &rq);
   request_.insert(make_pair(cnt_, rq));
 #endif
   ++cnt_;
@@ -157,4 +159,24 @@ void MPI_Interface::wait(const int rq) {
   assert(i != request_.end());
   MPI_Wait(&i->second, MPI_STATUS_IGNORE);
 #endif
+}
+
+
+pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
+#ifdef HAVE_SCALAPACK
+  return make_pair(numroc_(ndim, blocksize__, myprow_, 0, nprow_),
+                   numroc_(ncol, blocksize__, mypcol_, 0, npcol_));
+#else
+  return make_pair(0,0);
+#endif
+}
+
+unique_ptr<int[]> MPI_Interface::descinit(const int ndim, const int ncol) const {
+  unique_ptr<int[]> desc(new int[9]);
+#ifdef HAVE_SCALAPACK
+  const int localrow = numroc_(ndim, blocksize__, myprow_, 0, nprow_);
+  int info;
+  descinit_(desc.get(), ndim, ncol, blocksize__, blocksize__, 0, 0, context_, max(1,localrow), info);
+#endif
+  return desc;
 }
