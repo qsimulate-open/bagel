@@ -40,6 +40,16 @@ fi
 
 AC_F77_LIBRARY_LDFLAGS
 
+AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--enable-scalapack],[enable scalapack - used for parallel diagonalization])], [use_scalapack=yes], [use_scalapack=no])
+if test "x${use_scalapack}" = xyes; then
+    if test x${use_mpi} = xyes; then
+        AH_TEMPLATE([HAVE_SCALAPACK], [a scalapack library will be linked.])
+        AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK])], [AC_MSG_ERROR("Linking against scalapack library failed.")])
+    else
+        AC_MSG_ERROR("scalapack should be used with mpi")
+    fi
+fi
+
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [
