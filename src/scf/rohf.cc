@@ -26,6 +26,7 @@
 #include <chrono>
 #include <src/scf/rohf.h>
 #include <src/prop/dipole.h>
+#include <src/parallel/paramatrix.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -37,7 +38,7 @@ void ROHF::compute() {
   shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    Matrix intermediate = *tildex_ % *hcore_fock * *tildex_;
+    ParaMatrix intermediate = *tildex_ % *hcore_fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -64,8 +65,8 @@ void ROHF::compute() {
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
-    shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *fockA * *natorb));
-    shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *fockB * *natorb));
+    shared_ptr<ParaMatrix> intermediateA(new ParaMatrix(*natorb % *fockA * *natorb));
+    shared_ptr<ParaMatrix> intermediateB(new ParaMatrix(*natorb % *fockB * *natorb));
 
     // Specific to ROHF:
     //   here we want to symmetrize closed-virtual blocks
@@ -103,9 +104,9 @@ void ROHF::compute() {
 
     if (iter >= diis_start_) {
       shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-      shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *tmp_fock * *natorb));
-                           tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-      shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *tmp_fock * *natorb));
+      shared_ptr<ParaMatrix> intermediateA(new ParaMatrix(*natorb % *tmp_fock * *natorb));
+                         tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
+      shared_ptr<ParaMatrix> intermediateB(new ParaMatrix(*natorb % *tmp_fock * *natorb));
 
       // Specific to ROHF:
       //   here we want to symmetrize closed-virtual blocks

@@ -35,6 +35,7 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <src/parallel/paramatrix.h>
 
 namespace bagel {
 
@@ -75,7 +76,7 @@ class SCF : public SCF_base {
       }
 
       if (SCF_base::coeff_ == nullptr) {
-        Matrix intermediate = *tildex_ % *previous_fock * *tildex_;
+        ParaMatrix intermediate = *tildex_ % *previous_fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
       }
@@ -100,7 +101,7 @@ class SCF : public SCF_base {
         // Need to share exactly the same between MPI processes
         if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
 
-        Matrix intermediate = *coeff_ % *fock * *coeff_;
+        ParaMatrix intermediate = *coeff_ % *fock * *coeff_;
 
 // TODO level shift - needed?
 //      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
@@ -134,7 +135,7 @@ class SCF : public SCF_base {
         std::shared_ptr<Matrix> diis_density;
         if (iter >= diis_start_) {
           std::shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
-          std::shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *tmp_fock * *tildex_));
+          std::shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *tmp_fock * *tildex_));
           intermediate->diagonalize(eig());
           std::shared_ptr<Coeff> tmp_coeff(new Coeff(*tildex_**intermediate));
           diis_density = tmp_coeff->form_density_rhf(nocc_);

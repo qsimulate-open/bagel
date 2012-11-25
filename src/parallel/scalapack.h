@@ -42,6 +42,7 @@ extern "C" {
   int numroc_(const int* globalsize, const int* blocksize, const int* myrow, const int* startproc, const int* nproc); 
   void descinit_(int* desc, const int* dimr, const int* dimc, const int* nbr, const int* nbc, const int* nsr, const int* nsc, const int* context, const int* ld, int* info);
   void pdelset_(double* mat, const int* i, const int* j, const int* desc, const double* a); 
+  void pdelget_(const char*, const char*, double* val, const double* mat, const int* i, const int* j, const int* desc); 
 
   void pdsyev_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, const int*); 
 }
@@ -56,6 +57,7 @@ static int numroc_(const int a, const int b, const int c, const int d, const int
 static void descinit_(int* a, const int b, const int c, const int d, const int e, const int f, const int g, const int h, const int i, int& j)
   { descinit_(a, &b, &c, &d, &e, &f, &g, &h, &i, &j); }
 static void pdelset_(double* a, const int b, const int c, const int* d, const double e) { pdelset_(a, &b, &c, d, &e); }
+static void pdelget_(const char* a, const char* b, double& val, const double* mat, const int i, const int j, const int* desc) { pdelget_(a, b, &val, mat, &i, &j, desc); }
 
 static void pdsyev_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork, int& info) {
   const int one = 1;

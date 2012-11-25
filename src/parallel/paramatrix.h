@@ -35,10 +35,15 @@ namespace bagel {
 
 class ParaMatrix : public Matrix {
   protected:
+    int localrow_;
+    int localcol_;
+
+    std::unique_ptr<double[]> getlocal_(const std::unique_ptr<int[]>& desc) const;
+    void setlocal_(const std::unique_ptr<double[]>& loc, const std::unique_ptr<int[]>& desc);
 
   public:
-    ParaMatrix(const int n, const int m) : Matrix(n,m) {}
-    ParaMatrix(const ParaMatrix& o) : Matrix(o) { }
+    ParaMatrix(const int n, const int m);
+    ParaMatrix(const Matrix& o) : Matrix(o) { }
 
     void allreduce();
     void broadcast(const int root = 0);

@@ -31,6 +31,11 @@
 using namespace std;
 using namespace bagel;
 
+
+ParaMatrix::ParaMatrix(const int n, const int m) : Matrix(n,m) {
+}
+
+
 void ParaMatrix::allreduce() {
   mpi__->allreduce(data_.get(), size());
 }
@@ -42,25 +47,49 @@ void ParaMatrix::broadcast(const int root) {
 
 #ifdef HAVE_SCALAPACK
 void ParaMatrix::diagonalize(double* eig) {
-assert(false);
+
   if (ndim_ != mdim_) throw logic_error("illegal call of ParaMatrix::diagonalize");
   const int n = ndim_;
   int localrow, localcol;
   tie(localrow, localcol) = mpi__->numroc(n, n);
-  unique_ptr<double[]> local(new double[localrow*localcol]);
-  unique_ptr<double[]> coeff(new double[localrow*localcol]);
 
   unique_ptr<int[]> desc = mpi__->descinit(n, n);
+  unique_ptr<double[]> coeff(new double[localrow*localcol]);
 
-  for (int i = 0; i != n; ++i)
-    for (int j = 0; j != n; ++j)
-      pdelset_(local.get(), j+1, i+1, desc.get(), data_[j+n*i]); 
+  unique_ptr<double[]> local = getlocal_(desc);
 
   int info;
-  int lwork = n*n;
+  // first compute worksize
+  double wsize;
+  pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), &wsize, -1, info);
+
+  const int lwork = round(wsize)*100;
   unique_ptr<double[]> work(new double[lwork]);
   pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), work.get(), lwork, info);
-
   if (info) throw runtime_error("pdsyev failed in paramatrix");
+
+  setlocal_(coeff, desc);
+}
+
+
+// TODO this should be rewritten 
+unique_ptr<double[]> ParaMatrix::getlocal_(const unique_ptr<int[]>& desc) const {
+  int localrow, localcol;
+  tie(localrow, localcol) = mpi__->numroc(ndim_, mdim_);
+  unique_ptr<double[]> local(new double[localrow*localcol]);
+
+  for (int i = 0; i != mdim_; ++i)
+    for (int j = 0; j != ndim_; ++j)
+      pdelset_(local.get(), j+1, i+1, desc.get(), data_[j+ndim_*i]); 
+  return local;
+}
+
+
+// TODO this should be rewritten
+void ParaMatrix::setlocal_(const unique_ptr<double[]>& loc, const unique_ptr<int[]>& desc) {
+  zero();
+  for (int i = 0; i != mdim_; ++i)
+    for (int j = 0; j != ndim_; ++j)
+      pdelget_("A", " ", data_[j+ndim_*i], loc.get(), j+1, i+1, desc.get()); 
 }
 #endif
