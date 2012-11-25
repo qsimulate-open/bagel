@@ -53,7 +53,7 @@ static void pdsyev_(const char* a, const char* b, const int dim, double* mat, co
   pdsyev_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, &info);
 }
 
-std::pair<int, int> numgrid(int numproc) {
+static std::pair<int, int> numgrid(int numproc) {
   int sq = static_cast<int>(sqrt(static_cast<double>(numproc)))+1;
   for (int i = sq; i != 0; --i)
     if (numproc%i == 0) return make_pair(i, numproc/i); 
