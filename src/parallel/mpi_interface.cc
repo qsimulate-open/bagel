@@ -37,6 +37,8 @@ MPI_Interface::MPI_Interface(int argc, char** argv)
   MPI_Init(&argc, &argv);
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(mpi__->size());
+  if (mpi__->rank() == 0)
+    cout << "  * process grid (" << nprow_ << ", " << npcol_ << ") will be used" << endl;
   sl_init_(context_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
 #endif

@@ -78,18 +78,63 @@ unique_ptr<double[]> ParaMatrix::getlocal_(const unique_ptr<int[]>& desc) const 
   tie(localrow, localcol) = mpi__->numroc(ndim_, mdim_);
   unique_ptr<double[]> local(new double[localrow*localcol]);
 
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = 0; j != ndim_; ++j)
-      pdelset_(local.get(), j+1, i+1, desc.get(), data_[j+ndim_*i]); 
+  const int nblock = localrow/blocksize__;
+  const int mblock = localcol/blocksize__;
+  const size_t nstride = blocksize__*mpi__->nprow();
+  const size_t mstride = blocksize__*mpi__->npcol();
+  const int myprow = mpi__->myprow()*blocksize__;
+  const int mypcol = mpi__->mypcol()*blocksize__;
+
+  for (int i = 0; i != mblock; ++i)
+    for (int j = 0; j != nblock; ++j)
+      for (int id = 0; id != blocksize__; ++id) 
+        copy_n(element_ptr(myprow+j*nstride, mypcol+i*mstride+id), blocksize__, &local[j*blocksize__+localrow*(i*blocksize__+id)]); 
+
+  for (int id = 0; id != localcol % blocksize__; ++id) {
+    for (int j = 0; j != nblock; ++j)
+      copy_n(element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id), blocksize__, &local[j*blocksize__+localrow*(mblock*blocksize__+id)]); 
+    for (int jd = 0; jd != localrow % blocksize__; ++jd)
+      local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id);
+  }
+  for (int i = 0; i != mblock; ++i)
+    for (int id = 0; id != blocksize__; ++id) 
+      for (int jd = 0; jd != localrow % blocksize__; ++jd)
+        local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+i*mstride+id);
+
   return local;
 }
 
 
 // TODO this should be rewritten
-void ParaMatrix::setlocal_(const unique_ptr<double[]>& loc, const unique_ptr<int[]>& desc) {
+void ParaMatrix::setlocal_(const unique_ptr<double[]>& local, const unique_ptr<int[]>& desc) {
   zero();
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = 0; j != ndim_; ++j)
-      pdelget_("A", " ", data_[j+ndim_*i], loc.get(), j+1, i+1, desc.get()); 
+
+  int localrow, localcol;
+  tie(localrow, localcol) = mpi__->numroc(ndim_, mdim_);
+  const int nblock = localrow/blocksize__;
+  const int mblock = localcol/blocksize__;
+  const size_t nstride = blocksize__*mpi__->nprow();
+  const size_t mstride = blocksize__*mpi__->npcol();
+  const int myprow = mpi__->myprow()*blocksize__;
+  const int mypcol = mpi__->mypcol()*blocksize__;
+
+  for (int i = 0; i != mblock; ++i)
+    for (int j = 0; j != nblock; ++j)
+      for (int id = 0; id != blocksize__; ++id) 
+        copy_n(&local[j*blocksize__+localrow*(i*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+i*mstride+id)); 
+
+  for (int id = 0; id != localcol % blocksize__; ++id) {
+    for (int j = 0; j != nblock; ++j)
+      copy_n(&local[j*blocksize__+localrow*(mblock*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id)); 
+    for (int jd = 0; jd != localrow % blocksize__; ++jd)
+      element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id) = local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)];
+  }
+  for (int i = 0; i != mblock; ++i)
+    for (int id = 0; id != blocksize__; ++id) 
+      for (int jd = 0; jd != localrow % blocksize__; ++jd)
+        element(myprow+nblock*nstride+jd, mypcol+i*mstride+id) = local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)];
+
+  // syncronize (this can be improved, but...)
+  allreduce();
 }
 #endif
