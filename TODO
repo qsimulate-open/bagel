@@ -20,7 +20,6 @@ o F12 DF factory is disabled now (see "#define SlaterFit DFDist" in src/df/fit.h
 
 o Parallelization needs more work
 
-  - get and set functions in src/parallel/paramatrix.cc should be rewritten 
   - MP2 parallelism can be improved significantly 
   - Make sure that MoldenIO is MPI-safe.
   - FCI is not parallelized yet 

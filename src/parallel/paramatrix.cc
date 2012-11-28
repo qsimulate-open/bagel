@@ -72,7 +72,6 @@ void ParaMatrix::diagonalize(double* eig) {
 }
 
 
-// TODO this should be rewritten 
 unique_ptr<double[]> ParaMatrix::getlocal_(const unique_ptr<int[]>& desc) const {
   int localrow, localcol;
   tie(localrow, localcol) = mpi__->numroc(ndim_, mdim_);
@@ -105,7 +104,6 @@ unique_ptr<double[]> ParaMatrix::getlocal_(const unique_ptr<int[]>& desc) const 
 }
 
 
-// TODO this should be rewritten
 void ParaMatrix::setlocal_(const unique_ptr<double[]>& local, const unique_ptr<int[]>& desc) {
   zero();
 
