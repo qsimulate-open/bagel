@@ -327,20 +327,21 @@ class SpinFreeMethod {
         // first compute Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) // TODO this should be computed directly maybe 
         // form f(x0,x1) <- this is not so simple...
         std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
-        for (auto& i1 : active_) {
-          for (auto& i0 : active_) {
-            std::unique_ptr<double[]> dat = this->f1_->get_block({i0.key(), i1.key()});
-            fockact->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), dat);
-          }
-        }
+        for (auto& i1 : active_)
+          for (auto& i0 : active_)
+            fockact->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
+
         // TODO hardwired 0
         std::shared_ptr<RDM<3> > rdm3 = ref_->compute_rdm3(0);
         dgemv_("N", size, dim, 1.0, rdm3->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-        // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
-        std::shared_ptr<Matrix> work4(new Matrix(dim, dim));
-        sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work4->data(), nact, nact, nact, nact);
 
-        denom_xx_ = (*shalf_xx_ % *work4 * *shalf_xx_).diag();
+        // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
+        std::shared_ptr<Matrix> work4 = work2->clone();
+        sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work4->data(), nact, nact, nact, nact);
+        denom_xx_ = std::unique_ptr<double[]>(new double[dim]);
+        Matrix fss = *shalf_xx_ % *work4 * *shalf_xx_;
+        fss.diagonalize(denom_xx_.get());
+        *shalf_xx_ = fss % *shalf_xx_;
 
 #ifdef LOCAL_DEBUG
 for (int i = 0; i != dim; ++i) std::cout << denom_xx_[i] << std::endl;
