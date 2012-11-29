@@ -65,7 +65,7 @@ class SpinFreeMethod {
     void print_iteration() {
       std::cout << "      ---- iteration ----" << std::endl << std::endl;
       time_ = std::chrono::high_resolution_clock::now();
-    };
+    }
 
     void print_iteration(const int i, const double en, const double err) {
       auto end = std::chrono::high_resolution_clock::now();
@@ -74,13 +74,13 @@ class SpinFreeMethod {
                                                 << std::setw(15) << std::fixed << std::setprecision(10) << err
                                                 << std::setw(10) << std::fixed << std::setprecision(2) << tim << std::endl;
       time_ = end;
-    };
+    }
 
     void print_iteration(const bool noconv) {
       std::cout << std::endl << "      -------------------" << std::endl;
       if (noconv) std::cout << "      *** Convergence not reached ***" << std::endl;
       std::cout << std::endl;
-    };
+    }
 
 
     // E0 is defined as Trace(f(x,x), gamma(x,x))
@@ -92,7 +92,7 @@ class SpinFreeMethod {
       // TODO parallelize?
       for (auto& i1 : active_) {
         for (auto& i0 : active_) {
-          std::vector<size_t> hash = {i0.key(), i1.key()};
+          std::vector<size_t> hash = {i0.key(), i1.key()}
           const size_t size = i0.size() * i1.size();
           std::unique_ptr<double[]> fdata = f1_->get_block(hash);
           std::unique_ptr<double[]> rdata = rdm1_->get_block(hash);
@@ -101,7 +101,7 @@ class SpinFreeMethod {
       }
       std::cout << "    - Zeroth order energy: " << sum << std::endl;
       return sum;
-    };
+    }
 
 
     // S^-1/2 for aa/xx blocks
@@ -118,8 +118,8 @@ class SpinFreeMethod {
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()}
+              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()}
 
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
@@ -156,7 +156,7 @@ class SpinFreeMethod {
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()}
 
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
@@ -194,7 +194,7 @@ class SpinFreeMethod {
           }
         }
       }
-    };
+    }
 
   public:
     SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
@@ -215,23 +215,23 @@ class SpinFreeMethod {
         IndexRange virt(active_);
         virt.merge(virt_);
 
-        std::vector<IndexRange> o = {occ, virt, occ, virt};
+        std::vector<IndexRange> o = {occ, virt, occ, virt}
         K2ext<T> v2k(ref_, o);
         v2_ = v2k.tensor();
       }
       // f1 tensor.
       {
-        std::vector<IndexRange> o = {all_, all_};
+        std::vector<IndexRange> o = {all_, all_}
         MOFock<T> fock(ref_, o);
         f1_ = fock.tensor();
       }
       // rdms
       if (!ref_->rdm1().empty()) {
-        std::vector<IndexRange> o = {active_, active_};
+        std::vector<IndexRange> o = {active_, active_}
         rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
-            std::vector<size_t> hash = {i0.key(), i1.key()};
+            std::vector<size_t> hash = {i0.key(), i1.key()}
             const size_t size = i0.size() * i1.size();
             std::unique_ptr<double[]> data(new double[size]); 
             int iall = 0;
@@ -244,13 +244,13 @@ class SpinFreeMethod {
         }
       }
       if (!ref_->rdm2().empty()) {
-        std::vector<IndexRange> o = {active_, active_, active_, active_};
+        std::vector<IndexRange> o = {active_, active_, active_, active_}
         rdm2_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
         for (auto& i3 : active_) {
           for (auto& i2 : active_) {
             for (auto& i1 : active_) {
               for (auto& i0 : active_) {
-                std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()};
+                std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()}
                 const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
                 std::unique_ptr<double[]> data(new double[size]); 
                 int iall = 0;
@@ -268,7 +268,7 @@ class SpinFreeMethod {
       }
       // generic function??
       if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
-        std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
+        std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_}
         rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
         // TODO for the time being we hardwire "0" here (but this should be fixed)
         std::shared_ptr<RDM<3> > rdm3source = ref_->compute_rdm3(0);
@@ -278,7 +278,7 @@ class SpinFreeMethod {
               for (auto& i2 : active_) {
                 for (auto& i1 : active_) {
                   for (auto& i0 : active_) {
-                    std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()};
+                    std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()}
                     const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
                     std::unique_ptr<double[]> data(new double[size]); 
                     int iall = 0;
@@ -349,15 +349,15 @@ for (int i = 0; i != dim; ++i) std::cout << denom_xx_[i] << std::endl;
 
       // set e0
       e0_ = compute_e0();
-    };
+    }
 
-    IndexRange& virt() { return virt_; };
-    IndexRange& all() { return all_; };
-    IndexRange& closed() { return closed_; };
+    IndexRange& virt() { return virt_; }
+    IndexRange& all() { return all_; }
+    IndexRange& closed() { return closed_; }
 
-    std::shared_ptr<const Reference>& ref() { return ref_; };;
+    std::shared_ptr<const Reference>& ref() { return ref_; };
 
-    double e0() const { return e0_; };
+    double e0() const { return e0_; }
 
     virtual void solve() = 0;
 
