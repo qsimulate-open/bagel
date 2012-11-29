@@ -111,6 +111,7 @@ void SuperCI::compute() {
     // setting error of macro iteration
     gradient = sigma_->ddot(*sigma_) / sigma_->size();
 
+    if (gradient < thresh_) break;
 
     shared_ptr<RotFile> init_sigma(new RotFile(*sigma_));
 
@@ -206,7 +207,6 @@ void SuperCI::compute() {
     // TODO change when there are several states (and do something for other states)
     energy_ = energy[0];
 
-    if (gradient < thresh_) break;
     if (iter == max_iter_-1) {
       resume_stdcout();
       cout << "  " << endl << "    * Max iteration reached in the CASSCF macro interation." << endl << endl;
@@ -220,6 +220,8 @@ void SuperCI::compute() {
   resume_stdcout();
 
   // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
+  fci_->update(coeff_);
   fci_->compute();
   fci_->compute_rdm12();
 
