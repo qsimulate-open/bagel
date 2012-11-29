@@ -537,5 +537,5 @@ void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, cons
 }
  
 
-void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
+void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]>& data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
 void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }

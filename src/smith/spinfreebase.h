@@ -329,9 +329,7 @@ class SpinFreeMethod {
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
             std::unique_ptr<double[]> dat = this->f1_->get_block({i0.key(), i1.key()});
-            for (int j1 = i1.offset(), iall = 0; j1 != i1.offset()+i1.size(); ++j1)
-              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                fockact->element(j0-nclosed, j1-nclosed) = dat[iall];
+            fockact->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), dat);
           }
         }
         // TODO hardwired 0
