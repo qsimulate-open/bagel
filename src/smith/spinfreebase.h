@@ -313,14 +313,6 @@ class SpinFreeMethod {
           sort_indices<0,2,1,3,0,1,1,1>(shalf_xx_->data(), work2->data(), nact, nact, nact, nact);
           work2->inverse_half(1.0e-9);
           *shalf_xx_ = *work2;
-//#define LOCAL_DEBUG
-#ifdef LOCAL_DEBUG
-          Matrix r(dim, dim);
-          Matrix s(dim, dim);
-          std::copy_n(ref_->rdm2(0)->data(), size, r.data());
-          sort_indices<0,2,1,3,0,1,1,1>(r.data(), s.data(), nact, nact, nact, nact);
-          (s * *shalf_xx_ * *shalf_xx_).print("unit");
-#endif
         }
 
         // denominator Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)

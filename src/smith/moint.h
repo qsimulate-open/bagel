@@ -118,9 +118,7 @@ class K2ext {
               // move in place
               if (hashkey23 != hashkey01) {
                 std::unique_ptr<double[]> target2(new double[size]);
-                const int s01 = i0->size() * i1->size();
-                const int s23 = i2->size() * i3->size();
-                mytranspose_(target.get(), &s01, &s23, target2.get());
+                mytranspose_(target.get(), i0->size()*i1->size(), i2->size()*i3->size(), target2.get());
 
                 data_->put_block({j2, j3, j0, j1}, target2);
               }
@@ -183,14 +181,7 @@ class MOFock {
       for (auto& i0 : blocks_[0]) {
         size_t j1 = blocks_[1].keyoffset();
         for (auto& i1 : blocks_[1]) {
-          const size_t size = i0.size() * i1.size();
-          std::unique_ptr<double[]> target(new double[size]);
-          int iall = 0;
-          for (int k0 = i0.offset(); k0 != i0.offset()+i0.size(); ++k0) {
-            for (int k1 = i1.offset(); k1 != i1.offset()+i1.size(); ++k1, ++iall) {
-              target[iall] = f.element(k1, k0);
-            }
-          }
+          std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
           data_->put_block({j1, j0}, target);
           ++j1;
         }
