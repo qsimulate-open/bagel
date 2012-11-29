@@ -175,7 +175,7 @@ class SpinFreeMethod {
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != nact*nact; ++j02, ++iall)
-                    interm[iall] /= (denom_xx_[j02] - eig_[j3] - eig_[j1]);
+                    interm[iall] /= e0_ - (denom_xx_[j02] + eig_[j3] + eig_[j1]);
 
               // move back to non-orthogonal basis
               dgemm_("T", "N", i0.size()*i2.size(), i1.size()*i3.size(), nact*nact, 1.0, trans, nact*nact, interm, nact*nact,
@@ -196,7 +196,7 @@ class SpinFreeMethod {
 
   public:
     SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
-      const int max = 10;
+      const int max = 100;
       IndexRange c(r->nclosed(), max);
       IndexRange act(r->nact(), max, c.nblock(), c.size());
       IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
@@ -309,7 +309,7 @@ class SpinFreeMethod {
           shalf_xx_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
           std::copy_n(ref_->rdm2(0)->data(), size, shalf_xx_->data()); 
           sort_indices<0,2,1,3,0,1,1,1>(shalf_xx_->data(), work2->data(), nact, nact, nact, nact);
-          work2->inverse_half(1.0e-9);
+          work2->inverse_half(0.0e-9);
           *shalf_xx_ = *work2;
 //#define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
