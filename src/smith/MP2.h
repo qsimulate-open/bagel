@@ -192,7 +192,6 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
         std::shared_ptr<Queue<T> > energ = q.second;
         while (!queue->done())
           queue->next_compute();
-        r->scale(0.25); // FIXME
 //      *r = *(r->add_dagger());
         this->update_amplitude(t2, r);
         const double err = r->rms();
