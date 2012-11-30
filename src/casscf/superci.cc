@@ -192,7 +192,10 @@ void SuperCI::compute() {
     // checking orthonormaligy of orbitals.
     shared_ptr<Overlap> o(new Overlap(geom_));
     shared_ptr<Matrix> m(new Matrix(*coeff_ % *o * *coeff_));
-    assert(fabs(m->trace() - m->ddot(m)) < 1.0e-10);
+    if (fabs(m->trace() - m->ddot(m)) > 1.0e-10) {
+      stringstream ss; ss << "orbitals are not orthogonal with each other " << scientific << setprecision(3) << fabs(m->trace() - m->ddot(m));
+      throw logic_error(ss.str());
+    }
 #endif
 
     mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
