@@ -497,9 +497,9 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
               rblock = icart;
               satom = iatom - 2;
             } else { // center == 2
-              if (iatom < 3) continue;
+              if (iatom != 2) continue;
               rblock = icart;
-              satom = 3;
+              satom = 0;
             }
             double* ints = stack_->libint_t_ptr(0)->targets[satom*3+icart];
 
