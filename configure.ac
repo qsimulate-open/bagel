@@ -108,6 +108,7 @@ if test x${use_mpi} = xyes; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
 
+AC_PREFIX_DEFAULT(["/usr/local/bagel"])
 
 
 AC_CONFIG_FILES([Makefile
