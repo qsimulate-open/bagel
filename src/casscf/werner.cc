@@ -55,7 +55,7 @@ void WernerKnowles::compute() {
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
-    vector<double> energy = fci_->energy();
+    energy_ = fci_->energy();
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
     form_natural_orbs();
@@ -129,12 +129,8 @@ void WernerKnowles::compute() {
     coeff_ = newcc;
 
     resume_stdcout();
-    print_iteration(iter, miter, tcount, energy, error, duration_cast<milliseconds>(high_resolution_clock::now() - start).count()*0.001);
+    print_iteration(iter, miter, tcount, energy_, error, duration_cast<milliseconds>(high_resolution_clock::now() - start).count()*0.001);
     mute_stdcout();
-
-    // set energy_
-    // TODO change when there are several states (and do something for other states)
-    energy_ = energy[0];
 
     if (error < thresh_) break;
 

@@ -161,18 +161,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
 
 
 Matrix& Matrix::operator*=(const Matrix& o) {
-  const int l = ndim_;
-  const int m = mdim_;
-  assert(mdim_ == o.ndim());
-  const int n = o.mdim();
-
-  Matrix out(l, n);
-  const double* odata = o.data();
-  double* outdata = out.data();
-
-  dgemm_("N", "N", l, n, m, 1.0, data(), l, odata, o.ndim_, 0.0, outdata, l);
-
-  *this = out;
+  *this = *this * o;
   return *this;
 }
 

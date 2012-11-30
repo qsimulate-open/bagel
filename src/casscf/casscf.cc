@@ -68,6 +68,8 @@ void CASSCF::common_init() {
   max_micro_iter_ = read_input<int>(idata_, "maxiter_micro", 100);
   // get nstate from the input
   nstate_ = read_input<int>(idata_, "nstate", 1);
+  // get istate from the input (for geometry optimization)
+  istate_ = read_input<int>(idata_, "istate", 0);
   // get thresh (for macro iteration) from the input
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-10);
   // get thresh (for micro iteration) from the input
