@@ -61,7 +61,7 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
       for (int i = 0; i != nact; ++i) {
         for (int j = 0; j != nact; ++j) {
           for (int k = 0; k != nact; ++k) {
-            dcopy_(nact, rdm->data()+nact*(k+nact*(j+nact*i)),1, rdm2all.get()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))),1);
+            copy_n(rdm->data()+nact*(k+nact*(j+nact*i)), nact, rdm2all.get()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))));
           }
         }
       }

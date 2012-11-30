@@ -79,7 +79,7 @@ class DIIS {
             matrix_[(j - 1) + (i - 1) * nld_] = matrix_save_[j + i * nld_];
         }
       } else if (data_.size() != 1) {
-        dcopy_(size, matrix_save_, 1, matrix_, 1);
+        std::copy_n(matrix_save_.get(), size, matrix_.get());
       }
       const int cnum = data_.size();
       iterator data_iter = data_.begin();
@@ -93,7 +93,7 @@ class DIIS {
       for (int i = 0; i != cnum; ++i) coeff_[i] = 0.0;
       coeff_[cnum] = -1.0;
 
-      dcopy_(size, matrix_, 1, matrix_save_, 1);
+      std::copy_n(matrix_.get(), size, matrix_save_.get());
 
       const int cdim = cnum + 1;
       int info;

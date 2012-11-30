@@ -72,7 +72,7 @@ unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   assert(initialized_[blocknum]);
 
   // then copy...
-  dcopy_(blocksize, data_.at(blocknum), 1, buf, 1);
+  copy_n(data_.at(blocknum).get(), blocksize, buf.get());
 
   return move(buf);
 }
@@ -144,7 +144,7 @@ Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
     for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
       if (k->second != l->second || k->first != l->first)
         throw logic_error("Trying to copy something different in Storage_Incore");
-      dcopy_(k->second.second, *j, 1, *i, 1);
+      copy_n(j->get(), k->second.second, i->get());
     }
   } else {
     throw logic_error("Trying to copy something different in Storage_Incore");

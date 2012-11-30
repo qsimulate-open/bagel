@@ -260,13 +260,13 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   unique_ptr<double[]> buf2(new double[nact*nact*asize_]);
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      dcopy_(asize_, data_.get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1, buf.get()+asize_*(j+nact*i),1);
+      copy_n(data_.get()+asize_*(j+nclosed+b1size_*(i+nclosed)), asize_, buf.get()+asize_*(j+nact*i));
   // multiply
   dgemm_("N", "N", asize_, nact*nact, nact*nact, 1.0, buf.get(), asize_, rdm, nact*nact, 0.0, buf2.get(), asize_);
   // slot in
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      dcopy_(asize_, buf2.get()+asize_*(j+nact*i),1, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1);
+      copy_n(buf2.get()+asize_*(j+nact*i), asize_, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)));
 
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab

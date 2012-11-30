@@ -24,12 +24,12 @@
 //
 
 #include <src/rysint/carsphlist.h>
-#include <cstring>
+#include <algorithm>
 
 using namespace bagel;
-
+using namespace std;
 
 void CarSphList::carsph_11(const int nloop, const double* source, double* target) {
-  ::memcpy(target, source, nloop * 9  * sizeof(double));
+  copy_n(source, 9*nloop, target);
 }
 

@@ -119,7 +119,7 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
     // first term
     Matrix all1(geom_->nbasis(), geom_->nbasis());
     for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
-    for (int i = 0; i != nact_; ++i) dcopy_(nact_, fci_->rdm1_av()->data()+nact_*i, 1, all1.element_ptr(nclosed_, i+nclosed_), 1);
+    for (int i = 0; i != nact_; ++i) copy_n(fci_->rdm1_av()->data()+nact_*i, nact_, all1.element_ptr(nclosed_, i+nclosed_));
     shared_ptr<Matrix> buf(new Matrix(geom_->nbasis(), geom_->nbasis()));
     dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbas, 0.0, buf->data(), nbas);
     dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);

@@ -212,7 +212,7 @@ class QFile {
 
 
     QFile& operator=(const QFile& o) {
-      dcopy_(nb_*na_, o.data(), 1, data(), 1); return *this;
+      std::copy_n(o.data(), nb_*na_, data()); return *this;
     };
 
     void print() const {

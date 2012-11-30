@@ -192,7 +192,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<QFile>& fact, 
     if (nclosed_) {
       shared_ptr<Matrix> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
       shared_ptr<Matrix> f_inactao(new Matrix(geom_->nbasis(), geom_->nbasis()));
-      dcopy_(f_inactao->size(), fci_->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
+      copy_n(fci_->jop()->core_fock_ptr(), f_inactao->size(), f_inactao->data());
       finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_inactao * *coeff_));
 
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());

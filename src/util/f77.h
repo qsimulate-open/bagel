@@ -37,7 +37,9 @@ extern "C" {
  void mytranspose_(const double*, const int*, const int*, double*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
 
+/* dcopy is strongly discouraged since std::copy and std::copy_n are potentially faster
  void dcopy_(const int*, const double*, const int*, double*, const int*);
+*/
  void daxpy_(const int*, const double*, const double*, const int*, double*, const int*);
  void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*);
  void dgesv_(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* b, const int* ldb, int* info);
@@ -99,9 +101,11 @@ static void dgemv_(const char* a, const int b, const int c, const double d, cons
 static void daxpy_(const int a, const double b, const double* c, const int d, double* e, const int f) {daxpy_(&a,&b,c,&d,e,&f); }
 static void daxpy_(const int a, const double b, const std::unique_ptr<double []>& c, const int d, std::unique_ptr<double []>& e, const int f)
                    {daxpy_(&a,&b,c.get(),&d,e.get(),&f); }
+/* dcopy is strongly discouraged since std::copy and std::copy_n are potentially faster
 static void dcopy_(const int a, const double* b, const int c, double* d, const int e) {dcopy_(&a, b, &c, d, &e); }
 static void dcopy_(const int a, const std::unique_ptr<double []>& b, const int c, std::unique_ptr<double []>& d, const int e)
                   {dcopy_(&a, b.get(), &c, d.get(), &e); }
+*/
 static void dscal_(const int a, const double b, double* c, const int d) {dscal_(&a, &b, c, &d); }
 static void dscal_(const int a, const double b, std::unique_ptr<double []>& c, const int d) {dscal_(&a, &b, c.get(), &d); }
 static double ddot_(const int a, const double* b, const int c, const double* d, const int e) { return ddot_(&a,b,&c,d,&e); }

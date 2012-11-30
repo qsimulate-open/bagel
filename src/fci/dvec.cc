@@ -56,7 +56,7 @@ Dvec::Dvec(shared_ptr<const Civec> e, const size_t ij) : det_(e->det()), lena_(e
   double* tmp = data();
   for (int i = 0; i != ij; ++i, tmp+=lenb_*lena_) {
     shared_ptr<Civec> c(new Civec(det_, tmp));
-    dcopy_(lenb_*lena_, e->data(), 1, c->data(), 1);
+    copy_n(e->data(), lenb_*lena_, c->data());
     dvec_.push_back(c);
   }
 }

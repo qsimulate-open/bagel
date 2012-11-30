@@ -63,7 +63,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
     shared_ptr<Matrix> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
     shared_ptr<Matrix> f_inactao(new Matrix(nbasis, nbasis));
-    dcopy_(nbasis*nbasis, task_->fci()->jop()->core_fock_ptr(), 1, f_inactao->data(), 1);
+    copy_n(task_->fci()->jop()->core_fock_ptr(), nbasis*nbasis, f_inactao->data()); // TODO copy construct?
     shared_ptr<Matrix> finact (new Matrix(*coeff % *f_inactao * *coeff));
 
     shared_ptr<Matrix> denall = task_->ao_rdm1(task_->fci()->rdm1(target));

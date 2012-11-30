@@ -77,7 +77,7 @@ class JKop {
       for (int i = 0; i != nact; ++i) {
         for (int j = 0; j != nact; ++j) {
           for (int k = 0; k != nact; ++k) {
-            dcopy_(nact, rdm->data()+nact*(k+nact*(j+nact*i)),1, rdm2all.get()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))),1);
+            std::copy_n(rdm->data()+nact*(k+nact*(j+nact*i)), nact, rdm2all.get()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))));
           }
         }
       }
@@ -96,7 +96,7 @@ class JKop {
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nocc; ++k) {
-            dcopy_(nocc, rdm2all.get()+nocc*(j+nocc*(k+nocc*i)), 1, rdm2allk.get()+nocc*(k+nocc*(j+nocc*i)), 1);
+            std::copy_n(rdm2all.get()+nocc*(j+nocc*(k+nocc*i)), nocc, rdm2allk.get()+nocc*(k+nocc*(j+nocc*i)));
           }
         }
       }

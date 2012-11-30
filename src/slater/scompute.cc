@@ -41,18 +41,15 @@ using namespace bagel;
 
 void SlaterBatch::compute() {
   bool swapped = false;
-  const double zero = 0.0;
-  const int zeroint = 0;
-  const int unit = 1;
 
   bkup_ = stack_->get(size_alloc_);
   if (yukawa_)
     bkup2_ = stack_->get(size_alloc_);
 
   const int size = size_alloc_;
-  dcopy_(&size, &zero, &zeroint, data_, &unit);
+  fill_n(data_, size, 0.0);
   if (yukawa_)
-    dcopy_(&size, &zero, &zeroint, data2_, &unit);
+    fill_n(data2_, size, 0.0);
 
   // perform VRR
   // data_ and data2_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
@@ -275,9 +272,9 @@ void SlaterBatch::compute() {
   }
 
   if (swapped) {
-    dcopy_(&size, bkup_, &unit, data_, &unit);
+    copy_n(bkup_, size, data_);
     if (yukawa_)
-      dcopy_(&size, bkup2_, &unit, data2_, &unit);
+      copy_n(bkup2_, size, data2_);
   }
 
   stack_->release(size_alloc_, bkup_);
