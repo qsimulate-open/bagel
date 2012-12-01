@@ -29,6 +29,7 @@
 #include <stddef.h>
 #include <config.h>
 #include <memory>
+#include <complex>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
@@ -66,6 +67,7 @@ class MPI_Interface {
     void allreduce(double*, const size_t size) const;
     // broadcast
     void broadcast(double*, const size_t size, const int root) const;
+    void broadcast(std::complex<double>*, const size_t size, const int root) const;
     // broadcast of const objects. Use with caution...
     void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 

@@ -107,6 +107,13 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 }
 
 
+void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
+#ifdef HAVE_MPI_H
+  MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
+#endif
+}
+
+
 void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
   // sometimes we need to broadcast const objects for consistency...

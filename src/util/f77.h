@@ -56,12 +56,12 @@ extern "C" {
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zscal_(const int*, const std::complex<double>*, std::complex<double>*, const int*);
 #ifndef ZDOT_RETURN
- void zdotu_(std::complex<double>*, const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
+// void zdotu_(std::complex<double>*, const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
  void zdotc_(std::complex<double>*, const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
 #else
- std::complex<double> zdotu_(const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
  std::complex<double> zdotc_(const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
 #endif
+ std::complex<double> zdotu_(const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
  void zaxpy_(const int*, const std::complex<double>*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zheev_(const char*, const char*, const int*, std::complex<double>*, const int*, double*, std::complex<double>*, const int*, double*, int*);
  void zgeev_(const char*, const char*, const int*, std::complex<double>*, const int*, std::complex<double>*,
@@ -138,5 +138,32 @@ static void zgemm3m_(const char* transa, const char* transb, const int m, const 
                      const std::complex<double> alpha, const std::unique_ptr<std::complex<double>[]>& a, const int lda, const std::unique_ptr<std::complex<double>[]>& b, const int ldb,
                      const std::complex<double> beta, std::unique_ptr<std::complex<double>[]>& c, const int ldc)
                      { zgemm3m_(transa,transb,&m,&n,&k,&alpha,a.get(),&lda,b.get(),&ldb,&beta,c.get(),&ldc); }
+static void zaxpy_(const int a, const std::complex<double> b, const std::complex<double>* c, const int d, std::complex<double>* e, const int f)
+                  { zaxpy_(&a,&b,c,&d,e,&f); }
+static void zaxpy_(const int a, const std::complex<double> b, const std::unique_ptr<std::complex<double>[]>& c, const int d, std::unique_ptr<std::complex<double>[]>& e,
+                   const int f) { zaxpy_(&a,&b,c.get(),&d,e.get(),&f); }
+static void zscal_(const int a, const std::complex<double> b, std::complex<double>* c, const int d) { zscal_(&a, &b, c, &d); }
+static void zscal_(const int a, const std::complex<double> b, std::unique_ptr<std::complex<double> []>& c, const int d) { zscal_(&a, &b, c.get(), &d); }
 
+static std::complex<double> zdotu_(const int a, const std::complex<double>* b, const int c, const std::complex<double>* d, const int e) { return zdotu_(&a,b,&c,d,&e); }
+static std::complex<double> zdotu_(const int a, const std::unique_ptr<std::complex<double> []>& b, const int c, const std::unique_ptr<std::complex<double> []>& d,
+                                   const int e)
+                                  { return zdotu_(&a,b.get(),&c,d.get(),&e); }
+#ifndef ZDOT_RETURN
+//static void zdotu_(std::complex<double>* a, const int b, const std::complex<double>* c, const int d, const std::complex<double>* e, const int f) { zdotu_(a,&b,c,&d,e,&f); }
+//static void zdotu_(std::unique_ptr<std::complex<double> []>& a, const int b, const std::unique_ptr<std::complex<double> []>& c, const int d,
+//                   const std::unique_ptr<std::complex<double> []>& e, const int f)
+//                  { zdotu_(a.get(),&b,c.get(),&d,e.get(),&f); }
+
+#else
+#endif
+static void zgesv_(const int n, const int nrhs, std::complex<double>* a, const int lda, int* ipiv, std::complex<double>* b, const int ldb, int& info)
+             { zgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info); }
+static void zgesv_(const int n, const int nrhs, std::unique_ptr<std::complex<double>[]>& a, const int lda, std::unique_ptr<int[]>& ipiv,
+             std::unique_ptr<std::complex<double>[]>& b, const int ldb, int& info) {zgesv_(&n, &nrhs, a.get(), &lda, ipiv.get(), b.get(), &ldb, &info); }
+static void zheev_(const char* a, const char* b, const int c, std::complex<double>* d, const int e, double* f, std::complex<double>* g, const int h, double* i, int& j)
+                  { zheev_(a,b,&c,d,&e,f,g,&h,i,&j); }
+static void zheev_(const char* a, const char* b, const int c, std::unique_ptr<std::complex<double> []>& d, const int e,
+                   std::unique_ptr<double []>& f, std::unique_ptr<std::complex<double> []>& g, const int h, std::unique_ptr<double[]>& i, int& j)
+                  { zheev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,i.get(),&j); }
 #endif
