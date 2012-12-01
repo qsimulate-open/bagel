@@ -31,7 +31,7 @@ using namespace bagel;
 
 
 Qvec::Qvec(const int n, const int m, shared_ptr<const DFDist> df, shared_ptr<const Coeff> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2> > rdm)
- : QFile(n,m) {
+ : Matrix(n,m) {
 
   const int nbasis = df->nbasis0();
   assert(df->nbasis0() == df->nbasis1());

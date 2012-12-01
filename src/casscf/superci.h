@@ -49,16 +49,16 @@ class SuperCI : public CASSCF {
     };
 
     void grad_vc(const std::shared_ptr<Matrix> fock, std::shared_ptr<RotFile> sigma);
-    void grad_va(const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
-    void grad_ca(const std::shared_ptr<Matrix> fock, const std::shared_ptr<QFile> fact, std::shared_ptr<RotFile> sigma);
+    void grad_va(const std::shared_ptr<Matrix> fact, std::shared_ptr<RotFile> sigma);
+    void grad_ca(const std::shared_ptr<Matrix> fock, const std::shared_ptr<Matrix> fact, std::shared_ptr<RotFile> sigma);
 
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix> f);
+                      const std::shared_ptr<Matrix> gaa, const std::shared_ptr<Matrix> f);
     void sigma_ai_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> f);
-    void sigma_at_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<QFile> fact);
-    void sigma_ai_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<QFile> fact);
+    void sigma_at_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> fact);
+    void sigma_ai_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> fact);
     void sigma_ti_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<QFile> gaa, const std::shared_ptr<Matrix> f, const std::shared_ptr<QFile> factp);
+                      const std::shared_ptr<Matrix> gaa, const std::shared_ptr<Matrix> f, const std::shared_ptr<Matrix> factp);
 
     void update_orbitals(std::shared_ptr<RotFile> rot);
     std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
