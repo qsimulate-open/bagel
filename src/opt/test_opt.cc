@@ -112,8 +112,8 @@ std::vector<double> reference_cas_act_opt() {
 }
 std::vector<double> reference_mp2_opt() {
   std::vector<double> out(6);
-  out[2] = 1.932774;
-  out[5] = 0.196533;
+  out[2] = 1.932841;
+  out[5] = 0.195930;
   return out;
 }
 

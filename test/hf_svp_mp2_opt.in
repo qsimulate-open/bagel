@@ -10,4 +10,5 @@ molecule {
 
 mp2-opt {
   thresh = 1.0e-10;
+  frozen = true;
 }
