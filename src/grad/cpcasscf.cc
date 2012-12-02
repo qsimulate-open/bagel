@@ -155,17 +155,17 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
       shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
       tmp0->daxpy(1.0, tmp1);
       shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-      unique_ptr<double[]> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
     }
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
     shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->data(), nocca);
     fullz->symmetrize();
     {
       shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-      unique_ptr<double[]> buf = half->form_2index(tmp, 2.0); // Factor of 2
+      shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf.get(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
     }
 
     // one electron part...
@@ -294,8 +294,8 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 #endif
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
-  unique_ptr<double[]> jd = half->form_2index(fulld, 1.0);
-  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd.get(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);
+  shared_ptr<const Matrix> jd = half->form_2index(fulld, 1.0);
+  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd->data(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);
 
   return amat;
 }

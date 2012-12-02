@@ -34,15 +34,21 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DFDist> df, shared_ptr<con
  : Matrix(n,m) {
 
   const int nbasis = df->nbasis0();
-  assert(df->nbasis0() == df->nbasis1());
+  assert(df->nbasis0() == df->nbasis1() && n == nbasis);
 
+  // one index transformed integrals (active)
   shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
 
+  // J^{-1}(D|xy)
   shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ();
 
+  // [D|tu] = (D|xy)Gamma_xy,tu
   shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm->data());
 
-  unique_ptr<double[]> tmp = half->form_2index(prdm, 1.0);
-  dgemm_("T", "N", n, m, nbasis, 1.0, coeff->data(), nbasis, tmp.get(), nbasis, 0.0, data(), n);
+  // (r,u) = (rt|D)[D|tu] 
+  shared_ptr<const Matrix> tmp = half->form_2index(prdm, 1.0);
+
+  // MO transformation of the first index
+  *this = *coeff % *tmp;
 
 }

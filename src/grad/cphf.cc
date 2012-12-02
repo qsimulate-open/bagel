@@ -94,9 +94,8 @@ shared_ptr<Matrix> CPHF::solve() const {
     // K part
     {
       // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
-      Matrix kir(nocca, nbasis);
-      copy_n(halfjj_->compute_Kop_1occ(pbmao.data()).get(), nocca*nbasis, kir.data());
-      kia = (kir * vcoeff) * (-2.0);
+      shared_ptr<const Matrix> kir = halfjj_->compute_Kop_1occ(pbmao.data());
+      kia = (*kir * vcoeff) * (-2.0);
     }
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)

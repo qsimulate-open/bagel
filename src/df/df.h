@@ -75,7 +75,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     void add_block(std::shared_ptr<DFBlock> o);
 
-    std::unique_ptr<double[]> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
+    std::shared_ptr<Matrix> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const; 
 
@@ -154,7 +154,7 @@ class DFHalfDist : public ParallelDF {
     void rotate_occ(const double* d);
     std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
 
-    std::unique_ptr<double[]> compute_Kop_1occ(const double* den) const;
+    std::shared_ptr<Matrix> compute_Kop_1occ(const double* den) const;
 
     std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }

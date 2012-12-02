@@ -39,6 +39,7 @@
 #include <src/util/f77.h>
 #include <src/df/df.h>
 #include <src/parallel/paramatrix.h>
+#include <src/parallel/mpi_interface.h>
 
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfdistt.h>
@@ -60,12 +61,9 @@ int ParallelDF::get_node(const int off) const {
 }
 
 
-unique_ptr<double[]> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  unique_ptr<double[]> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
-
-  // all reduce
-  const size_t size = block_->b2size()*o->block_->b2size();
-  mpi__->allreduce(out.get(), size);
+shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
+  shared_ptr<ParaMatrix> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
+  out->allreduce();
   return out;
 }
 
@@ -313,7 +311,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
 }
 
 
-unique_ptr<double[]> DFHalfDist::compute_Kop_1occ(const double* den) const {
+shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den) const {
   return apply_density(den)->form_2index(df_, 1.0);
 }
 

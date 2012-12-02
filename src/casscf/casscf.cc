@@ -217,7 +217,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     factp = shared_ptr<Matrix>(new Matrix(nact_, nact_));
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
-#if 0
+#if 1
         if (occup_[i]+occup_[j] > occup_thresh)
           factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
         else

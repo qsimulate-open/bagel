@@ -67,6 +67,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const double* const ocoeff = ref_->coeff()->data();
   const double* const vcoeff = coeff + nocc*nbasis;
 
+  shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
+  shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
+  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
+
   // first compute half transformed integrals
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
   // TODO this is a waste...
@@ -136,9 +140,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   unique_ptr<double[]> lai(new double[nocca*nvirt]);
-  const unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
+  shared_ptr<const Matrix> laq = gia->form_2index(half, 2.0);
   {
-    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq.get(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt);
+    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq->data(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt);
   }
 
   // Gip = Gia(D|ia) C+_ap
@@ -147,11 +151,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   unique_ptr<double[]> lia(new double[nocca*nvirt]);
   fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
   unique_ptr<double[]> lif(new double[nocc*max(static_cast<unsigned long int>(ncore),1lu)]);
-  const unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
+  shared_ptr<const Matrix> lip = gip->form_2index(geom_->df(), 2.0);
   {
-    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
+    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip->data(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
     if (ncore)
-      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc);
+      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip->data(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc);
   }
 
   // core-occ density matrix elements
@@ -171,8 +175,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // -1*K_al(d_rs)
   unique_ptr<double[]> kia(new double[nvirt*nocca]);
   {
-    unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
-    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
+    shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
+    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir->data(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
   }
 
   shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
@@ -247,16 +251,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (int j = 0; j != nvirt; ++j)
       wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis);
-  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis);
-  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis);
+  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip->data(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis);
+  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq->data(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis);
+  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq->data(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis);
 
   unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao->data());
   unique_ptr<double[]> jri(new double[nbasis*nocca]);
   dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
   dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis);
-  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
-  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
+  shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
+  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir->data(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
 
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
