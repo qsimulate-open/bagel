@@ -85,8 +85,7 @@ void SuperCI::compute() {
 
 
     // compute one-boedy operators
-    shared_ptr<Matrix> f;
-    shared_ptr<QFile>    fact, factp, gaa;
+    shared_ptr<Matrix> f, fact, factp, gaa;
     shared_ptr<RotFile> denom_;
     one_body_operators(f, fact, factp, gaa, denom_);
 

@@ -66,7 +66,7 @@ shared_ptr<Matrix> WernerKnowles::compute_sigma_R(const shared_ptr<const Jvec> j
 shared_ptr<const Matrix> WernerKnowles::compute_denom(const shared_ptr<const Matrix> C) {
 #ifndef DEBUG4INDEX
   shared_ptr<Matrix> f;
-  shared_ptr<QFile>    fact, factp, gaa;
+  shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile> denom_;
   one_body_operators(f, fact, factp, gaa, denom_, false);
   shared_ptr<Matrix> denom = denom_->unpack_sym(geom_, 1.0e1);

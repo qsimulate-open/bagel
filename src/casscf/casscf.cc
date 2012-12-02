@@ -178,7 +178,7 @@ shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive
 
 
 
-void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<QFile>& fact, shared_ptr<QFile>& factp, shared_ptr<QFile>& gaa,
+void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
                                 shared_ptr<RotFile>& d, const bool superci) const {
 
   shared_ptr<Matrix> finact;
@@ -209,14 +209,14 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<QFile>& fact, 
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
-    fact = shared_ptr<QFile>(new QFile(*qxr));// nbasis_ runs first
+    fact = shared_ptr<Matrix>(new Matrix(*qxr));// nbasis_ runs first
     for (int i = 0; i != nact_; ++i)
       daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
 
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
-    factp = shared_ptr<QFile>(new QFile(nact_, nact_));
+    factp = shared_ptr<Matrix>(new Matrix(nact_, nact_));
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
         if (occup_[i]+occup_[j] > occup_thresh)
@@ -227,7 +227,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<QFile>& fact, 
   }
 
   // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  gaa = shared_ptr<QFile>(new QFile(nact_, nact_));
+  gaa = shared_ptr<Matrix>(new Matrix(nact_, nact_));
   dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
   for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
@@ -297,7 +297,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   // TODO
   // compute one-boedy operators
   shared_ptr<Matrix> f;
-  shared_ptr<QFile>    fact, factp, gaa;
+  shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile>  denom;
   one_body_operators(f, fact, factp, gaa, denom);
 
