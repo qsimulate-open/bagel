@@ -536,3 +536,14 @@ unique_ptr<double[]> Matrix::get_block(const int ndim_i, const int mdim_i, const
     copy_n(data_.get() + ndim_i + i*ndim_, ndim, out.get() + j*ndim);
   return out;
 }
+
+
+void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    daxpy_(ndim, 1.0, data + j*ndim, 1, data_.get() + ndim_i + i*ndim_, 1);
+}
+
+void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& o) {
+  assert(ndim == o.ndim() && mdim == o.mdim());
+  add_block(ndim_i, mdim_i, ndim, mdim, o.data());
+}

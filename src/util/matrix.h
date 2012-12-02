@@ -77,6 +77,8 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]>& o);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
     std::unique_ptr<double[]> get_block(const int nstart, const int mstart, const int ndim, const int mdim) const;
+    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* o);
+    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);

@@ -145,14 +145,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DFHalfDist> gip = gia->back_transform(vcoeff);
   // Liq = 2 Gip(D) * (D|pq)
-  unique_ptr<double[]> lia(new double[nocca*nvirt]);
-  fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
-  unique_ptr<double[]> lif(new double[nocc*max(static_cast<unsigned long int>(ncore),1lu)]);
+  Matrix lia(nocca, nvirt);
+  Matrix lif(nocc, max(1lu,ncore));
   shared_ptr<const Matrix> lip = gip->form_2index(geom_->df(), 2.0);
   {
-    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip->data(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
+    lia.add_block(ncore, 0, nocc, nvirt, *lip * *vcmat);
     if (ncore)
-      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip->data(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc);
+      lif = *lip * *ccmat; 
   }
 
   // core-occ density matrix elements
@@ -161,15 +160,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
-  shared_ptr<Matrix> dmp2ao_part(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
-  unique_ptr<double[]> jai(new double[nvirt*nocca]);
-  {
-    shared_ptr<const Matrix> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
-    Matrix jri = *jrs * *ocmat;
-    dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.data(), nbasis, 0.0, jai.get(), nvirt);
-  }
+  const Matrix dmp2ao_part = *ref_->coeff() * *dmp2 ^ *ref_->coeff();
+  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part.data()) * *ocmat * 2.0;
   // -1*K_al(d_rs)
-  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part->data(), -1.0) * *vcmat;
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part.data(), -1.0) * *vcmat;
 
   shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
@@ -243,15 +237,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (int j = 0; j != nvirt; ++j)
       wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip->data(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis);
-  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq->data(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis);
-  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq->data(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis);
-
-  shared_ptr<const Matrix> jrs = geom_->df()->compute_Jop(dmp2ao->data());
-  const Matrix jri = *jrs * *ocmat;
-  dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.data(), nbasis, 1.0, wd->data(), nbasis);
-  shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0);
-  dgemm_("N", "N", nocca, nocca, nbasis, 1.0, kir->data(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
+  wd->add_block(ncore, 0, nocc, nocca, *lip * *ocmat);
+  wd->add_block(nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
+  wd->add_block(nocca, nocca, nvirt, nvirt, *laq * *vcmat);
+  wd->add_block(0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao->data()) * *ocmat * 2.0));
+  wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0) * *ocmat));
 
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
