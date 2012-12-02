@@ -165,6 +165,7 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
 unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
+  assert(nocc > 0);
   double* cdata = coeff_->data() + nstart*nbasis_;
 
   // first half transformation
