@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_util_matrix_h
-#define __src_util_matrix_h
+#ifndef __src_util_zmatrix_h
+#define __src_util_zmatrix_h
 
 #include <cassert>
 #include <string>

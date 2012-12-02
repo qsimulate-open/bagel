@@ -31,11 +31,11 @@
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
+SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : ZMatrix(geom->nbasis(), geom->nbasis()), geom_(geom) {
 
   for (int i = 0; i != 4; ++i) {
     shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis())); 
-    data_[i] = tmp;
+    dataarray_[i] = tmp;
   }
 
   init();
@@ -45,7 +45,7 @@ SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 
 void SmallNAI::print() const {
   int j = 0;
-  for (auto i = data_.begin(); i != data_.end(); ++i, ++j) {
+  for (auto i = dataarray_.begin(); i != dataarray_.end(); ++i, ++j) {
     stringstream ss;
     ss << "SmallNAI " << j;
     (*i)->print(ss.str());
@@ -65,10 +65,10 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   int cnt = 0;
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[0]->element(j,i) = batch[0]->data(cnt);
-      data_[1]->element(j,i) = batch[1]->data(cnt);
-      data_[2]->element(j,i) = batch[2]->data(cnt);
-      data_[3]->element(j,i) = batch[3]->data(cnt);
+      dataarray_[0]->element(j,i) = batch[0]->data(cnt);
+      dataarray_[1]->element(j,i) = batch[1]->data(cnt);
+      dataarray_[2]->element(j,i) = batch[2]->data(cnt);
+      dataarray_[3]->element(j,i) = batch[3]->data(cnt);
     }
   }
 }

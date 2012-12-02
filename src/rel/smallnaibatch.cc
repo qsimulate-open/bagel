@@ -44,7 +44,6 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
 
   aux_dec_ = array<shared_ptr<const Shell>,2>{{shells_[0]->kinetic_balance_uncont(-1), shells_[1]->kinetic_balance_uncont(-1)}};
 
-  // TODO this can be done outside
   for (int i = 0; i != 4; ++i)
      data_[i] = shared_ptr<Matrix>(new Matrix(shells_[0]->nbasis(), shells_[1]->nbasis()));
 }
@@ -65,13 +64,9 @@ void SmallNAIBatch::compute() {
   const int a0 = a0size_inc + a0size_dec;
   const int a1 = a1size_inc + a1size_dec;
 
-  // current nai array
-  //double* const nai = stack_->get(a0*a1);
-
   // first compute uncontracted NAI with auxiliary basis (cartesian)
 #define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
-  //make nai_compute function
   const shared_ptr<const Matrix> nai = nai_compute();
 
 #else

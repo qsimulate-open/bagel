@@ -35,6 +35,7 @@
 #include <src/scf/kinetic.h>
 #include <src/util/matrix.h>
 #include <src/scf/scf_base.h>
+#include <src/rel/smallnai.h>
 
 namespace bagel {
 
@@ -43,11 +44,12 @@ class Dirac : public SCF_base {
     // nonrelativistic integrals
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Matrix> nai_;
+    const std::shared_ptr<const ZMatrix> smallnai_;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)) {
+     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
     }
     ~Dirac() {};
 

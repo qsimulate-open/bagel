@@ -24,25 +24,36 @@
 //
 
 
+#include <src/util/constants.h>
 #include <src/rel/dirac.h>
-#include <src/rel/smallnai.h>
+#include <src/util/zmatrix.h>
+#include <src/util/matrix.h>
 
 using namespace std;
 using namespace bagel;
 
 void Dirac::compute() {
+  const int n = geom_->nbasis();
+  const double c = c__;
+  const double w = 0.25/(c*c);
 
   kinetic_->print("kinetic");
   nai_->print("nai");
 
-#if 1
-  SmallNAI snai(geom_);
-  snai.print();
-#else
-  SmallNAI* p = new SmallNAI(geom_);
-  p->print();
-#endif
+  shared_ptr<Matrix> hcore(new Matrix(2*n, 2*n));
 
+  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
+  hcore->copy_block(0, 0, n, n, nai_);
+  hcore->copy_block(0, n, n, n, kinetic_);
+  hcore->copy_block(n, 0, n, n, kinetic_);
+  hcore->copy_block(n, n, n, n, shared_ptr<Matrix>(new Matrix(*nai_*w - *kinetic_)));
+  
+  unique_ptr<double[]> eig(new double[hcore->ndim()]);
+  hcore->diagonalize(eig.get()); 
+  
+  hcore->print("hcore");
+
+  for (int i = 0; i != 2*n; ++i) cout << setprecision(10) << setw(15) << eig[i] << endl;
 }
 
 

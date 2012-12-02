@@ -29,14 +29,15 @@
 
 #include <memory>
 #include <array>
-#include <src/scf/matrix1e.h>
+#include <src/util/zmatrix.h>
+#include <src/util/matrix.h>
 #include <src/scf/geometry.h>
 
 namespace bagel {
 
-class SmallNAI {
+class SmallNAI : public ZMatrix {
   protected:
-    std::array<std::shared_ptr<Matrix>, 4> data_;
+    std::array<std::shared_ptr<Matrix>, 4> dataarray_;
     const std::shared_ptr<const Geometry> geom_;
 
     void init();
@@ -45,7 +46,7 @@ class SmallNAI {
     SmallNAI(const std::shared_ptr<const Geometry> geom);
     ~SmallNAI() {};
   
-    const std::shared_ptr<Matrix>& operator[](const int i) const { return data_[i]; }; 
+    const std::shared_ptr<Matrix>& operator[](const int i) const { return dataarray_[i]; }; 
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
 
