@@ -346,9 +346,9 @@ unique_ptr<double[]> DFBlock::form_vec(const double* den) const {
 }
 
 
-unique_ptr<double[]> DFBlock::form_mat(const double* fit) const {
-  unique_ptr<double[]> out(new double[b1size_*b2size_]);
-  dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out.get(), 1);
+shared_ptr<ParaMatrix> DFBlock::form_mat(const double* fit) const {
+  shared_ptr<ParaMatrix> out(new ParaMatrix(b1size_,b2size_));
+  dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out->data(), 1);
   return out;
 }
 

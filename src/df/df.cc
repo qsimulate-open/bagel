@@ -234,13 +234,13 @@ pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<
 }
 
 
-unique_ptr<double[]> DFDist::compute_Jop(const double* den) const {
+shared_ptr<Matrix> DFDist::compute_Jop(const double* den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  unique_ptr<double[]> out = block_->form_mat(tmp0.get()+block_->astart());
+  shared_ptr<ParaMatrix> out = block_->form_mat(tmp0.get()+block_->astart());
   // all reduce
-  mpi__->allreduce(out.get(), nindex1_*nindex2_);
+  out->allreduce();
   return out;
 }
 

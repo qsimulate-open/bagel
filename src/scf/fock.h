@@ -262,9 +262,9 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     // first half transformation and multiplying J^-1/2 from the front.
     std::shared_ptr<DFHalfDist> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
     std::shared_ptr<const Matrix> kop = half->form_2index(half, -0.5);
-    std::unique_ptr<double[]> jop = df->compute_Jop(density_->data());
+    std::shared_ptr<const Matrix> jop = df->compute_Jop(density_->data());
     daxpy_(ndim_*ndim_, 1.0, kop->data(), 1, data_.get(), 1);
-    daxpy_(ndim_*ndim_, 1.0, jop, 1, data_, 1);
+    daxpy_(ndim_*ndim_, 1.0, jop->data(), 1, data_.get(), 1);
 
   }
 

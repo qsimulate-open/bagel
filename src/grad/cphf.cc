@@ -49,11 +49,8 @@ shared_ptr<Matrix> CPHF::solve() const {
 
   const size_t nbasis = geom_->nbasis();
 
-  Matrix ocoeff(nbasis, nocca);
-  copy_n(ref_->coeff()->data(), nbasis*nocca, ocoeff.data());
-  
-  Matrix vcoeff(nbasis, nvirt);
-  copy_n(ref_->coeff()->data()+nocca*nbasis, nbasis*nvirt, vcoeff.data());
+  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
+  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(nocca, nbasis);
 
   shared_ptr<Matrix> t(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
@@ -80,22 +77,18 @@ shared_ptr<Matrix> CPHF::solve() const {
     Matrix pbmao(nbasis, nbasis);
     {
       Matrix pms(nocca, nbasis);
-      dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff.data(), nbasis, 0.0, pms.data(), nocca);
-      pbmao = ocoeff * pms;
+      dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff->data(), nbasis, 0.0, pms.data(), nocca);
+      pbmao = *ocoeff * pms;
     }
     pbmao.symmetrize();
-    {
-      Matrix jrs(nbasis, nbasis);
-      copy_n(geom_->df()->compute_Jop(pbmao.data()).get(), nbasis*nbasis, jrs.data());
-      jri = jrs * ocoeff;
-    }
-    jai = (vcoeff % jri) * 4.0;
+    jri = *geom_->df()->compute_Jop(pbmao.data()) * *ocoeff;
+    jai = (*vcoeff % jri) * 4.0;
 
     // K part
     {
       // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
       shared_ptr<const Matrix> kir = halfjj_->compute_Kop_1occ(pbmao.data());
-      kia = (*kir * vcoeff) * (-2.0);
+      kia = (*kir * *vcoeff) * (-2.0);
     }
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)

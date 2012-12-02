@@ -127,7 +127,7 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
 
     // compute a J operator, given density matrices in AO basis
-    std::unique_ptr<double[]> compute_Jop(const double* den) const;
+    std::shared_ptr<Matrix> compute_Jop(const double* den) const;
 
     std::unique_ptr<double[]> compute_cd(const double* den) const;
 
