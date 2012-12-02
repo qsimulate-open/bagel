@@ -70,12 +70,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
 
   // first compute half transformed integrals
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acmat->data(), nocc);
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acmat);
   // TODO this is a waste...
-  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocmat->data(), nocca)->apply_JJ();
+  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocmat)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcmat->data(), nvirt)->apply_J();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcmat)->apply_J();
   shared_ptr<const DFFullDist> bv = full->apply_J();
   shared_ptr<DFFullDist> gia = bv->clone();
 
@@ -141,7 +141,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const Matrix lai = *laq * *ocmat;
 
   // Gip = Gia(D|ia) C+_ap
-  shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat->data());
+  shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat);
   // Liq = 2 Gip(D) * (D|pq)
   Matrix lia(nocca, nvirt);
   Matrix lif(nocc, max(1lu,ncore));
@@ -208,11 +208,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
-  shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat->data());
+  shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat);
   sep3->scale(-2.0);
   /// mp2 two body part ----------------
   {
-    shared_ptr<DFDist> sep32 = gip->back_transform(acmat->data());
+    shared_ptr<DFDist> sep32 = gip->back_transform(acmat);
     sep3->daxpy(4.0, sep32);
   }
   sep3->add_direct_product(cd, dd, 1.0);

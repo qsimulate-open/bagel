@@ -125,6 +125,7 @@ class DFDist : public ParallelDF {
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const { return compute_half_transform(c->data(), c->mdim()); }
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const double* den) const;
@@ -146,7 +147,9 @@ class DFHalfDist : public ParallelDF {
     size_t nbasis() const { return nindex2_; };
 
     std::shared_ptr<DFFullDist> compute_second_transform(const double* c, const size_t nocc) const;
+    std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const { return compute_second_transform(c->data(), c->mdim()); }
     std::shared_ptr<DFDist> back_transform(const double* c) const;
+    std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex1_); return back_transform(c->data()); }
 
     std::shared_ptr<DFHalfDist> copy() const; 
     std::shared_ptr<DFHalfDist> clone() const; 
@@ -178,6 +181,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> clone() const; 
 
     std::shared_ptr<DFHalfDist> back_transform(const double* c) const;
+    std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex2_); return back_transform(c->data()); }
 
     void symmetrize();
 
