@@ -1,0 +1,15 @@
+molecule {
+ symmetry = C1; 
+ basis = svp;
+ df_basis = svp-jkfit;
+ schwarz_thresh = 1.0e-12;
+ angstrom = false;
+ atom = ( H,     -0.000000,     -0.000000,      1.700000);
+ atom = ( F,      0.000000,      0.000000,      0.000000);
+}
+
+casscf-opt {
+ nact = 0;
+ nact_cas = 6;
+ nclosed = 0;
+}
