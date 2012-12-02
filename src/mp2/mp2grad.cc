@@ -35,6 +35,7 @@
 #include <src/grad/gradeval.h>
 
 using namespace std;
+using namespace std::chrono;
 using namespace bagel;
 
 MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
@@ -48,7 +49,7 @@ void MP2Grad::compute() { }
 
 template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
-  auto tp1 = chrono::high_resolution_clock::now();
+  auto tp1 = high_resolution_clock::now();
 
   const size_t ncore = ref_->ncore();
 
@@ -63,26 +64,23 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const coeff = ref_->coeff()->data() + ncore*nbasis;
-  const double* const ocoeff = ref_->coeff()->data();
-  const double* const vcoeff = coeff + nocc*nbasis;
-
   shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
+  shared_ptr<const Matrix> acmat = ref_->coeff()->slice(ncore, nocca);
   shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
   shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
 
   // first compute half transformed integrals
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acmat->data(), nocc);
   // TODO this is a waste...
-  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
+  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocmat->data(), nocca)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcmat->data(), nvirt)->apply_J();
   shared_ptr<const DFFullDist> bv = full->apply_J();
   shared_ptr<DFFullDist> gia = bv->clone();
 
-  auto tp2 = chrono::high_resolution_clock::now();
-  auto dr1 = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
+  auto tp2 = high_resolution_clock::now();
+  auto dr1 = duration_cast<milliseconds>(tp2-tp1);
   cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << dr1.count()*0.001 << endl << endl;
 
   // assemble
@@ -133,8 +131,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis);
   }
 
-  auto tp3 = chrono::high_resolution_clock::now();
-  auto dr2 = chrono::duration_cast<chrono::milliseconds>(tp3-tp2);
+  auto tp3 = high_resolution_clock::now();
+  auto dr2 = duration_cast<milliseconds>(tp3-tp2);
   cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << dr2.count()*0.001 << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 
@@ -143,7 +141,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const Matrix lai = *laq * *ocmat;
 
   // Gip = Gia(D|ia) C+_ap
-  shared_ptr<DFHalfDist> gip = gia->back_transform(vcoeff);
+  shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat->data());
   // Liq = 2 Gip(D) * (D|pq)
   Matrix lia(nocca, nvirt);
   Matrix lif(nocc, max(1lu,ncore));
@@ -171,8 +169,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
 
-  auto tp4 = chrono::high_resolution_clock::now();
-  auto dr3 = chrono::duration_cast<chrono::milliseconds>(tp4-tp3);
+  auto tp4 = high_resolution_clock::now();
+  auto dr3 = duration_cast<milliseconds>(tp4-tp3);
   cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << dr3.count()*0.001 << endl << endl;
 
   // solving CPHF
@@ -191,8 +189,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  auto tp5 = chrono::high_resolution_clock::now();
-  auto dr4 = chrono::duration_cast<chrono::milliseconds>(tp5-tp4);
+  auto tp5 = high_resolution_clock::now();
+  auto dr4 = duration_cast<milliseconds>(tp5-tp4);
   cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << dr4.count()*0.001 << endl;
 
   // one electron matrices
@@ -210,11 +208,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
-  shared_ptr<DFDist> sep3 = sepd->back_transform(ocoeff);
+  shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat->data());
   sep3->scale(-2.0);
   /// mp2 two body part ----------------
   {
-    shared_ptr<DFDist> sep32 = gip->back_transform(coeff);
+    shared_ptr<DFDist> sep32 = gip->back_transform(acmat->data());
     sep3->daxpy(4.0, sep32);
   }
   sep3->add_direct_product(cd, dd, 1.0);
@@ -246,15 +244,15 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
-  auto tp6 = chrono::high_resolution_clock::now();
-  auto dr5 = chrono::duration_cast<chrono::milliseconds>(tp6-tp5);
+  auto tp6 = high_resolution_clock::now();
+  auto dr5 = duration_cast<milliseconds>(tp6-tp5);
   cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << dr5.count()*0.001 << endl;
 
   // gradient evaluation
   shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
 
-  auto tp7 = chrono::high_resolution_clock::now();
-  auto dr6 = chrono::duration_cast<chrono::milliseconds>(tp7-tp6);
+  auto tp7 = high_resolution_clock::now();
+  auto dr6 = duration_cast<milliseconds>(tp7-tp6);
   cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right << setw(10) << dr6.count()*0.001 << endl << endl;
 
   // set proper energy_
