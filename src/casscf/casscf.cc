@@ -191,9 +191,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     // Fock operators
     if (nclosed_) {
       shared_ptr<Matrix> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-      shared_ptr<Matrix> f_inactao(new Matrix(geom_->nbasis(), geom_->nbasis()));
-      copy_n(fci_->jop()->core_fock_ptr(), f_inactao->size(), f_inactao->data());
-      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_inactao * *coeff_));
+      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *fci_->jop()->core_fock() * *coeff_));
 
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix> denact(new Matrix(*denall-*deninact));
@@ -226,8 +224,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
       }
   }
 
-  // G matrix (active-active) 2Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  gaa = shared_ptr<Matrix>(new Matrix(nact_, nact_));
+  // G matrix (active-active) Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
+  gaa = factp->clone(); 
   dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
   for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
@@ -241,7 +239,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   for (int i = 0; i != nact_; ++i) {
     if (occup_[i] > occup_thresh) {
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = (-fact->element(i+nclosed_,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
+        *target = (gaa->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
     } else {
       for (int j = 0; j != nvirt_; ++j, ++target)
         *target = 1.0/occup_thresh;
