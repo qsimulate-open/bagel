@@ -47,9 +47,10 @@ class HPW_DIIS  {
     DIIS<T> diis_;
     RefT base_;
     const RefT orig_;
+    const bool testing_;
 
   public:
-    HPW_DIIS(const int n, RefT o) : diis_(n), orig_(o) {
+    HPW_DIIS(const int n, RefT o, const bool test = false) : diis_(n), orig_(o), testing_(test) {
       std::shared_ptr<T> b = o->clone();
       b->unit();
       RefT tmp(new T(*b));
@@ -58,6 +59,9 @@ class HPW_DIIS  {
     ~HPW_DIIS() {};
 
     std::shared_ptr<T> extrapolate(const RefT rot) {
+#ifndef NDEBUG
+      if (testing_) return std::shared_ptr<T>(new T(*rot));
+#endif
       // prev = log(base)
       RefT expo = (*base_**rot).log();
       RefT prev_ = base_->log();

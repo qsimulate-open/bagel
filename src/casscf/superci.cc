@@ -101,7 +101,7 @@ void SuperCI::compute() {
 
     // <a/i|H|0> = 2f_ai
     grad_vc(f, sigma_);
-    // <a/r|H|0> = h_as d_sr + 2(as|tu)P_rs,tu = fact_rs
+    // <a/r|H|0> = h_as d_sr + (as|tu)D_rs,tu = fact_ar
     grad_va(fact, sigma_);
     // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
     grad_ca(f, fact, sigma_);
@@ -205,12 +205,8 @@ void SuperCI::compute() {
     print_iteration(iter, 0, 0, energy_, gradient, duration_cast<milliseconds>(end - start).count()*0.001);
     mute_stdcout();
 
-    if (iter == max_iter_-1) {
-      resume_stdcout();
-      cout << "  " << endl << "    * Max iteration reached in the CASSCF macro interation." << endl << endl;
-      mute_stdcout();
-      break;
-    }
+    if (iter == max_iter_-1)
+      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
   }
   // ============================
   // macro iteration to here

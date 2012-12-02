@@ -44,7 +44,7 @@ void SuperCI::grad_vc(const shared_ptr<Matrix> f, shared_ptr<RotFile> sigma) {
 }
 
 
-// <a/r|H|0> finact_as d_sr + 2(as|tu)P_rs,tu = fact_ar  (/sqrt(nr))
+// <a/r|H|0> finact_as h_sr + (as|tu)D_rs,tu = fact_ar  (/sqrt(nr) - due to normalization)
 void SuperCI::grad_va(const shared_ptr<Matrix> fact, shared_ptr<RotFile> sigma) {
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
@@ -79,7 +79,11 @@ void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sig
   shared_ptr<Matrix> gtup(new Matrix(*gaa));
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
+#if 0
       const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
+#else
+      const double fac = 1.0;
+#endif
       gtup->element(j,i) *= fac;
     }
   }
