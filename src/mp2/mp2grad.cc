@@ -139,11 +139,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 
   // L''aq = 2 Gia(D|ia) (D|iq)
-  unique_ptr<double[]> lai(new double[nocca*nvirt]);
   shared_ptr<const Matrix> laq = gia->form_2index(half, 2.0);
-  {
-    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq->data(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt);
-  }
+  const Matrix lai = *laq * *ocmat;
 
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DFHalfDist> gip = gia->back_transform(vcoeff);
@@ -172,11 +169,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.data(), nbasis, 0.0, jai.get(), nvirt);
   }
   // -1*K_al(d_rs)
-  unique_ptr<double[]> kia(new double[nvirt*nocca]);
-  {
-    shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
-    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir->data(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
-  }
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part->data(), -1.0) * *vcmat;
 
   shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
@@ -257,8 +250,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const Matrix> jrs = geom_->df()->compute_Jop(dmp2ao->data());
   const Matrix jri = *jrs * *ocmat;
   dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.data(), nbasis, 1.0, wd->data(), nbasis);
-  shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
-  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir->data(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
+  shared_ptr<const Matrix> kir = halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0);
+  dgemm_("N", "N", nocca, nocca, nbasis, 1.0, kir->data(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
 
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));

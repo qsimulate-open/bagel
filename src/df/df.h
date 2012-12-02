@@ -154,7 +154,7 @@ class DFHalfDist : public ParallelDF {
     void rotate_occ(const double* d);
     std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
 
-    std::shared_ptr<Matrix> compute_Kop_1occ(const double* den) const;
+    std::shared_ptr<Matrix> compute_Kop_1occ(const double* den, const double a) const;
 
     std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }

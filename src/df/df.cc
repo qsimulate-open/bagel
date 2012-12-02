@@ -311,8 +311,8 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
 }
 
 
-shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den) const {
-  return apply_density(den)->form_2index(df_, 1.0);
+shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den, const double a) const {
+  return apply_density(den)->form_2index(df_, a);
 }
 
 
