@@ -73,6 +73,8 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
+    // compute S^1/2. Same algorithm as above.
+    void sqrt();
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]>& o);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);

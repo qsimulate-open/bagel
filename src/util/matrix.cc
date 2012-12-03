@@ -421,7 +421,7 @@ void Matrix::purify_unitary() {
       const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
       daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
-    const double b = 1.0/sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     dscal_(ndim_, b, &data_[i*ndim_], 1);
   }
 #endif
@@ -493,7 +493,7 @@ void Matrix::inverse_half(const double thresh) {
   diagonalize(vec.get());
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+    double s = vec[i] > thresh ? 1.0/::sqrt(::sqrt(vec[i])) : 0.0;
     dscal_(n, s, data_.get()+i*n, 1);
   }
 
@@ -504,6 +504,21 @@ void Matrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
+}
+
+// compute Hermitian square root, S^{1/2}
+void Matrix::sqrt() {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  unique_ptr<double[]> vec(new double[n]);
+  diagonalize(vec.get());
+
+  for (int i = 0; i != n; ++i) {
+    double s = ::sqrt(::sqrt(vec[i]));
+    dscal_(n, s, data_.get()+i*n, 1);
+  }
+
+  *this = *this ^ *this;
 }
 
 
