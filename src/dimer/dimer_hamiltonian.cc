@@ -65,8 +65,21 @@ void Dimer::hamiltonian() {
   space_ = shared_ptr<Space>(new Space(ccvecs_.first->det(), 1));
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
+  // Construct reorganized reference to compute DimerJop
+  shared_ptr<Matrix> tmp_mat = scoeff_->slice(0,ncore_.first);
+  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first, nbasis_.first + ncore_.second));
+
+  tmp_mat = tmp_mat->merge(scoeff_->slice(ncore_.first, ncore_.first + nact_.first));
+  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first + ncore_.second, nbasis_.first + ncore_.second + nact_.second));
+
+  tmp_mat = tmp_mat->merge(scoeff_->slice(ncore_.first + nact_.first, nbasis_.first));
+  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first + ncore_.second + nact_.second, nbasis_.first + nbasis_.second));
+
+  shared_ptr<Coeff> coeff(new Coeff(*tmp_mat));
+  shared_ptr<Reference> ref(new Reference(sgeom_, coeff, sref_->nclosed(), sref_->nact(), sref_->nvirt()));
+
   // create jop_ object (which effectively includes all closed-closed interactions)
-  jop_ = shared_ptr<DimerJop>(new DimerJop(sref_, ncore, ncore + nact_.first, ncore + nact, scoeff_));
+  jop_ = shared_ptr<DimerJop>(new DimerJop(ref, ncore, ncore + nact_.first, ncore + nact, scoeff_));
 
   // compute close-close
   cout << "  o Computing closed-closed interactions" << endl;
@@ -85,6 +98,17 @@ void Dimer::hamiltonian() {
   *hamiltonian_ += *compute_inter_activeactive();
 
   hamiltonian_->print("Dimer Hamiltonian", dimerstates_);
+
+  vector<double> eigvec(dimerstates_, 0.0);
+  hamiltonian_->diagonalize(eigvec.data());
+
+  cout << endl << " ===== Adiabatic state energies ===== " << endl;
+
+  int istate = 0;
+  for( auto& ieig : eigvec ) {
+    cout << "   state " << setw(3) << istate << ": " << setprecision(12) << setw(16) << ieig << endl;
+     ++istate;
+  }
 }
 
 shared_ptr<Matrix> Dimer::compute_closeclose() {

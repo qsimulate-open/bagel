@@ -63,6 +63,8 @@ void DimerSCF::compute() {
   DIIS<Matrix> diis(5);
   shared_ptr<Matrix> densitychange = aodensity_; // assumes hcore guess...
 
+  //levelshift_->print_mo_data(coeff_);
+
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = chrono::high_resolution_clock::now();
 
@@ -70,6 +72,8 @@ void DimerSCF::compute() {
     previous_fock = fock;
 
     Matrix intermediate = *coeff_ % *fock * *coeff_;
+
+    //intermediate.print("a", 24);
 
     levelshift_->shift(intermediate, coeff_);
 
@@ -84,6 +88,8 @@ void DimerSCF::compute() {
 
     // Note: the energy has to be computed this way since, by construction, the Fock matrix is NOT diagonal
     energy_ = 0.5*(*aodensity_ * (*fock + *hcore_)).trace() + geom_->nuclear_repulsion();
+    //shared_ptr<Fock<1> > tmp_fock(new Fock<1>(geom_, hcore_fock, new_density, schwarz_));
+    //energy_ = 0.5*(*new_density * (*tmp_fock + *hcore_)).trace() + geom_->nuclear_repulsion();
 
     auto tp2 = chrono::high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
@@ -119,6 +125,8 @@ void DimerSCF::compute() {
     Dipole mu(geom_, aodensity_);
     mu.compute();
   }
+
+  //levelshift_->print_mo_data(coeff_);
 }
 
 shared_ptr<Reference> DimerSCF::conv_to_ref() const {

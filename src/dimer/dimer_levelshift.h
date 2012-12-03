@@ -58,6 +58,8 @@ class ShiftDimer : public LevelShift {
     ShiftDimer(std::shared_ptr<const Dimer> dimer, const double shift_parameter);
 
     void shift(Matrix& fock_mo, std::shared_ptr<const Coeff> coeff);
+
+    void print_mo_data(std::shared_ptr<const Coeff> coeff);
 };
 
 }

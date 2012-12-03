@@ -78,8 +78,9 @@ class Dimer {
       std::pair<int, int> nvirt_;
       std::pair<int, int> nstates_;
       std::pair<int, int> nbasis_;
+      std::pair<int, int> nele_;
       
-      const bool symmetric_;
+      bool symmetric_;
    public:
       // Constructors
       Dimer(RefGeometry a, RefGeometry b);
@@ -97,6 +98,11 @@ class Dimer {
       std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
+      void set_sref(std::shared_ptr<const Reference> ref) { 
+        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*ref->coeff()));
+        sref_ = std::shared_ptr<Reference>(new Reference(sgeom_, scoeff_, sref_->nclosed(), sref_->nact(), sref_->nvirt()));
+      }
+
       std::pair<const int, const int> nbasis() const {return nbasis_; };
       std::pair<const int, const int> ncore() const { return ncore_; };
       int dimerbasis() const { return dimerbasis_; };
@@ -111,6 +117,7 @@ class Dimer {
       // Calculations
       void hamiltonian();
       void energy(); // A rather naive, probably temporary, function for computing the energy
+      void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
 
    private:
       void construct_geometry();
