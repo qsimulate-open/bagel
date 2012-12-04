@@ -50,6 +50,7 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
+#include <src/util/localization.h>
 #include <src/rel/dirac.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
@@ -311,9 +312,23 @@ int main(int argc, char** argv) {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        dimer->fci(testdata);
+        std::shared_ptr<Matrix> density = ref->coeff()->form_density_rhf(ref->nocc());
+        // for testing purposes, only using region_size right now which assigns the first "region_size" atoms to the first
+        // region and the rest to the second region.
+        int region_size = read_input<int>(testdata, "region_size", 0);
+        if(region_size <= 0) throw std::runtime_error("region_size should be greater than 0");
+        
+        std::pair<int, int> pair1(0, region_size-1); std::pair<int,int> pair2(region_size,geom->natom()-1);
+        std::vector<std::pair<int, int> > bounds = {pair1, pair2};
+        std::shared_ptr<OrbitalLocalization> regionalize(new RegionLocalization(geom, density, bounds));
 
-        dimer->hamiltonian();
+        std::shared_ptr<Matrix> regional_mos = regionalize->localize();
+        //regional_mos->print("Regionalized MOs", geom->nbasis());
+
+        std::shared_ptr<const Coeff> regional_coeff(new const Coeff(*regional_mos));
+        ref = std::shared_ptr<Reference>(new Reference(geom, regional_coeff, ref->nclosed(), ref->nact(), ref->nvirt()));
+        //dimer->fci(testdata);
+        //dimer->hamiltonian();
       }
       #endif
     }
