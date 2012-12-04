@@ -295,7 +295,7 @@ double Matrix::ddot(const std::shared_ptr<const Matrix> o) const {
 
 
 double Matrix::rms() const {
-  return ::sqrt(ddot(*this) / (ndim_ * mdim_));
+  return std::sqrt(ddot(*this) / (ndim_ * mdim_));
 }
 
 
@@ -421,7 +421,7 @@ void Matrix::purify_unitary() {
       const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
       daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
-    const double b = 1.0/::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     dscal_(ndim_, b, &data_[i*ndim_], 1);
   }
 #endif
@@ -493,7 +493,7 @@ void Matrix::inverse_half(const double thresh) {
   diagonalize(vec.get());
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/::sqrt(::sqrt(vec[i])) : 0.0;
+    double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
     dscal_(n, s, data_.get()+i*n, 1);
   }
 
@@ -514,7 +514,7 @@ void Matrix::sqrt() {
   diagonalize(vec.get());
 
   for (int i = 0; i != n; ++i) {
-    double s = ::sqrt(::sqrt(vec[i]));
+    double s = std::sqrt(std::sqrt(vec[i]));
     dscal_(n, s, data_.get()+i*n, 1);
   }
 
