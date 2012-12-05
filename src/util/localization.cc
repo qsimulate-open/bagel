@@ -31,7 +31,8 @@
 #include <src/util/f77.h>
 #include <src/util/localization.h>
 #include <src/scf/overlap.h>
-#include <src/util/constants.h>
+#include <src/scf/coeff.h>
+#include <src/util/jacobi.h>
 
 using namespace bagel;
 using namespace std;
@@ -97,13 +98,15 @@ shared_ptr<Matrix> RegionLocalization::localize() {
 
   // Starting rotations. For now, let's see if one sweep suffices.
   {
+    shared_ptr<JacobiDiag> jacobi(new JacobiDiag(ortho_density,U));
+
     for(int& iocc : occupied) {
-      for(int& imixed : mixed) jacobi(iocc, imixed, ortho_density, U);
-      for(int& ivirt : virt) jacobi(iocc, ivirt, ortho_density, U);
+      for(int& imixed : mixed) jacobi->rotate(iocc, imixed);
+      for(int& ivirt : virt) jacobi->rotate(iocc, ivirt);
     }
   
     for(int& imixed : mixed) {
-      for(int& ivirt : virt) jacobi(imixed, ivirt, ortho_density, U);
+      for(int& ivirt : virt) jacobi->rotate(imixed, ivirt);
     }
   }
 
@@ -132,61 +135,5 @@ shared_ptr<Matrix> RegionLocalization::localize() {
     }
   }
 
-  cout << "The diagonal components of the transformed DM are: " << endl;
-  for (int i = 0; i < nbasis; ++i) {
-    cout << ortho_density->element(i,i);
-    for (int j = 0; j < 7 && i < nbasis; ++j, ++i) {
-      cout << ",   " << ortho_density->element(i,i);
-    }
-    cout << endl;
-  }
-
   return out;
-}
-
-// For better or for worse, implementation following the description on wikipedia :)
-void OrbitalLocalization::jacobi(const int k, const int l, shared_ptr<Matrix> A, shared_ptr<Matrix> Q) {
-  const double kl = A->element(k,l);
-  if (k < numerical_zero__) return;
-  const double kk = A->element(k,k);
-  const double ll = A->element(l,l);
-
-  const bool vectors = (Q != nullptr);
-
-  const double beta = 0.5*(ll - kk)/kl;
-  const double t = copysign(1.0,beta)/(abs(beta) + sqrt(beta*beta + 1.0));
-  const double c = 1.0/(sqrt(t*t + 1.0));
-  const double s = c*t;
-  const double rho = (1.0 - c)/s;
-  
-  A->element(k,k) = kk - t * kl;
-  A->element(l,l) = ll + t * kl;
-
-  A->element(k,l) = 0.0;
-  A->element(l,k) = 0.0;
-
-  const int nbasis = A->ndim();
-
-  // I'm afraid of overwriting data, thus copying some stuff
-  unique_ptr<double[]> k_column(new double[nbasis]);
-  double* k_column_data = k_column.get();
-  copy_n(A->element_ptr(0,k), nbasis, k_column_data);
-  unique_ptr<double[]> l_column(new double[nbasis]);
-  double* l_column_data = l_column.get();
-  copy_n(A->element_ptr(0,l), nbasis, l_column_data);
-  
-  for(int i = 0; i < nbasis; ++i) {
-    if (i == k || i == l) continue;
-
-    const double ik = k_column_data[i];
-    const double il = l_column_data[i];
-
-    double new_ik = ik - s * (il + rho * ik);
-    double new_il = il + s * (ik - rho * il);
-
-    A->element(i,k) = new_ik; A->element(k,i) = new_ik;
-    A->element(i,l) = new_il; A->element(l,i) = new_il;
-  }
-
-  if(vectors) drot_(nbasis, Q->element_ptr(0,k), 1, Q->element_ptr(0,l), 1, c, -s);
 }

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: localization.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: jacobi.h
+// Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_UTIL_LOCALIZE_H
-#define __BAGEL_UTIL_LOCALIZE_H
+#ifndef __BAGEL_UTIL_JACOBI_H
+#define __BAGEL_UTIL_JACOBI_H
 
 #include <cassert>
 #include <string>
@@ -34,29 +34,37 @@
 #include <list>
 #include <src/scf/geometry.h>
 #include <src/util/matrix.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 
-class OrbitalLocalization {
+class Jacobi_base {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Matrix> density_;
+    std::shared_ptr<Matrix> Q_; // Stores the eigenvectors
+
+    const int nbasis_;
 
   public:
-    OrbitalLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density) : geom_(geom), density_(density) {};
+    Jacobi_base(std::shared_ptr<Matrix> Q) : Q_(Q), nbasis_(Q->ndim()) {};
 
-    virtual std::shared_ptr<Matrix> localize() = 0;
+    virtual void rotate(const int k, const int l) = 0;
+    void sweep();
 };
 
-class RegionLocalization : public OrbitalLocalization {
+/************************************************************
+* JacobiDiag provides the routines that would be            *
+* used to diagonalize the matrix A_ and stores the eigen-   *
+* vectors into Q_(if provided).                             *
+************************************************************/
+
+class JacobiDiag : public Jacobi_base {
   protected:
-    std::vector<std::pair<int, int> > bounds_;
+    std::shared_ptr<Matrix> A_; // The matrix to be diagonalized
 
   public:
-    RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density, std::vector<std::pair<int, int> > atom_bounds);
+    JacobiDiag(std::shared_ptr<Matrix> A, std::shared_ptr<Matrix> Q) : Jacobi_base(Q), A_(A) {};
 
-    std::shared_ptr<Matrix> localize() override;
-  
+    void rotate(const int k, const int l) override;
 };
 
 }

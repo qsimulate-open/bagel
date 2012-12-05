@@ -49,8 +49,8 @@ void DimerSCF::compute() {
   string indent = "  ";
   shared_ptr<Fock<1> > previous_fock(new Fock<1>(geom_, hcore_));
   shared_ptr<Fock<1> > hcore_fock = previous_fock;
-
-  aodensity_ = dimer_->form_density_rhf(coeff_);
+  //aodensity_ = dimer_->form_density_rhf(coeff_);
+  aodensity_ = coeff_->form_density_rhf(nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;

@@ -100,7 +100,7 @@ class Dimer {
 
       void set_sref(std::shared_ptr<const Reference> ref) { 
         scoeff_ = std::shared_ptr<Coeff>(new Coeff(*ref->coeff()));
-        sref_ = std::shared_ptr<Reference>(new Reference(sgeom_, scoeff_, sref_->nclosed(), sref_->nact(), sref_->nvirt()));
+        sref_ = std::shared_ptr<Reference>(new Reference(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt()));
       }
 
       std::pair<const int, const int> nbasis() const {return nbasis_; };
@@ -118,6 +118,8 @@ class Dimer {
       void hamiltonian();
       void energy(); // A rather naive, probably temporary, function for computing the energy
       void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
+      
+      void localize();
 
    private:
       void construct_geometry();
