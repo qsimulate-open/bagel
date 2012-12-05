@@ -112,9 +112,9 @@ class ZMatrix { // Not to be confused with ZMatrix1e... at least for the moment
     void zaxpy(const std::complex<double>, const ZMatrix&);
     void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);
     std::complex<double> zdotu(const ZMatrix&) const;
-    std::complex<double> norm() const { return std::sqrt(zdotu(*this)); };
     std::complex<double> zdotu(const std::shared_ptr<const ZMatrix>) const;
-    std::complex<double> rms() const;
+    double norm() const;
+    double rms() const;
     std::complex<double> trace() const;
 
     void zscal(const std::complex<double> a) { zscal_(size(), a, data(), 1); };
