@@ -25,3 +25,5 @@ o Parallelization needs more work
   - FCI is not parallelized yet 
   - Shell distribution to MPI processes (src/df/df.cc) should be optimized
   - linear solver should be parallelized
+
+o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
