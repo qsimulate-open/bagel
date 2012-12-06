@@ -186,12 +186,12 @@ class MOFock {
       const int nvirt   = ref_->nvirt();
       const int nbasis  = ref_->geom()->nbasis();
       std::unique_ptr<double[]> eig(new double[nbasis]);
-      if (nclosed) {
+      if (nclosed > 1) {
         std::shared_ptr<Matrix> fcl = forig.get_submatrix(0, 0, nclosed, nclosed); 
         fcl->diagonalize(eig.get());
         dgemm_("N", "N", nbasis, nclosed, nclosed, 1.0, ref_->coeff()->data(), nbasis, fcl->data(), nclosed, 0.0, coeff_->data(), nbasis); 
       }
-      if (nvirt) {
+      if (nvirt > 1) {
         std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt); 
         fvirt->diagonalize(eig.get());
         dgemm_("N", "N", nbasis, nvirt, nvirt, 1.0, ref_->coeff()->element_ptr(0,nocc), nbasis, fvirt->data(), nvirt, 0.0, coeff_->element_ptr(0,nocc), nbasis);

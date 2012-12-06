@@ -153,6 +153,7 @@ class SpinFreeMethod {
           std::unique_ptr<double[]> transp(new double[i0.size()*i2.size()*nact*nact]);
           for (int j2 = i2.offset(), k = 0; j2 != i2.offset()+i2.size(); ++j2)
             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++k) {
+              assert(j0-nclo >= 0 && j2-nclo >= 0);
               std::copy_n(shalf_xx_->element_ptr(0,(j0-nclo)+(j2-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
             }
 
@@ -197,6 +198,23 @@ class SpinFreeMethod {
           }
         }
       }
+      for (auto& i3 : virt_) {
+        for (auto& i2 : closed_) {
+          for (auto& i1 : virt_) {
+            for (auto& i0 : active_) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              if (!r->get_size(h)) continue;
+              std::unique_ptr<double[]> data0 = r->get_block(h);
+              std::fill_n(data0.get(), r->get_size(h), 0.0); 
+              if (!put) {
+                t->add_block(h,data0);
+              } else {
+                t->put_block(h,data0);
+              }
+            }
+          }
+        }
+      }
     }
 
   public:
@@ -236,6 +254,7 @@ class SpinFreeMethod {
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {active_, active_};
         rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
+        const int nclo = ref_->nclosed();
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
             std::vector<size_t> hash = {i0.key(), i1.key()};
@@ -245,7 +264,7 @@ class SpinFreeMethod {
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                 // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element({j0, j1});
+                data[iall] = ref_->rdm1(0)->element({j0-nclo, j1-nclo});
             rdm1_->put_block(hash, data);
           }
         }
@@ -253,6 +272,7 @@ class SpinFreeMethod {
       if (!ref_->rdm2().empty()) {
         std::vector<IndexRange> o = {active_, active_, active_, active_};
         rdm2_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false)); 
+        const int nclo = ref_->nclosed();
         for (auto& i3 : active_) {
           for (auto& i2 : active_) {
             for (auto& i1 : active_) {
@@ -266,7 +286,7 @@ class SpinFreeMethod {
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                         // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element({j0, j1, j2, j3});
+                        data[iall] = ref_->rdm2(0)->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo});
                  rdm2_->put_block(hash, data);
               }
             }
@@ -280,6 +300,7 @@ class SpinFreeMethod {
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
         std::shared_ptr<RDM<3> > rdm3source = ref_->compute_rdm3(0);
+        const int nclo = ref_->nclosed();
         for (auto& i5 : active_) {
           for (auto& i4 : active_) {
             for (auto& i3 : active_) {
@@ -296,7 +317,7 @@ class SpinFreeMethod {
                           for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                data[iall] = rdm3source->element({j0, j1, j2, j3, j4, j5});
+                                data[iall] = rdm3source->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo});
                     rdm3_->put_block(hash, data);
                   }
                 }
@@ -308,7 +329,6 @@ class SpinFreeMethod {
         // aa/xx blocks 
         // metric half inverse (S^-1/2)
         const int nact = ref_->nact();
-        const int nclosed = ref_->nclosed();
         const size_t dim = nact*nact;
         const size_t size = dim*dim;
         {

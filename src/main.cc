@@ -55,6 +55,7 @@
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
 #include <src/smith/CAS_all_active.h>
+#include <src/smith/CAS_test.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -238,6 +239,9 @@ int main(int argc, char** argv) {
           mp2->solve();
         } else if (method == "caspt2") {
           std::shared_ptr<SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore> > cas(new SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>(ref));
+          cas->solve();
+        } else if (method == "caspt2-test") {
+          std::shared_ptr<SMITH::CAS_test::CAS_test<SMITH::Storage_Incore> > cas(new SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>(ref));
           cas->solve();
         } else {
           std::stringstream ss; ss << method << " method is not implemented in SMITH";
