@@ -27,3 +27,5 @@ o Parallelization needs more work
   - linear solver should be parallelized
 
 o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
+
+o Clean up interface to localization routines, especially PM

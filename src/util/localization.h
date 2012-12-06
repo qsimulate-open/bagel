@@ -33,6 +33,7 @@
 #include <memory>
 #include <list>
 #include <src/scf/geometry.h>
+#include <src/scf/coeff.h>
 #include <src/util/matrix.h>
 
 namespace bagel {
@@ -53,10 +54,30 @@ class RegionLocalization : public OrbitalLocalization {
     std::vector<std::pair<int, int> > bounds_;
 
   public:
-    RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density, std::vector<std::pair<int, int> > atom_bounds);
+    RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density, std::vector<std::pair<int, int> > region_bounds);
 
     std::shared_ptr<Matrix> localize() override;
   
+};
+
+// Pipek-Mezey
+class PMLocalization : public OrbitalLocalization {
+  protected:
+    std::vector<std::pair<int, int> > atom_bounds_;
+
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<Matrix> S_;
+
+    const int norb_;
+
+  public:
+    PMLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int norb);
+
+    std::shared_ptr<Matrix> localize() override;
+
+  private:
+    double calc_P() const;
 };
 
 }
