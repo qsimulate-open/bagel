@@ -97,7 +97,6 @@ class Tensor {
     void initialize() { data_->initialize(); };
 
     ~Tensor() {
-//    std::cout << "destructor called" << std::endl;
     };
 
     Tensor<T>& operator=(const Tensor<T>& o) {
@@ -212,7 +211,31 @@ class Tensor {
         }
       }
       return out;
-    };
+    }
+
+
+    template<int p>
+    std::shared_ptr<Tensor<T> > spin_couple() {
+      static_assert(std::abs(p) == 1, "spin_couple should be called with 1 or -1");
+      std::shared_ptr<Tensor<T> > out = copy();
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 4);
+      for (auto& i3 : o[3].range()) {
+        for (auto& i2 : o[2].range()) {
+          for (auto& i1 : o[1].range()) {
+            for (auto& i0 : o[0].range()) {
+              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> g = {i2.key(), i3.key(), i0.key(), i1.key()};
+              std::unique_ptr<double[]> data0 = get_block(h);
+              const std::unique_ptr<double[]> data1 = get_block(g);
+              sort_indices<2,3,0,1,1,1,p,1>(data1, data0, i2.size(), i3.size(), i0.size(), i1.size());
+              out->put_block(h,data0);
+            }
+          }
+        }
+      }
+      return out;
+    }
 
 
     void print2(std::string label, const double thresh = 5.0e-2) {
