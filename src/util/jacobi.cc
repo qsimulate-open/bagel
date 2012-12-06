@@ -37,7 +37,7 @@ using namespace std;
 using namespace bagel;
 
 void Jacobi_base::sweep() {
-  for(int i = 0; i < nbasis_; ++i) {
+  for(int i = 0; i < mdim_; ++i) {
     for(int j = 0; j < i; ++j) {
       rotate(i,j);
     }
@@ -85,4 +85,35 @@ void JacobiDiag::rotate(const int k, const int l) {
   }
 
   drot_(nbasis_, Q_->element_ptr(0,k), 1, Q_->element_ptr(0,l), 1, c, -s);
+}
+
+void JacobiPM::rotate(const int k, const int l) {
+  // There may be a more efficient way to do this, but this works for now
+
+  vector<double> Qkl_A, Qkminusl_A;
+  for(auto& ibounds : atom_bounds_) {
+    double value_kl = 0.0, value_k = 0.0, value_l = 0.0;
+
+    for(int i = ibounds.first; i < ibounds.second; ++i) {
+      value_kl += Q_->element(i,l) * ddot_(nbasis_, Q_->element_ptr(0,k), 1, S_->element_ptr(0,i), 1);
+      value_kl += Q_->element(i,k) * ddot_(nbasis_, Q_->element_ptr(0,l), 1, S_->element_ptr(0,i), 1);
+
+      value_k += Q_->element(i,k) * ddot_(nbasis_, Q_->element_ptr(0,k), 1, S_->element_ptr(0,i), 1);
+      value_l += Q_->element(i,l) * ddot_(nbasis_, Q_->element_ptr(0,l), 1, S_->element_ptr(0,i), 1);
+    }
+
+    Qkl_A.push_back(0.5*value_kl);
+    Qkminusl_A.push_back(value_k-value_l);
+  }
+
+  const int natoms = atom_bounds_.size();
+
+  double Ast = ddot_(natoms, Qkl_A.data(), 1, Qkl_A.data(), 1) - 0.25 * ddot_(natoms, Qkminusl_A.data(), 1, Qkminusl_A.data(), 1);
+  double Bst = ddot_(natoms, Qkl_A.data(), 1, Qkminusl_A.data(), 1);
+
+  if( abs(Bst) < numerical_zero__ && Ast > 0.0 ) return;
+
+  double gamma = copysign(0.25, Bst) * acos( -Ast/hypot(Ast,Bst) );
+
+  drot_(nbasis_, Q_->element_ptr(0,k), 1, Q_->element_ptr(0,l), 1, cos(gamma), sin(gamma));
 }

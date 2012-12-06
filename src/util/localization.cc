@@ -28,6 +28,8 @@
 #include <algorithm>
 #include <memory>
 #include <list>
+#include <iostream>
+#include <iomanip>
 #include <src/util/f77.h>
 #include <src/util/localization.h>
 #include <src/scf/overlap.h>
@@ -68,14 +70,13 @@ shared_ptr<Matrix> RegionLocalization::localize() {
     const int fence = iregion.second;
     const int size_i = fence - start;
 
-    Matrix D_i(size_i, size_i);
-    D_i.copy_block(0,0,size_i,size_i, ortho_density->get_block(start, start, size_i, size_i));
+    shared_ptr<Matrix> D_i = ortho_density->get_submatrix(start, start, size_i, size_i);
 
     vector<double> eig_i(size_i);
-    D_i.diagonalize(eig_i.data());
+    D_i->diagonalize(eig_i.data());
 
     eigenvalues.insert(eigenvalues.end(), eig_i.begin(), eig_i.end());
-    T->copy_block(start, start, size_i, size_i, D_i.data());
+    T->copy_block(start, start, size_i, size_i, D_i->data());
   }
 
   *ortho_density = (*T) % (*ortho_density) * (*T);
@@ -132,6 +133,61 @@ shared_ptr<Matrix> RegionLocalization::localize() {
     for(int& ivirt : virt) {
       copy_n(tmp->element_ptr(0,ivirt), nbasis, out->element_ptr(0,imo));
       ++imo;
+    }
+  }
+
+  return out;
+}
+
+PMLocalization::PMLocalization(shared_ptr<const Geometry> geom, shared_ptr<const Coeff> coeff, const int norb) :
+  OrbitalLocalization(geom, shared_ptr<Matrix>(new Matrix(*coeff))), coeff_(coeff), norb_(norb) {
+  
+  S_ = shared_ptr<Matrix>(new Overlap(geom));
+
+  vector<vector<int> > offsets = geom->offsets();
+  for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
+    const int start = ioffset->front();
+    int end;
+    if((ioffset+1) == offsets.end()) end = geom->nbasis();
+    else end = (ioffset+1)->front();
+
+    atom_bounds_.push_back(make_pair(start, end));
+  }
+}
+
+shared_ptr<Matrix> PMLocalization::localize() {
+  shared_ptr<JacobiPM> jacobi(new JacobiPM(density_, norb_, S_, atom_bounds_));
+
+  cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
+  cout << "Iteration          P              dP" << endl;
+
+  double P = calc_P();
+
+  cout << setw(3) << 0 << setw(16) << setprecision(10) << P << endl;
+
+  for(int iter = 0; iter < 10; ++iter) {
+    jacobi->sweep();
+
+    double tmp_P = calc_P();
+    cout << setw(3) << iter+1 << setw(16) << setprecision(10) << tmp_P
+                              << setw(16) << setprecision(10) << tmp_P - P << endl;
+    P = tmp_P;
+  }
+
+  return density_;
+}
+
+double PMLocalization::calc_P() const {
+  double out = 0.0;
+
+  const int nbasis = density_->ndim();
+  for(int imo = 0; imo < norb_; ++imo) {
+    for(auto& ibounds : atom_bounds_) {
+      double QA = 0.0;
+      for(int iao = ibounds.first; iao < ibounds.second; ++iao) {
+        QA += density_->element(iao,imo) * ddot_(nbasis, density_->element_ptr(0,imo), 1, S_->element_ptr(0,iao), 1);
+      }
+      out += QA*QA;
     }
   }
 
