@@ -47,13 +47,13 @@ template <typename T>
 class K2ext {
   protected:
     std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
 
     // some handwritten drivers
     std::map<size_t, std::shared_ptr<DFFullDist> > generate_list() {
       std::shared_ptr<const DFDist> df = ref_->geom()->df();
-      std::shared_ptr<const Coeff> coeff = ref_->coeff();
 
       // It is the easiest to do integral transformation for each blocks.
       assert(blocks_.size() == 4);
@@ -67,18 +67,18 @@ class K2ext {
       // closed loop
       size_t cnt = blocks_[0].keyoffset();
       for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff->data()+nbasis*i0->offset(), i0->size())->apply_J();
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0->offset(), i0->size())->apply_J();
         // virtual loop
         size_t cnt2 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
-          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff->data()+nbasis*i1->offset(), i1->size());
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1->offset(), i1->size());
 
           std::vector<size_t> h = {{cnt, cnt2}};
           dflist.insert(make_pair(generate_hash_key(h), df_full));
         }
       }
       return dflist;
-    };
+    }
 
     void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist> >& dflist) {
       // form four-index integrals
@@ -128,21 +128,21 @@ class K2ext {
           }
         }
       }
-    }; // vaaii_;
+    } // vaaii_;
 
   public:
-    K2ext(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+    K2ext(std::shared_ptr<const Reference> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b) : ref_(r), coeff_(c), blocks_(b) {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
       data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
       form_4index(generate_list());
-    };
+    }
 
-    ~K2ext() {};
+    ~K2ext() {}
 
-    std::shared_ptr<Tensor<T> > data() { return data_; };
-    std::shared_ptr<Tensor<T> > tensor() { return data_; };
+    std::shared_ptr<Tensor<T> > data() { return data_; }
+    std::shared_ptr<Tensor<T> > tensor() { return data_; }
 
 };
 
@@ -151,10 +151,12 @@ template <typename T>
 class MOFock {
   protected:
     std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
+
   public:
-    MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), blocks_(b) {
+    MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
@@ -176,7 +178,26 @@ class MOFock {
       }
 
       std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
-      Matrix f = *r->coeff() % *fock1 * *r->coeff();
+      const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
+
+      // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
+      const int nclosed = ref_->nclosed();
+      const int nocc    = ref_->nocc();
+      const int nvirt   = ref_->nvirt();
+      const int nbasis  = ref_->geom()->nbasis();
+      std::unique_ptr<double[]> eig(new double[nbasis]);
+      if (nclosed) {
+        std::shared_ptr<Matrix> fcl = forig.get_submatrix(0, 0, nclosed, nclosed); 
+        fcl->diagonalize(eig.get());
+        dgemm_("N", "N", nbasis, nclosed, nclosed, 1.0, ref_->coeff()->data(), nbasis, fcl->data(), nclosed, 0.0, coeff_->data(), nbasis); 
+      }
+      if (nvirt) {
+        std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt); 
+        fvirt->diagonalize(eig.get());
+        dgemm_("N", "N", nbasis, nvirt, nvirt, 1.0, ref_->coeff()->element_ptr(0,nocc), nbasis, fvirt->data(), nvirt, 0.0, coeff_->element_ptr(0,nocc), nbasis);
+      }
+      const Matrix f = *coeff_ % *fock1 * *coeff_;
+
       size_t j0 = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
         size_t j1 = blocks_[1].keyoffset();
@@ -187,11 +208,12 @@ class MOFock {
         }
         ++j0;
       }
-    };
-    ~MOFock() {};
+    }
+    ~MOFock() {}
 
-    std::shared_ptr<Tensor<T> > data() { return data_; };
-    std::shared_ptr<Tensor<T> > tensor() { return data_; };
+    std::shared_ptr<Tensor<T> > data() { return data_; }
+    std::shared_ptr<Tensor<T> > tensor() { return data_; }
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 
 }

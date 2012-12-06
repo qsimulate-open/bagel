@@ -31,10 +31,9 @@
 #include <list>
 #include <cassert>
 #include <vector>
-#include <src/util/matrix.h>
+#include <src/parallel/paramatrix.h>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
-#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 
@@ -125,14 +124,14 @@ class DFBlock {
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
 
     // Form 2- and 4-index integrals
-    std::unique_ptr<double[]> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
+    std::shared_ptr<ParaMatrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
     // slowest index of o is fixed to n
     std::unique_ptr<double[]> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
     std::unique_ptr<double[]> form_vec(const double* den) const;
-    std::unique_ptr<double[]> form_mat(const double* fit) const;
+    std::shared_ptr<ParaMatrix> form_mat(const double* fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
 

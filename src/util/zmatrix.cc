@@ -201,7 +201,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
   const complex<double>* odata = o.data();
   complex<double>* outdata = out.data();
 
-  zgemm3m_("T", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("H", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
 
   return out;
 }
@@ -218,7 +218,7 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
   const complex<double>* odata = o.data();
   complex<double>* outdata = out.data();
 
-  zgemm3m_("N", "T", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("N", "H", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
 
   return out;
 }
@@ -296,11 +296,17 @@ complex<double> ZMatrix::zdotu(const std::shared_ptr<const ZMatrix> o) const {
   return zdotu_(ndim_*mdim_, data(), 1, o->data(), 1);
 }
 
-#if 0
-complex<double> ZMatrix::rms() const {
-  return ::sqrt(zdotu(*this) / (ndim_ * mdim_));
+
+double ZMatrix::norm() const {
+  complex<double> n = zdotu(*this);
+  assert(fabs(n.imag()) < 1.0e-10);
+  return n.real();
 }
-#endif
+
+
+double ZMatrix::rms() const {
+  return norm()/std::sqrt(ndim_ * mdim_);
+}
 
 
 complex<double> ZMatrix::trace() const {

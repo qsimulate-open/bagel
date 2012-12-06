@@ -295,7 +295,7 @@ double Matrix::ddot(const std::shared_ptr<const Matrix> o) const {
 
 
 double Matrix::rms() const {
-  return ::sqrt(ddot(*this) / (ndim_ * mdim_));
+  return std::sqrt(ddot(*this) / (ndim_ * mdim_));
 }
 
 
@@ -421,7 +421,7 @@ void Matrix::purify_unitary() {
       const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
       daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
-    const double b = 1.0/sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     dscal_(ndim_, b, &data_[i*ndim_], 1);
   }
 #endif
@@ -493,7 +493,7 @@ void Matrix::inverse_half(const double thresh) {
   diagonalize(vec.get());
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+    double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
     dscal_(n, s, data_.get()+i*n, 1);
   }
 
@@ -504,6 +504,21 @@ void Matrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
+}
+
+// compute Hermitian square root, S^{1/2}
+void Matrix::sqrt() {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  unique_ptr<double[]> vec(new double[n]);
+  diagonalize(vec.get());
+
+  for (int i = 0; i != n; ++i) {
+    double s = std::sqrt(std::sqrt(vec[i]));
+    dscal_(n, s, data_.get()+i*n, 1);
+  }
+
+  *this = *this ^ *this;
 }
 
 
@@ -535,4 +550,23 @@ unique_ptr<double[]> Matrix::get_block(const int ndim_i, const int mdim_i, const
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) 
     copy_n(data_.get() + ndim_i + i*ndim_, ndim, out.get() + j*ndim);
   return out;
+}
+
+
+shared_ptr<Matrix> Matrix::get_submatrix(const int ndim_i, const int mdim_i, const int ndim, const int mdim) const {
+  shared_ptr<Matrix> out(new Matrix(ndim, mdim)); 
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) 
+    copy_n(data_.get() + ndim_i + i*ndim_, ndim, out->data_.get() + j*ndim);
+  return out;
+}
+
+
+void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    daxpy_(ndim, 1.0, data + j*ndim, 1, data_.get() + ndim_i + i*ndim_, 1);
+}
+
+void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& o) {
+  assert(ndim == o.ndim() && mdim == o.mdim());
+  add_block(ndim_i, mdim_i, ndim, mdim, o.data());
 }

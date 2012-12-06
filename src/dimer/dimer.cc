@@ -30,6 +30,7 @@
 #include <src/scf/matrix1e.h>
 #include <src/scf/overlap.h>
 #include <src/scf/fock.h>
+#include <src/fci/harrison.h>
 #include <src/dimer/dimer.h>
 
 using namespace std;
@@ -47,6 +48,7 @@ Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : dimer
    shared_ptr<const Geometry> geomB(new const Geometry((*A), displacement));
 
    geoms_ = make_pair(A, geomB);
+   nele_ = make_pair(A->nele(), geomB->nele());
 
    cout << " ===== Constructing Dimer geometry ===== " << endl;
    construct_geometry();
@@ -64,6 +66,7 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
 
    geoms_ = make_pair(geomA, geomB);
+   nele_ = make_pair(geomA->nele(), geomB->nele());
 
    cout << " ===== Constructing Dimer geometry ===== " << endl;
    construct_geometry();
@@ -95,6 +98,7 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
 
    geoms_ = make_pair(geomA, geomB);
+   nele_ = make_pair(geomA->nele(), geomB->nele());
 
    ci_ = make_pair(A, A);
    ccvecs_ = make_pair(A->civectors(), A->civectors());
@@ -153,8 +157,8 @@ void Dimer::construct_coeff() {
   }
   else {
     // Round nele up for number of orbitals
-    ncore_.first  = (geoms_.first->nele() + 1)/2;
-    ncore_.second = (geoms_.second->nele() + 1)/2;
+    ncore_.first  = (nele_.first + 1)/2;
+    ncore_.second = (nele_.second + 1)/2;
 
     nact_.first  = 0;
     nact_.second = 0;
@@ -255,4 +259,48 @@ void Dimer::energy() {
    energy = 0.5*energy + sgeom_->nuclear_repulsion();
 
    energy_ = energy;
+}
+
+void Dimer::fci(multimap<string,string> idata) {
+  { // Start FCI on unit A
+    // Move occupied orbitals of unit B to form the core orbitals
+    shared_ptr<Matrix> Amatrix = scoeff_->slice(nbasis_.first, nbasis_.first + ncore_.second)->merge(scoeff_->slice(0,nbasis_.first));
+    shared_ptr<Coeff> Acoeff(new Coeff(*Amatrix));
+
+    // Set up variables for this fci
+    shared_ptr<Reference> Aref(new Reference(sgeom_, Acoeff, (nele_.first + nele_.second)/2, 0, 0));
+
+    const int ncore = ncore_.second; // ncore in this set up is all the occupied orbitals of unit B
+    const int norb  = nbasis_.first; // Assuming use of the whole space
+
+    // for now let's just hardcode in HZ. This can maybe be changed later
+    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Aref, ncore, norb));
+
+    fci->compute();
+    ccvecs_.first = fci->civectors();
+  }
+
+  { // Start FCI on unit B
+    shared_ptr<Matrix> Bmatrix = scoeff_->slice(0,ncore_.first)->merge(scoeff_->slice(nbasis_.first, nbasis_.first + nbasis_.second));
+    shared_ptr<Coeff> Bcoeff(new Coeff(*Bmatrix));
+
+    // Set up variables for this fci
+    shared_ptr<Reference> Bref(new Reference(sgeom_, Bcoeff, (nele_.first + nele_.second)/2, 0, 0));
+
+    const int ncore = ncore_.first;
+    const int norb = nbasis_.second;
+
+    // HZ fci
+    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Bref, ncore, norb));
+
+    fci->compute();
+    ccvecs_.second = fci->civectors();
+  }
+
+  // Wavefunctions came from FCI calculations, so I should know the following
+  ncore_ = make_pair(0,0);
+  nact_ = make_pair(nbasis_.first, nbasis_.second);
+  nvirt_ = make_pair(0,0);
+
+  symmetric_ = false;
 }

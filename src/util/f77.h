@@ -52,6 +52,7 @@ extern "C" {
              const double* beta, double* c, const int* ldc);
  void dsysv_(const char* uplo, const int* n, const int* nrhs, double* a, const int* lda, int* ipiv,
              double* b, const int* ldb, double* work, const int* lwork, int* info);
+ void drot_(const int*, const double*, const int*, const double*, const int*, const double*, const double*);
 
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zscal_(const int*, const std::complex<double>*, std::complex<double>*, const int*);
@@ -131,6 +132,11 @@ static void dger_(const int a, const int b, const double c, const double* d, con
 static void dger_(const int a, const int b, const double c, const std::unique_ptr<double[]>& d, const int e, const std::unique_ptr<double[]>& f,
                   const int g, std::unique_ptr<double[]>& h, const int i)
                  { dger_(&a, &b, &c, d.get(), &e, f.get(), &g, h.get(), &i); }
+static void drot_(const int a, const double* b, const int c, const double* d, const int e, const double f, const double g)
+                 { drot_(&a, b, &c, d, &e, &f, &g); }
+static void drot_(const int a, std::unique_ptr<double[]> b, const int c, std::unique_ptr<double[]> d, const int e, const double f, const double g)
+                 { drot_(&a, b.get(), &c, d.get(), &e, &f, &g); }
+
 static void zgemm3m_(const char* transa, const char* transb, const int m, const int n, const int k,
                      const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
                      const std::complex<double> beta, std::complex<double>* c, const int ldc) { zgemm3m_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }

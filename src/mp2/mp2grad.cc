@@ -35,6 +35,7 @@
 #include <src/grad/gradeval.h>
 
 using namespace std;
+using namespace std::chrono;
 using namespace bagel;
 
 MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
@@ -48,7 +49,7 @@ void MP2Grad::compute() { }
 
 template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
-  auto tp1 = chrono::high_resolution_clock::now();
+  auto tp1 = high_resolution_clock::now();
 
   const size_t ncore = ref_->ncore();
 
@@ -63,22 +64,23 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const coeff = ref_->coeff()->data() + ncore*nbasis;
-  const double* const ocoeff = ref_->coeff()->data();
-  const double* const vcoeff = coeff + nocc*nbasis;
+  shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
+  shared_ptr<const Matrix> acmat = ref_->coeff()->slice(ncore, nocca);
+  shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
+  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
 
   // first compute half transformed integrals
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acmat);
   // TODO this is a waste...
-  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocoeff, nocca)->apply_JJ();
+  shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocmat)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(vcmat)->apply_J();
   shared_ptr<const DFFullDist> bv = full->apply_J();
   shared_ptr<DFFullDist> gia = bv->clone();
 
-  auto tp2 = chrono::high_resolution_clock::now();
-  auto dr1 = chrono::duration_cast<chrono::milliseconds>(tp2-tp1);
+  auto tp2 = high_resolution_clock::now();
+  auto dr1 = duration_cast<milliseconds>(tp2-tp1);
   cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << dr1.count()*0.001 << endl << endl;
 
   // assemble
@@ -129,29 +131,25 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis);
   }
 
-  auto tp3 = chrono::high_resolution_clock::now();
-  auto dr2 = chrono::duration_cast<chrono::milliseconds>(tp3-tp2);
+  auto tp3 = high_resolution_clock::now();
+  auto dr2 = duration_cast<milliseconds>(tp3-tp2);
   cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << dr2.count()*0.001 << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 
   // L''aq = 2 Gia(D|ia) (D|iq)
-  unique_ptr<double[]> lai(new double[nocca*nvirt]);
-  const unique_ptr<double[]> laq = gia->form_2index(half, 2.0);
-  {
-    dgemm_("N", "N", nvirt, nocca, nbasis, 1.0, laq.get(), nvirt, ocoeff, nbasis, 0.0, lai.get(), nvirt);
-  }
+  shared_ptr<const Matrix> laq = gia->form_2index(half, 2.0);
+  const Matrix lai = *laq * *ocmat;
 
   // Gip = Gia(D|ia) C+_ap
-  shared_ptr<DFHalfDist> gip = gia->back_transform(vcoeff);
+  shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat);
   // Liq = 2 Gip(D) * (D|pq)
-  unique_ptr<double[]> lia(new double[nocca*nvirt]);
-  fill(lia.get(), lia.get()+nocca*nvirt, 0.0);
-  unique_ptr<double[]> lif(new double[nocc*max(static_cast<unsigned long int>(ncore),1lu)]);
-  const unique_ptr<double[]> lip = gip->form_2index(geom_->df(), 2.0);
+  Matrix lia(nocca, nvirt);
+  Matrix lif(nocc, max(1lu,ncore));
+  shared_ptr<const Matrix> lip = gip->form_2index(geom_->df(), 2.0);
   {
-    dgemm_("N", "N", nocc, nvirt, nbasis, 1.0, lip.get(), nocc, vcoeff, nbasis, 0.0, lia.get()+ncore, nocca);
+    lia.add_block(ncore, 0, nocc, nvirt, *lip * *vcmat);
     if (ncore)
-      dgemm_("N", "N", nocc, ncore, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 0.0, lif.get(), nocc);
+      lif = *lip * *ccmat; 
   }
 
   // core-occ density matrix elements
@@ -160,20 +158,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
-  shared_ptr<Matrix> dmp2ao_part(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
-  unique_ptr<double[]> jai(new double[nvirt*nocca]);
-  {
-    unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao_part->data());
-    unique_ptr<double[]> jri(new double[nbasis*nocca]);
-    dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
-    dgemm_("T", "N", nvirt, nocca, nbasis, 2.0, vcoeff, nbasis, jri.get(), nbasis, 0.0, jai.get(), nvirt);
-  }
+  const Matrix dmp2ao_part = *ref_->coeff() * *dmp2 ^ *ref_->coeff();
+  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part.data()) * *ocmat * 2.0;
   // -1*K_al(d_rs)
-  unique_ptr<double[]> kia(new double[nvirt*nocca]);
-  {
-    unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao_part->data());
-    dgemm_("N", "N", nocca, nvirt, nbasis, -1.0, kir.get(), nocca, vcoeff, nbasis, 0.0, kia.get(), nocca);
-  }
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part.data(), -1.0) * *vcmat;
 
   shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
@@ -181,8 +169,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
 
-  auto tp4 = chrono::high_resolution_clock::now();
-  auto dr3 = chrono::duration_cast<chrono::milliseconds>(tp4-tp3);
+  auto tp4 = high_resolution_clock::now();
+  auto dr3 = duration_cast<milliseconds>(tp4-tp3);
   cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << dr3.count()*0.001 << endl << endl;
 
   // solving CPHF
@@ -201,8 +189,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  auto tp5 = chrono::high_resolution_clock::now();
-  auto dr4 = chrono::duration_cast<chrono::milliseconds>(tp5-tp4);
+  auto tp5 = high_resolution_clock::now();
+  auto dr4 = duration_cast<milliseconds>(tp5-tp4);
   cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << dr4.count()*0.001 << endl;
 
   // one electron matrices
@@ -220,11 +208,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
-  shared_ptr<DFDist> sep3 = sepd->back_transform(ocoeff);
+  shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat);
   sep3->scale(-2.0);
   /// mp2 two body part ----------------
   {
-    shared_ptr<DFDist> sep32 = gip->back_transform(coeff);
+    shared_ptr<DFDist> sep32 = gip->back_transform(acmat);
     sep3->daxpy(4.0, sep32);
   }
   sep3->add_direct_product(cd, dd, 1.0);
@@ -247,29 +235,24 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (int j = 0; j != nvirt; ++j)
       wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  dgemm_("N", "N", nocc, nocca, nbasis, 1.0, lip.get(), nocc, ocoeff, nbasis, 1.0, wd->data()+ncore, nbasis);
-  dgemm_("N", "N", nvirt, nocca, nbasis, 2.0, laq.get(), nvirt, ocoeff, nbasis, 1.0, wd->data()+nocca, nbasis);
-  dgemm_("N", "N", nvirt, nvirt, nbasis, 1.0, laq.get(), nvirt, vcoeff, nbasis, 1.0, wd->data()+nocca+nocca*nbasis, nbasis);
-
-  unique_ptr<double[]> jrs = geom_->df()->compute_Jop(dmp2ao->data());
-  unique_ptr<double[]> jri(new double[nbasis*nocca]);
-  dgemm_("N", "N", nbasis, nocca, nbasis, 1.0, jrs.get(), nbasis, ocoeff, nbasis, 0.0, jri.get(), nbasis);
-  dgemm_("T", "N", nocca, nocca, nbasis, 2.0, ocoeff, nbasis, jri.get(), nbasis, 1.0, wd->data(), nbasis);
-  unique_ptr<double[]> kir = halfjj->compute_Kop_1occ(dmp2ao->data());
-  dgemm_("N", "N", nocca, nocca, nbasis, -1.0, kir.get(), nocca, ocoeff, nbasis, 1.0, wd->data(), nbasis);
+  wd->add_block(ncore, 0, nocc, nocca, *lip * *ocmat);
+  wd->add_block(nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
+  wd->add_block(nocca, nocca, nvirt, nvirt, *laq * *vcmat);
+  wd->add_block(0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao->data()) * *ocmat * 2.0));
+  wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0) * *ocmat));
 
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
-  auto tp6 = chrono::high_resolution_clock::now();
-  auto dr5 = chrono::duration_cast<chrono::milliseconds>(tp6-tp5);
+  auto tp6 = high_resolution_clock::now();
+  auto dr5 = duration_cast<milliseconds>(tp6-tp5);
   cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << dr5.count()*0.001 << endl;
 
   // gradient evaluation
   shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
 
-  auto tp7 = chrono::high_resolution_clock::now();
-  auto dr6 = chrono::duration_cast<chrono::milliseconds>(tp7-tp6);
+  auto tp7 = high_resolution_clock::now();
+  auto dr6 = duration_cast<milliseconds>(tp7-tp6);
   cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right << setw(10) << dr6.count()*0.001 << endl << endl;
 
   // set proper energy_

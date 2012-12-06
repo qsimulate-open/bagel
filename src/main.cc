@@ -50,6 +50,7 @@
 #include <src/opt/opt.h>
 #include <src/util/input.h>
 #include <src/util/constants.h>
+#include <src/util/localization.h>
 #include <src/rel/dirac.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
@@ -292,6 +293,7 @@ int main(int argc, char** argv) {
         scf = std::shared_ptr<DimerSCF>(new DimerSCF(iter->second, dimer));
         scf->compute();
         ref = scf->conv_to_ref();
+        dimer->set_sref(ref);
 
       } else if (method == "print") {
 
@@ -310,40 +312,23 @@ int main(int argc, char** argv) {
         std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        //std::shared_ptr<FCI> fci(new HarrisonZarrabian(iter->second, ref));
-        //fci->compute();
-        //std::shared_ptr<const CIWfn> ci = fci->conv_to_ciwfn();
-
-        double dx = read_input<double>(testdata, "dx", 0.0);
-        double dy = read_input<double>(testdata, "dy", 0.0);
-        double dz = read_input<double>(testdata, "dz", 0.0);
-        std::array<double,3> disp = {{dx,dy,dz}};
-        std::shared_ptr<Dimer> dim(new Dimer(ref, disp));
-        //dim->hamiltonian();
-
-        std::shared_ptr<DimerSCF> dimer_scf(new DimerSCF(testdata, dim));
-        dimer_scf->compute();
-
-        ref = dimer_scf->conv_to_ref();
-        geom = dim->sgeom();
-
-        #if 0
-        std::shared_ptr<Coeff> ovlp = dim->overlap();
-        //ovlp->print("overlap", 12);
-        double max = 0.0;
-        const int n = ovlp->ndim();
-        const int m = ovlp->mdim();
+        std::shared_ptr<Matrix> density = ref->coeff()->form_density_rhf(ref->nocc());
+        // for testing purposes, only using region_size right now which assigns the first "region_size" atoms to the first
+        // region and the rest to the second region.
+        int region_size = read_input<int>(testdata, "region_size", 0);
+        if(region_size <= 0) throw std::runtime_error("region_size should be greater than 0");
         
-        for(int i = 0; i < m; ++i) {
-          for(int j = 0; j < n; ++j) {
-            if (i==j) continue;
-            double value = abs(ovlp->element(i,j));
-            if (value > max) max = value;
-          }
-        }
-        std::cout << std::setprecision(12) << "max: " << max << std::endl;
-        #endif
-      
+        std::pair<int, int> pair1(0, region_size-1); std::pair<int,int> pair2(region_size,geom->natom()-1);
+        std::vector<std::pair<int, int> > bounds = {pair1, pair2};
+        std::shared_ptr<OrbitalLocalization> regionalize(new RegionLocalization(geom, density, bounds));
+
+        std::shared_ptr<Matrix> regional_mos = regionalize->localize();
+        //regional_mos->print("Regionalized MOs", geom->nbasis());
+
+        std::shared_ptr<const Coeff> regional_coeff(new const Coeff(*regional_mos));
+        ref = std::shared_ptr<Reference>(new Reference(geom, regional_coeff, ref->nclosed(), ref->nact(), ref->nvirt()));
+        //dimer->fci(testdata);
+        //dimer->hamiltonian();
       }
       #endif
     }

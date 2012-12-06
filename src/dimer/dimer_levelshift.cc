@@ -43,14 +43,6 @@ ShiftDimer::ShiftDimer(shared_ptr<const Dimer> dimer, const double shift_paramet
   const int nfence = nstart + nbasis_.second;
   subspace_ = dimer->proj_coeff()->slice(nstart, nfence);
 
-  #if 0
-  S_ = shared_ptr<const Matrix>(new const Overlap(dimer->sgeom()));
-  Matrix S_1((*subspace_) % (*subspace_) );
-  S_1.inverse();
-
-  subspace_projector_ = shared_ptr<const Matrix>(new const Matrix( (*subspace_) * S_1 ^ (*subspace_) ));
-  #endif
-
   S_ = shared_ptr<const Matrix>(new const Overlap(dimer->sgeom()));
   subspace_projector_ = shared_ptr<const Matrix>(new const Matrix( (*S_) * (*dimer->proj_coeff()) ));
 }
@@ -96,4 +88,33 @@ void ShiftDimer::shift(Matrix& fock_mo, shared_ptr<const Coeff> coeff) {
       fock_mo.element(aiter,aiter) += shift_parameter_;
     }
   }
+}
+
+void ShiftDimer::print_mo_data(shared_ptr<const Coeff> coeff) {
+  // Project onto subspace
+  Matrix overlap( (*coeff) % (*subspace_projector_) );
+
+  // multimap will order according to overlap
+  vector<double> Anorms, Bnorms;
+
+  double* odata = overlap.data();
+
+  const int nbasisA = nbasis_.first;
+  const int nbasisB = nbasis_.second;
+
+  for(int i = 0; i < dimerbasis_; ++i, ++odata) {
+    double A_norm = ddot_(nbasisA, odata, dimerbasis_, odata, dimerbasis_);
+    Anorms.push_back(A_norm);
+  }
+
+  odata = overlap.data() + dimerbasis_ * nbasisA;
+  for(int i = 0; i < dimerbasis_; ++i, ++odata) {
+    double B_norm = ddot_(nbasisB, odata, dimerbasis_, odata, dimerbasis_);
+    Bnorms.push_back(B_norm);
+  }
+
+  cout << endl << "Subspace overlaps" << endl;
+  cout << setw(5) << "MO" << setw(10) << "A" << setw(10) << "B" << endl;
+  for(int i = 0; i < dimerbasis_; ++i)
+    cout << setw(5) << i << setw(10) << setprecision(6) << Anorms.at(i) << setw(10) << Bnorms.at(i) << endl;
 }

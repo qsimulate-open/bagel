@@ -36,6 +36,7 @@
 #include <chrono>
 #include <iomanip>
 #include <src/parallel/paramatrix.h>
+#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 

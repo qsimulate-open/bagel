@@ -43,21 +43,21 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     const int mdim_;
 
   public:
-    Matrix() : ndim_(0), mdim_(0) {};
+    Matrix() : ndim_(0), mdim_(0) {}
     Matrix(const int n, const int m);
     Matrix(const Matrix&);
     ~Matrix();
 
-    int size() const { return ndim_*mdim_; };
-    int ndim() const { return ndim_; };
-    int mdim() const { return mdim_; };
-    double* data() const { return data_.get(); };
-    double& data(const size_t i) { return *(data_.get()+i); };
-    const double& data(const size_t i) const { return *(data_.get()+i); };
-    double& element(int i, int j) { return *element_ptr(i, j); };
-    double* element_ptr(int i, int j) { return data()+i+j*ndim_; };
-    const double& element(int i, int j) const { return *element_ptr(i, j); };
-    const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; };
+    int size() const { return ndim_*mdim_; }
+    int ndim() const { return ndim_; }
+    int mdim() const { return mdim_; }
+    double* data() const { return data_.get(); }
+    double& data(const size_t i) { return *(data_.get()+i); }
+    const double& data(const size_t i) const { return *(data_.get()+i); }
+    double& element(int i, int j) { return *element_ptr(i, j); }
+    double* element_ptr(int i, int j) { return data()+i+j*ndim_; }
+    const double& element(int i, int j) const { return *element_ptr(i, j); }
+    const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; }
 
     void fill_upper();
     void symmetrize();
@@ -73,10 +73,15 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
+    // compute S^1/2. Same algorithm as above.
+    void sqrt();
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]>& o);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
     std::unique_ptr<double[]> get_block(const int nstart, const int mstart, const int ndim, const int mdim) const;
+    std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
+    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* o);
+    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);
@@ -95,12 +100,12 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
 
-    double& operator[](const size_t& i) { return data_[i]; };
-    const double& operator[](const size_t& i) const { return data_[i]; };
-    double& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; };
-    const double& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; };
+    double& operator[](const size_t& i) { return data_[i]; }
+    const double& operator[](const size_t& i) const { return data_[i]; }
+    double& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
+    const double& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
 
-    std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_)); };
+    std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_)); }
 
     // returns exp(*this)
     std::shared_ptr<Matrix> exp(const int deg = 6) const;
@@ -112,25 +117,25 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void daxpy(const double, const Matrix&);
     void daxpy(const double, const std::shared_ptr<const Matrix>);
     double ddot(const Matrix&) const;
-    double norm() const { return std::sqrt(ddot(*this)); };
+    double norm() const { return std::sqrt(ddot(*this)); }
     double ddot(const std::shared_ptr<const Matrix>) const;
     double rms() const;
     double trace() const;
 
-    void dscal(const double a) { dscal_(size(), a, data(), 1); };
-    void scale(const double a) { dscal(a); };
+    void dscal(const double a) { dscal_(size(), a, data(), 1); }
+    void scale(const double a) { dscal(a); }
 
-    void add_diag(const double a, const int i, const int j) { 
+    void add_diag(const double a, const int i, const int j) {
       assert(ndim_ == mdim_);
       for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
-    };
-    void add_diag(const double a) { add_diag(a,0,ndim_); };
+    }
+    void add_diag(const double a) { add_diag(a,0,ndim_); }
     // returns diagonal elements
     std::unique_ptr<double[]> diag() const;
 
-    void fill(const double a) { std::fill(data(), data()+ndim_*mdim_, a); };
-    void zero() { fill(0.0); };
-    void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);};
+    void fill(const double a) { std::fill(data(), data()+ndim_*mdim_, a); }
+    void zero() { fill(0.0); }
+    void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 
     void purify_unitary();
