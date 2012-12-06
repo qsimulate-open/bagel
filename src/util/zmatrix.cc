@@ -540,9 +540,9 @@ void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, con
 void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
 
 void ZMatrix::copy_real_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i; i != mdim_i + mdim ; ++i) {
-    for (int j = ndim_i; j != ndim_i + ndim ; ++j) {
-      element(i,j) = (data + i + j*ndim, 0);
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+      element(k,i) = (data + j*ndim + l, 0);
     } 
   } 
 } 
