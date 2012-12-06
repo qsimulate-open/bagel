@@ -532,3 +532,19 @@ void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, con
 
 void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
 void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
+
+#if 0
+void ZMatrix::copy_real_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    copy_n(data + j*ndim, ndim, data_.get() + ndim_i + i*ndim_);
+}
+#endif
+
+shared_ptr<ZMatrix> ZMatrix::convert_real(shared_ptr<Matrix> in) {
+  shared_ptr<ZMatrix> out(new ZMatrix(in->ndim(), in->mdim()));
+  for (int i = 0; i != in->size(); ++i) {
+    out->data_[i] = (in->data(i), 0);
+  }
+
+  return out;
+}

@@ -34,6 +34,7 @@
 #include <list>
 #include <src/util/f77.h>
 #include <complex>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
@@ -140,6 +141,8 @@ class ZMatrix { // Not to be confused with ZMatrix1e... at least for the moment
     std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix> > o);
 
     void print(const std::string in = "", const int size = 10) const;
+
+    std::shared_ptr<ZMatrix> convert_real(std::shared_ptr<Matrix>);
 };
 
 }
