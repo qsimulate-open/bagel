@@ -195,15 +195,8 @@ class SpinFreeMethod {
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != nact*nact; ++j02, ++iall) {
-#if 0
                     interp[iall] /= e0_ - (denom_xxp_[j02] + eig_[j3] + eig_[j1]);
                     interm[iall] /= e0_ - (denom_xxm_[j02] + eig_[j3] + eig_[j1]);
-#else
-//                  interp[iall] /= - (eig_[j3] + eig_[j1]);
-//                  interm[iall] /= - (eig_[j3] + eig_[j1]);
-                    interp[iall] /= e0_ - (eig_[j3] + eig_[j1]);
-                    interm[iall] /= e0_ - (eig_[j3] + eig_[j1]);
-#endif
                   }
 
               // move back to non-orthogonal basis
@@ -360,7 +353,7 @@ class SpinFreeMethod {
         for (auto& i1 : active_)
           for (auto& i0 : active_)
             fockact->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
-        dgemv_("N", size, dim, 1.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
+        dgemv_("N", size, dim, 2.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
 
         // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
         std::shared_ptr<Matrix> work4 = work2->clone();
