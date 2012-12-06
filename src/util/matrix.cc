@@ -553,6 +553,14 @@ unique_ptr<double[]> Matrix::get_block(const int ndim_i, const int mdim_i, const
 }
 
 
+shared_ptr<Matrix> Matrix::get_submatrix(const int ndim_i, const int mdim_i, const int ndim, const int mdim) const {
+  shared_ptr<Matrix> out(new Matrix(ndim, mdim)); 
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) 
+    copy_n(data_.get() + ndim_i + i*ndim_, ndim, out->data_.get() + j*ndim);
+  return out;
+}
+
+
 void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
     daxpy_(ndim, 1.0, data + j*ndim, 1, data_.get() + ndim_i + i*ndim_, 1);

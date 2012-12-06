@@ -87,13 +87,12 @@ unique_ptr<double[]> Storage_Incore::move_block(const size_t& key) {
 
   if (!initialized(blocknum)) {
     unique_ptr<double[]> tmp(new double[hash->second.second]);
-    fill(tmp.get(), tmp.get()+hash->second.second, 0.0);
+    fill_n(tmp.get(), hash->second.second, 0.0);
     data_[blocknum] = move(tmp);
     initialized_[blocknum] = true;
   }
 
   assert(initialized_[blocknum]);
-
   return move(data_.at(blocknum));
 }
 
