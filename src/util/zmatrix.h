@@ -78,6 +78,9 @@ class ZMatrix {
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
+    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
+    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
+    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
 
     ZMatrix operator*(const ZMatrix&) const;
     ZMatrix& operator*=(const ZMatrix&);
