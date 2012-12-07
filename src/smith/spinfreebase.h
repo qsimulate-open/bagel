@@ -219,7 +219,7 @@ class SpinFreeMethod {
 
   public:
     SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
-      const int max = 1000;
+      const int max = 10;
       IndexRange c(r->nclosed(), max);
       IndexRange act(r->nact(), max, c.nblock(), c.size());
       IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
@@ -339,7 +339,7 @@ class SpinFreeMethod {
           shalf_xx_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
           std::shared_ptr<Matrix> tmp = shalf_xx_->clone();
           std::copy_n(ref_->rdm2(0)->data(), size, tmp->data()); 
-          sort_indices<0,2,1,3,0,1, 1,1>(tmp->data(), shalf_xx_->data(), nact, nact, nact, nact);
+          sort_indices<0,2,1,3,0,1,1,1>(tmp->data(), shalf_xx_->data(), nact, nact, nact, nact);
           shalf_xx_->inverse_half(1.0e-9);
         }
 
@@ -350,7 +350,7 @@ class SpinFreeMethod {
         std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
         for (auto& i1 : active_)
           for (auto& i0 : active_)
-            fockact->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
+            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
         dgemv_("N", size, dim, 1.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
 
         // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
