@@ -69,7 +69,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       task2->add_dep(task0);
       queue_->add_task(task2);
 
-      std::vector<IndexRange> I0_index = {this->active_, this->closed_, this->virt_, this->virt_};
+      std::vector<IndexRange> I0_index = {this->active_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I0(new Tensor<T>(I0_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor3 = {r, I0};
       std::shared_ptr<Task3<T> > task3(new Task3<T>(tensor3, index));
@@ -111,7 +111,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task7->add_dep(task1);
 
-      std::vector<IndexRange> I5_index = {this->active_, this->closed_, this->virt_, this->virt_};
+      std::vector<IndexRange> I5_index = {this->active_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {I0, this->f1_, I5};
       std::shared_ptr<Task8<T> > task8(new Task8<T>(tensor8, index));
@@ -154,7 +154,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task12->add_dep(task2);
 
-      std::vector<IndexRange> I11_index = {this->active_, this->closed_, this->virt_, this->virt_};
+      std::vector<IndexRange> I11_index = {this->active_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I11(new Tensor<T>(I11_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor13 = {I0, this->f1_, I11};
       std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
@@ -197,7 +197,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task17->add_dep(task2);
 
-      std::vector<IndexRange> I17_index = {this->active_, this->closed_, this->virt_, this->virt_};
+      std::vector<IndexRange> I17_index = {this->active_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I17(new Tensor<T>(I17_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor18 = {I0, this->f1_, I17};
       std::shared_ptr<Task18<T> > task18(new Task18<T>(tensor18, index));

@@ -187,21 +187,6 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
 
       task16->add_dep(task2);
 
-      std::vector<IndexRange> I14_index = {this->active_, this->active_, this->active_, this->active_};
-      std::shared_ptr<Tensor<T> > I14(new Tensor<T>(I14_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor17 = {I10, r, I14};
-      std::shared_ptr<Task17<T> > task17(new Task17<T>(tensor17, index));
-      task14->add_dep(task17);
-      energy_->add_task(task17);
-
-
-      std::vector<std::shared_ptr<Tensor<T> > > tensor18 = {I14, Gamma2};
-      std::shared_ptr<Task18<T> > task18(new Task18<T>(tensor18, index));
-      task17->add_dep(task18);
-      energy_->add_task(task18);
-
-      task18->add_dep(task2);
-
       return make_pair(queue_, energy_);
     };
 
