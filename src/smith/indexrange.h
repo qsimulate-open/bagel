@@ -87,7 +87,7 @@ class IndexRange {
           off += *i;
         }
         // set size_
-        size_ = off;
+        size_ = off - orboffset_;
       } else {
         size_ = 0;
       }

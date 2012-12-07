@@ -224,6 +224,9 @@ class SpinFreeMethod {
       IndexRange act(r->nact(), max, c.nblock(), c.size());
       IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
       IndexRange a(c); a.merge(act); a.merge(v);
+      assert(c.size() == r->nclosed());
+      assert(act.size() == r->nact());
+      assert(v.size() == r->nvirt());
       closed_ = c;
       active_ = act;
       virt_ = v;

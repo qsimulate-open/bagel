@@ -133,7 +133,7 @@ class Tensor {
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
       if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
-      return std::move(data_->get_block(generate_hash_key(p)));
+      return data_->get_block(generate_hash_key(p));
     };
 
     std::unique_ptr<double[]> get_block(const std::initializer_list<size_t>& p) const {
@@ -142,7 +142,7 @@ class Tensor {
 
     std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
       assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
-      return std::move(data_->move_block(generate_hash_key(p)));
+      return data_->move_block(generate_hash_key(p));
     };
 
     std::unique_ptr<double[]> move_block(const std::initializer_list<size_t>& p) const {

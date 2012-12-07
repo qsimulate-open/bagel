@@ -172,7 +172,7 @@ class MOFock {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
         std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
         // slince of coeff
-        std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nclosed()+ref_->nact());
+        std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis
         den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
       }
