@@ -157,7 +157,6 @@ class Task3 : public Task<T> {
     std::shared_ptr<Tensor<T> > v2;
 
     void compute_() {
-std::cout << e0_ << std::endl;
       for (auto& a2 : virt_) {
         for (auto& c3 : closed_) {
           for (auto& a4 : virt_) {
