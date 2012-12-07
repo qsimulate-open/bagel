@@ -348,36 +348,6 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task35->add_dep(task2);
 
-      std::vector<IndexRange> I38_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T> > I38(new Tensor<T>(I38_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor36 = {I31, r, I38};
-      std::shared_ptr<Task36<T> > task36(new Task36<T>(tensor36, index));
-      task31->add_dep(task36);
-      energy_->add_task(task36);
-
-
-      std::vector<std::shared_ptr<Tensor<T> > > tensor37 = {I38, Gamma2};
-      std::shared_ptr<Task37<T> > task37(new Task37<T>(tensor37, index));
-      task36->add_dep(task37);
-      energy_->add_task(task37);
-
-      task37->add_dep(task2);
-
-      std::vector<IndexRange> I41_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T> > I41(new Tensor<T>(I41_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor38 = {I31, r, I41};
-      std::shared_ptr<Task38<T> > task38(new Task38<T>(tensor38, index));
-      task31->add_dep(task38);
-      energy_->add_task(task38);
-
-
-      std::vector<std::shared_ptr<Tensor<T> > > tensor39 = {I41, Gamma2};
-      std::shared_ptr<Task39<T> > task39(new Task39<T>(tensor39, index));
-      task38->add_dep(task39);
-      energy_->add_task(task39);
-
-      task39->add_dep(task2);
-
       return make_pair(queue_, energy_);
     };
 

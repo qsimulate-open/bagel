@@ -161,7 +161,7 @@ class MP2 : public SpinFreeMethod<T>, SMITH_info {
       energy_->add_task(task13);
 
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor14 = {I17, this->v2_, r};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor14 = {I17, this->v2_};
       std::shared_ptr<Task14<T> > task14(new Task14<T>(tensor14, index));
       task13->add_dep(task14);
       energy_->add_task(task14);
