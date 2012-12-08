@@ -219,17 +219,19 @@ class SpinFreeMethod {
         for (auto& i3 : virt_) {
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
+              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
+              std::vector<size_t> g = {i2.key(), i1.key(), i0.key(), i3.key()};
               if (!r->get_size(h)) continue;
               assert(r->get_size(g));
               std::unique_ptr<double[]> data0 = r->get_block(h);
+              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
+              sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
               const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size()); 
+              sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size()); 
               std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
 
               // move to orthogonal basis
-              dgemm_("N", "N", nact, i1.size()*i2.size()*i3.size(), i0.size(), 1.0, transp, nact, data0, i0.size(),
+              dgemm_("N", "N", nact, i1.size()*i2.size()*i3.size(), i0.size(), 1.0, transp, nact, data2, i0.size(),
                                                                                0.0, interm, nact);
 
               size_t iall = 0;
@@ -241,12 +243,13 @@ class SpinFreeMethod {
 
               // move back to non-orthogonal basis
               dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
-                                                                               0.0, data0,  i0.size());
+                                                                               0.0, data2,  i0.size());
 
+              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(h,data0);
+                t->add_block(hout,data2);
               } else {
-                t->put_block(h,data0);
+                t->put_block(hout,data2);
               }
             }
           }
@@ -264,17 +267,19 @@ class SpinFreeMethod {
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i2.key(), i1.key(), i0.key(), i3.key()};
+              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
+              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
               if (!r->get_size(h)) continue;
               assert(r->get_size(g));
               std::unique_ptr<double[]> data0 = r->get_block(h);
+              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
+              sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size()); 
               const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices<2,1,0,3,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size()); 
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size()); 
               std::unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*nact]);
 
               // move to orthogonal basis
-              dgemm_("N", "T", i0.size()*i1.size()*i2.size(), nact, i3.size(), 1.0, data0, i0.size()*i1.size()*i2.size(), transp, nact,
+              dgemm_("N", "T", i0.size()*i1.size()*i2.size(), nact, i3.size(), 1.0, data2, i0.size()*i1.size()*i2.size(), transp, nact,
                                                                                0.0, interm, i0.size()*i1.size()*i2.size());
 
               size_t iall = 0;
@@ -286,12 +291,13 @@ class SpinFreeMethod {
 
               // move back to non-orthogonal basis
               dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
-                                                                               0.0, data0,  i0.size()*i1.size()*i2.size());
+                                                                               0.0, data2,  i0.size()*i1.size()*i2.size());
 
+              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(h,data0);
+                t->add_block(hout,data2);
               } else {
-                t->put_block(h,data0);
+                t->put_block(hout,data2);
               }
             }
           }
