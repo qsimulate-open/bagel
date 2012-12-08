@@ -539,22 +539,36 @@ void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, con
 void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
 void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
 
-void ZMatrix::copy_real_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) = (data + j*ndim + l, 0);
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+//if (type == 0) {
+    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+        element(k,i) = a * *(data + j*ndim + l);
+//      element(k,i) = a * (*(data + j*ndim + l), 0);
+      } 
     } 
-  } 
+#if 0
+  } else {
+    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+        element(k,i) = (0, coeff * *(data + j*ndim + l));
+      } 
+    } 
+  }
+#endif
 } 
  
-void ZMatrix::copy_real_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { copy_real_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
-void ZMatrix::copy_real_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) { copy_real_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get()); }
 
-shared_ptr<ZMatrix> ZMatrix::convert_real(shared_ptr<Matrix> in) {
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
+  assert(ndim == data->ndim() && mdim == data->mdim());
+  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
+}
+
+shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) {
   shared_ptr<ZMatrix> out(new ZMatrix(in->ndim(), in->mdim()));
   for (int i = 0; i != in->size(); ++i) {
     out->data_[i] = (in->data(i), 0);
   }
-
   return out;
 }

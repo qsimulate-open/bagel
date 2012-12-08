@@ -44,7 +44,7 @@ class Dirac : public SCF_base {
     // nonrelativistic integrals
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Matrix> nai_;
-    const std::shared_ptr<const ZMatrix> smallnai_;
+    const std::shared_ptr<const SmallNAI> smallnai_;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
