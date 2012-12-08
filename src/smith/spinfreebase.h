@@ -128,7 +128,7 @@ class SpinFreeMethod {
               // if this block is not included in the current wave function, skip it
               if (!r->get_size(h)) continue;
               std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1 = r->get_block(g);
+              const std::unique_ptr<double[]> data1 = r->get_block(g);
 
               // this is an inverse of the overlap.
               // prefactor of 0.25 included here
@@ -212,8 +212,12 @@ class SpinFreeMethod {
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
               std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
+              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
               if (!r->get_size(h)) continue;
+              assert(r->get_size(g));
               std::unique_ptr<double[]> data0 = r->get_block(h);
+              const std::unique_ptr<double[]> data1 = r->get_block(g);
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size()); 
               std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
 
               // move to orthogonal basis
@@ -225,11 +229,11 @@ class SpinFreeMethod {
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = 0; j0 != nact; ++j0, ++iall)
-                      interm[iall] /= e0_ - (denom_x_[j0] + eig_[j3] + eig_[j2] + eig_[j1]);
+                      interm[iall] /= e0_ - (denom_x_[j0] + eig_[j3] - eig_[j2] + eig_[j1]);
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
-              dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 0.5, transp, nact, interm, nact,
+              dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
                                                                                0.0, data0,  i0.size());
 
               if (!put) {
@@ -375,7 +379,7 @@ class SpinFreeMethod {
           // denominator Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)
           // first compute Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) // TODO this should be computed directly maybe
           std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, dim, 1.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
+          dgemv_("N", size, nact*nact, 1.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
 
           // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
           std::shared_ptr<Matrix> work4 = work2->clone();
@@ -398,7 +402,7 @@ class SpinFreeMethod {
           // denominator Gamma(x0,x1, x2,x3) * f(x0,x1) * T(x2,D) * T(x3,D)
           std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
           // TODO hardwired 0
-          dgemv_("N", size, dim, 1.0, ref_->rdm2(0)->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
+          dgemv_("N", size, nact*nact, 1.0, ref_->rdm2(0)->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
 
           Matrix fss = *shalf_x_ % *work2 * *shalf_x_;
           denom_x_ = std::unique_ptr<double[]>(new double[dim]);
