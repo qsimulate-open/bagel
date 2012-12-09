@@ -46,22 +46,6 @@ class RDM_base {
     size_t dim_;
     int rank_;
 
-    // T should be able to be multiplied by norb_
-    template<int i, typename T, typename ...args>
-    size_t address_(const T& head, const args&... tail) const {
-      static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
-      T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_; 
-      return out + address_<i+1>(tail...);
-    }
-    template<int i, typename T>
-    size_t address_(const T& head) const {
-      static_assert(i >= 0 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
-      T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_; 
-      return out;
-    }
-
   public:
     RDM_base(const int n, const int rank);
     RDM_base(const RDM_base& o);
@@ -76,29 +60,41 @@ class RDM_base {
     void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
     size_t size() const { return dim_*dim_; }
 
-    template<typename ...args>
-    double& element(const args&... index) { return data_[address_<0>(index...)]; }
-
-    template<typename ...args>
-    const double& element(const args&... index) const { return data_[address_<0>(index...)]; }
-
-    std::vector<double> diag() const {
-      std::vector<double> out(dim_);
-      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
-      return out;
-    }
-
 };
 
 
 template <int rank>
 class RDM : public RDM_base {
+  protected:
+    // T should be able to be multiplied by norb_
+    template<int i, typename T, typename ...args>
+    size_t address_(const T& head, const args&... tail) const {
+      static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
+      T out = head;
+      for (int j = 0; j != i; ++j) out *= norb_; 
+      return out + address_<i+1>(tail...);
+    }
+    template<int i, typename T>
+    size_t address_(const T& head) const {
+      static_assert(i+1 == rank*2 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
+      T out = head;
+      for (int j = 0; j != i; ++j) out *= norb_; 
+      return out;
+    }
+
   public:
     RDM(const int n) : RDM_base(n, rank) { };
     RDM(const RDM& o) : RDM_base(o) {};
     ~RDM() {  };
 
     std::shared_ptr<RDM<rank> > clone() const { return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_)); };
+
+    template<typename ...args>
+    double& element(const args&... index) { return data_[address_<0>(index...)]; }
+
+    template<typename ...args>
+    const double& element(const args&... index) const { return data_[address_<0>(index...)]; }
+
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
@@ -158,6 +154,13 @@ class RDM : public RDM_base {
         assert(false);
       }
     }
+
+    std::vector<double> diag() const {
+      std::vector<double> out(dim_);
+      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
+      return out;
+    }
+
 
     void print(const double thresh = 1.0e-3) const {
       static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
