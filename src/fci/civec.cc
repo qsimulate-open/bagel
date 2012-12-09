@@ -37,7 +37,6 @@ Civec::Civec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena())
 
 
 Civec::Civec(shared_ptr<const Determinants> det, double* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
-  cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
   cc_ptr_ = din_;
   fill(cc(), cc() + lena_*lenb_, 0.0);
 }
