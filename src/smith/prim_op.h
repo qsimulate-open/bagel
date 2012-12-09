@@ -97,14 +97,14 @@ static void sort_indices(const double* const unsorted, double* const sorted,
       }
     }
   }
-};
+}
 
 
 template<int i, int j, int k, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int d,const int c,const int b) { // according to unsorted
   sort_indices<i,j,k,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b);
-};
+}
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
@@ -135,18 +135,18 @@ static void sort_indices(const double* unsorted, double* sorted,
       }
     }
   }
-};
+}
 
 
 template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int d,const int c,const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b, a);
-};
+}
 
 
 template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+static void sort_indices(const double* unsorted, double* sorted,
                          const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
@@ -178,13 +178,19 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
       }
     }
   }
-};
+}
+
+
+template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,m,n,an,ad,fn,fd>(unsorted.get(), sorted.get(), f,e,d,c,b,a);
+}
 
 
 template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                         const int h, const int g, const int f, const int e, const int d, const int c, 
-                         const int b, const int a) { // according to unsorted
+static void sort_indices(const double* unsorted, double* sorted,
+                         const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
@@ -221,7 +227,13 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
       }
     }
   }
-};
+}
+
+template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,m,n,o,p,an,ad,fn,fd>(unsorted.get(), sorted.get(), h,g,f,e,d,c,b,a);
+}
 
 
 }

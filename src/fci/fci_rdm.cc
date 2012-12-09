@@ -25,6 +25,7 @@
 
 
 #include <src/fci/fci.h>
+#include <src/smith/prim_op.h>
 #include <src/wfn/rdm.h>
 
 using namespace std;
@@ -202,58 +203,76 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
     }
   }
 
-  // Checking
-  // multiply civec to get 2RDM
-#ifdef LOCAL_DEBUG2
-  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
-  const size_t nritest = ebra->lena() * ebra->lenb();
-  dgemm_("T", "N", 1, ebra->ij(), nritest, 1.0, cbra->data(), nritest, ebra->data(0)->data(), nritest, 0.0, rdm2->data(), 1); // <- should be dgemv, but anyway
-  cout << "RDM2 debug" << endl;
-  rdm2->print();
-#endif
+  // size of the RI space
+  const size_t nri = ebra->lena() * ebra->lenb();
+  assert(nri == dbra->lena()*dbra->lenb());
 
   // first form <0|E_ij,kl|I><I|E_mn|0>
-  shared_ptr<RDM<3> > tmp3(new RDM<3>(norb_));
-  const size_t nri = ebra->lena() * ebra->lenb();
-  dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(0)->data(), nri, ebra->data(0)->data(), nri, 0.0, tmp3->data(), dbra->ij());
+  {
+    shared_ptr<RDM<3> > tmp3(new RDM<3>(norb_));
+    dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(), nri, ebra->data(), nri, 0.0, tmp3->data(), dbra->ij());
 
-  // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
-  // we assume that rdm2_[ist] is set
-  for (int i0 = 0; i0 != norb_; ++i0) {
-    for (int i1 = 0; i1 != norb_; ++i1) {
-      for (int i2 = 0; i2 != norb_; ++i2) {
-        for (int i3 = 0; i3 != norb_; ++i3) {
-          // i4 and i5 correspond to m and n (they should be transposed here)
-          for (int i5 = 0; i5 != norb_; ++i5) {
-            for (int i4 = 0; i4 != norb_; ++i4) {
-              rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
+    // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
+    // we assume that rdm2_[ist] is set
+    for (int i0 = 0; i0 != norb_; ++i0) {
+      for (int i1 = 0; i1 != norb_; ++i1) {
+        for (int i2 = 0; i2 != norb_; ++i2) {
+          for (int i3 = 0; i3 != norb_; ++i3) {
+            // i4 and i5 correspond to m and n (they should be transposed here)
+            for (int i5 = 0; i5 != norb_; ++i5) {
+              for (int i4 = 0; i4 != norb_; ++i4) {
+                rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
+              }
+              rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
+              rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
             }
-            rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
-            rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
           }
         }
       }
     }
   }
 
-#ifdef LOCAL_DEBUG2
-  // takes trace of 3RDM and check if it is identical to 2RDM 
-  shared_ptr<RDM<2> > tmp2(new RDM<2>(norb_));
-  tmp2->zero();
-  for (int i0 = 0; i0 != norb_; ++i0) {
-    for (int i1 = 0; i1 != norb_; ++i1) {
-      for (int i2 = 0; i2 != norb_; ++i2) {
-        for (int i3 = 0; i3 != norb_; ++i3) {
-          // i4 and i5 correspond to m and n (they should be transposed here)
-          for (int i4 = 0; i4 != norb_; ++i4) {
-            tmp2->element(i3,i2,i1,i0) += 1.0/(nelea()+neleb()-2) * rdm3->element(i3, i2, i1, i0, i4, i4);
-          }
-        }
-      }
+  // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
+  {
+    {
+      shared_ptr<RDM<4> > tmp4(new RDM<4>(norb_));
+      dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
+      SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
+      for (int l = 0; l != norb_; ++l)
+        for (int d = 0; d != norb_; ++d)
+          for (int k = 0; k != norb_; ++k)
+            for (int c = 0; c != norb_; ++c)
+              for (int j = 0; j != norb_; ++j)
+                for (int b = 0; b != norb_; ++b)
+                  for (int i = 0; i != norb_; ++i)
+                    for (int a = 0; a != norb_; ++a) {
+                      if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,k,b,l);
+                      if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,l,b,k);
+                      if (c == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,k,b,j,d,l);
+                      if (c == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,k,d,l);
+                      if (d == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,l,b,j,c,k);
+                      if (d == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,l,c,k);
+                    }
     }
   }
-  cout << "??" << endl;
-  tmp2->print();
+#if 0
+  // Checking 4RDM by comparing with 3RDM
+  shared_ptr<RDM<3> > debug(new RDM<3>(*rdm3));
+  cout << "printing out rdm" << endl;
+  for (int l = 0; l != norb_; ++l)
+    for (int d = 0; d != norb_; ++d)
+      for (int k = 0; k != norb_; ++k)
+        for (int c = 0; c != norb_; ++c)
+          for (int j = 0; j != norb_; ++j)
+            for (int b = 0; b != norb_; ++b)
+    for (int i = 0; i != norb_; ++i) {
+      debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(i,i,b,j,c,k,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,i,i,c,k,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,i,i,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,d,l,i,i);
+    }
+  debug->print(1.0e-8);
+  cout << "printing out rdm - end" << endl;
 #endif
 
   cc_->set_det(det_);

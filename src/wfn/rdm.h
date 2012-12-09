@@ -162,22 +162,24 @@ class RDM : public RDM_base {
     }
 
 
+    // What is the best way to implement this for general rank??
     void print(const double thresh = 1.0e-3) const {
       static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
+      const double* ptr = data_.get();
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
-          for (int j = 0; j != norb_; ++j)
-            std::cout << std::setw(12) << std::setprecision(7) << element(j,i);
+          for (int j = 0; j != norb_; ++j, ++ptr)
+            std::cout << std::setw(12) << std::setprecision(7) << *ptr;
           std::cout << std::endl;
         }
       } else if (rank == 2) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j) {
             for (int k = 0; k != norb_; ++k) {
-              for (int l = 0; l != norb_; ++l) {
-                if (std::abs(element(l,k,j,i)) > thresh) std::cout << std::setw(3) << l << std::setw(3)
+              for (int l = 0; l != norb_; ++l, ++ptr) {
+                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << element(l,k,j,i) << std::endl;
+                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
         } } } }
       } else if (rank == 3) {
         for (int i = 0; i != norb_; ++i) {
@@ -185,10 +187,10 @@ class RDM : public RDM_base {
             for (int k = 0; k != norb_; ++k) {
               for (int l = 0; l != norb_; ++l) {
               for (int m = 0; m != norb_; ++m) {
-              for (int n = 0; n != norb_; ++n) {
-                if (std::abs(element(n,m,l,k,j,i)) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
+              for (int n = 0; n != norb_; ++n, ++ptr) {
+                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << element(n,m,l,k,j,i) << std::endl;
+                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
         } } } } } }
       }
     }
