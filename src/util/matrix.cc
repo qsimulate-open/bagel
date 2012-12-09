@@ -498,8 +498,10 @@ void Matrix::inverse_half(const double thresh) {
   }
 
 #ifndef NDEBUG
+#if 0
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
+#endif
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]); 
