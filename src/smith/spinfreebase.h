@@ -99,7 +99,7 @@ class SpinFreeMethod {
           sum += ddot_(size, fdata, 1, rdata, 1);
         }
       }
-      std::cout << "    - Zeroth order energy: " << sum << std::endl;
+      std::cout << "    - Zeroth order energy: " << std::setw(20) << std::setprecision(10) << sum << std::endl;
       return sum;
     }
 
