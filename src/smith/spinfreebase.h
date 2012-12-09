@@ -470,7 +470,7 @@ class SpinFreeMethod {
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                 // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element({j0-nclo, j1-nclo});
+                data[iall] = ref_->rdm1(0)->element(j0-nclo, j1-nclo);
             rdm1_->put_block(hash, data);
           }
         }
@@ -492,7 +492,7 @@ class SpinFreeMethod {
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                         // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo});
+                        data[iall] = ref_->rdm2(0)->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
                  rdm2_->put_block(hash, data);
               }
             }
@@ -523,7 +523,7 @@ class SpinFreeMethod {
                           for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                data[iall] = rdm3source->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo});
+                                data[iall] = rdm3source->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
                     rdm3_->put_block(hash, data);
                   }
                 }
@@ -604,9 +604,9 @@ class SpinFreeMethod {
             for (int j = 0; j != nact; ++j) {
               for (int k = 0; k != nact; ++k) {
                 // see Celani eq. A7
-                hole->element({k, i, i, j}) += h1->element(k,j);
-                hole->element({i, k, j, i}) -= rdm1mat->element(k,j);
-                hole->element({i, i, k, j}) += 2.0*rdm1mat->element(k,j);
+                hole->element(k, i, i, j) += h1->element(k,j);
+                hole->element(i, k, j, i) -= rdm1mat->element(k,j);
+                hole->element(i, i, k, j) += 2.0*rdm1mat->element(k,j);
               }
             }
           }
@@ -628,12 +628,12 @@ class SpinFreeMethod {
             for (int i1 = 0; i1 != nact; ++i1)
               for (int i3 = 0; i3 != nact; ++i3)
                 for (int i0 = 0; i0 != nact; ++i0) {
-                  if (i1 == i3) ovl->element({i0, i3, i1, i2}) +=      rdm1mat->element(i0, i2); 
-                  if (i1 == i2) ovl->element({i0, i3, i1, i2}) += -2.0*rdm1mat->element(i0, i3); 
-                  if (i0 == i3) ovl->element({i0, i3, i1, i2}) += -2.0*rdm1mat->element(i1, i2); 
-                  if (i0 == i2) ovl->element({i0, i3, i1, i2}) +=      rdm1mat->element(i1, i3);
-                  if (i0 == i3 && i1 == i2) ovl->element({i0, i3, i1, i2}) +=  4.0; 
-                  if (i0 == i2 && i1 == i3) ovl->element({i0, i3, i1, i2}) += -2.0; 
+                  if (i1 == i3) ovl->element(i0, i3, i1, i2) +=      rdm1mat->element(i0, i2); 
+                  if (i1 == i2) ovl->element(i0, i3, i1, i2) += -2.0*rdm1mat->element(i0, i3); 
+                  if (i0 == i3) ovl->element(i0, i3, i1, i2) += -2.0*rdm1mat->element(i1, i2); 
+                  if (i0 == i2) ovl->element(i0, i3, i1, i2) +=      rdm1mat->element(i1, i3);
+                  if (i0 == i3 && i1 == i2) ovl->element(i0, i3, i1, i2) +=  4.0; 
+                  if (i0 == i2 && i1 == i3) ovl->element(i0, i3, i1, i2) += -2.0; 
                 }
           shalf_hh_ = std::shared_ptr<Matrix>(new Matrix(dim, dim)); 
           sort_indices<0,2,1,3,0,1,1,1>(ovl->data(), shalf_hh_->data(), nact, nact, nact, nact);
@@ -646,36 +646,32 @@ class SpinFreeMethod {
                 for (int i1 = 0; i1 != nact; ++i1)
                   for (int i5 = 0; i5 != nact; ++i5)
                     for (int i0 = 0; i0 != nact; ++i0) {
-                      if (i3 == i5)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i1, i4, i0, i2});
-                      if (i3 == i4)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i5, i1, i2});
-                      if (i1 == i5)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i4, i3, i2});
-                      if (i1 == i5 && i3 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i0, i2);
-                      if (i1 == i4)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm2->element({i0, i5, i3, i2}); 
-                      if (i1 == i4 && i3 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i0, i2);
-                      if (i1 == i2)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i5, i3, i4});
-                      if (i1 == i2 && i3 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i0, i4); 
-                      if (i1 == i2 && i3 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i0, i5);
-                      if (i0 == i5)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm2->element({i1, i4, i3, i2});
-                      if (i0 == i5 && i3 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i4);
-                      if (i1 == i2 && i0 == i5 && i3 == i4) 
-                                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0;
-                      if (i0 == i4)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i1, i5, i3, i2});
-                      if (i0 == i4 && i3 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i3, i5);
-                      if (i1 == i2 && i0 == i4 && i3 == i5) 
-                                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0;
-                      if (i0 == i2)                 rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i3, i5, i1, i4});
-                      if (i0 == i2 && i3 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i1, i4);
-                      if (i0 == i2 && i3 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i1, i5);
-                      if (i1 == i5 && i0 == i2)     rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i3, i4); 
-                      if (i0 == i2 && i1 == i5 && i3 == i4)
-                                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0;
-                      if (i0 == i2 && i1 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i5);
-                      if (i1 == i4 && i3 == i5 && i0 == i2)
-                                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0;
-                      if (i0 == i5 && i1 == i4)     rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0* rdm1mat->element(i3, i2);
-                      if (i0 == i4 && i1 == i5)     rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i2); 
+                      if (i3 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i1, i4, i0, i2);
+                      if (i3 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i5, i1, i2);
+                      if (i1 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i4, i3, i2);
+                      if (i1 == i5 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i0, i2);
+                      if (i1 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm2->element(i0, i5, i3, i2); 
+                      if (i1 == i4 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i0, i2);
+                      if (i1 == i2)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i5, i3, i4);
+                      if (i1 == i2 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i0, i4); 
+                      if (i1 == i2 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i0, i5);
+                      if (i0 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm2->element(i1, i4, i3, i2);
+                      if (i0 == i5 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i1, i2);
+                      if (i1 == i2 && i0 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i4);
+                      if (i1 == i2 && i0 == i5 && i3 == i4) rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0;
+                      if (i0 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i1, i5, i3, i2);
+                      if (i0 == i4 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i1, i2);
+                      if (i1 == i2 && i0 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i3, i5);
+                      if (i1 == i2 && i0 == i4 && i3 == i5) rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0;
+                      if (i0 == i2)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i3, i5, i1, i4);
+                      if (i0 == i2 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i1, i4);
+                      if (i0 == i2 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i1, i5);
+                      if (i1 == i5 && i0 == i2)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i3, i4); 
+                      if (i0 == i2 && i1 == i5 && i3 == i4) rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0;
+                      if (i0 == i2 && i1 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i5);
+                      if (i1 == i4 && i3 == i5 && i0 == i2) rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0;
+                      if (i0 == i5 && i1 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0* rdm1mat->element(i3, i2);
+                      if (i0 == i4 && i1 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i2); 
                     }
           // denominator rdm3(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)
           std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
@@ -702,8 +698,8 @@ class SpinFreeMethod {
           for (int i = 0; i != nact; ++i)
             for (int j = 0; j != nact; ++j)
               for (int k = 0; k != nact; ++k) {
-                ovl1->element({i, i, k, j}) += 2.0 * rdm1mat->element(k, j);
-                ovl4->element({k, i, i, j}) += rdm1mat->element(k, j);
+                ovl1->element(i, i, k, j) += 2.0 * rdm1mat->element(k, j);
+                ovl4->element(k, i, i, j) += rdm1mat->element(k, j);
               }
           std::shared_ptr<Matrix> work(new Matrix(dim, dim)); 
           sort_indices<3,0,2,1,0,1,1,1>(ovl1->data(), work->data(), nact, nact, nact, nact);
@@ -724,14 +720,14 @@ class SpinFreeMethod {
                 for (int i2 = 0; i2 != nact; ++i2)
                   for (int i1 = 0; i1 != nact; ++i1)
                     for (int i0 = 0; i0 != nact; ++i0) {
-                      if (i3 == i4)             den3->element({i0, i1, i4, i5, i2, i3}) += rdm2->element({i0, i1, i2, i5}); 
-                      if (i1 == i2)             den3->element({i0, i1, i4, i5, i2, i3}) += rdm2->element({i0, i3, i4, i5}); 
-                      if (i1 == i2 && i3 == i4) den3->element({i0, i1, i4, i5, i2, i3}) += rdm1mat->element(i0, i5); 
-                      if (i1 == i4)             den3->element({i0, i1, i4, i5, i2, i3}) += rdm2->element({i2, i3, i0, i5});
-                      if (i3 == i4)             den0->element({i4, i1, i0, i5, i2, i3}) += -1.0 * rdm2->element({i2, i1, i0, i5}); 
-                      if (i1 == i2)             den0->element({i4, i1, i0, i5, i2, i3}) += -1.0 * rdm2->element({i4, i3, i0, i5}); 
-                      if (i3 == i4 && i1 == i2) den0->element({i4, i1, i0, i5, i2, i3}) +=  2.0 * rdm1mat->element(i0, i5); 
-                      if (i1 == i4)             den0->element({i4, i1, i0, i5, i2, i3}) +=  2.0 * rdm2->element({i2, i3, i0, i5}); 
+                      if (i3 == i4)             den3->element(i0, i1, i4, i5, i2, i3) += rdm2->element(i0, i1, i2, i5); 
+                      if (i1 == i2)             den3->element(i0, i1, i4, i5, i2, i3) += rdm2->element(i0, i3, i4, i5); 
+                      if (i1 == i2 && i3 == i4) den3->element(i0, i1, i4, i5, i2, i3) += rdm1mat->element(i0, i5); 
+                      if (i1 == i4)             den3->element(i0, i1, i4, i5, i2, i3) += rdm2->element(i2, i3, i0, i5);
+                      if (i3 == i4)             den0->element(i4, i1, i0, i5, i2, i3) += -1.0 * rdm2->element(i2, i1, i0, i5); 
+                      if (i1 == i2)             den0->element(i4, i1, i0, i5, i2, i3) += -1.0 * rdm2->element(i4, i3, i0, i5); 
+                      if (i3 == i4 && i1 == i2) den0->element(i4, i1, i0, i5, i2, i3) +=  2.0 * rdm1mat->element(i0, i5); 
+                      if (i1 == i4)             den0->element(i4, i1, i0, i5, i2, i3) +=  2.0 * rdm2->element(i2, i3, i0, i5); 
                     }
           std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
           dgemv_("N", size, nact*nact, 1.0, den0->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
@@ -761,12 +757,12 @@ class SpinFreeMethod {
                 for (int i3 = 0; i3 != nact; ++i3)
                   for (int i1 = 0; i1 != nact; ++i1)
                     for (int i0 = 0; i0 != nact; ++i0) {
-                      if (i2 == i4)             ovl->element({i0, i1, i3, i2, i4, i5}) += -1.0 * rdm2->element({i0, i1, i3, i5});
-                      if (i2 == i3)             ovl->element({i0, i1, i3, i2, i4, i5}) +=  2.0 * rdm2->element({i0, i1, i4, i5});
-                      if (i1 == i4)             ovl->element({i0, i1, i3, i2, i4, i5}) += -1.0 * rdm2->element({i3, i2, i0, i5});
-                      if (i1 == i4 && i2 == i3) ovl->element({i0, i1, i3, i2, i4, i5}) +=  2.0 * rdm1mat->element(i0, i5);
-                      if (i1 == i3)             ovl->element({i0, i1, i3, i2, i4, i5}) += -1.0 * rdm2->element({i0, i2, i4, i5});
-                      if (i1 == i3 && i2 == i4) ovl->element({i0, i1, i3, i2, i4, i5}) += -1.0 * rdm1mat->element(i0, i5);
+                      if (i2 == i4)             ovl->element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2->element(i0, i1, i3, i5);
+                      if (i2 == i3)             ovl->element(i0, i1, i3, i2, i4, i5) +=  2.0 * rdm2->element(i0, i1, i4, i5);
+                      if (i1 == i4)             ovl->element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2->element(i3, i2, i0, i5);
+                      if (i1 == i4 && i2 == i3) ovl->element(i0, i1, i3, i2, i4, i5) +=  2.0 * rdm1mat->element(i0, i5);
+                      if (i1 == i3)             ovl->element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2->element(i0, i2, i4, i5);
+                      if (i1 == i3 && i2 == i4) ovl->element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm1mat->element(i0, i5);
                     }
           std::shared_ptr<RDM<4> > rdm4(new RDM<4>(* ... ));
           for (int i4 = 0; i4 != nact; ++i4)
@@ -777,32 +773,32 @@ class SpinFreeMethod {
                     for (int i5 = 0; i5 != nact; ++i5)
                       for (int i1 = 0; i1 != nact; ++i1)
                         for (int i0 = 0; i0 != nact; ++i0) {
-                          if (i4 == i6)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i1, i5, i2, i3, i7});
-                          if (i4 == i5)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i1, i3, i2, i6, i7});
-                          if (i2 == i6)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i1, i3, i4, i5, i7});
-                          if (i2 == i6 && i4 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i1, i3, i7});
-                          if (i2 == i5)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm3source->element({i0, i1, i3, i4, i6, i7});
-                          if (i2 == i5 && i4 == i6)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm2->element({i0, i1, i3, i7});
-                          if (i2 == i3)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i1, i5, i4, i6, i7});
-                          if (i2 == i3 && i4 == i6)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i1, i5, i7});
-                          if (i2 == i3 && i4 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm2->element({i0, i1, i6, i7});
-                          if (i1 == i6)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i3, i4, i5, i2, i0, i7});
-                          if (i1 == i6 && i4 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i3, i2, i0, i7});
-                          if (i1 == i6 && i2 == i3)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i5, i4, i0, i7});
-                          if (i1 == i6 && i2 == i3 && i4 == i5) rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm1mat->element(i0, i7);
-                          if (i1 == i5)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i2, i3, i4, i6, i7});
-                          if (i1 == i5 && i4 == i6)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i2, i3, i7});
-                          if (i2 == i3 && i1 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i4, i6, i7});
-                          if (i2 == i3 && i1 == i5 && i4 == i6) rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm1mat->element(i0, i7);
-                          if (i1 == i3)                         rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm3source->element({i0, i4, i5, i2, i6, i7});
-                          if (i1 == i3 && i4 == i6)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i5, i2, i0, i7});
-                          if (i1 == i3 && i4 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i2, i6, i7});
-                          if (i2 == i6 && i1 == i3)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i0, i4, i5, i7});
-                          if (i2 == i6 && i1 == i3 && i4 == i5) rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm1mat->element(i0, i7);
-                          if (i1 == i3 && i2 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm2->element({i0, i4, i6, i7});
-                          if (i4 == i6 && i2 == i5 && i1 == i3) rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm1mat->element(i0, i7);
-                          if (i1 == i6 && i2 == i5)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) +=  2.0 * rdm2->element({i3, i4, i0, i7});
-                          if (i1 == i5 && i2 == i6)             rdm4->element({i0, i1, i5, i2, i6, i7, i3, i4}) += -1.0 * rdm2->element({i3, i4, i0, i7);
+                          if (i4 == i6)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i1, i5, i2, i3, i7);
+                          if (i4 == i5)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i1, i3, i2, i6, i7);
+                          if (i2 == i6)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i1, i3, i4, i5, i7);
+                          if (i2 == i6 && i4 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i1, i3, i7);
+                          if (i2 == i5)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm3source->element(i0, i1, i3, i4, i6, i7);
+                          if (i2 == i5 && i4 == i6)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2->element(i0, i1, i3, i7);
+                          if (i2 == i3)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i1, i5, i4, i6, i7);
+                          if (i2 == i3 && i4 == i6)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i1, i5, i7);
+                          if (i2 == i3 && i4 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2->element(i0, i1, i6, i7);
+                          if (i1 == i6)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i3, i4, i5, i2, i0, i7);
+                          if (i1 == i6 && i4 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i3, i2, i0, i7);
+                          if (i1 == i6 && i2 == i3)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i5, i4, i0, i7);
+                          if (i1 == i6 && i2 == i3 && i4 == i5) rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm1mat->element(i0, i7);
+                          if (i1 == i5)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i2, i3, i4, i6, i7);
+                          if (i1 == i5 && i4 == i6)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i2, i3, i7);
+                          if (i2 == i3 && i1 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i4, i6, i7);
+                          if (i2 == i3 && i1 == i5 && i4 == i6) rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm1mat->element(i0, i7);
+                          if (i1 == i3)                         rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3source->element(i0, i4, i5, i2, i6, i7);
+                          if (i1 == i3 && i4 == i6)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i5, i2, i0, i7);
+                          if (i1 == i3 && i4 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i2, i6, i7);
+                          if (i2 == i6 && i1 == i3)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i0, i4, i5, i7);
+                          if (i2 == i6 && i1 == i3 && i4 == i5) rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm1mat->element(i0, i7);
+                          if (i1 == i3 && i2 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2->element(i0, i4, i6, i7);
+                          if (i4 == i6 && i2 == i5 && i1 == i3) rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm1mat->element(i0, i7);
+                          if (i1 == i6 && i2 == i5)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2->element(i3, i4, i0, i7);
+                          if (i1 == i5 && i2 == i6)             rdm4->element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2->element(i3, i4, i0, i7);
                         }
         }
         // xx/xa case 
@@ -815,7 +811,7 @@ class SpinFreeMethod {
                 for (int i3 = 0; i3 != nact; ++i3)
                   for (int i2 = 0; i2 != nact; ++i2)
                     for (int i1 = 0; i1 != nact; ++i1) {
-                      if (i2 == i3) ovl->element({i1, i2, i3, i4, i0, i5}) += 1.0 * rdm2->element({i1, i4, i0, i5});
+                      if (i2 == i3) ovl->element(i1, i2, i3, i4, i0, i5) += 1.0 * rdm2->element(i1, i4, i0, i5);
                     } 
           std::shared_ptr<RDM<4> > rdm4(new RDM<4>(* ... ));
           for (int i4 = 0; i4 != nact; ++i4)
@@ -826,10 +822,10 @@ class SpinFreeMethod {
                     for (int i5 = 0; i5 != nact; ++i5)
                       for (int i2 = 0; i2 != nact; ++i2)
                         for (int i1 = 0; i1 != nact; ++i1) {
-                          if (i4 == i5)             rdm4->element({i1, i2, i5, i6, i0, i7, i3, i4}) += 1.0 * rdm3source->element({i1, i2, i3, i6, i0, i7});
-                          if (i2 == i3)             rdm4->element({i1, i2, i5, i6, i0, i7, i3, i4}) += 1.0 * rdm3source->element({i1, i4, i5, i6, i0, i7});
-                          if (i2 == i3 && i4 == i5) rdm4->element({i1, i2, i5, i6, i0, i7, i3, i4}) += 1.0 * rdm2->element({i1, i6, i0, i7});
-                          if (i2 == i5)             rdm4->element({i1, i2, i5, i6, i0, i7, i3, i4}) += 1.0 * rdm3source->element({i3, i4, i1, i6, i0, i7});
+                          if (i4 == i5)             rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3source->element(i1, i2, i3, i6, i0, i7);
+                          if (i2 == i3)             rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3source->element(i1, i4, i5, i6, i0, i7);
+                          if (i2 == i3 && i4 == i5) rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm2->element(i1, i6, i0, i7);
+                          if (i2 == i5)             rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3source->element(i3, i4, i1, i6, i0, i7);
                         }    
         }
 #endif
