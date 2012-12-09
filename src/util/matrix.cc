@@ -500,6 +500,13 @@ void Matrix::inverse_half(const double thresh) {
 #ifndef NDEBUG
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
+  vector<double> rm;
+  for (int i = 0; i != n; ++i)
+    if (vec[i] < thresh) rm.push_back(vec[i]); 
+  if (!rm.empty())
+    cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
+            "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
+            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl; 
 #endif
 
   *this = *this ^ *this;
