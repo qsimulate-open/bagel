@@ -32,6 +32,7 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
+#include <type_traits>
 #include <initializer_list>
 #include <src/scf/matrix1e.h>
 #include <src/util/f77.h>
@@ -48,14 +49,14 @@ class RDM_base {
     // T should be able to be multiplied by norb_
     template<int i, typename T, typename ...args>
     size_t address_(const T& head, const args&... tail) const {
-      static_assert(i >= 0, "address_ called with a wrong template variable");
+      static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
       T out = head;
       for (int j = 0; j != i; ++j) out *= norb_; 
       return out + address_<i+1>(tail...);
     }
     template<int i, typename T>
     size_t address_(const T& head) const {
-      static_assert(i >= 0, "address_(const T&) called with a wrong template variable");
+      static_assert(i >= 0 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
       T out = head;
       for (int j = 0; j != i; ++j) out *= norb_; 
       return out;
