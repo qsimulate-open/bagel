@@ -45,35 +45,35 @@ class RDM_base {
     size_t dim_;
     int rank_;
 
-  public:
-    RDM_base(const int n, const int rank);
-    RDM_base(const RDM_base& o);
-
-    double* first() { return data(); };
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
-
-    void zero() { std::fill(data(), data()+dim_*dim_, 0.0); };
-    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); };
-    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); };
-    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); };
-    size_t size() const { return dim_*dim_; }
-
     // T should be able to be multiplied by norb_
     template<int i, typename T, typename ...args>
     size_t address_(const T& head, const args&... tail) const {
-      static_assert(i >= 0, "address_ called by wrong template variables");
+      static_assert(i >= 0, "address_ called with a wrong template variable");
       T out = head;
       for (int j = 0; j != i; ++j) out *= norb_; 
       return out + address_<i+1>(tail...);
     }
     template<int i, typename T>
     size_t address_(const T& head) const {
-      static_assert(i >= 0, "address_ called by wrong template variables");
+      static_assert(i >= 0, "address_(const T&) called with a wrong template variable");
       T out = head;
       for (int j = 0; j != i; ++j) out *= norb_; 
       return out;
     }
+
+  public:
+    RDM_base(const int n, const int rank);
+    RDM_base(const RDM_base& o);
+
+    double* first() { return data(); }
+    double* data() { return data_.get(); }
+    const double* data() const { return data_.get(); }
+
+    void zero() { std::fill(data(), data()+dim_*dim_, 0.0); }
+    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); }
+    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); }
+    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
+    size_t size() const { return dim_*dim_; }
 
     template<typename ...args>
     double& element(const args&... index) { return data_[address_<0>(index...)]; }
@@ -85,7 +85,7 @@ class RDM_base {
       std::vector<double> out(dim_);
       for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
       return out;
-    };
+    }
 
 };
 
@@ -105,7 +105,7 @@ class RDM : public RDM_base {
       const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
       const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1);
       return ::fabs(a-b) < 1.0e-12;
-    };
+    }
 
 
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
@@ -117,7 +117,7 @@ class RDM : public RDM_base {
         for (int j = 0; j != norb_; ++j)
           out->element(j+nclosed, i+nclosed) = element(j,i);
       return out;
-    };
+    }
 
     std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
       static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
@@ -132,7 +132,7 @@ class RDM : public RDM_base {
       assert(!info);
       for (auto& i : vec) i = 2.0-i;
       return std::make_pair(buf, vec);
-    };
+    }
 
     void transform(const std::vector<double>& coeff) {
       const double* start = &(coeff[0]);
@@ -156,7 +156,7 @@ class RDM : public RDM_base {
       } else {
         assert(false);
       }
-    };
+    }
 
     void print(const double thresh = 1.0e-3) const {
       static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
@@ -187,7 +187,7 @@ class RDM : public RDM_base {
                       << std::setw(12) << std::setprecision(7) << element(n,m,l,k,j,i) << std::endl;
         } } } } } }
       }
-    };
+    }
 };
 
 }
