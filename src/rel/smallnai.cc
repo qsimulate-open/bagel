@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : ZMatrix(geom->nbasis(), geom->nbasis()), geom_(geom) {
+SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 
   for (int i = 0; i != 4; ++i) {
     shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis())); 

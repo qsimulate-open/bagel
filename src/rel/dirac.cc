@@ -36,23 +36,44 @@ void Dirac::compute() {
   const int n = geom_->nbasis();
   const double c = c__;
   const double w = 0.25/(c*c);
+  const double t = 0.5/(c*c);
 
   kinetic_->print("kinetic");
   nai_->print("nai");
 
-  shared_ptr<Matrix> hcore(new Matrix(2*n, 2*n));
+  shared_ptr<ZMatrix> hcore(new ZMatrix(4*n, 4*n));
+  shared_ptr<ZMatrix> znai(new ZMatrix(2*n, 2*n));
+  shared_ptr<ZMatrix> zkinetic(new ZMatrix(2*n, 2*n));
+
+  array<shared_ptr<ZMatrix>,4> zsmallnai;
+  for (auto& i : zsmallnai)
+    i = znai->clone(); 
+
+  znai->copy_real_block(complex<double>(1.0,0.0), 0, n, n, n, nai_);
+  znai->copy_real_block(complex<double>(1.0,0.0), n, 0, n, n, nai_);
+  zkinetic->copy_real_block(complex<double>(1.0,0.0), 0, n, n, n, kinetic_);
+  zkinetic->copy_real_block(complex<double>(1.0,0.0), n, 0, n, n, kinetic_);
+
+  zsmallnai[0]->copy_real_block(complex<double>(-1.0, 0.0), 0, 0, n, n, (*smallnai_)[0]);
+  zsmallnai[0]->copy_real_block(complex<double>(-1.0, 0.0), n, n, n, n, (*smallnai_)[0]);
+  zsmallnai[1]->copy_real_block(complex<double>( 0.0,-1.0), 0, 0, n, n, (*smallnai_)[1]);
+  zsmallnai[1]->copy_real_block(complex<double>( 0.0, 1.0), n, n, n, n, (*smallnai_)[1]);
+  zsmallnai[2]->copy_real_block(complex<double>(-1.0, 0.0), 0, n, n, n, (*smallnai_)[2]);
+  zsmallnai[2]->copy_real_block(complex<double>( 1.0, 0.0), n, 0, n, n, (*smallnai_)[2]);
+  zsmallnai[3]->copy_real_block(complex<double>( 0.0, 1.0), 0, n, n, n, (*smallnai_)[3]);
+  zsmallnai[3]->copy_real_block(complex<double>( 0.0, 1.0), n, 0, n, n, (*smallnai_)[3]);
+
+  shared_ptr<ZMatrix> smallnai(new ZMatrix(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]));
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
-  hcore->copy_block(0, 0, n, n, nai_);
-  hcore->copy_block(0, n, n, n, kinetic_);
-  hcore->copy_block(n, 0, n, n, kinetic_);
-  hcore->copy_block(n, n, n, n, shared_ptr<Matrix>(new Matrix(*nai_*w - *kinetic_)));
+  hcore->copy_block(0, 0, 2*n, 2*n, znai);
+  hcore->copy_block(0, 2*n, 2*n, 2*n, zkinetic);
+  hcore->copy_block(n, 0, 2*n, 2*n, zkinetic);
+  hcore->copy_block(2*n, 2*n, 2*n, 2*n, shared_ptr<ZMatrix>(new ZMatrix(*smallnai * w - *zkinetic)));
   
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
   hcore->diagonalize(eig.get()); 
   
-  hcore->print("hcore");
-
   for (int i = 0; i != 2*n; ++i) cout << setprecision(10) << setw(15) << eig[i] << endl;
 }
 

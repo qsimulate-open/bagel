@@ -35,7 +35,7 @@
 
 namespace bagel {
 
-class SmallNAI : public ZMatrix {
+class SmallNAI {
   protected:
     std::array<std::shared_ptr<Matrix>, 4> dataarray_;
     const std::shared_ptr<const Geometry> geom_;
