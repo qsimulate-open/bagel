@@ -78,12 +78,12 @@ shared_ptr<Dvec> Reference::civectors() const {
 
 
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
-shared_ptr<RDM<3> > Reference::compute_rdm3(const int i) const {
+tuple<shared_ptr<RDM<3> >,std::shared_ptr<RDM<4> > > Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method
   shared_ptr<FCI> fci(new KnowlesHandy(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();
   fci->compute_rdm12();
-  return get<0>(fci->compute_rdm34(i));
+  return fci->compute_rdm34(i);
 }
 
 

@@ -499,19 +499,26 @@ class SpinFreeMethod {
           }
         }
       }
-      // generic function??
+      // TODO generic function??
       if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
-        std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-        rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        {
+          std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
+          rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+          std::vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
+          rdm4_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(p, false));
+        }
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
-        std::shared_ptr<RDM<3> > rdm3source = ref_->compute_rdm3(0);
+        std::shared_ptr<RDM<3> > rdm3source;
+        std::shared_ptr<RDM<4> > rdm4source;
+        std::tie(rdm3source, rdm4source) = ref_->compute_rdm34(0);
+
         const int nclo = ref_->nclosed();
-        for (auto& i5 : active_) {
-          for (auto& i4 : active_) {
-            for (auto& i3 : active_) {
-              for (auto& i2 : active_) {
-                for (auto& i1 : active_) {
+        for (auto& i5 : active_)
+          for (auto& i4 : active_)
+            for (auto& i3 : active_)
+              for (auto& i2 : active_)
+                for (auto& i1 : active_)
                   for (auto& i0 : active_) {
                     std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()};
                     const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
@@ -526,11 +533,30 @@ class SpinFreeMethod {
                                 data[iall] = rdm3source->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
                     rdm3_->put_block(hash, data);
                   }
-                }
-              }
-            }
-          }
-        }
+        // TODO there should be a better way of doing this!!!
+        for (auto& i7 : active_)
+          for (auto& i6 : active_)
+            for (auto& i5 : active_)
+              for (auto& i4 : active_)
+                for (auto& i3 : active_)
+                  for (auto& i2 : active_)
+                    for (auto& i1 : active_)
+                      for (auto& i0 : active_) {
+                        std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key(), i6.key(), i7.key()};
+                        const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size();
+                        std::unique_ptr<double[]> data(new double[size]);
+                        int iall = 0;
+                        for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7)
+                          for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6)
+                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                              for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                                        data[iall] = rdm4source->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
+                    rdm4_->put_block(hash, data);
+                  }
 
         const int nact = ref_->nact();
         std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
