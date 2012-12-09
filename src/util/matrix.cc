@@ -521,6 +521,7 @@ void Matrix::sqrt() {
   diagonalize(vec.get());
 
   for (int i = 0; i != n; ++i) {
+    if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
     double s = std::sqrt(std::sqrt(vec[i]));
     dscal_(n, s, data_.get()+i*n, 1);
   }
