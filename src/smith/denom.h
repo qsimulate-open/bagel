@@ -34,26 +34,31 @@ namespace SMITH {
 
 class Denom {
   protected:
+    std::shared_ptr<const Matrix> shalf_hh_; 
     std::shared_ptr<const Matrix> shalf_xh_; 
     std::shared_ptr<const Matrix> shalf_xhh_; 
     std::shared_ptr<const Matrix> shalf_xxh_; 
 
+    std::unique_ptr<double[]> denom_hh_;
     std::unique_ptr<double[]> denom_xh_;
     std::unique_ptr<double[]> denom_xhh_;
     std::unique_ptr<double[]> denom_xxh_;
 
     // init functions
-    void init_xxh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xhh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
+    void init_hh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
     void init_xh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
+    void init_xhh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
+    void init_xxh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
 
   public:
     Denom(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
 
+    std::shared_ptr<const Matrix> shalf_hh() const { return shalf_hh_; } 
     std::shared_ptr<const Matrix> shalf_xh() const { return shalf_xh_; } 
     std::shared_ptr<const Matrix> shalf_xhh() const { return shalf_xhh_; } 
     std::shared_ptr<const Matrix> shalf_xxh() const { return shalf_xxh_; } 
 
+    const double& denom_hh(const size_t i) const { return denom_hh_[i]; } 
     const double& denom_xh(const size_t i) const { return denom_xh_[i]; } 
     const double& denom_xhh(const size_t i) const { return denom_xhh_[i]; } 
     const double& denom_xxh(const size_t i) const { return denom_xxh_[i]; } 

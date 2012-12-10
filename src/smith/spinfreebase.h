@@ -108,9 +108,11 @@ class SpinFreeMethod {
     std::shared_ptr<const Matrix> shalf_xhh() const { return denom_->shalf_xhh(); }
     std::shared_ptr<const Matrix> shalf_xxh() const { return denom_->shalf_xxh(); }
     std::shared_ptr<const Matrix> shalf_xh() const { return denom_->shalf_xh(); }
+    std::shared_ptr<const Matrix> shalf_hh() const { return denom_->shalf_hh(); }
     const double& denom_xhh(const size_t i) const { return denom_->denom_xhh(i); }
     const double& denom_xxh(const size_t i) const { return denom_->denom_xxh(i); }
     const double& denom_xh(const size_t i) const { return denom_->denom_xh(i); }
+    const double& denom_hh(const size_t i) const { return denom_->denom_hh(i); }
 
     // S^-1/2 for aa/xx blocks (overlap is 2rdm)
     std::shared_ptr<Matrix> shalf_xx_;
@@ -124,11 +126,11 @@ class SpinFreeMethod {
     std::shared_ptr<Matrix> shalf_h_;
     std::unique_ptr<double[]> denom_h_;
 
+#if 0
     // S^-1/2 for xx/cc blocks
     std::shared_ptr<Matrix> shalf_hh_;
     std::unique_ptr<double[]> denom_hh_;
 
-#if 0
     // S^-1/2 for ax/cx and xa/cx blocks (4*2rdm size)
     std::shared_ptr<Matrix> shalf_xh_;
     std::unique_ptr<double[]> denom_xh_;
@@ -327,13 +329,13 @@ class SpinFreeMethod {
       }
       for (auto& i3 : active_) {
         for (auto& i1 : active_) {
-          assert(shalf_hh_);
+          assert(shalf_hh());
           const int nact = ref_->nact();
           const int nclo = ref_->nclosed();
           std::unique_ptr<double[]> transp(new double[i1.size()*i3.size()*nact*nact]);
           for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++k)
-              std::copy_n(shalf_hh_->element_ptr(0,(j1-nclo)+(j3-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
+              std::copy_n(shalf_hh()->element_ptr(0,(j1-nclo)+(j3-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
 
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
@@ -357,7 +359,7 @@ class SpinFreeMethod {
               for (int j13 = 0; j13 != nact*nact; ++j13)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= e0_ - (denom_hh_[j13] - eig_[j2] - eig_[j0]);
+                    interm[iall] /= e0_ - (denom_hh(j13) - eig_[j2] - eig_[j0]);
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -766,74 +768,6 @@ class SpinFreeMethod {
           fss.diagonalize(denom_h_.get());
           *shalf_h_ = fss % *shalf_h_;
         }
-        // xx/cc blocks
-        {
-          // overlap (2rdm size)
-          const size_t dim = nact*nact;
-          const size_t size = dim*dim;
-          std::shared_ptr<RDM<2> > ovl(new RDM<2>(*rdm2));
-          for (int i2 = 0; i2 != nact; ++i2)
-            for (int i1 = 0; i1 != nact; ++i1)
-              for (int i3 = 0; i3 != nact; ++i3)
-                for (int i0 = 0; i0 != nact; ++i0) {
-                  if (i1 == i3) ovl->element(i0, i3, i1, i2) +=      rdm1mat->element(i0, i2);
-                  if (i1 == i2) ovl->element(i0, i3, i1, i2) += -2.0*rdm1mat->element(i0, i3);
-                  if (i0 == i3) ovl->element(i0, i3, i1, i2) += -2.0*rdm1mat->element(i1, i2);
-                  if (i0 == i2) ovl->element(i0, i3, i1, i2) +=      rdm1mat->element(i1, i3);
-                  if (i0 == i3 && i1 == i2) ovl->element(i0, i3, i1, i2) +=  4.0;
-                  if (i0 == i2 && i1 == i3) ovl->element(i0, i3, i1, i2) += -2.0;
-                }
-          shalf_hh_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
-          sort_indices<0,2,1,3,0,1,1,1>(ovl->data(), shalf_hh_->data(), nact, nact, nact, nact);
-          shalf_hh_->inverse_half(1.0e-9);
-          // denominator
-          std::shared_ptr<RDM<3> > rdm3(new RDM<3>(*rdm3source));
-          for (int i2 = 0; i2 != nact; ++i2)
-            for (int i3 = 0; i3 != nact; ++i3)
-              for (int i4 = 0; i4 != nact; ++i4)
-                for (int i1 = 0; i1 != nact; ++i1)
-                  for (int i5 = 0; i5 != nact; ++i5)
-                    for (int i0 = 0; i0 != nact; ++i0) {
-                      if (i3 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i1, i4, i0, i2);
-                      if (i3 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i5, i1, i2);
-                      if (i1 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i4, i3, i2);
-                      if (i1 == i5 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i0, i2);
-                      if (i1 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm2->element(i0, i5, i3, i2);
-                      if (i1 == i4 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i0, i2);
-                      if (i1 == i2)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i0, i5, i3, i4);
-                      if (i1 == i2 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i0, i4);
-                      if (i1 == i2 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i0, i5);
-                      if (i0 == i5)                         rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm2->element(i1, i4, i3, i2);
-                      if (i0 == i5 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i4);
-                      if (i1 == i2 && i0 == i5 && i3 == i4) rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0;
-                      if (i0 == i4)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i1, i5, i3, i2);
-                      if (i0 == i4 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i3, i5);
-                      if (i1 == i2 && i0 == i4 && i3 == i5) rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0;
-                      if (i0 == i2)                         rdm3->element(i0, i5, i1, i4, i3, i2) += rdm2->element(i3, i5, i1, i4);
-                      if (i0 == i2 && i3 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i1, i4);
-                      if (i0 == i2 && i3 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i1, i5);
-                      if (i1 == i5 && i0 == i2)             rdm3->element(i0, i5, i1, i4, i3, i2) += rdm1mat->element(i3, i4);
-                      if (i0 == i2 && i1 == i5 && i3 == i4) rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0;
-                      if (i0 == i2 && i1 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i5);
-                      if (i1 == i4 && i3 == i5 && i0 == i2) rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0;
-                      if (i0 == i5 && i1 == i4)             rdm3->element(i0, i5, i1, i4, i3, i2) += 4.0* rdm1mat->element(i3, i2);
-                      if (i0 == i4 && i1 == i5)             rdm3->element(i0, i5, i1, i4, i3, i2) += -2.0* rdm1mat->element(i3, i2);
-                    }
-          // denominator rdm3(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)
-          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, nact*nact, 1.0, rdm3->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-
-          // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
-          std::shared_ptr<Matrix> work4 = work2->clone();
-          sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work4->data(), nact, nact, nact, nact);
-          Matrix fss = *shalf_hh_ % *work4 * *shalf_hh_;
-          denom_hh_ = std::unique_ptr<double[]>(new double[dim]);
-          fss.diagonalize(denom_hh_.get());
-          *shalf_hh_ = fss % *shalf_hh_;
-        }
-
 
       }
 

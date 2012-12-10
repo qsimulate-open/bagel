@@ -32,10 +32,80 @@ using namespace bagel;
 using namespace SMITH;
 
 Denom::Denom(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+  init_hh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xhh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xxh_(rdm1, rdm2, rdm3, rdm4, fock);
 }
+
+
+void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+  const size_t nact = rdm1.norb();
+  const size_t dim  = nact*nact;
+  const size_t size = dim*dim;
+  RDM<2> ovl = rdm2;
+  for (int i2 = 0; i2 != nact; ++i2)
+    for (int i1 = 0; i1 != nact; ++i1)
+      for (int i3 = 0; i3 != nact; ++i3)
+        for (int i0 = 0; i0 != nact; ++i0) {
+          if (i1 == i3)             ovl.element(i0, i3, i1, i2) +=        rdm1.element(i0, i2);
+          if (i1 == i2)             ovl.element(i0, i3, i1, i2) += -2.0 * rdm1.element(i0, i3);
+          if (i0 == i3)             ovl.element(i0, i3, i1, i2) += -2.0 * rdm1.element(i1, i2);
+          if (i0 == i2)             ovl.element(i0, i3, i1, i2) +=        rdm1.element(i1, i3);
+          if (i0 == i3 && i1 == i2) ovl.element(i0, i3, i1, i2) +=  4.0;
+          if (i0 == i2 && i1 == i3) ovl.element(i0, i3, i1, i2) += -2.0;
+        }
+
+  Matrix shalf(dim, dim);
+  sort_indices<0,2,1,3,0,1,1,1>(ovl.data(), shalf.data(), nact, nact, nact, nact);
+  shalf.inverse_half(1.0e-9);
+
+  RDM<3> r3 = rdm3;
+  for (int i2 = 0; i2 != nact; ++i2)
+    for (int i3 = 0; i3 != nact; ++i3)
+      for (int i4 = 0; i4 != nact; ++i4)
+        for (int i1 = 0; i1 != nact; ++i1)
+          for (int i5 = 0; i5 != nact; ++i5)
+            for (int i0 = 0; i0 != nact; ++i0) {
+              if (i3 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i1, i4, i0, i2);
+              if (i3 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i5, i1, i2);
+              if (i1 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i4, i3, i2);
+              if (i1 == i5 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i0, i2);
+              if (i1 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm2.element(i0, i5, i3, i2);
+              if (i1 == i4 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i0, i2);
+              if (i1 == i2)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i5, i3, i4);
+              if (i1 == i2 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i0, i4);
+              if (i1 == i2 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i0, i5);
+              if (i0 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm2.element(i1, i4, i3, i2);
+              if (i0 == i5 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i1, i2);
+              if (i1 == i2 && i0 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i4);
+              if (i1 == i2 && i0 == i5 && i3 == i4) r3.element(i0, i5, i1, i4, i3, i2) +=  4.0;
+              if (i0 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i1, i5, i3, i2);
+              if (i0 == i4 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i1, i2);
+              if (i1 == i2 && i0 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i3, i5);
+              if (i1 == i2 && i0 == i4 && i3 == i5) r3.element(i0, i5, i1, i4, i3, i2) += -2.0;
+              if (i0 == i2)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i3, i5, i1, i4);
+              if (i0 == i2 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i1, i4);
+              if (i0 == i2 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i1, i5);
+              if (i1 == i5 && i0 == i2)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i3, i4);
+              if (i0 == i2 && i1 == i5 && i3 == i4) r3.element(i0, i5, i1, i4, i3, i2) += -2.0;
+              if (i0 == i2 && i1 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i5);
+              if (i1 == i4 && i3 == i5 && i0 == i2) r3.element(i0, i5, i1, i4, i3, i2) +=  4.0;
+              if (i0 == i5 && i1 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=  4.0 * rdm1.element(i3, i2);
+              if (i0 == i4 && i1 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i2);
+            }
+
+  Matrix work(dim, dim);
+  Matrix work2(dim, dim);
+  dgemv_("N", size, nact*nact, 1.0, r3.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
+
+  sort_indices<0,2,1,3,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+  Matrix fss = shalf % work * shalf;
+  denom_hh_ = unique_ptr<double[]>(new double[dim]);
+  fss.diagonalize(denom_hh_.get());
+  shalf_hh_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+}
+
 
 
 void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
