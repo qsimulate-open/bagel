@@ -129,10 +129,10 @@ void ERIBatch::compute() {
     int offset = 0;
     if (swapped) {
       for (int i = 0; i != nloop; ++i, offset += m * n)
-        mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
+        mytranspose_(&data_[offset], m, n, &bkup_[offset]);
     } else {
       for (int i = 0; i != nloop; ++i, offset += m * n)
-        mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
+        mytranspose_(&bkup_[offset], m, n, &data_[offset]);
     }
   } else {
     swapped = (swapped ^ true);
@@ -192,7 +192,7 @@ void ERIBatch::compute() {
   if (!swap0123_) {
     const int m = c * d * cont2size_ * cont3size_;
     const int n = a * b * cont0size_ * cont1size_;
-    mytranspose_(source_now, &m, &n, target_now);
+    mytranspose_(source_now, m, n, target_now);
   } else {
     swapped = (swapped ^ true);
   }

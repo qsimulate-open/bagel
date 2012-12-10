@@ -39,5 +39,5 @@ RDM_base::RDM_base(const int n, const int rank) : norb_(n), rank_(rank) {
 
 RDM_base::RDM_base(const RDM_base& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_) {
   data_ = unique_ptr<double[]>(new double[dim_*dim_]);
-  copy(o.data(), o.data()+dim_*dim_, data());
+  copy_n(o.data(), dim_*dim_, data());
 }

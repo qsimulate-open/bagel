@@ -32,20 +32,20 @@ using namespace bagel;
 Civec::Civec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
   cc_ptr_ = cc_.get();
-  fill(cc(), cc() + lena_*lenb_, 0.0);
+  fill_n(cc(), lena_*lenb_, 0.0);
 }
 
 
 Civec::Civec(shared_ptr<const Determinants> det, double* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ptr_ = din_;
-  fill(cc(), cc() + lena_*lenb_, 0.0);
+  fill_n(cc(), lena_*lenb_, 0.0);
 }
 
 
 Civec::Civec(const Civec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
   cc_ptr_ = cc_.get();
-  copy(o.cc(), o.cc() + lena_*lenb_, cc());
+  copy_n(o.cc(), lena_*lenb_, cc());
 }
 
 
@@ -59,7 +59,7 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 shared_ptr<Civec> Civec::transpose() const {
   shared_ptr<Civec> ct(new Civec(det_));
   double* cct = ct->data();
-  mytranspose_(cc(), &lenb_, &lena_, cct);
+  mytranspose_(cc(), lenb_, lena_, cct);
   return ct;
 }
 
@@ -75,7 +75,7 @@ void Civec::daxpy(double a, const Civec& other) {
 
 
 double Civec::norm() const {
-  return sqrt(ddot_(lena_*lenb_, cc(), 1, cc(), 1));
+  return sqrt(ddot(*this));
 }
 
 
@@ -85,21 +85,21 @@ void Civec::scale(const double a) {
 
 
 double Civec::variance() const {
-  return ddot_(lena_*lenb_, cc(), 1, cc(), 1) / (lena_*lenb_);
+  return ddot(*this) / (lena_*lenb_);
 }
 
 
 double Civec::orthog(list<shared_ptr<const Civec> > c) {
-  for (auto iter = c.begin(); iter != c.end(); ++iter)
-    project_out(*iter);
+  for (auto& iter : c)
+    project_out(iter);
   const double norm = this->norm();
   const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-  dscal_(lena_*lenb_, scal, cc(), 1);
+  scale(scal);
   return 1.0/scal;
 }
 
 double Civec::orthog(shared_ptr<const Civec> o) {
-  list<shared_ptr<const Civec> > v; v.push_back(o);
+  list<shared_ptr<const Civec> > v = {o};
   return orthog(v);
 }
 

@@ -4,6 +4,7 @@
 //
 
 #include <string>
+#include <iomanip>
 #include <sstream>
 #include "../macros.h"
 
@@ -30,17 +31,38 @@ int main() {
   ofs.open(filename.c_str());
 
   stringstream out;
-    out << "\
-//\n\
-// Author: Toru Shiozaki\n\
-// Machine Generated Code\n\
-//\n\
-\n\
-#include \"sortlist.h\"\n\
-#include <algorithm>\n\
-\n\
-using namespace std;\n\
-\n";
+  out << "//" << endl;
+  out << "// BAGEL - Parallel electron correlation program." << endl;
+  out << "// Filename: " << filename << endl;
+  out << "// Copyright (C) 2009 Toru Shiozaki" << endl;
+  out << "//" << endl;
+  out << "// Author: Toru Shiozaki <shiozaki@northwestern.edu>" << endl;
+  out << "// Maintainer: Shiozaki group" << endl;
+  out << "//" << endl;
+  out << "// This file is part of the BAGEL package." << endl;
+  out << "//" << endl;
+  out << "// The BAGEL package is free software; you can redistribute it and/or modify" << endl;
+  out << "// it under the terms of the GNU Library General Public License as published by" << endl;
+  out << "// the Free Software Foundation; either version 2, or (at your option)" << endl;
+  out << "// any later version." << endl;
+  out << "//" << endl;
+  out << "// The BAGEL package is distributed in the hope that it will be useful," << endl;
+  out << "// but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl;
+  out << "// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl;
+  out << "// GNU Library General Public License for more details." << endl;
+  out << "//" << endl;
+  out << "// You should have received a copy of the GNU Library General Public License" << endl;
+  out << "// along with the BAGEL package; see COPYING.  If not, write to" << endl;
+  out << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
+  out << "//" << endl;
+  out << endl;
+  out << endl;
+  out << "#include <algorithm>" << endl;
+  out << "#include <src/rysint/sortlist.h>" << endl;
+  out << endl;
+  out << "using namespace std;" << endl;
+  out << "using namespace bagel;" << endl;
+  out << endl;
 
   for (int x2 = 0; x2 != ANG_HRR_END; ++x2) {
   for (int x3 = 0; x3 != x2 + 1; ++x3) {
@@ -100,7 +122,7 @@ void SortList::sort_indices_" << label << "(double* target, const double* source
           const int toffset = " << x2end << " * c2 * cont3csize + c3x3end;" << endl;
           for (int x2 = 0; x2 != x2end; ++x2) {
             out << "\
-          copy(current_source+soffset+" << (x3end * (x2)) << ", current_source+soffset+" << (x3end * (x2+1)) << ", current_target+toffset+" << x2 << "*cont3csize);" << endl;
+          copy_n(current_source+soffset+" << setw(3) << (x3end * (x2)) << ", " << setw(3) << x3end << ", current_target+toffset+" << setw(2) << x2 << "*cont3csize);" << endl;
           }
     out << "\
         }\n\

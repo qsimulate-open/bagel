@@ -433,9 +433,9 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
             const int n = sam[0]*sam[1];
             const int nn = cam[0]*cam[1];
             carsphlist.carsphfunc_call(carsphindex, n, ints, area);
-            mytranspose_(area, &m, &n, ints);
+            mytranspose_(area, m, n, ints);
             carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
-            copy(area, area+nn*m, ints);
+            copy_n(area, nn*m, ints);
             stack_->release(batchsize, area);
           }
 
