@@ -454,8 +454,7 @@ class SpinFreeMethod {
               size_t iall = 0;
               for (int j123 = 0; j123 != nact*nact*nact; ++j123)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
-                  interm[iall] /= e0_ - (eig_[j1]);
-//                interm[iall] /= e0_ - (denom_xhh_[j123] + eig_[j1]);
+                  interm[iall] /= e0_ - (denom_xhh_[j123] + eig_[j1]);
 
               // move back to non-orthogonal basis
               dgemm_("N", "N", i1.size(), i0.size()*i2.size()*i3.size(), nact*nact*nact, 1.0, interm, i1.size(), transp, nact*nact*nact,
@@ -885,6 +884,8 @@ class SpinFreeMethod {
 #endif
         // xx/xa case
         {
+          const size_t dim = nact*nact*nact;
+          const size_t size = dim*dim;
           std::shared_ptr<RDM<3> > ovl(new RDM<3>(*rdm3source));
           for (int i5 = 0; i5 != nact; ++i5)
             for (int i0 = 0; i0 != nact; ++i0)
@@ -894,11 +895,11 @@ class SpinFreeMethod {
                     for (int i1 = 0; i1 != nact; ++i1) {
                       if (i2 == i3) ovl->element(i1, i2, i3, i4, i0, i5) += 1.0 * rdm2->element(i1, i4, i0, i5);
                     }
-          shalf_xhh_ = std::shared_ptr<Matrix>(new Matrix(nact*nact*nact, nact*nact*nact));
+          shalf_xhh_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
           sort_indices<4,0,1,5,3,2,0,1,1,1>(ovl->data(), shalf_xhh_->data(), nact, nact, nact, nact, nact, nact);
           shalf_xhh_->inverse_half(1.0e-9);
-#if 0
-          std::shared_ptr<RDM<4> > rdm4(new RDM<4>(* ... ));
+
+          std::shared_ptr<RDM<4> > rdm4(new RDM<4>(*rdm4source));
           for (int i4 = 0; i4 != nact; ++i4)
             for (int i3 = 0; i3 != nact; ++i3)
               for (int i7 = 0; i7 != nact; ++i7)
@@ -912,7 +913,14 @@ class SpinFreeMethod {
                           if (i2 == i3 && i4 == i5) rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm2->element(i1, i6, i0, i7);
                           if (i2 == i5)             rdm4->element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3source->element(i3, i4, i1, i6, i0, i7);
                         }
-#endif
+          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
+          dgemv_("N", size, nact*nact, 1.0, rdm4->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
+          Matrix fss(dim, dim);
+          sort_indices<4,0,1,5,3,2,0,1,1,1>(work2->data(), fss.data(), nact, nact, nact, nact, nact, nact);
+          fss = *shalf_xhh_ % fss * *shalf_xhh_;
+          denom_xhh_ = std::unique_ptr<double[]>(new double[dim]);
+          fss.diagonalize(denom_xhh_.get());
+          *shalf_xhh_ = fss % *shalf_xhh_; 
         }
       }
 
