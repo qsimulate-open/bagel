@@ -148,16 +148,17 @@ class MOFock {
     std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
+    std::shared_ptr<Tensor<T> > hcore_;
 
   public:
     MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
-      data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      data_  = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      hcore_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
 
-      // TODO parallel not considered yet at all...
-      std::shared_ptr<const Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
+      std::shared_ptr<const Fock<1> > hcore(new Fock<1>(ref_->geom(), ref_->hcore()));
 
       std::shared_ptr<Matrix> den;
       if (ref_->nact() == 0) {
@@ -171,7 +172,7 @@ class MOFock {
         den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
       }
 
-      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
+      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), hcore, den, r->schwarz()));
       const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
@@ -196,8 +197,13 @@ class MOFock {
       for (auto& i0 : blocks_[0]) {
         size_t j1 = blocks_[1].keyoffset();
         for (auto& i1 : blocks_[1]) {
-          std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-          data_->put_block({j1, j0}, target);
+          {
+            std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
+            data_->put_block({j1, j0}, target);
+          } {
+            std::unique_ptr<double[]> target = hcore->get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
+            hcore_->put_block({j1, j0}, target);
+          }
           ++j1;
         }
         ++j0;
@@ -207,6 +213,7 @@ class MOFock {
 
     std::shared_ptr<Tensor<T> > data() { return data_; }
     std::shared_ptr<Tensor<T> > tensor() { return data_; }
+    std::shared_ptr<Tensor<T> > hcore() { return hcore_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 

@@ -52,6 +52,7 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
+    std::shared_ptr<Tensor<T> > h1_;
     std::shared_ptr<Tensor<T> > rdm1_;
     std::shared_ptr<Tensor<T> > rdm2_;
     std::shared_ptr<Tensor<T> > rdm3_;
@@ -537,6 +538,7 @@ class SpinFreeMethod {
         std::vector<IndexRange> o = {all_, all_};
         MOFock<T> fock(ref_, o);
         f1_ = fock.tensor();
+        h1_ = fock.hcore();
         // canonical orbitals within closed and virtual subspaces
         coeff = fock.coeff();
       }
