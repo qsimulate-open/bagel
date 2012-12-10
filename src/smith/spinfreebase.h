@@ -508,7 +508,6 @@ class SpinFreeMethod {
               size_t iall = 0;
               for (int j013 = 0; j013 != nact*nact*nact; ++j013)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
-//                interm[iall] /= e0_ - (- eig_[j2]);
                   interm[iall] /= e0_ - (denom_xxh_[j013] - eig_[j2]);
 
               // move back to non-orthogonal basis
