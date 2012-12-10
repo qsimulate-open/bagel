@@ -106,6 +106,7 @@ class K2ext {
               const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 
               // contract
+              // TODO form_4index function now generates global 4 index tensor. This should be localized.
               std::unique_ptr<double[]> target = df01->form_4index(df23, 1.0);
 
               // move in place
