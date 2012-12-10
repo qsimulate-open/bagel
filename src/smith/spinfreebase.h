@@ -479,7 +479,7 @@ class SpinFreeMethod {
       for (auto& i3 : active_) {
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
-            assert(shalf_xhh_);
+            assert(shalf_xxh_);
             const int nact = ref_->nact();
             const int nclo = ref_->nclosed();
             std::unique_ptr<double[]> transp(new double[i0.size()*i1.size()*i3.size()*nact*nact*nact]);
