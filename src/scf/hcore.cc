@@ -63,7 +63,6 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
   {
     KineticBatch kinetic(input);
     kinetic.compute();
-    const double* kdata = kinetic.data();
 
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
