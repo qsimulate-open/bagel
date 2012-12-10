@@ -69,11 +69,7 @@ SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix(gm->nbasis(), gm->n
       assert(block.size() == size * size);
 
       for (int k = 0; k != nfunc; ++k) {
-        int index = 0;
-        for (int ic = coffset; ic != coffset + size; ++ic) {
-          for (int it = toffset; it != toffset + size; ++it, ++index)
-            data_[ic * ndim_ + it] = block[index];
-        }
+        copy_block(toffset, coffset, size, size, &block[0]);
         coffset += size;
         toffset += size;
       }

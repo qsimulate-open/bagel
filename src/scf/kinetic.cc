@@ -60,13 +60,8 @@ void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const 
 
   KineticBatch kinetic(input);
   kinetic.compute();
-  const double* kdata = kinetic.data();
-  int cnt = 0;
-  for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-    for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      data_[i*ndim_ + j] = kdata[cnt];
-    }
-  }
+
+  copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
 }
 
 
