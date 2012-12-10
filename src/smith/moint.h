@@ -62,20 +62,17 @@ class K2ext {
       const size_t nbasis = df->nbasis0();
       assert(df->nbasis0() == df->nbasis1());
 
-      // TODO this part should be heavily parallelized
-      // Also need to think a bit on the data layout.
-      // closed loop
+      // occ loop
       size_t cnt = blocks_[0].keyoffset();
-      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0->offset(), i0->size())->apply_J();
+      for (auto& i0 : blocks_[0]) {
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0.offset(), i0.size())->apply_J();
         // virtual loop
         size_t cnt2 = blocks_[1].keyoffset();
-        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
-          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1->offset(), i1->size());
-
-          std::vector<size_t> h = {{cnt, cnt2}};
-          dflist.insert(make_pair(generate_hash_key(h), df_full));
+        for (auto& i1 : blocks_[1]) {
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
+          dflist.insert(make_pair(generate_hash_key(cnt, cnt2++), df_full));
         }
+        ++cnt;
       }
       return dflist;
     }
@@ -89,24 +86,20 @@ class K2ext {
         size_t j1 = blocks_[1].keyoffset();
         for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
           // find three-index integrals
-          std::vector<size_t> i01 = {j0, j1};
-
-          auto iter01 = dflist.find(generate_hash_key(i01));
+          auto iter01 = dflist.find(generate_hash_key(j0,j1));
           assert(iter01 != dflist.end());
           std::shared_ptr<DFFullDist> df01 = iter01->second;
-          size_t hashkey01 = generate_hash_key(i01);
+          size_t hashkey01 = generate_hash_key(j0,j1);
 
           size_t j2 = blocks_[2].keyoffset();
           for (auto i2 = blocks_[2].range().begin(); i2 != blocks_[2].range().end(); ++i2, ++j2) {
             size_t j3 = blocks_[3].keyoffset();
             for (auto i3 = blocks_[3].range().begin(); i3 != blocks_[3].range().end(); ++i3, ++j3) {
               // find three-index integrals
-              std::vector<size_t> i23 = {j2, j3};
-
-              size_t hashkey23 = generate_hash_key(i23);
+              size_t hashkey23 = generate_hash_key(j2,j3);
               if (hashkey23 > hashkey01) continue;
 
-              auto iter23 = dflist.find(generate_hash_key(i23));
+              auto iter23 = dflist.find(generate_hash_key(j2,j3));
               assert(iter23 != dflist.end());
               std::shared_ptr<const DFFullDist> df23 = iter23->second;
 

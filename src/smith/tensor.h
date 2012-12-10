@@ -34,6 +34,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <type_traits>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
@@ -41,18 +42,28 @@
 namespace bagel {
 namespace SMITH {
 
+const static int shift = 8;
+
 // this function should be fast
-inline static size_t generate_hash_key(const std::vector<size_t>& o) {
+template<class T>
+size_t generate_hash_key(const T& head) { return head; }
+
+template<class T, typename... args>
+size_t generate_hash_key(const T& head, const args&... tail) {
   // this assumes < 256 blocks; TODO runtime determination?
-  const int shift = 8;
+  static_assert(std::is_integral<T>::value, "unexpected type T");
+  return (generate_hash_key(tail...) << shift) + head;
+}
+
+size_t generate_hash_key(const std::vector<size_t>& o) {
   size_t out = 0;
-  for (auto& i : o) {
+  for (auto i = o.rbegin(); i != o.rend(); ++i) {
     out <<= shift;
-    out += i;
-    assert(i < (1 << shift));
+    out += *i;
   }
   return out;
-};
+}
+
 
 template <typename T>
 class Tensor {
