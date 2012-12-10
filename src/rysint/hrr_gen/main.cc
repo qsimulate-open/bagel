@@ -113,7 +113,7 @@ int main() {
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include \"hrrlist.h\"\n\
+#include <src/rysint/hrrlist.h>\n\
 #include <array>\n\
 #include <algorithm>\n\
 \n\
