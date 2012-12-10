@@ -60,6 +60,8 @@ class RDM_base {
     void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
     size_t size() const { return dim_*dim_; }
 
+    int norb() const { return norb_; }
+
 };
 
 
