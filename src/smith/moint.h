@@ -192,6 +192,7 @@ class MOFock {
         dgemm_("N", "N", nbasis, nvirt, nvirt, 1.0, ref_->coeff()->element_ptr(0,nocc), nbasis, fvirt->data(), nvirt, 0.0, coeff_->element_ptr(0,nocc), nbasis);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
+      const Matrix hc = *coeff_ % *hcore * *coeff_;
 
       size_t j0 = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
@@ -201,7 +202,7 @@ class MOFock {
             std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
             data_->put_block({j1, j0}, target);
           } {
-            std::unique_ptr<double[]> target = hcore->get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
+            std::unique_ptr<double[]> target = hc.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
             hcore_->put_block({j1, j0}, target);
           }
           ++j1;
