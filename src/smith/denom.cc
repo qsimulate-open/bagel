@@ -31,11 +31,85 @@ using namespace std;
 using namespace bagel;
 using namespace SMITH;
 
-Denom::Denom(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+Denom::Denom(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock, const double thr) : thresh_(thr) {
+  init_x_(rdm1, rdm2, rdm3, rdm4, fock);
+  init_h_(rdm1, rdm2, rdm3, rdm4, fock);
+  init_xx_(rdm1, rdm2, rdm3, rdm4, fock);
   init_hh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xhh_(rdm1, rdm2, rdm3, rdm4, fock);
   init_xxh_(rdm1, rdm2, rdm3, rdm4, fock);
+}
+
+
+void Denom::init_x_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+  const size_t nact = rdm1.norb();
+  const size_t dim = nact;
+  const size_t size = dim*dim;
+  Matrix shalf(dim, dim);
+  copy_n(rdm1.data(), size, shalf.data());
+  shalf.inverse_half(1.0e-9);
+
+  Matrix work2(dim, dim);
+  dgemv_("N", size, nact*nact, 1.0, rdm2.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
+
+  Matrix fss = shalf % work2 * shalf;
+  denom_x_ = unique_ptr<double[]>(new double[dim]);
+  fss.diagonalize(denom_x_.get());
+  shalf_x_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+}
+
+
+void Denom::init_h_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+  const size_t nact = rdm1.norb();
+  const size_t dim  = nact;
+  const size_t size = dim*dim;
+  Matrix shalf(dim, dim);
+  copy_n(rdm1.data(), size, shalf.data());
+  shalf.scale(-1.0);
+  shalf.add_diag(2.0); //.. making hole 1RDM
+  Matrix h1 = shalf;
+  shalf.inverse_half(thresh_);
+
+  RDM<2> ovl = rdm2;
+  ovl.scale(-1.0);
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k) {
+        // see Celani eq. A7
+        ovl.element(k, i, i, j) +=          h1.element(k,j);
+        ovl.element(i, k, j, i) += -1.0 * rdm1.element(k,j);
+        ovl.element(i, i, k, j) +=  2.0 * rdm1.element(k,j);
+      }
+  Matrix work2(dim, dim);
+  dgemv_("N", size, nact*nact, 1.0, ovl.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
+
+  Matrix fss = shalf % work2 * shalf;
+  denom_h_ = unique_ptr<double[]>(new double[dim]);
+  fss.diagonalize(denom_h_.get());
+  shalf_h_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+}
+
+
+
+void Denom::init_xx_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, const RDM<4>& rdm4, const Matrix& fock) {
+  const size_t nact = rdm1.norb();
+  const size_t dim  = nact*nact;
+  const size_t size = dim*dim;
+  Matrix shalf(dim, dim);
+  RDM<2> tmp = rdm2;
+  sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), shalf.data(), nact, nact, nact, nact);
+  shalf.inverse_half(thresh_);
+
+  Matrix work(dim, dim);
+  Matrix work2(dim, dim);
+  dgemv_("N", size, nact*nact, 1.0, rdm3.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
+
+  sort_indices<0,2,1,3,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+  Matrix fss = shalf % work * shalf;
+  denom_xx_ = unique_ptr<double[]>(new double[dim]);
+  fss.diagonalize(denom_xx_.get());
+  shalf_xx_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
 }
 
 
@@ -58,7 +132,7 @@ void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
 
   Matrix shalf(dim, dim);
   sort_indices<0,2,1,3,0,1,1,1>(ovl.data(), shalf.data(), nact, nact, nact, nact);
-  shalf.inverse_half(1.0e-9);
+  shalf.inverse_half(thresh_);
 
   RDM<3> r3 = rdm3;
   for (int i2 = 0; i2 != nact; ++i2)
@@ -134,7 +208,7 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   shalf.add_block(dim, 0, dim, dim, work);
   shalf.add_block(0, dim, dim, dim, work);
 
-  shalf.inverse_half(1.0e-9);
+  shalf.inverse_half(thresh_);
 
   RDM<3> d0 = rdm3;
   RDM<3> d3 = rdm3; 
@@ -191,7 +265,7 @@ void Denom::init_xhh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
             }
   Matrix shalf(dim, dim);
   sort_indices<4,0,1,5,3,2,0,1,1,1>(ovl.data(), shalf.data(), nact, nact, nact, nact, nact, nact);
-  shalf.inverse_half(1.0e-9);
+  shalf.inverse_half(thresh_);
 
   RDM<4> r4 = rdm4;
   for (int i4 = 0; i4 != nact; ++i4)
@@ -239,7 +313,7 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
             }
   Matrix shalf(dim, dim);
   sort_indices<0,1,3,5,4,2,0,1,1,1>(ovl.data(), shalf.data(), nact, nact, nact, nact, nact, nact);
-  shalf.inverse_half(1.0e-9);
+  shalf.inverse_half(thresh_);
 
   RDM<4> r4 = rdm4;
   r4.scale(-1.0);
