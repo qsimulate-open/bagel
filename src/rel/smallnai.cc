@@ -62,6 +62,7 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   SmallNAIBatch batch(input, geom_);
   batch.compute();
 
+#if 0
   int cnt = 0;
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
@@ -71,6 +72,12 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
       dataarray_[3]->element(j,i) = batch[3]->data(cnt);
     }
   }
+#else
+  dataarray_[0]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[0]);
+  dataarray_[1]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[1]);
+  dataarray_[2]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[2]);
+  dataarray_[3]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[3]);
+#endif
 }
 
 
