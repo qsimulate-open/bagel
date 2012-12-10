@@ -122,12 +122,14 @@ void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
     for (int i1 = 0; i1 != nact; ++i1)
       for (int i3 = 0; i3 != nact; ++i3)
         for (int i0 = 0; i0 != nact; ++i0) {
-          if (i1 == i3)             ovl.element(i0, i3, i1, i2) +=        rdm1.element(i0, i2);
-          if (i1 == i2)             ovl.element(i0, i3, i1, i2) += -2.0 * rdm1.element(i0, i3);
-          if (i0 == i3)             ovl.element(i0, i3, i1, i2) += -2.0 * rdm1.element(i1, i2);
-          if (i0 == i2)             ovl.element(i0, i3, i1, i2) +=        rdm1.element(i1, i3);
-          if (i0 == i3 && i1 == i2) ovl.element(i0, i3, i1, i2) +=  4.0;
-          if (i0 == i2 && i1 == i3) ovl.element(i0, i3, i1, i2) += -2.0;
+          double a = 0.0;
+          if (i1 == i3)             a +=        rdm1.element(i0, i2);
+          if (i1 == i2)             a += -2.0 * rdm1.element(i0, i3);
+          if (i0 == i3)             a += -2.0 * rdm1.element(i1, i2);
+          if (i0 == i2)             a +=        rdm1.element(i1, i3);
+          if (i0 == i3 && i1 == i2) a +=  4.0;
+          if (i0 == i2 && i1 == i3) a += -2.0;
+          ovl.element(i0, i3, i1, i2) += a;
         }
 
   Matrix shalf(dim, dim);
@@ -141,32 +143,34 @@ void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
         for (int i1 = 0; i1 != nact; ++i1)
           for (int i5 = 0; i5 != nact; ++i5)
             for (int i0 = 0; i0 != nact; ++i0) {
-              if (i3 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i1, i4, i0, i2);
-              if (i3 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i5, i1, i2);
-              if (i1 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i4, i3, i2);
-              if (i1 == i5 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i0, i2);
-              if (i1 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm2.element(i0, i5, i3, i2);
-              if (i1 == i4 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i0, i2);
-              if (i1 == i2)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i0, i5, i3, i4);
-              if (i1 == i2 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i0, i4);
-              if (i1 == i2 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i0, i5);
-              if (i0 == i5)                         r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm2.element(i1, i4, i3, i2);
-              if (i0 == i5 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i1, i2);
-              if (i1 == i2 && i0 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i4);
-              if (i1 == i2 && i0 == i5 && i3 == i4) r3.element(i0, i5, i1, i4, i3, i2) +=  4.0;
-              if (i0 == i4)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i1, i5, i3, i2);
-              if (i0 == i4 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i1, i2);
-              if (i1 == i2 && i0 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i3, i5);
-              if (i1 == i2 && i0 == i4 && i3 == i5) r3.element(i0, i5, i1, i4, i3, i2) += -2.0;
-              if (i0 == i2)                         r3.element(i0, i5, i1, i4, i3, i2) +=        rdm2.element(i3, i5, i1, i4);
-              if (i0 == i2 && i3 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i1, i4);
-              if (i0 == i2 && i3 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i1, i5);
-              if (i1 == i5 && i0 == i2)             r3.element(i0, i5, i1, i4, i3, i2) +=        rdm1.element(i3, i4);
-              if (i0 == i2 && i1 == i5 && i3 == i4) r3.element(i0, i5, i1, i4, i3, i2) += -2.0;
-              if (i0 == i2 && i1 == i4)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i5);
-              if (i1 == i4 && i3 == i5 && i0 == i2) r3.element(i0, i5, i1, i4, i3, i2) +=  4.0;
-              if (i0 == i5 && i1 == i4)             r3.element(i0, i5, i1, i4, i3, i2) +=  4.0 * rdm1.element(i3, i2);
-              if (i0 == i4 && i1 == i5)             r3.element(i0, i5, i1, i4, i3, i2) += -2.0 * rdm1.element(i3, i2);
+              double a = 0.0;
+              if (i3 == i5)                         a +=        rdm2.element(i1, i4, i0, i2);
+              if (i3 == i4)                         a +=        rdm2.element(i0, i5, i1, i2);
+              if (i1 == i5)                         a +=        rdm2.element(i0, i4, i3, i2);
+              if (i1 == i5 && i3 == i4)             a +=        rdm1.element(i0, i2);
+              if (i1 == i4)                         a += -2.0 * rdm2.element(i0, i5, i3, i2);
+              if (i1 == i4 && i3 == i5)             a += -2.0 * rdm1.element(i0, i2);
+              if (i1 == i2)                         a +=        rdm2.element(i0, i5, i3, i4);
+              if (i1 == i2 && i3 == i5)             a +=        rdm1.element(i0, i4);
+              if (i1 == i2 && i3 == i4)             a += -2.0 * rdm1.element(i0, i5);
+              if (i0 == i5)                         a += -2.0 * rdm2.element(i1, i4, i3, i2);
+              if (i0 == i5 && i3 == i4)             a += -2.0 * rdm1.element(i1, i2);
+              if (i1 == i2 && i0 == i5)             a += -2.0 * rdm1.element(i3, i4);
+              if (i1 == i2 && i0 == i5 && i3 == i4) a +=  4.0;
+              if (i0 == i4)                         a +=        rdm2.element(i1, i5, i3, i2);
+              if (i0 == i4 && i3 == i5)             a +=        rdm1.element(i1, i2);
+              if (i1 == i2 && i0 == i4)             a +=        rdm1.element(i3, i5);
+              if (i1 == i2 && i0 == i4 && i3 == i5) a += -2.0;
+              if (i0 == i2)                         a +=        rdm2.element(i3, i5, i1, i4);
+              if (i0 == i2 && i3 == i5)             a += -2.0 * rdm1.element(i1, i4);
+              if (i0 == i2 && i3 == i4)             a +=        rdm1.element(i1, i5);
+              if (i1 == i5 && i0 == i2)             a +=        rdm1.element(i3, i4);
+              if (i0 == i2 && i1 == i5 && i3 == i4) a += -2.0;
+              if (i0 == i2 && i1 == i4)             a += -2.0 * rdm1.element(i3, i5);
+              if (i1 == i4 && i3 == i5 && i0 == i2) a +=  4.0;
+              if (i0 == i5 && i1 == i4)             a +=  4.0 * rdm1.element(i3, i2);
+              if (i0 == i4 && i1 == i5)             a += -2.0 * rdm1.element(i3, i2);
+              r3.element(i0, i5, i1, i4, i3, i2) += a;
             }
 
   Matrix work(dim, dim);
@@ -219,14 +223,21 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
         for (int i2 = 0; i2 != nact; ++i2)
           for (int i1 = 0; i1 != nact; ++i1)
             for (int i0 = 0; i0 != nact; ++i0) {
-              if (i3 == i4)             d3.element(i0, i1, i4, i5, i2, i3) += rdm2.element(i0, i1, i2, i5);
-              if (i1 == i2)             d3.element(i0, i1, i4, i5, i2, i3) += rdm2.element(i0, i3, i4, i5);
-              if (i1 == i2 && i3 == i4) d3.element(i0, i1, i4, i5, i2, i3) += rdm1.element(i0, i5);
-              if (i1 == i4)             d3.element(i0, i1, i4, i5, i2, i3) += rdm2.element(i2, i3, i0, i5);
-              if (i3 == i4)             d0.element(i4, i1, i0, i5, i2, i3) += -1.0 * rdm2.element(i2, i1, i0, i5);
-              if (i1 == i2)             d0.element(i4, i1, i0, i5, i2, i3) += -1.0 * rdm2.element(i4, i3, i0, i5);
-              if (i3 == i4 && i1 == i2) d0.element(i4, i1, i0, i5, i2, i3) +=  2.0 * rdm1.element(i0, i5);
-              if (i1 == i4)             d0.element(i4, i1, i0, i5, i2, i3) +=  2.0 * rdm2.element(i2, i3, i0, i5);
+              {
+                double a = 0.0;
+                if (i3 == i4)             a += rdm2.element(i0, i1, i2, i5);
+                if (i1 == i2)             a += rdm2.element(i0, i3, i4, i5);
+                if (i1 == i2 && i3 == i4) a += rdm1.element(i0, i5);
+                if (i1 == i4)             a += rdm2.element(i2, i3, i0, i5);
+                d3.element(i0, i1, i4, i5, i2, i3) += a;
+              } {
+                double b = 0.0;
+                if (i3 == i4)             b += -1.0 * rdm2.element(i2, i1, i0, i5);
+                if (i1 == i2)             b += -1.0 * rdm2.element(i4, i3, i0, i5);
+                if (i3 == i4 && i1 == i2) b +=  2.0 * rdm1.element(i0, i5);
+                if (i1 == i4)             b +=  2.0 * rdm2.element(i2, i3, i0, i5);
+                d0.element(i4, i1, i0, i5, i2, i3) += b;
+              }
             }
 
   Matrix work2(dim, dim);
@@ -276,10 +287,12 @@ void Denom::init_xhh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
             for (int i5 = 0; i5 != nact; ++i5)
               for (int i2 = 0; i2 != nact; ++i2)
                 for (int i1 = 0; i1 != nact; ++i1) {
-                  if (i4 == i5)             r4.element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3.element(i1, i2, i3, i6, i0, i7);
-                  if (i2 == i3)             r4.element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3.element(i1, i4, i5, i6, i0, i7);
-                  if (i2 == i3 && i4 == i5) r4.element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm2.element(i1, i6, i0, i7);
-                  if (i2 == i5)             r4.element(i1, i2, i5, i6, i0, i7, i3, i4) += 1.0 * rdm3.element(i3, i4, i1, i6, i0, i7);
+                  double a = 0.0;
+                  if (i4 == i5)             a += 1.0 * rdm3.element(i1, i2, i3, i6, i0, i7);
+                  if (i2 == i3)             a += 1.0 * rdm3.element(i1, i4, i5, i6, i0, i7);
+                  if (i2 == i3 && i4 == i5) a += 1.0 * rdm2.element(i1, i6, i0, i7);
+                  if (i2 == i5)             a += 1.0 * rdm3.element(i3, i4, i1, i6, i0, i7);
+                  r4.element(i1, i2, i5, i6, i0, i7, i3, i4) += a;
                 }
   Matrix work2(dim, dim);
   dgemv_("N", size, nact*nact, 1.0, r4.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
@@ -304,12 +317,14 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
         for (int i3 = 0; i3 != nact; ++i3)
           for (int i1 = 0; i1 != nact; ++i1)
             for (int i0 = 0; i0 != nact; ++i0) {
-              if (i2 == i4)             ovl.element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2.element(i0, i1, i3, i5);
-              if (i2 == i3)             ovl.element(i0, i1, i3, i2, i4, i5) +=  2.0 * rdm2.element(i0, i1, i4, i5);
-              if (i1 == i4)             ovl.element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2.element(i3, i2, i0, i5);
-              if (i1 == i4 && i2 == i3) ovl.element(i0, i1, i3, i2, i4, i5) +=  2.0 * rdm1.element(i0, i5);
-              if (i1 == i3)             ovl.element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm2.element(i0, i2, i4, i5);
-              if (i1 == i3 && i2 == i4) ovl.element(i0, i1, i3, i2, i4, i5) += -1.0 * rdm1.element(i0, i5);
+              double a = 0.0;
+              if (i2 == i4)             a += -1.0 * rdm2.element(i0, i1, i3, i5);
+              if (i2 == i3)             a +=  2.0 * rdm2.element(i0, i1, i4, i5);
+              if (i1 == i4)             a += -1.0 * rdm2.element(i3, i2, i0, i5);
+              if (i1 == i4 && i2 == i3) a +=  2.0 * rdm1.element(i0, i5);
+              if (i1 == i3)             a += -1.0 * rdm2.element(i0, i2, i4, i5);
+              if (i1 == i3 && i2 == i4) a += -1.0 * rdm1.element(i0, i5);
+              ovl.element(i0, i1, i3, i2, i4, i5) += a;
             }
   Matrix shalf(dim, dim);
   sort_indices<0,1,3,5,4,2,0,1,1,1>(ovl.data(), shalf.data(), nact, nact, nact, nact, nact, nact);
@@ -325,32 +340,34 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
             for (int i5 = 0; i5 != nact; ++i5)
               for (int i1 = 0; i1 != nact; ++i1)
                 for (int i0 = 0; i0 != nact; ++i0) {
-                  if (i4 == i6)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i1, i5, i2, i3, i7);
-                  if (i4 == i5)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i1, i3, i2, i6, i7);
-                  if (i2 == i6)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i1, i3, i4, i5, i7);
-                  if (i2 == i6 && i4 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i1, i3, i7);
-                  if (i2 == i5)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm3.element(i0, i1, i3, i4, i6, i7);
-                  if (i2 == i5 && i4 == i6)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2.element(i0, i1, i3, i7);
-                  if (i2 == i3)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i1, i5, i4, i6, i7);
-                  if (i2 == i3 && i4 == i6)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i1, i5, i7);
-                  if (i2 == i3 && i4 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2.element(i0, i1, i6, i7);
-                  if (i1 == i6)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i3, i4, i5, i2, i0, i7);
-                  if (i1 == i6 && i4 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i3, i2, i0, i7);
-                  if (i1 == i6 && i2 == i3)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i5, i4, i0, i7);
-                  if (i1 == i6 && i2 == i3 && i4 == i5) r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm1.element(i0, i7);
-                  if (i1 == i5)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i2, i3, i4, i6, i7);
-                  if (i1 == i5 && i4 == i6)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i2, i3, i7);
-                  if (i2 == i3 && i1 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i4, i6, i7);
-                  if (i2 == i3 && i1 == i5 && i4 == i6) r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm1.element(i0, i7);
-                  if (i1 == i3)                         r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm3.element(i0, i4, i5, i2, i6, i7);
-                  if (i1 == i3 && i4 == i6)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i5, i2, i0, i7);
-                  if (i1 == i3 && i4 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i2, i6, i7);
-                  if (i2 == i6 && i1 == i3)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i0, i4, i5, i7);
-                  if (i2 == i6 && i1 == i3 && i4 == i5) r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm1.element(i0, i7);
-                  if (i1 == i3 && i2 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2.element(i0, i4, i6, i7);
-                  if (i4 == i6 && i2 == i5 && i1 == i3) r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm1.element(i0, i7);
-                  if (i1 == i6 && i2 == i5)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) +=  2.0 * rdm2.element(i3, i4, i0, i7);
-                  if (i1 == i5 && i2 == i6)             r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += -1.0 * rdm2.element(i3, i4, i0, i7);
+                  double a = 0.0;
+                  if (i4 == i6)                         a += -1.0 * rdm3.element(i0, i1, i5, i2, i3, i7);
+                  if (i4 == i5)                         a += -1.0 * rdm3.element(i0, i1, i3, i2, i6, i7);
+                  if (i2 == i6)                         a += -1.0 * rdm3.element(i0, i1, i3, i4, i5, i7);
+                  if (i2 == i6 && i4 == i5)             a += -1.0 * rdm2.element(i0, i1, i3, i7);
+                  if (i2 == i5)                         a +=  2.0 * rdm3.element(i0, i1, i3, i4, i6, i7);
+                  if (i2 == i5 && i4 == i6)             a +=  2.0 * rdm2.element(i0, i1, i3, i7);
+                  if (i2 == i3)                         a += -1.0 * rdm3.element(i0, i1, i5, i4, i6, i7);
+                  if (i2 == i3 && i4 == i6)             a += -1.0 * rdm2.element(i0, i1, i5, i7);
+                  if (i2 == i3 && i4 == i5)             a +=  2.0 * rdm2.element(i0, i1, i6, i7);
+                  if (i1 == i6)                         a += -1.0 * rdm3.element(i3, i4, i5, i2, i0, i7);
+                  if (i1 == i6 && i4 == i5)             a += -1.0 * rdm2.element(i3, i2, i0, i7);
+                  if (i1 == i6 && i2 == i3)             a += -1.0 * rdm2.element(i5, i4, i0, i7);
+                  if (i1 == i6 && i2 == i3 && i4 == i5) a +=  2.0 * rdm1.element(i0, i7);
+                  if (i1 == i5)                         a += -1.0 * rdm3.element(i0, i2, i3, i4, i6, i7);
+                  if (i1 == i5 && i4 == i6)             a += -1.0 * rdm2.element(i0, i2, i3, i7);
+                  if (i2 == i3 && i1 == i5)             a += -1.0 * rdm2.element(i0, i4, i6, i7);
+                  if (i2 == i3 && i1 == i5 && i4 == i6) a += -1.0 * rdm1.element(i0, i7);
+                  if (i1 == i3)                         a += -1.0 * rdm3.element(i0, i4, i5, i2, i6, i7);
+                  if (i1 == i3 && i4 == i6)             a += -1.0 * rdm2.element(i5, i2, i0, i7);
+                  if (i1 == i3 && i4 == i5)             a += -1.0 * rdm2.element(i0, i2, i6, i7);
+                  if (i2 == i6 && i1 == i3)             a += -1.0 * rdm2.element(i0, i4, i5, i7);
+                  if (i2 == i6 && i1 == i3 && i4 == i5) a += -1.0 * rdm1.element(i0, i7);
+                  if (i1 == i3 && i2 == i5)             a +=  2.0 * rdm2.element(i0, i4, i6, i7);
+                  if (i4 == i6 && i2 == i5 && i1 == i3) a +=  2.0 * rdm1.element(i0, i7);
+                  if (i1 == i6 && i2 == i5)             a +=  2.0 * rdm2.element(i3, i4, i0, i7);
+                  if (i1 == i5 && i2 == i6)             a += -1.0 * rdm2.element(i3, i4, i0, i7);
+                  r4.element(i0, i1, i5, i2, i6, i7, i3, i4) += a;
                 }
   Matrix work2(dim, dim);
   dgemv_("N", size, nact*nact, 1.0, r4.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
