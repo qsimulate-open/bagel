@@ -219,8 +219,7 @@ class Tensor {
       const size_t size = range_[0].size();
       std::unique_ptr<double[]> buf(new double[size]);
       for (auto& i : range_[0]) {
-        std::vector<size_t> h = {i.key(), i.key()};
-        std::unique_ptr<double[]> data0 = move_block(h);
+        std::unique_ptr<double[]> data0 = move_block(i, i);
         for (int j = 0; j != i.size(); ++j) {
           buf[j+i.offset()] = data0[j+j*i.size()];
         }
@@ -258,10 +257,9 @@ class Tensor {
       assert(o.size() == 2);
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          std::vector<size_t> h = {i0.key(), i1.key()};
           // if this block is not included in the current wave function, skip it
-          if (!this->get_size(h)) continue;
-          std::unique_ptr<double[]> data = this->get_block(h);
+          if (!this->get_size(i0, i1)) continue;
+          std::unique_ptr<double[]> data = this->get_block(i0, i1);
           size_t iall = 0;
           for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
@@ -286,10 +284,9 @@ class Tensor {
         for (auto& i2 : o[2].range()) {
           for (auto& i1 : o[1].range()) {
             for (auto& i0 : o[0].range()) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
               // if this block is not included in the current wave function, skip it
-              if (!this->get_size(h)) continue;
-              std::unique_ptr<double[]> data = this->get_block(h);
+              if (!this->get_size(i0, i1, i2, i3)) continue;
+              std::unique_ptr<double[]> data = this->get_block(i0, i1, i2, i3);
               size_t iall = 0;
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
