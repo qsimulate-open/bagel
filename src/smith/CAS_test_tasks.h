@@ -73,16 +73,13 @@ class Task1 : public Task<T> {  // associated with gamma
     void compute_() {
       for (auto& x0 : active_) {
         for (auto& x3 : active_) {
-          std::vector<size_t> ohash = {x3.key(), x0.key()};
-          std::unique_ptr<double[]> odata = Gamma0->move_block(ohash);
+          std::unique_ptr<double[]> odata = Gamma0->move_block(x3, x0);
           // associated with merged
           for (auto& x1 : active_) {
             for (auto& x2 : active_) {
-              std::vector<size_t> fhash = {x2.key(), x1.key()};
-              std::unique_ptr<double[]> fdata = f1->get_block(fhash);
+              std::unique_ptr<double[]> fdata = f1->get_block(x2, x1);
               {
-                std::vector<size_t> i0hash = {x3.key(), x0.key(), x2.key(), x1.key()};
-                std::unique_ptr<double[]> i0data = rdm2->get_block(i0hash);
+                std::unique_ptr<double[]> i0data = rdm2->get_block(x3, x0, x2, x1);
                 for (int i1 = 0; i1 != x1.size(); ++i1) {
                   for (int i2 = 0; i2 != x2.size(); ++i2) {
                     for (int i0 = 0; i0 != x0.size(); ++i0) {
@@ -96,7 +93,7 @@ class Task1 : public Task<T> {  // associated with gamma
               }
             }
           }
-          Gamma0->put_block(ohash, odata);
+          Gamma0->put_block(odata, x3, x0);
         }
       }
     };  
@@ -126,14 +123,12 @@ class Task2 : public Task<T> {  // associated with gamma
     void compute_() {
       for (auto& x0 : active_) {
         for (auto& x1 : active_) {
-          std::vector<size_t> ohash = {x1.key(), x0.key()};
-          std::unique_ptr<double[]> odata = Gamma2->move_block(ohash);
+          std::unique_ptr<double[]> odata = Gamma2->move_block(x1, x0);
           {
-            std::vector<size_t> i0hash = {x1.key(), x0.key()};
-            std::unique_ptr<double[]> i0data = rdm1->get_block(i0hash);
+            std::unique_ptr<double[]> i0data = rdm1->get_block(x1, x0);
             sort_indices<0,1,1,1,1,1>(i0data, odata, x1.size(), x0.size());
           }
-          Gamma2->put_block(ohash, odata);
+          Gamma2->put_block(odata, x1, x0);
         }
       }
     };  

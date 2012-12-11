@@ -91,13 +91,11 @@ class SpinFreeMethod {
       if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1_)))
         throw std::logic_error("SpinFreeMethod::compute_e0 was called before f1_ or rdm1_ was computed. Strange.");
       double sum = 0.0;
-      // TODO parallelize?
       for (auto& i1 : active_) {
         for (auto& i0 : active_) {
-          std::vector<size_t> hash = {i0.key(), i1.key()};
           const size_t size = i0.size() * i1.size();
-          std::unique_ptr<double[]> fdata = f1_->get_block(hash);
-          std::unique_ptr<double[]> rdata = rdm1_->get_block(hash);
+          std::unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+          std::unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
           sum += ddot_(size, fdata, 1, rdata, 1);
         }
       }
@@ -130,13 +128,10 @@ class SpinFreeMethod {
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
+              if (!r->get_size(i0, i1, i2, i3)) continue;
+              std::unique_ptr<double[]>       data0 = r->get_block(i0, i1, i2, i3);
+              const std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
               // this is an inverse of the overlap.
               // prefactor of 0.25 included here
@@ -149,9 +144,9 @@ class SpinFreeMethod {
                       // note that e0 is cancelled by another term
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               if (!put) {
-                t->add_block(h,data0);
+                t->add_block(data0, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data0);
+                t->put_block(data0, i0, i1, i2, i3);
               }
             }
           }
@@ -170,13 +165,11 @@ class SpinFreeMethod {
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              if (!r->get_size(i0, i1, i2, i3)) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
+              std::unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
               // sort. Active indices run faster
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
               // intermediate area
@@ -200,9 +193,9 @@ class SpinFreeMethod {
               // sort back to the original order
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
               if (!put) {
-                t->add_block(h,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data1);
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -220,18 +213,16 @@ class SpinFreeMethod {
         for (auto& i3 : virt_) {
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::vector<size_t> g = {i2.key(), i1.key(), i0.key(), i3.key()};
-              if (!r->get_size(h)) continue;
-              assert(r->get_size(g));
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
+              if (!r->get_size(i2, i3, i0, i1)) continue;
+              assert(r->get_size(i2, i1, i0, i3));
+              std::unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
+              const std::unique_ptr<double[]> data1 = r->get_block(i2, i1, i0, i3);
+              std::unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
               sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
               sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
-              std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
 
               // move to orthogonal basis
+              std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
               dgemm_("N", "N", nact, i1.size()*i2.size()*i3.size(), i0.size(), 1.0, transp, nact, data2, i0.size(),
                                                                                0.0, interm, nact);
 
@@ -246,11 +237,10 @@ class SpinFreeMethod {
               dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
                                                                                0.0, data2,  i0.size());
 
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data2);
+                t->add_block(data2, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data2);
+                t->put_block(data2, i0, i1, i2, i3);
               }
             }
           }
@@ -268,14 +258,12 @@ class SpinFreeMethod {
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
-              if (!r->get_size(h)) continue;
-              assert(r->get_size(g));
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
+              if (!r->get_size(i2, i3, i0, i1)) continue;
+              assert(r->get_size(i0, i3, i2, i1));
+              std::unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
+              const std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
+              std::unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
               sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
               sort_indices<0,3,2,1,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size());
               std::unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*nact]);
 
@@ -294,11 +282,10 @@ class SpinFreeMethod {
               dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
                                                                                0.0, data2,  i0.size()*i1.size()*i2.size());
 
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data2);
+                t->add_block(data2, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data2);
+                t->put_block(data2, i0, i1, i2, i3);
               }
             }
           }
@@ -316,13 +303,11 @@ class SpinFreeMethod {
 
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              if (!r->get_size(i0, i1, i2, i3)) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
+              std::unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
               // sort. Active indices run slower
               sort_indices<0,3,2,1,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
               // intermediate area
@@ -346,9 +331,9 @@ class SpinFreeMethod {
               // sort back to the original order
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
               if (!put) {
-                t->add_block(h,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data1);
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -368,15 +353,12 @@ class SpinFreeMethod {
 
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-
-              std::vector<size_t> hin = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::vector<size_t> gin = {i0.key(), i3.key(), i2.key(), i1.key()};
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(hin)) continue;
-              assert(r->get_size(gin) == r->get_size(hin));
-              const size_t blocksize = r->get_size(hin);
-              std::unique_ptr<double[]> data0 = r->get_block(hin);
-              std::unique_ptr<double[]> data1 = r->get_block(gin);
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
+              assert(blocksize == r->get_size(i0, i3, i2, i1));
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
               std::unique_ptr<double[]> data2(new double[blocksize*2]);
               // sort. Active indices run slower
@@ -402,14 +384,12 @@ class SpinFreeMethod {
               // sort back to the original order
               std::copy_n(data2.get(), blocksize, data0.get());
               sort_indices<2,1,0,3,0,1,1,1>(data2.get()+blocksize, data1.get(), i0.size(), i1.size(), i2.size(), i3.size());
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i2.key(), i1.key(), i0.key(), i3.key()};
               if (!put) {
-                t->add_block(h,data0);
-                t->add_block(g,data1);
+                t->add_block(data0, i0, i1, i2, i3);
+                t->add_block(data1, i2, i1, i0, i3);
               } else {
-                t->put_block(h,data0);
-                t->put_block(g,data1);
+                t->put_block(data0, i0, i1, i2, i3);
+                t->put_block(data1, i2, i1, i0, i3);
               }
             }
           }
@@ -428,13 +408,12 @@ class SpinFreeMethod {
                   std::copy_n(shalf_xhh()->element_ptr(0,j0-nclo+nact*(j2-nclo+nact*(j3-nclo))), nact*nact*nact, transp.get()+nact*nact*nact*k);
 
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1(new double[blocksize]);
               // sort. Active indices run slower
               sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
               // intermediate area
@@ -455,11 +434,10 @@ class SpinFreeMethod {
 
               // sort back to the original order
               sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i1.size(), i0.size(), i2.size(), i3.size());
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data1);
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -478,13 +456,12 @@ class SpinFreeMethod {
                   std::copy_n(shalf_xxh()->element_ptr(0,j0-nclo+nact*(j1-nclo+nact*(j3-nclo))), nact*nact*nact, transp.get()+nact*nact*nact*k);
 
             for (auto& i2 : closed_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1(new double[blocksize]);
               // sort. Active indices run slower
               sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
               // intermediate area
@@ -505,11 +482,10 @@ class SpinFreeMethod {
 
               // sort back to the original order
               sort_indices<1,2,0,3,0,1,1,1>(data0, data1, i2.size(), i0.size(), i1.size(), i3.size());
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data1);
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -561,7 +537,6 @@ class SpinFreeMethod {
         const int nclo = ref_->nclosed();
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
-            std::vector<size_t> hash = {i0.key(), i1.key()};
             const size_t size = i0.size() * i1.size();
             std::unique_ptr<double[]> data(new double[size]);
             int iall = 0;
@@ -569,7 +544,7 @@ class SpinFreeMethod {
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                 // TODO for the time being we hardwire "0" here (but this should be fixed)
                 data[iall] = ref_->rdm1(0)->element(j0-nclo, j1-nclo);
-            rdm1_->put_block(hash, data);
+            rdm1_->put_block(data, i0, i1);
           }
         }
       }
@@ -581,7 +556,6 @@ class SpinFreeMethod {
           for (auto& i2 : active_) {
             for (auto& i1 : active_) {
               for (auto& i0 : active_) {
-                std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()};
                 const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
                 std::unique_ptr<double[]> data(new double[size]);
                 int iall = 0;
@@ -591,7 +565,7 @@ class SpinFreeMethod {
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                         // TODO for the time being we hardwire "0" here (but this should be fixed)
                         data[iall] = ref_->rdm2(0)->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
-                 rdm2_->put_block(hash, data);
+                 rdm2_->put_block(data, i0, i1, i2, i3);
               }
             }
           }
@@ -618,7 +592,6 @@ class SpinFreeMethod {
               for (auto& i2 : active_)
                 for (auto& i1 : active_)
                   for (auto& i0 : active_) {
-                    std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()};
                     const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
                     std::unique_ptr<double[]> data(new double[size]);
                     int iall = 0;
@@ -629,7 +602,7 @@ class SpinFreeMethod {
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                                 data[iall] = rdm3->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
-                    rdm3_->put_block(hash, data);
+                    rdm3_->put_block(data, i0, i1, i2, i3, i4, i5);
                   }
         // TODO there should be a better way of doing this!!!
         for (auto& i7 : active_)
@@ -640,7 +613,6 @@ class SpinFreeMethod {
                   for (auto& i2 : active_)
                     for (auto& i1 : active_)
                       for (auto& i0 : active_) {
-                        std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key(), i6.key(), i7.key()};
                         const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size();
                         std::unique_ptr<double[]> data(new double[size]);
                         int iall = 0;
@@ -653,14 +625,14 @@ class SpinFreeMethod {
                                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                                         data[iall] = rdm4->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
-                    rdm4_->put_block(hash, data);
+                    rdm4_->put_block(data, i0, i1, i2, i3, i4, i5, i6, i7);
                   }
 
         const int nact = ref_->nact();
         std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
         for (auto& i1 : active_)
           for (auto& i0 : active_)
-            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
+            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
         // TODO hardwired 0
         std::shared_ptr<RDM<1> > rdm1(new RDM<1>(*ref_->rdm1(0)));

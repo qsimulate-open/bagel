@@ -68,7 +68,7 @@ class K2ext {
         // virtual loop
         for (auto& i1 : blocks_[1]) {
           std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
-          dflist.insert(make_pair(generate_hash_key(i0.key(), i1.key()), df_full));
+          dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
         }
       }
       return dflist;
@@ -81,18 +81,18 @@ class K2ext {
       for (auto& i0 : blocks_[0]) {
         for (auto& i1 : blocks_[1]) {
           // find three-index integrals
-          auto iter01 = dflist.find(generate_hash_key(i0.key(), i1.key()));
+          auto iter01 = dflist.find(generate_hash_key(i0, i1));
           assert(iter01 != dflist.end());
           std::shared_ptr<DFFullDist> df01 = iter01->second;
-          size_t hashkey01 = generate_hash_key(i0.key(), i1.key());
+          size_t hashkey01 = generate_hash_key(i0, i1);
 
           for (auto& i2 : blocks_[2]) {
             for (auto& i3 : blocks_[3]) {
               // find three-index integrals
-              size_t hashkey23 = generate_hash_key(i2.key(), i3.key());
+              size_t hashkey23 = generate_hash_key(i2, i3);
               if (hashkey23 > hashkey01) continue;
 
-              auto iter23 = dflist.find(generate_hash_key(i2.key(), i3.key()));
+              auto iter23 = dflist.find(generate_hash_key(i2, i3));
               assert(iter23 != dflist.end());
               std::shared_ptr<const DFFullDist> df23 = iter23->second;
 
@@ -105,10 +105,10 @@ class K2ext {
                 std::unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
                 mytranspose_(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
 
-                data_->put_block({i2.key(), i3.key(), i0.key(), i1.key()}, target2);
+                data_->put_block(target2, i2, i3, i0, i1);
               }
 
-              data_->put_block({i0.key(), i1.key(), i2.key(), i3.key()}, target);
+              data_->put_block(target, i0, i1, i2, i3);
             }
           }
         }
@@ -189,10 +189,10 @@ class MOFock {
         for (auto& i1 : blocks_[1]) {
           {
             std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            data_->put_block({i1.key(), i0.key()}, target);
+            data_->put_block(target, i1, i0);
           } {
             std::unique_ptr<double[]> target = hc.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            hcore_->put_block({i1.key(), i0.key()}, target);
+            hcore_->put_block(target, i1, i0);
           }
         }
       }
