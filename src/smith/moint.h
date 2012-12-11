@@ -81,29 +81,23 @@ class K2ext {
       // form four-index integrals
       // TODO this part should be heavily parallelized
       // TODO i01 < i23 symmetry should be used.
-      size_t j0 = blocks_[0].keyoffset();
-      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++j0) {
-        size_t j1 = blocks_[1].keyoffset();
-        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
+      for (auto& i0 : blocks_[0]) {
+        for (auto& i1 : blocks_[1]) {
           // find three-index integrals
-          auto iter01 = dflist.find(generate_hash_key(j0,j1));
+          auto iter01 = dflist.find(generate_hash_key(i0.key(), i1.key()));
           assert(iter01 != dflist.end());
           std::shared_ptr<DFFullDist> df01 = iter01->second;
-          size_t hashkey01 = generate_hash_key(j0,j1);
+          size_t hashkey01 = generate_hash_key(i0.key(), i1.key());
 
-          size_t j2 = blocks_[2].keyoffset();
-          for (auto i2 = blocks_[2].range().begin(); i2 != blocks_[2].range().end(); ++i2, ++j2) {
-            size_t j3 = blocks_[3].keyoffset();
-            for (auto i3 = blocks_[3].range().begin(); i3 != blocks_[3].range().end(); ++i3, ++j3) {
+          for (auto& i2 : blocks_[2]) {
+            for (auto& i3 : blocks_[3]) {
               // find three-index integrals
-              size_t hashkey23 = generate_hash_key(j2,j3);
+              size_t hashkey23 = generate_hash_key(i2.key(), i3.key());
               if (hashkey23 > hashkey01) continue;
 
-              auto iter23 = dflist.find(generate_hash_key(j2,j3));
+              auto iter23 = dflist.find(generate_hash_key(i2.key(), i3.key()));
               assert(iter23 != dflist.end());
               std::shared_ptr<const DFFullDist> df23 = iter23->second;
-
-              const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
 
               // contract
               // TODO form_4index function now generates global 4 index tensor. This should be localized.
@@ -111,18 +105,18 @@ class K2ext {
 
               // move in place
               if (hashkey23 != hashkey01) {
-                std::unique_ptr<double[]> target2(new double[size]);
-                mytranspose_(target.get(), i0->size()*i1->size(), i2->size()*i3->size(), target2.get());
+                std::unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
+                mytranspose_(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
 
-                data_->put_block({j2, j3, j0, j1}, target2);
+                data_->put_block({i2.key(), i3.key(), i0.key(), i1.key()}, target2);
               }
 
-              data_->put_block({j0, j1, j2, j3}, target);
+              data_->put_block({i0.key(), i1.key(), i2.key(), i3.key()}, target);
             }
           }
         }
       }
-    } // vaaii_;
+    }
 
   public:
     K2ext(std::shared_ptr<const Reference> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b) : ref_(r), coeff_(c), blocks_(b) {
@@ -194,20 +188,16 @@ class MOFock {
       const Matrix f = *coeff_ % *fock1 * *coeff_;
       const Matrix hc = *coeff_ % *hcore * *coeff_;
 
-      size_t j0 = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
-        size_t j1 = blocks_[1].keyoffset();
         for (auto& i1 : blocks_[1]) {
           {
             std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            data_->put_block({j1, j0}, target);
+            data_->put_block({i1.key(), i0.key()}, target);
           } {
             std::unique_ptr<double[]> target = hc.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            hcore_->put_block({j1, j0}, target);
+            hcore_->put_block({i1.key(), i0.key()}, target);
           }
-          ++j1;
         }
-        ++j0;
       }
     }
     ~MOFock() {}
