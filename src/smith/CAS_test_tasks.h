@@ -1644,7 +1644,7 @@ class Task34 : public EnergyTask<T> {
     Task34(std::vector<std::shared_ptr<Tensor<T> > > t, std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T> >,2> in = {{t[1], t[2]}};
 
-      subtasks_.reserve(range[2]->nblock() * range[0]->nblock() * range[2]->nblock() * range[0]->nblock());
+      subtasks_.reserve(range[2]->nblock() * range[0]->nblock() * range[2]->nblock() * range[1]->nblock());
       for (auto& a1 : *range[2])
         for (auto& c2 : *range[0])
           for (auto& a3 : *range[2])
