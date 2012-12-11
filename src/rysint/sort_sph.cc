@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,8 +24,8 @@
 //
 
 
-#include <src/rysint/sortlist.h>
 #include <algorithm>
+#include <src/rysint/sortlist.h>
 
 using namespace std;
 using namespace bagel;
@@ -34,7 +34,7 @@ void SortList::sort_indices_00_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 1;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 1 * c2end;
+    const int cont2csize = 1 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -44,13 +44,28 @@ void SortList::sort_indices_00_sph(double* target, const double* source, const i
         for (int c3 = 0; c3 != c3end; ++c3) {
           const int soffset = 1 * (c3 + c3end * c2);
           const int toffset = 1 * c3 * cont2csize + c2x2end;
-          current_target[toffset                     ] = current_source[soffset];
+          current_target[toffset + 0 * cont2csize + 0] = current_source[soffset + 0];
         }
       }
 
     }
   } else {
-    copy(source, source+c3end*c2end, target);
+    int offset = 0;
+    const int cont3csize = 1 * c3end;
+    for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
+      double* current_target = &target[offset];
+      const double* current_source = &source[offset];
+
+      for (int c2 = 0; c2 != c2end; ++c2) {
+        for (int c3 = 0; c3 != c3end; ++c3) {
+          const int c3x3end = c3 * 1;
+          const int soffset = 1 * (c3 + c3end * c2);
+          const int toffset = 1 * c2 * cont3csize + c3x3end;
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+        }
+      }
+
+    }
   }
 
 }
@@ -60,7 +75,7 @@ void SortList::sort_indices_01_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 3;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 3 * c2end;
+    const int cont2csize = 3 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -89,9 +104,9 @@ void SortList::sort_indices_01_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 3 * (c3 + c3end * c2);
           const int toffset = 3 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
         }
       }
 
@@ -105,7 +120,7 @@ void SortList::sort_indices_11_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 9;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 3 * c2end;
+    const int cont2csize = 3 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -140,9 +155,9 @@ void SortList::sort_indices_11_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 9 * (c3 + c3end * c2);
           const int toffset = 3 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
         }
       }
 
@@ -156,7 +171,7 @@ void SortList::sort_indices_02_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 5;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 5 * c2end;
+    const int cont2csize = 5 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -187,11 +202,11 @@ void SortList::sort_indices_02_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 5 * (c3 + c3end * c2);
           const int toffset = 5 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+4, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+4, current_source+soffset+5, current_target+toffset+4*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  3,   1, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+  4,   1, current_target+toffset+ 4*cont3csize);
         }
       }
 
@@ -205,7 +220,7 @@ void SortList::sort_indices_12_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 15;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 5 * c2end;
+    const int cont2csize = 5 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -246,11 +261,11 @@ void SortList::sort_indices_12_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 15 * (c3 + c3end * c2);
           const int toffset = 5 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+12, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+15, current_target+toffset+4*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  9,   3, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 12,   3, current_target+toffset+ 4*cont3csize);
         }
       }
 
@@ -264,7 +279,7 @@ void SortList::sort_indices_22_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 25;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 5 * c2end;
+    const int cont2csize = 5 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -315,11 +330,11 @@ void SortList::sort_indices_22_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 5;
           const int soffset = 25 * (c3 + c3end * c2);
           const int toffset = 5 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+5, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+10, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+15, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+20, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+20, current_source+soffset+25, current_target+toffset+4*cont3csize);
+          copy_n(current_source+soffset+  0,   5, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  5,   5, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 10,   5, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 15,   5, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 20,   5, current_target+toffset+ 4*cont3csize);
         }
       }
 
@@ -333,7 +348,7 @@ void SortList::sort_indices_03_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 7;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 7 * c2end;
+    const int cont2csize = 7 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -366,13 +381,13 @@ void SortList::sort_indices_03_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 7 * (c3 + c3end * c2);
           const int toffset = 7 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+4, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+4, current_source+soffset+5, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+6, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+7, current_target+toffset+6*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  3,   1, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+  4,   1, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+  5,   1, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+  6,   1, current_target+toffset+ 6*cont3csize);
         }
       }
 
@@ -386,7 +401,7 @@ void SortList::sort_indices_13_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 21;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 7 * c2end;
+    const int cont2csize = 7 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -433,13 +448,13 @@ void SortList::sort_indices_13_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 21 * (c3 + c3end * c2);
           const int toffset = 7 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+12, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+15, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+18, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+21, current_target+toffset+6*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  9,   3, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 12,   3, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 15,   3, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 18,   3, current_target+toffset+ 6*cont3csize);
         }
       }
 
@@ -453,7 +468,7 @@ void SortList::sort_indices_23_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 35;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 7 * c2end;
+    const int cont2csize = 7 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -514,13 +529,13 @@ void SortList::sort_indices_23_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 5;
           const int soffset = 35 * (c3 + c3end * c2);
           const int toffset = 7 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+5, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+10, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+15, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+20, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+20, current_source+soffset+25, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+25, current_source+soffset+30, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+35, current_target+toffset+6*cont3csize);
+          copy_n(current_source+soffset+  0,   5, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  5,   5, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 10,   5, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 15,   5, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 20,   5, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 25,   5, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 30,   5, current_target+toffset+ 6*cont3csize);
         }
       }
 
@@ -534,7 +549,7 @@ void SortList::sort_indices_33_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 49;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 7 * c2end;
+    const int cont2csize = 7 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -609,13 +624,13 @@ void SortList::sort_indices_33_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 7;
           const int soffset = 49 * (c3 + c3end * c2);
           const int toffset = 7 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+7, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+14, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+14, current_source+soffset+21, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+28, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+28, current_source+soffset+35, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+42, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+42, current_source+soffset+49, current_target+toffset+6*cont3csize);
+          copy_n(current_source+soffset+  0,   7, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  7,   7, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 14,   7, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 21,   7, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 28,   7, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 35,   7, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 42,   7, current_target+toffset+ 6*cont3csize);
         }
       }
 
@@ -629,7 +644,7 @@ void SortList::sort_indices_04_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 9;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 9 * c2end;
+    const int cont2csize = 9 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -664,15 +679,15 @@ void SortList::sort_indices_04_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 9 * (c3 + c3end * c2);
           const int toffset = 9 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+4, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+4, current_source+soffset+5, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+6, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+7, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+8, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+8, current_source+soffset+9, current_target+toffset+8*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  3,   1, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+  4,   1, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+  5,   1, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+  6,   1, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+  7,   1, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+  8,   1, current_target+toffset+ 8*cont3csize);
         }
       }
 
@@ -686,7 +701,7 @@ void SortList::sort_indices_14_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 27;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 9 * c2end;
+    const int cont2csize = 9 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -739,15 +754,15 @@ void SortList::sort_indices_14_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 27 * (c3 + c3end * c2);
           const int toffset = 9 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+12, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+15, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+18, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+21, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+24, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+24, current_source+soffset+27, current_target+toffset+8*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  9,   3, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 12,   3, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 15,   3, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 18,   3, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 21,   3, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 24,   3, current_target+toffset+ 8*cont3csize);
         }
       }
 
@@ -761,7 +776,7 @@ void SortList::sort_indices_24_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 45;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 9 * c2end;
+    const int cont2csize = 9 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -832,15 +847,15 @@ void SortList::sort_indices_24_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 5;
           const int soffset = 45 * (c3 + c3end * c2);
           const int toffset = 9 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+5, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+10, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+15, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+20, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+20, current_source+soffset+25, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+25, current_source+soffset+30, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+35, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+40, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+40, current_source+soffset+45, current_target+toffset+8*cont3csize);
+          copy_n(current_source+soffset+  0,   5, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  5,   5, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 10,   5, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 15,   5, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 20,   5, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 25,   5, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 30,   5, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 35,   5, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 40,   5, current_target+toffset+ 8*cont3csize);
         }
       }
 
@@ -854,7 +869,7 @@ void SortList::sort_indices_34_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 63;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 9 * c2end;
+    const int cont2csize = 9 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -943,15 +958,15 @@ void SortList::sort_indices_34_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 7;
           const int soffset = 63 * (c3 + c3end * c2);
           const int toffset = 9 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+7, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+14, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+14, current_source+soffset+21, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+28, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+28, current_source+soffset+35, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+42, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+42, current_source+soffset+49, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+49, current_source+soffset+56, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+56, current_source+soffset+63, current_target+toffset+8*cont3csize);
+          copy_n(current_source+soffset+  0,   7, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  7,   7, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 14,   7, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 21,   7, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 28,   7, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 35,   7, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 42,   7, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 49,   7, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 56,   7, current_target+toffset+ 8*cont3csize);
         }
       }
 
@@ -965,7 +980,7 @@ void SortList::sort_indices_44_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 81;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 9 * c2end;
+    const int cont2csize = 9 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1072,15 +1087,15 @@ void SortList::sort_indices_44_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 9;
           const int soffset = 81 * (c3 + c3end * c2);
           const int toffset = 9 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+9, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+18, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+27, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+27, current_source+soffset+36, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+36, current_source+soffset+45, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+45, current_source+soffset+54, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+54, current_source+soffset+63, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+63, current_source+soffset+72, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+72, current_source+soffset+81, current_target+toffset+8*cont3csize);
+          copy_n(current_source+soffset+  0,   9, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  9,   9, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 18,   9, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 27,   9, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 36,   9, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 45,   9, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 54,   9, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 63,   9, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 72,   9, current_target+toffset+ 8*cont3csize);
         }
       }
 
@@ -1094,7 +1109,7 @@ void SortList::sort_indices_05_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 11;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1131,17 +1146,17 @@ void SortList::sort_indices_05_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 11 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+4, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+4, current_source+soffset+5, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+6, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+7, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+8, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+8, current_source+soffset+9, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+10, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+11, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  3,   1, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+  4,   1, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+  5,   1, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+  6,   1, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+  7,   1, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+  8,   1, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+  9,   1, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 10,   1, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1155,7 +1170,7 @@ void SortList::sort_indices_15_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 33;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1214,17 +1229,17 @@ void SortList::sort_indices_15_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 33 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+12, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+15, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+18, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+21, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+24, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+24, current_source+soffset+27, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+27, current_source+soffset+30, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+33, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  9,   3, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 12,   3, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 15,   3, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 18,   3, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 21,   3, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 24,   3, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 27,   3, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 30,   3, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1238,7 +1253,7 @@ void SortList::sort_indices_25_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 55;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1319,17 +1334,17 @@ void SortList::sort_indices_25_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 5;
           const int soffset = 55 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+5, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+10, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+15, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+20, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+20, current_source+soffset+25, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+25, current_source+soffset+30, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+35, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+40, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+40, current_source+soffset+45, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+45, current_source+soffset+50, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+50, current_source+soffset+55, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,   5, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  5,   5, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 10,   5, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 15,   5, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 20,   5, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 25,   5, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 30,   5, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 35,   5, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 40,   5, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 45,   5, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 50,   5, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1343,7 +1358,7 @@ void SortList::sort_indices_35_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 77;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1446,17 +1461,17 @@ void SortList::sort_indices_35_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 7;
           const int soffset = 77 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+7, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+14, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+14, current_source+soffset+21, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+28, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+28, current_source+soffset+35, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+42, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+42, current_source+soffset+49, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+49, current_source+soffset+56, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+56, current_source+soffset+63, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+63, current_source+soffset+70, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+70, current_source+soffset+77, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,   7, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  7,   7, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 14,   7, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 21,   7, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 28,   7, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 35,   7, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 42,   7, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 49,   7, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 56,   7, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 63,   7, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 70,   7, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1470,7 +1485,7 @@ void SortList::sort_indices_45_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 99;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1595,17 +1610,17 @@ void SortList::sort_indices_45_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 9;
           const int soffset = 99 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+9, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+18, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+27, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+27, current_source+soffset+36, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+36, current_source+soffset+45, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+45, current_source+soffset+54, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+54, current_source+soffset+63, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+63, current_source+soffset+72, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+72, current_source+soffset+81, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+81, current_source+soffset+90, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+90, current_source+soffset+99, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,   9, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  9,   9, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 18,   9, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 27,   9, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 36,   9, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 45,   9, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 54,   9, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 63,   9, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 72,   9, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 81,   9, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 90,   9, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1619,7 +1634,7 @@ void SortList::sort_indices_55_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 121;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 11 * c2end;
+    const int cont2csize = 11 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1766,17 +1781,17 @@ void SortList::sort_indices_55_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 11;
           const int soffset = 121 * (c3 + c3end * c2);
           const int toffset = 11 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+11, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+11, current_source+soffset+22, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+22, current_source+soffset+33, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+33, current_source+soffset+44, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+44, current_source+soffset+55, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+55, current_source+soffset+66, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+66, current_source+soffset+77, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+77, current_source+soffset+88, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+88, current_source+soffset+99, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+99, current_source+soffset+110, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+110, current_source+soffset+121, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+  0,  11, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+ 11,  11, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 22,  11, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 33,  11, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 44,  11, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 55,  11, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 66,  11, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 77,  11, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 88,  11, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 99,  11, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+110,  11, current_target+toffset+10*cont3csize);
         }
       }
 
@@ -1790,7 +1805,7 @@ void SortList::sort_indices_06_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 13;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1829,19 +1844,19 @@ void SortList::sort_indices_06_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 1;
           const int soffset = 13 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+1, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+1, current_source+soffset+2, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+2, current_source+soffset+3, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+4, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+4, current_source+soffset+5, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+6, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+7, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+8, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+8, current_source+soffset+9, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+10, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+11, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+11, current_source+soffset+12, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+13, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,   1, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  1,   1, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  2,   1, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  3,   1, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+  4,   1, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+  5,   1, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+  6,   1, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+  7,   1, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+  8,   1, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+  9,   1, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 10,   1, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+ 11,   1, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+ 12,   1, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -1855,7 +1870,7 @@ void SortList::sort_indices_16_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 39;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1920,19 +1935,19 @@ void SortList::sort_indices_16_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 3;
           const int soffset = 39 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+3, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+3, current_source+soffset+6, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+6, current_source+soffset+9, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+12, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+12, current_source+soffset+15, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+18, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+21, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+24, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+24, current_source+soffset+27, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+27, current_source+soffset+30, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+33, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+33, current_source+soffset+36, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+36, current_source+soffset+39, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,   3, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  3,   3, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+  6,   3, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+  9,   3, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 12,   3, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 15,   3, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 18,   3, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 21,   3, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 24,   3, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 27,   3, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 30,   3, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+ 33,   3, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+ 36,   3, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -1946,7 +1961,7 @@ void SortList::sort_indices_26_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 65;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2037,19 +2052,19 @@ void SortList::sort_indices_26_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 5;
           const int soffset = 65 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+5, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+5, current_source+soffset+10, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+10, current_source+soffset+15, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+15, current_source+soffset+20, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+20, current_source+soffset+25, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+25, current_source+soffset+30, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+30, current_source+soffset+35, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+40, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+40, current_source+soffset+45, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+45, current_source+soffset+50, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+50, current_source+soffset+55, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+55, current_source+soffset+60, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+60, current_source+soffset+65, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,   5, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  5,   5, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 10,   5, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 15,   5, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 20,   5, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 25,   5, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 30,   5, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 35,   5, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 40,   5, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 45,   5, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 50,   5, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+ 55,   5, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+ 60,   5, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -2063,7 +2078,7 @@ void SortList::sort_indices_36_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 91;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2180,19 +2195,19 @@ void SortList::sort_indices_36_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 7;
           const int soffset = 91 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+7, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+7, current_source+soffset+14, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+14, current_source+soffset+21, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+21, current_source+soffset+28, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+28, current_source+soffset+35, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+35, current_source+soffset+42, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+42, current_source+soffset+49, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+49, current_source+soffset+56, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+56, current_source+soffset+63, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+63, current_source+soffset+70, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+70, current_source+soffset+77, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+77, current_source+soffset+84, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+84, current_source+soffset+91, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,   7, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  7,   7, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 14,   7, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 21,   7, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 28,   7, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 35,   7, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 42,   7, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 49,   7, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 56,   7, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 63,   7, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 70,   7, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+ 77,   7, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+ 84,   7, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -2206,7 +2221,7 @@ void SortList::sort_indices_46_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 117;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2349,19 +2364,19 @@ void SortList::sort_indices_46_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 9;
           const int soffset = 117 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+9, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+9, current_source+soffset+18, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+18, current_source+soffset+27, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+27, current_source+soffset+36, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+36, current_source+soffset+45, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+45, current_source+soffset+54, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+54, current_source+soffset+63, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+63, current_source+soffset+72, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+72, current_source+soffset+81, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+81, current_source+soffset+90, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+90, current_source+soffset+99, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+99, current_source+soffset+108, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+108, current_source+soffset+117, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,   9, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+  9,   9, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 18,   9, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 27,   9, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 36,   9, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 45,   9, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 54,   9, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 63,   9, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 72,   9, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 81,   9, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+ 90,   9, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+ 99,   9, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+108,   9, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -2375,7 +2390,7 @@ void SortList::sort_indices_56_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 143;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2544,19 +2559,19 @@ void SortList::sort_indices_56_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 11;
           const int soffset = 143 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+11, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+11, current_source+soffset+22, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+22, current_source+soffset+33, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+33, current_source+soffset+44, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+44, current_source+soffset+55, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+55, current_source+soffset+66, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+66, current_source+soffset+77, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+77, current_source+soffset+88, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+88, current_source+soffset+99, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+99, current_source+soffset+110, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+110, current_source+soffset+121, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+121, current_source+soffset+132, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+132, current_source+soffset+143, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,  11, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+ 11,  11, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 22,  11, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 33,  11, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 44,  11, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 55,  11, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 66,  11, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 77,  11, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+ 88,  11, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+ 99,  11, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+110,  11, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+121,  11, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+132,  11, current_target+toffset+12*cont3csize);
         }
       }
 
@@ -2570,7 +2585,7 @@ void SortList::sort_indices_66_sph(double* target, const double* source, const i
   const int innerloopsize = c2end * c3end * 169;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 13 * c2end;
+    const int cont2csize = 13 * c2end; 
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2765,19 +2780,19 @@ void SortList::sort_indices_66_sph(double* target, const double* source, const i
           const int c3x3end = c3 * 13;
           const int soffset = 169 * (c3 + c3end * c2);
           const int toffset = 13 * c2 * cont3csize + c3x3end;
-          copy(current_source+soffset+0, current_source+soffset+13, current_target+toffset+0*cont3csize);
-          copy(current_source+soffset+13, current_source+soffset+26, current_target+toffset+1*cont3csize);
-          copy(current_source+soffset+26, current_source+soffset+39, current_target+toffset+2*cont3csize);
-          copy(current_source+soffset+39, current_source+soffset+52, current_target+toffset+3*cont3csize);
-          copy(current_source+soffset+52, current_source+soffset+65, current_target+toffset+4*cont3csize);
-          copy(current_source+soffset+65, current_source+soffset+78, current_target+toffset+5*cont3csize);
-          copy(current_source+soffset+78, current_source+soffset+91, current_target+toffset+6*cont3csize);
-          copy(current_source+soffset+91, current_source+soffset+104, current_target+toffset+7*cont3csize);
-          copy(current_source+soffset+104, current_source+soffset+117, current_target+toffset+8*cont3csize);
-          copy(current_source+soffset+117, current_source+soffset+130, current_target+toffset+9*cont3csize);
-          copy(current_source+soffset+130, current_source+soffset+143, current_target+toffset+10*cont3csize);
-          copy(current_source+soffset+143, current_source+soffset+156, current_target+toffset+11*cont3csize);
-          copy(current_source+soffset+156, current_source+soffset+169, current_target+toffset+12*cont3csize);
+          copy_n(current_source+soffset+  0,  13, current_target+toffset+ 0*cont3csize);
+          copy_n(current_source+soffset+ 13,  13, current_target+toffset+ 1*cont3csize);
+          copy_n(current_source+soffset+ 26,  13, current_target+toffset+ 2*cont3csize);
+          copy_n(current_source+soffset+ 39,  13, current_target+toffset+ 3*cont3csize);
+          copy_n(current_source+soffset+ 52,  13, current_target+toffset+ 4*cont3csize);
+          copy_n(current_source+soffset+ 65,  13, current_target+toffset+ 5*cont3csize);
+          copy_n(current_source+soffset+ 78,  13, current_target+toffset+ 6*cont3csize);
+          copy_n(current_source+soffset+ 91,  13, current_target+toffset+ 7*cont3csize);
+          copy_n(current_source+soffset+104,  13, current_target+toffset+ 8*cont3csize);
+          copy_n(current_source+soffset+117,  13, current_target+toffset+ 9*cont3csize);
+          copy_n(current_source+soffset+130,  13, current_target+toffset+10*cont3csize);
+          copy_n(current_source+soffset+143,  13, current_target+toffset+11*cont3csize);
+          copy_n(current_source+soffset+156,  13, current_target+toffset+12*cont3csize);
         }
       }
 
