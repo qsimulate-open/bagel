@@ -63,16 +63,13 @@ class K2ext {
       assert(df->nbasis0() == df->nbasis1());
 
       // occ loop
-      size_t cnt = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
         std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0.offset(), i0.size())->apply_J();
         // virtual loop
-        size_t cnt2 = blocks_[1].keyoffset();
         for (auto& i1 : blocks_[1]) {
           std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
-          dflist.insert(make_pair(generate_hash_key(cnt, cnt2++), df_full));
+          dflist.insert(make_pair(generate_hash_key(i0.key(), i1.key()), df_full));
         }
-        ++cnt;
       }
       return dflist;
     }
@@ -160,7 +157,7 @@ class MOFock {
       } else {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
         std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
-        // slince of coeff
+        // slice of coeff
         std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis
         den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));

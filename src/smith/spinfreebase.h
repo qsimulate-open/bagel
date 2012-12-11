@@ -607,9 +607,9 @@ class SpinFreeMethod {
         }
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
-        std::shared_ptr<RDM<3> > rdm3source;
-        std::shared_ptr<RDM<4> > rdm4source;
-        std::tie(rdm3source, rdm4source) = ref_->compute_rdm34(0);
+        std::shared_ptr<RDM<3> > rdm3;
+        std::shared_ptr<RDM<4> > rdm4;
+        std::tie(rdm3, rdm4) = ref_->compute_rdm34(0);
 
         const int nclo = ref_->nclosed();
         for (auto& i5 : active_)
@@ -628,7 +628,7 @@ class SpinFreeMethod {
                           for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                data[iall] = rdm3source->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
+                                data[iall] = rdm3->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
                     rdm3_->put_block(hash, data);
                   }
         // TODO there should be a better way of doing this!!!
@@ -652,7 +652,7 @@ class SpinFreeMethod {
                                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                        data[iall] = rdm4source->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
+                                        data[iall] = rdm4->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
                     rdm4_->put_block(hash, data);
                   }
 
@@ -662,17 +662,12 @@ class SpinFreeMethod {
           for (auto& i0 : active_)
             fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
 
-        // TODO to be cleaned up
-        std::shared_ptr<Matrix> rdm1mat(new Matrix(nact, nact));
-        std::shared_ptr<Matrix> rdm2mat(new Matrix(nact*nact, nact*nact));
         // TODO hardwired 0
-        std::copy_n(ref_->rdm1(0)->data(), rdm1mat->size(), rdm1mat->data());
-        std::copy_n(ref_->rdm2(0)->data(), rdm2mat->size(), rdm2mat->data());
         std::shared_ptr<RDM<1> > rdm1(new RDM<1>(*ref_->rdm1(0)));
         std::shared_ptr<RDM<2> > rdm2(new RDM<2>(*ref_->rdm2(0)));
 
         // construct denominator
-        denom_ = std::shared_ptr<const Denom>(new Denom(*rdm1, *rdm2, *rdm3source, *rdm4source, *fockact));
+        denom_ = std::shared_ptr<const Denom>(new Denom(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
 
       }
 
