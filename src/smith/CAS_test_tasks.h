@@ -32,6 +32,7 @@
 #include <src/smith/indexrange.h>
 #include <src/smith/tensor.h>
 #include <src/smith/task.h>
+#include <src/smith/subtask.h>
 #include <vector>
 
 namespace bagel {
@@ -1593,56 +1594,62 @@ class Task33 : public EnergyTask<T> {
 template <typename T>
 class Task34 : public EnergyTask<T> {
   protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > I31;
-    std::shared_ptr<Tensor<T> > v2;
-    std::shared_ptr<Tensor<T> > I35;
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
 
-    void compute_() {
-      this->energy_ = 0.0;
-      for (auto& a1 : virt_) {
-        for (auto& c2 : closed_) {
-          for (auto& a3 : virt_) {
-            for (auto& x0 : active_) {
-              std::vector<size_t> ohash = {x0.key(), a3.key(), c2.key(), a1.key()};
-              std::unique_ptr<double[]> odata = I31->move_block(ohash);
-              std::unique_ptr<double[]> odata_sorted(new double[I31->get_size(ohash)]);
-              std::fill_n(odata_sorted.get(), I31->get_size(ohash), 0.0);
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T> >& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T> >& out() const { return this->out_tensor(); }
 
-              for (auto& x1 : active_) {
-                std::vector<size_t> i0hash = {x1.key(), a1.key(), c2.key(), a3.key()};
-                std::unique_ptr<double[]> i0data = v2->get_block(i0hash);
-                std::unique_ptr<double[]> i0data_sorted(new double[v2->get_size(i0hash)]);
-                sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T> >,2>& in, std::shared_ptr<Tensor<T> >& out,
+                   std::array<std::shared_ptr<const IndexRange>, 3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
 
-                std::vector<size_t> i1hash = {x1.key(), x0.key()};
-                std::unique_ptr<double[]> i1data = I35->get_block(i1hash);
-                std::unique_ptr<double[]> i1data_sorted(new double[I35->get_size(i1hash)]);
-                sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+        void compute() override {
+          std::unique_ptr<double[]> odata = out()->move_block(b(0), b(1), b(2), b(3));
+          const size_t oblocksize = out()->get_size(b(0), b(1), b(2), b(3));
+          std::unique_ptr<double[]> odata_sorted(new double[oblocksize]);
+          std::fill_n(odata_sorted.get(), oblocksize, 0.0);
 
-                dgemm_("T", "N", a1.size()*c2.size()*a3.size(), x0.size(), x1.size(),
-                       1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
-                       1.0, odata_sorted, a1.size()*c2.size()*a3.size());
-              }
+          for (auto& x1 : *range_[1]) {
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, b(3), b(2), b(1));
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, b(3), b(2), b(1))]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), b(3).size(), b(2).size(), b(1).size());
 
-              sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), x0.size());
-              I31->put_block(ohash, odata);
-            }
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, b(0));
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, b(0))]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), b(0).size());
+
+            dgemm_("T", "N", b(3).size()*b(2).size()*b(1).size(), b(0).size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, b(3).size()*b(2).size()*b(1).size());
           }
+
+          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, b(3).size(), b(2).size(), b(1).size(), b(0).size());
+          out()->put_block(odata, b(0), b(1), b(2), b(3));
         }
-      }
     };
 
+    // a queue of subtasks
+    std::vector<std::shared_ptr<Task_local> > subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) i->compute();
+    }
+
   public:
-    Task34(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      I31 = t[0];
-      v2 = t[1];
-      I35 = t[2];
+    Task34(std::vector<std::shared_ptr<Tensor<T> > > t, std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T> >,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock() * range[0]->nblock() * range[2]->nblock() * range[0]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
     };
     ~Task34() {};
 };
@@ -1650,37 +1657,44 @@ class Task34 : public EnergyTask<T> {
 template <typename T>
 class Task35 : public EnergyTask<T> {
   protected:
-    IndexRange closed_;
-    IndexRange active_;
-    IndexRange virt_;
-    std::shared_ptr<Tensor<T> > I35;
-    std::shared_ptr<Tensor<T> > Gamma2;
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T> >& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T> >& out() const { return this->out_tensor(); }
 
-    void compute_() {
-      this->energy_ = 0.0;
-      for (auto& x0 : active_) {
-        for (auto& x1 : active_) {
-          std::vector<size_t> ohash = {x1.key(), x0.key()};
-          std::unique_ptr<double[]> odata = I35->move_block(ohash);
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T> >,1>& in, std::shared_ptr<Tensor<T> >& out)
+          : SubTask<2,1,T>(block, in, out) { }
+
+        void compute() override {
+          std::unique_ptr<double[]> odata = out()->move_block(b(0), b(1));
           {
-            std::vector<size_t> i0hash = {x1.key(), x0.key()};
-            std::unique_ptr<double[]> i0data = Gamma2->get_block(i0hash);
-            sort_indices<0,1,1,1,4,1>(i0data, odata, x1.size(), x0.size());
+            std::unique_ptr<double[]> i0data = in(0)->get_block(b(0), b(1));
+            sort_indices<0,1,1,1,4,1>(i0data, odata, b(0).size(), b(1).size());
           }
-          I35->put_block(ohash, odata);
+          out()->put_block(odata, b(0), b(1));
         }
-      }
     };
+
+    // a queue of subtasks
+    std::vector<std::shared_ptr<Task_local> > subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) i->compute();
+    }
 
   public:
-    Task35(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
-      closed_ = i[0];
-      active_ = i[1];
-      virt_   = i[2];
-      I35 = t[0];
-      Gamma2 = t[1];
-    };
-    ~Task35() {};
+    Task35(std::vector<std::shared_ptr<Tensor<T> > > t, std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T> >,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock() * range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0])));
+    }
+    ~Task35() {}
 };
 
 

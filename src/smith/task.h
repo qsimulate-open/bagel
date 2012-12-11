@@ -45,49 +45,50 @@ class Task : public std::enable_shared_from_this<Task<T> > {
     virtual void compute_() = 0;
 
   public:
-    Task() : done_(false) {};
-    Task(std::list<std::shared_ptr<Task<T> > >& d) : depend_(d), done_(false) {};
-    ~Task() { };
+    Task() : done_(false) {}
+    Task(std::list<std::shared_ptr<Task<T> > >& d) : depend_(d), done_(false) {}
+    ~Task() { }
     void compute() {
       compute_();
       done_ = true;
-    };
+    }
 
     void add_dep(std::shared_ptr<Task<T> > a) {
       depend_.push_back(a);
       a->set_target(this->shared_from_this());
-    };
+    }
 
     void delete_dep(std::shared_ptr<Task<T> > a) {
       auto iter = std::find(depend_.begin(), depend_.end(), a);
       if (iter != depend_.end()) depend_.erase(iter);
       // depend_ should not have duplicated records.
       assert(std::find(depend_.begin(), depend_.end(), a) == depend_.end());
-    };
+    }
 
-    void set_target(std::shared_ptr<Task<T> > b) { target_.push_back(b); };
+    void set_target(std::shared_ptr<Task<T> > b) { target_.push_back(b); }
 
-    void initialize() { done_ = false; };
+    void initialize() { done_ = false; }
 
-    bool done() const { return done_; };
+    bool done() const { return done_; }
 
     bool ready() const {
       bool out = true;
       for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->done();
       return out && !done_;
-    };
+    }
 
-    virtual double energy() const { return 0.0; };
+    virtual double energy() const { return 0.0; }
 };
+
 
 template <typename T>
 class EnergyTask : public Task<T> {
   protected:
     double energy_;
   public:
-    EnergyTask() : Task<T>() {};
-    ~EnergyTask() {};
-    double energy() const { return energy_; };
+    EnergyTask() : Task<T>() {}
+    ~EnergyTask() {}
+    double energy() const { return energy_; }
 
 };
 

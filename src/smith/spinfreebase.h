@@ -42,10 +42,17 @@ namespace SMITH {
 template <typename T>
 class SpinFreeMethod {
   protected:
+    // deprecated
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
+
+    // new
+    std::shared_ptr<const IndexRange> rvirt_;
+    std::shared_ptr<const IndexRange> ractive_;
+    std::shared_ptr<const IndexRange> rclosed_;
+
     std::shared_ptr<const Reference> ref_;
 
     double e0_;
@@ -507,6 +514,10 @@ class SpinFreeMethod {
       active_ = act;
       virt_ = v;
       all_ = a;
+
+      rclosed_ = std::shared_ptr<const IndexRange>(new IndexRange(c));
+      ractive_ = std::shared_ptr<const IndexRange>(new IndexRange(act));
+      rvirt_   = std::shared_ptr<const IndexRange>(new IndexRange(v));
 
       // f1 tensor.
       std::shared_ptr<const Coeff> coeff;
