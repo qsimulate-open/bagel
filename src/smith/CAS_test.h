@@ -50,9 +50,6 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
     std::pair<std::shared_ptr<Queue<T> >, std::shared_ptr<Queue<T> > > make_queue_() {
       std::shared_ptr<Queue<T> > queue_(new Queue<T>());
       std::vector<IndexRange> index = {this->closed_, this->active_, this->virt_};
-/* for new stuff */
-      std::array<std::shared_ptr<const IndexRange>,3> pindex = {{this->rclosed_, this->ractive_, this->rvirt_}};
-/*****************/
 
       std::vector<std::shared_ptr<Tensor<T> > > tensor0 = {r};
       std::shared_ptr<Task0<T> > task0(new Task0<T>(tensor0, index));
@@ -60,7 +57,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       std::vector<IndexRange> Gamma0_index = {this->active_, this->active_};
       std::shared_ptr<Tensor<T> > Gamma0(new Tensor<T>(Gamma0_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor1 = {Gamma0, this->rdm2_, this->f1_};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor1 = {Gamma0, this->rdm1_, this->rdm2_, this->f1_};
       std::shared_ptr<Task1<T> > task1(new Task1<T>(tensor1, index));
       task1->add_dep(task0);
       queue_->add_task(task1);
@@ -72,7 +69,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       task2->add_dep(task0);
       queue_->add_task(task2);
 
-      std::vector<IndexRange> I0_index = {this->active_, this->virt_, this->closed_, this->virt_};
+      std::vector<IndexRange> I0_index = {this->active_, this->closed_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I0(new Tensor<T>(I0_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor3 = {r, I0};
       std::shared_ptr<Task3<T> > task3(new Task3<T>(tensor3, index));
@@ -114,7 +111,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task7->add_dep(task1);
 
-      std::vector<IndexRange> I5_index = {this->active_, this->virt_, this->closed_, this->virt_};
+      std::vector<IndexRange> I5_index = {this->active_, this->closed_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I5(new Tensor<T>(I5_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor8 = {I0, this->f1_, I5};
       std::shared_ptr<Task8<T> > task8(new Task8<T>(tensor8, index));
@@ -157,7 +154,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task12->add_dep(task2);
 
-      std::vector<IndexRange> I11_index = {this->active_, this->virt_, this->closed_, this->virt_};
+      std::vector<IndexRange> I11_index = {this->active_, this->closed_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T> > I11(new Tensor<T>(I11_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor13 = {I0, this->f1_, I11};
       std::shared_ptr<Task13<T> > task13(new Task13<T>(tensor13, index));
@@ -183,16 +180,16 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task15->add_dep(task2);
 
-      std::vector<IndexRange> I15_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor16 = {I11, t2, I15};
+      std::vector<IndexRange> I18_index = {this->active_, this->active_};
+      std::shared_ptr<Tensor<T> > I18(new Tensor<T>(I18_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor16 = {I11, t2, I18};
       std::shared_ptr<Task16<T> > task16(new Task16<T>(tensor16, index));
       task13->add_dep(task16);
       task16->add_dep(task0);
       queue_->add_task(task16);
 
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor17 = {I15, Gamma2};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor17 = {I18, Gamma2};
       std::shared_ptr<Task17<T> > task17(new Task17<T>(tensor17, index));
       task16->add_dep(task17);
       task17->add_dep(task0);
@@ -200,25 +197,25 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       task17->add_dep(task2);
 
-      std::vector<IndexRange> I17_index = {this->active_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T> > I17(new Tensor<T>(I17_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor18 = {I0, this->f1_, I17};
+      std::vector<IndexRange> I14_index = {this->active_, this->closed_, this->virt_, this->closed_};
+      std::shared_ptr<Tensor<T> > I14(new Tensor<T>(I14_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor18 = {I0, this->f1_, I14};
       std::shared_ptr<Task18<T> > task18(new Task18<T>(tensor18, index));
       task3->add_dep(task18);
       task18->add_dep(task0);
       queue_->add_task(task18);
 
 
-      std::vector<IndexRange> I18_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T> > I18(new Tensor<T>(I18_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor19 = {I17, t2, I18};
+      std::vector<IndexRange> I15_index = {this->active_, this->active_};
+      std::shared_ptr<Tensor<T> > I15(new Tensor<T>(I15_index, false));
+      std::vector<std::shared_ptr<Tensor<T> > > tensor19 = {I14, t2, I15};
       std::shared_ptr<Task19<T> > task19(new Task19<T>(tensor19, index));
       task18->add_dep(task19);
       task19->add_dep(task0);
       queue_->add_task(task19);
 
 
-      std::vector<std::shared_ptr<Tensor<T> > > tensor20 = {I18, Gamma2};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor20 = {I15, Gamma2};
       std::shared_ptr<Task20<T> > task20(new Task20<T>(tensor20, index));
       task19->add_dep(task20);
       task20->add_dep(task0);
@@ -228,7 +225,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 
       std::vector<IndexRange> I21_index = {this->active_, this->active_};
       std::shared_ptr<Tensor<T> > I21(new Tensor<T>(I21_index, false));
-      std::vector<std::shared_ptr<Tensor<T> > > tensor21 = {I17, t2, I21};
+      std::vector<std::shared_ptr<Tensor<T> > > tensor21 = {I14, t2, I21};
       std::shared_ptr<Task21<T> > task21(new Task21<T>(tensor21, index));
       task18->add_dep(task21);
       task21->add_dep(task0);
@@ -314,7 +311,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       std::shared_ptr<Queue<T> > energy_(new Queue<T>());
       std::vector<IndexRange> I30_index;
       std::shared_ptr<Tensor<T> > I30(new Tensor<T>(I30_index, false));
-      std::vector<IndexRange> I31_index = {this->active_, this->virt_, this->closed_, this->virt_};
+      std::vector<IndexRange> I31_index = {this->active_, this->closed_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T> > I31(new Tensor<T>(I31_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor31 = {I30, t2, I31};
       std::shared_ptr<Task31<T> > task31(new Task31<T>(tensor31, index));
@@ -339,13 +336,13 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       std::vector<IndexRange> I35_index = {this->active_, this->active_};
       std::shared_ptr<Tensor<T> > I35(new Tensor<T>(I35_index, false));
       std::vector<std::shared_ptr<Tensor<T> > > tensor34 = {I31, this->v2_, I35};
-      std::shared_ptr<Task34<T> > task34(new Task34<T>(tensor34, pindex));
+      std::shared_ptr<Task34<T> > task34(new Task34<T>(tensor34, index));
       task31->add_dep(task34);
       energy_->add_task(task34);
 
 
       std::vector<std::shared_ptr<Tensor<T> > > tensor35 = {I35, Gamma2};
-      std::shared_ptr<Task35<T> > task35(new Task35<T>(tensor35, pindex));
+      std::shared_ptr<Task35<T> > task35(new Task35<T>(tensor35, index));
       task34->add_dep(task35);
       energy_->add_task(task35);
 
@@ -359,10 +356,8 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
       e0_ = this->e0();
-#if 1
       this->update_amplitude(t2, this->v2_, true);
       t2->scale(2.0);
-#endif
       r = t2->clone();
     };
     ~CAS_test() {}; 
@@ -376,7 +371,6 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
         std::shared_ptr<Queue<T> > energ = q.second;
         while (!queue->done())
           queue->next_compute();
-//      *r = *(r->add_dagger());
         this->update_amplitude(t2, r);
         const double err = r->rms();
         r->zero();
@@ -391,7 +385,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       double en = 0.0;
       while (!energ->done()) {
         std::shared_ptr<Task<T> > c = energ->next_compute();
-        en += c->energy() * 0.25; // FIXME
+        en += c->energy() * 0.25;
       }   
       return en; 
     };  
