@@ -63,7 +63,7 @@ void ParaMatrix::diagonalize(double* eig) {
   double wsize;
   pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), &wsize, -1, info);
 
-  const int lwork = round(wsize)*100;
+  const int lwork = round(wsize);
   unique_ptr<double[]> work(new double[lwork]);
   pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), work.get(), lwork, info);
   if (info) throw runtime_error("pdsyev failed in paramatrix");
