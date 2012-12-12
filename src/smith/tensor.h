@@ -55,8 +55,8 @@ size_t generate_hash_key(const std::vector<size_t>& o) {
   return out;
 }
 
-template<class T>
-size_t generate_hash_key(const T& head) { return head.key(); }
+static
+size_t generate_hash_key() { return 0; }
 
 template<class T, typename... args>
 size_t generate_hash_key(const T& head, const args&... tail) {
