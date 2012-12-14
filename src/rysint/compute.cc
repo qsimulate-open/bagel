@@ -31,11 +31,14 @@
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
+#include <src/rysint/sortlist.h>
+#include <src/rysint/hrrlist.h>
 
 using namespace std;
 using namespace bagel;
 
 static const CarSphList carsphlist;
+static const HRRList hrr;
 
 void ERIBatch::compute() {
   bool swapped = false;
@@ -85,7 +88,7 @@ void ERIBatch::compute() {
   // data will be stored in bkup_: cont01{ cont23{ xyzf{ xyzab{ } } } }
   if (basisinfo_[1]->angular_number() != 0) {
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-    hrr_->hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
+    hrr.hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
   } else {
     swapped = (swapped ^ true);
   }
@@ -143,10 +146,10 @@ void ERIBatch::compute() {
   // data will be stored in data_: cont01{ xyzab{ cont23{ xyzcd{ } } } } if spherical
   if (basisinfo_[3]->angular_number() != 0) {
     const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
-    if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
-    else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
-    else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
-    else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
+    if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
+    else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
+    else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
+    else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
   } else {
     swapped = (swapped ^ true);
   }
@@ -175,12 +178,14 @@ void ERIBatch::compute() {
   double *target_now = swapped ? bkup_ : data_;
   double *source_now = swapped ? data_ : bkup_;
 
+  const SortList sort(spherical_);
+
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   if (basisinfo_[2]->angular_number() != 0) {
     const int nloop = a * b * cont0size_ * cont1size_;
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-    sort_->sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
+    sort.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
   } else {
     swapped = (swapped ^ true);
   }
@@ -204,7 +209,7 @@ void ERIBatch::compute() {
   if (basisinfo_[0]->angular_number() != 0) {
     const int nloop = c * d * cont2size_ * cont3size_;
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
+    sort.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
   } else {
     swapped = (swapped ^ true);
   }

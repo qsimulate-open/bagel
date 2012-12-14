@@ -32,12 +32,16 @@
 #include <src/rysint/naibatch.h>
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
+#include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
+#include <src/rysint/hrrlist.h>
 
 using namespace std;
 using namespace bagel;
 
 typedef std::shared_ptr<Atom> RefAtom;
+
+static const HRRList hrr;
 
 void NAIBatch::compute() {
   const double zero = 0.0;
@@ -64,6 +68,8 @@ void NAIBatch::compute() {
 
   const int alc = size_alloc_;
   fill(data_, data_ + alc, zero);
+
+  const SortList sort(spherical_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -134,7 +140,7 @@ void NAIBatch::compute() {
   {
     if (basisinfo_[1]->angular_number() != 0) {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      hrr_->hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
+      hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
       copy(bkup_, bkup_+size_alloc_, data_);
     }
@@ -153,10 +159,10 @@ void NAIBatch::compute() {
   // data will be stored in data_: cont1b{ cont0a{ } }
   if (spherical_) {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, data_, bkup_, cont1size_, cont0size_, 1, swap01_);
+    sort.sortfunc_call(index, data_, bkup_, cont1size_, cont0size_, 1, swap01_);
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
+    sort.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
     copy(bkup_, bkup_+size_final_, data_);
   }
 

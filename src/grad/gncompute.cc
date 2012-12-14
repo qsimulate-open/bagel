@@ -25,6 +25,7 @@
 
 #include <src/grad/gnaibatch.h>
 #include <src/rysint/carsphlist.h>
+#include <src/rysint/sortlist.h>
 #include <src/util/comb.h>
 
 using namespace std;
@@ -90,6 +91,8 @@ void GNAIBatch::compute() {
 
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   assert(acsize*primsize_ == size_block_);
+
+  const SortList sort(spherical_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -270,13 +273,13 @@ void GNAIBatch::compute() {
       target = bkup_;
       source = cdata;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_->sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
+      sort.sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
       copy(bkup_, bkup_+size_block_, cdata);
     } else {
       target = cdata;
       source = bkup_;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_->sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
+      sort.sortfunc_call(index, target, source, cont1size_, cont0size_, 1, swap01_);
     }
   }
 

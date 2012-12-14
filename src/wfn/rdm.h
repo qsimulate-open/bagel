@@ -32,10 +32,11 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
+#include <stdexcept>
 #include <type_traits>
-#include <initializer_list>
-#include <src/scf/matrix1e.h>
+#include <src/scf/geometry.h>
 #include <src/util/f77.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 

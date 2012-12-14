@@ -27,6 +27,7 @@
 #include <iomanip>
 #include <src/grad/gradbatch.h>
 #include <src/util/f77.h>
+#include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
@@ -72,6 +73,8 @@ void GradBatch::compute() {
   }
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
+
+  const SortList sort(spherical_);
 
   // loop over gradient...
   double* cdata = data_;
@@ -166,7 +169,7 @@ void GradBatch::compute() {
     if (basisinfo_[2]->angular_number() != 0) {
       const int nloop = a * b * cont0size_ * cont1size_;
       const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-      sort_->sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
+      sort.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
       swapped = (swapped ^ true);
     }
@@ -190,7 +193,7 @@ void GradBatch::compute() {
     if (basisinfo_[0]->angular_number() != 0) {
       const int nloop = c * d * cont2size_ * cont3size_;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_->sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
+      sort.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
       swapped = (swapped ^ true);
     }

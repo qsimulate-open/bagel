@@ -33,11 +33,14 @@
 #include <src/slater/slaterbatch.h>
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
+#include <src/rysint/hrrlist.h>
+#include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
 
 using namespace std;
 using namespace bagel;
 
+const static HRRList hrr;
 
 void SlaterBatch::compute() {
   bool swapped = false;
@@ -128,9 +131,9 @@ void SlaterBatch::compute() {
   {
     if (basisinfo_[1]->angular_number() != 0) {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      hrr_->hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
+      hrr.hrrfunc_call(hrr_index, contsize_ * csize_, data_, AB_, bkup_);
       if (yukawa_)
-        hrr_->hrrfunc_call(hrr_index, contsize_ * csize_, data2_, AB_, bkup2_);
+        hrr.hrrfunc_call(hrr_index, contsize_ * csize_, data2_, AB_, bkup2_);
     } else {
       swapped = true;
     }
@@ -199,16 +202,16 @@ void SlaterBatch::compute() {
   {
     if (basisinfo_[3]->angular_number() != 0) {
       const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
-      if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
-      else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
-      else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
-      else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
+      if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
+      else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
+      else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
+      else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
 
       if (yukawa_) {
-        if (swapped && spherical_)       hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup2_, CD_, data2_);
-        else if (swapped)                hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
-        else if (!swapped && spherical_) hrr_->hrrfunc_call(hrr_index, contsize_ * asph * bsph, data2_, CD_, bkup2_);
-        else                             hrr_->hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
+        if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup2_, CD_, data2_);
+        else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
+        else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data2_, CD_, bkup2_);
+        else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
       }
     } else {
       swapped = (swapped ^ true);
@@ -241,14 +244,16 @@ void SlaterBatch::compute() {
   double *data_now_2 = swapped ? bkup2_ : data2_;
   double *bkup_now_2 = swapped ? data2_ : bkup2_;
 
+  const SortList sort(spherical_);
+
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   {
     const int nloop = a * b * cont0size_ * cont1size_;
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-    sort_->sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
+    sort.sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
     if (yukawa_)
-      sort_->sortfunc_call(index, data_now_2, bkup_now_2, cont3size_, cont2size_, nloop, swap23_);
+      sort.sortfunc_call(index, data_now_2, bkup_now_2, cont3size_, cont2size_, nloop, swap23_);
   }
 
   // transpose batch
@@ -266,9 +271,9 @@ void SlaterBatch::compute() {
   {
     const int nloop = c * d * cont2size_ * cont3size_;
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_->sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
+    sort.sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
     if (yukawa_)
-      sort_->sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
+      sort.sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
   }
 
   if (swapped) {

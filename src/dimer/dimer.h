@@ -29,7 +29,6 @@
 #include <array>
 #include <src/scf/geometry.h>
 #include <src/scf/coeff.h>
-#include <src/scf/matrix1e.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
 #include <src/dimer/dimer_jop.h>

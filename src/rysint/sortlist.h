@@ -97,7 +97,7 @@ struct SortList {
   static void sort_indices_56_sph(double*, const double*, const int, const int, const int, const bool);
   static void sort_indices_66_sph(double*, const double*, const int, const int, const int, const bool);
 
-  void sortfunc_call(const unsigned int i, double* a1, const double* a2, const int a3, const int a4, const int a5, const bool a6) {
+  void sortfunc_call(const unsigned int i, double* a1, const double* a2, const int a3, const int a4, const int a5, const bool a6) const {
     return (sortfunc[i])(a1, a2, a3, a4, a5, a6);
   };
 

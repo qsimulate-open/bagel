@@ -28,7 +28,7 @@
 #define __src_scf_coeff_h
 
 #include <src/scf/geometry.h>
-#include <src/scf/matrix1e.h>
+#include <src/util/matrix.h>
 #include <memory>
 
 namespace bagel {
