@@ -201,7 +201,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
   const complex<double>* odata = o.data();
   complex<double>* outdata = out.data();
 
-  zgemm3m_("H", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("C", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
 
   return out;
 }
@@ -218,7 +218,7 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
   const complex<double>* odata = o.data();
   complex<double>* outdata = out.data();
 
-  zgemm3m_("N", "H", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
 
   return out;
 }
@@ -517,15 +517,31 @@ void ZMatrix::inverse_half(const double thresh) {
 }
 
 
-void ZMatrix::print(const string name, const int size) const {
+void ZMatrix::print(const string component, const string name, const int size) const {
 
   cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size,ndim_); ++i) {
-    for (int j = 0; j != min(size,mdim_); ++j) {
-      cout << fixed << setw(12) << setprecision(9) << data_[j * ndim_ + i]  << " ";
+  if (component == "R")  {
+    for (int i = 0; i != min(size,ndim_); ++i) {
+      for (int j = 0; j != min(size,mdim_); ++j) {
+        cout << fixed << setw(12) << setprecision(9) << real(data_[j * ndim_ + i])  << " ";
+      }
+      cout << endl;
     }
-    cout << endl;
-  }
+  } else if (component == "I") {
+    for (int i = 0; i != min(size,ndim_); ++i) {
+      for (int j = 0; j != min(size,mdim_); ++j) {
+        cout << fixed << setw(12) << setprecision(9) << imag(data_[j * ndim_ + i])  << " ";
+      }
+      cout << endl;
+    }
+  } else if (component == "T") {
+    for (int i = 0; i != min(size,ndim_); ++i) {
+      for (int j = 0; j != min(size,mdim_); ++j) {
+        cout << fixed << setw(12) << setprecision(9) << data_[j * ndim_ + i]  << " ";
+      }
+      cout << endl;
+    }
+  } else cout << "First argument of print is illegal." << endl;
 
 }
 

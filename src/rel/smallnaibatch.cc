@@ -29,6 +29,7 @@
 #include <src/rel/smallnaibatch.h>
 #include <src/osint/momentbatch.h>
 #include <src/osint/overlapbatch.h>
+#include <src/rysint/naibatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/util/matrix.h>
 
@@ -98,9 +99,9 @@ void SmallNAIBatch::compute() {
 
     // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
     for (int i = 0; i != 3; ++i) {
-      *data_[0]    -= *ints[i] * *tmp2[i];
-      *data_[b[i]] -= *ints[b[i]-1] * *tmp2[i];
-      *data_[i+1]  += *ints[f[i]-1] * *tmp2[i];
+      *data_[0]    += *ints[i] * *tmp2[i];
+      *data_[b[i]] += *ints[b[i]-1] * *tmp2[i];
+      *data_[i+1]  -= *ints[f[i]-1] * *tmp2[i];
     }
 
   }
@@ -154,22 +155,22 @@ shared_ptr<Matrix> SmallNAIBatch::nai_compute() const {
 
   shared_ptr<Matrix> nai(new Matrix(a0, a1));
   {
-    shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_inc_, stack_));
+    shared_ptr<NAIBatch> naic(new NAIBatch(aux_inc_, geom_, stack_));
     naic->compute();
     nai->copy_block(0, 0, a0size_inc, a1size_inc, naic->data());
   }
   if (aux_dec_[0] && aux_dec_[1]) {
-    shared_ptr<OverlapBatch> naic(new OverlapBatch(aux_dec_, stack_));
+    shared_ptr<NAIBatch> naic(new NAIBatch(aux_dec_, geom_, stack_));
     naic->compute();
     nai->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, naic->data());
   }
   if (aux_dec_[0]) {
-    shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, stack_));
+    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{aux_dec_[0],aux_inc_[1]}}, geom_, stack_));
     naic->compute();
     nai->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, naic->data());
   }
   if (aux_dec_[1]) {
-    shared_ptr<OverlapBatch> naic(new OverlapBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, stack_));
+    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{aux_inc_[0],aux_dec_[1]}}, geom_, stack_));
     naic->compute();
     nai->copy_block(0, a1size_inc, a0size_inc, a1size_dec, naic->data());
   }

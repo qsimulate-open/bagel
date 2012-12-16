@@ -55,7 +55,13 @@ class Dirac : public SCF_base {
 
     void compute() override;
 
+    std::shared_ptr<ZMatrix> hcore_construct(const int);
+
+    std::shared_ptr<ZMatrix> s12_construct(const int);
+
     std::shared_ptr<Reference> conv_to_ref() const override;
+
+    void print_eig(const int, const std::unique_ptr<double[]>&);
 
 };
 

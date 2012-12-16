@@ -134,8 +134,8 @@ class ZMatrix {
     std::unique_ptr<std::complex<double>[]> diag() const;
 
     void fill(const std::complex<double> a) { std::fill(data(), data()+ndim_*mdim_, a); }
-    void zero() { fill((0.0, 0.0)); }
-    void unit() { fill((0.0, 0,0)); for (int i = 0; i != ndim_; ++i) element(i,i) = (1.0, 0.0); assert(ndim_ == mdim_);}
+    void zero() { fill(std::complex<double>(0.0, 0.0)); }
+    void unit() { fill(std::complex<double>(0.0, 0.0)); for (int i = 0; i != ndim_; ++i) element(i,i) = std::complex<double>(1.0, 0.0); assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 
     void purify_unitary();
@@ -144,7 +144,8 @@ class ZMatrix {
 
     std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix> > o);
 
-    void print(const std::string in = "", const int size = 10) const;
+    // first parameter must be "R", "I", or "T" to print real part, imaginary part, or total
+    void print(const std::string, const std::string in = "", const int size = 10) const;
 
     std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
 };
