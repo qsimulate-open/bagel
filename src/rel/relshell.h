@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: smallnaibatch.h
+// Filename: relshell.h 
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley and Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,48 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_REL_RELSHELL_H
+#define __SRC_REL_RELSHELL_H
 
-#ifndef __SRC_REL_SMALLNAIBATCH_H
-#define __SRC_REL_SMALLNAIBATCH_H
-
-#include <stddef.h>
-#include <src/scf/shell.h>
-#include <src/scf/geometry.h>
+#include <array>
 #include <memory>
-#include <src/rysint/naibatch.h>
-#include <src/parallel/resources.h>
-#include <src/rel/relshell.h>
 #include <src/util/matrix.h>
-
-// computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
+#include <src/scf/shell.h>
 
 namespace bagel {
 
-class SmallNAIBatch {
+class RelShell : public Shell {
   protected:
-    std::array<std::shared_ptr<Matrix>,4> data_;
+    std::array<std::shared_ptr<const Matrix>,3> small_; 
 
-    const std::shared_ptr<const Geometry> geom_;
-    const std::array<std::shared_ptr<const RelShell>,2> shells_;
+    const std::shared_ptr<const Shell> aux_inc_;
+    const std::shared_ptr<const Shell> aux_dec_;
 
-    const size_t size_block_;
-
-    std::shared_ptr<StackMem> stack_;
-
-    void do_nothing();
+    std::shared_ptr<const Matrix> overlap_compute_() const;
+    std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
 
   public:
-    SmallNAIBatch(std::array<std::shared_ptr<const RelShell>,2> info, std::shared_ptr<const Geometry> geom);
-    ~SmallNAIBatch();
+    RelShell(const std::shared_ptr<const Shell> o);
 
-    void compute();
+    const std::shared_ptr<const Matrix> small(const int i) const { return small_[i]; }
 
-    std::shared_ptr<Matrix> operator[](const int i) { return data_[i]; }
-
-    std::shared_ptr<Matrix> nai_compute() const;
-
-    size_t size_block() const { return size_block_; }
-
+    const std::shared_ptr<const Shell> aux_inc() const { return aux_inc_; }
+    const std::shared_ptr<const Shell> aux_dec() const { return aux_dec_; }
 };
 
 }

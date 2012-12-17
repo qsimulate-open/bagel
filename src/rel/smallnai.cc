@@ -25,6 +25,7 @@
 
 
 #include <stddef.h>
+#include <src/rel/relshell.h>
 #include <src/rel/smallnai.h>
 #include <src/rel/smallnaibatch.h>
 
@@ -53,7 +54,7 @@ void SmallNAI::print() const {
 }
 
 
-void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void SmallNAI::computebatch(const array<shared_ptr<const RelShell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -62,22 +63,10 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   SmallNAIBatch batch(input, geom_);
   batch.compute();
 
-#if 0
-  int cnt = 0;
-  for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-    for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      dataarray_[0]->element(j,i) = batch[0]->data(cnt);
-      dataarray_[1]->element(j,i) = batch[1]->data(cnt);
-      dataarray_[2]->element(j,i) = batch[2]->data(cnt);
-      dataarray_[3]->element(j,i) = batch[3]->data(cnt);
-    }
-  }
-#else
   dataarray_[0]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[0]);
   dataarray_[1]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[1]);
   dataarray_[2]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[2]);
   dataarray_[3]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[3]);
-#endif
 }
 
 
@@ -92,7 +81,9 @@ void SmallNAI::init() {
     for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
       auto offset1 = o0->begin();
       for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
-        array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+        shared_ptr<const RelShell> c1(new RelShell(*b1));
+        shared_ptr<const RelShell> c0(new RelShell(*b0));
+        array<shared_ptr<const RelShell>,2> input = {{c1, c0}};
         computebatch(input, *offset0, *offset1);
       }
     }
@@ -103,7 +94,9 @@ void SmallNAI::init() {
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
         auto offset1 = o1->begin();
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
-          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+          shared_ptr<const RelShell> c1(new RelShell(*b1));
+          shared_ptr<const RelShell> c0(new RelShell(*b0));
+          array<shared_ptr<const RelShell>,2> input = {{c1, c0}};
           computebatch(input, *offset0, *offset1);
         }
       }

@@ -32,6 +32,7 @@
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/scf/geometry.h>
+#include <src/rel/relshell.h>
 
 namespace bagel {
 
@@ -48,7 +49,7 @@ class SmallNAI {
   
     const std::shared_ptr<Matrix>& operator[](const int i) const { return dataarray_[i]; }; 
 
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
+    void computebatch(const std::array<std::shared_ptr<const RelShell>,2>& input, const int offsetb0, const int offsetb1);
 
     void print() const;
 };
