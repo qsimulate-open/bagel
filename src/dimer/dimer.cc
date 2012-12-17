@@ -249,18 +249,6 @@ void Dimer::orthonormalize() {
    scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
 }
 
-void Dimer::energy() {
-   shared_ptr<Matrix> ao_density = scoeff_->form_density_rhf(sref_->nclosed());
-   shared_ptr<Fock<1> > hcore(new Fock<1>(sgeom_));
-   shared_ptr<Fock<1> > fock(new Fock<1>(sgeom_, hcore, ao_density, sgeom_->schwarz()));
-
-   Matrix hcore_fock = (*hcore + *fock);
-   double energy = ao_density->ddot(*hcore_fock.transpose());
-   energy = 0.5*energy + sgeom_->nuclear_repulsion();
-
-   energy_ = energy;
-}
-
 void Dimer::fci(multimap<string,string> idata) {
   { // Start FCI on unit A
     // Move occupied orbitals of unit B to form the core orbitals
@@ -303,4 +291,20 @@ void Dimer::fci(multimap<string,string> idata) {
   nvirt_ = make_pair(0,0);
 
   symmetric_ = false;
+}
+
+void Dimer::localize(multimap<string, string> idata) {
+  string localizemethod = read_input<string>(idata,"localization", "pm");
+
+  shared_ptr<OrbitalLocalization> localization;
+  if (localizemethod == "region") {
+    vector<int> sizes = { geoms_.first->natom(), geoms_.second->natom() };
+    localization = shared_ptr<OrbitalLocalization>(new RegionLocalization(sref_, sizes));
+  }
+  else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey") {
+    localization = shared_ptr<OrbitalLocalization>(new PMLocalization(sref_));
+  }
+  else throw std::runtime_error("Unrecognized orbital localization method");
+
+  set_coeff(localization->localize());
 }

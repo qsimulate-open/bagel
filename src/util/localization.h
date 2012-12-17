@@ -34,6 +34,7 @@
 #include <list>
 #include <src/scf/geometry.h>
 #include <src/scf/coeff.h>
+#include <src/wfn/reference.h>
 #include <src/util/matrix.h>
 
 namespace bagel {
@@ -41,23 +42,38 @@ namespace bagel {
 class OrbitalLocalization {
   protected:
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Matrix> density_;
+    std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const Reference> ref_;
+
+    const int nclosed_;
+    const int nact_;
 
   public:
-    OrbitalLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density) : geom_(geom), density_(density) {};
+    OrbitalLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0) : 
+      geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact) {}
+    OrbitalLocalization(std::shared_ptr<const Reference> ref) : 
+      OrbitalLocalization( ref->geom(), ref->coeff(), ref->nclosed(), ref->nact() ) { ref_ = ref; }
 
-    virtual std::shared_ptr<Matrix> localize() = 0;
+    virtual std::shared_ptr<const Coeff> localize(const double thresh = 1.0e-8) = 0;
 };
 
 class RegionLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int> > bounds_;
+    std::shared_ptr<Matrix> sqrt_S_;
+    std::shared_ptr<Matrix> S_inverse_half_;
 
   public:
-    RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<Matrix> density, std::vector<std::pair<int, int> > region_bounds);
+    RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, std::vector<int> region_sizes, 
+      const int nclosed, const int nact) : OrbitalLocalization(geom, coeff, nclosed, nact) {common_init(region_sizes);}
+    RegionLocalization(std::shared_ptr<const Reference> ref, std::vector<int> region_sizes) : 
+      OrbitalLocalization(ref) {common_init(region_sizes);}
 
-    std::shared_ptr<Matrix> localize() override;
+    std::shared_ptr<const Coeff> localize(const double thresh = 1.0e-8) override;
   
+  private:
+    void common_init(std::vector<int> sizes);
+    std::shared_ptr<Matrix> localize_space(std::shared_ptr<Matrix> density);
 };
 
 // Pipek-Mezey
@@ -69,15 +85,18 @@ class PMLocalization : public OrbitalLocalization {
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<Matrix> S_;
 
-    const int norb_;
-
   public:
-    PMLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int norb);
+    PMLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0) :
+      OrbitalLocalization(geom, coeff, nclosed, nact) {common_init(geom);}
+    PMLocalization(std::shared_ptr<const Reference> ref) : OrbitalLocalization(ref) {common_init(ref->geom());}
 
-    std::shared_ptr<Matrix> localize() override;
+    std::shared_ptr<const Coeff> localize(const double thresh = 1.0e-8) override;
 
   private:
-    double calc_P() const;
+    double calc_P(std::shared_ptr<Matrix> coeff, const int nstart, const int norb) const;
+    void common_init(std::shared_ptr<const Geometry> geom);
+
+    void localize_space(std::shared_ptr<Matrix> coeff, const int nstart, const int norb);
 };
 
 }

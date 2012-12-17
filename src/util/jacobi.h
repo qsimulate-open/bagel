@@ -43,10 +43,11 @@ class Jacobi_base {
     std::shared_ptr<Matrix> Q_; // Stores the eigenvectors
 
     const int nbasis_;
-    const int mdim_;
+    const int nstart_;
+    const int norb_;
 
   public:
-    Jacobi_base(std::shared_ptr<Matrix> Q, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), mdim_(norb) {};
+    Jacobi_base(std::shared_ptr<Matrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {};
 
     virtual void rotate(const int k, const int l) = 0;
     virtual void sweep();
@@ -74,8 +75,8 @@ class JacobiPM : public Jacobi_base {
     std::vector<std::pair<int, int> > atom_bounds_;
 
   public:
-    JacobiPM(std::shared_ptr<Matrix> coeff, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int> > atom_bounds) : 
-      Jacobi_base(coeff, norb), S_(S), atom_bounds_(atom_bounds) {};
+    JacobiPM(std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int> > atom_bounds) : 
+      Jacobi_base(coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {};
 
     void rotate(const int k, const int l) override;
 };
