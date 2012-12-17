@@ -32,7 +32,6 @@
 #include <src/scf/geometry.h>
 #include <memory>
 #include <src/rysint/naibatch.h>
-#include <src/parallel/resources.h>
 #include <src/rel/relshell.h>
 #include <src/util/matrix.h>
 
@@ -48,8 +47,6 @@ class SmallNAIBatch {
     const std::array<std::shared_ptr<const RelShell>,2> shells_;
 
     const size_t size_block_;
-
-    std::shared_ptr<StackMem> stack_;
 
     void do_nothing();
 
