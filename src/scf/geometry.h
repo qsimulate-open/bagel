@@ -173,6 +173,11 @@ class Geometry {
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
     std::array<std::unique_ptr<double[]>,2> compute_internal_coordinate() const;
+
+    // initialize relativistic components
+    std::shared_ptr<const Geometry> relativistic() const;
+
+    bool rel_initialized() const { return atoms_.front()->rel_initialized(); }
 };
 
 }

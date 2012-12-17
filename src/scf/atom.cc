@@ -41,6 +41,7 @@
 #include <src/osint/overlapbatch.h>
 #include <src/scf/atommap.h>
 #include <src/util/constants.h>
+#include <src/rel/relshell.h>
 
 using namespace std;
 using namespace bagel;
@@ -387,4 +388,16 @@ double Atom::dihedral_angle(const std::shared_ptr<const Atom> a, const std::shar
   Quatern<double> b12 = b1 * b2; b12[0] = 0.0;
   Quatern<double> b23 = b2 * b3; b23[0] = 0.0;
   return ::atan2(b2.norm()*b1.ddot(b23), b12.ddot(b23)) * rad2deg__;
+}
+
+
+shared_ptr<const Atom> Atom::relativistic() const {
+  // basically the same
+  // except for shells_
+  vector<shared_ptr<const RelShell> > rshells;
+  for (auto& i : shells_)
+    rshells.push_back(shared_ptr<const RelShell>(new RelShell(i))); 
+  shared_ptr<Atom> atom(new Atom(*this));
+  atom->relshells_ = rshells;
+  return atom;
 }

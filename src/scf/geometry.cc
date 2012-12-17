@@ -836,3 +836,17 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
 
   return array<unique_ptr<double[]>,2>{{move(bnew), move(bdmnew)}};
 }
+
+
+shared_ptr<const Geometry> Geometry::relativistic() const {
+  // basically the same
+  shared_ptr<Geometry> geom(new Geometry(*this));
+
+  // except for atoms_->shells
+  vector<shared_ptr<const Atom> > atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->relativistic());
+  geom->atoms_ = atom;
+
+  return geom;
+}

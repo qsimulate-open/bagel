@@ -49,7 +49,7 @@ class Dirac : public SCF_base {
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
+     : SCF_base(idata_, geom->relativistic(), re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
     }
     ~Dirac() {};
 

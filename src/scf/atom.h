@@ -24,12 +24,13 @@
 //
 
 
-#ifndef __scf_atom_h
-#define __scf_atom_h
+#ifndef __SRC_SCF_ATOM_H
+#define __SRC_SCF_ATOM_H
 
 #include <array>
 #include <vector>
 #include <string>
+#include <src/rel/relshell.h>
 #include <src/scf/shell.h>
 #include <memory>
 
@@ -43,6 +44,7 @@ class Atom {
     std::string name_;
     std::array<double,3> position_;
     std::vector<std::shared_ptr<const Shell> > shells_;
+    std::vector<std::shared_ptr<const RelShell> > relshells_;
     int atom_number_;
     double atom_charge_;
     int nbasis_;
@@ -62,21 +64,22 @@ class Atom {
     Atom(const std::string name, const std::vector<std::shared_ptr<const Shell> > shell);
     Atom(const Atom&, const std::array<double,3>&);
     Atom(const Atom&, const double*);
-    ~Atom() {};
+    ~Atom() {}
 
-    const std::string name() const { return name_; };
-    int atom_number() const { return atom_number_;};
-    double atom_charge() const { return atom_charge_;};
-    const std::array<double,3> position() const { return position_; };
-    double position(const unsigned int i) const { return position_[i]; };
-    const std::vector<std::shared_ptr<const Shell> >& shells() const { return shells_; };
-    int nshell() const { return shells_.size(); };
+    const std::string name() const { return name_; }
+    int atom_number() const { return atom_number_;}
+    double atom_charge() const { return atom_charge_;}
+    const std::array<double,3> position() const { return position_; }
+    double position(const unsigned int i) const { return position_[i]; }
+    const std::vector<std::shared_ptr<const Shell> >& shells() const { return shells_; }
+    const std::vector<std::shared_ptr<const RelShell> >& relshells() const { return relshells_; }
+    int nshell() const { return shells_.size(); }
 
-    bool dummy() const { return atom_number_ == 0; };
+    bool dummy() const { return atom_number_ == 0; }
 
-    int nbasis() const { return nbasis_; };
-    int lmax() const { return lmax_; };
-    bool spherical() const { return spherical_; };
+    int nbasis() const { return nbasis_; }
+    int lmax() const { return lmax_; }
+    bool spherical() const { return spherical_; }
 
     void print_basis() const;
     void print() const;
@@ -91,6 +94,10 @@ class Atom {
     double angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
     // dihedral angle for A-this-O-B
     double dihedral_angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
+
+    // inititalize relativistic calculation
+    std::shared_ptr<const Atom> relativistic() const;
+    bool rel_initialized() const { return !relshells_.empty(); }
 };
 
 }
