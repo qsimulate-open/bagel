@@ -82,6 +82,7 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* o);
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
+    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o) { add_block(nstart, mstart, ndim, mdim, *o); };
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);

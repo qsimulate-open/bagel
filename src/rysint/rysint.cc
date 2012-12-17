@@ -39,7 +39,7 @@ using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
  : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
-   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
+   vrr_(new VRRList()) {
 
   if (stack == nullptr) {
     stack_ = resources__->get();
@@ -53,7 +53,7 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
  : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
-   hrr_(new HRRList()), vrr_(new VRRList()), sort_(new SortList(info.front()->spherical())) {
+   vrr_(new VRRList()) {
   shared_ptr<const Shell> dum(new Shell(spherical_));
   basisinfo_ = {{ info[0], info[1], dum, dum }};
 

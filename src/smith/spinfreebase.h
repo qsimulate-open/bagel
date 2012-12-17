@@ -31,6 +31,7 @@
 #include <src/smith/prim_op.h>
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
+#include <src/smith/denom.h>
 #include <src/util/matrix.h>
 #include <src/wfn/reference.h>
 #include <chrono>
@@ -41,16 +42,24 @@ namespace SMITH {
 template <typename T>
 class SpinFreeMethod {
   protected:
+    // deprecated
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
+
+    // new
+    std::shared_ptr<const IndexRange> rvirt_;
+    std::shared_ptr<const IndexRange> ractive_;
+    std::shared_ptr<const IndexRange> rclosed_;
+
     std::shared_ptr<const Reference> ref_;
 
     double e0_;
 
     std::shared_ptr<Tensor<T> > v2_;
     std::shared_ptr<Tensor<T> > f1_;
+    std::shared_ptr<Tensor<T> > h1_;
     std::shared_ptr<Tensor<T> > rdm1_;
     std::shared_ptr<Tensor<T> > rdm2_;
     std::shared_ptr<Tensor<T> > rdm3_;
@@ -89,36 +98,33 @@ class SpinFreeMethod {
       if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1_)))
         throw std::logic_error("SpinFreeMethod::compute_e0 was called before f1_ or rdm1_ was computed. Strange.");
       double sum = 0.0;
-      // TODO parallelize?
       for (auto& i1 : active_) {
         for (auto& i0 : active_) {
-          std::vector<size_t> hash = {i0.key(), i1.key()};
           const size_t size = i0.size() * i1.size();
-          std::unique_ptr<double[]> fdata = f1_->get_block(hash);
-          std::unique_ptr<double[]> rdata = rdm1_->get_block(hash);
+          std::unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+          std::unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
           sum += ddot_(size, fdata, 1, rdata, 1);
         }
       }
-      std::cout << "    - Zeroth order energy: " << sum << std::endl;
+      std::cout << "    - Zeroth order energy: " << std::setw(20) << std::setprecision(10) << sum << std::endl;
       return sum;
     }
 
-
-    // S^-1/2 for aa/xx blocks (overlap is 2rdm)
-    std::shared_ptr<Matrix> shalf_xx_;
-    std::unique_ptr<double[]> denom_xx_;
-
-    // S^-1/2 for aa/cx blocks (overlap is 1rdm)
-    std::shared_ptr<Matrix> shalf_x_;
-    std::unique_ptr<double[]> denom_x_;
-
-    // S^-1/2 for ax/cc blocks (overlap is 1-hole rdm)
-    std::shared_ptr<Matrix> shalf_h_;
-    std::unique_ptr<double[]> denom_h_;
-
-    // S^-1/2 for xx/cc blocks (overlap is 1-hole rdm)
-    std::shared_ptr<Matrix> shalf_hh_;
-    std::unique_ptr<double[]> denom_hh_;
+    std::shared_ptr<const Denom> denom_;
+    std::shared_ptr<const Matrix> shalf_xhh() const { return denom_->shalf_xhh(); }
+    std::shared_ptr<const Matrix> shalf_xxh() const { return denom_->shalf_xxh(); }
+    std::shared_ptr<const Matrix> shalf_xh() const { return denom_->shalf_xh(); }
+    std::shared_ptr<const Matrix> shalf_hh() const { return denom_->shalf_hh(); }
+    std::shared_ptr<const Matrix> shalf_xx() const { return denom_->shalf_xx(); }
+    std::shared_ptr<const Matrix> shalf_h() const { return denom_->shalf_h(); }
+    std::shared_ptr<const Matrix> shalf_x() const { return denom_->shalf_x(); }
+    const double& denom_xhh(const size_t i) const { return denom_->denom_xhh(i); }
+    const double& denom_xxh(const size_t i) const { return denom_->denom_xxh(i); }
+    const double& denom_xh(const size_t i) const { return denom_->denom_xh(i); }
+    const double& denom_hh(const size_t i) const { return denom_->denom_hh(i); }
+    const double& denom_xx(const size_t i) const { return denom_->denom_xx(i); }
+    const double& denom_h(const size_t i) const { return denom_->denom_h(i); }
+    const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
 
     void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r, const bool put = false) {
 
@@ -129,13 +135,10 @@ class SpinFreeMethod {
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
+              if (!r->get_size(i0, i1, i2, i3)) continue;
+              std::unique_ptr<double[]>       data0 = r->get_block(i0, i1, i2, i3);
+              const std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
               // this is an inverse of the overlap.
               // prefactor of 0.25 included here
@@ -145,12 +148,12 @@ class SpinFreeMethod {
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                      // note that e0 is cancelled by another term 
+                      // note that e0 is cancelled by another term
                       data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
               if (!put) {
-                t->add_block(h,data0);
+                t->add_block(data0, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data0);
+                t->put_block(data0, i0, i1, i2, i3);
               }
             }
           }
@@ -159,23 +162,21 @@ class SpinFreeMethod {
       for (auto& i2 : active_) {
         for (auto& i0 : active_) {
           // trans is the transformation matrix
-          assert(shalf_xx_);
+          assert(shalf_xx());
           const int nact = ref_->nact();
           const int nclo = ref_->nclosed();
           std::unique_ptr<double[]> transp(new double[i0.size()*i2.size()*nact*nact]);
           for (int j2 = i2.offset(), k = 0; j2 != i2.offset()+i2.size(); ++j2)
             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++k)
-              std::copy_n(shalf_xx_->element_ptr(0,(j0-nclo)+(j2-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
+              std::copy_n(shalf_xx()->element_ptr(0,(j0-nclo)+(j2-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              if (!r->get_size(i0, i1, i2, i3)) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
+              std::unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
               // sort. Active indices run faster
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
               // intermediate area
@@ -189,7 +190,7 @@ class SpinFreeMethod {
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != nact*nact; ++j02, ++iall)
-                    interm[iall] /= e0_ - (denom_xx_[j02] + eig_[j3] + eig_[j1]);
+                    interm[iall] /= e0_ - (denom_xx(j02) + eig_[j3] + eig_[j1]);
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -199,9 +200,9 @@ class SpinFreeMethod {
               // sort back to the original order
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
               if (!put) {
-                t->add_block(h,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data1);
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -209,28 +210,26 @@ class SpinFreeMethod {
       }
       for (auto& i0 : active_) {
         // trans is the transformation matrix
-        assert(shalf_x_);
+        assert(shalf_x());
         const int nact = ref_->nact();
         const int nclo = ref_->nclosed();
         std::unique_ptr<double[]> transp(new double[i0.size()*nact]);
         for (int j0 = i0.offset(), k = 0; j0 != i0.offset()+i0.size(); ++j0, ++k)
-          std::copy_n(shalf_x_->element_ptr(0,j0-nclo), nact, transp.get()+nact*k);
+          std::copy_n(shalf_x()->element_ptr(0,j0-nclo), nact, transp.get()+nact*k);
 
         for (auto& i3 : virt_) {
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::vector<size_t> g = {i2.key(), i1.key(), i0.key(), i3.key()};
-              if (!r->get_size(h)) continue;
-              assert(r->get_size(g));
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
+              if (!r->get_size(i2, i3, i0, i1)) continue;
+              assert(r->get_size(i2, i1, i0, i3));
+              std::unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
+              const std::unique_ptr<double[]> data1 = r->get_block(i2, i1, i0, i3);
+              std::unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
               sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size()); 
-              std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
+              sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
 
               // move to orthogonal basis
+              std::unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*nact]);
               dgemm_("N", "N", nact, i1.size()*i2.size()*i3.size(), i0.size(), 1.0, transp, nact, data2, i0.size(),
                                                                                0.0, interm, nact);
 
@@ -239,17 +238,16 @@ class SpinFreeMethod {
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = 0; j0 != nact; ++j0, ++iall)
-                      interm[iall] /= e0_ - (denom_x_[j0] + eig_[j3] - eig_[j2] + eig_[j1]);
+                      interm[iall] /= e0_ - (denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]);
 
               // move back to non-orthogonal basis
               dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
                                                                                0.0, data2,  i0.size());
 
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data2);
+                t->add_block(data2, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data2);
+                t->put_block(data2, i0, i1, i2, i3);
               }
             }
           }
@@ -257,25 +255,23 @@ class SpinFreeMethod {
       }
       for (auto& i3 : active_) {
         // trans is the transformation matrix
-        assert(shalf_h_);
+        assert(shalf_h());
         const int nact = ref_->nact();
         const int nclo = ref_->nclosed();
         std::unique_ptr<double[]> transp(new double[i3.size()*nact]);
         for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3, ++k)
-          std::copy_n(shalf_h_->element_ptr(0,j3-nclo), nact, transp.get()+nact*k);
+          std::copy_n(shalf_h()->element_ptr(0,j3-nclo), nact, transp.get()+nact*k);
 
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::vector<size_t> g = {i0.key(), i3.key(), i2.key(), i1.key()};
-              if (!r->get_size(h)) continue;
-              assert(r->get_size(g));
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data2(new double[r->get_size(h)]);
-              sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size()); 
-              const std::unique_ptr<double[]> data1 = r->get_block(g);
-              sort_indices<0,3,2,1,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size()); 
+              if (!r->get_size(i2, i3, i0, i1)) continue;
+              assert(r->get_size(i0, i3, i2, i1));
+              std::unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
+              const std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
+              std::unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
+              sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
+              sort_indices<0,3,2,1,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size());
               std::unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*nact]);
 
               // move to orthogonal basis
@@ -287,17 +283,16 @@ class SpinFreeMethod {
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                      interm[iall] /= e0_ - (denom_h_[j3] - eig_[j2] + eig_[j1] - eig_[j0]);
+                      interm[iall] /= e0_ - (denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]);
 
               // move back to non-orthogonal basis
               dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
                                                                                0.0, data2,  i0.size()*i1.size()*i2.size());
 
-              std::vector<size_t> hout = {i0.key(), i1.key(), i2.key(), i3.key()};
               if (!put) {
-                t->add_block(hout,data2);
+                t->add_block(data2, i0, i1, i2, i3);
               } else {
-                t->put_block(hout,data2);
+                t->put_block(data2, i0, i1, i2, i3);
               }
             }
           }
@@ -305,23 +300,21 @@ class SpinFreeMethod {
       }
       for (auto& i3 : active_) {
         for (auto& i1 : active_) {
-          assert(shalf_hh_);
+          assert(shalf_hh());
           const int nact = ref_->nact();
           const int nclo = ref_->nclosed();
           std::unique_ptr<double[]> transp(new double[i1.size()*i3.size()*nact*nact]);
           for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++k)
-              std::copy_n(shalf_hh_->element_ptr(0,(j1-nclo)+(j3-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
+              std::copy_n(shalf_hh()->element_ptr(0,(j1-nclo)+(j3-nclo)*nact), nact*nact, transp.get()+nact*nact*k);
 
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-
               // if this block is not included in the current wave function, skip it
-              if (!r->get_size(h)) continue;
+              if (!r->get_size(i0, i1, i2, i3)) continue;
               // data0 is the source area
-              std::unique_ptr<double[]> data0 = r->get_block(h);
-              std::unique_ptr<double[]> data1(new double[r->get_size(h)]);
+              std::unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
+              std::unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
               // sort. Active indices run slower
               sort_indices<0,3,2,1,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
               // intermediate area
@@ -335,7 +328,7 @@ class SpinFreeMethod {
               for (int j13 = 0; j13 != nact*nact; ++j13)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= e0_ - (denom_hh_[j13] - eig_[j2] - eig_[j0]);
+                    interm[iall] /= e0_ - (denom_hh(j13) - eig_[j2] - eig_[j0]);
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -345,9 +338,161 @@ class SpinFreeMethod {
               // sort back to the original order
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
               if (!put) {
-                t->add_block(h,data1);
+                t->add_block(data1, i0, i1, i2, i3);
               } else {
-                t->put_block(h,data1);
+                t->put_block(data1, i0, i1, i2, i3);
+              }
+            }
+          }
+        }
+      }
+      for (auto& i3 : active_) {
+        for (auto& i2 : active_) {
+          assert(shalf_xh());
+          const int nact = ref_->nact();
+          const int nclo = ref_->nclosed();
+          std::unique_ptr<double[]> transp(new double[i2.size()*i3.size()*nact*nact*4]);
+          for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
+            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++k) {
+              std::copy_n(shalf_xh()->element_ptr(0,             (j2-nclo)+(j3-nclo)*nact), nact*nact*2, transp.get()+nact*nact*2*k);
+              std::copy_n(shalf_xh()->element_ptr(0, nact*nact + (j2-nclo)+(j3-nclo)*nact), nact*nact*2, transp.get()+nact*nact*2*(k+i2.size()*i3.size()));
+            }
+
+          for (auto& i1 : virt_) {
+            for (auto& i0 : closed_) {
+              // if this block is not included in the current wave function, skip it
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
+              assert(blocksize == r->get_size(i0, i3, i2, i1));
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
+
+              std::unique_ptr<double[]> data2(new double[blocksize*2]);
+              // sort. Active indices run slower
+              sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
+              sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+              // intermediate area
+              std::unique_ptr<double[]> interm(new double[i0.size()*i1.size()*nact*nact*2]);
+
+              // move to orthogonal basis
+              dgemm_("N", "T", i0.size()*i1.size(), nact*nact*2, i2.size()*i3.size()*2, 1.0, data2,  i0.size()*i1.size(), transp, nact*nact*2,
+                                                                                        0.0, interm, i0.size()*i1.size());
+
+              size_t iall = 0;
+              for (int j23 = 0; j23 != nact*nact*2; ++j23)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    interm[iall] /= e0_ - (denom_xh(j23) + eig_[j1] - eig_[j0]);
+
+              // move back to non-orthogonal basis
+              dgemm_("N", "N", i0.size()*i1.size(), i2.size()*i3.size()*2, nact*nact*2, 1.0, interm, i0.size()*i1.size(), transp, nact*nact*2,
+                                                                                        0.0, data2,  i0.size()*i1.size());
+
+              // sort back to the original order
+              std::copy_n(data2.get(), blocksize, data0.get());
+              sort_indices<2,1,0,3,0,1,1,1>(data2.get()+blocksize, data1.get(), i0.size(), i1.size(), i2.size(), i3.size());
+              if (!put) {
+                t->add_block(data0, i0, i1, i2, i3);
+                t->add_block(data1, i2, i1, i0, i3);
+              } else {
+                t->put_block(data0, i0, i1, i2, i3);
+                t->put_block(data1, i2, i1, i0, i3);
+              }
+            }
+          }
+        }
+      }
+      for (auto& i3 : active_) {
+        for (auto& i2 : active_) {
+          for (auto& i0 : active_) {
+            assert(shalf_xhh());
+            const int nact = ref_->nact();
+            const int nclo = ref_->nclosed();
+            std::unique_ptr<double[]> transp(new double[i0.size()*i2.size()*i3.size()*nact*nact*nact]);
+            for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++k)
+                  std::copy_n(shalf_xhh()->element_ptr(0,j0-nclo+nact*(j2-nclo+nact*(j3-nclo))), nact*nact*nact, transp.get()+nact*nact*nact*k);
+
+            for (auto& i1 : virt_) {
+              // if this block is not included in the current wave function, skip it
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
+              // data0 is the source area
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1(new double[blocksize]);
+              // sort. Active indices run slower
+              sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              // intermediate area
+              std::unique_ptr<double[]> interm(new double[i1.size()*nact*nact*nact]);
+
+              // move to orthogonal basis
+              dgemm_("N", "T", i1.size(), nact*nact*nact, i0.size()*i2.size()*i3.size(), 1.0, data1,  i1.size(), transp, nact*nact*nact,
+                                                                                         0.0, interm, i1.size());
+
+              size_t iall = 0;
+              for (int j123 = 0; j123 != nact*nact*nact; ++j123)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
+                  interm[iall] /= e0_ - (denom_xhh(j123) + eig_[j1]);
+
+              // move back to non-orthogonal basis
+              dgemm_("N", "N", i1.size(), i0.size()*i2.size()*i3.size(), nact*nact*nact, 1.0, interm, i1.size(), transp, nact*nact*nact,
+                                                                                         0.0, data0,  i1.size());
+
+              // sort back to the original order
+              sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i1.size(), i0.size(), i2.size(), i3.size());
+              if (!put) {
+                t->add_block(data1, i0, i1, i2, i3);
+              } else {
+                t->put_block(data1, i0, i1, i2, i3);
+              }
+            }
+          }
+        }
+      }
+      for (auto& i3 : active_) {
+        for (auto& i1 : active_) {
+          for (auto& i0 : active_) {
+            assert(shalf_xxh());
+            const int nact = ref_->nact();
+            const int nclo = ref_->nclosed();
+            std::unique_ptr<double[]> transp(new double[i0.size()*i1.size()*i3.size()*nact*nact*nact]);
+            for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
+              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++k)
+                  std::copy_n(shalf_xxh()->element_ptr(0,j0-nclo+nact*(j1-nclo+nact*(j3-nclo))), nact*nact*nact, transp.get()+nact*nact*nact*k);
+
+            for (auto& i2 : closed_) {
+              // if this block is not included in the current wave function, skip it
+              const size_t blocksize = r->get_size(i2, i3, i0, i1);
+              if (!blocksize) continue;
+              // data0 is the source area
+              std::unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
+              std::unique_ptr<double[]> data1(new double[blocksize]);
+              // sort. Active indices run slower
+              sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              // intermediate area
+              std::unique_ptr<double[]> interm(new double[i2.size()*nact*nact*nact]);
+
+              // move to orthogonal basis
+              dgemm_("N", "T", i2.size(), nact*nact*nact, i0.size()*i1.size()*i3.size(), 1.0, data1,  i2.size(), transp, nact*nact*nact,
+                                                                                         0.0, interm, i2.size());
+
+              size_t iall = 0;
+              for (int j013 = 0; j013 != nact*nact*nact; ++j013)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
+                  interm[iall] /= e0_ - (denom_xxh(j013) - eig_[j2]);
+
+              // move back to non-orthogonal basis
+              dgemm_("N", "N", i2.size(), i0.size()*i1.size()*i3.size(), nact*nact*nact, 1.0, interm, i2.size(), transp, nact*nact*nact,
+                                                                                         0.0, data0,  i2.size());
+
+              // sort back to the original order
+              sort_indices<1,2,0,3,0,1,1,1>(data0, data1, i2.size(), i0.size(), i1.size(), i3.size());
+              if (!put) {
+                t->add_block(data1, i0, i1, i2, i3);
+              } else {
+                t->put_block(data1, i0, i1, i2, i3);
               }
             }
           }
@@ -370,12 +515,17 @@ class SpinFreeMethod {
       virt_ = v;
       all_ = a;
 
+      rclosed_ = std::shared_ptr<const IndexRange>(new IndexRange(c));
+      ractive_ = std::shared_ptr<const IndexRange>(new IndexRange(act));
+      rvirt_   = std::shared_ptr<const IndexRange>(new IndexRange(v));
+
       // f1 tensor.
       std::shared_ptr<const Coeff> coeff;
       {
         std::vector<IndexRange> o = {all_, all_};
         MOFock<T> fock(ref_, o);
         f1_ = fock.tensor();
+        h1_ = fock.hcore();
         // canonical orbitals within closed and virtual subspaces
         coeff = fock.coeff();
       }
@@ -398,15 +548,14 @@ class SpinFreeMethod {
         const int nclo = ref_->nclosed();
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
-            std::vector<size_t> hash = {i0.key(), i1.key()};
             const size_t size = i0.size() * i1.size();
             std::unique_ptr<double[]> data(new double[size]);
             int iall = 0;
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                 // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element({j0-nclo, j1-nclo});
-            rdm1_->put_block(hash, data);
+                data[iall] = ref_->rdm1(0)->element(j0-nclo, j1-nclo);
+            rdm1_->put_block(data, i0, i1);
           }
         }
       }
@@ -418,7 +567,6 @@ class SpinFreeMethod {
           for (auto& i2 : active_) {
             for (auto& i1 : active_) {
               for (auto& i0 : active_) {
-                std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key()};
                 const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
                 std::unique_ptr<double[]> data(new double[size]);
                 int iall = 0;
@@ -427,28 +575,34 @@ class SpinFreeMethod {
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                         // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo});
-                 rdm2_->put_block(hash, data);
+                        data[iall] = ref_->rdm2(0)->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
+                 rdm2_->put_block(data, i0, i1, i2, i3);
               }
             }
           }
         }
       }
-      // generic function??
+      // TODO generic function??
       if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
-        std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-        rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        {
+          std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
+          rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+          std::vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
+          rdm4_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(p, false));
+        }
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
-        std::shared_ptr<RDM<3> > rdm3source = ref_->compute_rdm3(0);
+        std::shared_ptr<RDM<3> > rdm3;
+        std::shared_ptr<RDM<4> > rdm4;
+        std::tie(rdm3, rdm4) = ref_->compute_rdm34(0);
+
         const int nclo = ref_->nclosed();
-        for (auto& i5 : active_) {
-          for (auto& i4 : active_) {
-            for (auto& i3 : active_) {
-              for (auto& i2 : active_) {
-                for (auto& i1 : active_) {
+        for (auto& i5 : active_)
+          for (auto& i4 : active_)
+            for (auto& i3 : active_)
+              for (auto& i2 : active_)
+                for (auto& i1 : active_)
                   for (auto& i0 : active_) {
-                    std::vector<size_t> hash = {i0.key(), i1.key(), i2.key(), i3.key(), i4.key(), i5.key()};
                     const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
                     std::unique_ptr<double[]> data(new double[size]);
                     int iall = 0;
@@ -458,182 +612,45 @@ class SpinFreeMethod {
                           for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                data[iall] = rdm3source->element({j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo});
-                    rdm3_->put_block(hash, data);
+                                data[iall] = rdm3->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
+                    rdm3_->put_block(data, i0, i1, i2, i3, i4, i5);
                   }
-                }
-              }
-            }
-          }
-        }
+        // TODO there should be a better way of doing this!!!
+        for (auto& i7 : active_)
+          for (auto& i6 : active_)
+            for (auto& i5 : active_)
+              for (auto& i4 : active_)
+                for (auto& i3 : active_)
+                  for (auto& i2 : active_)
+                    for (auto& i1 : active_)
+                      for (auto& i0 : active_) {
+                        const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size();
+                        std::unique_ptr<double[]> data(new double[size]);
+                        int iall = 0;
+                        for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7)
+                          for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6)
+                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                              for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                                        data[iall] = rdm4->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
+                    rdm4_->put_block(data, i0, i1, i2, i3, i4, i5, i6, i7);
+                  }
 
         const int nact = ref_->nact();
         std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
         for (auto& i1 : active_)
           for (auto& i0 : active_)
-            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block({i0.key(), i1.key()}));
+            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
-        // TODO to be cleaned up
-        std::shared_ptr<Matrix> rdm1mat(new Matrix(nact, nact));
-        std::shared_ptr<Matrix> rdm2mat(new Matrix(nact*nact, nact*nact));
         // TODO hardwired 0
-        std::copy_n(ref_->rdm1(0)->data(), rdm1mat->size(), rdm1mat->data());
-        std::copy_n(ref_->rdm2(0)->data(), rdm2mat->size(), rdm2mat->data());
+        std::shared_ptr<RDM<1> > rdm1(new RDM<1>(*ref_->rdm1(0)));
         std::shared_ptr<RDM<2> > rdm2(new RDM<2>(*ref_->rdm2(0)));
 
-        // aa/xx blocks
-        // metric half inverse (S^-1/2)
-        {
-          const size_t dim = nact*nact;
-          const size_t size = dim*dim;
-          shalf_xx_ = std::shared_ptr<Matrix>(new Matrix(dim, dim));
-          Matrix tmp = *rdm2mat;
-          sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), shalf_xx_->data(), nact, nact, nact, nact);
-          shalf_xx_->inverse_half(1.0e-9);
-
-          // denominator Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)
-          // first compute Gamma(x0,x1, x2,x3, x4,x5) * f(x0,x1) // TODO this should be computed directly maybe
-          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, nact*nact, 1.0, rdm3source->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-
-          // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
-          std::shared_ptr<Matrix> work4 = work2->clone();
-          sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work4->data(), nact, nact, nact, nact);
-          Matrix fss = *shalf_xx_ % *work4 * *shalf_xx_;
-          denom_xx_ = std::unique_ptr<double[]>(new double[dim]);
-          fss.diagonalize(denom_xx_.get());
-          *shalf_xx_ = fss % *shalf_xx_;
-        }
-
-        // aa/cx blocks
-        {
-          const size_t dim = nact;
-          const size_t size = dim*dim;
-          shalf_x_ = std::shared_ptr<Matrix>(new Matrix(*rdm1mat));
-          shalf_x_->inverse_half(1.0e-9);
-
-          // denominator Gamma(x0,x1, x2,x3) * f(x0,x1) * T(x2,D) * T(x3,D)
-          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, nact*nact, 1.0, rdm2->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-
-          Matrix fss = *shalf_x_ % *work2 * *shalf_x_;
-          denom_x_ = std::unique_ptr<double[]>(new double[dim]);
-          fss.diagonalize(denom_x_.get());
-          *shalf_x_ = fss % *shalf_x_;
-        }
-
-        // ax/cc blocks
-        {
-          const size_t dim = nact;
-          const size_t size = dim*dim;
-          shalf_h_ = std::shared_ptr<Matrix>(new Matrix(*rdm1mat));
-          shalf_h_->scale(-1.0);
-          shalf_h_->add_diag(2.0); //.. making hole 1RDM
-          std::shared_ptr<const Matrix> h1(new Matrix(*shalf_h_));
-          shalf_h_->inverse_half(1.0e-9);
-
-          // denominator hole(x0,x1, x2,x3) * f(x0,x1) * T(x2,D) * T(x3,D)
-          std::shared_ptr<RDM<2> > hole(new RDM<2>(*rdm2)); 
-          hole->scale(-1.0);
-          for (int i = 0; i != nact; ++i) {
-            for (int j = 0; j != nact; ++j) {
-              for (int k = 0; k != nact; ++k) {
-                // see Celani eq. A7
-                hole->element({k, i, i, j}) += h1->element(k,j);
-                hole->element({i, k, j, i}) -= rdm1mat->element(k,j);
-                hole->element({i, i, k, j}) += 2.0*rdm1mat->element(k,j);
-              }
-            }
-          }
-          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, nact*nact, 1.0, hole->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-
-          Matrix fss = *shalf_h_ % *work2 * *shalf_h_;
-          denom_h_ = std::unique_ptr<double[]>(new double[dim]);
-          fss.diagonalize(denom_h_.get());
-          *shalf_h_ = fss % *shalf_h_;
-        }
-        // xx/cc blocks
-        {
-          // overlap (2rdm size)
-          const size_t dim = nact*nact;
-          const size_t size = dim*dim;
-          std::shared_ptr<RDM<2> > ovl(new RDM<2>(*rdm2));
-          for (int i2 = 0; i2 != nact; ++i2)
-            for (int i1 = 0; i1 != nact; ++i1)
-              for (int i3 = 0; i3 != nact; ++i3)
-                for (int i0 = 0; i0 != nact; ++i0) {
-                  if (i1 == i3) ovl->element({i0, i3, i1, i2}) +=      rdm1mat->element(i0, i2); 
-                  if (i1 == i2) ovl->element({i0, i3, i1, i2}) += -2.0*rdm1mat->element(i0, i3); 
-                  if (i0 == i3) ovl->element({i0, i3, i1, i2}) += -2.0*rdm1mat->element(i1, i2); 
-                  if (i0 == i2) ovl->element({i0, i3, i1, i2}) +=      rdm1mat->element(i1, i3);
-                  if (i0 == i3 && i1 == i2) ovl->element({i0, i3, i1, i2}) +=  4.0; 
-                  if (i0 == i2 && i1 == i3) ovl->element({i0, i3, i1, i2}) += -2.0; 
-                }
-          shalf_hh_ = std::shared_ptr<Matrix>(new Matrix(dim, dim)); 
-          sort_indices<0,2,1,3,0,1,1,1>(ovl->data(), shalf_hh_->data(), nact, nact, nact, nact);
-          shalf_hh_->inverse_half(1.0e-9);
-          // denominator
-          std::shared_ptr<RDM<3> > rdm3(new RDM<3>(*rdm3source));
-          for (int i2 = 0; i2 != nact; ++i2)
-            for (int i3 = 0; i3 != nact; ++i3)
-              for (int i4 = 0; i4 != nact; ++i4)
-                for (int i1 = 0; i1 != nact; ++i1)
-                  for (int i5 = 0; i5 != nact; ++i5)
-                    for (int i0 = 0; i0 != nact; ++i0) {
-                      if (i3 == i5) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i1, i4, i0, i2});
-                      if (i3 == i4) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i5, i1, i2});
-                      if (i1 == i5) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i4, i3, i2});
-                      if (i1 == i5 && i3 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i0, i2);
-                      if (i1 == i4) rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm2->element({i0, i5, i3, i2}); 
-                      if (i1 == i4 && i3 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i0, i2);
-                      if (i1 == i2) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i0, i5, i3, i4});
-                      if (i1 == i2 && i3 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i0, i4); 
-                      if (i1 == i2 && i3 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i0, i5);
-                      if (i0 == i5) rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm2->element({i1, i4, i3, i2});
-                      if (i0 == i5 && i3 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i4);
-                      if (i1 == i2 && i0 == i5 && i3 == i4) rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0;
-                      if (i0 == i4) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i1, i5, i3, i2});
-                      if (i0 == i4 && i3 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i1, i2);
-                      if (i1 == i2 && i0 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i3, i5);
-                      if (i1 == i2 && i0 == i4 && i3 == i5) rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0;
-                      if (i0 == i2) rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm2->element({i3, i5, i1, i4});
-                      if (i0 == i2 && i3 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i1, i4);
-                      if (i0 == i2 && i3 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i1, i5);
-                      if (i1 == i5 && i0 == i2)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += rdm1mat->element(i3, i4); 
-                      if (i0 == i2 && i1 == i5 && i3 == i4) rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0;
-                      if (i0 == i2 && i1 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i5);
-                      if (i1 == i4 && i3 == i5 && i0 == i2) rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0;
-                      if (i0 == i5 && i1 == i4)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += 4.0* rdm1mat->element(i3, i2);
-                      if (i0 == i4 && i1 == i5)
-                                    rdm3->element({i0, i5, i1, i4, i3, i2}) += -2.0* rdm1mat->element(i3, i2); 
-                    }
-          // denominator rdm3(x0,x1, x2,x3, x4,x5) * f(x0,x1) * T(x2,x4; D) * T(x3, x5; D)
-          std::shared_ptr<Matrix> work2(new Matrix(dim, dim));
-          dgemv_("N", size, nact*nact, 1.0, rdm3->data(), size, fockact->data(), 1, 0.0, work2->data(), 1);
-
-          // GammaF(x2,x3, x4,x5) * T(x2,x4; D) * T(x3, x5; D)
-          std::shared_ptr<Matrix> work4 = work2->clone();
-          sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work4->data(), nact, nact, nact, nact);
-          Matrix fss = *shalf_hh_ % *work4 * *shalf_hh_;
-          denom_hh_ = std::unique_ptr<double[]>(new double[dim]);
-          fss.diagonalize(denom_hh_.get());
-          *shalf_hh_ = fss % *shalf_hh_;
-        }
+        // construct denominator
+        denom_ = std::shared_ptr<const Denom>(new Denom(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
 
       }
 

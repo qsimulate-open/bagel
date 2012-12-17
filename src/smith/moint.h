@@ -62,19 +62,13 @@ class K2ext {
       const size_t nbasis = df->nbasis0();
       assert(df->nbasis0() == df->nbasis1());
 
-      // TODO this part should be heavily parallelized
-      // Also need to think a bit on the data layout.
-      // closed loop
-      size_t cnt = blocks_[0].keyoffset();
-      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++cnt) {
-        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0->offset(), i0->size())->apply_J();
+      // occ loop
+      for (auto& i0 : blocks_[0]) {
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0.offset(), i0.size())->apply_J();
         // virtual loop
-        size_t cnt2 = blocks_[1].keyoffset();
-        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++cnt2) {
-          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1->offset(), i1->size());
-
-          std::vector<size_t> h = {{cnt, cnt2}};
-          dflist.insert(make_pair(generate_hash_key(h), df_full));
+        for (auto& i1 : blocks_[1]) {
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
+          dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
         }
       }
       return dflist;
@@ -84,51 +78,42 @@ class K2ext {
       // form four-index integrals
       // TODO this part should be heavily parallelized
       // TODO i01 < i23 symmetry should be used.
-      size_t j0 = blocks_[0].keyoffset();
-      for (auto i0 = blocks_[0].range().begin(); i0 != blocks_[0].range().end(); ++i0, ++j0) {
-        size_t j1 = blocks_[1].keyoffset();
-        for (auto i1 = blocks_[1].range().begin(); i1 != blocks_[1].range().end(); ++i1, ++j1) {
+      for (auto& i0 : blocks_[0]) {
+        for (auto& i1 : blocks_[1]) {
           // find three-index integrals
-          std::vector<size_t> i01 = {j0, j1};
-
-          auto iter01 = dflist.find(generate_hash_key(i01));
+          auto iter01 = dflist.find(generate_hash_key(i0, i1));
           assert(iter01 != dflist.end());
           std::shared_ptr<DFFullDist> df01 = iter01->second;
-          size_t hashkey01 = generate_hash_key(i01);
+          size_t hashkey01 = generate_hash_key(i0, i1);
 
-          size_t j2 = blocks_[2].keyoffset();
-          for (auto i2 = blocks_[2].range().begin(); i2 != blocks_[2].range().end(); ++i2, ++j2) {
-            size_t j3 = blocks_[3].keyoffset();
-            for (auto i3 = blocks_[3].range().begin(); i3 != blocks_[3].range().end(); ++i3, ++j3) {
+          for (auto& i2 : blocks_[2]) {
+            for (auto& i3 : blocks_[3]) {
               // find three-index integrals
-              std::vector<size_t> i23 = {j2, j3};
-
-              size_t hashkey23 = generate_hash_key(i23);
+              size_t hashkey23 = generate_hash_key(i2, i3);
               if (hashkey23 > hashkey01) continue;
 
-              auto iter23 = dflist.find(generate_hash_key(i23));
+              auto iter23 = dflist.find(generate_hash_key(i2, i3));
               assert(iter23 != dflist.end());
               std::shared_ptr<const DFFullDist> df23 = iter23->second;
 
-              const size_t size = i0->size() * i1->size() * i2->size() * i3->size();
-
               // contract
+              // TODO form_4index function now generates global 4 index tensor. This should be localized.
               std::unique_ptr<double[]> target = df01->form_4index(df23, 1.0);
 
               // move in place
               if (hashkey23 != hashkey01) {
-                std::unique_ptr<double[]> target2(new double[size]);
-                mytranspose_(target.get(), i0->size()*i1->size(), i2->size()*i3->size(), target2.get());
+                std::unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
+                mytranspose_(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
 
-                data_->put_block({j2, j3, j0, j1}, target2);
+                data_->put_block(target2, i2, i3, i0, i1);
               }
 
-              data_->put_block({j0, j1, j2, j3}, target);
+              data_->put_block(target, i0, i1, i2, i3);
             }
           }
         }
       }
-    } // vaaii_;
+    }
 
   public:
     K2ext(std::shared_ptr<const Reference> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b) : ref_(r), coeff_(c), blocks_(b) {
@@ -154,16 +139,17 @@ class MOFock {
     std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T> > data_;
+    std::shared_ptr<Tensor<T> > hcore_;
 
   public:
     MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
-      data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      data_  = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      hcore_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
 
-      // TODO parallel not considered yet at all...
-      std::shared_ptr<const Fock<1> > fock0(new Fock<1>(ref_->geom(), ref_->hcore()));
+      std::shared_ptr<const Fock<1> > hcore(new Fock<1>(ref_->geom(), ref_->hcore()));
 
       std::shared_ptr<Matrix> den;
       if (ref_->nact() == 0) {
@@ -171,13 +157,13 @@ class MOFock {
       } else {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
         std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
-        // slince of coeff
+        // slice of coeff
         std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis
         den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
       }
 
-      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), fock0, den, r->schwarz()));
+      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), hcore, den, r->schwarz()));
       const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
@@ -197,22 +183,25 @@ class MOFock {
         dgemm_("N", "N", nbasis, nvirt, nvirt, 1.0, ref_->coeff()->element_ptr(0,nocc), nbasis, fvirt->data(), nvirt, 0.0, coeff_->element_ptr(0,nocc), nbasis);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
+      const Matrix hc = *coeff_ % *hcore * *coeff_;
 
-      size_t j0 = blocks_[0].keyoffset();
       for (auto& i0 : blocks_[0]) {
-        size_t j1 = blocks_[1].keyoffset();
         for (auto& i1 : blocks_[1]) {
-          std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-          data_->put_block({j1, j0}, target);
-          ++j1;
+          {
+            std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
+            data_->put_block(target, i1, i0);
+          } {
+            std::unique_ptr<double[]> target = hc.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
+            hcore_->put_block(target, i1, i0);
+          }
         }
-        ++j0;
       }
     }
     ~MOFock() {}
 
     std::shared_ptr<Tensor<T> > data() { return data_; }
     std::shared_ptr<Tensor<T> > tensor() { return data_; }
+    std::shared_ptr<Tensor<T> > hcore() { return hcore_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 

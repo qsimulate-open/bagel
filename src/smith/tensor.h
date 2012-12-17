@@ -34,6 +34,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <type_traits>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
@@ -41,22 +42,32 @@
 namespace bagel {
 namespace SMITH {
 
-// this function should be fast
-inline static size_t generate_hash_key(const std::vector<size_t>& o) {
-  // this assumes < 256 blocks; TODO runtime determination?
-  const int shift = 8;
+// this assumes < 256 blocks; TODO runtime determination?
+const static int shift = 8;
+
+/* obsolete function */
+size_t generate_hash_key(const std::vector<size_t>& o) {
   size_t out = 0;
-  for (auto& i : o) {
+  for (auto i = o.rbegin(); i != o.rend(); ++i) {
     out <<= shift;
-    out += i;
-    assert(i < (1 << shift));
+    out += *i;
   }
   return out;
-};
+}
+
+static
+size_t generate_hash_key() { return 0; }
+
+template<class T, typename... args>
+size_t generate_hash_key(const T& head, const args&... tail) {
+  return (generate_hash_key(tail...) << shift) + head.key();
+}
+
 
 template <typename T>
 class Tensor {
   protected:
+
     std::vector<IndexRange> range_;
     std::shared_ptr<T> data_;
     int rank_;
@@ -130,6 +141,32 @@ class Tensor {
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
+    template<typename ...args>
+    std::unique_ptr<double[]> get_block(const args& ...p) const {
+      return data_->get_block(generate_hash_key(p...));
+    }
+
+    template<typename ...args>
+    std::unique_ptr<double[]> move_block(const args& ...p) const {
+      return data_->move_block(generate_hash_key(p...));
+    }
+
+    template<typename ...args>
+    void put_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+      data_->put_block(generate_hash_key(p...), o);
+    }
+
+    template<typename ...args>
+    void add_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+      data_->add_block(generate_hash_key(p...), o);
+    }
+
+    template<typename ...args>
+    size_t get_size(const args& ...p) const {
+      return data_->blocksize(generate_hash_key(p...));
+    }
+
+/****************** following functions are obsolete *************************/
     std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
       assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
       if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
@@ -170,6 +207,7 @@ class Tensor {
       assert(p.size() == rank_);
       return data_->blocksize(generate_hash_key(p));
     }
+/****************** to here *************************/
 
     void zero() {
       data_->zero();
@@ -181,12 +219,11 @@ class Tensor {
       const size_t size = range_[0].size();
       std::unique_ptr<double[]> buf(new double[size]);
       for (auto& i : range_[0]) {
-        std::vector<size_t> h = {i.key(), i.key()};
-        std::unique_ptr<double[]> data0 = move_block(h);
+        std::unique_ptr<double[]> data0 = move_block(i, i);
         for (int j = 0; j != i.size(); ++j) {
           buf[j+i.offset()] = data0[j+j*i.size()];
         }
-        put_block(h, data0);
+        put_block(data0, i, i);
       }
       return std::move(buf);
     }
@@ -200,12 +237,10 @@ class Tensor {
         for (auto& i2 : o[2].range()) {
           for (auto& i1 : o[1].range()) {
             for (auto& i0 : o[0].range()) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
-              std::vector<size_t> g = {i2.key(), i3.key(), i0.key(), i1.key()};
-              std::unique_ptr<double[]> data0 = get_block(h);
-              const std::unique_ptr<double[]> data1 = get_block(g);
+              std::unique_ptr<double[]>       data0 = get_block(i0, i1, i2, i3);
+              const std::unique_ptr<double[]> data1 = get_block(i2, i3, i0, i1);
               sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2.size(), i3.size(), i0.size(), i1.size());
-              out->put_block(h,data0);
+              out->put_block(data0, i0, i1, i2, i3);
             }
           }
         }
@@ -222,10 +257,9 @@ class Tensor {
       assert(o.size() == 2);
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          std::vector<size_t> h = {i0.key(), i1.key()};
           // if this block is not included in the current wave function, skip it
-          if (!this->get_size(h)) continue;
-          std::unique_ptr<double[]> data = this->get_block(h);
+          if (!this->get_size(i0, i1)) continue;
+          std::unique_ptr<double[]> data = this->get_block(i0, i1);
           size_t iall = 0;
           for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
@@ -250,10 +284,9 @@ class Tensor {
         for (auto& i2 : o[2].range()) {
           for (auto& i1 : o[1].range()) {
             for (auto& i0 : o[0].range()) {
-              std::vector<size_t> h = {i0.key(), i1.key(), i2.key(), i3.key()};
               // if this block is not included in the current wave function, skip it
-              if (!this->get_size(h)) continue;
-              std::unique_ptr<double[]> data = this->get_block(h);
+              if (!this->get_size(i0, i1, i2, i3)) continue;
+              std::unique_ptr<double[]> data = this->get_block(i0, i1, i2, i3);
               size_t iall = 0;
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)

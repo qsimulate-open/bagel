@@ -25,13 +25,16 @@
 
 
 #include <stddef.h>
+#include <src/rel/relshell.h>
 #include <src/rel/smallnai.h>
 #include <src/rel/smallnaibatch.h>
 
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : ZMatrix(geom->nbasis(), geom->nbasis()), geom_(geom) {
+SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
+  if (!geom->rel_initialized())
+    throw logic_error("SmallNAI called with a non-relativistic geometry object.");
 
   for (int i = 0; i != 4; ++i) {
     shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis())); 
@@ -53,7 +56,7 @@ void SmallNAI::print() const {
 }
 
 
-void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void SmallNAI::computebatch(const array<shared_ptr<const RelShell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -62,15 +65,10 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   SmallNAIBatch batch(input, geom_);
   batch.compute();
 
-  int cnt = 0;
-  for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-    for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-      dataarray_[0]->element(j,i) = batch[0]->data(cnt);
-      dataarray_[1]->element(j,i) = batch[1]->data(cnt);
-      dataarray_[2]->element(j,i) = batch[2]->data(cnt);
-      dataarray_[3]->element(j,i) = batch[3]->data(cnt);
-    }
-  }
+  dataarray_[0]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[0]);
+  dataarray_[1]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[1]);
+  dataarray_[2]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[2]);
+  dataarray_[3]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[3]);
 }
 
 
@@ -82,10 +80,10 @@ void SmallNAI::init() {
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
     // iatom0 = iatom1;
     auto offset0 = o0->begin();
-    for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
+    for (auto b0 = (*a0)->relshells().begin(); b0 != (*a0)->relshells().end(); ++b0, ++offset0) {
       auto offset1 = o0->begin();
-      for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
-        array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+      for (auto b1 = (*a0)->relshells().begin(); b1 != (*a0)->relshells().end(); ++b1, ++offset1) {
+        array<shared_ptr<const RelShell>,2> input = {{*b1, *b0}};
         computebatch(input, *offset0, *offset1);
       }
     }
@@ -93,10 +91,10 @@ void SmallNAI::init() {
     auto o1 = o0+1;
     for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
       auto offset0 = o0->begin();
-      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
+      for (auto b0 = (*a0)->relshells().begin(); b0 != (*a0)->relshells().end(); ++b0, ++offset0) {
         auto offset1 = o1->begin();
-        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
-          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+        for (auto b1 = (*a1)->relshells().begin(); b1 != (*a1)->relshells().end(); ++b1, ++offset1) {
+          array<shared_ptr<const RelShell>,2> input = {{*b1, *b0}};
           computebatch(input, *offset0, *offset1);
         }
       }

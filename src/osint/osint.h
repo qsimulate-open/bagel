@@ -57,7 +57,7 @@ class OSInt {
 
     bool swap01_;
 
-    SortList sort_;
+    const SortList sort_;
 
     const int deriv_rank_;
     size_t size_alloc_;

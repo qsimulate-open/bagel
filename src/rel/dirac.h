@@ -44,18 +44,24 @@ class Dirac : public SCF_base {
     // nonrelativistic integrals
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Matrix> nai_;
-    const std::shared_ptr<const ZMatrix> smallnai_;
+    const std::shared_ptr<const SmallNAI> smallnai_;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-     : SCF_base(idata_, geom, re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
+     : SCF_base(idata_, geom->relativistic(), re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
     }
     ~Dirac() {};
 
     void compute() override;
 
+    std::shared_ptr<ZMatrix> hcore_construct(const int);
+
+    std::shared_ptr<ZMatrix> s12_construct(const int);
+
     std::shared_ptr<Reference> conv_to_ref() const override;
+
+    void print_eig(const int, const std::unique_ptr<double[]>&);
 
 };
 

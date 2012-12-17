@@ -235,10 +235,15 @@ pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<
 
 
 shared_ptr<Matrix> DFDist::compute_Jop(const double* den) const {
+  return compute_Jop(shared_from_this(), den);
+}
+
+
+shared_ptr<Matrix> DFDist::compute_Jop(const std::shared_ptr<const ParallelDF> o, const double* den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = compute_cd(den);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  shared_ptr<ParaMatrix> out = block_->form_mat(tmp0.get()+block_->astart());
+  shared_ptr<ParaMatrix> out = o->block()->form_mat(tmp0.get()+block_->astart());
   // all reduce
   out->allreduce();
   return out;

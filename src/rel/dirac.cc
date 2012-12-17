@@ -34,30 +34,85 @@ using namespace bagel;
 
 void Dirac::compute() {
   const int n = geom_->nbasis();
-  const double c = c__;
-  const double w = 0.25/(c*c);
 
-  kinetic_->print("kinetic");
-  nai_->print("nai");
+  shared_ptr<ZMatrix> hcore = hcore_construct(n);
+  shared_ptr<ZMatrix> s12 = s12_construct(n);
 
-  shared_ptr<Matrix> hcore(new Matrix(2*n, 2*n));
-
-  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
-  hcore->copy_block(0, 0, n, n, nai_);
-  hcore->copy_block(0, n, n, n, kinetic_);
-  hcore->copy_block(n, 0, n, n, kinetic_);
-  hcore->copy_block(n, n, n, n, shared_ptr<Matrix>(new Matrix(*nai_*w - *kinetic_)));
-  
+  ZMatrix interm = *s12 % *hcore * *s12;
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
-  hcore->diagonalize(eig.get()); 
-  
-  hcore->print("hcore");
+  interm.diagonalize(eig.get()); 
 
-  for (int i = 0; i != 2*n; ++i) cout << setprecision(10) << setw(15) << eig[i] << endl;
+  print_eig(n, eig);
 }
 
+//Print non dirac sea eigenvalues
+void Dirac::print_eig(const int n, const unique_ptr<double[]>& eig) {
+  for (int i = 2*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig[i] << endl;
+}
 
 shared_ptr<Reference> Dirac::conv_to_ref() const {
   assert(false);
   return shared_ptr<Reference>();
+}
+
+shared_ptr<ZMatrix> Dirac::hcore_construct(const int n) {
+  const double c = c__;
+  const complex<double> w(0.25/(c*c), 0.0);
+
+  const complex<double> coeff1 (1.0, 0.0);
+  const complex<double> coeffi (0.0, 1.0);
+
+  shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
+  shared_ptr<ZMatrix> znai(new ZMatrix(2*n, 2*n));
+  shared_ptr<ZMatrix> zkinetic(new ZMatrix(2*n, 2*n));
+
+  array<shared_ptr<ZMatrix>,4> zsmallnai;
+  for (auto& i : zsmallnai)
+    i = znai->clone(); 
+
+  znai->copy_real_block(coeff1, 0, 0, n, n, nai_);
+  znai->copy_real_block(coeff1, n, n, n, n, nai_);
+  zkinetic->copy_real_block(coeff1, 0, 0, n, n, kinetic_);
+  zkinetic->copy_real_block(coeff1, n, n, n, n, kinetic_);
+
+  zsmallnai[0]->copy_real_block(coeff1, 0, 0, n, n, (*smallnai_)[0]);
+  zsmallnai[0]->copy_real_block(coeff1, n, n, n, n, (*smallnai_)[0]);
+  zsmallnai[1]->copy_real_block(coeffi, 0, 0, n, n, (*smallnai_)[1]);
+  zsmallnai[1]->copy_real_block(-coeffi, n, n, n, n, (*smallnai_)[1]);
+  zsmallnai[2]->copy_real_block(coeffi, 0, n, n, n, (*smallnai_)[2]);
+  zsmallnai[2]->copy_real_block(coeffi, n, 0, n, n, (*smallnai_)[2]);
+  zsmallnai[3]->copy_real_block(coeff1, 0, n, n, n, (*smallnai_)[3]);
+  zsmallnai[3]->copy_real_block(-coeff1, n, 0, n, n, (*smallnai_)[3]);
+
+  shared_ptr<ZMatrix> smallnai(new ZMatrix(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]));
+
+  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
+  out->zero();
+  out->copy_block(0, 0, 2*n, 2*n, znai);
+  out->copy_block(0, 2*n, 2*n, 2*n, zkinetic);
+  out->copy_block(2*n, 0, 2*n, 2*n, zkinetic);
+  out->copy_block(2*n, 2*n, 2*n, 2*n, shared_ptr<ZMatrix>(new ZMatrix(*smallnai * w - *zkinetic)));
+
+  return out;
+}
+
+shared_ptr<ZMatrix> Dirac::s12_construct(const int n) {
+  const double c = c__;
+  const double t = 0.5/(c*c);
+  const complex<double> coeff1 (1.0, 0.0);
+
+  shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
+  shared_ptr<Overlap> ovl(new Overlap(*overlap_));
+
+  shared_ptr<Matrix> k12(new Matrix(*kinetic_ * t));
+  ovl->inverse_half();
+  k12->inverse_half();
+
+  out->zero();
+  out->copy_real_block(coeff1, 0, 0, n, n, ovl);
+  out->copy_real_block(coeff1, n, n, n, n, ovl);
+  out->copy_real_block(coeff1, 2*n, 2*n, n, n, k12); 
+  out->copy_real_block(coeff1, 3*n, 3*n, n, n, k12); 
+
+  return out;
 }

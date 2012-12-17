@@ -161,12 +161,12 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
   shared_ptr<RDM<1> > ra(new RDM<1>(nocc));
   shared_ptr<RDM<1> > rb(new RDM<1>(nocc));
   r->zero();
-  for (int i = 0; i != nocc; ++i) r->element({i,i}) = occup[i] * (-1.0);
+  for (int i = 0; i != nocc; ++i) r->element(i,i) = occup[i] * (-1.0);
 
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j != nocc; ++j) {
-      ra->element({j,i}) = amat->element(j,i) * 0.5;
-      rb->element({j,i}) = bmat->element(j,i) * 0.5;
+      ra->element(j,i) = amat->element(j,i) * 0.5;
+      rb->element(j,i) = bmat->element(j,i) * 0.5;
     }
   }
 

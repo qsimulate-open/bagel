@@ -66,12 +66,11 @@ void Fock_base::fock_one_electron_part() {
       Matrix tmp = symm % (*this) * symm;
       intermediate += tmp;
     }
-    double* idata = intermediate.data();
-    daxpy_(size, 1.0, idata, 1, data(), 1);
-    dscal_(size, 1.0/nirrep, data(), 1);
+    *this += intermediate;
+    *this *= 1.0/nirrep;
   }
-  const double* previous_data = previous_->data();
-  daxpy_(size, 1.0, previous_data, 1, data(), 1);
+
+  *this += *previous_;
 
   fill_upper();
 }

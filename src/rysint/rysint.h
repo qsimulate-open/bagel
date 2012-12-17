@@ -31,8 +31,6 @@
 
 #include <stddef.h>
 #include <src/rysint/vrrlist.h>
-#include <src/rysint/hrrlist.h>
-#include <src/rysint/sortlist.h>
 #include <src/scf/shell.h>
 #include <src/parallel/resources.h>
 #include <tuple>
@@ -70,9 +68,7 @@ class RysInt {
     int deriv_rank_;
     int tenno_;
 
-    std::shared_ptr<HRRList> hrr_;
     std::shared_ptr<VRRListBase> vrr_;
-    std::shared_ptr<SortList> sort_;
 
     double *data_;
     double *data2_;

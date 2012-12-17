@@ -513,10 +513,10 @@ void Geometry::merge_obs_aux() {
 vector<double> Geometry::xyz() const {
   vector<double> out;
   out.reserve(3*natom());
-  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
-    out.push_back((*i)->position(0));
-    out.push_back((*i)->position(1));
-    out.push_back((*i)->position(2));
+  for (auto& i : atoms_) {
+    out.push_back(i->position(0));
+    out.push_back(i->position(1));
+    out.push_back(i->position(2));
   }
   return out;
 }
@@ -524,11 +524,11 @@ vector<double> Geometry::xyz() const {
 array<double,3> Geometry::charge_center() const {
   array<double,3> out{{0.0, 0.0, 0.0}};
   double sum = 0.0;
-  for (auto i = atoms_.begin(); i != atoms_.end(); ++i) {
-    out[0] += (*i)->atom_charge() * (*i)->position(0);
-    out[1] += (*i)->atom_charge() * (*i)->position(1);
-    out[2] += (*i)->atom_charge() * (*i)->position(2);
-    sum += (*i)->atom_charge();
+  for (auto& i : atoms_) {
+    out[0] += i->atom_charge() * i->position(0);
+    out[1] += i->atom_charge() * i->position(1);
+    out[2] += i->atom_charge() * i->position(2);
+    sum += i->atom_charge();
   }
   out[0] /= sum;
   out[1] /= sum;
@@ -612,8 +612,8 @@ class Node {
 
     void add_connected(const std::shared_ptr<Node> i) {
       std::weak_ptr<Node> in = i;
-      for (auto iter = connected_.begin(); iter != connected_.end(); ++iter)
-        if (iter->lock() == i) throw logic_error("Node::add_connected");
+      for (auto& iter : connected_)
+        if (iter.lock() == i) throw logic_error("Node::add_connected");
       connected_.push_back(in);
     };
 
@@ -622,16 +622,16 @@ class Node {
 
     std::set<std::shared_ptr<Node> > common_center(const std::shared_ptr<Node> o) const {
       std::set<std::shared_ptr<Node> > out;
-      for (auto c = connected_.begin(); c != connected_.end(); ++c) {
-        if (c->lock()->connected_with(o)) out.insert(c->lock());
+      for (auto& c : connected_) {
+        if (c.lock()->connected_with(o)) out.insert(c.lock());
       }
       return out;
     };
 
     bool connected_with(const std::shared_ptr<Node> o) {
       bool out = false;
-      for (auto i = connected_.begin(); i != connected_.end(); ++i) {
-        if (i->lock() == o) {
+      for (auto& i : connected_) {
+        if (i.lock() == o) {
           out = true;
           break;
         }
@@ -835,4 +835,18 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   }
 
   return array<unique_ptr<double[]>,2>{{move(bnew), move(bdmnew)}};
+}
+
+
+shared_ptr<const Geometry> Geometry::relativistic() const {
+  // basically the same
+  shared_ptr<Geometry> geom(new Geometry(*this));
+
+  // except for atoms_->shells
+  vector<shared_ptr<const Atom> > atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->relativistic());
+  geom->atoms_ = atom;
+
+  return geom;
 }

@@ -27,12 +27,10 @@
 #define __BAGEL_FCI_FCI_H
 
 #include <tuple>
-#include <src/scf/scf.h>
 #include <cassert>
 #include <iostream>
 #include <memory>
 #include <bitset>
-#include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>

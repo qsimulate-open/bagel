@@ -78,9 +78,10 @@ class ZMatrix {
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
-    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
-    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
-    void copy_real_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
+    // copy a block from a Matrix object to ZMatrix object and mutliply by coefficient coeff. If type = 0, coeff is purely real, else purely imaginary
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
 
     ZMatrix operator*(const ZMatrix&) const;
     ZMatrix& operator*=(const ZMatrix&);
@@ -133,8 +134,8 @@ class ZMatrix {
     std::unique_ptr<std::complex<double>[]> diag() const;
 
     void fill(const std::complex<double> a) { std::fill(data(), data()+ndim_*mdim_, a); }
-    void zero() { fill(0.0); }
-    void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
+    void zero() { fill(std::complex<double>(0.0, 0.0)); }
+    void unit() { fill(std::complex<double>(0.0, 0.0)); for (int i = 0; i != ndim_; ++i) element(i,i) = std::complex<double>(1.0, 0.0); assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 
     void purify_unitary();
@@ -143,9 +144,10 @@ class ZMatrix {
 
     std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix> > o);
 
-    void print(const std::string in = "", const int size = 10) const;
+    // first parameter must be "R", "I", or "T" to print real part, imaginary part, or total
+    void print(const std::string, const std::string in = "", const int size = 10) const;
 
-    std::shared_ptr<ZMatrix> convert_real(std::shared_ptr<Matrix>);
+    std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
 };
 
 }

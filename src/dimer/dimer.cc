@@ -27,7 +27,6 @@
 
 #include <src/scf/geometry.h>
 #include <src/scf/coeff.h>
-#include <src/scf/matrix1e.h>
 #include <src/scf/overlap.h>
 #include <src/scf/fock.h>
 #include <src/fci/harrison.h>

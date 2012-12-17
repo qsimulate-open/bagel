@@ -32,9 +32,11 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
-#include <initializer_list>
-#include <src/scf/matrix1e.h>
+#include <stdexcept>
+#include <type_traits>
+#include <src/scf/geometry.h>
 #include <src/util/f77.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
@@ -49,48 +51,40 @@ class RDM_base {
     RDM_base(const int n, const int rank);
     RDM_base(const RDM_base& o);
 
-    double* first() { return data(); };
-    double* data() { return data_.get(); };
-    const double* data() const { return data_.get(); };
+    double* first() { return data(); }
+    double* data() { return data_.get(); }
+    const double* data() const { return data_.get(); }
 
-    void zero() { std::fill(data(), data()+dim_*dim_, 0.0); };
-    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); };
-    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); };
-    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); };
+    void zero() { std::fill(data(), data()+dim_*dim_, 0.0); }
+    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); }
+    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); }
+    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
     size_t size() const { return dim_*dim_; }
 
-    double& element(const std::initializer_list<int>& list) {
-      assert(rank_*2 == list.size());
-      size_t address = 0;
-      size_t unit = 1LU;
-      for (auto& i : list) {
-        address += i*unit;
-        unit *= norb_;
-      }
-      return data_[address];
-    };
-    const double& element(const std::initializer_list<int>& list) const {
-      assert(rank_*2 == list.size());
-      size_t address = 0;
-      size_t unit = 1LU;
-      for (auto& i : list) {
-        address += i*unit;
-        unit *= norb_;
-      }
-      return data_[address];
-    };
-
-    std::vector<double> diag() const {
-      std::vector<double> out(dim_);
-      for (int i = 0; i != dim_; ++i) out[i] = element({i,i});
-      return out;
-    };
+    int norb() const { return norb_; }
 
 };
 
 
 template <int rank>
 class RDM : public RDM_base {
+  protected:
+    // T should be able to be multiplied by norb_
+    template<int i, typename T, typename ...args>
+    size_t address_(const T& head, const args&... tail) const {
+      static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
+      T out = head;
+      for (int j = 0; j != i; ++j) out *= norb_; 
+      return out + address_<i+1>(tail...);
+    }
+    template<int i, typename T>
+    size_t address_(const T& head) const {
+      static_assert(i+1 == rank*2 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
+      T out = head;
+      for (int j = 0; j != i; ++j) out *= norb_; 
+      return out;
+    }
+
   public:
     RDM(const int n) : RDM_base(n, rank) { };
     RDM(const RDM& o) : RDM_base(o) {};
@@ -98,13 +92,20 @@ class RDM : public RDM_base {
 
     std::shared_ptr<RDM<rank> > clone() const { return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_)); };
 
+    template<typename ...args>
+    double& element(const args&... index) { return data_[address_<0>(index...)]; }
+
+    template<typename ...args>
+    const double& element(const args&... index) const { return data_[address_<0>(index...)]; }
+
+
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
       if (rank != 1) throw std::logic_error("RDM::natural_orbitals() is implemented only for rank 1");
       const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
       const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1);
       return ::fabs(a-b) < 1.0e-12;
-    };
+    }
 
 
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
@@ -114,9 +115,9 @@ class RDM : public RDM_base {
         for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
       for (int i = 0; i != norb_; ++i)
         for (int j = 0; j != norb_; ++j)
-          out->element(j+nclosed, i+nclosed) = element({j,i});
+          out->element(j+nclosed, i+nclosed) = element(j,i);
       return out;
-    };
+    }
 
     std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
       static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
@@ -131,7 +132,7 @@ class RDM : public RDM_base {
       assert(!info);
       for (auto& i : vec) i = 2.0-i;
       return std::make_pair(buf, vec);
-    };
+    }
 
     void transform(const std::vector<double>& coeff) {
       const double* start = &(coeff[0]);
@@ -155,24 +156,33 @@ class RDM : public RDM_base {
       } else {
         assert(false);
       }
-    };
+    }
 
+    std::vector<double> diag() const {
+      std::vector<double> out(dim_);
+      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
+      return out;
+    }
+
+
+    // What is the best way to implement this for general rank??
     void print(const double thresh = 1.0e-3) const {
       static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
+      const double* ptr = data_.get();
       if (rank == 1) {
         for (int i = 0; i != norb_; ++i) {
-          for (int j = 0; j != norb_; ++j)
-            std::cout << std::setw(12) << std::setprecision(7) << element({j,i});
+          for (int j = 0; j != norb_; ++j, ++ptr)
+            std::cout << std::setw(12) << std::setprecision(7) << *ptr;
           std::cout << std::endl;
         }
       } else if (rank == 2) {
         for (int i = 0; i != norb_; ++i) {
           for (int j = 0; j != norb_; ++j) {
             for (int k = 0; k != norb_; ++k) {
-              for (int l = 0; l != norb_; ++l) {
-                if (std::abs(element({l,k,j,i})) > thresh) std::cout << std::setw(3) << l << std::setw(3)
+              for (int l = 0; l != norb_; ++l, ++ptr) {
+                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << element({l,k,j,i}) << std::endl;
+                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
         } } } }
       } else if (rank == 3) {
         for (int i = 0; i != norb_; ++i) {
@@ -180,13 +190,13 @@ class RDM : public RDM_base {
             for (int k = 0; k != norb_; ++k) {
               for (int l = 0; l != norb_; ++l) {
               for (int m = 0; m != norb_; ++m) {
-              for (int n = 0; n != norb_; ++n) {
-                if (std::abs(element({n,m,l,k,j,i})) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
+              for (int n = 0; n != norb_; ++n, ++ptr) {
+                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
                       << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << element({n,m,l,k,j,i}) << std::endl;
+                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
         } } } } } }
       }
-    };
+    }
 };
 
 }

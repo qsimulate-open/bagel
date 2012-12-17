@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "hrrlist.h"
+#include <src/rysint/hrrlist.h>
 #include <array>
 #include <algorithm>
 

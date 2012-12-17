@@ -85,10 +85,10 @@ class JKop {
       for (int i = 0; i != nclosed; ++i) {
         for (int j = 0; j != nact; ++j) {
           for (int k = 0; k != nact; ++k) {
-            rdm2all[i+nocc*(i+nocc*(k+nclosed+nocc*(j+nclosed)))] += rdm1_av->element({k,j}) * 2.0;
-            rdm2all[k+nclosed+nocc*(j+nclosed+nocc*(i+nocc*(i)))] += rdm1_av->element({k,j}) * 2.0;
-            rdm2all[i+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i)))] -= rdm1_av->element({k,j});
-            rdm2all[k+nclosed+nocc*(i+nocc*(i+nocc*(j+nclosed)))] -= rdm1_av->element({k,j});
+            rdm2all[i+nocc*(i+nocc*(k+nclosed+nocc*(j+nclosed)))] += rdm1_av->element(k,j) * 2.0;
+            rdm2all[k+nclosed+nocc*(j+nclosed+nocc*(i+nocc*(i)))] += rdm1_av->element(k,j) * 2.0;
+            rdm2all[i+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i)))] -= rdm1_av->element(k,j);
+            rdm2all[k+nclosed+nocc*(i+nocc*(i+nocc*(j+nclosed)))] -= rdm1_av->element(k,j);
           }
         }
       }
@@ -121,7 +121,7 @@ class JKop {
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j, icnt += nbasis_*nbasis_) {
           if (i >= nclosed && j >= nclosed) {
-            daxpy_(nbasis_*nbasis_, rdm1_av->element({static_cast<int>(j-nclosed),static_cast<int>(i-nclosed)}), hcore->data(), 1, data_.get()+icnt, 1);
+            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1);
           } else if (i == j) {
             daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_.get()+icnt, 1);
           }

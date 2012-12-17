@@ -63,24 +63,14 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
   {
     KineticBatch kinetic(input);
     kinetic.compute();
-    const double* kdata = kinetic.data();
-    int cnt = 0;
-    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] = kdata[cnt];
-      }
-    }
+
+    copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
     NAIBatch nai(input, geom_);
     nai.compute();
-    const double* ndata = nai.data();
-    int cnt = 0;
-    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
-      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] += ndata[cnt];
-      }
-    }
+
+    add_block(offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
   if (geom_->external()) {
@@ -88,6 +78,7 @@ void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, con
     dipole.compute();
     const size_t block = dipole.size_block();
     const double* dip = dipole.data();
+
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
