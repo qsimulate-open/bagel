@@ -8,5 +8,3 @@ _carsph_00.cc _carsph_10.cc _carsph_20.cc _carsph_30.cc _carsph_40.cc _carsph_50
 _eriroot_1.f _eriroot_2.f _eriroot_3.f _eriroot_4.f _eriroot_5.f _eriroot_6.f _eriroot_7.f _eriroot_8.f _eriroot_9.f _eriroot_10.f _eriroot_11.f _eriroot_12.f _eriroot_13.f \
 erirootlist.cc
 AM_CXXFLAGS=-I$(top_srcdir)
-
-#mpreal.cc rys_gmp.cc
