@@ -31,6 +31,8 @@
 #include <stdexcept>
 #include <memory>
 
+#include <boost/lexical_cast.hpp>
+
 #include <src/scf/overlap.h>
 #include <src/scf/coeff.h>
 #include <src/scf/geometry.h>
@@ -302,6 +304,25 @@ int main(int argc, char** argv) {
         ref = dimer->sref();
         
       #endif
+      } else if (method == "localize") {
+        if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
+
+        std::string localizemethod = read_input<std::string>(iter->second,"algorithm", "pm");
+        std::shared_ptr<OrbitalLocalization> localization;
+        if (localizemethod == "region") {
+          std::vector<int> sizes;
+          auto bound = iter->second.equal_range("region");
+          for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(boost::lexical_cast<int>(isizes->second));
+
+          localization = std::shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
+        }
+        else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
+          localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
+        else throw std::runtime_error("Unrecognized orbital localization method");
+
+        std::shared_ptr<const Coeff> new_coeff = localization->localize();
+        ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
+        
       } else if (method == "print") {
 
         std::multimap<std::string, std::string> pdata = iter->second;

@@ -81,8 +81,6 @@ class PMLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int> > atom_bounds_;
 
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<Matrix> S_;
 
   public:
