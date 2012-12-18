@@ -97,17 +97,18 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
 }
 
 int main() {
+
+  mpfr::mpreal pi = GMPPI;
   mpfr::mpreal::set_default_prec(GMPPREC);
   vector<double> nbox_(14);
   for (int nroot=1; nroot!=14; ++nroot) { 
     nbox_[nroot] = 32;
   } 
 
-#if 1
   for (int nroot=1; nroot!=14; ++nroot) { // this is the outer most loop.
-#else
-  for (int nroot=1; nroot!=2; ++nroot) { // this is the outer most loop.
-#endif
+    vector<double> aroot;
+    vector<double> aweight;
+#ifndef BREIT
     // first obtain asymptotics
     const int n=nroot*2;
 
@@ -117,50 +118,52 @@ int main() {
     for (int i=0; i!= n; ++i) {
       a[i+i*n] = 0.0; 
       if (i > 0) { 
-        a[(i-1)+i*n] = ::sqrt((double)(i)*0.5);
-        a[i+(i-1)*n] = ::sqrt((double)(i)*0.5);
+        const double ia = static_cast<double>(i);
+        a[(i-1)+i*n] = ::sqrt(ia*0.5);
+        a[i+(i-1)*n] = ::sqrt(ia*0.5);
       }
     }
     int nn = n*5;
     int info = 0;
     dsyev_("v", "U", &n, a, &n, b, c, &nn, &info); 
-
-    // asymmtotic formula
-#if 0
-    vector<mpfr::mpreal> ta;
-    for (int i = 0; i != 100; ++i) ta.push_back(i+1);
-    vector<mpfr::mpreal> dx(ta.size() * nroot);
-    vector<mpfr::mpreal> dw(ta.size() * nroot);
-    mpfr::mpreal small("1e-16");
-    rysroot_gmp(ta, dx, dw, nroot, ta.size());
-    for (int i = 0; i != 100; ++i) {
-      for (int j = 0; j != nroot; ++j) {
-        if (abs(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*sqrt(GMPPI/ta[i])-dw[i*nroot+j]) > small) goto line1; 
-      }
-      cout << setw(10) << "nroot :" << setw(2) << nroot <<
-              setw(10) << i << " " << fixed << setprecision(15) << setw(20) << (double)dx[i*nroot] << " " << setw(20) << (double)dw[i*nroot] <<
-              setw(20) << b[nroot]*b[nroot]/(double)(ta[i]) << " " << setw(20)<<
-                          (double)((a[nroot*(nroot*2)]*a[nroot*(nroot*2)])*sqrt(GMPPI/ta[i])) <<endl;
-      break;
-line1:
-      int k; // dummy
+    for (int j = 0; j != nroot; ++j) {
+      aroot.push_back((double)(b[nroot+j]*b[nroot+j]));
+      aweight.push_back((double)(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*sqrt(pi)));
+    }
+#else
+    const mpreal t = 1000;
+    const mpreal s = 2000;
+    vector<mpreal> dx(nroot*2);
+    vector<mpreal> dw(nroot*2);
+    vector<mpreal> tt(1, t); tt.push_back(s);
+    rysroot_gmp(tt, dx, dw, nroot, 2);
+    for (int j = 0; j != nroot; ++j) {
+      assert(fabs(dx[j]*t - dx[j+nroot]*s) < 1.0e-16);
+      assert(fabs(dw[j]*sqrt(t) - dw[j+nroot]*sqrt(s)) < 1.0e-16);
+      aroot.push_back((double)dx[j]*t);
+      aweight.push_back((double)dw[j]*sqrt(t));
     }
 #endif
+
     const int ndeg = NGRID;
     const int nbox = nbox_[nroot];
     const int jend = nbox;
     const double stride = (double)MAXT/(double)nbox;
     ofstream ofs; 
-    string filename = "_eriroot_" + lexical_cast<string>(nroot) + ".f";
+#ifndef BREIT
+    const string func = "eriroot";
+#else
+    const string func = "breitroot";
+#endif
+    string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".f";
     ofs.open(filename.c_str());
     ofs << "\
 !/\n\
 !/ Author : Toru Shiozaki\n\
 !/ Machine generated code\n\
 !/" << endl;
-    mpfr::mpreal pi = GMPPI;
     ofs << "\
-      subroutine eriroot" + lexical_cast<string>(nroot) + "(ta, rr, ww, n)\n\
+      subroutine " + func + lexical_cast<string>(nroot) + "(ta, rr, ww, n)\n\
       implicit none\n\
       integer i, j, n, offset, it, boxof\n\
       double precision t, t2, d, e, f, g\n\
@@ -170,7 +173,7 @@ line1:
       data (ax(i), i = 1, "<<nroot<<")/\n";
     for (int j=0; j!= nroot; ++j) {
       ofs << "\
-     &   " << scientific << setprecision(15) << setw(20) << (double)(b[nroot+j]*b[nroot+j]);
+     &   " << scientific << setprecision(15) << setw(20) << aroot[j];
       if (j != nroot-1) ofs << ",";
       ofs << endl;
     }
@@ -179,7 +182,7 @@ line1:
       data (aw(i), i = 1, "<<nroot<<")/\n";
     for (int j=0; j!= nroot; ++j) {
       ofs << "\
-     &   " << scientific << setprecision(15) << setw(20) << (double)(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*sqrt(pi));
+     &   " << scientific << setprecision(15) << setw(20) << aweight[j]; 
       if (j != nroot-1) ofs << ",";
       ofs << endl;
     }
