@@ -43,22 +43,25 @@ using namespace std;
 * Orthogonalize based on regions - follows the implementation in                    *
 *   de Silva, Giebultowski, Korchowiec, PCCP 2011, 14, 546–552                      *
 ************************************************************************************/
-RegionLocalization::RegionLocalization(shared_ptr<const Geometry> geom, shared_ptr<Matrix> density, vector<pair<int, int> > atom_bounds)
-   : OrbitalLocalization(geom, density) {
-  for (pair<int,int>& ibound : atom_bounds) {
-    int start = geom_->offset(ibound.first).front();
-    int end = (((ibound.second+1) >= (geom_->natom())) ? geom_->nbasis() : geom_->offset(ibound.second+1).front() );
+void RegionLocalization::common_init(vector<int> sizes) {
+  int natom = 0;
+  for (auto& isize : sizes) {
+    int start = geom_->offset(natom).front();
+    int end = (((natom + isize) >= (geom_->natom())) ? geom_->nbasis() : geom_->offset(natom + isize).front() );
     bounds_.push_back(make_pair(start, end));
+
+    natom += isize;
   }
+
+  sqrt_S_ = shared_ptr<Matrix>(new Overlap(geom_)); sqrt_S_->sqrt();
+  S_inverse_half_ = shared_ptr<Matrix>(new Overlap(geom_)); S_inverse_half_->inverse_half();
 }
 
-shared_ptr<Matrix> RegionLocalization::localize() {
+shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density) {
   const int nbasis = geom_->nbasis();
 
-  Overlap sqrt_S(geom_); sqrt_S.sqrt();
-
   // Symmetric orthogonalized density matrix
-  shared_ptr<Matrix> ortho_density(new Matrix( sqrt_S * (*density_) * sqrt_S ));
+  shared_ptr<Matrix> ortho_density(new Matrix( (*sqrt_S_) * (*density) * (*sqrt_S_) ));
 
   // transform will hold the eigenvectors of each block
   shared_ptr<Matrix> T(new Matrix(nbasis, nbasis));
@@ -81,8 +84,6 @@ shared_ptr<Matrix> RegionLocalization::localize() {
 
   *ortho_density = (*T) % (*ortho_density) * (*T);
 
-  // Set up for Jacobi rotations. Maybe this is general enough to have its own utility?
-
   // U matrix will collect the transformations. It should start as the identity.
   shared_ptr<Matrix> U(new Matrix(nbasis, nbasis)); U->add_diag(1.0);
 
@@ -97,7 +98,7 @@ shared_ptr<Matrix> RegionLocalization::localize() {
     }
   }
 
-  // Starting rotations. For now, let's see if one sweep suffices.
+  // Starting rotations
   {
     shared_ptr<JacobiDiag> jacobi(new JacobiDiag(ortho_density,U));
 
@@ -113,10 +114,9 @@ shared_ptr<Matrix> RegionLocalization::localize() {
 
   // TODO: here would be the stage 2 jacobi sweeps. This would be necessary for covalently bound regions.
 
-  Overlap S_inverse_half(geom_); S_inverse_half.inverse_half();
 
   // Reorder so that the occupied orbitals come first, separated by fragment
-  shared_ptr<Matrix> tmp(new Matrix(S_inverse_half * (*T) * (*U)));
+  shared_ptr<Matrix> tmp(new Matrix((*S_inverse_half_) * (*T) * (*U)));
 
   shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
 
@@ -139,9 +139,37 @@ shared_ptr<Matrix> RegionLocalization::localize() {
   return out;
 }
 
-PMLocalization::PMLocalization(shared_ptr<const Geometry> geom, shared_ptr<const Coeff> coeff, const int norb) :
-  OrbitalLocalization(geom, shared_ptr<Matrix>(new Matrix(*coeff))), coeff_(coeff), norb_(norb) {
-  
+shared_ptr<const Coeff> RegionLocalization::localize(const double thresh) {
+  const int nbasis = geom_->nbasis();
+
+  shared_ptr<const Coeff> out;
+
+  shared_ptr<Matrix> closed_coeff = localize_space(coeff_->form_density_rhf(nclosed_));
+  if (nact_ == 0) { // In this case, I'm done
+    out = shared_ptr<const Coeff>(new const Coeff(*closed_coeff));
+  }
+  else {
+    shared_ptr<Matrix> tmp(new Matrix(nbasis, nbasis));
+
+    vector<double> active_weights(nbasis, 0.0);
+    fill_n(active_weights.begin() + nclosed_, nact_, 1.0);
+    shared_ptr<Matrix> active_coeff = localize_space(coeff_->form_weighted_density_rhf(nclosed_+nact_, active_weights));
+
+    vector<double> virt_weights(nbasis, 0.0);
+    fill(virt_weights.begin() + nclosed_ + nact_, virt_weights.begin() + nbasis, 1.0);
+    shared_ptr<Matrix> virt_coeff = localize_space(coeff_->form_weighted_density_rhf(nbasis, virt_weights));
+
+    tmp->copy_block(0, 0, nbasis, nclosed_, closed_coeff);
+    tmp->copy_block(0, nclosed_, nbasis, nact_, active_coeff);
+    tmp->copy_block(0, nclosed_ + nact_, nbasis, nbasis - (nclosed_ + nact_), virt_coeff);
+
+    out = shared_ptr<const Coeff>(new const Coeff(*tmp));
+  }
+
+  return out;
+}
+
+void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
   S_ = shared_ptr<Matrix>(new Overlap(geom));
 
   vector<vector<int> > offsets = geom->offsets();
@@ -155,37 +183,68 @@ PMLocalization::PMLocalization(shared_ptr<const Geometry> geom, shared_ptr<const
   }
 }
 
-shared_ptr<Matrix> PMLocalization::localize() {
-  shared_ptr<JacobiPM> jacobi(new JacobiPM(density_, norb_, S_, atom_bounds_));
-
+shared_ptr<const Coeff> PMLocalization::localize(const double thresh) {
+  shared_ptr<Matrix> new_coeff(new Matrix(*coeff_));
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
+
+  // Localize occupied space
+  cout << "  Localizing occupied space" << endl;
+  localize_space(new_coeff, 0, nclosed_);
+
+  // If there is an active space, localize it
+  if (nact_ != 0) {
+    cout << "  Localizing active space" << endl;
+    localize_space(new_coeff, nclosed_, nact_);
+  }
+  else {
+    cout << "  No active space to localize" << endl << endl;
+  }
+    
+
+  // If there is virtual left, localize it
+  const int nvirt = geom_->nbasis() - (nact_ + nclosed_);
+  if ( nvirt != 0 ) {
+    cout << "  Localizing virtual space" << endl;
+    localize_space(new_coeff, nclosed_ + nact_, nvirt);
+  }
+  else {
+    cout << "  No virtual space to localize" << endl << endl;
+  }
+
+  shared_ptr<const Coeff> out(new const Coeff(*new_coeff));
+
+  return out;
+}
+
+void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, const int norb) {
+  shared_ptr<JacobiPM> jacobi(new JacobiPM(coeff, nstart, norb, S_, atom_bounds_));
+
   cout << "Iteration          P              dP" << endl;
 
-  double P = calc_P();
+  double P = calc_P(coeff, nstart, norb);
 
   cout << setw(3) << 0 << setw(16) << setprecision(10) << P << endl;
 
   for(int iter = 0; iter < 10; ++iter) {
     jacobi->sweep();
 
-    double tmp_P = calc_P();
+    double tmp_P = calc_P(coeff, nstart, norb);
     cout << setw(3) << iter+1 << setw(16) << setprecision(10) << tmp_P
                               << setw(16) << setprecision(10) << tmp_P - P << endl;
     P = tmp_P;
   }
-
-  return density_;
+  cout << endl;
 }
 
-double PMLocalization::calc_P() const {
+double PMLocalization::calc_P(shared_ptr<Matrix> coeff, const int nstart, const int norb) const {
   double out = 0.0;
 
-  const int nbasis = density_->ndim();
-  for(int imo = 0; imo < norb_; ++imo) {
+  const int nbasis = coeff->ndim();
+  for(int imo = nstart; imo < (norb + nstart); ++imo) {
     for(auto& ibounds : atom_bounds_) {
       double QA = 0.0;
       for(int iao = ibounds.first; iao < ibounds.second; ++iao) {
-        QA += density_->element(iao,imo) * ddot_(nbasis, density_->element_ptr(0,imo), 1, S_->element_ptr(0,iao), 1);
+        QA += coeff->element(iao,imo) * ddot_(nbasis, coeff->element_ptr(0,imo), 1, S_->element_ptr(0,iao), 1);
       }
       out += QA*QA;
     }

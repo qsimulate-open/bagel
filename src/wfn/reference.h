@@ -46,7 +46,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // Geometry which this wave function is beloinging to
     const std::shared_ptr<const Geometry> geom_;
     // MO coefficients
-    const std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const Coeff> coeff_;
     // in case of spin-broken wave functions (UHF)
     std::shared_ptr<const Coeff> coeffA_;
     std::shared_ptr<const Coeff> coeffB_;
@@ -86,6 +86,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     std::shared_ptr<const Hcore> hcore() const { return hcore_; }
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+
+    void set_coeff(std::shared_ptr<const Coeff> coeff) { coeff_ = coeff; }
+    void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::shared_ptr<const Coeff>(new const Coeff(*matrix)); }
 
     void set_eig(const std::vector<double>& eig);
     const std::vector<double>& eig() const { return eig_; }

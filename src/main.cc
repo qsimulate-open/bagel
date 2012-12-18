@@ -290,15 +290,18 @@ int main(int argc, char** argv) {
         geom = dimer->sgeom();
         ref = dimer->sref();
 
+      #if 0
       } else if (method == "dimer-scf") {
-        
-        if(!static_cast<bool>(dimer)) throw std::runtime_error("dimerize section must appear before dimer-scf.");
 
         scf = std::shared_ptr<DimerSCF>(new DimerSCF(iter->second, dimer));
         scf->compute();
         ref = scf->conv_to_ref();
         dimer->set_sref(ref);
 
+        geom = dimer->sgeom();
+        ref = dimer->sref();
+        
+      #endif
       } else if (method == "print") {
 
         std::multimap<std::string, std::string> pdata = iter->second;

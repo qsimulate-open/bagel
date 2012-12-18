@@ -37,8 +37,8 @@ using namespace std;
 using namespace bagel;
 
 void Jacobi_base::sweep() {
-  for(int i = 0; i < mdim_; ++i) {
-    for(int j = 0; j < i; ++j) {
+  for(int i = nstart_; i < (norb_ + nstart_); ++i) {
+    for(int j = nstart_; j < i; ++j) {
       rotate(i,j);
     }
   }

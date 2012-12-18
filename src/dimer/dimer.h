@@ -35,6 +35,7 @@
 #include <src/fci/dvec.h>
 #include <src/fci/space.h>
 #include <src/util/matrix.h>
+#include <src/util/localization.h>
 
 namespace bagel {
 
@@ -101,6 +102,10 @@ class Dimer {
         scoeff_ = std::shared_ptr<Coeff>(new Coeff(*ref->coeff()));
         sref_ = std::shared_ptr<Reference>(new Reference(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt()));
       }
+      void set_coeff(std::shared_ptr<const Coeff> coeff) {
+        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*coeff));
+        sref_->set_coeff(coeff);
+      };
 
       std::pair<const int, const int> nbasis() const {return nbasis_; };
       std::pair<const int, const int> ncore() const { return ncore_; };
@@ -115,10 +120,9 @@ class Dimer {
 
       // Calculations
       void hamiltonian();
-      void energy(); // A rather naive, probably temporary, function for computing the energy
       void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
       
-      void localize();
+      void localize(std::multimap<std::string, std::string> idata);
 
    private:
       void construct_geometry();
