@@ -36,11 +36,13 @@ namespace bagel {
 
 class ERIBatch_base : public RysInt{
   protected:
+    const bool breit_;
+
     void root_weight(const int ps);
     void compute_ssss(const double);
 
   public:
-    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv) : RysInt(o) {
+    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const bool breit = false) : RysInt(o), breit_(breit) {
       const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
       deriv_rank_ = deriv;
 

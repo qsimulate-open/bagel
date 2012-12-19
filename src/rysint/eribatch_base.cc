@@ -27,7 +27,7 @@
 #include <src/rysint/inline.h>
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
-#include <src/rysint/f77.h>
+#include <src/rysint/erirootlist.h>
 #include <src/util/constants.h>
 #include <algorithm>
 #include <cmath>
@@ -36,50 +36,56 @@
 using namespace std;
 using namespace bagel;
 
+const static ERIRootList eri;
 
 static const double pitwohalf__ = pow(pi__, 2.5);
 static const double pimhalf__ = 1.0/sqrt(pi__);
-
 static const double T_thresh__ = 1.0e-8;
 
 void ERIBatch_base::root_weight(const int ps) {
-  if (amax_ + cmax_ == 0) {
-    for (int j = 0; j != screening_size_; ++j) {
-      int i = screening_[j];
-      if (T_[i] < T_thresh__) {
-        weights_[i] = 1.0;
-      } else {
-        const double sqrtt = ::sqrt(T_[i]);
-        const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
+  if (!breit_) {
+    if (amax_ + cmax_ == 0) {
+      for (int j = 0; j != screening_size_; ++j) {
+        int i = screening_[j];
+        if (T_[i] < T_thresh__) {
+          weights_[i] = 1.0;
+        } else {
+          const double sqrtt = ::sqrt(T_[i]);
+          const double erfsqt = inline_erf(sqrtt);
+          weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
+        }
       }
+    } else {
+      eri.root(rank_, T_, roots_, weights_, ps);
     }
-  } else if (rank_ == 1) {
-    eriroot1_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 2) {
-    eriroot2_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 3) {
-    eriroot3_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 4) {
-    eriroot4_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 5) {
-    eriroot5_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 6) {
-    eriroot6_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 7) {
-    eriroot7_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 8) {
-    eriroot8_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 9) {
-    eriroot9_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 10) {
-    eriroot10_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 11) {
-    eriroot11_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 12) {
-    eriroot12_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 13) {
-    eriroot13_(T_, roots_, weights_, &ps);
+  } else {
+    if (rank_ == 1) {
+      breitroot1_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 2) {
+      breitroot2_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 3) {
+      breitroot3_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 4) {
+      breitroot4_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 5) {
+      breitroot5_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 6) {
+      breitroot6_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 7) {
+      breitroot7_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 8) {
+      breitroot8_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 9) {
+      breitroot9_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 10) {
+      breitroot10_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 11) {
+      breitroot11_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 12) {
+      breitroot12_(T_, roots_, weights_, &ps);
+    } else if (rank_ == 13) {
+      breitroot13_(T_, roots_, weights_, &ps);
+    }
   }
 }
 
@@ -95,32 +101,8 @@ void NAIBatch_base::root_weight(const int ps) {
         weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
       }
     }
-  } else if (rank_ == 1) {
-    eriroot1_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 2) {
-    eriroot2_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 3) {
-    eriroot3_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 4) {
-    eriroot4_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 5) {
-    eriroot5_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 6) {
-    eriroot6_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 7) {
-    eriroot7_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 8) {
-    eriroot8_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 9) {
-    eriroot9_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 10) {
-    eriroot10_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 11) {
-    eriroot11_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 12) {
-    eriroot12_(T_, roots_, weights_, &ps);
-  } else if (rank_ == 13) {
-    eriroot13_(T_, roots_, weights_, &ps);
+  } else {
+    eri.root(rank_, T_, roots_, weights_, ps);
   }
 }
 

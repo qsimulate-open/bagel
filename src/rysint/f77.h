@@ -42,6 +42,19 @@ extern "C" {
  void eriroot11_(const double*, double*, double*, const int*);
  void eriroot12_(const double*, double*, double*, const int*);
  void eriroot13_(const double*, double*, double*, const int*);
+ void breitroot1_(const double*, double*, double*, const int*);
+ void breitroot2_(const double*, double*, double*, const int*);
+ void breitroot3_(const double*, double*, double*, const int*);
+ void breitroot4_(const double*, double*, double*, const int*);
+ void breitroot5_(const double*, double*, double*, const int*);
+ void breitroot6_(const double*, double*, double*, const int*);
+ void breitroot7_(const double*, double*, double*, const int*);
+ void breitroot8_(const double*, double*, double*, const int*);
+ void breitroot9_(const double*, double*, double*, const int*);
+ void breitroot10_(const double*, double*, double*, const int*);
+ void breitroot11_(const double*, double*, double*, const int*);
+ void breitroot12_(const double*, double*, double*, const int*);
+ void breitroot13_(const double*, double*, double*, const int*);
 };
 
 #endif
