@@ -28,6 +28,7 @@
 #include <src/rysint/eribatch_base.h>
 #include <src/rysint/naibatch_base.h>
 #include <src/rysint/erirootlist.h>
+#include <src/rysint/breitrootlist.h>
 #include <src/util/constants.h>
 #include <algorithm>
 #include <cmath>
@@ -37,6 +38,7 @@ using namespace std;
 using namespace bagel;
 
 const static ERIRootList eri;
+const static BreitRootList breit;
 
 static const double pitwohalf__ = pow(pi__, 2.5);
 static const double pimhalf__ = 1.0/sqrt(pi__);
@@ -59,33 +61,15 @@ void ERIBatch_base::root_weight(const int ps) {
       eri.root(rank_, T_, roots_, weights_, ps);
     }
   } else {
-    if (rank_ == 1) {
-      breitroot1_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 2) {
-      breitroot2_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 3) {
-      breitroot3_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 4) {
-      breitroot4_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 5) {
-      breitroot5_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 6) {
-      breitroot6_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 7) {
-      breitroot7_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 8) {
-      breitroot8_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 9) {
-      breitroot9_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 10) {
-      breitroot10_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 11) {
-      breitroot11_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 12) {
-      breitroot12_(T_, roots_, weights_, &ps);
-    } else if (rank_ == 13) {
-      breitroot13_(T_, roots_, weights_, &ps);
+#if 0
+    if (amax_ + cmax_ == 0) {
+      ...
+    } else {
+#endif
+      breit.root(rank_, T_, roots_, weights_, ps);
+#if 0
     }
+#endif
   }
 }
 

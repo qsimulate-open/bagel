@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: erirootlist.h
+// Filename: breitrootlist.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,33 +24,33 @@
 //
 
 
-#ifndef __SRC_RYSINT_ERIROOTLIST_H
-#define __SRC_RYSINT_ERIROOTLIST_H
+#ifndef __SRC_RYSINT_BREITROOTLIST_H
+#define __SRC_RYSINT_BREITROOTLIST_H
 
 #include <src/rysint/macros.h>
 #include <src/rysint/f77.h>
 
 namespace bagel {
 
-struct ERIRootList  {
+struct BreitRootList  {
   private:
     void (*rfunc[RYS_MAX + 1])(const double*, double*, double*, const int*);
 
   public:
-    ERIRootList() {
-      rfunc[1] = &eriroot1_;
-      rfunc[2] = &eriroot2_;
-      rfunc[3] = &eriroot3_;
-      rfunc[4] = &eriroot4_;
-      rfunc[5] = &eriroot5_;
-      rfunc[6] = &eriroot6_;
-      rfunc[7] = &eriroot7_;
-      rfunc[8] = &eriroot8_;
-      rfunc[9] = &eriroot9_;
-      rfunc[10] = &eriroot10_;
-      rfunc[11] = &eriroot11_;
-      rfunc[12] = &eriroot12_;
-      rfunc[13] = &eriroot13_;
+    BreitRootList() {
+      rfunc[1] = &breitroot1_;
+      rfunc[2] = &breitroot2_;
+      rfunc[3] = &breitroot3_;
+      rfunc[4] = &breitroot4_;
+      rfunc[5] = &breitroot5_;
+      rfunc[6] = &breitroot6_;
+      rfunc[7] = &breitroot7_;
+      rfunc[8] = &breitroot8_;
+      rfunc[9] = &breitroot9_;
+      rfunc[10] = &breitroot10_;
+      rfunc[11] = &breitroot11_;
+      rfunc[12] = &breitroot12_;
+      rfunc[13] = &breitroot13_;
     }
 
     void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { (rfunc[i])(a1, a2, a3, &a4); }
