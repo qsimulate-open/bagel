@@ -61,7 +61,6 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal twoU = U + U;
       mpreal g_tu_1 = U == zero ? zero : prefactor / sqrtu * (erfck + erfcl); 
       g_tu[0] = prefactor / sqrtt * (erfck - erfcl); 
-      mone = g_tu[0];
       g_tu[1] = halfpT * (g_tu[0] + twoU * g_tu_1 - expmt);
       const int gtuend = 2 * nrank + 2; // +2 due to Breit (the last entry is not needed for ERI)
       for (int i = 2; i != gtuend; ++i) {
@@ -72,6 +71,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       for (int i = 0; i != gtuend-1; ++i)
         g_tu[i] = g_tu[i+1];
 #endif
+      mone = g_tu[0];
     }  
 
 

@@ -96,6 +96,30 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
   return c;
 }
 
+extern "C" {
+  void breitroot3_(double*, double*, double*, const int*);
+}
+
+bool test() {
+  // testing with rank 3
+  const static int nrank = 3;
+  const static int nsize = 1;
+  vector<mpreal> tt(nsize, 32.4);
+  vector<mpreal> rr(nsize*nrank);
+  vector<mpreal> ww(nsize*nrank);
+  rysroot_gmp(tt, rr, ww, nrank, nsize); 
+
+  double dt[nsize] = {(double)(tt[0])};
+  double dr[nsize*nrank];
+  double dw[nsize*nrank];
+  breitroot3_(dt, dr, dw, &nsize);
+  for (int i = 0; i != nrank; ++i) {
+    assert(fabs(dr[i] - (double)(rr[i])) < 1.0e-15);
+    assert(fabs(dw[i] - (double)(ww[i])) < 1.0e-15);
+  }
+  cout << "test passed" << endl;
+}
+
 int main() {
 
   mpfr::mpreal pi = GMPPI;
@@ -139,9 +163,9 @@ int main() {
     rysroot_gmp(tt, dx, dw, nroot, 2);
     for (int j = 0; j != nroot; ++j) {
       assert(fabs(dx[j]*t - dx[j+nroot]*s) < 1.0e-16);
-      assert(fabs(dw[j]*sqrt(t) - dw[j+nroot]*sqrt(s)) < 1.0e-16);
+      assert(fabs(dw[j]*t*sqrt(t) - dw[j+nroot]*s*sqrt(s)) < 1.0e-16);
       aroot.push_back((double)dx[j]*t);
-      aweight.push_back((double)dw[j]*sqrt(t));
+      aweight.push_back((double)dw[j]*t*sqrt(t));
     }
 #endif
 
@@ -241,7 +265,7 @@ int main() {
         else if (t >= " << MAXT << ".0d0) then\n\
           t = 1.0d0/dsqrt(t)\n\
           rr(offset+1:offset+" << nroot << ") = ax(1:" << nroot << ")*t*t\n\
-          ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*t\n\
+          ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*t*t*t\n\
         else\n\
           it = int(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< "d0)\n\
           t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << "d0)\n     &     *"
