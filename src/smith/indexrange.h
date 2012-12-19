@@ -50,6 +50,10 @@ class Index {
     size_t size() const { return size_; };
     size_t key() const { return key_; };
 
+    bool operator==(const Index& o) const {
+      return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
+    };
+    // I think this version is not needed.
     bool operator==(const Index& o) {
       return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
     };
