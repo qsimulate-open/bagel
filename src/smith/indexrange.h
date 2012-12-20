@@ -53,10 +53,6 @@ class Index {
     bool operator==(const Index& o) const {
       return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
     };
-    // I think this version is not needed.
-    bool operator==(const Index& o) {
-      return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
-    };
 };
 
 class IndexRange {
