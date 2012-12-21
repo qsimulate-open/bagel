@@ -139,7 +139,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   return out;
 }
 
-shared_ptr<const Coeff> RegionLocalization::localize(const double thresh) {
+shared_ptr<const Coeff> RegionLocalization::localize(const int iter, const double thresh) {
   const int nbasis = geom_->nbasis();
 
   shared_ptr<const Coeff> out;
@@ -183,7 +183,9 @@ void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
   }
 }
 
-shared_ptr<const Coeff> PMLocalization::localize(const double thresh) {
+shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double thresh) {
+  iter_ = iter; thresh_ = thresh;
+
   shared_ptr<Matrix> new_coeff(new Matrix(*coeff_));
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
 
@@ -212,6 +214,7 @@ shared_ptr<const Coeff> PMLocalization::localize(const double thresh) {
   }
 
   shared_ptr<const Coeff> out(new const Coeff(*new_coeff));
+  coeff_ = out;
 
   return out;
 }
@@ -225,18 +228,23 @@ void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, 
 
   cout << setw(3) << 0 << setw(16) << setprecision(10) << P << endl;
 
-  for(int iter = 0; iter < 10; ++iter) {
+  for(int i = 0; i < iter_; ++i) {
     jacobi->sweep();
 
     double tmp_P = calc_P(coeff, nstart, norb);
-    cout << setw(3) << iter+1 << setw(16) << setprecision(10) << tmp_P
-                              << setw(16) << setprecision(10) << tmp_P - P << endl;
+    double dP = tmp_P - P;
+    cout << setw(3) << i+1 << setw(16) << setprecision(10) << tmp_P
+                           << setw(16) << setprecision(10) << dP << endl;
     P = tmp_P;
+    if (abs(dP)/P < thresh_) {
+      cout << "Converged!" << endl;
+      break;
+    }
   }
   cout << endl;
 }
 
-double PMLocalization::calc_P(shared_ptr<Matrix> coeff, const int nstart, const int norb) const {
+double PMLocalization::calc_P(shared_ptr<const Matrix> coeff, const int nstart, const int norb) const {
   double out = 0.0;
 
   const int nbasis = coeff->ndim();
@@ -251,4 +259,8 @@ double PMLocalization::calc_P(shared_ptr<Matrix> coeff, const int nstart, const 
   }
 
   return out;
+}
+
+double PMLocalization::metric() const {
+  return calc_P(coeff_, 0, nclosed_);
 }

@@ -320,7 +320,10 @@ int main(int argc, char** argv) {
           localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
         else throw std::runtime_error("Unrecognized orbital localization method");
 
-        std::shared_ptr<const Coeff> new_coeff = localization->localize();
+        const int max_iter = read_input<int>(iter->second,"max_iter", 50);
+        const double thresh = read_input<double>(iter->second,"thresh", 1.0e-6);
+
+        std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
         ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
         
       } else if (method == "print") {
