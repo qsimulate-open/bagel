@@ -73,7 +73,3 @@ Int2D::Int2D(const array<double,11>& dparam, const double* roots, const int rank
 }
 
 
-Int2D::~Int2D() {
-
-}
-

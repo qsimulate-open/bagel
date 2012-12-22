@@ -56,19 +56,17 @@ class Int2D {
 
     Int2D(const std::array<double, 11>&, const double*, const int, const int, double*,
           void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*));
-    Int2D() {};
-    ~Int2D();
 
-    const double* data() const { return data_; };
-    int datasize() const { return datasize_; };
+    const double* data() const { return data_; }
+    int datasize() const { return datasize_; }
 
     void scale_data(const double* a, const double c) {
       scale_.scalefunc[rank_](data_, a, c, data_, datasize_);
-    };
+    }
 
     void scale_data_t(double* target, const double* a, const double c) {
       scale_.scalefunc[rank_](target, a, c, data_, datasize_);
-    };
+    }
 };
 
 }
