@@ -72,7 +72,7 @@ class GradBatch : public ERIBatch_base {
     GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);
     ~GradBatch();
 
-    void compute();
+    void compute() override;
 
 };
 

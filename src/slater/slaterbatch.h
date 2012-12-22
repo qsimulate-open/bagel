@@ -87,7 +87,7 @@ class SlaterBatch : public RysInt {
     ~SlaterBatch();
 
     /// compute a batch of integrals
-    void compute();
+    void compute() override;
 
 };
 

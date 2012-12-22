@@ -53,7 +53,7 @@ class ERIBatch : public ERIBatch_base {
     ERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true);
 
     /// compute a batch of integrals
-    virtual void compute();
+    void compute() override;
 
 };
 

@@ -38,5 +38,3 @@ BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const doub
 
 }
 
-
-void BreitBatch::compute() {}

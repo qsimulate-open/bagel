@@ -44,7 +44,7 @@ class NAIBatch : public NAIBatch_base {
      ~NAIBatch() {};
 
     /// compute a batch of integrals
-    void compute();
+    void compute() override;
 
 };
 
