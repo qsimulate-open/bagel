@@ -33,29 +33,33 @@ using namespace std;
 using namespace bagel;
 
 void Dirac::compute() {
-  const int n = geom_->nbasis();
 
-  shared_ptr<ZMatrix> hcore = hcore_construct(n);
-  shared_ptr<ZMatrix> s12 = s12_construct(n);
+  shared_ptr<ZMatrix> hcore = hcore_construct();
+  shared_ptr<ZMatrix> s12 = s12_construct();
 
   ZMatrix interm = *s12 % *hcore * *s12;
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
   interm.diagonalize(eig.get()); 
 
-  print_eig(n, eig);
+  print_eig(eig);
 }
 
+
 //Print non dirac sea eigenvalues
-void Dirac::print_eig(const int n, const unique_ptr<double[]>& eig) {
+void Dirac::print_eig(const unique_ptr<double[]>& eig) {
+  const int n = geom_->nbasis();
   for (int i = 2*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig[i] << endl;
 }
+
 
 shared_ptr<Reference> Dirac::conv_to_ref() const {
   assert(false);
   return shared_ptr<Reference>();
 }
 
-shared_ptr<ZMatrix> Dirac::hcore_construct(const int n) {
+
+shared_ptr<ZMatrix> Dirac::hcore_construct() {
+  const int n = geom_->nbasis();
   const double c = c__;
   const complex<double> w(0.25/(c*c), 0.0);
 
@@ -96,7 +100,9 @@ shared_ptr<ZMatrix> Dirac::hcore_construct(const int n) {
   return out;
 }
 
-shared_ptr<ZMatrix> Dirac::s12_construct(const int n) {
+
+shared_ptr<ZMatrix> Dirac::s12_construct() {
+  const int n = geom_->nbasis();
   const double c = c__;
   const double t = 0.5/(c*c);
   const complex<double> coeff1 (1.0, 0.0);

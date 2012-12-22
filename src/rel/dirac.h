@@ -46,6 +46,9 @@ class Dirac : public SCF_base {
     const std::shared_ptr<const Matrix> nai_;
     const std::shared_ptr<const SmallNAI> smallnai_;
 
+    std::shared_ptr<ZMatrix> hcore_construct();
+    std::shared_ptr<ZMatrix> s12_construct();
+
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
@@ -55,13 +58,9 @@ class Dirac : public SCF_base {
 
     void compute() override;
 
-    std::shared_ptr<ZMatrix> hcore_construct(const int);
-
-    std::shared_ptr<ZMatrix> s12_construct(const int);
-
     std::shared_ptr<Reference> conv_to_ref() const override;
 
-    void print_eig(const int, const std::unique_ptr<double[]>&);
+    void print_eig(const std::unique_ptr<double[]>&);
 
 };
 
