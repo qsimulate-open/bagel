@@ -27,12 +27,7 @@
 #ifndef __SRC_DF_FIT_H
 #define __SRC_DF_FIT_H
 
-#include <memory>
 #include <src/df/df.h>
-#include <src/rysint/eribatch.h>
-#include <src/slater/slaterbatch.h>
-#include <src/grad/gradbatch.h>
-#include <src/slater/slaterbatch.h>
 
 #define ERIFit DFDist
 // just to make it compiled

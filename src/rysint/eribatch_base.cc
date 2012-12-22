@@ -29,6 +29,7 @@
 #include <src/rysint/naibatch_base.h>
 #include <src/rysint/erirootlist.h>
 #include <src/rysint/breitrootlist.h>
+#include <src/rysint/breitbatch.h>
 #include <src/util/constants.h>
 #include <algorithm>
 #include <cmath>
@@ -38,11 +39,42 @@ using namespace std;
 using namespace bagel;
 
 const static ERIRootList eri;
-const static BreitRootList breit;
+const static BreitRootList br;
 
 static const double pitwohalf__ = pow(pi__, 2.5);
 static const double pimhalf__ = 1.0/sqrt(pi__);
 static const double T_thresh__ = 1.0e-8;
+
+
+ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv)
+ : RysInt(o), breit_(dynamic_cast<BreitBatch*>(this)) {
+
+  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+  deriv_rank_ = deriv;
+
+  // determins if we want to swap shells
+  set_swap_info(true);
+
+  // stores AB and CD
+  set_ab_cd();
+
+  // set primsize_ and contsize_, as well as relevant members
+  set_prim_contsizes();
+
+  // sets angular info
+  int asize_final, csize_final, asize_final_sph, csize_final_sph;
+  tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
+
+  // allocate
+  allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
+  allocate_arrays(primsize_);
+
+  compute_ssss(integral_thresh);
+
+  root_weight(primsize_);
+
+}
+
 
 void ERIBatch_base::root_weight(const int ps) {
   if (!breit_) {
@@ -66,7 +98,7 @@ void ERIBatch_base::root_weight(const int ps) {
       ...
     } else {
 #endif
-      breit.root(rank_, T_, roots_, weights_, ps);
+      br.root(rank_, T_, roots_, weights_, ps);
 #if 0
     }
 #endif

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: eribatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: breitbatch.cc
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,15 +23,18 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/rysint/eribatch.h>
+#include <src/slater/svrrlist.h>
+#include <src/rysint/breitbatch.h>
 
 using namespace std;
 using namespace bagel;
 
 
-ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
-:  ERIBatch_base(_info, max_density, 0) {
-  vrr_ = shared_ptr<VRRListBase>(new VRRList());
+BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
+:  ERIBatch_base(_info, max_density, 1) {
+  vrr_ = shared_ptr<VRRListBase>(new SVRRList());
 
 }
 
+
+void BreitBatch::compute() {}

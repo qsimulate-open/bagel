@@ -37,7 +37,7 @@ using namespace bagel;
 
 static const Comb comb;
 
-inline size_t GradBatch::m(int i, int a, int b, int c, int d) {
+inline size_t GradBatch::m(int i, int a, int b, int c, int d) const {
   const int la = basisinfo_[0]->angular_number()+2;
   const int lb = basisinfo_[1]->angular_number()+2;
   const int lc = basisinfo_[2]->angular_number()+2;

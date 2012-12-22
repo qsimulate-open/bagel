@@ -59,7 +59,7 @@ class GradBatch : public ERIBatch_base {
 
     void set_exponents();
     std::unique_ptr<double[]> exponents_;
-    size_t m(const int, const int, const int, const int, const int);
+    size_t m(const int, const int, const int, const int, const int) const;
 
   public:
     GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);

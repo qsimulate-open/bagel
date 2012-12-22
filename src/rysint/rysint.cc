@@ -221,6 +221,7 @@ void RysInt::allocate_arrays(const size_t ps) {
   }
 }
 
+
 // TODO this is not a good design. Should refactor at certain point using virtual functions...
 void RysInt::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
@@ -238,10 +239,13 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
 
   // derivative integrals
   } else if (deriv_rank_ == 1) {
-    // if this is a two-electron gradient integral
     size_block_ = asize_final * csize_final * primsize_;
-    if (dynamic_cast<ERIBatch_base*>(this)) {
+    // if this is a two-electron gradient integral
+    if (dynamic_cast<ERIBatch_base*>(this) && !dynamic_cast<ERIBatch_base*>(this)->breit()) {
       size_alloc_ = 12 * size_block_;
+    // if this is a two-electron Breit integral
+    } else if (dynamic_cast<ERIBatch_base*>(this) && dynamic_cast<ERIBatch_base*>(this)->breit()) {
+      size_alloc_ = 6 * size_block_;
     // if this is an NAI gradient integral
     } else if (dynamic_cast<NAIBatch_base*>(this)) {
       // in this case, we store everything

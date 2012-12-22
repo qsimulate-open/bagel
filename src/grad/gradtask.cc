@@ -27,6 +27,7 @@
 #include <stddef.h>
 #include <array>
 #include <src/grad/gradeval_base.h>
+#include <src/grad/gradbatch.h>
 #include <src/grad/gradfile.h>
 #include <src/grad/gnaibatch.h>
 #include <src/grad/goverlapbatch.h>

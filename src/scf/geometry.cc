@@ -34,6 +34,7 @@
 #include <chrono>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
+#include <src/rysint/eribatch.h>
 #include <src/scf/geometry.h>
 #include <src/scf/atommap.h>
 #include <src/io/moldenin.h>

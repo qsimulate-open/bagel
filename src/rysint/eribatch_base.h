@@ -42,33 +42,9 @@ class ERIBatch_base : public RysInt{
     void compute_ssss(const double);
 
   public:
-    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const bool breit = false) : RysInt(o), breit_(breit) {
-      const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
-      deriv_rank_ = deriv;
+    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv);
 
-      // determins if we want to swap shells
-      set_swap_info(true);
-
-      // stores AB and CD
-      set_ab_cd();
-
-      // set primsize_ and contsize_, as well as relevant members
-      set_prim_contsizes();
-
-      // sets angular info
-      int asize_final, csize_final, asize_final_sph, csize_final_sph;
-      std::tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
-
-      // allocate
-      allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
-      allocate_arrays(primsize_);
-
-      compute_ssss(integral_thresh);
-
-      root_weight(primsize_);
-
-    };
-    ~ERIBatch_base() {};
+    bool breit() const { return breit_; }
 
 };
 
