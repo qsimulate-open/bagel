@@ -154,10 +154,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
     for (int iz = 0; iz <= i; ++iz) {
       for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
-        if (ix >= 0) {
-          cmapping_[ix + cmax1_ * (iy + cmax1_ * iz)] = cnt;
-          ++cnt;
-        }
+        if (ix >= 0)
+          cmapping_[ix + cmax1_ * (iy + cmax1_ * iz)] = cnt++;
       }
     }
   }
@@ -166,10 +164,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
     for (int jz = 0; jz <= j; ++jz) {
       for (int jy = 0; jy <= j - jz; ++jy) {
         const int jx = j - jy - jz;
-        if (jx >= 0){
-          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt;
-          ++cnt;
-        }
+        if (jx >= 0)
+          amapping_[jx + amax1_ * (jy + amax1_ * jz)] = cnt++;
       }
     }
   }

@@ -33,20 +33,21 @@ namespace bagel {
 class BreitBatch : public ERIBatch_base {
 
   protected:
+    void perform_VRR();
 #if 0
-    void perform_BVRR1();
-    void perform_BVRR2();
-    void perform_BVRR3();
-    void perform_BVRR4();
-    void perform_BVRR5();
-    void perform_BVRR6();
-    void perform_BVRR7();
-    void perform_BVRR8();
-    void perform_BVRR9();
-    void perform_BVRR10();
-    void perform_BVRR11();
-    void perform_BVRR12();
-    void perform_BVRR13();
+    void perform_VRR1();
+    void perform_VRR2();
+    void perform_VRR3();
+    void perform_VRR4();
+    void perform_VRR5();
+    void perform_VRR6();
+    void perform_VRR7();
+    void perform_VRR8();
+    void perform_VRR9();
+    void perform_VRR10();
+    void perform_VRR11();
+    void perform_VRR12();
+    void perform_VRR13();
 #endif
 
   public:
