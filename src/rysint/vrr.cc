@@ -60,7 +60,7 @@ void ERIBatch::perform_VRR4() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 4;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -85,9 +85,9 @@ void ERIBatch::perform_VRR4() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 4 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 4 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 4; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -95,7 +95,7 @@ void ERIBatch::perform_VRR4() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 4 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(4, iyiz, 1, workx+offsetx, 1);
@@ -139,7 +139,7 @@ void ERIBatch::perform_VRR5() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 5;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -164,9 +164,9 @@ void ERIBatch::perform_VRR5() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 5 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 5 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 5; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -174,7 +174,7 @@ void ERIBatch::perform_VRR5() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 5 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(5, iyiz, 1, workx+offsetx, 1);
@@ -218,7 +218,7 @@ void ERIBatch::perform_VRR6() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 6;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -243,9 +243,9 @@ void ERIBatch::perform_VRR6() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 6 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 6 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 6; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -253,7 +253,7 @@ void ERIBatch::perform_VRR6() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 6 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(6, iyiz, 1, workx+offsetx, 1);
@@ -297,7 +297,7 @@ void ERIBatch::perform_VRR7() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 7;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -322,9 +322,9 @@ void ERIBatch::perform_VRR7() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 7 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 7 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 7; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -332,7 +332,7 @@ void ERIBatch::perform_VRR7() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 7 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(7, iyiz, 1, workx+offsetx, 1);
@@ -376,7 +376,7 @@ void ERIBatch::perform_VRR8() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 8;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -401,9 +401,9 @@ void ERIBatch::perform_VRR8() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 8 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 8 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 8; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -411,7 +411,7 @@ void ERIBatch::perform_VRR8() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 8 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(8, iyiz, 1, workx+offsetx, 1);
@@ -455,7 +455,7 @@ void ERIBatch::perform_VRR9() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 9;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -480,9 +480,9 @@ void ERIBatch::perform_VRR9() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 9 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 9 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 9; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -490,7 +490,7 @@ void ERIBatch::perform_VRR9() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 9 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(9, iyiz, 1, workx+offsetx, 1);
@@ -534,7 +534,7 @@ void ERIBatch::perform_VRR10() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 10;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -559,9 +559,9 @@ void ERIBatch::perform_VRR10() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 10 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 10 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 10; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -569,7 +569,7 @@ void ERIBatch::perform_VRR10() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 10 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(10, iyiz, 1, workx+offsetx, 1);
@@ -613,7 +613,7 @@ void ERIBatch::perform_VRR11() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 11;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -638,9 +638,9 @@ void ERIBatch::perform_VRR11() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 11 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 11 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 11; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -648,7 +648,7 @@ void ERIBatch::perform_VRR11() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 11 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(11, iyiz, 1, workx+offsetx, 1);
@@ -692,7 +692,7 @@ void ERIBatch::perform_VRR12() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 12;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -717,9 +717,9 @@ void ERIBatch::perform_VRR12() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 12 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 12 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 12; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -727,7 +727,7 @@ void ERIBatch::perform_VRR12() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 12 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(12, iyiz, 1, workx+offsetx, 1);
@@ -771,7 +771,7 @@ void ERIBatch::perform_VRR13() {
   const double dz = basisinfo_[3]->position(2);
   for (int j = 0; j != screening_size_; ++j) {
     int ii = screening_[j];
-    int offset = ii * rank_;
+    int offset = ii * 13;
     int data_offset_ii = ii * acsize;
 
     double* current_data = &data_[data_offset_ii];
@@ -796,9 +796,9 @@ void ERIBatch::perform_VRR13() {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
         const int iyz = cmax1_ * (iy + cmax1_ * iz);
         for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = rank_ * (amax1_ * iz + jz);
+          const int offsetz = 13 * (amax1_ * iz + jz);
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = rank_ * (amax1_ * iy + jy);
+            const int offsety = 13 * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
             for (int i = 0; i != 13; ++i)
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];
@@ -806,7 +806,7 @@ void ERIBatch::perform_VRR13() {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = rank_ * (amax1_ * ix + jx);
+                const int offsetx = 13 * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
                 current_data[ijposition] = ddot_(13, iyiz, 1, workx+offsetx, 1);

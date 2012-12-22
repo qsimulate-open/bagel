@@ -86,7 +86,7 @@ void ERIBatch::perform_VRR" + rank + "() {\n\
   const double dz = basisinfo_[3]->position(2);\n\
   for (int j = 0; j != screening_size_; ++j) {\n\
     int ii = screening_[j];\n\
-    int offset = ii * rank_;\n\
+    int offset = ii * " + rank + ";\n\
     int data_offset_ii = ii * acsize;\n\
 \n\
     double* current_data = &data_[data_offset_ii];\n\
@@ -111,9 +111,9 @@ void ERIBatch::perform_VRR" + rank + "() {\n\
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {\n\
         const int iyz = cmax1_ * (iy + cmax1_ * iz);\n\
         for (int jz = 0; jz <= amax_; ++jz) {\n\
-          const int offsetz = rank_ * (amax1_ * iz + jz);\n\
+          const int offsetz = " + rank + " * (amax1_ * iz + jz);\n\
           for (int jy = 0; jy <= amax_ - jz; ++jy) {\n\
-            const int offsety = rank_ * (amax1_ * iy + jy);\n\
+            const int offsety = " + rank + " * (amax1_ * iy + jy);\n\
             const int jyz = amax1_ * (jy + amax1_ * jz);\n\
             for (int i = 0; i != " + rank + "; ++i)\n\
               iyiz[i] = worky[offsety + i] * workz[offsetz + i];\n";
@@ -122,7 +122,7 @@ out +="\
               const int iposition = cmapping_[ix + iyz];\n\
               const int ipos_asize = iposition * asize_;\n\
               for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {\n\
-                const int offsetx = rank_ * (amax1_ * ix + jx);\n\
+                const int offsetx = " + rank + " * (amax1_ * ix + jx);\n\
                 const int jposition = amapping_[jx + jyz];\n\
                 const int ijposition = jposition + ipos_asize;\n\
                 current_data[ijposition] = ddot_(" + rank + ", iyiz, 1, workx+offsetx, 1);\n\

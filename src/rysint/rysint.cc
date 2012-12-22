@@ -38,7 +38,7 @@ using namespace std;
 using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
- : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
+ : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0), breit_(0),
    vrr_(new VRRList()) {
 
   if (stack == nullptr) {
@@ -52,7 +52,7 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
 
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
- : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0),
+ : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0), breit_(0),
    vrr_(new VRRList()) {
   shared_ptr<const Shell> dum(new Shell(spherical_));
   basisinfo_ = {{ info[0], info[1], dum, dum }};
@@ -128,8 +128,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
   const int ang3 = basisinfo_[3]->angular_number();
-  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_));
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_);
+  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + breit_));
+  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + breit_);
 
   amax_ = ang0 + ang1 + deriv_rank_;
   cmax_ = ang2 + ang3 + deriv_rank_;
@@ -225,23 +225,26 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_start = asize_ * csize_ * primsize_;
     const unsigned int size_intermediate = asize_final * csize_ * contsize_;
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-    size_alloc_ = max(size_start, max(size_intermediate, size_intermediate2));
-    size_block_ = size_alloc_;
+    size_block_ = max(size_start, max(size_intermediate, size_intermediate2));
+    size_alloc_ = size_block_;
+
+    // if this is a two-electron Breit integral
+    if (breit_) 
+      size_alloc_ = 6 * size_block_;
+
     stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = nullptr;
-    if (tenno_) {
+
+    // if Slater/Yukawa integrals
+    if (tenno_)
       stack_save2_ = stack_->get(size_alloc_);
-    }
 
   // derivative integrals
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
     // if this is a two-electron gradient integral
-    if (dynamic_cast<ERIBatch_base*>(this) && !dynamic_cast<ERIBatch_base*>(this)->breit()) {
+    if (dynamic_cast<ERIBatch_base*>(this)) {
       size_alloc_ = 12 * size_block_;
-    // if this is a two-electron Breit integral
-    } else if (dynamic_cast<ERIBatch_base*>(this) && dynamic_cast<ERIBatch_base*>(this)->breit()) {
-      size_alloc_ = 6 * size_block_;
     // if this is an NAI gradient integral
     } else if (dynamic_cast<NAIBatch_base*>(this)) {
       // in this case, we store everything

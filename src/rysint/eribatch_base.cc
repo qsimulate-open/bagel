@@ -47,7 +47,10 @@ static const double T_thresh__ = 1.0e-8;
 
 
 ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv)
- : RysInt(o), breit_(dynamic_cast<BreitBatch*>(this)) {
+ : RysInt(o) {
+
+  // if this is called from BreitBatch, increment RysInt::breit_
+  if (dynamic_cast<BreitBatch*>(this)) ++breit_;
 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
   deriv_rank_ = deriv;
@@ -77,7 +80,7 @@ ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const do
 
 
 void ERIBatch_base::root_weight(const int ps) {
-  if (!breit_) {
+  if (breit_ == 0) {
     if (amax_ + cmax_ == 0) {
       for (int j = 0; j != screening_size_; ++j) {
         int i = screening_[j];

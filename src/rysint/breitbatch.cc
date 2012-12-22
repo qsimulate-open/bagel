@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/slater/svrrlist.h>
+#include <src/grad/gvrrlist.h>
 #include <src/rysint/breitbatch.h>
 
 using namespace std;
@@ -31,10 +31,10 @@ using namespace bagel;
 
 
 BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
-:  ERIBatch_base(_info, max_density, 1) {
+:  ERIBatch_base(_info, max_density, 0) {
 
-  // Since #root is larger by 1/2 as compared to ERI, we use Slater VRR functions 
-  vrr_ = shared_ptr<VRRListBase>(new SVRRList());
+  // two-index recurrence is the same as gradient integrals
+  vrr_ = shared_ptr<VRRListBase>(new GVRRList());
 
 }
 

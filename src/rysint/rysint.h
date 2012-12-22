@@ -67,6 +67,7 @@ class RysInt {
     // over written in the constructor of a derived class
     int deriv_rank_;
     int tenno_;
+    int breit_;
 
     std::shared_ptr<VRRListBase> vrr_;
 
