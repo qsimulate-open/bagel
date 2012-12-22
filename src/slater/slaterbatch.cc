@@ -285,7 +285,9 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   fill(coeffy_, coeffy_ + primsize_, 0.0);
   fill(T_, T_ + primsize_, -1.0);
   fill(U_, U_ + primsize_, 1.0e-100);
-  screening_ = (int*)stack_->get(primsize_);
+
+  // this should be allocated in RysInt
+//screening_ = (int*)stack_->get(primsize_);
   screening_size_ = 0;
 
   const double twogamma = 2.0 / gamma_;

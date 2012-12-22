@@ -282,8 +282,8 @@ void SlaterBatch::compute() {
       copy_n(bkup2_, size, data2_);
   }
 
-  stack_->release(size_alloc_, bkup_);
   if (yukawa_) stack_->release(size_alloc_, bkup2_);
+  stack_->release(size_alloc_, bkup_);
 }
 
 
