@@ -44,15 +44,16 @@ class Index {
     size_t size_;
     size_t key_;
   public:
-    Index(const size_t& o, const size_t& s, const size_t& i) : offset_(o), size_(s), key_(i) {};
-    ~Index() {};
-    size_t offset() const { return offset_; };
-    size_t size() const { return size_; };
-    size_t key() const { return key_; };
+    Index(const size_t& o, const size_t& s, const size_t& i) : offset_(o), size_(s), key_(i) {}
+    Index() : offset_(0LU), size_(0LU), key_(0LU) {}
+    ~Index() {}
+    size_t offset() const { return offset_; }
+    size_t size() const { return size_; }
+    size_t key() const { return key_; }
 
     bool operator==(const Index& o) const {
       return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
-    };
+    }
 };
 
 class IndexRange {
@@ -91,26 +92,26 @@ class IndexRange {
       } else {
         size_ = 0;
       }
-    };
-    IndexRange() {};
-    ~IndexRange() {};
+    }
+    IndexRange() {}
+    ~IndexRange() {}
 
-    const std::vector<Index>& range() const { return range_; };
-    Index range(const int i) const { return range_[i]; };
+    const std::vector<Index>& range() const { return range_; }
+    Index range(const int i) const { return range_[i]; }
 
-    std::vector<Index>::iterator begin() { return range_.begin(); };
-    std::vector<Index>::iterator end() { return range_.end(); };
-    std::vector<Index>::const_iterator begin() const { return range_.begin(); };
-    std::vector<Index>::const_iterator end() const { return range_.end(); };
+    std::vector<Index>::iterator begin() { return range_.begin(); }
+    std::vector<Index>::iterator end() { return range_.end(); }
+    std::vector<Index>::const_iterator begin() const { return range_.begin(); }
+    std::vector<Index>::const_iterator end() const { return range_.end(); }
 
-    int nblock() const { return range_.size(); };
-    int size() const { return size_; };
-    int keyoffset() const { return keyoffset_; };
+    int nblock() const { return range_.size(); }
+    int size() const { return size_; }
+    int keyoffset() const { return keyoffset_; }
 
     void merge(const IndexRange& o) {
        range_.insert(range_.end(), o.range_.begin(), o.range_.end());
        size_ += o.size_;
-    };
+    }
 
     bool operator==(const IndexRange& o) {
       bool out = size_ == o.size_;
@@ -121,16 +122,16 @@ class IndexRange {
         out = false;
       }
       return out;
-    };
-    bool operator!=(const IndexRange& o) { return !(*this == o); };
+    }
+    bool operator!=(const IndexRange& o) { return !(*this == o); }
 
     std::string str() const {
       std::stringstream ss;
       for (auto& i : range_)
         ss << std::setw(10) << i.offset() << std::setw(10) << i.size() << std::endl;
       return ss.str();
-    };
-    void print() const { std::cout << str() << std::endl; };
+    }
+    void print() const { std::cout << str() << std::endl; }
 };
 
 }
