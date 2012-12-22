@@ -65,6 +65,13 @@ void BreitBatch::perform_VRR1() {
 
   const int acsize = size_block_ / primsize_;
 
+  double* const iyiz_nn = stack_->get(1*6);
+  double* const iyiz_tn = iyiz_nn + 1;
+  double* const iyiz_nt = iyiz_tn + 1;
+  double* const iyiz_tt = iyiz_nt + 1;
+  double* const iyiz_sn = iyiz_tt + 1;
+  double* const iyiz_ns = iyiz_sn + 1;
+
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
     const size_t offset = ii * 1;
@@ -113,13 +120,6 @@ void BreitBatch::perform_VRR1() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(1*6);
-    double* const iyiz_tn = iyiz_nn + 1;
-    double* const iyiz_nt = iyiz_tn + 1;
-    double* const iyiz_tt = iyiz_nt + 1;
-    double* const iyiz_sn = iyiz_tt + 1;
-    double* const iyiz_ns = iyiz_sn + 1;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -162,9 +162,9 @@ void BreitBatch::perform_VRR1() {
       }   
     }   
 
-    stack_->release(1*6, iyiz_nn);
   }
 
+  stack_->release(1*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -204,6 +204,13 @@ void BreitBatch::perform_VRR2() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(2*6);
+  double* const iyiz_tn = iyiz_nn + 2;
+  double* const iyiz_nt = iyiz_tn + 2;
+  double* const iyiz_tt = iyiz_nt + 2;
+  double* const iyiz_sn = iyiz_tt + 2;
+  double* const iyiz_ns = iyiz_sn + 2;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -253,13 +260,6 @@ void BreitBatch::perform_VRR2() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(2*6);
-    double* const iyiz_tn = iyiz_nn + 2;
-    double* const iyiz_nt = iyiz_tn + 2;
-    double* const iyiz_tt = iyiz_nt + 2;
-    double* const iyiz_sn = iyiz_tt + 2;
-    double* const iyiz_ns = iyiz_sn + 2;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -302,9 +302,9 @@ void BreitBatch::perform_VRR2() {
       }   
     }   
 
-    stack_->release(2*6, iyiz_nn);
   }
 
+  stack_->release(2*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -344,6 +344,13 @@ void BreitBatch::perform_VRR3() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(3*6);
+  double* const iyiz_tn = iyiz_nn + 3;
+  double* const iyiz_nt = iyiz_tn + 3;
+  double* const iyiz_tt = iyiz_nt + 3;
+  double* const iyiz_sn = iyiz_tt + 3;
+  double* const iyiz_ns = iyiz_sn + 3;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -393,13 +400,6 @@ void BreitBatch::perform_VRR3() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(3*6);
-    double* const iyiz_tn = iyiz_nn + 3;
-    double* const iyiz_nt = iyiz_tn + 3;
-    double* const iyiz_tt = iyiz_nt + 3;
-    double* const iyiz_sn = iyiz_tt + 3;
-    double* const iyiz_ns = iyiz_sn + 3;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -442,9 +442,9 @@ void BreitBatch::perform_VRR3() {
       }   
     }   
 
-    stack_->release(3*6, iyiz_nn);
   }
 
+  stack_->release(3*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -484,6 +484,13 @@ void BreitBatch::perform_VRR4() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(4*6);
+  double* const iyiz_tn = iyiz_nn + 4;
+  double* const iyiz_nt = iyiz_tn + 4;
+  double* const iyiz_tt = iyiz_nt + 4;
+  double* const iyiz_sn = iyiz_tt + 4;
+  double* const iyiz_ns = iyiz_sn + 4;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -533,13 +540,6 @@ void BreitBatch::perform_VRR4() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(4*6);
-    double* const iyiz_tn = iyiz_nn + 4;
-    double* const iyiz_nt = iyiz_tn + 4;
-    double* const iyiz_tt = iyiz_nt + 4;
-    double* const iyiz_sn = iyiz_tt + 4;
-    double* const iyiz_ns = iyiz_sn + 4;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -582,9 +582,9 @@ void BreitBatch::perform_VRR4() {
       }   
     }   
 
-    stack_->release(4*6, iyiz_nn);
   }
 
+  stack_->release(4*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -624,6 +624,13 @@ void BreitBatch::perform_VRR5() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(5*6);
+  double* const iyiz_tn = iyiz_nn + 5;
+  double* const iyiz_nt = iyiz_tn + 5;
+  double* const iyiz_tt = iyiz_nt + 5;
+  double* const iyiz_sn = iyiz_tt + 5;
+  double* const iyiz_ns = iyiz_sn + 5;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -673,13 +680,6 @@ void BreitBatch::perform_VRR5() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(5*6);
-    double* const iyiz_tn = iyiz_nn + 5;
-    double* const iyiz_nt = iyiz_tn + 5;
-    double* const iyiz_tt = iyiz_nt + 5;
-    double* const iyiz_sn = iyiz_tt + 5;
-    double* const iyiz_ns = iyiz_sn + 5;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -722,9 +722,9 @@ void BreitBatch::perform_VRR5() {
       }   
     }   
 
-    stack_->release(5*6, iyiz_nn);
   }
 
+  stack_->release(5*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -764,6 +764,13 @@ void BreitBatch::perform_VRR6() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(6*6);
+  double* const iyiz_tn = iyiz_nn + 6;
+  double* const iyiz_nt = iyiz_tn + 6;
+  double* const iyiz_tt = iyiz_nt + 6;
+  double* const iyiz_sn = iyiz_tt + 6;
+  double* const iyiz_ns = iyiz_sn + 6;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -813,13 +820,6 @@ void BreitBatch::perform_VRR6() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(6*6);
-    double* const iyiz_tn = iyiz_nn + 6;
-    double* const iyiz_nt = iyiz_tn + 6;
-    double* const iyiz_tt = iyiz_nt + 6;
-    double* const iyiz_sn = iyiz_tt + 6;
-    double* const iyiz_ns = iyiz_sn + 6;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -862,9 +862,9 @@ void BreitBatch::perform_VRR6() {
       }   
     }   
 
-    stack_->release(6*6, iyiz_nn);
   }
 
+  stack_->release(6*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -904,6 +904,13 @@ void BreitBatch::perform_VRR7() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(7*6);
+  double* const iyiz_tn = iyiz_nn + 7;
+  double* const iyiz_nt = iyiz_tn + 7;
+  double* const iyiz_tt = iyiz_nt + 7;
+  double* const iyiz_sn = iyiz_tt + 7;
+  double* const iyiz_ns = iyiz_sn + 7;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -953,13 +960,6 @@ void BreitBatch::perform_VRR7() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(7*6);
-    double* const iyiz_tn = iyiz_nn + 7;
-    double* const iyiz_nt = iyiz_tn + 7;
-    double* const iyiz_tt = iyiz_nt + 7;
-    double* const iyiz_sn = iyiz_tt + 7;
-    double* const iyiz_ns = iyiz_sn + 7;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1002,9 +1002,9 @@ void BreitBatch::perform_VRR7() {
       }   
     }   
 
-    stack_->release(7*6, iyiz_nn);
   }
 
+  stack_->release(7*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1044,6 +1044,13 @@ void BreitBatch::perform_VRR8() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(8*6);
+  double* const iyiz_tn = iyiz_nn + 8;
+  double* const iyiz_nt = iyiz_tn + 8;
+  double* const iyiz_tt = iyiz_nt + 8;
+  double* const iyiz_sn = iyiz_tt + 8;
+  double* const iyiz_ns = iyiz_sn + 8;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1093,13 +1100,6 @@ void BreitBatch::perform_VRR8() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(8*6);
-    double* const iyiz_tn = iyiz_nn + 8;
-    double* const iyiz_nt = iyiz_tn + 8;
-    double* const iyiz_tt = iyiz_nt + 8;
-    double* const iyiz_sn = iyiz_tt + 8;
-    double* const iyiz_ns = iyiz_sn + 8;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1142,9 +1142,9 @@ void BreitBatch::perform_VRR8() {
       }   
     }   
 
-    stack_->release(8*6, iyiz_nn);
   }
 
+  stack_->release(8*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1184,6 +1184,13 @@ void BreitBatch::perform_VRR9() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(9*6);
+  double* const iyiz_tn = iyiz_nn + 9;
+  double* const iyiz_nt = iyiz_tn + 9;
+  double* const iyiz_tt = iyiz_nt + 9;
+  double* const iyiz_sn = iyiz_tt + 9;
+  double* const iyiz_ns = iyiz_sn + 9;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1233,13 +1240,6 @@ void BreitBatch::perform_VRR9() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(9*6);
-    double* const iyiz_tn = iyiz_nn + 9;
-    double* const iyiz_nt = iyiz_tn + 9;
-    double* const iyiz_tt = iyiz_nt + 9;
-    double* const iyiz_sn = iyiz_tt + 9;
-    double* const iyiz_ns = iyiz_sn + 9;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1282,9 +1282,9 @@ void BreitBatch::perform_VRR9() {
       }   
     }   
 
-    stack_->release(9*6, iyiz_nn);
   }
 
+  stack_->release(9*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1324,6 +1324,13 @@ void BreitBatch::perform_VRR10() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(10*6);
+  double* const iyiz_tn = iyiz_nn + 10;
+  double* const iyiz_nt = iyiz_tn + 10;
+  double* const iyiz_tt = iyiz_nt + 10;
+  double* const iyiz_sn = iyiz_tt + 10;
+  double* const iyiz_ns = iyiz_sn + 10;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1373,13 +1380,6 @@ void BreitBatch::perform_VRR10() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(10*6);
-    double* const iyiz_tn = iyiz_nn + 10;
-    double* const iyiz_nt = iyiz_tn + 10;
-    double* const iyiz_tt = iyiz_nt + 10;
-    double* const iyiz_sn = iyiz_tt + 10;
-    double* const iyiz_ns = iyiz_sn + 10;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1422,9 +1422,9 @@ void BreitBatch::perform_VRR10() {
       }   
     }   
 
-    stack_->release(10*6, iyiz_nn);
   }
 
+  stack_->release(10*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1464,6 +1464,13 @@ void BreitBatch::perform_VRR11() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(11*6);
+  double* const iyiz_tn = iyiz_nn + 11;
+  double* const iyiz_nt = iyiz_tn + 11;
+  double* const iyiz_tt = iyiz_nt + 11;
+  double* const iyiz_sn = iyiz_tt + 11;
+  double* const iyiz_ns = iyiz_sn + 11;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1513,13 +1520,6 @@ void BreitBatch::perform_VRR11() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(11*6);
-    double* const iyiz_tn = iyiz_nn + 11;
-    double* const iyiz_nt = iyiz_tn + 11;
-    double* const iyiz_tt = iyiz_nt + 11;
-    double* const iyiz_sn = iyiz_tt + 11;
-    double* const iyiz_ns = iyiz_sn + 11;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1562,9 +1562,9 @@ void BreitBatch::perform_VRR11() {
       }   
     }   
 
-    stack_->release(11*6, iyiz_nn);
   }
 
+  stack_->release(11*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1604,6 +1604,13 @@ void BreitBatch::perform_VRR12() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(12*6);
+  double* const iyiz_tn = iyiz_nn + 12;
+  double* const iyiz_nt = iyiz_tn + 12;
+  double* const iyiz_tt = iyiz_nt + 12;
+  double* const iyiz_sn = iyiz_tt + 12;
+  double* const iyiz_ns = iyiz_sn + 12;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1653,13 +1660,6 @@ void BreitBatch::perform_VRR12() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(12*6);
-    double* const iyiz_tn = iyiz_nn + 12;
-    double* const iyiz_nt = iyiz_tn + 12;
-    double* const iyiz_tt = iyiz_nt + 12;
-    double* const iyiz_sn = iyiz_tt + 12;
-    double* const iyiz_ns = iyiz_sn + 12;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1702,9 +1702,9 @@ void BreitBatch::perform_VRR12() {
       }   
     }   
 
-    stack_->release(12*6, iyiz_nn);
   }
 
+  stack_->release(12*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);
@@ -1744,6 +1744,13 @@ void BreitBatch::perform_VRR13() {
   double* const worksz = worksy + worksize;
 
   const int acsize = size_block_ / primsize_;
+
+  double* const iyiz_nn = stack_->get(13*6);
+  double* const iyiz_tn = iyiz_nn + 13;
+  double* const iyiz_nt = iyiz_tn + 13;
+  double* const iyiz_tt = iyiz_nt + 13;
+  double* const iyiz_sn = iyiz_tt + 13;
+  double* const iyiz_ns = iyiz_sn + 13;
 
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
@@ -1793,13 +1800,6 @@ void BreitBatch::perform_VRR13() {
     double* const datayz = dataxz + size_block_; 
     double* const datazz = datayz + size_block_; 
 
-    double* const iyiz_nn = stack_->get(13*6);
-    double* const iyiz_tn = iyiz_nn + 13;
-    double* const iyiz_nt = iyiz_tn + 13;
-    double* const iyiz_tt = iyiz_nt + 13;
-    double* const iyiz_sn = iyiz_tt + 13;
-    double* const iyiz_ns = iyiz_sn + 13;
-
 
     // assemble up to amax_, cmax_
     for (int iz = 0; iz <= cmax_; ++iz) {
@@ -1842,9 +1842,9 @@ void BreitBatch::perform_VRR13() {
       }   
     }   
 
-    stack_->release(13*6, iyiz_nn);
   }
 
+  stack_->release(13*6, iyiz_nn);
   stack_->release(worksize*3, worksx);
   stack_->release(worksize*3, worktx);
   stack_->release(worksize*3, workx);

@@ -87,6 +87,13 @@ using namespace bagel;\n\
     ss << "" << endl;
     ss << "  const int acsize = size_block_ / primsize_;" << endl;
     ss << "" << endl;
+    ss << "  double* const iyiz_nn = stack_->get(" << rank << "*6);" << endl;
+    ss << "  double* const iyiz_tn = iyiz_nn + " << rank << ";" << endl;
+    ss << "  double* const iyiz_nt = iyiz_tn + " << rank << ";" << endl;
+    ss << "  double* const iyiz_tt = iyiz_nt + " << rank << ";" << endl;
+    ss << "  double* const iyiz_sn = iyiz_tt + " << rank << ";" << endl;
+    ss << "  double* const iyiz_ns = iyiz_sn + " << rank << ";" << endl;
+    ss << "" << endl;
     ss << "  for (int j = 0; j != screening_size_; ++j) {" << endl;
     ss << "    const int ii = screening_[j];" << endl;
     ss << "    const size_t offset = ii * " << rank << ";" << endl;
@@ -135,13 +142,6 @@ using namespace bagel;\n\
     ss << "    double* const datayz = dataxz + size_block_; " << endl;
     ss << "    double* const datazz = datayz + size_block_; " << endl;
     ss << "" << endl;
-    ss << "    double* const iyiz_nn = stack_->get(" << rank << "*6);" << endl;
-    ss << "    double* const iyiz_tn = iyiz_nn + " << rank << ";" << endl;
-    ss << "    double* const iyiz_nt = iyiz_tn + " << rank << ";" << endl;
-    ss << "    double* const iyiz_tt = iyiz_nt + " << rank << ";" << endl;
-    ss << "    double* const iyiz_sn = iyiz_tt + " << rank << ";" << endl;
-    ss << "    double* const iyiz_ns = iyiz_sn + " << rank << ";" << endl;
-    ss << "" << endl;
     ss << "" << endl;
     ss << "    // assemble up to amax_, cmax_" << endl;
     ss << "    for (int iz = 0; iz <= cmax_; ++iz) {" << endl;
@@ -184,9 +184,9 @@ using namespace bagel;\n\
     ss << "      }   " << endl;
     ss << "    }   " << endl;
     ss << "" << endl;
-    ss << "    stack_->release(" << rank << "*6, iyiz_nn);" << endl;
     ss << "  }" << endl;
     ss << "" << endl;
+    ss << "  stack_->release(" << rank << "*6, iyiz_nn);" << endl;
     ss << "  stack_->release(worksize*3, worksx);" << endl;
     ss << "  stack_->release(worksize*3, worktx);" << endl;
     ss << "  stack_->release(worksize*3, workx);" << endl;
