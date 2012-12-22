@@ -83,16 +83,17 @@ void BreitBatch::perform_VRR1() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(1, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<1> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<1> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<1> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<1> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<1> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<1> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -223,16 +224,17 @@ void BreitBatch::perform_VRR2() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(2, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<2> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<2> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<2> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<2> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<2> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<2> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -363,16 +365,17 @@ void BreitBatch::perform_VRR3() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(3, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<3> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<3> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<3> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -503,16 +506,17 @@ void BreitBatch::perform_VRR4() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(4, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<4> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<4> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<4> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -643,16 +647,17 @@ void BreitBatch::perform_VRR5() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(5, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<5> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<5> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<5> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -783,16 +788,17 @@ void BreitBatch::perform_VRR6() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(6, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<6> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<6> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<6> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -923,16 +929,17 @@ void BreitBatch::perform_VRR7() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(7, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<7> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<7> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<7> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1063,16 +1070,17 @@ void BreitBatch::perform_VRR8() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(8, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<8> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<8> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<8> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1203,16 +1211,17 @@ void BreitBatch::perform_VRR9() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(9, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<9> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<9> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<9> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1343,16 +1352,17 @@ void BreitBatch::perform_VRR10() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(10, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<10> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<10> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<10> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1483,16 +1493,17 @@ void BreitBatch::perform_VRR11() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(11, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<11> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<11> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<11> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1623,16 +1634,17 @@ void BreitBatch::perform_VRR12() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(12, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<12> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<12> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<12> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
@@ -1763,16 +1775,17 @@ void BreitBatch::perform_VRR13() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
+    dscal_(13, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(&weights_[offset], coeff_[ii]);
+    Int2D<13> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    cix.scale_data(weights_+offset, coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<13> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3+2], q_[ii3+2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<13> ciz(dparamz, roots_+offset, worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
