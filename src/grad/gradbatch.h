@@ -55,11 +55,18 @@ class GradBatch : public ERIBatch_base {
     void perform_VRR11();
     void perform_VRR12();
     void perform_VRR13();
-    void perform_VRR();
 
     void set_exponents();
     std::unique_ptr<double[]> exponents_;
-    size_t m(const int, const int, const int, const int, const int) const;
+
+    template<int rank>
+    size_t m(const int& i, const int& a, const int& b, const int& c, const int& d) const {
+      const int la = basisinfo_[0]->angular_number()+2;
+      const int lb = basisinfo_[1]->angular_number()+2;
+      const int lc = basisinfo_[2]->angular_number()+2;
+      const int ld = basisinfo_[3]->angular_number()+2;
+      return i+rank*(a+la*(b+lb*(c+lc*d)));
+    }
 
   public:
     GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);

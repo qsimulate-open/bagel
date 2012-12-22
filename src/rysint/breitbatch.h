@@ -33,8 +33,6 @@ namespace bagel {
 class BreitBatch : public ERIBatch_base {
 
   protected:
-    void perform_VRR();
-#if 0
     void perform_VRR1();
     void perform_VRR2();
     void perform_VRR3();
@@ -48,7 +46,6 @@ class BreitBatch : public ERIBatch_base {
     void perform_VRR11();
     void perform_VRR12();
     void perform_VRR13();
-#endif
 
   public:
 

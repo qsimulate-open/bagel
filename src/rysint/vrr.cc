@@ -72,14 +72,14 @@ void ERIBatch::perform_VRR4() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 4, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<4> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 4, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<4> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 4, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<4> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -151,14 +151,14 @@ void ERIBatch::perform_VRR5() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 5, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<5> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 5, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<5> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 5, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<5> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -230,14 +230,14 @@ void ERIBatch::perform_VRR6() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 6, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<6> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 6, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<6> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 6, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<6> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -309,14 +309,14 @@ void ERIBatch::perform_VRR7() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 7, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<7> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 7, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<7> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 7, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<7> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -388,14 +388,14 @@ void ERIBatch::perform_VRR8() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 8, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<8> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 8, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<8> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 8, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<8> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -467,14 +467,14 @@ void ERIBatch::perform_VRR9() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 9, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<9> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 9, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<9> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 9, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<9> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -546,14 +546,14 @@ void ERIBatch::perform_VRR10() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 10, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<10> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 10, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<10> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 10, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<10> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -625,14 +625,14 @@ void ERIBatch::perform_VRR11() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 11, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<11> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 11, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<11> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 11, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<11> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -704,14 +704,14 @@ void ERIBatch::perform_VRR12() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 12, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<12> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 12, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<12> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 12, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<12> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -783,14 +783,14 @@ void ERIBatch::perform_VRR13() {
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D cix(dparamx, &roots_[offset], 13, worksize, workx, vrr_->vrrfunc[vrr_index]);
+    Int2D<13> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
     cix.scale_data(&weights_[offset], coeff_[ii]);
 
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciy(dparamy, &roots_[offset], 13, worksize, worky, vrr_->vrrfunc[vrr_index]);
+    Int2D<13> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
 
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D ciz(dparamz, &roots_[offset], 13, worksize, workz, vrr_->vrrfunc[vrr_index]);
+    Int2D<13> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
 
     for (int iz = 0; iz <= cmax_; ++iz) {
       for (int iy = 0; iy <= cmax_ - iz; ++iy) {

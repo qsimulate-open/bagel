@@ -60,9 +60,6 @@ void SlaterBatch::compute() {
     switch (rank_) {
       case 1: perform_USVRR1(); break;
       case 2: perform_USVRR2(); break;
-#if 0
-// I cannot believe my code
-// See comments in svrr_template.cc
       case 3: perform_USVRR3(); break;
       case 4: perform_USVRR4(); break;
       case 5: perform_USVRR5(); break;
@@ -74,16 +71,12 @@ void SlaterBatch::compute() {
       case 11: perform_USVRR11(); break;
       case 12: perform_USVRR12(); break;
       case 13: perform_USVRR13(); break;
-#endif
-      default: perform_USVRR(); break;
+      default: assert(false); break;
     }
   } else {
     switch (rank_) {
       case 1: perform_SVRR1(); break;
       case 2: perform_SVRR2(); break;
-#if 0
-// I cannot believe my code
-// See comments in svrr_template.cc
       case 3: perform_SVRR3(); break;
       case 4: perform_SVRR4(); break;
       case 5: perform_SVRR5(); break;
@@ -95,8 +88,7 @@ void SlaterBatch::compute() {
       case 11: perform_SVRR11(); break;
       case 12: perform_SVRR12(); break;
       case 13: perform_SVRR13(); break;
-#endif
-      default: perform_SVRR(); break;
+      default: assert(false); break;
     }
   }
 
