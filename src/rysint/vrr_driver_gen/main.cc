@@ -45,17 +45,15 @@ string header = "\
 \n\
 #include <src/rysint/eribatch.h>\n\
 #include <src/rysint/int2d.h>\n\
-#include <iostream>\n\
-#include <iomanip>\n\
 #include <cmath>\n\
-#include <cassert>\n\
 #include <algorithm>\n\
 #include <cstring>\n\
-#include <src/util/resources.h>\n\
+#include <src/parallel/resources.h>\n\
+#include <src/util/f77.h>\n\
 \n\
 using namespace std;\n\
+using namespace bagel;\n\
 \n\
-extern StackMem* stack;\n\
 ";
 ofs << header << endl;
 
@@ -68,9 +66,9 @@ void ERIBatch::perform_VRR" + rank + "() {\n\
   const int worksize = " + rank + " * isize;\n\
   const int vrr_index = amax_ * ANG_VRR_END + cmax_;\n\
 \n\
-  double* const workx = stack->get(worksize);\n\
-  double* const worky = stack->get(worksize);\n\
-  double* const workz = stack->get(worksize);\n\
+  double* const workx = stack_->get(worksize);\n\
+  double* const worky = stack_->get(worksize);\n\
+  double* const workz = stack_->get(worksize);\n\
   double iyiz[" + rank + "];\n\
 \n\
   const int acsize = asize_ * csize_;\n\
@@ -102,44 +100,32 @@ void ERIBatch::perform_VRR" + rank + "() {\n\
     const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};\n\
     Int2D cix(dparamx, &roots_[offset], " + rank + ", worksize, workx, vrr_->vrrfunc[vrr_index]);\n\
     cix.scale_data(&weights_[offset], coeff_[ii]);\n\
- \n\
+\n\
     const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};\n\
     Int2D ciy(dparamy, &roots_[offset], " + rank + ", worksize, worky, vrr_->vrrfunc[vrr_index]);\n\
- \n\
+\n\
     const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};\n\
     Int2D ciz(dparamz, &roots_[offset], " + rank + ", worksize, workz, vrr_->vrrfunc[vrr_index]);\n\
 \n\
-    for (int iz = 0; iz <= cmax_; ++iz) { \n\
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) { \n\
+    for (int iz = 0; iz <= cmax_; ++iz) {\n\
+      for (int iy = 0; iy <= cmax_ - iz; ++iy) {\n\
         const int iyz = cmax1_ * (iy + cmax1_ * iz);\n\
-        for (int jz = 0; jz <= amax_; ++jz) { \n\
+        for (int jz = 0; jz <= amax_; ++jz) {\n\
           const int offsetz = rank_ * (amax1_ * iz + jz);\n\
-          for (int jy = 0; jy <= amax_ - jz; ++jy) { \n\
+          for (int jy = 0; jy <= amax_ - jz; ++jy) {\n\
             const int offsety = rank_ * (amax1_ * iy + jy);\n\
-            const int jyz = amax1_ * (jy + amax1_ * jz);\n";
-            for (int i = 0; i != r; ++i) {
-              string istr = lexical_cast<string>(i);
-              out += "\
-            iyiz[" + istr + "] = worky[offsety + " + istr + "] * workz[offsetz + " + istr + "]; \n";
-            }
+            const int jyz = amax1_ * (jy + amax1_ * jz);\n\
+            for (int i = 0; i != " + rank + "; ++i)\n\
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];\n";
 out +="\
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) { \n\
+            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {\n\
               const int iposition = cmapping_[ix + iyz];\n\
               const int ipos_asize = iposition * asize_;\n\
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) { \n\
+              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {\n\
                 const int offsetx = rank_ * (amax1_ * ix + jx);\n\
                 const int jposition = amapping_[jx + jyz];\n\
                 const int ijposition = jposition + ipos_asize;\n\
-\n";
-                for (int i = 0; i != r; ++i) {
-                  string istr = lexical_cast<string>(i);
-                  string equal = i == 0 ? "=" : "+=";
-                  out += "\
-                current_data[ijposition] " + equal + " iyiz[" + istr + "] * workx[offsetx + " + istr + "]; \n";
-                }
-//cout << iposition << \" \" << ix << iy << iz << \"||\" << jposition << \" \" << jx << jy << jz << \"||\" << current_data[ijposition] << endl;\n\
-//
-out +="\
+                current_data[ijposition] = ddot_(" + rank + ", iyiz, 1, workx+offsetx, 1);\n\
               }\n\
             }\n\
           }\n\
@@ -149,9 +135,9 @@ out +="\
 \n\
   }\n\
 \n\
-  stack->release(worksize, workz);\n\
-  stack->release(worksize, worky);\n\
-  stack->release(worksize, workx);\n\
+  stack_->release(worksize, workz);\n\
+  stack_->release(worksize, worky);\n\
+  stack_->release(worksize, workx);\n\
 }\n\n";
 
 ofs << out << endl;

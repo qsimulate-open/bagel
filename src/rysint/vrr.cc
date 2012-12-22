@@ -25,15 +25,15 @@
 
 #include <src/rysint/eribatch.h>
 #include <src/rysint/int2d.h>
-#include <iostream>
-#include <iomanip>
 #include <cmath>
-#include <cassert>
 #include <algorithm>
 #include <cstring>
+#include <src/parallel/resources.h>
+#include <src/util/f77.h>
 
 using namespace std;
 using namespace bagel;
+
 
 void ERIBatch::perform_VRR4() {
   const int isize = (amax_ + 1) * (cmax_ + 1);
@@ -89,10 +89,8 @@ void ERIBatch::perform_VRR4() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
+            for (int i = 0; i != 4; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -100,11 +98,7 @@ void ERIBatch::perform_VRR4() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
+                current_data[ijposition] = ddot_(4, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -174,11 +168,8 @@ void ERIBatch::perform_VRR5() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
+            for (int i = 0; i != 5; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -186,12 +177,7 @@ void ERIBatch::perform_VRR5() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
+                current_data[ijposition] = ddot_(5, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -261,12 +247,8 @@ void ERIBatch::perform_VRR6() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
+            for (int i = 0; i != 6; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -274,13 +256,7 @@ void ERIBatch::perform_VRR6() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
+                current_data[ijposition] = ddot_(6, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -350,13 +326,8 @@ void ERIBatch::perform_VRR7() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
+            for (int i = 0; i != 7; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -364,14 +335,7 @@ void ERIBatch::perform_VRR7() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
+                current_data[ijposition] = ddot_(7, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -441,14 +405,8 @@ void ERIBatch::perform_VRR8() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
+            for (int i = 0; i != 8; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -456,15 +414,7 @@ void ERIBatch::perform_VRR8() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
+                current_data[ijposition] = ddot_(8, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -534,15 +484,8 @@ void ERIBatch::perform_VRR9() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
-            iyiz[8] = worky[offsety + 8] * workz[offsetz + 8];
+            for (int i = 0; i != 9; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -550,16 +493,7 @@ void ERIBatch::perform_VRR9() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
-                current_data[ijposition] += iyiz[8] * workx[offsetx + 8];
+                current_data[ijposition] = ddot_(9, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -629,16 +563,8 @@ void ERIBatch::perform_VRR10() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
-            iyiz[8] = worky[offsety + 8] * workz[offsetz + 8];
-            iyiz[9] = worky[offsety + 9] * workz[offsetz + 9];
+            for (int i = 0; i != 10; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -646,17 +572,7 @@ void ERIBatch::perform_VRR10() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
-                current_data[ijposition] += iyiz[8] * workx[offsetx + 8];
-                current_data[ijposition] += iyiz[9] * workx[offsetx + 9];
+                current_data[ijposition] = ddot_(10, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -726,17 +642,8 @@ void ERIBatch::perform_VRR11() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
-            iyiz[8] = worky[offsety + 8] * workz[offsetz + 8];
-            iyiz[9] = worky[offsety + 9] * workz[offsetz + 9];
-            iyiz[10] = worky[offsety + 10] * workz[offsetz + 10];
+            for (int i = 0; i != 11; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -744,18 +651,7 @@ void ERIBatch::perform_VRR11() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
-                current_data[ijposition] += iyiz[8] * workx[offsetx + 8];
-                current_data[ijposition] += iyiz[9] * workx[offsetx + 9];
-                current_data[ijposition] += iyiz[10] * workx[offsetx + 10];
+                current_data[ijposition] = ddot_(11, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -825,18 +721,8 @@ void ERIBatch::perform_VRR12() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
-            iyiz[8] = worky[offsety + 8] * workz[offsetz + 8];
-            iyiz[9] = worky[offsety + 9] * workz[offsetz + 9];
-            iyiz[10] = worky[offsety + 10] * workz[offsetz + 10];
-            iyiz[11] = worky[offsety + 11] * workz[offsetz + 11];
+            for (int i = 0; i != 12; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -844,19 +730,7 @@ void ERIBatch::perform_VRR12() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
-                current_data[ijposition] += iyiz[8] * workx[offsetx + 8];
-                current_data[ijposition] += iyiz[9] * workx[offsetx + 9];
-                current_data[ijposition] += iyiz[10] * workx[offsetx + 10];
-                current_data[ijposition] += iyiz[11] * workx[offsetx + 11];
+                current_data[ijposition] = ddot_(12, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
@@ -926,19 +800,8 @@ void ERIBatch::perform_VRR13() {
           for (int jy = 0; jy <= amax_ - jz; ++jy) {
             const int offsety = rank_ * (amax1_ * iy + jy);
             const int jyz = amax1_ * (jy + amax1_ * jz);
-            iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-            iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-            iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-            iyiz[3] = worky[offsety + 3] * workz[offsetz + 3];
-            iyiz[4] = worky[offsety + 4] * workz[offsetz + 4];
-            iyiz[5] = worky[offsety + 5] * workz[offsetz + 5];
-            iyiz[6] = worky[offsety + 6] * workz[offsetz + 6];
-            iyiz[7] = worky[offsety + 7] * workz[offsetz + 7];
-            iyiz[8] = worky[offsety + 8] * workz[offsetz + 8];
-            iyiz[9] = worky[offsety + 9] * workz[offsetz + 9];
-            iyiz[10] = worky[offsety + 10] * workz[offsetz + 10];
-            iyiz[11] = worky[offsety + 11] * workz[offsetz + 11];
-            iyiz[12] = worky[offsety + 12] * workz[offsetz + 12];
+            for (int i = 0; i != 13; ++i)
+              iyiz[i] = worky[offsety + i] * workz[offsetz + i];
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
               const int ipos_asize = iposition * asize_;
@@ -946,20 +809,7 @@ void ERIBatch::perform_VRR13() {
                 const int offsetx = rank_ * (amax1_ * ix + jx);
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                current_data[ijposition] += iyiz[3] * workx[offsetx + 3];
-                current_data[ijposition] += iyiz[4] * workx[offsetx + 4];
-                current_data[ijposition] += iyiz[5] * workx[offsetx + 5];
-                current_data[ijposition] += iyiz[6] * workx[offsetx + 6];
-                current_data[ijposition] += iyiz[7] * workx[offsetx + 7];
-                current_data[ijposition] += iyiz[8] * workx[offsetx + 8];
-                current_data[ijposition] += iyiz[9] * workx[offsetx + 9];
-                current_data[ijposition] += iyiz[10] * workx[offsetx + 10];
-                current_data[ijposition] += iyiz[11] * workx[offsetx + 11];
-                current_data[ijposition] += iyiz[12] * workx[offsetx + 12];
+                current_data[ijposition] = ddot_(13, iyiz, 1, workx+offsetx, 1);
               }
             }
           }
