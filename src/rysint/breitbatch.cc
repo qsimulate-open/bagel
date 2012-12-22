@@ -32,6 +32,8 @@ using namespace bagel;
 
 BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
 :  ERIBatch_base(_info, max_density, 1) {
+
+  // Since #root is larger by 1/2 as compared to ERI, we use Slater VRR functions 
   vrr_ = shared_ptr<VRRListBase>(new SVRRList());
 
 }
