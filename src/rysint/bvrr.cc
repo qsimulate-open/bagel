@@ -77,7 +77,7 @@ void BreitBatch::perform_VRR1() {
     const size_t offset = ii * 1;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -101,10 +101,10 @@ void BreitBatch::perform_VRR1() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 1; ++i) {
-          worktx[i+1*(ia+amax2*ic)] = pq[0]*workx[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+1*(ia+amax2*(ic-1))]); 
-          workty[i+1*(ia+amax2*ic)] = pq[1]*worky[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+1*(ia+amax2*(ic-1))]); 
-          worktz[i+1*(ia+amax2*ic)] = pq[2]*workz[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+1*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+1*(ia+amax2*ic)] = pq[0]*workx[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+1*(ia+amax2*(ic-1))]);
+          workty[i+1*(ia+amax2*ic)] = pq[1]*worky[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+1*(ia+amax2*(ic-1))]);
+          worktz[i+1*(ia+amax2*ic)] = pq[2]*workz[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+1*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -112,14 +112,14 @@ void BreitBatch::perform_VRR1() {
           worksx[i+1*(ia+amax2*ic)] = worktx[i+1*((ia+1)+amax2*ic)] - worktx[i+1*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+1*(ia+amax2*ic)];
           worksy[i+1*(ia+amax2*ic)] = workty[i+1*((ia+1)+amax2*ic)] - workty[i+1*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+1*(ia+amax2*ic)];
           worksz[i+1*(ia+amax2*ic)] = worktz[i+1*((ia+1)+amax2*ic)] - worktz[i+1*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+1*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -134,13 +134,13 @@ void BreitBatch::perform_VRR1() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 1; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -150,18 +150,18 @@ void BreitBatch::perform_VRR1() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(1, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(1, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(1, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(1, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(1, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(1, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(1, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(1, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(1, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(1, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(1, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(1, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -218,7 +218,7 @@ void BreitBatch::perform_VRR2() {
     const size_t offset = ii * 2;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -242,10 +242,10 @@ void BreitBatch::perform_VRR2() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 2; ++i) {
-          worktx[i+2*(ia+amax2*ic)] = pq[0]*workx[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+2*(ia+amax2*(ic-1))]); 
-          workty[i+2*(ia+amax2*ic)] = pq[1]*worky[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+2*(ia+amax2*(ic-1))]); 
-          worktz[i+2*(ia+amax2*ic)] = pq[2]*workz[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+2*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+2*(ia+amax2*ic)] = pq[0]*workx[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+2*(ia+amax2*(ic-1))]);
+          workty[i+2*(ia+amax2*ic)] = pq[1]*worky[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+2*(ia+amax2*(ic-1))]);
+          worktz[i+2*(ia+amax2*ic)] = pq[2]*workz[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+2*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -253,14 +253,14 @@ void BreitBatch::perform_VRR2() {
           worksx[i+2*(ia+amax2*ic)] = worktx[i+2*((ia+1)+amax2*ic)] - worktx[i+2*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+2*(ia+amax2*ic)];
           worksy[i+2*(ia+amax2*ic)] = workty[i+2*((ia+1)+amax2*ic)] - workty[i+2*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+2*(ia+amax2*ic)];
           worksz[i+2*(ia+amax2*ic)] = worktz[i+2*((ia+1)+amax2*ic)] - worktz[i+2*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+2*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -275,13 +275,13 @@ void BreitBatch::perform_VRR2() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 2; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -291,18 +291,18 @@ void BreitBatch::perform_VRR2() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(2, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(2, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(2, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(2, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(2, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(2, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(2, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(2, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(2, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(2, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(2, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(2, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -359,7 +359,7 @@ void BreitBatch::perform_VRR3() {
     const size_t offset = ii * 3;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -383,10 +383,10 @@ void BreitBatch::perform_VRR3() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 3; ++i) {
-          worktx[i+3*(ia+amax2*ic)] = pq[0]*workx[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+3*(ia+amax2*(ic-1))]); 
-          workty[i+3*(ia+amax2*ic)] = pq[1]*worky[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+3*(ia+amax2*(ic-1))]); 
-          worktz[i+3*(ia+amax2*ic)] = pq[2]*workz[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+3*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+3*(ia+amax2*ic)] = pq[0]*workx[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+3*(ia+amax2*(ic-1))]);
+          workty[i+3*(ia+amax2*ic)] = pq[1]*worky[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+3*(ia+amax2*(ic-1))]);
+          worktz[i+3*(ia+amax2*ic)] = pq[2]*workz[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+3*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -394,14 +394,14 @@ void BreitBatch::perform_VRR3() {
           worksx[i+3*(ia+amax2*ic)] = worktx[i+3*((ia+1)+amax2*ic)] - worktx[i+3*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+3*(ia+amax2*ic)];
           worksy[i+3*(ia+amax2*ic)] = workty[i+3*((ia+1)+amax2*ic)] - workty[i+3*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+3*(ia+amax2*ic)];
           worksz[i+3*(ia+amax2*ic)] = worktz[i+3*((ia+1)+amax2*ic)] - worktz[i+3*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+3*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -416,13 +416,13 @@ void BreitBatch::perform_VRR3() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 3; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -432,18 +432,18 @@ void BreitBatch::perform_VRR3() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(3, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(3, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(3, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(3, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(3, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(3, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(3, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(3, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(3, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(3, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(3, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(3, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -500,7 +500,7 @@ void BreitBatch::perform_VRR4() {
     const size_t offset = ii * 4;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -524,10 +524,10 @@ void BreitBatch::perform_VRR4() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 4; ++i) {
-          worktx[i+4*(ia+amax2*ic)] = pq[0]*workx[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+4*(ia+amax2*(ic-1))]); 
-          workty[i+4*(ia+amax2*ic)] = pq[1]*worky[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+4*(ia+amax2*(ic-1))]); 
-          worktz[i+4*(ia+amax2*ic)] = pq[2]*workz[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+4*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+4*(ia+amax2*ic)] = pq[0]*workx[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+4*(ia+amax2*(ic-1))]);
+          workty[i+4*(ia+amax2*ic)] = pq[1]*worky[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+4*(ia+amax2*(ic-1))]);
+          worktz[i+4*(ia+amax2*ic)] = pq[2]*workz[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+4*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -535,14 +535,14 @@ void BreitBatch::perform_VRR4() {
           worksx[i+4*(ia+amax2*ic)] = worktx[i+4*((ia+1)+amax2*ic)] - worktx[i+4*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+4*(ia+amax2*ic)];
           worksy[i+4*(ia+amax2*ic)] = workty[i+4*((ia+1)+amax2*ic)] - workty[i+4*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+4*(ia+amax2*ic)];
           worksz[i+4*(ia+amax2*ic)] = worktz[i+4*((ia+1)+amax2*ic)] - worktz[i+4*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+4*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -557,13 +557,13 @@ void BreitBatch::perform_VRR4() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 4; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -573,18 +573,18 @@ void BreitBatch::perform_VRR4() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(4, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(4, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(4, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(4, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(4, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(4, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(4, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(4, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(4, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(4, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(4, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(4, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -641,7 +641,7 @@ void BreitBatch::perform_VRR5() {
     const size_t offset = ii * 5;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -665,10 +665,10 @@ void BreitBatch::perform_VRR5() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 5; ++i) {
-          worktx[i+5*(ia+amax2*ic)] = pq[0]*workx[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+5*(ia+amax2*(ic-1))]); 
-          workty[i+5*(ia+amax2*ic)] = pq[1]*worky[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+5*(ia+amax2*(ic-1))]); 
-          worktz[i+5*(ia+amax2*ic)] = pq[2]*workz[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+5*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+5*(ia+amax2*ic)] = pq[0]*workx[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+5*(ia+amax2*(ic-1))]);
+          workty[i+5*(ia+amax2*ic)] = pq[1]*worky[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+5*(ia+amax2*(ic-1))]);
+          worktz[i+5*(ia+amax2*ic)] = pq[2]*workz[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+5*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -676,14 +676,14 @@ void BreitBatch::perform_VRR5() {
           worksx[i+5*(ia+amax2*ic)] = worktx[i+5*((ia+1)+amax2*ic)] - worktx[i+5*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+5*(ia+amax2*ic)];
           worksy[i+5*(ia+amax2*ic)] = workty[i+5*((ia+1)+amax2*ic)] - workty[i+5*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+5*(ia+amax2*ic)];
           worksz[i+5*(ia+amax2*ic)] = worktz[i+5*((ia+1)+amax2*ic)] - worktz[i+5*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+5*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -698,13 +698,13 @@ void BreitBatch::perform_VRR5() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 5; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -714,18 +714,18 @@ void BreitBatch::perform_VRR5() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(5, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(5, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(5, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(5, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(5, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(5, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(5, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(5, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(5, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(5, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(5, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(5, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -782,7 +782,7 @@ void BreitBatch::perform_VRR6() {
     const size_t offset = ii * 6;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -806,10 +806,10 @@ void BreitBatch::perform_VRR6() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 6; ++i) {
-          worktx[i+6*(ia+amax2*ic)] = pq[0]*workx[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+6*(ia+amax2*(ic-1))]); 
-          workty[i+6*(ia+amax2*ic)] = pq[1]*worky[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+6*(ia+amax2*(ic-1))]); 
-          worktz[i+6*(ia+amax2*ic)] = pq[2]*workz[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+6*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+6*(ia+amax2*ic)] = pq[0]*workx[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+6*(ia+amax2*(ic-1))]);
+          workty[i+6*(ia+amax2*ic)] = pq[1]*worky[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+6*(ia+amax2*(ic-1))]);
+          worktz[i+6*(ia+amax2*ic)] = pq[2]*workz[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+6*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -817,14 +817,14 @@ void BreitBatch::perform_VRR6() {
           worksx[i+6*(ia+amax2*ic)] = worktx[i+6*((ia+1)+amax2*ic)] - worktx[i+6*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+6*(ia+amax2*ic)];
           worksy[i+6*(ia+amax2*ic)] = workty[i+6*((ia+1)+amax2*ic)] - workty[i+6*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+6*(ia+amax2*ic)];
           worksz[i+6*(ia+amax2*ic)] = worktz[i+6*((ia+1)+amax2*ic)] - worktz[i+6*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+6*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -839,13 +839,13 @@ void BreitBatch::perform_VRR6() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 6; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -855,18 +855,18 @@ void BreitBatch::perform_VRR6() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(6, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(6, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(6, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(6, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(6, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(6, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(6, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(6, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(6, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(6, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(6, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(6, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -923,7 +923,7 @@ void BreitBatch::perform_VRR7() {
     const size_t offset = ii * 7;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -947,10 +947,10 @@ void BreitBatch::perform_VRR7() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 7; ++i) {
-          worktx[i+7*(ia+amax2*ic)] = pq[0]*workx[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+7*(ia+amax2*(ic-1))]); 
-          workty[i+7*(ia+amax2*ic)] = pq[1]*worky[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+7*(ia+amax2*(ic-1))]); 
-          worktz[i+7*(ia+amax2*ic)] = pq[2]*workz[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+7*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+7*(ia+amax2*ic)] = pq[0]*workx[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+7*(ia+amax2*(ic-1))]);
+          workty[i+7*(ia+amax2*ic)] = pq[1]*worky[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+7*(ia+amax2*(ic-1))]);
+          worktz[i+7*(ia+amax2*ic)] = pq[2]*workz[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+7*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -958,14 +958,14 @@ void BreitBatch::perform_VRR7() {
           worksx[i+7*(ia+amax2*ic)] = worktx[i+7*((ia+1)+amax2*ic)] - worktx[i+7*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+7*(ia+amax2*ic)];
           worksy[i+7*(ia+amax2*ic)] = workty[i+7*((ia+1)+amax2*ic)] - workty[i+7*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+7*(ia+amax2*ic)];
           worksz[i+7*(ia+amax2*ic)] = worktz[i+7*((ia+1)+amax2*ic)] - worktz[i+7*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+7*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -980,13 +980,13 @@ void BreitBatch::perform_VRR7() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 7; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -996,18 +996,18 @@ void BreitBatch::perform_VRR7() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(7, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(7, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(7, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(7, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(7, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(7, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(7, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(7, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(7, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(7, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(7, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(7, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1064,7 +1064,7 @@ void BreitBatch::perform_VRR8() {
     const size_t offset = ii * 8;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1088,10 +1088,10 @@ void BreitBatch::perform_VRR8() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 8; ++i) {
-          worktx[i+8*(ia+amax2*ic)] = pq[0]*workx[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+8*(ia+amax2*(ic-1))]); 
-          workty[i+8*(ia+amax2*ic)] = pq[1]*worky[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+8*(ia+amax2*(ic-1))]); 
-          worktz[i+8*(ia+amax2*ic)] = pq[2]*workz[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+8*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+8*(ia+amax2*ic)] = pq[0]*workx[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+8*(ia+amax2*(ic-1))]);
+          workty[i+8*(ia+amax2*ic)] = pq[1]*worky[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+8*(ia+amax2*(ic-1))]);
+          worktz[i+8*(ia+amax2*ic)] = pq[2]*workz[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+8*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1099,14 +1099,14 @@ void BreitBatch::perform_VRR8() {
           worksx[i+8*(ia+amax2*ic)] = worktx[i+8*((ia+1)+amax2*ic)] - worktx[i+8*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+8*(ia+amax2*ic)];
           worksy[i+8*(ia+amax2*ic)] = workty[i+8*((ia+1)+amax2*ic)] - workty[i+8*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+8*(ia+amax2*ic)];
           worksz[i+8*(ia+amax2*ic)] = worktz[i+8*((ia+1)+amax2*ic)] - worktz[i+8*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+8*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1121,13 +1121,13 @@ void BreitBatch::perform_VRR8() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 8; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1137,18 +1137,18 @@ void BreitBatch::perform_VRR8() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(8, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(8, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(8, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(8, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(8, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(8, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(8, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(8, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(8, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(8, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(8, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(8, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1205,7 +1205,7 @@ void BreitBatch::perform_VRR9() {
     const size_t offset = ii * 9;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1229,10 +1229,10 @@ void BreitBatch::perform_VRR9() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 9; ++i) {
-          worktx[i+9*(ia+amax2*ic)] = pq[0]*workx[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+9*(ia+amax2*(ic-1))]); 
-          workty[i+9*(ia+amax2*ic)] = pq[1]*worky[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+9*(ia+amax2*(ic-1))]); 
-          worktz[i+9*(ia+amax2*ic)] = pq[2]*workz[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+9*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+9*(ia+amax2*ic)] = pq[0]*workx[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+9*(ia+amax2*(ic-1))]);
+          workty[i+9*(ia+amax2*ic)] = pq[1]*worky[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+9*(ia+amax2*(ic-1))]);
+          worktz[i+9*(ia+amax2*ic)] = pq[2]*workz[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+9*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1240,14 +1240,14 @@ void BreitBatch::perform_VRR9() {
           worksx[i+9*(ia+amax2*ic)] = worktx[i+9*((ia+1)+amax2*ic)] - worktx[i+9*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+9*(ia+amax2*ic)];
           worksy[i+9*(ia+amax2*ic)] = workty[i+9*((ia+1)+amax2*ic)] - workty[i+9*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+9*(ia+amax2*ic)];
           worksz[i+9*(ia+amax2*ic)] = worktz[i+9*((ia+1)+amax2*ic)] - worktz[i+9*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+9*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1262,13 +1262,13 @@ void BreitBatch::perform_VRR9() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 9; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1278,18 +1278,18 @@ void BreitBatch::perform_VRR9() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(9, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(9, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(9, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(9, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(9, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(9, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(9, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(9, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(9, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(9, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(9, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(9, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1346,7 +1346,7 @@ void BreitBatch::perform_VRR10() {
     const size_t offset = ii * 10;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1370,10 +1370,10 @@ void BreitBatch::perform_VRR10() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 10; ++i) {
-          worktx[i+10*(ia+amax2*ic)] = pq[0]*workx[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+10*(ia+amax2*(ic-1))]); 
-          workty[i+10*(ia+amax2*ic)] = pq[1]*worky[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+10*(ia+amax2*(ic-1))]); 
-          worktz[i+10*(ia+amax2*ic)] = pq[2]*workz[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+10*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+10*(ia+amax2*ic)] = pq[0]*workx[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+10*(ia+amax2*(ic-1))]);
+          workty[i+10*(ia+amax2*ic)] = pq[1]*worky[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+10*(ia+amax2*(ic-1))]);
+          worktz[i+10*(ia+amax2*ic)] = pq[2]*workz[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+10*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1381,14 +1381,14 @@ void BreitBatch::perform_VRR10() {
           worksx[i+10*(ia+amax2*ic)] = worktx[i+10*((ia+1)+amax2*ic)] - worktx[i+10*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+10*(ia+amax2*ic)];
           worksy[i+10*(ia+amax2*ic)] = workty[i+10*((ia+1)+amax2*ic)] - workty[i+10*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+10*(ia+amax2*ic)];
           worksz[i+10*(ia+amax2*ic)] = worktz[i+10*((ia+1)+amax2*ic)] - worktz[i+10*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+10*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1403,13 +1403,13 @@ void BreitBatch::perform_VRR10() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 10; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1419,18 +1419,18 @@ void BreitBatch::perform_VRR10() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(10, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(10, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(10, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(10, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(10, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(10, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(10, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(10, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(10, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(10, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(10, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(10, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1487,7 +1487,7 @@ void BreitBatch::perform_VRR11() {
     const size_t offset = ii * 11;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1511,10 +1511,10 @@ void BreitBatch::perform_VRR11() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 11; ++i) {
-          worktx[i+11*(ia+amax2*ic)] = pq[0]*workx[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+11*(ia+amax2*(ic-1))]); 
-          workty[i+11*(ia+amax2*ic)] = pq[1]*worky[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+11*(ia+amax2*(ic-1))]); 
-          worktz[i+11*(ia+amax2*ic)] = pq[2]*workz[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+11*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+11*(ia+amax2*ic)] = pq[0]*workx[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+11*(ia+amax2*(ic-1))]);
+          workty[i+11*(ia+amax2*ic)] = pq[1]*worky[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+11*(ia+amax2*(ic-1))]);
+          worktz[i+11*(ia+amax2*ic)] = pq[2]*workz[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+11*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1522,14 +1522,14 @@ void BreitBatch::perform_VRR11() {
           worksx[i+11*(ia+amax2*ic)] = worktx[i+11*((ia+1)+amax2*ic)] - worktx[i+11*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+11*(ia+amax2*ic)];
           worksy[i+11*(ia+amax2*ic)] = workty[i+11*((ia+1)+amax2*ic)] - workty[i+11*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+11*(ia+amax2*ic)];
           worksz[i+11*(ia+amax2*ic)] = worktz[i+11*((ia+1)+amax2*ic)] - worktz[i+11*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+11*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1544,13 +1544,13 @@ void BreitBatch::perform_VRR11() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 11; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1560,18 +1560,18 @@ void BreitBatch::perform_VRR11() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(11, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(11, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(11, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(11, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(11, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(11, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(11, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(11, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(11, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(11, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(11, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(11, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1628,7 +1628,7 @@ void BreitBatch::perform_VRR12() {
     const size_t offset = ii * 12;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1652,10 +1652,10 @@ void BreitBatch::perform_VRR12() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 12; ++i) {
-          worktx[i+12*(ia+amax2*ic)] = pq[0]*workx[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+12*(ia+amax2*(ic-1))]); 
-          workty[i+12*(ia+amax2*ic)] = pq[1]*worky[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+12*(ia+amax2*(ic-1))]); 
-          worktz[i+12*(ia+amax2*ic)] = pq[2]*workz[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+12*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+12*(ia+amax2*ic)] = pq[0]*workx[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+12*(ia+amax2*(ic-1))]);
+          workty[i+12*(ia+amax2*ic)] = pq[1]*worky[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+12*(ia+amax2*(ic-1))]);
+          worktz[i+12*(ia+amax2*ic)] = pq[2]*workz[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+12*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1663,14 +1663,14 @@ void BreitBatch::perform_VRR12() {
           worksx[i+12*(ia+amax2*ic)] = worktx[i+12*((ia+1)+amax2*ic)] - worktx[i+12*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+12*(ia+amax2*ic)];
           worksy[i+12*(ia+amax2*ic)] = workty[i+12*((ia+1)+amax2*ic)] - workty[i+12*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+12*(ia+amax2*ic)];
           worksz[i+12*(ia+amax2*ic)] = worktz[i+12*((ia+1)+amax2*ic)] - worktz[i+12*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+12*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1685,13 +1685,13 @@ void BreitBatch::perform_VRR12() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 12; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1701,18 +1701,18 @@ void BreitBatch::perform_VRR12() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(12, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(12, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(12, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(12, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(12, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(12, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(12, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(12, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(12, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(12, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(12, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(12, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
@@ -1769,7 +1769,7 @@ void BreitBatch::perform_VRR13() {
     const size_t offset = ii * 13;
     const size_t data_offset_ii = ii * acsize;
 
-    const int ii3 = 3 * ii; 
+    const int ii3 = 3 * ii;
     const double cxp = xp_[ii];
     const double cxq = xq_[ii];
     const double oxp2 = 0.5 / cxp;
@@ -1793,10 +1793,10 @@ void BreitBatch::perform_VRR13() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 13; ++i) {
-          worktx[i+13*(ia+amax2*ic)] = pq[0]*workx[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+13*(ia+amax2*(ic-1))]); 
-          workty[i+13*(ia+amax2*ic)] = pq[1]*worky[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+13*(ia+amax2*(ic-1))]); 
-          worktz[i+13*(ia+amax2*ic)] = pq[2]*workz[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+13*(ia+amax2*(ic-1))]); 
-        }   
+          worktx[i+13*(ia+amax2*ic)] = pq[0]*workx[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workx[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workx[i+13*(ia+amax2*(ic-1))]);
+          workty[i+13*(ia+amax2*ic)] = pq[1]*worky[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+13*(ia+amax2*(ic-1))]);
+          worktz[i+13*(ia+amax2*ic)] = pq[2]*workz[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+13*(ia+amax2*(ic-1))]);
+        }
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
@@ -1804,14 +1804,14 @@ void BreitBatch::perform_VRR13() {
           worksx[i+13*(ia+amax2*ic)] = worktx[i+13*((ia+1)+amax2*ic)] - worktx[i+13*(ia+amax2*(ic+1))] + (ax - cx)*worktx[i+13*(ia+amax2*ic)];
           worksy[i+13*(ia+amax2*ic)] = workty[i+13*((ia+1)+amax2*ic)] - workty[i+13*(ia+amax2*(ic+1))] + (ay - cy)*workty[i+13*(ia+amax2*ic)];
           worksz[i+13*(ia+amax2*ic)] = worktz[i+13*((ia+1)+amax2*ic)] - worktz[i+13*(ia+amax2*(ic+1))] + (az - cz)*worktz[i+13*(ia+amax2*ic)];
-        }   
+        }
 
     double* const dataxx = &data_[data_offset_ii];
-    double* const dataxy = dataxx + size_block_; 
-    double* const datayy = dataxy + size_block_; 
-    double* const dataxz = datayy + size_block_; 
-    double* const datayz = dataxz + size_block_; 
-    double* const datazz = datayz + size_block_; 
+    double* const dataxy = dataxx + size_block_;
+    double* const datayy = dataxy + size_block_;
+    double* const dataxz = datayy + size_block_;
+    double* const datayz = dataxz + size_block_;
+    double* const datazz = datayz + size_block_;
 
 
     // assemble up to amax_, cmax_
@@ -1826,13 +1826,13 @@ void BreitBatch::perform_VRR13() {
             const int jyz = amax1_ * (jy + amax1_ * jz);
 
             for (int i = 0; i != 13; ++i) {
-              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i]; 
+              iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i];
               iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
               iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i] * (1.0-roots_[offset+i]);
-              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i]; 
-              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i]; 
-            }   
+              iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i];
+              iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i];
+            }
 
             for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
               const int iposition = cmapping_[ix + iyz];
@@ -1842,18 +1842,18 @@ void BreitBatch::perform_VRR13() {
                 const int jposition = amapping_[jx + jyz];
                 const int ijposition = jposition + ipos_asize;
 
-                dataxx[ijposition] = ddot_(13, iyiz_nn, 1, worksx+offsetx, 1); 
-                dataxy[ijposition] = ddot_(13, iyiz_tn, 1, worktx+offsetx, 1); 
-                dataxz[ijposition] = ddot_(13, iyiz_nt, 1, worktx+offsetx, 1); 
-                datayy[ijposition] = ddot_(13, iyiz_sn, 1, workx +offsetx, 1); 
-                datazz[ijposition] = ddot_(13, iyiz_ns, 1, workx +offsetx, 1); 
-                datayz[ijposition] = ddot_(13, iyiz_tt, 1, workx +offsetx, 1); 
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
+                dataxx[ijposition] = ddot_(13, iyiz_nn, 1, worksx+offsetx, 1);
+                dataxy[ijposition] = ddot_(13, iyiz_tn, 1, worktx+offsetx, 1);
+                dataxz[ijposition] = ddot_(13, iyiz_nt, 1, worktx+offsetx, 1);
+                datayy[ijposition] = ddot_(13, iyiz_sn, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(13, iyiz_ns, 1, workx +offsetx, 1);
+                datayz[ijposition] = ddot_(13, iyiz_tt, 1, workx +offsetx, 1);
+              }
+            }
+          }
+        }
+      }
+    }
 
   }
 
