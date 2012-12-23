@@ -83,11 +83,10 @@ void BreitBatch::perform_VRR1() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(1, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<1> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<1> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -97,7 +96,7 @@ void BreitBatch::perform_VRR1() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 1; ++i) {
@@ -105,7 +104,7 @@ void BreitBatch::perform_VRR1() {
           workty[i+1*(ia+amax2*ic)] = pq[1]*worky[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+1*(ia+amax2*(ic-1))]);
           worktz[i+1*(ia+amax2*ic)] = pq[2]*workz[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+1*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 1; ++i) {
@@ -152,10 +151,10 @@ void BreitBatch::perform_VRR1() {
 
                 dataxx[ijposition] = ddot_(1, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(1, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(1, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(1, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(1, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(1, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(1, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(1, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -224,11 +223,10 @@ void BreitBatch::perform_VRR2() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(2, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<2> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<2> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -238,7 +236,7 @@ void BreitBatch::perform_VRR2() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 2; ++i) {
@@ -246,7 +244,7 @@ void BreitBatch::perform_VRR2() {
           workty[i+2*(ia+amax2*ic)] = pq[1]*worky[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+2*(ia+amax2*(ic-1))]);
           worktz[i+2*(ia+amax2*ic)] = pq[2]*workz[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+2*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 2; ++i) {
@@ -293,10 +291,10 @@ void BreitBatch::perform_VRR2() {
 
                 dataxx[ijposition] = ddot_(2, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(2, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(2, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(2, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(2, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(2, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(2, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(2, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -365,11 +363,10 @@ void BreitBatch::perform_VRR3() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(3, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<3> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<3> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -379,7 +376,7 @@ void BreitBatch::perform_VRR3() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 3; ++i) {
@@ -387,7 +384,7 @@ void BreitBatch::perform_VRR3() {
           workty[i+3*(ia+amax2*ic)] = pq[1]*worky[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+3*(ia+amax2*(ic-1))]);
           worktz[i+3*(ia+amax2*ic)] = pq[2]*workz[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+3*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 3; ++i) {
@@ -434,10 +431,10 @@ void BreitBatch::perform_VRR3() {
 
                 dataxx[ijposition] = ddot_(3, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(3, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(3, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(3, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(3, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(3, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(3, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(3, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -506,11 +503,10 @@ void BreitBatch::perform_VRR4() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(4, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<4> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<4> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -520,7 +516,7 @@ void BreitBatch::perform_VRR4() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 4; ++i) {
@@ -528,7 +524,7 @@ void BreitBatch::perform_VRR4() {
           workty[i+4*(ia+amax2*ic)] = pq[1]*worky[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+4*(ia+amax2*(ic-1))]);
           worktz[i+4*(ia+amax2*ic)] = pq[2]*workz[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+4*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 4; ++i) {
@@ -575,10 +571,10 @@ void BreitBatch::perform_VRR4() {
 
                 dataxx[ijposition] = ddot_(4, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(4, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(4, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(4, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(4, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(4, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(4, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(4, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -647,11 +643,10 @@ void BreitBatch::perform_VRR5() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(5, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<5> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<5> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -661,7 +656,7 @@ void BreitBatch::perform_VRR5() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 5; ++i) {
@@ -669,7 +664,7 @@ void BreitBatch::perform_VRR5() {
           workty[i+5*(ia+amax2*ic)] = pq[1]*worky[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+5*(ia+amax2*(ic-1))]);
           worktz[i+5*(ia+amax2*ic)] = pq[2]*workz[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+5*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 5; ++i) {
@@ -716,10 +711,10 @@ void BreitBatch::perform_VRR5() {
 
                 dataxx[ijposition] = ddot_(5, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(5, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(5, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(5, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(5, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(5, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(5, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(5, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -788,11 +783,10 @@ void BreitBatch::perform_VRR6() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(6, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<6> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<6> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -802,7 +796,7 @@ void BreitBatch::perform_VRR6() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 6; ++i) {
@@ -810,7 +804,7 @@ void BreitBatch::perform_VRR6() {
           workty[i+6*(ia+amax2*ic)] = pq[1]*worky[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+6*(ia+amax2*(ic-1))]);
           worktz[i+6*(ia+amax2*ic)] = pq[2]*workz[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+6*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 6; ++i) {
@@ -857,10 +851,10 @@ void BreitBatch::perform_VRR6() {
 
                 dataxx[ijposition] = ddot_(6, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(6, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(6, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(6, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(6, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(6, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(6, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(6, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -929,11 +923,10 @@ void BreitBatch::perform_VRR7() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(7, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<7> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<7> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -943,7 +936,7 @@ void BreitBatch::perform_VRR7() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 7; ++i) {
@@ -951,7 +944,7 @@ void BreitBatch::perform_VRR7() {
           workty[i+7*(ia+amax2*ic)] = pq[1]*worky[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+7*(ia+amax2*(ic-1))]);
           worktz[i+7*(ia+amax2*ic)] = pq[2]*workz[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+7*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 7; ++i) {
@@ -998,10 +991,10 @@ void BreitBatch::perform_VRR7() {
 
                 dataxx[ijposition] = ddot_(7, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(7, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(7, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(7, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(7, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(7, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(7, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(7, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1070,11 +1063,10 @@ void BreitBatch::perform_VRR8() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(8, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<8> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<8> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1084,7 +1076,7 @@ void BreitBatch::perform_VRR8() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 8; ++i) {
@@ -1092,7 +1084,7 @@ void BreitBatch::perform_VRR8() {
           workty[i+8*(ia+amax2*ic)] = pq[1]*worky[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+8*(ia+amax2*(ic-1))]);
           worktz[i+8*(ia+amax2*ic)] = pq[2]*workz[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+8*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 8; ++i) {
@@ -1139,10 +1131,10 @@ void BreitBatch::perform_VRR8() {
 
                 dataxx[ijposition] = ddot_(8, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(8, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(8, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(8, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(8, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(8, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(8, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(8, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1211,11 +1203,10 @@ void BreitBatch::perform_VRR9() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(9, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<9> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<9> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1225,7 +1216,7 @@ void BreitBatch::perform_VRR9() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 9; ++i) {
@@ -1233,7 +1224,7 @@ void BreitBatch::perform_VRR9() {
           workty[i+9*(ia+amax2*ic)] = pq[1]*worky[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+9*(ia+amax2*(ic-1))]);
           worktz[i+9*(ia+amax2*ic)] = pq[2]*workz[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+9*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 9; ++i) {
@@ -1280,10 +1271,10 @@ void BreitBatch::perform_VRR9() {
 
                 dataxx[ijposition] = ddot_(9, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(9, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(9, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(9, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(9, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(9, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(9, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(9, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1352,11 +1343,10 @@ void BreitBatch::perform_VRR10() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(10, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<10> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<10> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1366,7 +1356,7 @@ void BreitBatch::perform_VRR10() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 10; ++i) {
@@ -1374,7 +1364,7 @@ void BreitBatch::perform_VRR10() {
           workty[i+10*(ia+amax2*ic)] = pq[1]*worky[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+10*(ia+amax2*(ic-1))]);
           worktz[i+10*(ia+amax2*ic)] = pq[2]*workz[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+10*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 10; ++i) {
@@ -1421,10 +1411,10 @@ void BreitBatch::perform_VRR10() {
 
                 dataxx[ijposition] = ddot_(10, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(10, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(10, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(10, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(10, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(10, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(10, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(10, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1493,11 +1483,10 @@ void BreitBatch::perform_VRR11() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(11, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<11> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<11> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1507,7 +1496,7 @@ void BreitBatch::perform_VRR11() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 11; ++i) {
@@ -1515,7 +1504,7 @@ void BreitBatch::perform_VRR11() {
           workty[i+11*(ia+amax2*ic)] = pq[1]*worky[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+11*(ia+amax2*(ic-1))]);
           worktz[i+11*(ia+amax2*ic)] = pq[2]*workz[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+11*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 11; ++i) {
@@ -1562,10 +1551,10 @@ void BreitBatch::perform_VRR11() {
 
                 dataxx[ijposition] = ddot_(11, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(11, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(11, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(11, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(11, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(11, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(11, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(11, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1634,11 +1623,10 @@ void BreitBatch::perform_VRR12() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(12, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<12> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<12> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1648,7 +1636,7 @@ void BreitBatch::perform_VRR12() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 12; ++i) {
@@ -1656,7 +1644,7 @@ void BreitBatch::perform_VRR12() {
           workty[i+12*(ia+amax2*ic)] = pq[1]*worky[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+12*(ia+amax2*(ic-1))]);
           worktz[i+12*(ia+amax2*ic)] = pq[2]*workz[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+12*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 12; ++i) {
@@ -1703,10 +1691,10 @@ void BreitBatch::perform_VRR12() {
 
                 dataxx[ijposition] = ddot_(12, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(12, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(12, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(12, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(12, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(12, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(12, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(12, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }
@@ -1775,11 +1763,10 @@ void BreitBatch::perform_VRR13() {
     const double oxp2 = 0.5 / cxp;
     const double oxq2 = 0.5 / cxq;
     const double opq = 1.0 / (cxp + cxq);
-    dscal_(13, cxp*cxq*2.0*opq, weights_+offset, 1);
 
     const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<13> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);
-    cix.scale_data(weights_+offset, coeff_[ii]);
+    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);
 
     const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
     Int2D<13> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);
@@ -1789,7 +1776,7 @@ void BreitBatch::perform_VRR13() {
 
     const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};
 
-    // next compute 	idle{I}_x,y,z up to amax_, cmax_
+    // next compute \tidle{I}_x,y,z up to amax_, cmax_
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 13; ++i) {
@@ -1797,7 +1784,7 @@ void BreitBatch::perform_VRR13() {
           workty[i+13*(ia+amax2*ic)] = pq[1]*worky[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+13*(ia+amax2*(ic-1))]);
           worktz[i+13*(ia+amax2*ic)] = pq[2]*workz[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+13*(ia+amax2*(ic-1))]);
         }
-    // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
+    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
       for (int ia = 0; ia != amax1_; ++ia)
         for (int i = 0; i != 13; ++i) {
@@ -1844,10 +1831,10 @@ void BreitBatch::perform_VRR13() {
 
                 dataxx[ijposition] = ddot_(13, iyiz_nn, 1, worksx+offsetx, 1);
                 dataxy[ijposition] = ddot_(13, iyiz_tn, 1, worktx+offsetx, 1);
-                dataxz[ijposition] = ddot_(13, iyiz_nt, 1, worktx+offsetx, 1);
                 datayy[ijposition] = ddot_(13, iyiz_sn, 1, workx +offsetx, 1);
-                datazz[ijposition] = ddot_(13, iyiz_ns, 1, workx +offsetx, 1);
+                dataxz[ijposition] = ddot_(13, iyiz_nt, 1, worktx+offsetx, 1);
                 datayz[ijposition] = ddot_(13, iyiz_tt, 1, workx +offsetx, 1);
+                datazz[ijposition] = ddot_(13, iyiz_ns, 1, workx +offsetx, 1);
               }
             }
           }

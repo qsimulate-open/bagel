@@ -105,11 +105,10 @@ using namespace bagel;\n\
     ss << "    const double oxp2 = 0.5 / cxp;" << endl;
     ss << "    const double oxq2 = 0.5 / cxq;" << endl;
     ss << "    const double opq = 1.0 / (cxp + cxq);" << endl;
-    ss << "    dscal_(" << rank << ", cxp*cxq*2.0*opq, weights_+offset, 1);" << endl;
     ss << "" << endl;
     ss << "    const array<double, 11> dparamx = {{p_[ii3],   q_[ii3],   ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};" << endl;
     ss << "    Int2D<" << rank << "> cix(dparamx, roots_+offset, worksize, workx, vrr_->vrrfunc[vrr_index]);" << endl;
-    ss << "    cix.scale_data(weights_+offset, coeff_[ii]);" << endl;
+    ss << "    cix.scale_data(weights_+offset, coeff_[ii]*cxp*cxq*2.0*opq);" << endl;
     ss << "" << endl;
     ss << "    const array<double, 11> dparamy = {{p_[ii3+1], q_[ii3+1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};" << endl;
     ss << "    Int2D<" << rank << "> ciy(dparamy, roots_+offset, worksize, worky, vrr_->vrrfunc[vrr_index]);" << endl;
@@ -119,7 +118,7 @@ using namespace bagel;\n\
     ss << "" << endl;
     ss << "    const double pq[3] = {p_[ii3]-q_[ii3], p_[ii3+1]-q_[ii3+1], p_[ii3+2]-q_[ii3+2]};" << endl;
     ss << "" << endl;
-    ss << "    // next compute \tidle{I}_x,y,z up to amax_, cmax_" << endl;
+    ss << "    // next compute \\tidle{I}_x,y,z up to amax_, cmax_" << endl;
     ss << "    for (int ic = 0; ic <= cmax1_; ++ic)" << endl;
     ss << "      for (int ia = 0; ia <= amax1_; ++ia)" << endl;
     ss << "        for (int i = 0; i != " << rank << "; ++i) {" << endl;
@@ -127,7 +126,7 @@ using namespace bagel;\n\
     ss << "          workty[i+" << rank << "*(ia+amax2*ic)] = pq[1]*worky[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+" << rank << "*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+" << rank << "*(ia+amax2*(ic-1))]);" << endl;
     ss << "          worktz[i+" << rank << "*(ia+amax2*ic)] = pq[2]*workz[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+" << rank << "*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+" << rank << "*(ia+amax2*(ic-1))]);" << endl;
     ss << "        }" << endl;
-    ss << "    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1" << endl;
+    ss << "    // then compute \\tilde{\\tilde{I}}_x,y,z up to amax_-1, cmax_-1" << endl;
     ss << "    for (int ic = 0; ic != cmax1_; ++ic)" << endl;
     ss << "      for (int ia = 0; ia != amax1_; ++ia)" << endl;
     ss << "        for (int i = 0; i != " << rank << "; ++i) {" << endl;
@@ -174,10 +173,10 @@ using namespace bagel;\n\
     ss << "" << endl;
     ss << "                dataxx[ijposition] = ddot_(" << rank << ", iyiz_nn, 1, worksx+offsetx, 1);" << endl;
     ss << "                dataxy[ijposition] = ddot_(" << rank << ", iyiz_tn, 1, worktx+offsetx, 1);" << endl;
-    ss << "                dataxz[ijposition] = ddot_(" << rank << ", iyiz_nt, 1, worktx+offsetx, 1);" << endl;
     ss << "                datayy[ijposition] = ddot_(" << rank << ", iyiz_sn, 1, workx +offsetx, 1);" << endl;
-    ss << "                datazz[ijposition] = ddot_(" << rank << ", iyiz_ns, 1, workx +offsetx, 1);" << endl;
+    ss << "                dataxz[ijposition] = ddot_(" << rank << ", iyiz_nt, 1, worktx+offsetx, 1);" << endl;
     ss << "                datayz[ijposition] = ddot_(" << rank << ", iyiz_tt, 1, workx +offsetx, 1);" << endl;
+    ss << "                datazz[ijposition] = ddot_(" << rank << ", iyiz_ns, 1, workx +offsetx, 1);" << endl;
     ss << "              }" << endl;
     ss << "            }" << endl;
     ss << "          }" << endl;
