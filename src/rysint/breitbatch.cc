@@ -31,7 +31,7 @@ using namespace bagel;
 
 
 BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
-:  ERIBatch_base(_info, max_density, 0) {
+:  ERIBatch_base(_info, max_density, 0, 1) {
 
   // two-index recurrence is the same as gradient integrals
   vrr_ = shared_ptr<VRRListBase>(new GVRRList());

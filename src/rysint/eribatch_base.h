@@ -37,11 +37,11 @@ namespace bagel {
 class ERIBatch_base : public RysInt{
   protected:
 
-    void root_weight(const int ps);
-    void compute_ssss(const double);
+    void root_weight(const int ps) override;
+    void compute_ssss(const double) override;
 
   public:
-    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv);
+    ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0);
 
 };
 

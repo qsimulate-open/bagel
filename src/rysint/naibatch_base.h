@@ -45,8 +45,8 @@ class NAIBatch_base : public RysInt {
     const int L_;
     const double A_;
 
-    void root_weight(const int ps);
-    void compute_ssss(const double);
+    void root_weight(const int ps) override;
+    void compute_ssss(const double) override;
 
   public:
     NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,

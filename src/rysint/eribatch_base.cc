@@ -46,11 +46,10 @@ static const double pimhalf__ = 1.0/sqrt(pi__);
 static const double T_thresh__ = 1.0e-8;
 
 
-ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv)
+ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit)
  : RysInt(o) {
 
-  // if this is called from BreitBatch, increment RysInt::breit_
-  if (dynamic_cast<BreitBatch*>(this)) ++breit_;
+  breit_ = breit;
 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
   deriv_rank_ = deriv;
