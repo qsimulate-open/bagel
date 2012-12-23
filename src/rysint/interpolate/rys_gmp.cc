@@ -22,7 +22,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
   mpfr::mpreal::set_default_prec(GMPPREC);
   mpreal mlp[40];
   mpreal sigma[40];
-  mpreal g_tu[40];
+  mpreal fm[40];
   mpreal w[40]; 
   mpreal x[40]; 
   mpreal lp[40];
@@ -44,34 +44,21 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal half = "0.5";
       const mpreal quater = "0.25";
 
-      // some parameter
       const mpreal sqrtt = sqrt(T);
-      const mpreal sqrtu = sqrt(U);
-      const mpreal kappa  = - sqrtt + sqrtu;
-      const mpreal lambda = sqrtt + sqrtu;
-
-      // target Gm(T, U)
-      const mpreal expmt = exp(-T);
-      const mpreal prefactor = expmt * quater * GMPPISQRT; 
-      const mpreal expkk = exp(kappa * kappa);
-      const mpreal expll = exp(lambda * lambda);
-      const mpreal erfck = erfc(kappa) * expkk;
-      const mpreal erfcl = erfc(lambda) * expll;
+      // target Fm(T)
+      const mpreal pi = GMPPI;
       const mpreal halfpT = half / T;
-      const mpreal twoU = U + U;
-      mpreal g_tu_1 = U == zero ? zero : prefactor / sqrtu * (erfck + erfcl); 
-      g_tu[0] = prefactor / sqrtt * (erfck - erfcl); 
-      g_tu[1] = halfpT * (g_tu[0] + twoU * g_tu_1 - expmt);
-      const int gtuend = 2 * nrank + 2; // +2 due to Breit (the last entry is not needed for ERI)
-      for (int i = 2; i != gtuend; ++i) {
-        g_tu[i] = halfpT * (static_cast<mpreal>(2 * i - 1) * g_tu[i - 1] + twoU * g_tu[i - 2] - expmt);
+      fm[0] = sqrt(pi) / sqrtt * half * erf(sqrtt);
+      const int gtuend = 40; // +2 due to Breit (the last entry is not needed for ERI)
+      for (int i = 1; i != gtuend; ++i) {
+        fm[i] = halfpT * ((2*i-1) * fm[i - 1] - exp(-T));
       }
 #ifdef BREIT
       // in case of Breit, we shift by one
       for (int i = 0; i != gtuend-1; ++i)
-        g_tu[i] = g_tu[i+1];
+        fm[i] = fm[i+1];
 #endif
-      mone = g_tu[0];
+      mone = fm[0];
     }  
 
 
@@ -80,24 +67,24 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal mpone = "1.0";
       const int n = nrank; 
 
-      mlp[0] = mpone / g_tu[0];
-      x[0] = g_tu[1] * mlp[0];
+      mlp[0] = mpone / fm[0];
+      x[0] = fm[1] * mlp[0];
       w[0] = "0.0";
  
       for (int k = 0; k <= n - 2; k += 2) {
         for (int l = k; l <= 2 * n - k - 3; ++l) {
-          sigma[l + 1] = g_tu[l + 2] - x[k] * g_tu[l + 1] - w[k] * sigma[l + 1] ;
+          sigma[l + 1] = fm[l + 2] - x[k] * fm[l + 1] - w[k] * sigma[l + 1] ;
         }
         mlp[k + 1] = mpone / sigma[k + 1];
-        x[k + 1] = - g_tu[k + 1] * mlp[k] + sigma[k + 2] * mlp[k + 1];
+        x[k + 1] = - fm[k + 1] * mlp[k] + sigma[k + 2] * mlp[k + 1];
         w[k + 1] = sigma[k + 1] * mlp[k];
 
         if(k != n - 2) { 
           for (int l = k + 1; l <= 2 * n - k - 4; ++l)  
-            g_tu[l + 1] = sigma[l + 2] - x[k + 1] * sigma[l + 1] - w[k + 1] * g_tu[l + 1];
-          mlp[k + 2] = mpone / g_tu[k + 2];
-          x[k + 2] = - sigma[k + 2] * mlp[k + 1] + g_tu[k + 3] * mlp[k + 2];
-          w[k + 2] = g_tu[k + 2] * mlp[k + 1];
+            fm[l + 1] = sigma[l + 2] - x[k + 1] * sigma[l + 1] - w[k + 1] * fm[l + 1];
+          mlp[k + 2] = mpone / fm[k + 2];
+          x[k + 2] = - sigma[k + 2] * mlp[k + 1] + fm[k + 3] * mlp[k + 2];
+          w[k + 2] = fm[k + 2] * mlp[k + 1];
         }
       }
 

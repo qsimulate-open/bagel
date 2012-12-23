@@ -45,13 +45,13 @@ class Int2D {
     double B01_[RANK];
 
     // two index intermediate
-    double* data_;
-    int datasize_;
+    double* const data_;
+    const int datasize_;
 
-    ScaleList scale_;
+    const ScaleList scale_;
 
   public:
-    Int2D(const std::array<double,11>& dparam, const double* roots, const int datasize, double* data_pointer,
+    Int2D(const std::array<double,11>& dparam, const double* roots, const int datasize, double* const data_pointer,
        void (*vrrfunc)(double*, const double*, const double*, const double*, const double*, const double*))
      : data_(data_pointer), datasize_(datasize) {
 

@@ -60,11 +60,6 @@ shared_ptr<Reference> Dirac::conv_to_ref() const {
 
 shared_ptr<ZMatrix> Dirac::hcore_construct() {
   const int n = geom_->nbasis();
-  const double c = c__;
-  const complex<double> w(0.25/(c*c), 0.0);
-
-  const complex<double> coeff1 (1.0, 0.0);
-  const complex<double> coeffi (0.0, 1.0);
 
   shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
   shared_ptr<ZMatrix> znai(new ZMatrix(2*n, 2*n));
@@ -73,6 +68,9 @@ shared_ptr<ZMatrix> Dirac::hcore_construct() {
   array<shared_ptr<ZMatrix>,4> zsmallnai;
   for (auto& i : zsmallnai)
     i = znai->clone(); 
+
+  const complex<double> coeff1 (1.0, 0.0);
+  const complex<double> coeffi (0.0, 1.0);
 
   znai->copy_real_block(coeff1, 0, 0, n, n, nai_);
   znai->copy_real_block(coeff1, n, n, n, n, nai_);
@@ -91,6 +89,7 @@ shared_ptr<ZMatrix> Dirac::hcore_construct() {
   shared_ptr<ZMatrix> smallnai(new ZMatrix(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]));
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
+  const complex<double> w(0.25/(c__*c__), 0.0);
   out->zero();
   out->copy_block(0, 0, 2*n, 2*n, znai);
   out->copy_block(0, 2*n, 2*n, 2*n, zkinetic);
@@ -103,14 +102,12 @@ shared_ptr<ZMatrix> Dirac::hcore_construct() {
 
 shared_ptr<ZMatrix> Dirac::s12_construct() {
   const int n = geom_->nbasis();
-  const double c = c__;
-  const double t = 0.5/(c*c);
   const complex<double> coeff1 (1.0, 0.0);
 
   shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
   shared_ptr<Overlap> ovl(new Overlap(*overlap_));
 
-  shared_ptr<Matrix> k12(new Matrix(*kinetic_ * t));
+  shared_ptr<Matrix> k12(new Matrix(*kinetic_ * (0.5/(c__*c__))));
   ovl->inverse_half();
   k12->inverse_half();
 
