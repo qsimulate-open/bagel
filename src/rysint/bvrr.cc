@@ -101,9 +101,9 @@ void BreitBatch::perform_VRR1() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 1; ++i) {
-          worktx[i+1*(ia+amax2*ic)] = pq[0]*workx[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+1*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+1*(ia+amax2*(ic-1))]); 
-          workty[i+1*(ia+amax2*ic)] = pq[1]*worky[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+1*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+1*(ia+amax2*(ic-1))]); 
-          worktz[i+1*(ia+amax2*ic)] = pq[2]*workz[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+1*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+1*(ia+amax2*(ic-1))]); 
+          worktx[i+1*(ia+amax2*ic)] = pq[0]*workx[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+1*(ia+amax2*(ic-1))]); 
+          workty[i+1*(ia+amax2*ic)] = pq[1]*worky[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+1*(ia+amax2*(ic-1))]); 
+          worktz[i+1*(ia+amax2*ic)] = pq[2]*workz[i+1*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+1*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+1*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -242,9 +242,9 @@ void BreitBatch::perform_VRR2() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 2; ++i) {
-          worktx[i+2*(ia+amax2*ic)] = pq[0]*workx[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+2*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+2*(ia+amax2*(ic-1))]); 
-          workty[i+2*(ia+amax2*ic)] = pq[1]*worky[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+2*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+2*(ia+amax2*(ic-1))]); 
-          worktz[i+2*(ia+amax2*ic)] = pq[2]*workz[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+2*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+2*(ia+amax2*(ic-1))]); 
+          worktx[i+2*(ia+amax2*ic)] = pq[0]*workx[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+2*(ia+amax2*(ic-1))]); 
+          workty[i+2*(ia+amax2*ic)] = pq[1]*worky[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+2*(ia+amax2*(ic-1))]); 
+          worktz[i+2*(ia+amax2*ic)] = pq[2]*workz[i+2*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+2*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+2*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -383,9 +383,9 @@ void BreitBatch::perform_VRR3() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 3; ++i) {
-          worktx[i+3*(ia+amax2*ic)] = pq[0]*workx[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+3*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+3*(ia+amax2*(ic-1))]); 
-          workty[i+3*(ia+amax2*ic)] = pq[1]*worky[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+3*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+3*(ia+amax2*(ic-1))]); 
-          worktz[i+3*(ia+amax2*ic)] = pq[2]*workz[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+3*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+3*(ia+amax2*(ic-1))]); 
+          worktx[i+3*(ia+amax2*ic)] = pq[0]*workx[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+3*(ia+amax2*(ic-1))]); 
+          workty[i+3*(ia+amax2*ic)] = pq[1]*worky[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+3*(ia+amax2*(ic-1))]); 
+          worktz[i+3*(ia+amax2*ic)] = pq[2]*workz[i+3*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+3*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+3*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -524,9 +524,9 @@ void BreitBatch::perform_VRR4() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 4; ++i) {
-          worktx[i+4*(ia+amax2*ic)] = pq[0]*workx[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+4*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+4*(ia+amax2*(ic-1))]); 
-          workty[i+4*(ia+amax2*ic)] = pq[1]*worky[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+4*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+4*(ia+amax2*(ic-1))]); 
-          worktz[i+4*(ia+amax2*ic)] = pq[2]*workz[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+4*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+4*(ia+amax2*(ic-1))]); 
+          worktx[i+4*(ia+amax2*ic)] = pq[0]*workx[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+4*(ia+amax2*(ic-1))]); 
+          workty[i+4*(ia+amax2*ic)] = pq[1]*worky[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+4*(ia+amax2*(ic-1))]); 
+          worktz[i+4*(ia+amax2*ic)] = pq[2]*workz[i+4*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+4*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+4*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -665,9 +665,9 @@ void BreitBatch::perform_VRR5() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 5; ++i) {
-          worktx[i+5*(ia+amax2*ic)] = pq[0]*workx[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+5*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+5*(ia+amax2*(ic-1))]); 
-          workty[i+5*(ia+amax2*ic)] = pq[1]*worky[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+5*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+5*(ia+amax2*(ic-1))]); 
-          worktz[i+5*(ia+amax2*ic)] = pq[2]*workz[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+5*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+5*(ia+amax2*(ic-1))]); 
+          worktx[i+5*(ia+amax2*ic)] = pq[0]*workx[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+5*(ia+amax2*(ic-1))]); 
+          workty[i+5*(ia+amax2*ic)] = pq[1]*worky[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+5*(ia+amax2*(ic-1))]); 
+          worktz[i+5*(ia+amax2*ic)] = pq[2]*workz[i+5*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+5*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+5*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -806,9 +806,9 @@ void BreitBatch::perform_VRR6() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 6; ++i) {
-          worktx[i+6*(ia+amax2*ic)] = pq[0]*workx[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+6*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+6*(ia+amax2*(ic-1))]); 
-          workty[i+6*(ia+amax2*ic)] = pq[1]*worky[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+6*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+6*(ia+amax2*(ic-1))]); 
-          worktz[i+6*(ia+amax2*ic)] = pq[2]*workz[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+6*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+6*(ia+amax2*(ic-1))]); 
+          worktx[i+6*(ia+amax2*ic)] = pq[0]*workx[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+6*(ia+amax2*(ic-1))]); 
+          workty[i+6*(ia+amax2*ic)] = pq[1]*worky[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+6*(ia+amax2*(ic-1))]); 
+          worktz[i+6*(ia+amax2*ic)] = pq[2]*workz[i+6*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+6*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+6*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -947,9 +947,9 @@ void BreitBatch::perform_VRR7() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 7; ++i) {
-          worktx[i+7*(ia+amax2*ic)] = pq[0]*workx[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+7*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+7*(ia+amax2*(ic-1))]); 
-          workty[i+7*(ia+amax2*ic)] = pq[1]*worky[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+7*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+7*(ia+amax2*(ic-1))]); 
-          worktz[i+7*(ia+amax2*ic)] = pq[2]*workz[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+7*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+7*(ia+amax2*(ic-1))]); 
+          worktx[i+7*(ia+amax2*ic)] = pq[0]*workx[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+7*(ia+amax2*(ic-1))]); 
+          workty[i+7*(ia+amax2*ic)] = pq[1]*worky[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+7*(ia+amax2*(ic-1))]); 
+          worktz[i+7*(ia+amax2*ic)] = pq[2]*workz[i+7*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+7*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+7*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1088,9 +1088,9 @@ void BreitBatch::perform_VRR8() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 8; ++i) {
-          worktx[i+8*(ia+amax2*ic)] = pq[0]*workx[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+8*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+8*(ia+amax2*(ic-1))]); 
-          workty[i+8*(ia+amax2*ic)] = pq[1]*worky[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+8*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+8*(ia+amax2*(ic-1))]); 
-          worktz[i+8*(ia+amax2*ic)] = pq[2]*workz[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+8*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+8*(ia+amax2*(ic-1))]); 
+          worktx[i+8*(ia+amax2*ic)] = pq[0]*workx[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+8*(ia+amax2*(ic-1))]); 
+          workty[i+8*(ia+amax2*ic)] = pq[1]*worky[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+8*(ia+amax2*(ic-1))]); 
+          worktz[i+8*(ia+amax2*ic)] = pq[2]*workz[i+8*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+8*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+8*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1229,9 +1229,9 @@ void BreitBatch::perform_VRR9() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 9; ++i) {
-          worktx[i+9*(ia+amax2*ic)] = pq[0]*workx[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+9*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+9*(ia+amax2*(ic-1))]); 
-          workty[i+9*(ia+amax2*ic)] = pq[1]*worky[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+9*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+9*(ia+amax2*(ic-1))]); 
-          worktz[i+9*(ia+amax2*ic)] = pq[2]*workz[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+9*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+9*(ia+amax2*(ic-1))]); 
+          worktx[i+9*(ia+amax2*ic)] = pq[0]*workx[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+9*(ia+amax2*(ic-1))]); 
+          workty[i+9*(ia+amax2*ic)] = pq[1]*worky[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+9*(ia+amax2*(ic-1))]); 
+          worktz[i+9*(ia+amax2*ic)] = pq[2]*workz[i+9*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+9*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+9*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1370,9 +1370,9 @@ void BreitBatch::perform_VRR10() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 10; ++i) {
-          worktx[i+10*(ia+amax2*ic)] = pq[0]*workx[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+10*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+10*(ia+amax2*(ic-1))]); 
-          workty[i+10*(ia+amax2*ic)] = pq[1]*worky[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+10*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+10*(ia+amax2*(ic-1))]); 
-          worktz[i+10*(ia+amax2*ic)] = pq[2]*workz[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+10*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+10*(ia+amax2*(ic-1))]); 
+          worktx[i+10*(ia+amax2*ic)] = pq[0]*workx[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+10*(ia+amax2*(ic-1))]); 
+          workty[i+10*(ia+amax2*ic)] = pq[1]*worky[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+10*(ia+amax2*(ic-1))]); 
+          worktz[i+10*(ia+amax2*ic)] = pq[2]*workz[i+10*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+10*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+10*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1511,9 +1511,9 @@ void BreitBatch::perform_VRR11() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 11; ++i) {
-          worktx[i+11*(ia+amax2*ic)] = pq[0]*workx[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+11*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+11*(ia+amax2*(ic-1))]); 
-          workty[i+11*(ia+amax2*ic)] = pq[1]*worky[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+11*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+11*(ia+amax2*(ic-1))]); 
-          worktz[i+11*(ia+amax2*ic)] = pq[2]*workz[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+11*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+11*(ia+amax2*(ic-1))]); 
+          worktx[i+11*(ia+amax2*ic)] = pq[0]*workx[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+11*(ia+amax2*(ic-1))]); 
+          workty[i+11*(ia+amax2*ic)] = pq[1]*worky[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+11*(ia+amax2*(ic-1))]); 
+          worktz[i+11*(ia+amax2*ic)] = pq[2]*workz[i+11*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+11*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+11*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1652,9 +1652,9 @@ void BreitBatch::perform_VRR12() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 12; ++i) {
-          worktx[i+12*(ia+amax2*ic)] = pq[0]*workx[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+12*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+12*(ia+amax2*(ic-1))]); 
-          workty[i+12*(ia+amax2*ic)] = pq[1]*worky[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+12*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+12*(ia+amax2*(ic-1))]); 
-          worktz[i+12*(ia+amax2*ic)] = pq[2]*workz[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+12*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+12*(ia+amax2*(ic-1))]); 
+          worktx[i+12*(ia+amax2*ic)] = pq[0]*workx[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+12*(ia+amax2*(ic-1))]); 
+          workty[i+12*(ia+amax2*ic)] = pq[1]*worky[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+12*(ia+amax2*(ic-1))]); 
+          worktz[i+12*(ia+amax2*ic)] = pq[2]*workz[i+12*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+12*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+12*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)
@@ -1793,9 +1793,9 @@ void BreitBatch::perform_VRR13() {
     for (int ic = 0; ic <= cmax1_; ++ic)
       for (int ia = 0; ia <= amax1_; ++ia)
         for (int i = 0; i != 13; ++i) {
-          worktx[i+13*(ia+amax2*ic)] = pq[0]*workx[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+13*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+13*(ia+amax2*(ic-1))]); 
-          workty[i+13*(ia+amax2*ic)] = pq[1]*worky[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+13*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+13*(ia+amax2*(ic-1))]); 
-          worktz[i+13*(ia+amax2*ic)] = pq[2]*workz[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+13*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+13*(ia+amax2*(ic-1))]); 
+          worktx[i+13*(ia+amax2*ic)] = pq[0]*workx[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+13*(ia+amax2*(ic-1))]); 
+          workty[i+13*(ia+amax2*ic)] = pq[1]*worky[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+13*(ia+amax2*(ic-1))]); 
+          worktz[i+13*(ia+amax2*ic)] = pq[2]*workz[i+13*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+13*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+13*(ia+amax2*(ic-1))]); 
         }   
     // then compute 	ilde{	ilde{I}}_x,y,z up to amax_-1, cmax_-1
     for (int ic = 0; ic != cmax1_; ++ic)

@@ -123,9 +123,9 @@ using namespace bagel;\n\
     ss << "    for (int ic = 0; ic <= cmax1_; ++ic)" << endl;
     ss << "      for (int ia = 0; ia <= amax1_; ++ia)" << endl;
     ss << "        for (int i = 0; i != " << rank << "; ++i) {" << endl;
-    ss << "          worktx[i+" << rank << "*(ia+amax2*ic)] = pq[0]*workx[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+" << rank << "*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
-    ss << "          workty[i+" << rank << "*(ia+amax2*ic)] = pq[1]*worky[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+" << rank << "*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
-    ss << "          worktz[i+" << rank << "*(ia+amax2*ic)] = pq[2]*workz[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+" << rank << "*(ia+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
+    ss << "          worktx[i+" << rank << "*(ia+amax2*ic)] = pq[0]*workx[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workx[i+" << rank << "*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workx[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
+    ss << "          workty[i+" << rank << "*(ia+amax2*ic)] = pq[1]*worky[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*worky[i+" << rank << "*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*worky[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
+    ss << "          worktz[i+" << rank << "*(ia+amax2*ic)] = pq[2]*workz[i+" << rank << "*(ia+amax2*ic)] + (ia==0 ? 0.0 : oxp2*workz[i+" << rank << "*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : oxq2*workz[i+" << rank << "*(ia+amax2*(ic-1))]); " << endl;
     ss << "        }   " << endl;
     ss << "    // then compute \tilde{\tilde{I}}_x,y,z up to amax_-1, cmax_-1" << endl;
     ss << "    for (int ic = 0; ic != cmax1_; ++ic)" << endl;
