@@ -41,7 +41,6 @@ static const CarSphList carsphlist;
 static const HRRList hrr;
 
 void BreitBatch::compute() {
-  bool swapped = false;
 
   double* const stack_save = stack_->get(size_block_);
   bkup_ = stack_save;
@@ -70,6 +69,7 @@ void BreitBatch::compute() {
   double* cdata = data_;
   for (int iblock = 0; iblock != 6; ++iblock, cdata += size_block_) {
 
+    bool swapped = false;
     // contract indices 01
     // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
     {
