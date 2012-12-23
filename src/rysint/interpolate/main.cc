@@ -5,6 +5,7 @@
 
 #define NGRID 12
 #define MAXT 64
+#define NBOX 1024
 #define SQRTPI2 0.886226925452758013649083741671
 #include <sstream>
 #include <iostream>
@@ -60,8 +61,8 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
   vector<mpreal> dx(rank);
   vector<mpreal> dw(rank);
   vector<mpreal> ttt(1);
-  for (vector<mpreal>::const_iterator titer = Tpoints.begin(); titer != Tpoints.end(); ++titer) { 
-    ttt[0] = *titer;
+  for (auto& t :Tpoints) { 
+    ttt[0] = t;
     rysroot_gmp(ttt, dx, dw, rank, 1);
     table_reserve.push_back(make_pair(dx, dw));
   }
@@ -78,14 +79,15 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
     }  
 
     const mpreal two = "2.0";
+    const mpreal half = "0.5";
     const mpreal fac = two / n; 
     const mpreal pi = GMPPI;
     for (int j = 0; j != n; ++j) {
       mpreal sum = 0.0;
       mpreal sum2 = 0.0;
       for (int k = 0; k != n; ++k) {
-        sum += cdx[k] * cos(pi * j * (k + 0.5) / n);
-        sum2 += cdw[k] * cos(pi * j * (k + 0.5) / n);
+        sum += cdx[k] * cos(pi * j * (k + half) / n);
+        sum2 += cdw[k] * cos(pi * j * (k + half) / n);
       }
       tc[j] = sum * fac;
       tc2[j] = sum2 * fac;
@@ -101,6 +103,7 @@ extern "C" {
 }
 
 bool test() {
+  mpfr::mpreal::set_default_prec(GMPPREC);
   // testing with rank 3
   const static int nrank = 3;
   const static int nsize = 1;
@@ -113,6 +116,11 @@ bool test() {
   double dr[nsize*nrank];
   double dw[nsize*nrank];
   breitroot3_(dt, dr, dw, &nsize);
+  cout << setprecision(10) << endl;
+  for (int i = 0; i != nrank; ++i) {
+    cout << dr[i] << " " << rr[i] << " " << fabs(dr[i] - (double)(rr[i])) << endl;
+    cout << dw[i] << " " << ww[i] << " " << fabs(dw[i] - (double)(ww[i])) << endl;
+  }
   for (int i = 0; i != nrank; ++i) {
     assert(fabs(dr[i] - (double)(rr[i])) < 1.0e-15);
     assert(fabs(dw[i] - (double)(ww[i])) < 1.0e-15);
@@ -121,12 +129,16 @@ bool test() {
 }
 
 int main() {
-
-  mpfr::mpreal pi = GMPPI;
   mpfr::mpreal::set_default_prec(GMPPREC);
+  mpfr::mpreal pi = GMPPI;
+#if 1
+  test();
+  return 0;
+#endif
+
   vector<double> nbox_(14);
   for (int nroot=1; nroot!=14; ++nroot) { 
-    nbox_[nroot] = 32;
+    nbox_[nroot] = NBOX;
   } 
 
   for (int nroot=1; nroot!=14; ++nroot) { // this is the outer most loop.
@@ -245,6 +257,11 @@ int main() {
         }
       }
     }
+#ifndef BREIT
+    string tafactor = "t";
+#else
+    string tafactor = "t*t*t";
+#endif
     ofs << "\
       data x /\n";
     ofs << listx.str() << "\
@@ -265,7 +282,7 @@ int main() {
         else if (t >= " << MAXT << ".0d0) then\n\
           t = 1.0d0/dsqrt(t)\n\
           rr(offset+1:offset+" << nroot << ") = ax(1:" << nroot << ")*t*t\n\
-          ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*t*t*t\n\
+          ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*" + tafactor + "\n\
         else\n\
           it = int(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< "d0)\n\
           t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << "d0)\n     &     *"
