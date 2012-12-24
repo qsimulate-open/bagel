@@ -32,6 +32,7 @@ using namespace std;
 using namespace bagel;
 
 
+#if 0
 void BreitBatch::perform_VRR1() {
   const int amax2 = amax1_+1;
   const int cmax2 = cmax1_+1;
@@ -170,6 +171,7 @@ void BreitBatch::perform_VRR1() {
   stack_->release(worksize*3, workx);
 
 }
+#endif
 
 
 void BreitBatch::perform_VRR2() {
