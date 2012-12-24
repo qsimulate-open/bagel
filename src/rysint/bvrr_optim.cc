@@ -40,15 +40,14 @@ void BreitBatch::perform_VRR1() {
   for (int j = 0; j != screening_size_; ++j) {
     const int ii = screening_[j];
     const int ii3 = ii*3;
-    const double oxp2 = 0.5 / xp_[ii];
-    const double oxq2 = 0.5 / xq_[ii]; 
+    const double oxpq2 = 0.5 / xp_[ii] + 0.5 / xq_[ii];
     const double rho2 = 2.0*xp_[ii]*xq_[ii]/(xp_[ii]+xq_[ii])*coeff_[ii]*weights_[ii];
     const double root = 1.0 - roots_[ii];
 
     for (int i = 0; i != 3; ++i) {
       const double PQ = p_[ii3+i] - q_[ii3+i];
       t[i] = PQ;
-      s[i] = (root*PQ*PQ + oxp2 + oxq2)*rho2;
+      s[i] = (root*PQ*PQ + oxpq2)*rho2;
     }
 
     const double fac = root*rho2;
