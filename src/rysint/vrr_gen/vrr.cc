@@ -63,12 +63,16 @@ const string VRR::dump(const string filename, const string prefix) const {
   contents << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
   contents << "//" << endl;
   contents << endl;
+#define USE_TEMPLATE
+#ifdef USE_TEMPLATE
+  contents << "#include <src/rysint/_vrr.h>" << endl;
+#endif
   if (prefix == "") {
-    contents << "#include <src/rysint/vrrlist.h>\n";
+    contents << "#include <src/rysint/vrrlist.h>" << endl;
   } else if (prefix == "s") {
-    contents << "#include <src/slater/svrrlist.h>\n";
+    contents << "#include <src/slater/svrrlist.h>" << endl;
   } else if (prefix == "g") {
-    contents << "#include <src/grad/gvrrlist.h>\n";
+    contents << "#include <src/grad/gvrrlist.h>" << endl;
   } else {
     throw logic_error("prefix is not defined in vrr_gen/vrr.cc");
   }
@@ -76,17 +80,20 @@ const string VRR::dump(const string filename, const string prefix) const {
   contents << "using namespace bagel;" << endl;
   contents << endl;
 
-  contents << "// returns double array of length " + lexical_cast<string>((a_ + 1) * (c_ + 1) * rank_) + "\n";
+  contents << "// returns double array of length " << (a_ + 1) * (c_ + 1) * rank_ << endl;
   if (prefix == "") {
-    contents << "void VRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+    contents << "void VRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {" << endl;
   } else if (prefix == "s") {
-    contents << "void SVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+    contents << "void SVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {" << endl;
   } else if (prefix == "g") {
-    contents << "void GVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {\n";
+    contents << "void GVRRList::" + filename + "(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {" << endl;
   } else {
     throw logic_error("prefix is not defined in vrr_gen/vrr.cc");
   }
 
+#ifdef USE_TEMPLATE
+  contents << "  vrr<" << a_ << "," << c_ << "," << rank_ << ">(data_, C00, D00, B00, B01, B10);" << endl; 
+#else
   contents << "#ifdef __GNUC__" << endl;
   contents << "  const double C00_[" << rank_ << "]__attribute__((aligned(32))) = {";
     for (int i = 0; i != rank_; ++i)
@@ -124,9 +131,10 @@ const string VRR::dump(const string filename, const string prefix) const {
   else if (a_ >  0 && c_ == 0) contents << vrrn0(a_).first;
   else if (a_ == 0 && c_ == 0) contents << vrr00(  ).first;
   else cout << "NEVER COMES HERE" << endl;
+#endif
 
 
-  contents << "}\n";
+  contents << "}" << endl;
 
   ofstream cc;
   const string ccfilename = filename + ".cc";
