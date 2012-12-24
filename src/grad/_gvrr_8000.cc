@@ -23,77 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/rysint/_vrr.h>
 #include <src/grad/gvrrlist.h>
 
 using namespace bagel;
 
 // returns double array of length 36
 void GVRRList::_gvrr_8000(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
-#ifdef __GNUC__
-  const double C00_[4]__attribute__((aligned(32))) = {C00[0], C00[1], C00[2], C00[3]};
-  const double D00_[4]__attribute__((aligned(32))) = {D00[0], D00[1], D00[2], D00[3]};
-  const double B00_[4]__attribute__((aligned(32))) = {B00[0], B00[1], B00[2], B00[3]};
-  const double B01_[4]__attribute__((aligned(32))) = {B01[0], B01[1], B01[2], B01[3]};
-  const double B10_[4]__attribute__((aligned(32))) = {B10[0], B10[1], B10[2], B10[3]};
-#else
-  const double* C00_ = C00;
-  const double* D00_ = D00;
-  const double* B00_ = B00;
-  const double* B01_ = B01;
-  const double* B10_ = B10;
-#endif
-
-  for (int t = 0; t != 4; ++t)
-    data_[0+t] = 1.0;
-
-  for (int t = 0; t != 4; ++t)
-    data_[4+t] = C00_[t];
-
-#ifdef __GNUC__
-  double B10_current[4]__attribute__((aligned(32)));
-#else
-  double B10_current[4];
-#endif
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] = B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[8+t] = C00_[t] * data_[4+t] + B10_current[t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[12+t] = C00_[t] * data_[8+t] + B10_current[t] * data_[4+t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[16+t] = C00_[t] * data_[12+t] + B10_current[t] * data_[8+t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[20+t] = C00_[t] * data_[16+t] + B10_current[t] * data_[12+t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[24+t] = C00_[t] * data_[20+t] + B10_current[t] * data_[16+t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[28+t] = C00_[t] * data_[24+t] + B10_current[t] * data_[20+t];
-
-  for (int t = 0; t != 4; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 4; ++t)
-    data_[32+t] = C00_[t] * data_[28+t] + B10_current[t] * data_[24+t];
+  vrr<8,0,4>(data_, C00, D00, B00, B01, B10);
 }
 

@@ -47,7 +47,6 @@ class VRR {
   public:
     // CAUTION : a change due to gradient (since _i and _j are not used at the same time).
     VRR(const int _i, const int _j): a_(_i), c_(_j), rank_(::ceil(0.5 * (_i + _j))) { };
-    //VRR(const int _i, const int _j): a_(_i), c_(_j), rank_(::ceil(0.5 * (_i + _j + 1))) { };
     ~VRR() { };
 
     const std::string dump(const std::string, const std::string) const;

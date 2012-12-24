@@ -39,7 +39,7 @@ struct GVRRList : public VRRListBase {
   GVRRList();
   ~GVRRList();
 
-  static void _gvrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
+//static void _gvrr_0000(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_0010(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_0020(double*, const double*, const double*, const double*, const double*, const double*);
   static void _gvrr_0030(double*, const double*, const double*, const double*, const double*, const double*);

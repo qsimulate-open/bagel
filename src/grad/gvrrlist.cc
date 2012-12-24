@@ -29,7 +29,7 @@
 using namespace bagel;
 
 GVRRList::GVRRList() {
-      vrrfunc[                  0] = &_gvrr_0000;
+//    vrrfunc[                  0] = &_gvrr_0000;
       vrrfunc[                  1] = &_gvrr_0010;
       vrrfunc[                  2] = &_gvrr_0020;
       vrrfunc[                  3] = &_gvrr_0030;

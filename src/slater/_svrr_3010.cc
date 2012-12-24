@@ -23,65 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/rysint/_vrr.h>
 #include <src/slater/svrrlist.h>
 
 using namespace bagel;
 
 // returns double array of length 24
 void SVRRList::_svrr_3010(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
-#ifdef __GNUC__
-  const double C00_[3]__attribute__((aligned(32))) = {C00[0], C00[1], C00[2]};
-  const double D00_[3]__attribute__((aligned(32))) = {D00[0], D00[1], D00[2]};
-  const double B00_[3]__attribute__((aligned(32))) = {B00[0], B00[1], B00[2]};
-  const double B01_[3]__attribute__((aligned(32))) = {B01[0], B01[1], B01[2]};
-  const double B10_[3]__attribute__((aligned(32))) = {B10[0], B10[1], B10[2]};
-#else
-  const double* C00_ = C00;
-  const double* D00_ = D00;
-  const double* B00_ = B00;
-  const double* B01_ = B01;
-  const double* B10_ = B10;
-#endif
-
-  for (int t = 0; t != 3; ++t)
-    data_[0+t] = 1.0;
-
-  for (int t = 0; t != 3; ++t)
-    data_[3+t] = C00_[t];
-
-#ifdef __GNUC__
-  double B10_current[3]__attribute__((aligned(32)));
-#else
-  double B10_current[3];
-#endif
-  for (int t = 0; t != 3; ++t)
-    B10_current[t] = B10_[t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[6+t] = C00_[t] * data_[3+t] + B10_current[t];
-
-  for (int t = 0; t != 3; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[9+t] = C00_[t] * data_[6+t] + B10_current[t] * data_[3+t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[12+t] = D00_[t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[15+t] = C00_[t] * data_[12+t] + B00_[t];
-
-  for (int t = 0; t != 3; ++t)
-    B10_current[t] = B10_[t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[18+t] = C00_[t] * data_[15+t] + B10_current[t] * data_[12+t] + B00_[t] * data_[3+t];
-
-  for (int t = 0; t != 3; ++t)
-    B10_current[t] += B10_[t];
-
-  for (int t = 0; t != 3; ++t)
-    data_[21+t] = C00_[t] * data_[18+t] + B10_current[t] * data_[15+t] + B00_[t] * data_[6+t];
+  vrr<3,1,3>(data_, C00, D00, B00, B01, B10);
 }
 

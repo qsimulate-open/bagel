@@ -40,8 +40,8 @@ int main() {
 
   for (int i = 0; i != ANG_VRR_END; ++i) {
     for (int j = 0; j != ANG_VRR_END; ++j) {
-#if 0
       if (i == 0 && j == 0) continue;
+#if 0
       if (i == 1 && j == 0) continue;
       if (i == 0 && j == 1) continue;
 //sum 2

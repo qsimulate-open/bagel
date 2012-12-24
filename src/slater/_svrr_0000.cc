@@ -23,26 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/rysint/_vrr.h>
 #include <src/slater/svrrlist.h>
 
 using namespace bagel;
 
 // returns double array of length 1
 void SVRRList::_svrr_0000(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
-#ifdef __GNUC__
-  const double C00_[1]__attribute__((aligned(32))) = {C00[0]};
-  const double D00_[1]__attribute__((aligned(32))) = {D00[0]};
-  const double B00_[1]__attribute__((aligned(32))) = {B00[0]};
-  const double B01_[1]__attribute__((aligned(32))) = {B01[0]};
-  const double B10_[1]__attribute__((aligned(32))) = {B10[0]};
-#else
-  const double* C00_ = C00;
-  const double* D00_ = D00;
-  const double* B00_ = B00;
-  const double* B01_ = B01;
-  const double* B10_ = B10;
-#endif
-
-  data_[0] = 1.0;
+  vrr<0,0,1>(data_, C00, D00, B00, B01, B10);
 }
 
