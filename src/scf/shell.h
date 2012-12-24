@@ -66,7 +66,7 @@ class Shell {
     int num_contracted() const { return contractions_.size(); };
 
     double position(const int i) const { return position_[i]; };
-    const std::array<double,3> position() const { return position_; };
+    const std::array<double,3>& position() const { return position_; };
     int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };

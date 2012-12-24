@@ -28,7 +28,7 @@
 
 using namespace bagel;
 
-SVRRList::SVRRList() : VRRList() {
+SVRRList::SVRRList() : VRRListBase() {
       vrrfunc[                  0] = &_svrr_0000;
       vrrfunc[                  1] = &_svrr_0010;
       vrrfunc[                  2] = &_svrr_0020;

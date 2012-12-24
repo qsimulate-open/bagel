@@ -24,8 +24,8 @@
 //
 
 
+#include <src/rysint/_vrr_drv.h>
 #include <src/rysint/eribatch.h>
-#include <src/rysint/int2d.h>
 #include <iostream>
 #include <iomanip>
 
@@ -34,10 +34,7 @@ using namespace bagel;
 
 void ERIBatch::perform_VRR3() {
 
-// some cases haven't been rewritten..
-// (4, 0, 0, 0) and (0, 0, 0, 4) hasn't been rewritten (using the generated code);
-// just copy (3, 1, 0, 0) etc and delete the first part!
-
+// (4, 0, 0, 0) and (0, 0, 0, 4) hasn't been rewritten (using the generic code);
 // (3, 0, 1, 0) and (1, 0, 3, 0) hasn't been rewritten yet
 // (2, 1, 1, 0) and (1, 0, 2, 1) hasn't been rewritten yet
 
@@ -1465,68 +1462,12 @@ void ERIBatch::perform_VRR3() {
     }
 
   } else {
-    double* workx = stack_->get(worksize);
-    double* worky = stack_->get(worksize);
-    double* workz = stack_->get(worksize);
-    double iyiz[3];
+// (4, 0, 0, 0) and (0, 0, 0, 4) hasn't been rewritten (using the generic code);
+// (3, 0, 1, 0) and (1, 0, 3, 0) hasn't been rewritten yet
+// (2, 1, 1, 0) and (1, 0, 2, 1) hasn't been rewritten yet
 
-    for (int j = 0; j != screening_size_; ++j) {
-      const int ii = screening_[j];
-      int offset = ii * rank_;
-      int data_offset_ii = ii * acsize;
+    perform_VRR();
 
-      double* current_data = &data_[data_offset_ii];
-
-      const int ii3 = 3 * ii;
-      const double cxp = xp_[ii];
-      const double cxq = xq_[ii];
-      const double oxp2 = 0.5 / cxp;
-      const double oxq2 = 0.5 / cxq;
-      const double opq = 1.0 / (cxp + cxq);
-      const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-      Int2D<3> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[vrr_index]);
-      cix.scale_data(&weights_[offset], coeff_[ii]);
-
-      const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-      Int2D<3> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[vrr_index]);
-
-      const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-      Int2D<3> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[vrr_index]);
-
-      for (int iz = 0; iz <= cmax_; ++iz) {
-        for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-          const int iyz = cmax1_ * (iy + cmax1_ * iz);
-          for (int jz = 0; jz <= amax_; ++jz) {
-            const int offsetz = rank_ * (amax1_ * iz + jz);
-            for (int jy = 0; jy <= amax_ - jz; ++jy) {
-              const int offsety = rank_ * (amax1_ * iy + jy);
-              const int jyz = amax1_ * (jy + amax1_ * jz);
-              iyiz[0] = worky[offsety + 0] * workz[offsetz + 0];
-              iyiz[1] = worky[offsety + 1] * workz[offsetz + 1];
-              iyiz[2] = worky[offsety + 2] * workz[offsetz + 2];
-              for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-                const int iposition = cmapping_[ix + iyz];
-                const int ipos_asize = iposition * asize_;
-                for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                  const int offsetx = rank_ * (amax1_ * ix + jx);
-                  const int jposition = amapping_[jx + jyz];
-                  const int ijposition = jposition + ipos_asize;
-
-                  current_data[ijposition] = iyiz[0] * workx[offsetx + 0];
-                  current_data[ijposition] += iyiz[1] * workx[offsetx + 1];
-                  current_data[ijposition] += iyiz[2] * workx[offsetx + 2];
-                }
-              }
-            }
-          }
-        }
-      }
-
-    }
-
-    stack_->release(worksize, workz);
-    stack_->release(worksize, worky);
-    stack_->release(worksize, workx);
   }
 }
 

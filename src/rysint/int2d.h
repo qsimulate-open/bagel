@@ -106,16 +106,13 @@ class Int2D {
 
 
 template <int a_, int c_, int rank_>
-void int2d(const std::array<double,11>& dparam, const double* roots, const int datasize, double* const data) {
+void int2d(const std::array<double,11>& dparam, const double* roots, double* const data) {
   /// for recursion
-  double C00_[rank_];
-  double D00_[rank_];
-  double B00_[rank_];
-  double B10_[rank_];
-  double B01_[rank_];
-
-  // two index intermediate
-  double* const data_;
+  double C00_[rank_]__attribute__((aligned(32)));
+  double D00_[rank_]__attribute__((aligned(32)));
+  double B00_[rank_]__attribute__((aligned(32)));
+  double B10_[rank_]__attribute__((aligned(32)));
+  double B01_[rank_]__attribute__((aligned(32)));
 
   const double P = dparam[0];
   const double Q = dparam[1];
@@ -150,7 +147,7 @@ void int2d(const std::array<double,11>& dparam, const double* roots, const int d
     B01_[i] = one_2q - b01i0 * tsq;
   }
 
-  vrr<a_,c_,rank_>(data_, C00_, D00_, B00_, B01_, B10_);
+  vrr<a_,c_,rank_>(data, C00_, D00_, B00_, B01_, B10_);
 }
 
 }

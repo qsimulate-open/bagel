@@ -36,7 +36,7 @@
 
 namespace bagel {
 
-struct SVRRList : public VRRList {
+struct SVRRList : public VRRListBase {
   SVRRList();
   ~SVRRList();
 //

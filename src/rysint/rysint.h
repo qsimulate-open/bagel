@@ -125,16 +125,18 @@ class RysInt {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    const double* data() const { return data_; };
-    const double* data2() const { return data2_; };
-    bool data2_exists() const { return data2_ != nullptr; };
-    unsigned int data_size() const { return size_final_; };
+    double* data() { return data_; } // TODO for debug
+    const double* data() const { return data_; }
+    const double* data2() const { return data2_; }
+    bool data2_exists() const { return data2_ != nullptr; }
+    unsigned int data_size() const { return size_final_; }
 
-    size_t size_block() const { return size_block_; };
+    size_t size_block() const { return size_block_; }
 
-    bool swap01() const { return swap01_; };
-    bool swap23() const { return swap23_; };
-    bool swap0123() const { return swap0123_; };
+    bool swap01() const { return swap01_; }
+    bool swap23() const { return swap23_; }
+    bool swap0123() const { return swap0123_; }
+
 };
 
 }
