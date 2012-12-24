@@ -229,7 +229,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     size_alloc_ = size_block_;
 
     // if this is a two-electron Breit integral
-    if (breit_) 
+    if (breit_)
       size_alloc_ = 6 * size_block_;
 
     stack_save_ = stack_->get(size_alloc_);

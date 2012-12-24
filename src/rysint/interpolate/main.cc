@@ -5,13 +5,13 @@
 
 #define NGRID 12
 #define MAXT 64
-#define NBOX 1024
-#define SQRTPI2 0.886226925452758013649083741671
+#define NBOX 32
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include "mpreal.h"
+#include <map>
 #include <cmath>
 #include <string>
 #include <cassert>
@@ -33,14 +33,15 @@ using namespace mpfr;
 vector<mpreal> chebft(int n) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   vector<mpreal> out(n);
+  const mpreal half = "0.5";
   for (int k = 0; k != n; ++k) {
-     const mpreal y = mpfr::cos(GMPPI * static_cast<mpreal>(k + 0.5) / n); 
+     const mpreal y = mpfr::cos(GMPPI * (k + half) / n); 
      out[k] = y;
   }
   return out;
 }
 
-vector<vector<double> > get_C(const double tbase, const double stride, int rank) {
+vector<vector<double> > get_C(const mpreal tbase, const mpreal stride, int rank) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   const int n = NGRID;
 
@@ -54,17 +55,18 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
 
   vector<mpreal> Tpoints(n);
   for (int i = 0; i != n; ++i) { 
-    Tpoints[i] = stride*0.5*cheb[i] + Tp; 
+    Tpoints[i] = stride*half*cheb[i] + Tp; 
   }
 
-  vector<pair<vector<mpreal>, vector<mpreal> > > table_reserve;
-  vector<mpreal> dx(rank);
-  vector<mpreal> dw(rank);
-  vector<mpreal> ttt(1);
-  for (auto& t :Tpoints) { 
-    ttt[0] = t;
+  vector<map<mpreal, mpreal> > table_reserve(n);
+  for (int i = 0; i < n; ++i) {
+    vector<mpreal> ttt(1); ttt[0] = Tpoints[i];
+    vector<mpreal> dx(rank);
+    vector<mpreal> dw(rank);
     rysroot_gmp(ttt, dx, dw, rank, 1);
-    table_reserve.push_back(make_pair(dx, dw));
+    // sort dx and dw using dx
+    for (int j = 0; j != rank; ++j)
+      table_reserve[i].insert(make_pair(dx[j], dw[j])); 
   }
 
   vector<vector<double> > c;
@@ -74,8 +76,10 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
 
     vector<mpreal> cdx, cdw;
     for (int j = 0; j != n; ++j) {
-      cdx.push_back((table_reserve[j].first)[ii]);
-      cdw.push_back((table_reserve[j].second)[ii]);
+      auto iter = table_reserve[j].begin();
+      for (int i = 0; i != ii; ++i) ++iter;
+      cdx.push_back(iter->first);
+      cdw.push_back(iter->second);
     }  
 
     const mpreal two = "2.0";
@@ -83,58 +87,120 @@ vector<vector<double> > get_C(const double tbase, const double stride, int rank)
     const mpreal fac = two / n; 
     const mpreal pi = GMPPI;
     for (int j = 0; j != n; ++j) {
-      mpreal sum = 0.0;
-      mpreal sum2 = 0.0;
+      mpreal sum = "0.0";
+      mpreal sum2 = "0.0";
       for (int k = 0; k != n; ++k) {
-        sum += cdx[k] * cos(pi * j * (k + half) / n);
-        sum2 += cdw[k] * cos(pi * j * (k + half) / n);
+        sum += cdx[k] * mpfr::cos(pi * j * (k + half) / n);
+        sum2 += cdw[k] * mpfr::cos(pi * j * (k + half) / n);
       }
       tc[j] = sum * fac;
       tc2[j] = sum2 * fac;
     }
+    if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
+      cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << (double)Tmin << " " << (double)Tmax << endl; 
+      for (int i = 0; i != n; ++i) {
+        cout << setw(20) << (double)(Tpoints[i]) << setw(20) << (double)cdx[i] << setw(20) << (double)(cdw[i]) << endl; 
+      }
+    } 
     c.push_back(tc);
     c.push_back(tc2);
   }
   return c;
 }
 
+
 extern "C" {
+  void breitroot1_(double*, double*, double*, const int*);
+  void breitroot2_(double*, double*, double*, const int*);
   void breitroot3_(double*, double*, double*, const int*);
+  void breitroot4_(double*, double*, double*, const int*);
+  void breitroot5_(double*, double*, double*, const int*);
+  void breitroot6_(double*, double*, double*, const int*);
+  void breitroot7_(double*, double*, double*, const int*);
+  void breitroot8_(double*, double*, double*, const int*);
+  void breitroot9_(double*, double*, double*, const int*);
+  void breitroot10_(double*, double*, double*, const int*);
+  void breitroot11_(double*, double*, double*, const int*);
+  void breitroot12_(double*, double*, double*, const int*);
+  void breitroot13_(double*, double*, double*, const int*);
 }
 
-bool test() {
+struct B {
+  void (*breitroot[14])(double*, double*, double*, const int*);
+  B() {
+    breitroot[1] = breitroot1_;
+    breitroot[2] = breitroot2_;
+    breitroot[3] = breitroot3_;
+    breitroot[4] = breitroot4_;
+    breitroot[5] = breitroot5_;
+    breitroot[6] = breitroot6_;
+    breitroot[7] = breitroot7_;
+    breitroot[8] = breitroot8_;
+    breitroot[9] = breitroot9_;
+    breitroot[10] = breitroot10_;
+    breitroot[11] = breitroot11_;
+    breitroot[12] = breitroot12_;
+    breitroot[13] = breitroot13_;
+  }
+  void root(const int rank, double* a, double* b, double* c, const int* d) { breitroot[rank](a,b,c,d); }
+} breit;
+
+bool test(const int nrank, const double tin) {
   mpfr::mpreal::set_default_prec(GMPPREC);
-  // testing with rank 3
-  const static int nrank = 3;
   const static int nsize = 1;
-  vector<mpreal> tt(nsize, 32.4);
+  vector<mpreal> tt(nsize, tin);
   vector<mpreal> rr(nsize*nrank);
   vector<mpreal> ww(nsize*nrank);
   rysroot_gmp(tt, rr, ww, nrank, nsize); 
+  map<mpreal,mpreal> gmp;
+  for (int i = 0; i != nsize*nrank; ++i)
+    gmp.insert(make_pair(rr[i], ww[i]));
 
   double dt[nsize] = {(double)(tt[0])};
   double dr[nsize*nrank];
   double dw[nsize*nrank];
-  breitroot3_(dt, dr, dw, &nsize);
-  cout << setprecision(10) << endl;
-  for (int i = 0; i != nrank; ++i) {
-    cout << dr[i] << " " << rr[i] << " " << fabs(dr[i] - (double)(rr[i])) << endl;
-    cout << dw[i] << " " << ww[i] << " " << fabs(dw[i] - (double)(ww[i])) << endl;
+  breit.root(nrank, dt, dr, dw, &nsize);
+  cout << setprecision(10) << scientific << endl;
+  auto iter = gmp.begin();
+  for (int i = 0; i != nrank*nsize; ++i, ++iter) {
+    cout << setw(20) << dr[i] << setw(20) << iter->first  << setw(20) << fabs(dr[i] - (double)(iter->first)) << endl;
+    cout << setw(20) << dw[i] << setw(20) << iter->second << setw(20) << fabs(dw[i] - (double)(iter->second)) << endl;
   }
-  for (int i = 0; i != nrank; ++i) {
-    assert(fabs(dr[i] - (double)(rr[i])) < 1.0e-15);
-    assert(fabs(dw[i] - (double)(ww[i])) < 1.0e-15);
+  iter = gmp.begin();
+  for (int i = 0; i != nrank; ++i, ++iter) {
+    if (!(fabs(dr[i] - (double)(iter->first)))) cout << dt[0] << endl;
+    assert(fabs(dr[i] - (double)(iter->first)) < 1.0e-15);
+    assert(fabs(dw[i] - (double)(iter->second)) < 1.0e-15);
   }
-  cout << "test passed" << endl;
+  cout << "test passed: rank" << setw(3) << nrank << endl;
 }
 
-int main() {
+#include <boost/lexical_cast.hpp>
+
+int main(int argc, char** argv) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   mpfr::mpreal pi = GMPPI;
-#if 1
-  test();
-  return 0;
+
+  if (argc > 1) {
+    const string toggle = argv[1];
+    if (toggle == "-t") {
+#if 0
+      if (argc <= 3) assert(false);
+      const string low = argv[2];
+      const string high = argv[3];
+      for (int i = 0; i < 700; ++i) {
+        for (int n = lexical_cast<int>(low); n <= lexical_cast<int>(high); ++n) test(n, i*0.1+1.0e-10);
+      }
+#else
+      test(3,1.1003333333);
+      test(3,1.1113333333);
+      test(3,1.1223333333);
+      test(3,1.1323333333);
+      test(3,1.1433333333);
 #endif
+      return 0;
+    }
+  }
 
   vector<double> nbox_(14);
   for (int nroot=1; nroot!=14; ++nroot) { 
@@ -142,6 +208,13 @@ int main() {
   } 
 
   for (int nroot=1; nroot!=14; ++nroot) { // this is the outer most loop.
+    if (argc > 2) {
+      const string toggle = argv[1];
+      if (toggle == "-r") {
+        const string target = argv[2]; 
+        if (nroot != lexical_cast<int>(target)) continue; 
+      }
+    }
     vector<double> aroot;
     vector<double> aweight;
 #ifndef BREIT
@@ -184,7 +257,8 @@ int main() {
     const int ndeg = NGRID;
     const int nbox = nbox_[nroot];
     const int jend = nbox;
-    const double stride = (double)MAXT/(double)nbox;
+    const double stride = static_cast<double>(MAXT)/nbox;
+    const mpreal mstride = static_cast<mpreal>(MAXT)/nbox;
     ofstream ofs; 
 #ifndef BREIT
     const string func = "eriroot";
@@ -199,7 +273,7 @@ int main() {
 !/ Machine generated code\n\
 !/" << endl;
     ofs << "\
-      subroutine " + func + lexical_cast<string>(nroot) + "(ta, rr, ww, n)\n\
+      subroutine " << func << nroot << "(ta, rr, ww, n)\n\
       implicit none\n\
       integer i, j, n, offset, it, boxof\n\
       double precision t, t2, d, e, f, g\n\
@@ -236,7 +310,7 @@ int main() {
     int index = 0;
     double tiny = 1.0e-100;
     for (int j=0; j!= jend; ++j) {
-      vector<vector<double> > c_all = get_C(j*stride,stride,nroot);
+      vector<vector<double> > c_all = get_C(j*mstride,mstride,nroot);
 
       for (int i = 0; i != nroot; ++i, ++index) {
         const int ii = 2 * i;
@@ -285,7 +359,7 @@ int main() {
           ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*" + tafactor + "\n\
         else\n\
           it = int(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< "d0)\n\
-          t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << "d0)\n     &     *"
+          t = (t-it*" << stride << "d0-" << setw(20) << setprecision(15) << fixed << stride/2.0 << "d0)\n     &     *"
                       << setw(20) << setprecision(15) << fixed << 2.0/stride << "d0\n\
           t2 = t * 2.0d0\n\
           do j=1, " << nroot << "\n\

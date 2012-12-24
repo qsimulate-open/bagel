@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 #include "mpreal.h"
 #include "gmp_macros.h"
 #include <algorithm>
@@ -30,13 +31,11 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
   for (int ibatch = 0; ibatch != nbatch; ++ibatch) {
     const int offset = ibatch * nrank;
 
-    if (ta[ibatch] < 0.0) continue;
+    if (ta[ibatch] < 0) continue;
 
     const mpreal T = ta[ibatch];
     assert(T > 0);
     
-    const mpreal U = "0.0";
-
     mpreal mone;
   
     {
@@ -49,17 +48,16 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal pi = GMPPI;
       const mpreal halfpT = half / T;
       fm[0] = sqrt(pi) / sqrtt * half * erf(sqrtt);
-      const int gtuend = 40; // +2 due to Breit (the last entry is not needed for ERI)
-      for (int i = 1; i != gtuend; ++i) {
+      for (int i = 1; i != 40; ++i) {
         fm[i] = halfpT * ((2*i-1) * fm[i - 1] - exp(-T));
       }
 #ifdef BREIT
       // in case of Breit, we shift by one
-      for (int i = 0; i != gtuend-1; ++i)
+      for (int i = 0; i != 39; ++i)
         fm[i] = fm[i+1];
 #endif
       mone = fm[0];
-    }  
+    }
 
 
     {
@@ -93,11 +91,11 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
         dw[offset + i - 1] = sqrt(w[i]);
         dx[offset + i] = x[i]; 
       }
-      dw[offset + n - 1] = 0.0;
+      dw[offset + n - 1] = "0.0";
 
       // solve tri-diagonal linear equation 
-      const mpreal zero = 0.0;
-      const mpreal one = 1.0;
+      const mpreal zero = "0.0";
+      const mpreal one = "1.0";
     
       lp[0] = one;
       for (int i = 1; i <= n + n - 2; ++i) lp[i] = zero;
@@ -114,6 +112,7 @@ line1:
 line2:
         if(mm != l) {
           ++iter;
+          if (iter == 100) throw logic_error("bad");
           mpreal g = (dx[offset + l + 1] - dx[offset + l]) / (dw[offset + l] * 2);
           const mpreal r = sqrt(g * g + one);
           g = dx[offset + mm] - dx[offset + l] + dw[offset + l] / (g + (g >= 0 ? fabs(r) : -fabs(r)));
@@ -130,7 +129,7 @@ line2:
               dw[offset + mm] = zero;
               goto line1;
             }
-            const mpreal pr = 1.0 / r;
+            const mpreal pr = one / r;
             s = f * pr;
             c = g * pr;
             g = dx[offset + i + 1] - p;
