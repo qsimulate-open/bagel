@@ -40,11 +40,7 @@ void ERIBatch::perform_VRR() {\n\
   const int a = basisinfo_[0]->angular_number();\n\
   const int b = basisinfo_[1]->angular_number();\n\
   const int c = basisinfo_[2]->angular_number();\n\
-  const int d = basisinfo_[3]->angular_number();\n\
-  const int isize = (amax_+1) * (cmax_+1); \n\
-  double* const workx = stack_->get(isize*rank_*3);\n\
-  double* const worky = workx + isize*rank_;\n\
-  double* const workz = worky + isize*rank_;\n"
+  const int d = basisinfo_[3]->angular_number();\n"
 
 for a in range(0,7):
  for b in range(0,7):
@@ -65,11 +61,10 @@ for a in range(0,7):
       int ii = screening_[j];\n\
       vrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz);\n\
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_);\n\
     }\n"
 ss += "\
   }\n\
-  stack_->release(rank_*isize*3, workx);\n\
 \n\
 }"
 

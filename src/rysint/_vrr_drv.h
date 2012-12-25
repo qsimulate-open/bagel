@@ -41,7 +41,7 @@ template<int a_, int b_, int c_, int d_, int rank_>
 void vrr_driver(double* out, const double* const roots, const double* const weights, const double& coeff,
                 const std::array<double,3>& a, const std::array<double,3>& b, const std::array<double,3>& c, const std::array<double,3>& d,
                 const double* const p, const double* const q, const double& xp, const double& xq,
-                const int* const amap, const int* const cmap, const int& asize_, double* const workx, double* const worky, double* const workz) {
+                const int* const amap, const int* const cmap, const int& asize_) {
 
   // compile time
   const int amax_ = a_+b_;
@@ -54,6 +54,10 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
 
+
+  double workx[worksize]__attribute__((aligned(32)));
+  double worky[worksize]__attribute__((aligned(32)));
+  double workz[worksize]__attribute__((aligned(32)));
   double iyiz[rank_]__attribute__((aligned(32)));
 
   const double oxp2 = 0.5 / xp;

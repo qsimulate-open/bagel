@@ -47,6 +47,8 @@ GradBatch::GradBatch(const array<RefShell,4>& shells, const double max_density, 
   centers_ = 4;
   for (auto& i : shells) if (i->dummy()) --centers_;
 
+  vrr_ = shared_ptr<VRRListBase>(dynamic_cast<VRRListBase*>(new GVRRList()));
+
   set_exponents();
 }
 
