@@ -27,15 +27,31 @@
 #ifndef __SRC_RYSINT_SCALEDATA_H
 #define __SRC_RYSINT_SCALEDATA_H
 
+#include <cassert>
+
 namespace bagel {
 
-template<int rank_>
-void scaledata(double* out, const double* a, const double c, const double* in, const int datasize) {
+template<int rank_, int worksize>
+void scaledata(double* out, const double* a, const double c, const double* in) {
+  static_assert(worksize % rank_ == 0, "worksize and rank_ inconsistent");
   double ca[rank_];
   for (int i = 0; i != rank_; ++i)
     ca[i] = c * a[i];
 
-  for (int of = 0; of != datasize; of += rank_)
+  for (int of = 0; of != worksize; of += rank_)
+    for (int i = 0; i != rank_; ++i)
+      out[of+i] = in[of+i] * ca[i];
+}
+
+// TODO will be removed
+template<int rank_>
+void scaledata(double* out, const double* a, const double c, const double* in, const int worksize) {
+  assert(worksize % rank_ == 0);
+  double ca[rank_];
+  for (int i = 0; i != rank_; ++i)
+    ca[i] = c * a[i];
+
+  for (int of = 0; of != worksize; of += rank_)
     for (int i = 0; i != rank_; ++i)
       out[of+i] = in[of+i] * ca[i];
 }
