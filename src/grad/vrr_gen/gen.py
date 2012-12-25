@@ -40,6 +40,7 @@ static const Comb comb;\n\
 \n\
 \n\
 void GradBatch::perform_VRR() {\n\
+#ifndef LIBINT_INTERFACE\n\
   const int acsize = size_block_ / primsize_;\n\
   const int a = basisinfo_[0]->angular_number();\n\
   const int b = basisinfo_[1]->angular_number();\n\
@@ -152,6 +153,7 @@ ss += "\
   stack_->release((amax_+1)*a2*b2, transx);\n\
   stack_->release(rank_*isize*3, workx);\n\
 \n\
+#endif\n\
 }"
 
 

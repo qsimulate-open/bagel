@@ -35,6 +35,7 @@ static const Comb comb;
 
 
 void GradBatch::perform_VRR() {
+#ifndef LIBINT_INTERFACE
   const int acsize = size_block_ / primsize_;
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
@@ -7178,4 +7179,5 @@ void GradBatch::perform_VRR() {
   stack_->release((amax_+1)*a2*b2, transx);
   stack_->release(rank_*isize*3, workx);
 
+#endif
 }

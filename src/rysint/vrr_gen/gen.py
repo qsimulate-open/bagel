@@ -36,6 +36,7 @@ using namespace bagel;\n\
 \n\
 \n\
 void ERIBatch::perform_VRR() {\n\
+#ifndef LIBINT_INTERFACE\n\
   const int acsize = asize_ * csize_;\n\
   const int a = basisinfo_[0]->angular_number();\n\
   const int b = basisinfo_[1]->angular_number();\n\
@@ -71,6 +72,7 @@ ss += "\
   }\n\
   stack_->release(rank_*isize*3, workx);\n\
 \n\
+#endif\n\
 }"
 
 
