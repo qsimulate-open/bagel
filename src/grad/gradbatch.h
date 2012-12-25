@@ -40,33 +40,10 @@ class GradBatch : public ERIBatch_base {
     // to reduce the number of differentiation
     int centers_;
 
-    // in the gradient computation, we don't assemble until we operate differential operators.
-    // we don't use translational invariance so far.
-    void perform_VRR1();
-    void perform_VRR2();
-    void perform_VRR3();
-    void perform_VRR4();
-    void perform_VRR5();
-    void perform_VRR6();
-    void perform_VRR7();
-    void perform_VRR8();
-    void perform_VRR9();
-    void perform_VRR10();
-    void perform_VRR11();
-    void perform_VRR12();
-    void perform_VRR13();
+    void perform_VRR();
 
     void set_exponents();
     std::unique_ptr<double[]> exponents_;
-
-    template<int rank>
-    size_t m(const int& i, const int& a, const int& b, const int& c, const int& d) const {
-      const int la = basisinfo_[0]->angular_number()+2;
-      const int lb = basisinfo_[1]->angular_number()+2;
-      const int lc = basisinfo_[2]->angular_number()+2;
-      const int ld = basisinfo_[3]->angular_number()+2;
-      return i+rank*(a+la*(b+lb*(c+lc*d)));
-    }
 
   public:
     GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);
