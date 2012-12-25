@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/slater/svrrlist.h>
+#include <src/grad/gvrrlist.h>
 #include <src/rysint/breitbatch.h>
 
 using namespace std;
@@ -34,7 +34,7 @@ BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const doub
 :  ERIBatch_base(_info, max_density, 0, 1) {
 
   // two-index recurrence is the same as gradient integrals
-  vrr_ = shared_ptr<VRRListBase>(new SVRRList());
+  vrr_ = shared_ptr<VRRListBase>(new GVRRList());
 
 }
 
