@@ -43,19 +43,6 @@ void scaledata(double* out, const double* a, const double c, const double* in) {
       out[of+i] = in[of+i] * ca[i];
 }
 
-// TODO will be removed
-template<int rank_>
-void scaledata(double* out, const double* a, const double c, const double* in, const int worksize) {
-  assert(worksize % rank_ == 0);
-  double ca[rank_];
-  for (int i = 0; i != rank_; ++i)
-    ca[i] = c * a[i];
-
-  for (int of = 0; of != worksize; of += rank_)
-    for (int i = 0; i != rank_; ++i)
-      out[of+i] = in[of+i] * ca[i];
-}
-
 }
 
 #endif
