@@ -61,23 +61,23 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
   const double oxp2 = 0.5 / xp;
   const double oxq2 = 0.5 / xq;
   const double opq = 1.0 / (xp + xq);
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq}}, roots, workx);
+  int2d<amax_,cmax_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
   scaledata<rank_, worksize>(workx, weights, coeff , workx);
 
   // first (0:a+b, 0, 0:c+d, 0)-> (0:a+1, 0:b+1, 0:c+1, 0:d+1)
-  for (int i = 0; i <= cmax_; ++i) 
+  for (int i = 0; i <= cmax_; ++i)
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workx+i*rank_*(amax_+1), rank_, transx, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
   dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2x, cmax_+1, 0.0, final_x, rank_*b2*a2);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq}}, roots, worky);
+  int2d<amax_,cmax_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
 
-  for (int i = 0; i <= cmax_; ++i) 
+  for (int i = 0; i <= cmax_; ++i)
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, worky+i*rank_*(amax_+1), rank_, transy, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
   dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2y, cmax_+1, 0.0, final_y, rank_*b2*a2);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq}}, roots, workz);
+  int2d<amax_,cmax_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
 
-  for (int i = 0; i <= cmax_; ++i) 
+  for (int i = 0; i <= cmax_; ++i)
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz+i*rank_*(amax_+1), rank_, transz, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
   dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2z, cmax_+1, 0.0, final_z, rank_*b2*a2);
 
@@ -98,11 +98,11 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
             final_za[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_z[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_z[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
             final_zb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_z[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_z[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
             final_zc[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[2]*final_z[r+rank_*(ia+a2*(ib+b2*(ic+1+c2*id)))] - (ic == 0 ? 0.0 : ic*final_z[r+rank_*(ia+a2*(ib+b2*(ic-1+c2*id)))]);
-          }    
-        }    
-      }    
-    }    
-  }    
+          }
+        }
+      }
+    }
+  }
 
   double* current_data0  = out;
   double* current_data1  = out + size_block;
@@ -118,19 +118,19 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
   for (int icz = 0; icz <= c_; ++icz) {
   for (int icy = 0; icy <= c_ - icz; ++icy) {
-  const int icx = c_ - icz - icy; 
+  const int icx = c_ - icz - icy;
 
     for (int idz = 0; idz <= d_; ++idz) {
     for (int idy = 0; idy <= d_ - idz; ++idy) {
-    const int idx = d_ - idz - idy; 
+    const int idx = d_ - idz - idy;
 
       for (int iaz = 0; iaz <= a_; ++iaz) {
       for (int iay = 0; iay <= a_ - iaz; ++iay) {
-      const int iax = a_ - iaz - iay; 
+      const int iax = a_ - iaz - iay;
 
         for (int ibz = 0; ibz <= b_; ++ibz) {
         for (int iby = 0; iby <= b_ - ibz; ++iby) {
-        const int ibx = b_ - ibz - iby; 
+        const int ibx = b_ - ibz - iby;
 
           for (int i = 0; i != rank_; ++i) {
             *current_data0  += final_xa[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
@@ -142,7 +142,7 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
             *current_data6  += final_xc[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
             *current_data7  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_yc[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
             *current_data8  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_zc[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-          }    
+          }
           ++current_data0;
           ++current_data1;
           ++current_data2;
@@ -153,10 +153,10 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
           ++current_data7;
           ++current_data8;
 
-        }}   
-      }}   
-    }}   
-  }}   
+        }}
+      }}
+    }}
+  }}
 
 }
 

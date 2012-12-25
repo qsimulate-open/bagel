@@ -2,10 +2,12 @@
 
 import math
 
+filename = "vrr.cc"
+
 ss = "\
 //\n\
 // BAGEL - Parallel electron correlation program.\n\
-// Filename: vrr.cc\n\
+// Filename: " + filename + "\n\
 // Copyright (C) 2009 Toru Shiozaki\n\
 //\n\
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
@@ -75,5 +77,5 @@ ss += "\
 #endif\n\
 }"
 
-
-print ss;
+f = open(filename, "w")
+f.write(ss)

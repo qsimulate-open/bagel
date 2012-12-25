@@ -63,11 +63,11 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
   const double oxq2 = 0.5 / xq;
   const double opq = 1.0 / (xp + xq);
 
-  int2d<amax1_,cmax1_,rank_>(std::array<double,11>{{p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq}}, roots, workx);
+  int2d<amax1_,cmax1_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
   scaledata<rank_, worksize>(workx, weights, coeff*xp*xq*2.0*opq, workx);
 
-  int2d<amax1_,cmax1_,rank_>(std::array<double,11>{{p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq}}, roots, worky);
-  int2d<amax1_,cmax1_,rank_>(std::array<double,11>{{p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq}}, roots, workz);
+  int2d<amax1_,cmax1_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
+  int2d<amax1_,cmax1_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
 
 
   const double pq[3] = {p[0]-q[0], p[1]-q[1], p[2]-q[2]};
@@ -81,7 +81,7 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
         workty[i+rank_*(ia+amax2*ic)] = pq[1]*worky[i+rank_*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*worky[i+rank_*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*worky[i+rank_*(ia+amax2*(ic-1))]);
         worktz[i+rank_*(ia+amax2*ic)] = pq[2]*workz[i+rank_*(ia+amax2*ic)] + (ia==0 ? 0.0 : ia*oxp2*workz[i+rank_*(ia-1+amax2*ic)]) - (ic==0 ? 0.0 : ic*oxq2*workz[i+rank_*(ia+amax2*(ic-1))]);
       }
-  // then compute \\tilde{\\tilde{I}}_x,y,z up to amax_-1, cmax_-1
+  // then compute \\tilde{\\tilde{I_x,y,z up to amax_-1, cmax_-1
   for (int ic = 0; ic != cmax1_; ++ic)
     for (int ia = 0; ia != amax1_; ++ia)
       for (int i = 0; i != rank_; ++i) {
@@ -89,8 +89,8 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
         worksy[i+rank_*(ia+amax2*ic)] = workty[i+rank_*((ia+1)+amax2*ic)] - workty[i+rank_*(ia+amax2*(ic+1))] + ac[1]*workty[i+rank_*(ia+amax2*ic)];
         worksz[i+rank_*(ia+amax2*ic)] = worktz[i+rank_*((ia+1)+amax2*ic)] - worktz[i+rank_*(ia+amax2*(ic+1))] + ac[2]*worktz[i+rank_*(ia+amax2*ic)];
       }
- 
-  double* const dataxx = out; 
+
+  double* const dataxx = out;
   double* const dataxy = dataxx + size_block;
   double* const datayy = dataxy + size_block;
   double* const dataxz = datayy + size_block;

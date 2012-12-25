@@ -62,15 +62,15 @@ void svrr_driver(double* out, const double* const roots, const double* const wei
   const double oxq2 = 0.5 / xq;
   const double opq = 1.0 / (xp + xq);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq}}, roots, workx);
+  int2d<amax_,cmax_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
   for (int i = 0; i != rank_; ++i) {
     wt[i] = weights[i] * roots[i];
     womt[i] = weights[i] - wt[i];
   }
   scaledata<rank_, worksize>(workx, womt, coeff, workx);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq}}, roots, worky);
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq}}, roots, workz);
+  int2d<amax_,cmax_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
+  int2d<amax_,cmax_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
 
   for (int iz = 0; iz <= cmax_; ++iz) {
     for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -125,7 +125,7 @@ void usvrr_driver(double* out, double* out2, const double* const roots, const do
   const double oxq2 = 0.5 / xq;
   const double opq = 1.0 / (xp + xq);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq}}, roots, workx);
+  int2d<amax_,cmax_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
   for (int i = 0; i != rank_; ++i) {
     wt[i] = weights[i] * roots[i];
     womt[i] = weights[i] - wt[i];
@@ -133,8 +133,8 @@ void usvrr_driver(double* out, double* out2, const double* const roots, const do
   scaledata<rank_, worksize>(workx2, wt, coeffy, workx);
   scaledata<rank_, worksize>(workx, womt, coeff, workx);
 
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq}}, roots, worky);
-  int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq}}, roots, workz);
+  int2d<amax_,cmax_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
+  int2d<amax_,cmax_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
 
   for (int iz = 0; iz <= cmax_; ++iz) {
     for (int iy = 0; iy <= cmax_ - iz; ++iy) {
