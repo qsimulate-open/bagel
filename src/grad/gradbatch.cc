@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <src/grad/gradbatch.h>
-#include <src/grad/gvrrlist.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/macros.h>
 
