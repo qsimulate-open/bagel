@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scaledata.h
+// Filename: vrr.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,31 @@
 //
 
 
-#ifndef __SRC_RYSINT_SCALEDATA_H
-#define __SRC_RYSINT_SCALEDATA_H
+#include <string>
+#include <cmath>
 
-namespace bagel {
+class VRR {
+  private:
+    // target angular momentum
+    int a_, c_;
 
-template<int rank_>
-void scaledata(double* out, const double* a, const double c, const double* in, const int datasize) {
-  double ca[rank_];
-  for (int i = 0; i != rank_; ++i)
-    ca[i] = c * a[i];
+    // rank of Rys quadruture
+    int rank_;
 
-  for (int of = 0; of != datasize; of += rank_)
-    for (int i = 0; i != rank_; ++i)
-      out[of+i] = in[of+i] * ca[i];
-}
+    // generating functions for each case
+    const std::pair<std::string, int> vrr00 (         ) const;
+    const std::pair<std::string, int> vrrn0 (const int) const;
+    const std::pair<std::string, int> vrr0m (const int) const;
+    const std::pair<std::string, int> vrr11 (         ) const;
+    const std::pair<std::string, int> vrrn1 (const int) const;
+    const std::pair<std::string, int> vrr1m (const int) const;
+    const std::pair<std::string, int> vrrnm (const int, const int) const;
 
-}
+  public:
+    VRR(const int _i, const int _j): a_(_i), c_(_j), rank_(::ceil(0.5 * (_i + _j + 1))) { };
+    ~VRR() { };
 
-#endif
+    const std::string dump(const std::string, const std::string prefix = "") const;
+
+};
 

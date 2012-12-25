@@ -29,40 +29,44 @@ ss = "\
 //\n\
 \n\
 #include <src/rysint/eribatch.h>\n\
+#include <src/rysint/int2d.h>\n\
+#include <cmath>\n\
+#include <algorithm>\n\
+#include <cstring>\n\
+#include <src/parallel/resources.h>\n\
 #include <src/rysint/_vrr_drv.h>\n\
+#include <src/util/f77.h>\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
 \n\
 \n\
 void ERIBatch::perform_VRR() {\n\
-  const int acsize = asize_ * csize_;\n\
-  const int a = basisinfo_[0]->angular_number();\n\
-  const int b = basisinfo_[1]->angular_number();\n\
-  const int c = basisinfo_[2]->angular_number();\n\
-  const int d = basisinfo_[3]->angular_number();\n"
+  const int acsize = asize_ * csize_;\n"
 
-for a in range(0,7):
- for b in range(0,7):
-  if a < b: continue
-  for c in range(0,7):
-   for d in range(0,7):
-    if c < d: continue
-    rank = int(math.ceil((a+b+c+d+1)*0.5-0.001))
+for a in range(0,13):
+  for c in range(0,13):
+    rank = int(math.ceil((a+c+1)*0.5-0.001))
 
     if a == 0 and c == 0: 
-     ss += "\
-  if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
-    else:
-     ss += "\
-  } else if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
-    ss += "\
+      ss += "\
+  if (amax_ == " + str(a) + " && cmax_ == " + str(c) + ") {\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
-      vrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
+      vrr_driver<" + str(a) + "," + str(c) + "," +  str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_);\n\
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, amin_, cmin_, asize_);\n\
     }\n"
+    else:
+      ss += "\
+  } else if (amax_ == " + str(a) + " && cmax_ == " + str(c) + ") {\n\
+    for (int j = 0; j != screening_size_; ++j) {\n\
+      int ii = screening_[j];\n\
+      vrr_driver<" + str(a) + "," + str(c) + "," +  str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, amin_, cmin_, asize_);\n\
+    }\n"
+
 ss += "\
   }\n\
 \n\

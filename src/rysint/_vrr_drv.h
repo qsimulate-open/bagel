@@ -29,31 +29,22 @@
 #ifndef __SRC_RYSINT____VRR_DRIVER_H
 #define __SRC_RYSINT____VRR_DRIVER_H
 
-#include <numeric>
 #include <algorithm>
 #include <array>
+#include <src/rysint/eribatch.h>
 #include <src/rysint/int2d.h>
 #include <src/rysint/scaledata.h>
 
 namespace bagel {
 
-template<int a_, int b_, int c_, int d_, int rank_>
+template<int amax_, int cmax_, int rank_>
 void vrr_driver(double* out, const double* const roots, const double* const weights, const double& coeff,
                 const std::array<double,3>& a, const std::array<double,3>& b, const std::array<double,3>& c, const std::array<double,3>& d,
                 const double* const p, const double* const q, const double& xp, const double& xq,
-                const int* const amap, const int* const cmap, const int& asize_) {
-
-  // compile time
-  const int amax_ = a_+b_;
-  const int cmax_ = c_+d_;
-  const int amax1_ = a_+b_+1;
-  const int cmax1_ = c_+d_+1;
-  const int amin_ = a_;
-  const int cmin_ = c_;
+                const int* const amap, const int* const cmap, const int& amin_, const int& cmin_, const int& asize_) {
 
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
-
 
   double workx[worksize]__attribute__((aligned(32)));
   double worky[worksize]__attribute__((aligned(32)));
@@ -65,10 +56,13 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
   const double opq = 1.0 / (xp + xq);
 
   int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq}}, roots, workx);
-  scaledata<rank_, worksize>(workx, weights, coeff, workx);
+  scaledata<rank_>(workx, weights, coeff, workx, worksize);
 
   int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq}}, roots, worky);
   int2d<amax_,cmax_,rank_>(std::array<double,11>{{p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq}}, roots, workz);
+
+  const int amax1_ = amax_+1;
+  const int cmax1_ = cmax_+1;
 
   for (int iz = 0; iz <= cmax_; ++iz) {
     for (int iy = 0; iy <= cmax_ - iz; ++iy) {
@@ -87,7 +81,9 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
               const int offsetx = rank_ * (amax1_ * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, 0.0);
+              out[ijposition] = 0.0;
+              for (int k = 0; k != rank_; ++k)
+                out[ijposition] += iyiz[k] * workx[offsetx+k];
             }
           }
         }
