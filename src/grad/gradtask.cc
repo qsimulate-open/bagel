@@ -30,8 +30,8 @@
 #include <src/grad/gradfile.h>
 #include <src/rysint/gradbatch.h>
 #include <src/rysint/gnaibatch.h>
-#include <src/grad/goverlapbatch.h>
-#include <src/grad/gkineticbatch.h>
+#include <src/osint/goverlapbatch.h>
+#include <src/osint/gkineticbatch.h>
 #include <src/smith/prim_op.h>
 #ifdef LIBINT_INTERFACE
   #include <src/rysint/glibint.h>

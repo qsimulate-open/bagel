@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gkineticbatch.h
+// Filename: goverlapbatch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,22 +24,21 @@
 //
 
 
-#ifndef __SRC_GRAD_GKINETICBATCH_H
-#define __SRC_GRAD_GKINETICBATCH_H
+#ifndef __SRC_OSINT_GOVERLAPBATCH_H
+#define __SRC_OSINT_GOVERLAPBATCH_H
 
 #include <src/osint/osint.h>
 #include <src/scf/geometry.h>
 
 namespace bagel {
 
-// computes derivative integrals of kinetic operator.
-class GKineticBatch : public OSInt {
+class GOverlapBatch : public OSInt {
   protected:
     const std::shared_ptr<const Geometry> geom_;
 
   public:
-    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,3), geom_(ge) { };
-    ~GKineticBatch() {};
+    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,1), geom_(ge) { };
+    ~GOverlapBatch() {};
 
     void compute();
 

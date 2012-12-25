@@ -28,7 +28,6 @@
 #include <cassert>
 #include <iostream>
 #include <src/osint/osint.h>
-#include <src/grad/goverlapbatch.h>
 #include <src/util/constants.h>
 
 using namespace std;
