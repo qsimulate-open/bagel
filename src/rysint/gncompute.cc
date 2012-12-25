@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/grad/gnaibatch.h>
+#include <src/rysint/gnaibatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/util/comb.h>

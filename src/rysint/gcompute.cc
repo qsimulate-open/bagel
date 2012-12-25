@@ -25,8 +25,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <src/grad/gradbatch.h>
 #include <src/util/f77.h>
+#include <src/rysint/gradbatch.h>
 #include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
 

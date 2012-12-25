@@ -30,7 +30,7 @@
 #include <iostream>
 #include <src/util/f77.h>
 #include <src/rysint/carsphlist.h>
-#include <src/grad/glibint.h>
+#include <src/rysint/glibint.h>
 #include <boys.h>
 
 using namespace std;

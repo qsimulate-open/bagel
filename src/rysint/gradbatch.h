@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gnaibatch.cc
+// Filename: gradbatch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,19 +24,36 @@
 //
 
 
-#include <src/grad/gnaibatch.h>
+#ifndef __SRC_RYSINT_GRADBATCH_H
+#define __SRC_RYSINT_GRADBATCH_H
 
-using namespace std;
-using namespace bagel;
+// compute analytic nuclear gradients
+#include <stddef.h>
+#include <memory>
+#include <src/rysint/eribatch_base.h>
 
-void GNAIBatch::set_exponents() {
-  exponents_ = unique_ptr<double[]>(new double[primsize_*2]);
-  assert(primsize_ == basisinfo_[0]->exponents().size() * basisinfo_[1]->exponents().size());
-  double* tmp = exponents_.get();
-  for (auto i0 = basisinfo_[0]->exponents().begin(); i0 != basisinfo_[0]->exponents().end(); ++i0) {
-    for (auto i1 = basisinfo_[1]->exponents().begin(); i1 != basisinfo_[1]->exponents().end(); ++i1, tmp+=2) {
-      tmp[0] = *i0;
-      tmp[1] = *i1;
-    }
-  }
+namespace bagel {
+
+class GradBatch : public ERIBatch_base {
+  protected:
+    // if we only compute three-center integrals, we want to use this info
+    // to reduce the number of differentiation
+    int centers_;
+
+    void perform_VRR();
+
+    void set_exponents();
+    std::unique_ptr<double[]> exponents_;
+
+  public:
+    GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);
+    ~GradBatch();
+
+    void compute() override;
+
+};
+
 }
+
+#endif
+

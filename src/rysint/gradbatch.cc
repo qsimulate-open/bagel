@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <stdexcept>
-#include <src/grad/gradbatch.h>
+#include <src/rysint/gradbatch.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/macros.h>
 

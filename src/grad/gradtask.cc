@@ -27,14 +27,14 @@
 #include <stddef.h>
 #include <array>
 #include <src/grad/gradeval_base.h>
-#include <src/grad/gradbatch.h>
 #include <src/grad/gradfile.h>
-#include <src/grad/gnaibatch.h>
+#include <src/rysint/gradbatch.h>
+#include <src/rysint/gnaibatch.h>
 #include <src/grad/goverlapbatch.h>
 #include <src/grad/gkineticbatch.h>
 #include <src/smith/prim_op.h>
 #ifdef LIBINT_INTERFACE
-  #include <src/grad/glibint.h>
+  #include <src/rysint/glibint.h>
 #endif
 
 using namespace std;

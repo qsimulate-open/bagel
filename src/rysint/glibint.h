@@ -26,8 +26,8 @@
 
 #ifdef LIBINT_INTERFACE
 
-#ifndef __SRC_GRAD_GLIBINT_H
-#define __SRC_GRAD_GLIBINT_H
+#ifndef __SRC_RYSINT_GLIBINT_H
+#define __SRC_RYSINT_GLIBINT_H
 
 #include <src/rysint/rysint.h>
 

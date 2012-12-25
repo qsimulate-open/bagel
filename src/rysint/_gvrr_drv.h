@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_GRAD__GVRR_DRV_H
-#define __SRC_GRAD__GVRR_DRV_H
+#ifndef __SRC_RYSINT__GVRR_DRV_H
+#define __SRC_RYSINT__GVRR_DRV_H
 
 #include <numeric>
 #include <algorithm>

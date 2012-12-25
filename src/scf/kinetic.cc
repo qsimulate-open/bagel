@@ -25,7 +25,6 @@
 
 
 #include <src/scf/kinetic.h>
-#include <src/grad/gnaibatch.h>
 #include <src/osint/kineticbatch.h>
 #include <src/osint/dipolebatch.h>
 #include <src/rysint/naibatch.h>
