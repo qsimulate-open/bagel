@@ -24,1067 +24,5512 @@
 //
 
 #include <src/slater/slaterbatch.h>
-#include <src/rysint/int2d.h>
-#include <src/parallel/resources.h>
-#include <src/util/f77.h>
+#include <src/slater/_svrr_drv.h>
 
 using namespace std;
 using namespace bagel;
 
 
-void SlaterBatch::perform_USVRR3() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 3 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[3];
-
+void SlaterBatch::perform_USVRR() {
   const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 3;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 3; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<3> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 3 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 3 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 3; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 3 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 3; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
+  const int a = basisinfo_[0]->angular_number();
+  const int b = basisinfo_[1]->angular_number();
+  const int c = basisinfo_[2]->angular_number();
+  const int d = basisinfo_[3]->angular_number();
+  const int isize = (amax_+1) * (cmax_+1); 
+  double* const workx = stack_->get(isize*rank_*4);
+  double* const worky = workx + isize*rank_;
+  double* const workz = worky + isize*rank_;
+  double* const workx2 = workz + isize*rank_;
+  if (a == 0 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,0,0,1>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,1,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,1,1,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,2,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,2,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,2,2,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,3,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,3,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,3,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,3,3,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,4,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,4,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,4,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,4,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,4,4,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,5,5,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,5,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 0 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<0,0,6,6,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,0,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,1,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,1,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,2,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,2,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,2,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,3,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,3,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,3,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,3,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,4,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,4,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,4,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,4,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,4,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,5,5,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,5,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,0,6,6,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,0,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,1,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,1,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,2,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,2,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,2,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,3,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,3,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,3,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,3,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,4,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,4,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,4,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,4,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,4,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,5,5,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 1 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<1,1,6,6,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,0,0,2>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,1,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,1,1,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,2,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,2,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,2,2,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,3,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,3,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,3,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,3,3,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,4,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,4,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,4,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,4,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,4,4,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,5,5,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,0,6,6,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,0,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,1,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,1,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,2,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,2,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,2,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,3,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,3,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,3,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,3,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,4,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,4,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,4,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,4,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,4,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,5,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,1,6,6,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,0,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,1,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,2,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,2,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,3,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,3,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,4,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,4,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,4,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,5,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 2 && b == 2 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<2,2,6,6,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,0,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,1,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,1,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,2,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,2,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,2,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,3,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,3,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,3,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,3,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,4,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,4,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,4,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,4,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,4,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,5,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,0,6,6,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,0,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,1,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,2,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,2,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,3,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,3,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,4,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,4,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,4,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,5,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,1,6,6,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 2 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,2,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 3 && b == 3 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<3,3,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,0,0,3>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,1,1,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,2,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,2,2,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,3,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,3,3,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,4,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,4,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,4,4,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,5,5,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,0,6,6,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,1,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 2 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,2,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 3 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,3,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,1,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,2,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,3,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,3,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,4,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,4,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 4 && b == 4 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<4,4,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,1,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,2,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,3,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,3,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,4,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,4,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,0,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,1,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 2 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,2,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,1,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,2,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,3,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,3,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,4,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,4,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 3 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,3,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,0,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,1,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,1,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,2,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,2,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,2,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,3,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,3,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,3,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,3,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,4,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,4,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,4,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,4,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,4,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,5,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 4 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,4,6,6,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,0,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,1,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,1,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,2,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,2,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,2,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,3,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,3,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,3,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,3,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,4,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,4,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,4,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,4,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,4,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,5,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,5,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 5 && b == 5 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<5,5,6,6,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,0,0,4>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,1,1,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,2,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,2,2,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,3,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,3,3,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,4,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,4,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,4,4,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,5,5,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 0 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,0,6,6,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,1,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,2,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,3,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,3,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,4,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,4,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 1 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,1,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,0,0,5>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,1,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,1,1,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,2,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,2,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,2,2,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,3,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,3,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,3,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,3,3,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,4,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,4,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,4,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,4,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,4,4,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,5,5,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 2 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,2,6,6,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,0,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,1,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,1,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,2,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,2,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,2,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,3,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,3,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,3,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,3,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,4,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,4,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,4,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,4,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,4,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,5,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 3 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,3,6,6,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,0,0,6>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,1,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,1,1,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,2,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,2,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,2,2,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,3,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,3,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,3,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,3,3,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,4,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,4,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,4,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,4,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,4,4,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,5,5,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,5,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 4 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,4,6,6,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,0,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,1,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,1,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,2,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,2,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,2,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,3,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,3,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,3,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,3,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,4,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,4,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,4,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,4,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,4,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,5,5,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,0,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,2,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,4,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,5,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 5 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,5,6,6,13>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 0 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,0,0,7>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 1 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,1,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 1 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,1,1,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 2 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,2,0,8>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 2 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,2,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 2 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,2,2,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 3 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,3,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 3 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,3,1,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 3 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,3,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 3 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,3,3,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 4 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,4,0,9>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 4 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,4,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 4 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,4,2,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 4 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,4,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 4 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,4,4,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,0,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,1,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,2,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,3,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,4,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 5 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,5,5,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,0,10>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 1) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,1,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 2) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,2,11>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 3) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,3,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 4) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,4,12>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 5) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,5,13>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
+  } else if (a == 6 && b == 6 && c == 6 && d == 6) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int ii = screening_[j];
+      usvrr_driver<6,6,6,6,13>(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);
+    }
   }
+  stack_->release(rank_*isize*4, workx);
 
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
 }
-
-
-void SlaterBatch::perform_USVRR4() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 4 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[4];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 4;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 4; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<4> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 4 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 4 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 4; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 4 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 4; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR5() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 5 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[5];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 5;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 5; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<5> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 5 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 5 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 5; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 5 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 5; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR6() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 6 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[6];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 6;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 6; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<6> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 6 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 6 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 6; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 6 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 6; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR7() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 7 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[7];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 7;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 7; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<7> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 7 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 7 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 7; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 7 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 7; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR8() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 8 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[8];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 8;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 8; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<8> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 8 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 8 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 8; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 8 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 8; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR9() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 9 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[9];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 9;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 9; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<9> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 9 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 9 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 9; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 9 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 9; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR10() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 10 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[10];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 10;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 10; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<10> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 10 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 10 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 10; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 10 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 10; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR11() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 11 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[11];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 11;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 11; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<11> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 11 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 11 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 11; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 11 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 11; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR12() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 12 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[12];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 12;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 12; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<12> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 12 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 12 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 12; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 12 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 12; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-
-void SlaterBatch::perform_USVRR13() {
-  const int isize = (amax_ + 1) * (cmax_ + 1); 
-  const int worksize = 13 * isize;
-  const int svrr_index = amax_ * ANG_VRR_END + cmax_;
-
-  double* workx = stack_->get(worksize);
-  double* workx2 = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
-  double iyiz[13];
-
-  const int acsize = asize_ * csize_;
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
-  const double cx = basisinfo_[2]->position(0);
-  const double cy = basisinfo_[2]->position(1);
-  const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
-  for (int j = 0; j != screening_size_; ++j) {
-    const int ii = screening_[j];
-    int offset = ii * 13;
-    int data_offset_ii = ii * acsize;
-
-    double* current_data = &data_[data_offset_ii];
-    double* current_data2 = &data2_[data_offset_ii];
-
-    const int ii3 = 3 * ii; 
-    const double cxp = xp_[ii];
-    const double cxq = xq_[ii];
-    const double oxp2 = 0.5 / cxp;
-    const double oxq2 = 0.5 / cxq;
-    const double opq = 1.0 / (cxp + cxq);
-    const array<double, 11> dparamx = {{p_[ii3], q_[ii3], ax, bx, cx, dx, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> cix(dparamx, &roots_[offset], worksize, workx, vrr_->vrrfunc[svrr_index]);
-    double womt[RYS_MAX];
-    double wt[RYS_MAX];
-    for (int i = 0; i != 13; ++i) {
-      wt[i] = weights_[offset + i] * roots_[offset + i]; 
-      womt[i] = weights_[offset + i]  - wt[i];
-    }   
-    cix.scale_data_t(workx2, wt, coeffy_[ii]);
-    cix.scale_data(womt, coeff_[ii]);
-
-    const array<double, 11> dparamy = {{p_[ii3 + 1], q_[ii3 + 1], ay, by, cy, dy, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> ciy(dparamy, &roots_[offset], worksize, worky, vrr_->vrrfunc[svrr_index]);
-
-    const array<double, 11> dparamz = {{p_[ii3 + 2], q_[ii3 + 2], az, bz, cz, dz, cxp, cxq, oxp2, oxq2, opq}};
-    Int2D<13> ciz(dparamz, &roots_[offset], worksize, workz, vrr_->vrrfunc[svrr_index]);
-
-    for (int iz = 0; iz <= cmax_; ++iz) {
-      for (int iy = 0; iy <= cmax_ - iz; ++iy) {
-        const int iyz = cmax1_ * (iy + cmax1_ * iz);
-        for (int jz = 0; jz <= amax_; ++jz) {
-          const int offsetz = 13 * (amax1_ * iz + jz);
-          for (int jy = 0; jy <= amax_ - jz; ++jy) {
-            const int offsety = 13 * (amax1_ * iy + jy);
-            const int jyz = amax1_ * (jy + amax1_ * jz);
-            for (int i = 0; i != 13; ++i) {
-              iyiz[i] = worky[offsety + i] * workz[offsetz + i]; 
-            }   
-            for (int ix = max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
-              const int iposition = cmapping_[ix + iyz];
-              const int ipos_asize = iposition * asize_;
-              for (int jx = max(0, amin_ - jy - jz); jx <= amax_ - jy - jz; ++jx) {
-                const int offsetx = 13 * (amax1_ * ix + jx);
-                const int jposition = amapping_[jx + jyz];
-                const int ijposition = jposition + ipos_asize;
-
-                current_data[ijposition] = 0.0;
-                current_data2[ijposition] = 0.0;
-                for (int i = 0; i != 13; ++i) {
-                  current_data[ijposition]  += iyiz[i] * workx[offsetx + i]; 
-                  current_data2[ijposition] += iyiz[i] * workx2[offsetx + i]; 
-                }   
-              }   
-            }   
-          }   
-        }   
-      }   
-    }   
-
-  }
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx2);
-  stack_->release(worksize, workx);
-}
-
-

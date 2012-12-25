@@ -28,8 +28,8 @@ ss = "\
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include <src/grad/gradbatch.h>\n\
-#include <src/grad/_gvrr_drv.h>\n\
+#include <src/rysint/gradbatch.h>\n\
+#include <src/rysint/_gvrr_drv.h>\n\
 #include <src/util/comb.h>\n\
 #include <src/util/f77.h>\n\
 \n\

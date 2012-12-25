@@ -31,7 +31,6 @@
 #include <src/rysint/int2d.h>
 #include <src/rysint/rysint.h>
 #include <src/rysint/macros.h>
-#include <src/slater/svrrlist.h>
 #include <memory>
 #include <tuple>
 
@@ -49,31 +48,10 @@ class SlaterBatch : public RysInt {
 
     void perform_SVRR1();
     void perform_SVRR2();
-    void perform_SVRR3();
-    void perform_SVRR4();
-    void perform_SVRR5();
-    void perform_SVRR6();
-    void perform_SVRR7();
-    void perform_SVRR8();
-    void perform_SVRR9();
-    void perform_SVRR10();
-    void perform_SVRR11();
-    void perform_SVRR12();
-    void perform_SVRR13();
-
     void perform_USVRR1();
     void perform_USVRR2();
-    void perform_USVRR3();
-    void perform_USVRR4();
-    void perform_USVRR5();
-    void perform_USVRR6();
-    void perform_USVRR7();
-    void perform_USVRR8();
-    void perform_USVRR9();
-    void perform_USVRR10();
-    void perform_USVRR11();
-    void perform_USVRR12();
-    void perform_USVRR13();
+    void perform_SVRR();
+    void perform_USVRR();
 
     void root_weight(const int primsize_) override;
     void root1_direct();

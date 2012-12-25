@@ -30,8 +30,8 @@
 #define __src_rysint_rysint_h
 
 #include <stddef.h>
-#include <src/rysint/vrrlist.h>
 #include <src/scf/shell.h>
+#include <src/rysint/macros.h>
 #include <src/parallel/resources.h>
 #include <tuple>
 #include <array>
@@ -68,8 +68,6 @@ class RysInt {
     int deriv_rank_;
     int tenno_;
     int breit_;
-
-    std::shared_ptr<VRRListBase> vrr_;
 
     double *data_;
     double *data2_;

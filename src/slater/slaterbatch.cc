@@ -51,7 +51,6 @@ SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const do
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
-  vrr_ = shared_ptr<VRRListBase>(new SVRRList());
 
   const double integral_thresh = std::max(1.0e-30, PRIM_SCREEN_THRESH * 1.0e-10);// / max_density;
 
@@ -287,7 +286,6 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   fill(U_, U_ + primsize_, 1.0e-100);
 
   // this should be allocated in RysInt
-//screening_ = (int*)stack_->get(primsize_);
   screening_size_ = 0;
 
   const double twogamma = 2.0 / gamma_;
