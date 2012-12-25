@@ -33,6 +33,10 @@
 #include <memory>
 #include <stdexcept>
 #include <boost/thread/thread.hpp>
+#include <config.h>
+#ifdef HAVE_MKL_H
+  #include "mkl_service.h"
+#endif
 
 namespace bagel {
 
@@ -47,6 +51,10 @@ class TaskQueue {
     TaskQueue(std::vector<T>& t) : task_(t) {}
 
     void compute(const int num_threads) {
+#ifdef HAVE_MKL_H
+      const int mkl_num = mkl_get_max_threads();
+      mkl_set_num_threads(1);
+#endif
 #ifndef _OPENMP
       for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
@@ -60,6 +68,9 @@ class TaskQueue {
       #pragma omp parallel for schedule(dynamic,chunck_)
       for (size_t i = 0; i < n; ++i)
         task_[i].compute();
+#endif
+#ifdef HAVE_MKL_H
+      mkl_set_num_threads(mkl_num);
 #endif
     }
 
