@@ -24,7 +24,7 @@
 //
 
 
-#include <src/slater/srootlist.h>
+#include <src/rysint/srootlist.h>
 
 extern "C" {
  // slater integrals

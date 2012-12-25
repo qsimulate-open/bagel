@@ -29,13 +29,13 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <src/slater/slaterbatch.h>
-#include <src/slater/srootlist.h>
+#include <src/rysint/slaterbatch.h>
+#include <src/rysint/srootlist.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
-#include <src/slater/sinline.h>
+#include <src/rysint/sinline.h>
 
 using namespace std;
 using namespace bagel;

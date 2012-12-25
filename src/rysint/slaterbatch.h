@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __src_slater_slaterbatch_h
-#define __src_slater_slaterbatch_h
+#ifndef __SRC_RYSINT_SLATERBATCH_H
+#define __SRC_RYSINT_SLATERBATCH_H
 
 #include <cassert>
 #include <vector>

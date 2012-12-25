@@ -28,23 +28,24 @@ ss = "\
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include <src/slater/slaterbatch.h>\n\
-#include <src/slater/_svrr_drv.h>\n\
+#include <src/rysint/slaterbatch.h>\n\
+#include <src/rysint/_svrr_drv.h>\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
 \n\
 \n\
-void SlaterBatch::perform_SVRR() {\n\
+void SlaterBatch::perform_USVRR() {\n\
   const int acsize = asize_ * csize_;\n\
   const int a = basisinfo_[0]->angular_number();\n\
   const int b = basisinfo_[1]->angular_number();\n\
   const int c = basisinfo_[2]->angular_number();\n\
   const int d = basisinfo_[3]->angular_number();\n\
   const int isize = (amax_+1) * (cmax_+1); \n\
-  double* const workx = stack_->get(isize*rank_*3);\n\
+  double* const workx = stack_->get(isize*rank_*4);\n\
   double* const worky = workx + isize*rank_;\n\
-  double* const workz = worky + isize*rank_;\n"
+  double* const workz = worky + isize*rank_;\n\
+  double* const workx2 = workz + isize*rank_;\n"
 
 for a in range(0,7):
  for b in range(0,7):
@@ -63,13 +64,13 @@ for a in range(0,7):
     ss += "\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
-      svrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
+      usvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz);\n\
+                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);\n\
     }\n"
 ss += "\
   }\n\
-  stack_->release(rank_*isize*3, workx);\n\
+  stack_->release(rank_*isize*4, workx);\n\
 \n\
 }"
 

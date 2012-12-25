@@ -30,7 +30,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
-#include <src/slater/slaterbatch.h>
+#include <src/rysint/slaterbatch.h>
 #include <src/util/f77.h>
 #include <src/rysint/macros.h>
 #include <src/rysint/hrrlist.h>

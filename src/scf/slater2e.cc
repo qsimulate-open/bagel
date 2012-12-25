@@ -31,7 +31,7 @@
 #include <cmath>
 #include <algorithm>
 #include <src/rysint/eribatch.h>
-#include <src/slater/slaterbatch.h>
+#include <src/rysint/slaterbatch.h>
 #include <src/macros.h>
 
 using namespace std;

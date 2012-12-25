@@ -30,7 +30,7 @@
 #include <src/scf/scf.h>
 #include <src/rysint/rysint.h>
 #include <src/rysint/eribatch.h>
-#include <src/slater/slaterbatch.h>
+#include <src/rysint/slaterbatch.h>
 #include <src/scf/geometry.h>
 #include <src/mp2/f12int4.h>
 

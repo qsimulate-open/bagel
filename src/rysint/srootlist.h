@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_slater_srootlist_h
-#define __src_slater_srootlist_h
+#ifndef __SRC_RYSINT_SROOTLIST_H
+#define __SRC_RYSINT_SROOTLIST_H
 
 #include <src/rysint/macros.h>
 
