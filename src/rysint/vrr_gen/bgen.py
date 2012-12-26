@@ -52,7 +52,8 @@ void BreitBatch::perform_VRR() {\n\
   double* const worktz = workty + isize*rank_;\n\
   double* const worksx = worktz + isize*rank_;\n\
   double* const worksy = worksx + isize*rank_;\n\
-  double* const worksz = worksy + isize*rank_;\n"
+  double* const worksz = worksy + isize*rank_;\n\
+  const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
 for a in range(0,7):
  for b in range(0,7):
@@ -61,20 +62,20 @@ for a in range(0,7):
    for d in range(0,7):
     if c < d: continue
     rank = int(math.ceil((a+b+c+d+2)*0.5-0.001))
+    off = 1 << 8
+    key = d+off*(c+off*(b+off*a))
 
     if a == 0 and c == 0: 
      ss += "\
-  if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
-    else:
-     ss += "\
-  } else if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
+  switch (hashkey) {\n"
     ss += "\
+  case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
       bvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                      basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
                      p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_, amapping_, cmapping_, asize_, workx, worky, workz, worktx, workty, worktz, worksx, worksy, worksz);\n\
-    }\n"
+    } break;\n"
 ss += "\
   }\n\
   stack_->release(rank_*isize*9, workx);\n\

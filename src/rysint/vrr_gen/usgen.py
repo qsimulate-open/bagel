@@ -47,7 +47,8 @@ void SlaterBatch::perform_USVRR() {\n\
   double* const workx = stack_->get(isize*rank_*4);\n\
   double* const worky = workx + isize*rank_;\n\
   double* const workz = worky + isize*rank_;\n\
-  double* const workx2 = workz + isize*rank_;\n"
+  double* const workx2 = workz + isize*rank_;\n\
+  const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
 for a in range(0,7):
  for b in range(0,7):
@@ -56,20 +57,20 @@ for a in range(0,7):
    for d in range(0,7):
     if c < d: continue
     rank = int(math.ceil((a+b+c+d+2)*0.5-0.001))
+    off = 1 << 8
+    key = d+off*(c+off*(b+off*a))
 
     if a == 0 and c == 0: 
      ss += "\
-  if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
-    else:
-     ss += "\
-  } else if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
+  switch (hashkey) {\n"
     ss += "\
+  case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
       usvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
                     p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);\n\
-    }\n"
+    } break;\n"
 ss += "\
   }\n\
   stack_->release(rank_*isize*4, workx);\n\

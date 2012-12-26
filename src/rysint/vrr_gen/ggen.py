@@ -104,7 +104,8 @@ void GradBatch::perform_VRR() {\n\
   double* const final_yc = stack_->get(b2*a2*c2*d2*rank_);\n\
   double* const final_za = stack_->get(b2*a2*c2*d2*rank_);\n\
   double* const final_zb = stack_->get(b2*a2*c2*d2*rank_);\n\
-  double* const final_zc = stack_->get(b2*a2*c2*d2*rank_);\n";
+  double* const final_zc = stack_->get(b2*a2*c2*d2*rank_);\n\
+  const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
 for a in range(0,7):
  for b in range(0,7):
@@ -113,14 +114,14 @@ for a in range(0,7):
    for d in range(0,7):
     if c < d: continue
     rank = int(math.ceil((a+b+c+d+2)*0.5-0.001))
+    off = 1 << 8
+    key = d+off*(c+off*(b+off*a))
 
     if a == 0 and c == 0: 
      ss += "\
-  if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
-    else:
-     ss += "\
-  } else if (a == " + str(a) + " && b == " + str(b) + " && c == " + str(c) + " && d == " + str(d) + ") {\n"
+  switch (hashkey) {\n"
     ss += "\
+  case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
       gvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
@@ -128,7 +129,7 @@ for a in range(0,7):
                     p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_,\n\
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz);\n\
-    }\n"
+    } break;\n"
 ss += "\
   }\n\
   stack_->release(b2*a2*c2*d2*rank_, final_zc);\n\
