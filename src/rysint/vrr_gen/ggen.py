@@ -124,7 +124,7 @@ for a in range(0,7):
   case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
-      GVRR_Driver::gvrr_driver_" + str(a) + "_" + str(b) + "_" + str(c) + "_" +  str(d) + "(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
+      gvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
                     p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_,\n\
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\

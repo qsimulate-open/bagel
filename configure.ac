@@ -113,12 +113,12 @@ AC_PREFIX_DEFAULT(["/usr/local/bagel"])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 src/rel/Makefile
                  src/parallel/Makefile
                  src/dimer/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
+                 src/rysint/Makefile
                  src/osint/Makefile
                  src/scf/Makefile
                  src/df/Makefile
@@ -131,6 +131,5 @@ AC_CONFIG_FILES([Makefile
                  src/casscf/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
-                 src/rysint/Makefile
-                 src/rysint/func/Makefile])
+                 src/rel/Makefile])
 AC_OUTPUT
