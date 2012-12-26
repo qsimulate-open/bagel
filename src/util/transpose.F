@@ -5,20 +5,24 @@ c
 c Assuming 16kB L1 cache or more
 c The arrays will occupy 12.8kB
 c
-      subroutine mytranspose_complex(h,m,n,vec)
+#include <config.h>
+      subroutine mytranspose(h,m,n,vec)
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim
-      complex*16 h(m,n),vec(n,m)
+      double precision h(m,n),vec(n,m)
+#ifdef HAVE_MKL_H
+#include <mkl.fi>
+      call mkl_domatcopy("c","t",m,n,1.0d0,h,m,vec,n)
+#else
       if((m.eq.1).or.(n.eq.1)) then
 c      quick return if possible
-       call zcopy(m*n,h,1,vec,1)
+       call dcopy(m*n,h,1,vec,1)
        return
       endif
       mresidual=mod(m,10)
       nresidual=mod(n,10)
       mlim=m-mresidual-1
       nlim=n-nresidual-1
-c$omp parallel do
       do i=1,nlim,10
        do j=1,mlim,10
         vec(i  ,j  )=h(j  ,i  )
@@ -152,6 +156,7 @@ c$omp parallel do
         vec(i  ,j  )=h(j  ,i  )
        enddo
       enddo
+#endif
       return
       end
 c

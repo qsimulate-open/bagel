@@ -7,7 +7,7 @@ _eriroot_1.f _eriroot_2.f _eriroot_3.f _eriroot_4.f _eriroot_5.f _eriroot_6.f _e
 _breitroot_1.f _breitroot_2.f _breitroot_3.f _breitroot_4.f _breitroot_5.f _breitroot_6.f _breitroot_7.f _breitroot_8.f _breitroot_9.f _breitroot_10.f _breitroot_11.f _breitroot_12.f _breitroot_13.f \
 rysint.cc eribatch_base.cc naibatch_base.cc eribatch.cc breitbatch.cc gradbatch.cc gnaibatch.cc slaterbatch.cc \
 compute.cc bcompute.cc gcompute.cc ncompute.cc gncompute.cc scompute.cc contraction.cc vrr_optim.cc bvrr_optim.cc sort.cc srootlist.cc svrr_optim.cc usvrr_optim.cc \
-rys.f hrrlist.cc sortlist.cc transpose.F start_up_slater.f90 \
+rys.f hrrlist.cc sortlist.cc start_up_slater.f90 \
 carsphlist.cc sort_sph.cc \
 libint.cc glibint.cc
 AM_CXXFLAGS=-I$(top_srcdir)
