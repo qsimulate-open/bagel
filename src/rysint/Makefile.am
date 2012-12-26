@@ -1,3 +1,4 @@
+SUBDIRS = func
 lib_LTLIBRARIES = librysint.la
 librysint_la_SOURCES = module.f90 vrr.cc gvrr.cc bvrr.cc svrr.cc usvrr.cc \
 _hrr_20_11.cc  _hrr_40_31.cc  _hrr_60_33.cc  _hrr_70_43.cc  _hrr_80_44.cc  _hrr_90_54.cc  _hrr_a0_64.cc _hrr_30_21.cc  _hrr_50_32.cc  _hrr_60_42.cc  _hrr_70_52.cc  _hrr_80_53.cc  _hrr_90_63.cc  _hrr_b0_65.cc _hrr_40_22.cc  _hrr_50_41.cc  _hrr_60_51.cc  _hrr_70_61.cc  _hrr_80_62.cc  _hrr_a0_55.cc  _hrr_c0_66.cc \
