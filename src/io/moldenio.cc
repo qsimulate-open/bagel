@@ -39,7 +39,7 @@
 #include <src/scf/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/util/constants.h>
-#include <src/scf/atommap.h>
+#include <src/util/atommap.h>
 
 using namespace bagel;
 using namespace std;

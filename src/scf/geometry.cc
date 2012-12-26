@@ -36,8 +36,8 @@
 #include <boost/lexical_cast.hpp>
 #include <src/rysint/eribatch.h>
 #include <src/scf/geometry.h>
-#include <src/scf/atommap.h>
 #include <src/io/moldenin.h>
+#include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/quatern.h>
 #include <src/rysint/libint.h>

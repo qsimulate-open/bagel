@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_scf_atommap_h
-#define __src_scf_atommap_h
+#ifndef __SRC_UTIL_ATOMMAP_H
+#define __SRC_UTIL_ATOMMAP_H
 
 #include <map>
 #include <string>

@@ -39,7 +39,7 @@
 #include <tuple>
 #include <src/util/quatern.h>
 #include <src/osint/overlapbatch.h>
-#include <src/scf/atommap.h>
+#include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/rel/relshell.h>
 
