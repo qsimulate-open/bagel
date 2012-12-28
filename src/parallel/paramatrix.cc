@@ -61,11 +61,23 @@ void ParaMatrix::diagonalize(double* eig) {
   int info;
   // first compute worksize
   double wsize;
+#define USE_D
+#ifndef USE_D
   pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), &wsize, -1, info);
+#else
+  int liwork = 1;
+  pdsyevd_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), &wsize, -1, &liwork, 1, info);
+  unique_ptr<int[]> iwork(new int[liwork]);
+  wsize =  max(131072.0, wsize*2.0);
+#endif
 
   const int lwork = round(wsize);
   unique_ptr<double[]> work(new double[lwork]);
+#ifndef USE_D
   pdsyev_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), work.get(), lwork, info);
+#else
+  pdsyevd_("V", "U", n, local.get(), desc.get(), eig, coeff.get(), desc.get(), work.get(), lwork, iwork.get(), liwork, info);
+#endif
   if (info) throw runtime_error("pdsyev failed in paramatrix");
 
   setlocal_(coeff, desc);

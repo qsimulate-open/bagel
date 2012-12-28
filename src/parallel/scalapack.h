@@ -45,6 +45,7 @@ extern "C" {
   void pdelget_(const char*, const char*, double* val, const double* mat, const int* i, const int* j, const int* desc); 
 
   void pdsyev_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, const int*); 
+  void pdsyevd_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, int*, const int*, const int*); 
 }
 
 static void sl_init_(int& i, const int j, const int k) { sl_init_(&i, &j, &k); }
@@ -62,6 +63,12 @@ static void pdelget_(const char* a, const char* b, double& val, const double* ma
 static void pdsyev_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork, int& info) {
   const int one = 1;
   pdsyev_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, &info);
+}
+
+static void pdsyevd_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork,
+                     int* iwork, const int liwork, int& info) {
+  const int one = 1;
+  pdsyevd_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, iwork, &liwork, &info);
 }
 
 
