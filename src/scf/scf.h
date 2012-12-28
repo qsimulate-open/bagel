@@ -33,10 +33,10 @@
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
 #include <iostream>
-#include <chrono>
 #include <iomanip>
 #include <src/parallel/paramatrix.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/util/timer.h>
 
 namespace bagel {
 
@@ -95,20 +95,37 @@ class SCF : public SCF_base {
       std::shared_ptr<Matrix> densitychange = aodensity_; // assumes hcore guess...
 
       for (int iter = 0; iter != max_iter_; ++iter) {
-        auto tp1 = std::chrono::high_resolution_clock::now();
+        Timer scftime;
+
+#ifdef HAVE_MPI_H
+        Timer pdebug;
+#endif
 
         std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, (DF==0?previous_fock:hcore_fock), (DF==0?densitychange:aodensity_), schwarz_));
         previous_fock = fock;
         // Need to share exactly the same between MPI processes
         if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
 
+#ifdef HAVE_MPI_H
+        pdebug.tick_print("Fock build");
+#endif
+
         ParaMatrix intermediate = *coeff_ % *fock * *coeff_;
+
+#ifdef HAVE_MPI_H
+        pdebug.tick_print("Trans to orth");
+#endif
 
 // TODO level shift - needed?
 //      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
         levelshift_->shift(intermediate);
 
         intermediate.diagonalize(eig());
+
+#ifdef HAVE_MPI_H
+        pdebug.tick_print("Diag");
+#endif
+
         coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
         std::shared_ptr<Matrix> new_density = coeff_->form_density_rhf(nocc_);
 
@@ -120,10 +137,12 @@ class SCF : public SCF_base {
         energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
         for (int i = 0; i != this->nocc(); ++i) energy_ += eig_[i];
 
-        auto tp2 = std::chrono::high_resolution_clock::now();
         std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
-                                          << std::setw(17) << error << std::setw(15) << std::setprecision(2)
-                                          << std::chrono::duration_cast<std::chrono::milliseconds>(tp2-tp1).count()*0.001 << std::endl;
+                                          << std::setw(17) << error << std::setw(15) << std::setprecision(2) << scftime.tick() << std::endl;
+
+#ifdef HAVE_MPI_H
+        pdebug.tick_print("Post process");
+#endif
 
         if (error < thresh_scf_) {
           std::cout << indent << std::endl << indent << "  * SCF iteration converged." << std::endl << std::endl;
@@ -137,9 +156,17 @@ class SCF : public SCF_base {
         if (iter >= diis_start_) {
           std::shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
           std::shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *tmp_fock * *tildex_));
+
+#ifdef HAVE_MPI_H
+          pdebug.tick_print("DIIS");
+#endif
           intermediate->diagonalize(eig());
           std::shared_ptr<Coeff> tmp_coeff(new Coeff(*tildex_**intermediate));
           diis_density = tmp_coeff->form_density_rhf(nocc_);
+
+#ifdef HAVE_MPI_H
+          pdebug.tick_print("Diag (redundant) etc");
+#endif
         } else {
           diis_density = new_density;
         }

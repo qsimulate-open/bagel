@@ -28,6 +28,7 @@
 #define __NEWINT_SRC_SCF_FOCK_H
 
 #include <iostream>
+#include <chrono>
 #include <iomanip>
 #include <memory>
 #include <algorithm>
@@ -39,6 +40,7 @@
 #include <src/util/matrix.h>
 #include <src/scf/fock_base.h>
 #include <src/parallel/paramatrix.h>
+#include <src/util/timer.h>
 
 namespace bagel {
 
@@ -244,6 +246,9 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     assert(ndim_ == df->nbasis0());
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
+#ifdef HAVE_MPI_H
+    Timer pdebug;
+#endif
     std::shared_ptr<ParaMatrix> coeff(new ParaMatrix(*den_ex));
     *coeff *= -1.0;
     int nocc = 0;
@@ -259,10 +264,33 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     }
     if (nocc == 0) return;
 
-    std::shared_ptr<DFHalfDist> half = df->compute_half_transform(coeff->data(), nocc)->apply_J();
+#ifdef HAVE_MPI_H
+    pdebug.tick_print("Compute coeff (redundant)", 1);
+#endif
+
+    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->data(), nocc);
+
+#ifdef HAVE_MPI_H
+    pdebug.tick_print("First index transform", 1);
+#endif
+
+    std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
+
+#ifdef HAVE_MPI_H
+    pdebug.tick_print("Metric multiply", 1);
+#endif
 
     *this += *half->form_2index(half, -0.5);
+
+#ifdef HAVE_MPI_H
+    pdebug.tick_print("Exchange build", 1);
+#endif
+
     *this += *df->compute_Jop(density_->data());
+
+#ifdef HAVE_MPI_H
+    pdebug.tick_print("Coulomb build", 1);
+#endif
   }
 
 };
