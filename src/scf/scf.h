@@ -94,14 +94,18 @@ class SCF : public SCF_base {
       DIIS<Matrix> diis(5);
       std::shared_ptr<Matrix> densitychange = aodensity_; // assumes hcore guess...
 
+      Timer scftime;
       for (int iter = 0; iter != max_iter_; ++iter) {
-        Timer scftime;
 
 #ifdef HAVE_MPI_H
         Timer pdebug;
 #endif
 
-        std::shared_ptr<Fock<DF> > fock(new Fock<DF>(geom_, (DF==0?previous_fock:hcore_fock), (DF==0?densitychange:aodensity_), schwarz_));
+        std::shared_ptr<Fock<DF> >fock;
+        if (DF == 0)
+          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
+        else
+          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
         previous_fock = fock;
         // Need to share exactly the same between MPI processes
         if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
@@ -161,11 +165,11 @@ class SCF : public SCF_base {
           pdebug.tick_print("DIIS");
 #endif
           intermediate->diagonalize(eig());
-          std::shared_ptr<Coeff> tmp_coeff(new Coeff(*tildex_**intermediate));
-          diis_density = tmp_coeff->form_density_rhf(nocc_);
+          coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
+          diis_density = coeff_->form_density_rhf(nocc_);
 
 #ifdef HAVE_MPI_H
-          pdebug.tick_print("Diag (redundant) etc");
+          pdebug.tick_print("Diag");
 #endif
         } else {
           diis_density = new_density;
@@ -174,10 +178,6 @@ class SCF : public SCF_base {
         densitychange = std::shared_ptr<Matrix>(new Matrix(*diis_density - *aodensity_));
         aodensity_ = diis_density;
 
-#if 0
-        // need to make all the node consistent (TODO it seems to be that if I sync every time after diagonalization, it looks fine)
-        mpi__->broadcast(DF == 1 ? aodensity_->data() : densitychange->data(), aodensity_->size(), 0);
-#endif
       }
       // by default we compute dipoles
       if (!geom_->external()) {

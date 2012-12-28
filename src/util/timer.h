@@ -52,7 +52,7 @@ class Timer {
     void tick_print(const std::string& title, const int level = 0) {
       const std::string indent(15+2*level, ' ');
       const std::string mark = (level == 0 ? "o" : (level == 1 ? "*" : "-"));
-      std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setprecision(2) << tick() << std::endl;
+      std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setw(13) << std::setprecision(2) << tick() << std::endl;
     }
 };
 

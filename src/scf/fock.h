@@ -48,23 +48,32 @@ template<int DF>
 class Fock : public Fock_base {
   protected:
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = std::shared_ptr<Matrix>());
+    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff);
 
   public:
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Fock<DF> > b, const std::shared_ptr<Matrix> c, const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part();
       fock_one_electron_part();
-    };
+    }
+
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Fock<DF> > b, const std::shared_ptr<Matrix> c, const std::vector<double>& d, const std::shared_ptr<const Matrix> ocoeff)
+     : Fock_base(a,b,c,d) {
+      fock_two_electron_part_with_coeff(ocoeff);
+      fock_one_electron_part();
+    }
+
     // Fock operator with a different density matrix for exchange
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Fock<DF> > b, const std::shared_ptr<Matrix> c, std::shared_ptr<const Matrix> ex,
          const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part(ex);
       fock_one_electron_part();
-    };
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Hcore> b) : Fock_base(a,b) {};
-    Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {};
-    ~Fock() {};
+    }
+
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Hcore> b) : Fock_base(a,b) {}
+
+    Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {}
 
 };
 
@@ -72,8 +81,6 @@ class Fock : public Fock_base {
 template<int DF>
 void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
-  // for debug <- what did I mean by this?? TODO
-  density_->fill_upper();
   if (den_ex != nullptr && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
   if (den_ex == nullptr) den_ex = density_;
 
@@ -239,6 +246,10 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   } else if (DF == 1) {
 
+#ifndef NDEBUG
+    std::cout << "    .. warning .. use a new Fock builder if possible (coeff_ required)" << std::endl;
+#endif
+
     std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
@@ -293,7 +304,41 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 #endif
   }
 
-};
+}
+
+template<int DF>
+void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff) {
+  if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
+
+#ifdef HAVE_MPI_H
+  Timer pdebug;
+#endif
+
+  std::shared_ptr<const DFDist> df = geom_->df();
+  std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
+
+#ifdef HAVE_MPI_H
+  pdebug.tick_print("First index transform", 1);
+#endif
+
+  std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
+
+#ifdef HAVE_MPI_H
+  pdebug.tick_print("Metric multiply", 1);
+#endif
+
+  *this += *half->form_2index(half, -1.0);
+
+#ifdef HAVE_MPI_H
+  pdebug.tick_print("Exchange build", 1);
+#endif
+
+  *this += *df->compute_Jop(density_->data());
+
+#ifdef HAVE_MPI_H
+  pdebug.tick_print("Coulomb build", 1);
+#endif
+}
 
 }
 
