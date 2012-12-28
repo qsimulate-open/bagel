@@ -50,6 +50,8 @@ if test "x${use_scalapack}" = xyes; then
         AH_TEMPLATE([HAVE_SCALAPACK], [a scalapack library will be linked.])
         if test x${use_mkl} = xno; then
             AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack $LIBS"], [AC_MSG_ERROR("Linking against scalapack library failed.")])
+        else
+            AC_DEFINE([HAVE_SCALAPACK])
         fi
     else
         AC_MSG_ERROR("scalapack should be used with mpi")
