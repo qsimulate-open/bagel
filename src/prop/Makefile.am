@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = libprop.la
-libprop_la_SOURCES = dipole.cc momentum.cc
+lib_LTLIBRARIES = libbagel_prop.la
+libbagel_prop_la_SOURCES = dipole.cc momentum.cc
 AM_CXXFLAGS=-I$(top_srcdir)
 

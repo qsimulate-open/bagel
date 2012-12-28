@@ -1,5 +1,5 @@
-INTLIBS = parallel/libparallel.la scf/libscf.la grad/libgrad.la rysint/librysint.la osint/libosint.la pscf/libpscf.la pmp2/libpmp2.la util/libutil.la casscf/libcasscf.la wfn/libwfn.la df/libdf.la smith/libsmith.la mp2/libmp2.la prop/libprop.la fci/libfci.la dimer/libdimer.la io/libio.la rel/librel.la
-# opt/libopt.a
+INTLIBS = parallel/libbagel_parallel.la scf/libbagel_scf.la grad/libbagel_grad.la rysint/libbagel_rysint.la osint/libbagel_osint.la pscf/libbagel_pscf.la pmp2/libbagel_pmp2.la util/libbagel_util.la casscf/libbagel_casscf.la wfn/libbagel_wfn.la df/libbagel_df.la smith/libbagel_smith.la mp2/libbagel_mp2.la prop/libbagel_prop.la fci/libbagel_fci.la dimer/libbagel_dimer.la io/libbagel_io.la rel/libbagel_rel.la
+# opt/libbagel_opt.a
 
 SUBDIRS = parallel io df opt grad mp2 wfn rysint osint scf pscf pmp2 util casscf smith prop dimer fci rel
 bin_PROGRAMS = BAGEL
