@@ -47,7 +47,7 @@ void UHF::compute() {
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
   cout << endl;
-  cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
+  cout << indent << "    * DIIS with orbital gradients will be used."
             << endl << endl;
   cout << indent << "=== UHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
@@ -56,37 +56,23 @@ void UHF::compute() {
 
   DIIS<Matrix> diis(5);
   DIIS<Matrix> diisB(5);
+  Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto tp1 = high_resolution_clock::now();
 
-    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, aodensityA_, schwarz_));
-    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, aodensityB_, schwarz_));
+    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
+    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeffB_->slice(0, noccB_)));
 
-    ParaMatrix intermediateA = *coeff_ % *fockA * *coeff_;
-    ParaMatrix intermediateB = *coeffB_ % *fockB * *coeffB_;
+    energy_ = 0.5*(*aodensity_ * *hcore_+ (*fockA * *aodensityA_ + *fockB * *aodensityB_)*0.5).trace() + geom_->nuclear_repulsion();
 
-    intermediateA.diagonalize(eig());
-    intermediateB.diagonalize(eigB());
-    coeff_  = shared_ptr<Coeff>(new Coeff((*coeff_)  * intermediateA));
-    coeffB_ = shared_ptr<Coeff>(new Coeff((*coeffB_) * intermediateB));
-
-    shared_ptr<Matrix> new_density, new_densityA, new_densityB;
-    tie(new_density, new_densityA, new_densityB) = form_density_uhf();
-
-    shared_ptr<Matrix> error_vector(new Matrix(
-      density_change_ ? (*new_density - *aodensity_) : (*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
-                                                       +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB)));
+    shared_ptr<const Matrix> error_vector(new Matrix(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
+                                                    +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB));
 
     const double error = error_vector->rms();
-
-    energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
-    for (int i = 0; i != this->nocc(); ++i)  energy_ += eig_[i]  * 0.5;
-    for (int i = 0; i != this->noccB(); ++i) energy_ += eigB_[i] * 0.5;
 
     auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2)
-                                      << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
+                                      << scftime.tick() << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
@@ -97,29 +83,21 @@ void UHF::compute() {
     }
 
     if (iter >= diis_start_) {
-      {
-        shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-        shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *tmp_fock * *tildex_));
-        intermediate->diagonalize(eig());
-        coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
-      } {
-        shared_ptr<Matrix> tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-        shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *tmp_fock * *tildex_));
-        intermediate->diagonalize(eigB());
-        coeffB_ = shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
-      }
-      tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
-    } else {
-      aodensityA_ = new_densityA;
-      aodensityB_ = new_densityB;
-      aodensity_  = new_density;
+      fockA = diis.extrapolate(make_pair(fockA, error_vector));
+      fockB = diisB.extrapolate(make_pair(fockB, error_vector));
     }
-#if 0
-    // need to make all the node consistent (TODO it seems to be that if I sync every time after diagonalization, it looks fine)
-    mpi__->broadcast(aodensityA_->data(), aodensityA_->size(), 0);
-    mpi__->broadcast(aodensityB_->data(), aodensityB_->size(), 0);
-    mpi__->broadcast(aodensity_->data(), aodensity_->size(), 0);
-#endif
+
+    {
+      shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *fockA * *tildex_));
+      intermediate->diagonalize(eig());
+      coeff_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
+    }{
+      shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *fockB * *tildex_));
+      intermediate->diagonalize(eigB());
+      coeffB_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
+    }
+    tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+
   }
   // now computes S^2 to see the spin contamination
   print_S2("UHF");

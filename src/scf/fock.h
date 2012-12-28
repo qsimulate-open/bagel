@@ -48,7 +48,7 @@ template<int DF>
 class Fock : public Fock_base {
   protected:
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = std::shared_ptr<Matrix>());
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff);
+    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const double scale_ex);
 
   public:
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d)
@@ -58,9 +58,9 @@ class Fock : public Fock_base {
     }
 
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
-         const std::shared_ptr<const Matrix> ocoeff)
+         const std::shared_ptr<const Matrix> ocoeff, const double scale_ex = 1.0)
      : Fock_base(a,b,c,d) {
-      fock_two_electron_part_with_coeff(ocoeff);
+      fock_two_electron_part_with_coeff(ocoeff, scale_ex);
       fock_one_electron_part();
     }
 
@@ -306,7 +306,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 }
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff) {
+void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
 #ifdef HAVE_MPI_H
@@ -326,7 +326,7 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
   pdebug.tick_print("Metric multiply", 1);
 #endif
 
-  *this += *half->form_2index(half, -1.0);
+  *this += *half->form_2index(half, -1.0*scale_exchange);
 
 #ifdef HAVE_MPI_H
   pdebug.tick_print("Exchange build", 1);

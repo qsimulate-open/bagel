@@ -53,7 +53,6 @@ class SCF_base {
     int diis_start_;
     double thresh_overlap_;
     double thresh_scf_;
-    bool density_change_;
 
     std::vector<double> schwarz_;
     void init_schwarz();

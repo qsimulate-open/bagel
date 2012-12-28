@@ -80,7 +80,7 @@ class SCF : public SCF_base {
 
       std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
       std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl << std::endl;
-      std::cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
+      std::cout << indent << "    * DIIS with orbital gradients will be used."
                 << std::endl << std::endl;
       std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << std::endl << indent << std::endl;
 
@@ -111,8 +111,19 @@ class SCF : public SCF_base {
         pdebug.tick_print("Fock build");
 #endif
 
-        std::shared_ptr<const Matrix> error_vector(new Matrix(density_change_ ? *densitychange : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)));
+        std::shared_ptr<const Matrix> error_vector(new Matrix(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock));
         const double error = error_vector->rms();
+
+        std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
+                                          << std::setw(17) << error << std::setw(15) << std::setprecision(2) << scftime.tick() << std::endl;
+
+        if (error < thresh_scf_) {
+          std::cout << indent << std::endl << indent << "  * SCF iteration converged." << std::endl << std::endl;
+          break;
+        } else if (iter == max_iter_-1) {
+          std::cout << indent << std::endl << indent << "  * Max iteration reached in SCF." << std::endl << std::endl;
+          break;
+        }
 
         if (iter >= diis_start_) {
           fock = diis.extrapolate(make_pair(fock, error_vector));
@@ -137,18 +148,6 @@ class SCF : public SCF_base {
 
         densitychange = std::shared_ptr<Matrix>(new Matrix(*new_density - *aodensity_));
         aodensity_ = new_density;
-
-        std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
-                                          << std::setw(17) << error << std::setw(15) << std::setprecision(2) << scftime.tick() << std::endl;
-
-        if (error < thresh_scf_) {
-          std::cout << indent << std::endl << indent << "  * SCF iteration converged." << std::endl << std::endl;
-          break;
-        } else if (iter == max_iter_-1) {
-          std::cout << indent << std::endl << indent << "  * Max iteration reached in SCF." << std::endl << std::endl;
-          break;
-        }
-
 
 #ifdef HAVE_MPI_H
         pdebug.tick_print("Post process");

@@ -50,13 +50,6 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
   thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
   string dd = read_input<string>(idata_, "diis", "gradient");
-  if (dd == "gradient") {
-    density_change_ = false;
-  } else if (dd == "density") {
-    density_change_ = true;
-  } else {
-    throw runtime_error("unrecongnized option for DIIS error vectors");
-  }
 
   // so far assuming that this is RHF
   int nact = read_input<int>(idata_, "nact", 0);

@@ -52,7 +52,7 @@ void DimerSCF::compute() {
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
-  cout << indent << "    * DIIS with " << (density_change_ ? "density changes" : "orbital gradients") << " will be used."
+  cout << indent << "    * DIIS with orbital gradients will be used."
             << endl << endl;
   cout << indent << "=== DimerRHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
@@ -78,9 +78,7 @@ void DimerSCF::compute() {
     coeff_ = shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
     shared_ptr<Matrix> new_density = dimer_->form_density_rhf(coeff_);
 
-    shared_ptr<Matrix> error_vector(new Matrix(
-      density_change_ ? (*new_density - *aodensity_) : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)
-    ));
+    shared_ptr<const Matrix> error_vector(new Matrix(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock));
     const double error = error_vector->rms();
 
     // Note: the energy has to be computed this way since, by construction, the Fock matrix is NOT diagonal
