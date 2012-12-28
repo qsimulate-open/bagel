@@ -69,10 +69,7 @@ class SCF : public SCF_base {
 
     void compute() override {
       std::string indent = "  ";
-      std::shared_ptr<const Matrix> previous_fock;
-      {
-        previous_fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_));
-      }
+      std::shared_ptr<const Matrix> previous_fock = hcore_;
 
       if (SCF_base::coeff_ == nullptr) {
         ParaMatrix intermediate = *tildex_ % *previous_fock * *tildex_;

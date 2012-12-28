@@ -35,10 +35,9 @@ using namespace bagel;
 void UHF::compute() {
 
   string indent = "  ";
-  shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    ParaMatrix intermediate = *tildex_ % *hcore_fock * *tildex_;
+    ParaMatrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -60,8 +59,8 @@ void UHF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
-    shared_ptr<Fock<1> > fockA(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityA_, schwarz_));
-    shared_ptr<Fock<1> > fockB(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityB_, schwarz_));
+    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, aodensityA_, schwarz_));
+    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, aodensityB_, schwarz_));
 
     ParaMatrix intermediateA = *coeff_ % *fockA * *coeff_;
     ParaMatrix intermediateB = *coeffB_ % *fockB * *coeffB_;

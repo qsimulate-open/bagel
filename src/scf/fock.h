@@ -57,7 +57,8 @@ class Fock : public Fock_base {
       fock_one_electron_part();
     }
 
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d, const std::shared_ptr<const Matrix> ocoeff)
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
+         const std::shared_ptr<const Matrix> ocoeff)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part_with_coeff(ocoeff);
       fock_one_electron_part();
@@ -71,9 +72,7 @@ class Fock : public Fock_base {
       fock_one_electron_part();
     }
 
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Hcore> b) : Fock_base(a,b) {}
-
-    Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {}
+//  Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {}
 
 };
 

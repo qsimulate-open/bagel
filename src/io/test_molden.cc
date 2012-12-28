@@ -74,7 +74,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     mfs >> coeff;
 
     std::shared_ptr<Matrix> ao_density = coeff->form_density_rhf(geom->nele()/2);
-    std::shared_ptr<Fock<1> > hcore(new Fock<1>(geom));
+    std::shared_ptr<const Matrix> hcore(new Hcore(geom));
     std::shared_ptr<Fock<1> > fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
 
     std::shared_ptr<Matrix> hcore_fock(new Matrix(*hcore + *fock));

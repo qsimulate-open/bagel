@@ -141,22 +141,23 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
   const int ncore = nstart;
   double core_energy = 0.0;
 
-  unique_ptr<double[]> aobuff(new double[nbasis_*nbasis_]);
-  shared_ptr<Fock<1> > fock0(new Fock<1>(geom_, ref_->hcore()));
+  shared_ptr<Matrix> fock0(new Matrix(*ref_->hcore()));
   const double* cdata = coeff_->data() + nstart*nbasis_;
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
     shared_ptr<Matrix> den = coeff_->form_density_rhf(ncore);
-    fock0 = shared_ptr<Fock<1> >(new Fock<1>(geom_, fock0, den, ref_->schwarz()));
+    fock0 = shared_ptr<Matrix>(new Fock<1>(geom_, ref_->hcore(), den, ref_->schwarz()));
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
     *core_fock_ = *fock0;
   }
   fock0->fill_upper();
-  dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.get(),nbasis_);
+
+  Matrix aobuff(nbasis_, nbasis_);
+  dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.data(),nbasis_);
 
   unique_ptr<double[]> buf(new double[nocc_*nocc_]);
   unique_ptr<double[]> out(new double[nocc_*nocc_]);
-  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.get(),nbasis_,0.0,out.get(),nocc_);
+  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.data(),nbasis_,0.0,out.get(),nocc_);
 
   return make_tuple(move(out), core_energy);
 }

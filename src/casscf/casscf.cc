@@ -42,7 +42,7 @@ static string tostring(const T i) {
 };
 
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : idata_(idat), geom_(geom), hcore_(new Fock<1>(geom)) {
+  : idata_(idat), geom_(geom), hcore_(new Hcore(geom)) {
 
   std::shared_ptr<SCF<1> > scf_;
   scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(idat, geom, re));

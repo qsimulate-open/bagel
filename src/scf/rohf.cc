@@ -35,10 +35,9 @@ using namespace bagel;
 void ROHF::compute() {
 
   string indent = "  ";
-  shared_ptr<Fock<1> > hcore_fock(new Fock<1>(geom_, hcore_));
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    ParaMatrix intermediate = *tildex_ % *hcore_fock * *tildex_;
+    ParaMatrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -60,8 +59,8 @@ void ROHF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
-    shared_ptr<Fock<1> > fockA(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityA_, schwarz_));
-    shared_ptr<Fock<1> > fockB(new Fock<1>(geom_, hcore_fock, aodensity_, aodensityB_, schwarz_));
+    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, aodensityA_, schwarz_));
+    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, aodensityB_, schwarz_));
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
@@ -122,12 +121,6 @@ void ROHF::compute() {
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
-#if 0
-    // need to make all the node consistent (TODO it seems to be that if I sync every time after diagonalization, it looks fine)
-    mpi__->broadcast(aodensityA_->data(), aodensityA_->size(), 0);
-    mpi__->broadcast(aodensityB_->data(), aodensityB_->size(), 0);
-    mpi__->broadcast(aodensity_->data(), aodensity_->size(), 0);
-#endif
   }
 
   print_S2("ROHF");

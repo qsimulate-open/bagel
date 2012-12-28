@@ -149,7 +149,7 @@ class MOFock {
       data_  = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
       hcore_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
 
-      std::shared_ptr<const Fock<1> > hcore(new Fock<1>(ref_->geom(), ref_->hcore()));
+      std::shared_ptr<const Matrix> hcore = ref_->hcore();
 
       std::shared_ptr<Matrix> den;
       if (ref_->nact() == 0) {
@@ -163,7 +163,7 @@ class MOFock {
         den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
       }
 
-      std::shared_ptr<const Fock<1> > fock1(new Fock<1>(ref_->geom(), hcore, den, r->schwarz()));
+      std::shared_ptr<const Matrix> fock1(new Fock<1>(ref_->geom(), hcore, den, r->schwarz()));
       const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace

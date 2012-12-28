@@ -75,7 +75,7 @@ class CASSCF {
     void mute_stdcout();
     void resume_stdcout();
 
-    const std::shared_ptr<Fock<1> > hcore_;
+    const std::shared_ptr<const Matrix> hcore_;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
     std::vector<double> form_natural_orbs();
@@ -107,7 +107,7 @@ class CASSCF {
     void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,
                             std::shared_ptr<RotFile>&, const bool superci=true) const;
     std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<RDM<1> > rdm1, const bool inactive_only = false) const;
-    std::shared_ptr<const Fock<1> > hcore() const { return hcore_; };
+    std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
 };

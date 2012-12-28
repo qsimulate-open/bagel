@@ -47,8 +47,6 @@ DimerSCF::DimerSCF(const multimap<string, string>& idata, const shared_ptr<const
 
 void DimerSCF::compute() {
   string indent = "  ";
-  shared_ptr<Fock<1> > previous_fock(new Fock<1>(geom_, hcore_));
-  shared_ptr<Fock<1> > hcore_fock = previous_fock;
   //aodensity_ = dimer_->form_density_rhf(coeff_);
   aodensity_ = coeff_->form_density_rhf(nocc_);
 
@@ -68,8 +66,7 @@ void DimerSCF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = chrono::high_resolution_clock::now();
 
-    shared_ptr<Fock<1> > fock(new Fock<1>(geom_, hcore_fock, aodensity_, schwarz_));
-    previous_fock = fock;
+    shared_ptr<const Matrix> fock(new Fock<1>(geom_, hcore_, aodensity_, schwarz_));
 
     Matrix intermediate = *coeff_ % *fock * *coeff_;
 
