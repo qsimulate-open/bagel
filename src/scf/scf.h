@@ -69,11 +69,9 @@ class SCF : public SCF_base {
 
     void compute() override {
       std::string indent = "  ";
-      std::shared_ptr<Fock<DF> > previous_fock;
-      std::shared_ptr<Fock<DF> > hcore_fock;
+      std::shared_ptr<const Matrix> previous_fock;
       {
-        previous_fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_));
-        if (DF) hcore_fock = previous_fock;
+        previous_fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_));
       }
 
       if (SCF_base::coeff_ == nullptr) {
@@ -101,29 +99,36 @@ class SCF : public SCF_base {
         Timer pdebug;
 #endif
 
-        std::shared_ptr<Fock<DF> >fock;
+        std::shared_ptr<const Matrix>fock;
         if (DF == 0)
-          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
         else
-          fock = std::shared_ptr<Fock<DF> >(new Fock<DF>(geom_, hcore_fock, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
         previous_fock = fock;
         // Need to share exactly the same between MPI processes
         if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
+
+        energy_  = 0.5*(*aodensity_ * (*hcore_+*fock)).trace() + geom_->nuclear_repulsion();
 
 #ifdef HAVE_MPI_H
         pdebug.tick_print("Fock build");
 #endif
 
-        ParaMatrix intermediate = *coeff_ % *fock * *coeff_;
+        std::shared_ptr<const Matrix> error_vector(new Matrix(density_change_ ? *densitychange : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)));
+        const double error = error_vector->rms();
 
+        if (iter >= diis_start_) {
+          fock = diis.extrapolate(make_pair(fock, error_vector));
 #ifdef HAVE_MPI_H
-        pdebug.tick_print("Trans to orth");
+          pdebug.tick_print("DIIS");
 #endif
+        }
 
-// TODO level shift - needed?
-//      intermediate.add_diag(1.0, this->nocc(), geom_->nbasis());
+        ParaMatrix intermediate(*coeff_ % *fock * *coeff_);
+
         levelshift_->shift(intermediate);
 
+        // save eigenvalues before diag
         intermediate.diagonalize(eig());
 
 #ifdef HAVE_MPI_H
@@ -133,20 +138,11 @@ class SCF : public SCF_base {
         coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
         std::shared_ptr<Matrix> new_density = coeff_->form_density_rhf(nocc_);
 
-        std::shared_ptr<Matrix> error_vector(new Matrix(
-          density_change_ ? (*new_density - *aodensity_) : (*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock)
-        ));
-        const double error = error_vector->rms();
-
-        energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
-        for (int i = 0; i != this->nocc(); ++i) energy_ += eig_[i];
+        densitychange = std::shared_ptr<Matrix>(new Matrix(*new_density - *aodensity_));
+        aodensity_ = new_density;
 
         std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
                                           << std::setw(17) << error << std::setw(15) << std::setprecision(2) << scftime.tick() << std::endl;
-
-#ifdef HAVE_MPI_H
-        pdebug.tick_print("Post process");
-#endif
 
         if (error < thresh_scf_) {
           std::cout << indent << std::endl << indent << "  * SCF iteration converged." << std::endl << std::endl;
@@ -156,28 +152,10 @@ class SCF : public SCF_base {
           break;
         }
 
-        std::shared_ptr<Matrix> diis_density;
-        if (iter >= diis_start_) {
-          std::shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
-          std::shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *tmp_fock * *tildex_));
 
 #ifdef HAVE_MPI_H
-          pdebug.tick_print("DIIS");
+        pdebug.tick_print("Post process");
 #endif
-          intermediate->diagonalize(eig());
-          coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_**intermediate));
-          diis_density = coeff_->form_density_rhf(nocc_);
-
-#ifdef HAVE_MPI_H
-          pdebug.tick_print("Diag");
-#endif
-        } else {
-          diis_density = new_density;
-        }
-
-        densitychange = std::shared_ptr<Matrix>(new Matrix(*diis_density - *aodensity_));
-        aodensity_ = diis_density;
-
       }
       // by default we compute dipoles
       if (!geom_->external()) {

@@ -41,7 +41,7 @@ typedef shared_ptr<Matrix> RefAODensity;
 typedef shared_ptr<const Shell> RefShell;
 typedef shared_ptr<const Fock_base> RefFock_base;
 
-Fock_base::Fock_base(const RefGeometry geom, const RefFock_base previous, const RefAODensity den, const vector<double>& schwarz)
+Fock_base::Fock_base(const RefGeometry geom, const shared_ptr<const Matrix> previous, const RefAODensity den, const vector<double>& schwarz)
  : Matrix1e(geom), previous_(previous), density_(den), schwarz_(schwarz) {
 
   schwarz_thresh_ = geom->schwarz_thresh();
