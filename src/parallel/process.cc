@@ -43,3 +43,6 @@ Process::~Process() {
     cout.rdbuf(cout_orig);
 }
 
+
+void Process::cout_on()  const { if (mpi__->rank() != 0) cout.rdbuf(cout_orig); }
+void Process::cout_off() const { if (mpi__->rank() != 0) cout.rdbuf(ss_.rdbuf()); }
