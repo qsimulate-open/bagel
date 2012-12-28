@@ -50,8 +50,6 @@ if test "x${use_scalapack}" = xyes; then
         AH_TEMPLATE([HAVE_SCALAPACK], [a scalapack library will be linked.])
         if test x${use_mkl} = xno; then
             AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack $LIBS"], [AC_MSG_ERROR("Linking against scalapack library failed.")])
-        else
-            AC_DEFINE([HAVE_SCALAPACK])
         fi
     else
         AC_MSG_ERROR("scalapack should be used with mpi")
@@ -101,9 +99,9 @@ if test x${use_mkl} = xyes; then
         AC_MSG_ERROR([Cannot find Intel Math Kernel Library]), [-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
 
     if test "x${use_scalapack}" = xyes; then
-        AC_CHECK_LIB([mkl_scalapack_lp64], main, LIBS="-lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 $LIBS",
+        AC_CHECK_LIB([mkl_scalapack_lp64], main, AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 $LIBS",
             [AC_CHECK_LIB(scalapack, main,  [AC_DEFINE([HAVE_SCALAPACK]) LIBS="-lscalapack $LIBS"], [AC_MSG_ERROR("Linking against scalapack library failed.")])],
-            [-lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+            [-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
     fi
 fi
 if test x${use_mpi} = xyes; then
