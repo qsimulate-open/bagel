@@ -42,6 +42,9 @@ class Process {
     Process();
     ~Process();
 
+    void cout_on()  const { std::cout.rdbuf(cout_orig); }
+    void cout_off() const { std::cout.rdbuf(ss_.rdbuf()); }
+
 };
 
 }
