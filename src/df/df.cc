@@ -27,6 +27,7 @@
 #include <memory>
 #include <stdexcept>
 #include <iostream>
+#include <numeric>
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
@@ -132,6 +133,27 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 }
 
 
+tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<shared_ptr<const Shell> >& all) const {
+  const int batchsize = naux_ / mpi__->size();
+  const int start = batchsize*mpi__->rank();
+  const int end   = mpi__->rank() != mpi__->size()-1 ? batchsize*mpi__->rank() + batchsize : naux_;
+
+  int out1;
+  vector<shared_ptr<const Shell> > out2;
+
+  int num = 0;
+  for (auto iter = all.begin(); iter != all.end(); ++iter) {
+    if (num >= start && num < end) {
+      if (out2.empty()) out1 = num;
+      out2.push_back(*iter);
+    }
+    num += (*iter)->nbasis();
+  }
+
+  return tie(out1, out2);
+}
+
+
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 
@@ -150,21 +172,10 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 #ifndef HAVE_MPI_H
   block_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
 #else
-  int batchsize = ashell.size() / mpi__->size();
-  int cnt = 0;
-  int c = 0;
-  for (int i = 0; i != mpi__->size(); ++i) {
-    vector<shared_ptr<const Shell> > tmp;
-    const int astart = cnt;
-    for (int j = 0; j != ((i != mpi__->size()-1) ? batchsize : ashell.size()-batchsize*i); ++j) {
-      tmp.push_back(ashell[c]);
-      cnt += ashell[c]->nbasis();
-      ++c;
-    }
-    assert(!tmp.empty());
-    if (i != mpi__->rank()) continue;
-    block_ = shared_ptr<DFBlock>(new DFBlock(tmp, b1shell, b2shell, astart, 0, 0));
-  }
+  int astart;
+  vector<shared_ptr<const Shell> > myashell;
+  tie(astart, myashell) = get_ashell(ashell);
+  block_ = shared_ptr<DFBlock>(new DFBlock(myashell, b1shell, b2shell, astart, 0, 0));
 #endif
 
   time.tick_print("3-index ints");

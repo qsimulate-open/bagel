@@ -105,6 +105,7 @@ class DFDist : public ParallelDF {
                      const std::vector<std::shared_ptr<const Atom> >&,
                      const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv);
     void make_table(const int nmax);
+    std::tuple<int, std::vector<std::shared_ptr<const Shell> > > get_ashell(const std::vector<std::shared_ptr<const Shell> >& all) const;
 
   public:
     // construction of a block from AO integrals
