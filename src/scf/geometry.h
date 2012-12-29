@@ -95,7 +95,7 @@ class Geometry {
     void common_init2(const bool print, const double thresh, const bool nodf = false);
 
   public:
-    Geometry(const std::string) {};
+    Geometry(const std::string) {}
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
@@ -104,28 +104,28 @@ class Geometry {
     ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
-    const std::vector<std::shared_ptr<const Atom> >& atoms() const { return atoms_; };
-    const std::vector<std::shared_ptr<const Atom> >& aux_atoms() const { return aux_atoms_; };
-    std::shared_ptr<const Atom> atoms(const unsigned int i) const { return atoms_[i]; };
+    const std::vector<std::shared_ptr<const Atom> >& atoms() const { return atoms_; }
+    const std::vector<std::shared_ptr<const Atom> >& aux_atoms() const { return aux_atoms_; }
+    std::shared_ptr<const Atom> atoms(const unsigned int i) const { return atoms_[i]; }
 
     // Returns a constant
-    int natom() const { return atoms_.size(); };
-    size_t nbasis() const { return nbasis_; };
-    size_t nele() const { return nele_; };
-    size_t nfrc() const { return nfrc_; };
-    size_t naux() const { return naux_; };
-    int lmax() const { return lmax_; };
-    int aux_lmax() const { return aux_lmax_; };
-    bool spherical() const { return spherical_; };
-    int nirrep() const { return nirrep_; };
-    double gamma() const {return gamma_; };
-    const std::string symmetry() const { return symmetry_; };
-    virtual double nuclear_repulsion() const { return nuclear_repulsion_; };
+    int natom() const { return atoms_.size(); }
+    size_t nbasis() const { return nbasis_; }
+    size_t nele() const { return nele_; }
+    size_t nfrc() const { return nfrc_; }
+    size_t naux() const { return naux_; }
+    int lmax() const { return lmax_; }
+    int aux_lmax() const { return aux_lmax_; }
+    bool spherical() const { return spherical_; }
+    int nirrep() const { return nirrep_; }
+    double gamma() const {return gamma_; }
+    const std::string symmetry() const { return symmetry_; }
+    virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
     const std::vector<double> compute_grad_vnuc() const;
-    const std::string basisfile() const { return basisfile_; };
-    const std::string auxfile() const { return auxfile_; };
-    double schwarz_thresh() const { return schwarz_thresh_; };
-    double overlap_thresh() const { return overlap_thresh_; };
+    const std::string basisfile() const { return basisfile_; }
+    const std::string auxfile() const { return auxfile_; }
+    double schwarz_thresh() const { return schwarz_thresh_; }
+    double overlap_thresh() const { return overlap_thresh_; }
 
     bool operator==(const Geometry& o) const;
 
@@ -133,10 +133,10 @@ class Geometry {
     int num_count_full_valence_nocc() const;
 
     // The position of the specific funciton in the basis set.
-    const std::vector<std::vector<int> >& offsets() const { return offsets_; };
-    const std::vector<std::vector<int> >& aux_offsets() const { return aux_offsets_; };
-    const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); };
-    const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); };
+    const std::vector<std::vector<int> >& offsets() const { return offsets_; }
+    const std::vector<std::vector<int> >& aux_offsets() const { return aux_offsets_; }
+    const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
+    const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
 
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
@@ -145,10 +145,11 @@ class Geometry {
     void print_atoms() const;
 
     // Returns the Petite list.
-    std::shared_ptr<Petite> plist() const { return plist_; };
+    std::shared_ptr<Petite> plist() const { return plist_; }
 
     // Rerurns DF data
-    const std::shared_ptr<const DFDist> df() const { return df_; };
+    const std::shared_ptr<const DFDist> df() const { return df_; }
+    void discard_df() { df_ = std::shared_ptr<DFDist>(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
@@ -160,15 +161,15 @@ class Geometry {
     template<typename T>
     std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0) const {
       return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam));
-    };
+    }
 
     std::vector<double> xyz() const;
 
     std::array<double,3> charge_center() const;
 
     // external field
-    bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; };
-    double external(const int i) const { return external_[i]; };
+    bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
+    double external(const int i) const { return external_[i]; }
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)

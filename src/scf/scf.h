@@ -68,11 +68,23 @@ class SCF : public SCF_base {
     ~SCF() {};
 
     void compute() override {
+      Timer scftime;
+
       std::string indent = "  ";
       std::shared_ptr<const Matrix> previous_fock = hcore_;
 
-      if (SCF_base::coeff_ == nullptr) {
+      if (coeff_ == nullptr) {
         ParaMatrix intermediate = *tildex_ % *previous_fock * *tildex_;
+        intermediate.diagonalize(eig());
+        coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
+      } else {
+        aodensity_ = coeff_->form_density_rhf(nocc_);
+        std::shared_ptr<const Matrix>fock;
+        if (DF == 0)
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, aodensity_, schwarz_));
+        else
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
+        ParaMatrix intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
       }
@@ -80,8 +92,9 @@ class SCF : public SCF_base {
 
       std::cout << indent << "=== Nuclear Repulsion ===" << std::endl << indent << std::endl;
       std::cout << indent << std::fixed << std::setprecision(10) << std::setw(15) << geom_->nuclear_repulsion() << std::endl << std::endl;
-      std::cout << indent << "    * DIIS with orbital gradients will be used."
-                << std::endl << std::endl;
+      std::cout << indent << "    * DIIS with orbital gradients will be used." << std::endl << std::endl;
+      scftime.tick_print("SCF startup");
+      std::cout << std::endl;
       std::cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << std::endl << indent << std::endl;
 
       // starting SCF iteration
@@ -89,11 +102,10 @@ class SCF : public SCF_base {
       DIIS<Matrix> diis(5);
       std::shared_ptr<Matrix> densitychange = aodensity_; // assumes hcore guess...
 
-      Timer scftime;
       for (int iter = 0; iter != max_iter_; ++iter) {
 
 #ifdef HAVE_MPI_H
-        Timer pdebug;
+        Timer pdebug(1);
 #endif
 
         std::shared_ptr<const Matrix>fock;
@@ -143,7 +155,7 @@ class SCF : public SCF_base {
         pdebug.tick_print("Diag");
 #endif
 
-        coeff_ = std::shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
+        coeff_ = std::shared_ptr<Coeff>(new Coeff(*coeff_ * intermediate));
         std::shared_ptr<Matrix> new_density = coeff_->form_density_rhf(nocc_);
 
         densitychange = std::shared_ptr<Matrix>(new Matrix(*new_density - *aodensity_));

@@ -29,7 +29,6 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <iomanip>
 #include <list>
 #include <src/rysint/eribatch.h>
@@ -37,6 +36,7 @@
 #include <src/util/taskqueue.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
+#include <src/util/timer.h>
 #include <src/df/df.h>
 #include <src/parallel/paramatrix.h>
 #include <src/parallel/mpi_interface.h>
@@ -45,7 +45,6 @@
 #include <src/df/dfdistt.h>
 
 using namespace std;
-using namespace chrono;
 using namespace bagel;
 
 
@@ -136,7 +135,7 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
 
-  auto tp0 = high_resolution_clock::now();
+  Timer time;
 
   // 3index Integral is now made in DFBlock.
   vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
@@ -193,15 +192,17 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 
   // these shell loops will be distributed across threads
   TaskQueue<DFIntTask_OLD<DFDist> > tq(tasks);
+
+  time.tick_print("time spent for task formation");
+
   tq.compute(resources__->max_num_threads());
 
-  auto tp1 = high_resolution_clock::now();
-  cout << "       - time spent for integral evaluation  " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp1-tp0).count()*0.001 << endl;
+  time.tick_print("time spent for integral evaluation");
 
-  if (compute_inverse) data2_->inverse_half(throverlap);
-  auto tp2 = high_resolution_clock::now();
-  cout << "       - time spent for computing inverse    " << setprecision(2) << setw(10) << duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl;
-
+  if (compute_inverse) {
+    data2_->inverse_half(throverlap);
+    time.tick_print("time spent for computing inverse");
+  }
 }
 
 

@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
       const std::string method = iter->first;
 
       if (method == "molecule") {
-        geom = std::shared_ptr<Geometry>(); // kill the previous one first
+        if (ref != nullptr) geom->discard_df(); 
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
         if (read_input<bool>(iter->second, "restart", false)) ref = std::shared_ptr<const Reference>();
         if (ref != nullptr) ref = ref->project_coeff(geom);

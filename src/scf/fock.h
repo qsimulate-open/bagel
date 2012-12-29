@@ -257,7 +257,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
 #ifdef HAVE_MPI_H
-    Timer pdebug;
+    Timer pdebug(2);
 #endif
     std::shared_ptr<ParaMatrix> coeff(new ParaMatrix(*den_ex));
     *coeff *= -1.0;
@@ -275,31 +275,31 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     if (nocc == 0) return;
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Compute coeff (redundant)", 1);
+    pdebug.tick_print("Compute coeff (redundant)");
 #endif
 
     std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->data(), nocc);
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("First index transform", 1);
+    pdebug.tick_print("First index transform");
 #endif
 
     std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Metric multiply", 1);
+    pdebug.tick_print("Metric multiply");
 #endif
 
     *this += *half->form_2index(half, -0.5);
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Exchange build", 1);
+    pdebug.tick_print("Exchange build");
 #endif
 
     *this += *df->compute_Jop(density_->data());
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Coulomb build", 1);
+    pdebug.tick_print("Coulomb build");
 #endif
   }
 

@@ -71,6 +71,8 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
+    // compute S^-1 using symmetric form.
+    void inverse_symmetric(const double thresh = 1.0e-8);
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
     // compute S^1/2. Same algorithm as above.

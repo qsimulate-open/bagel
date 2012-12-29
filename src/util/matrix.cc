@@ -485,6 +485,21 @@ void Matrix::inverse() {
 }
 
 
+// compute S^{-1} using diagonalization 
+void Matrix::inverse_symmetric(const double thresh) {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  unique_ptr<double[]> vec(new double[n]);
+  diagonalize(vec.get());
+
+  for (int i = 0; i != n; ++i) {
+    double s = vec[i] > thresh ? 1.0/std::sqrt(vec[i]) : 0.0;
+    dscal_(n, s, data_.get()+i*n, 1);
+  }
+  *this = *this ^ *this;
+}
+
+
 // compute S^{-1/2}
 void Matrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
