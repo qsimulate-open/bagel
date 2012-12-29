@@ -53,6 +53,7 @@
 #include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/util/localization.h>
+#include <src/util/timer.h>
 #include <src/rel/dirac.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
@@ -116,6 +117,9 @@ int main(int argc, char** argv) {
     std::shared_ptr<Dimer> dimer;
 
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+
+    // timer for each method
+    Timer timer(-1);
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
@@ -374,10 +378,14 @@ int main(int argc, char** argv) {
         //dimer->hamiltonian();
       }
       #endif
-    }
-    print_footer();
 
-    //test_solvers(geom);
+      cout << endl;
+      timer.tick_print("Method: " + method);
+      cout << endl;
+
+    }
+
+    print_footer();
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
