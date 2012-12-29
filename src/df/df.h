@@ -96,7 +96,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den) const;
 
-    std::unique_ptr<double[]> compute_cd(const std::shared_ptr<const Matrix> den) const;
+    std::unique_ptr<double[]> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>()) const;
 
 };
 

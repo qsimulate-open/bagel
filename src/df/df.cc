@@ -256,27 +256,32 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) c
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  unique_ptr<double[]> tmp0 = compute_cd(den);
+  unique_ptr<double[]> tmp0 = o->compute_cd(den, data2_);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  shared_ptr<ParaMatrix> out = o->block()->form_mat(tmp0.get()+block_->astart());
+  shared_ptr<ParaMatrix> out = block_->form_mat(tmp0.get()+block_->astart());
   // all reduce
   out->allreduce();
   return out;
 }
 
 
-unique_ptr<double[]> ParallelDF::compute_cd(const shared_ptr<const Matrix> den) const {
+unique_ptr<double[]> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2) const {
+  if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
+  if (!dat2) dat2 = data2_;
+
   unique_ptr<double[]> tmp0(new double[naux_]);
   unique_ptr<double[]> tmp1(new double[naux_]);
   fill_n(tmp0.get(), naux_, 0.0);
+
   // D = (D|rs)*d_rs
   unique_ptr<double[]> tmp = block_->form_vec(den);
   copy_n(tmp.get(), block_->asize(), tmp0.get()+block_->astart());
   // All reduce
   mpi__->allreduce(tmp0.get(), naux_);
+
   // C = S^-1_CD D 
-  dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
-  dgemv_("N", naux_, naux_, 1.0, data2_->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
+  dgemv_("N", naux_, naux_, 1.0, dat2->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
+  dgemv_("N", naux_, naux_, 1.0, dat2->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
   return tmp0;
 }
 

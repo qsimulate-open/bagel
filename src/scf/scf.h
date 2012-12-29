@@ -83,7 +83,7 @@ class SCF : public SCF_base {
         if (DF == 0)
           fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, aodensity_, schwarz_));
         else
-          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_), true));
         ParaMatrix intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
@@ -112,7 +112,7 @@ class SCF : public SCF_base {
         if (DF == 0)
           fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
         else
-          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
+          fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_), true));
         previous_fock = fock;
         // Need to share exactly the same between MPI processes
         if (DF == 0) mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
