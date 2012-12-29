@@ -296,7 +296,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     pdebug.tick_print("Exchange build");
 #endif
 
-    *this += *df->compute_Jop(density_->data());
+    *this += *df->compute_Jop(density_);
 
 #ifdef HAVE_MPI_H
     pdebug.tick_print("Coulomb build");
@@ -332,7 +332,7 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
   pdebug.tick_print("Exchange build");
 #endif
 
-  *this += *df->compute_Jop(density_->data());
+  *this += *df->compute_Jop(density_);
 
 #ifdef HAVE_MPI_H
   pdebug.tick_print("Coulomb build");

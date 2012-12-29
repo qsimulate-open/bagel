@@ -130,7 +130,7 @@ class DFBlock {
     std::unique_ptr<double[]> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
-    std::unique_ptr<double[]> form_vec(const double* den) const;
+    std::unique_ptr<double[]> form_vec(const std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<ParaMatrix> form_mat(const double* fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);

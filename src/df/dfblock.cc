@@ -339,9 +339,10 @@ shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, c
 }
 
 
-unique_ptr<double[]> DFBlock::form_vec(const double* den) const {
+unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
   unique_ptr<double[]> out(new double[asize_]);
-  dgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, den, 1, 0.0, out.get(), 1);
+  assert(den->ndim() == b1size_ && den->mdim() == b2size_);
+  dgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, den->data(), 1, 0.0, out.get(), 1);
   return out;
 }
 

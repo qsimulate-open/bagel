@@ -91,6 +91,13 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<const ParaMatrix> data2() const { return data2_; }
 
     int get_node(const int shelloffset) const;
+
+    // compute a J operator, given density matrices in AO basis
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den) const;
+
+    std::unique_ptr<double[]> compute_cd(const std::shared_ptr<const Matrix> den) const;
+
 };
 
 
@@ -127,12 +134,6 @@ class DFDist : public ParallelDF {
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
     std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const { return compute_half_transform(c->data(), c->mdim()); }
-
-    // compute a J operator, given density matrices in AO basis
-    std::shared_ptr<Matrix> compute_Jop(const double* den) const;
-    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const double* den) const;
-
-    std::unique_ptr<double[]> compute_cd(const double* den) const;
 
 };
 
