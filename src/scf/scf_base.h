@@ -43,9 +43,9 @@ class SCF_base {
   protected:
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<Overlap> overlap_;
-    const std::shared_ptr<Hcore> hcore_;
     std::shared_ptr<TildeX> tildex_;
+    std::shared_ptr<const Overlap> overlap_;
+    std::shared_ptr<const Hcore> hcore_;
     std::shared_ptr<Matrix> aodensity_;
     std::shared_ptr<const Coeff> coeff_;
 
@@ -76,7 +76,6 @@ class SCF_base {
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
 
-    const std::shared_ptr<Hcore> hcore() { return hcore_; };
     const std::shared_ptr<const Hcore> hcore() const { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 

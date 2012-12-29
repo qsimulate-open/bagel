@@ -26,6 +26,7 @@
 
 #include <src/scf/scf_base.h>
 #include <src/rysint/eribatch.h>
+#include <src/util/timer.h>
 #include <src/util/diis.h>
 #include <iostream>
 #include <cmath>
@@ -37,11 +38,16 @@ using namespace bagel;
 
 
 SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : idata_(idat), geom_(geom), overlap_(new Overlap(geom)), hcore_(new Hcore(geom)) {
+ : idata_(idat), geom_(geom) {
+
+  Timer scfb;
+  overlap_ = shared_ptr<const Overlap>(new Overlap(geom));
+  scfb.tick_print("Overlap matrix");
+  hcore_ = shared_ptr<const Hcore>(new Hcore(geom));
+  scfb.tick_print("Hcore matrix");
 
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
   eig_ = move(eig);
-  hcore_->fill_upper();
 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
@@ -60,12 +66,17 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
 
   tildex_ = shared_ptr<TildeX>(new TildeX(overlap_, thresh_overlap_));
 
+  scfb.tick_print("Overlap orthog");
+
   init_schwarz();
+
+  scfb.tick_print("Schwarz matrix");
 
   // if ref is passed to this
   if (re != nullptr) {
     coeff_ = re->coeff();
   }
+  cout << endl;
 }
 
 
