@@ -53,11 +53,6 @@ class Fock_base : public Matrix1e {
 
   public:
     Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Matrix>, const std::shared_ptr<Matrix>, const std::vector<double>&);
-    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Hcore>);
-    Fock_base(const std::shared_ptr<const Geometry>);
-
-    ~Fock_base();
-
 };
 
 }
