@@ -310,32 +310,32 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
 #ifdef HAVE_MPI_H
-  Timer pdebug;
+  Timer pdebug(2);
 #endif
 
   std::shared_ptr<const DFDist> df = geom_->df();
   std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("First index transform", 1);
+  pdebug.tick_print("First index transform");
 #endif
 
   std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Metric multiply", 1);
+  pdebug.tick_print("Metric multiply");
 #endif
 
   *this += *half->form_2index(half, -1.0*scale_exchange);
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Exchange build", 1);
+  pdebug.tick_print("Exchange build");
 #endif
 
   *this += *df->compute_Jop(density_->data());
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Coulomb build", 1);
+  pdebug.tick_print("Coulomb build");
 #endif
 }
 
