@@ -167,11 +167,14 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   }
 #endif
 
+  time.tick_print("3-index ints");
+
   // make a global hash table
   make_table(mpi__->size());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
+  tasks.reserve(ashell.size()*ashell.size());
   data2_ = shared_ptr<ParaMatrix>(new ParaMatrix(naux_, naux_));
 
   int tmpa = 0;
@@ -179,11 +182,13 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   for (auto& i : ashell) { aof.push_back(tmpa); tmpa += i->nbasis(); }
   const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
 
+  // naive static distribution
+  int u = 0;
   auto o0 = aof.begin();
   for (auto& b0 : ashell) {
     auto o1 = aof.begin();
     for (auto& b1 : ashell) {
-      if (*o0 <= *o1)
+      if (*o0 <= *o1 && (u++ % mpi__->size() == mpi__->rank()))
         tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
       ++o1;
     }
@@ -192,16 +197,14 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
 
   // these shell loops will be distributed across threads
   TaskQueue<DFIntTask_OLD<DFDist> > tq(tasks);
-
-  time.tick_print("time spent for task formation");
-
   tq.compute(resources__->max_num_threads());
+  data2_->allreduce();
 
-  time.tick_print("time spent for integral evaluation");
+  time.tick_print("2-index ints (not parallel)");
 
   if (compute_inverse) {
     data2_->inverse_half(throverlap);
-    time.tick_print("time spent for computing inverse");
+    time.tick_print("computing inverse");
   }
 }
 
