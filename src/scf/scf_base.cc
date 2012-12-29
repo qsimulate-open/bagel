@@ -37,7 +37,7 @@ using namespace std;
 using namespace bagel;
 
 
-SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
+SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
  : idata_(idat), geom_(geom) {
 
   Timer scfb;
@@ -68,9 +68,10 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
 
   scfb.tick_print("Overlap orthog");
 
-  init_schwarz();
-
-  scfb.tick_print("Schwarz matrix");
+  if (need_schwarz) {
+    init_schwarz();
+    scfb.tick_print("Schwarz matrix");
+  }
 
   // if ref is passed to this
   if (re != nullptr) {

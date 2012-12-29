@@ -211,7 +211,7 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   tq.compute(resources__->max_num_threads());
   data2_->allreduce();
 
-  time.tick_print("2-index ints (not parallel)");
+  time.tick_print("2-index ints");
 
   if (compute_inverse) {
     data2_->inverse_half(throverlap);

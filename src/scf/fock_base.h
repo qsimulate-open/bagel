@@ -52,7 +52,8 @@ class Fock_base : public Matrix1e {
     double schwarz_thresh_;
 
   public:
-    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Matrix>, const std::shared_ptr<Matrix>, const std::vector<double>&);
+    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Matrix>, const std::shared_ptr<Matrix>,
+              const std::vector<double>& = std::vector<double>());
 };
 
 }

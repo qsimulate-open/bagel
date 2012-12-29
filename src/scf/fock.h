@@ -51,18 +51,16 @@ class Fock : public Fock_base {
     void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
 
   public:
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d)
-     : Fock_base(a,b,c,d) {
-      fock_two_electron_part();
-      fock_one_electron_part();
-    }
-
+    // Fock operator for DF cases
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
          const std::shared_ptr<const Matrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : Fock_base(a,b,c,d) {
+     : Fock_base(a,b,c) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
+
+    // Fock operator
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, std::shared_ptr<const Matrix> ex,
@@ -80,7 +78,7 @@ class Fock : public Fock_base {
 template<int DF>
 void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
-  if (den_ex != nullptr && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
+  if (den_ex != density_) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
   if (den_ex == nullptr) den_ex = density_;
 
   const std::vector<std::shared_ptr<const Atom> > atoms = geom_->atoms();

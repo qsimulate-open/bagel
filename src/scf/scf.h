@@ -48,7 +48,7 @@ class SCF : public SCF_base {
   public:
     SCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-      : SCF_base(idata_, geom, re) {
+      : SCF_base(idata_, geom, re, DF==0) {
 
       // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
       // In the future, this should probably be moved to SCF_base and designed to work properly there
@@ -63,9 +63,7 @@ class SCF : public SCF_base {
       if (DF == 1) {
         // TODO init schwarz for auxiliary basis
       }
-    };
-
-    ~SCF() {};
+    }
 
     void compute() override {
       Timer scftime;
@@ -170,14 +168,14 @@ class SCF : public SCF_base {
         Dipole mu(geom_, aodensity_);
         mu.compute();
       }
-    };
+    }
 
     std::shared_ptr<Reference> conv_to_ref() const {
       std::shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;
-    };
+    }
 
 };
 
