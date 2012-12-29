@@ -420,9 +420,13 @@ void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
 #ifdef HAVE_MPI_H
+  Timer mult(3);
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+  mult.tick_print("Form DFDistT");
   work = work->apply_J(d);
+  mult.tick_print("Applicatoin of Inverse");
   work->get_paralleldf(out);
+  mult.tick_print("Return DFDist");
 #else
   out->block_->zero();
   out->block_->contrib_apply_J(block_, d);
@@ -434,9 +438,13 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
 #ifdef HAVE_MPI_H
+  Timer mult(3);
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+  mult.tick_print("Form DFDistT");
   work = work->apply_J(d);
+  mult.tick_print("Applicatoin of Inverse");
   work->get_paralleldf(out);
+  mult.tick_print("Return DFDist");
 #else
   out->block_->zero();
   out->block_->contrib_apply_J(block_, d);
