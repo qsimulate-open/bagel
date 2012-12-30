@@ -89,7 +89,7 @@ static std::pair<int, int> numgrid(int numproc) {
 }
 
 namespace bagel {
-  const static int blocksize__ = 16; 
+  const static int blocksize__ = 32;
 }
 
 #endif
