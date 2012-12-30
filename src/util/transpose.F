@@ -6,19 +6,6 @@ c Assuming 16kB L1 cache or more
 c The arrays will occupy 12.8kB
 c
 #include <config.h>
-      subroutine mytranspose_inplace(h,m,n)
-      implicit none
-      integer m,n
-      double precision h(*)
-#ifdef HAVE_MKL_H
-#include <mkl.fi>
-      call mkl_dimatcopy("c","t",m,n,1.0d0,h,m,n)
-#else
-      call abort
-#endif
-      return
-      end subroutine
-c
       subroutine mytranspose(h,m,n,vec)
       implicit none
       integer i,j,m,n,mresidual,nresidual,mlim,nlim

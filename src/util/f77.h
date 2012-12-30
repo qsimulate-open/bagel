@@ -35,7 +35,6 @@ extern "C" {
 
  // transposition
  void mytranspose_(const double*, const int*, const int*, double*);
- void mytranspose_inplace_(const double*, const int*, const int*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
 
 /* dcopy is strongly discouraged since std::copy and std::copy_n are potentially faster
@@ -87,7 +86,6 @@ extern "C" {
 }
 
 static void mytranspose_(const double* a, const int b, const int c, double* d) { mytranspose_(a,&b,&c,d); }
-static void mytranspose_inplace_(double* a, const int b, const int c) { mytranspose_inplace_(a,&b,&c); }
 
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
                    const double alpha, const double* a, const int lda, const double* b, const int ldb,

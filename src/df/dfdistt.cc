@@ -49,13 +49,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 
   data_ = unique_ptr<double[]>(new double[naux_*size_]);
 
-#ifndef HAVE_MKL_H
   // second form a matrix
   unique_ptr<double[]> buf(new double[naux_*size_]);
-  double* bufp = buf.get();
-#else
-  double* bufp = data_.get();
-#endif
 
   // source block
   shared_ptr<const DFBlock> source = in->block();
@@ -68,10 +63,10 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
       srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i));
-      rrequest.push_back(mpi__->request_recv(bufp+atab[i].first*size_, atab[i].second*size_, i));
+      rrequest.push_back(mpi__->request_recv(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
       assert(source->asize()*tabsize_[i] == atab[i].second*size_);
-      copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], bufp+atab[i].first*size_); 
+      copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf.get()+atab[i].first*size_); 
     }
   }
   for (auto& i : rrequest) mpi__->wait(i);
@@ -79,11 +74,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   // second transpose each block
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-#ifndef HAVE_MKL_H
-    mytranspose_(bufp+o, atab[i].second, size_, data_.get()+o);
-#else
-    mytranspose_inplace_(data_.get()+o, atab[i].second, size_);
-#endif
+    mytranspose_(buf.get()+o, atab[i].second, size_, data_.get()+o);
   }
 
   for (auto& i : srequest) mpi__->wait(i);
@@ -119,13 +110,8 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     if (i != mpi__->rank())
       request.push_back(mpi__->request_recv(out->block()->get()+out->block()->asize()*tabstart_[i], out->block()->asize()*tabsize_[i], i));
 
-#ifndef HAVE_MKL_H
   // second form a matrix
   unique_ptr<double[]> buf(new double[naux_*size_]);
-  double* bufp = buf.get();
-#else
-  double* bufp = data_.get(); 
-#endif
 
   // information on the data layout
   vector<pair<size_t, size_t> > atab = df_->atable();
@@ -133,19 +119,15 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   // transpose each block back
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-#ifndef HAVE_MKL_H
     mytranspose_(data_.get()+o, size_, atab[i].second, buf.get()+o);
-#else
-    mytranspose_inplace_(data_.get()+o, size_, atab[i].second);
-#endif
   }
 
   // last, issue all the send requests
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
-      request.push_back(mpi__->request_send(bufp+atab[i].first*size_, atab[i].second*size_, i));
+      request.push_back(mpi__->request_send(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
-      copy_n(bufp+atab[i].first*size_, out->block()->asize()*tabsize_[i], out->block()->get()+out->block()->asize()*tabstart_[i]);
+      copy_n(buf.get()+atab[i].first*size_, out->block()->asize()*tabsize_[i], out->block()->get()+out->block()->asize()*tabstart_[i]);
     }
   }
   for (auto& i : request) mpi__->wait(i);
