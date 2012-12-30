@@ -429,7 +429,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
   mult.tick_print("Form DFDistT");
   work = work->apply_J(d);
-  mult.tick_print("Applicatoin of Inverse");
+  mult.tick_print("Application of Inverse");
   work->get_paralleldf(out);
   mult.tick_print("Return DFDist");
 #else
