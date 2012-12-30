@@ -149,6 +149,7 @@ tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<sh
     }
     num += (*iter)->nbasis();
   }
+  if (out2.empty()) throw logic_error("This process has zero ashell. Use smaller number of MPI process");
 
   return tie(out1, out2);
 }
