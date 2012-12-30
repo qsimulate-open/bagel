@@ -74,7 +74,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   // second transpose each block
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-    mytranspose_(buf.get()+o, atab[i].second, size_, data_.get()+o);
+    for (size_t j = 0; j != size_; ++j)
+      copy_n(buf.get()+o+j*atab[i].second, atab[i].second, data_.get()+atab[i].first+j*naux_);
   }
 
   for (auto& i : srequest) mpi__->wait(i);
@@ -98,7 +99,7 @@ shared_ptr<DFDistT> DFDistT::clone() const {
 
 shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
   shared_ptr<DFDistT> out = clone();
-  dgemm_("N", "N", size_, naux_, naux_, 1.0, data_.get(), size_, d->data(), naux_, 0.0, out->data_.get(), size_); 
+  dgemm_("T", "N", naux_, size_, naux_, 1.0, d->data(), naux_, data_.get(), naux_, 0.0, out->data_.get(), naux_); 
   return out;
 }
 
@@ -119,7 +120,8 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   // transpose each block back
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-    mytranspose_(data_.get()+o, size_, atab[i].second, buf.get()+o);
+    for (size_t j = 0; j != size_; ++j)
+      copy_n(data_.get()+atab[i].first+j*naux_, atab[i].second, buf.get()+o+j*atab[i].second);
   }
 
   // last, issue all the send requests
