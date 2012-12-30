@@ -35,13 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<const Geometry> RefGeometry;
-typedef shared_ptr<const Hcore> RefHcore;
-typedef shared_ptr<Matrix> RefAODensity;
-typedef shared_ptr<const Shell> RefShell;
-typedef shared_ptr<const Fock_base> RefFock_base;
 
-Fock_base::Fock_base(const RefGeometry geom, const shared_ptr<const Matrix> previous, const RefAODensity den, const vector<double>& schwarz)
+Fock_base::Fock_base(const shared_ptr<const Geometry> geom, const shared_ptr<const Matrix> previous, const std::shared_ptr<const Matrix> den, const vector<double>& schwarz)
  : Matrix1e(geom), previous_(previous), density_(den), schwarz_(schwarz) {
 
   schwarz_thresh_ = geom->schwarz_thresh();
@@ -76,7 +71,7 @@ void Fock_base::fock_one_electron_part() {
 }
 
 
-void Fock_base::computebatch(const array<RefShell,2>& input, const int offsetb0, const int offsetb1) {
+void Fock_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);

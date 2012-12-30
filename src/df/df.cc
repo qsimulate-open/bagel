@@ -39,7 +39,6 @@
 #include <src/util/f77.h>
 #include <src/util/timer.h>
 #include <src/df/df.h>
-#include <src/parallel/paramatrix.h>
 #include <src/parallel/mpi_interface.h>
 
 #include <src/df/dfinttask_old.h>
@@ -62,7 +61,7 @@ int ParallelDF::get_node(const int off) const {
 
 
 shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  shared_ptr<ParaMatrix> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
+  shared_ptr<Matrix> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
   out->allreduce();
   return out;
 }
@@ -80,7 +79,7 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
 #ifdef HAVE_MPI_H
-  shared_ptr<ParaMatrix> out(new ParaMatrix(naux_, naux_));
+  shared_ptr<Matrix> out(new Matrix(naux_, naux_));
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
   shared_ptr<DFDistT> work2 = this == o.get() ? work : shared_ptr<DFDistT>(new DFDistT(o));
   assert(work->size() == work2->size());
@@ -186,7 +185,7 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
   tasks.reserve(ashell.size()*ashell.size());
-  data2_ = shared_ptr<ParaMatrix>(new ParaMatrix(naux_, naux_));
+  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
 
   int tmpa = 0;
   vector<int> aof;
@@ -258,7 +257,7 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o,
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = o->compute_cd(den, data2_);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  shared_ptr<ParaMatrix> out = block_->form_mat(tmp0.get()+block_->astart());
+  shared_ptr<Matrix> out = block_->form_mat(tmp0.get()+block_->astart());
   // all reduce
   out->allreduce();
   return out;

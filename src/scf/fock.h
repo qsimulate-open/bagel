@@ -39,7 +39,6 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/matrix.h>
 #include <src/scf/fock_base.h>
-#include <src/parallel/paramatrix.h>
 #include <src/util/timer.h>
 
 namespace bagel {
@@ -257,7 +256,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 #ifdef HAVE_MPI_H
     Timer pdebug(2);
 #endif
-    std::shared_ptr<ParaMatrix> coeff(new ParaMatrix(*den_ex));
+    std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));
     *coeff *= -1.0;
     int nocc = 0;
     {

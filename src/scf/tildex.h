@@ -27,16 +27,16 @@
 #ifndef __src_scf_tildex_h
 #define __src_scf_tildex_h
 
-#include <src/parallel/paramatrix.h>
+#include <src/util/matrix.h>
 #include <memory>
 
 namespace bagel {
 
-class TildeX : public ParaMatrix {
+class TildeX : public Matrix {
   protected:
 
   public:
-    TildeX(const std::shared_ptr<const Overlap> olp, const double thresh) : ParaMatrix(*olp)  {
+    TildeX(const std::shared_ptr<const Overlap> olp, const double thresh) : Matrix(*olp)  {
       this->inverse_half(thresh);
     }
 

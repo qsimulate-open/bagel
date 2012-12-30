@@ -34,7 +34,6 @@
 #include <src/wfn/reference.h>
 #include <iostream>
 #include <iomanip>
-#include <src/parallel/paramatrix.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/timer.h>
 
@@ -72,17 +71,17 @@ class SCF : public SCF_base {
       std::shared_ptr<const Matrix> previous_fock = hcore_;
 
       if (coeff_ == nullptr) {
-        ParaMatrix intermediate = *tildex_ % *previous_fock * *tildex_;
+        Matrix intermediate = *tildex_ % *previous_fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        std::shared_ptr<const Matrix>fock;
+        std::shared_ptr<const Matrix> fock;
         if (DF == 0)
           fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, aodensity_, schwarz_));
         else
           fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_), true));
-        ParaMatrix intermediate = *tildex_ % *fock * *tildex_;
+        Matrix intermediate = *tildex_ % *fock * *tildex_;
         intermediate.diagonalize(eig());
         coeff_ = std::shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
       }
@@ -106,7 +105,7 @@ class SCF : public SCF_base {
         Timer pdebug(1);
 #endif
 
-        std::shared_ptr<const Matrix>fock;
+        std::shared_ptr<const Matrix> fock;
         if (DF == 0)
           fock = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
         else
@@ -142,7 +141,7 @@ class SCF : public SCF_base {
 #endif
         }
 
-        ParaMatrix intermediate(*coeff_ % *fock * *coeff_);
+        Matrix intermediate(*coeff_ % *fock * *coeff_);
 
         levelshift_->shift(intermediate);
 

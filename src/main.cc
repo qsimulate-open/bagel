@@ -82,8 +82,6 @@ using std::cout;
 using std::endl;
 using namespace bagel;
 
-#include <src/parallel/paramatrix.h>
-
 int main(int argc, char** argv) {
 
   // setup MPI interface. It does nothing for serial runs
