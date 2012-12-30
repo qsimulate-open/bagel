@@ -49,7 +49,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<DFBlock> block_;
     // hash key and process number
     std::map<int, int> global_table_;
-    std::vector<std::pair<int, int> > atable_;
+    std::vector<std::pair<size_t, size_t> > atable_;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -84,8 +84,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
-    const std::pair<int, int> atable(const int i) const { return atable_[i]; }
-    const std::vector<std::pair<int, int> >& atable() const { return atable_; }
+    const std::pair<size_t, size_t> atable(const int i) const { return atable_[i]; }
+    const std::vector<std::pair<size_t, size_t> >& atable() const { return atable_; }
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const ParaMatrix> data2() const { return data2_; }

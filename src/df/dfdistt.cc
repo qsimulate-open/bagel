@@ -56,7 +56,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   shared_ptr<const DFBlock> source = in->block();
 
   // information on the data layout
-  vector<pair<int, int> > atab = df_->atable();
+  vector<pair<size_t, size_t> > atab = df_->atable();
 
   vector<int> srequest, rrequest;
   // first issue all the send and receive requests
@@ -82,7 +82,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 }
 
 
-DFDistT::DFDistT(const size_t naux, const vector<int> start, const vector<int> size, const size_t nindex1, const size_t nindex2,
+DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<size_t> size, const size_t nindex1, const size_t nindex2,
                  const shared_ptr<const ParallelDF> p)
  : data_(new double[naux*size[mpi__->rank()]]), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
    tabstart_(start), tabsize_(size), df_(p) {
@@ -114,7 +114,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   unique_ptr<double[]> buf(new double[naux_*size_]);
 
   // information on the data layout
-  vector<pair<int, int> > atab = df_->atable();
+  vector<pair<size_t, size_t> > atab = df_->atable();
 
   // transpose each block back
   for (int i = 0; i != mpi__->size(); ++i) {
