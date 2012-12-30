@@ -32,7 +32,6 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
-#include <src/parallel/paramatrix.h>
 
 using namespace bagel;
 using namespace std;
@@ -296,16 +295,16 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
 }
 
 
-shared_ptr<ParaMatrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const double a) const {
+shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (asize_ != o->asize_ || (b1size_ != o->b1size_ && b2size_ != o->b2size_)) throw logic_error("illegal call of DFBlock::form_2index");
-  shared_ptr<ParaMatrix> target;
+  shared_ptr<Matrix> target;
 
   if (b1size_ == o->b1size_) {
-    target = shared_ptr<ParaMatrix>(new ParaMatrix(b2size_,o->b2size_));
+    target = shared_ptr<Matrix>(new Matrix(b2size_,o->b2size_));
     dgemm_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target->data(), b2size_);
   } else {
     assert(b2size_ == o->b2size_);
-    target = shared_ptr<ParaMatrix>(new ParaMatrix(b1size_,o->b1size_));
+    target = shared_ptr<Matrix>(new Matrix(b1size_,o->b1size_));
     for (int i = 0; i != b2size_; ++i)
       dgemm_("T", "N", b1size_, o->b1size_, asize_, a, data_.get()+i*asize_*b1size_, asize_, o->data_.get()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
   }
@@ -339,15 +338,16 @@ shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, c
 }
 
 
-unique_ptr<double[]> DFBlock::form_vec(const double* den) const {
+unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
   unique_ptr<double[]> out(new double[asize_]);
-  dgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, den, 1, 0.0, out.get(), 1);
+  assert(den->ndim() == b1size_ && den->mdim() == b2size_);
+  dgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, den->data(), 1, 0.0, out.get(), 1);
   return out;
 }
 
 
-shared_ptr<ParaMatrix> DFBlock::form_mat(const double* fit) const {
-  shared_ptr<ParaMatrix> out(new ParaMatrix(b1size_,b2size_));
+shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
+  shared_ptr<Matrix> out(new Matrix(b1size_,b2size_));
   dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out->data(), 1);
   return out;
 }

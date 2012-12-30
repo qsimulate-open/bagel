@@ -37,6 +37,7 @@ Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
   copy_n(inp.data(), ndim_*mdim_, data());
 }
 
+
 Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
   double* cdata = data();
@@ -90,9 +91,9 @@ int Coeff::num_basis(vector<shared_ptr<const Coeff> > coeff_vec) const {
 
 shared_ptr<Matrix> Coeff::form_density_rhf(const int n, const int offset) const {
   const int nb = ndim_;
-  shared_ptr<Matrix> out(new Matrix(nb, nb));
-  double* out_data = out->data() + offset*nb;
-  dgemm_("N", "T", nb, nb, n, 2.0, data(), nb, data(), nb, 0.0, out_data, nb);
+  shared_ptr<const Matrix> tmp = this->slice(offset, offset+n); 
+  shared_ptr<Matrix> out(new Matrix(*tmp ^ *tmp));
+  *out *= 2.0;
   return out;
 }
 

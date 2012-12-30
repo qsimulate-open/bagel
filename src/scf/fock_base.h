@@ -38,7 +38,7 @@ namespace bagel {
 class Fock_base : public Matrix1e {
   protected:
     const std::shared_ptr<const Matrix> previous_;
-    const std::shared_ptr<Matrix> density_;
+    const std::shared_ptr<const Matrix> density_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
     // virtual function that is to be defined in the derived class
@@ -52,12 +52,8 @@ class Fock_base : public Matrix1e {
     double schwarz_thresh_;
 
   public:
-    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Matrix>, const std::shared_ptr<Matrix>, const std::vector<double>&);
-    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Hcore>);
-    Fock_base(const std::shared_ptr<const Geometry>);
-
-    ~Fock_base();
-
+    Fock_base(const std::shared_ptr<const Geometry>, const std::shared_ptr<const Matrix>, const std::shared_ptr<const Matrix>,
+              const std::vector<double>& = std::vector<double>());
 };
 
 }

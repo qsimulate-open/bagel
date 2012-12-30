@@ -30,6 +30,7 @@
 #include <config.h>
 #include <memory>
 #include <complex>
+#include <vector>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
@@ -42,7 +43,7 @@ class MPI_Interface {
     int cnt_;
 #ifdef HAVE_MPI_H
     // request handles
-    std::map<int, MPI_Request> request_; 
+    std::map<int, std::vector<MPI_Request> > request_; 
 #endif
     int nprow_; 
     int npcol_;

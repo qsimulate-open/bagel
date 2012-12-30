@@ -56,7 +56,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   shared_ptr<const DFBlock> source = in->block();
 
   // information on the data layout
-  vector<pair<int, int> > atab = df_->atable();
+  vector<pair<size_t, size_t> > atab = df_->atable();
 
   vector<int> srequest, rrequest;
   // first issue all the send and receive requests
@@ -74,7 +74,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   // second transpose each block
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-    mytranspose_(buf.get()+o, atab[i].second, size_, data_.get()+o);
+    for (size_t j = 0; j != size_; ++j)
+      copy_n(buf.get()+o+j*atab[i].second, atab[i].second, data_.get()+atab[i].first+j*naux_);
   }
 
   for (auto& i : srequest) mpi__->wait(i);
@@ -82,7 +83,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 }
 
 
-DFDistT::DFDistT(const size_t naux, const vector<int> start, const vector<int> size, const size_t nindex1, const size_t nindex2,
+DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<size_t> size, const size_t nindex1, const size_t nindex2,
                  const shared_ptr<const ParallelDF> p)
  : data_(new double[naux*size[mpi__->rank()]]), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
    tabstart_(start), tabsize_(size), df_(p) {
@@ -98,7 +99,7 @@ shared_ptr<DFDistT> DFDistT::clone() const {
 
 shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
   shared_ptr<DFDistT> out = clone();
-  dgemm_("N", "N", size_, naux_, naux_, 1.0, data_.get(), size_, d->data(), naux_, 0.0, out->data_.get(), size_); 
+  dgemm_("T", "N", naux_, size_, naux_, 1.0, d->data(), naux_, data_.get(), naux_, 0.0, out->data_.get(), naux_); 
   return out;
 }
 
@@ -114,12 +115,13 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   unique_ptr<double[]> buf(new double[naux_*size_]);
 
   // information on the data layout
-  vector<pair<int, int> > atab = df_->atable();
+  vector<pair<size_t, size_t> > atab = df_->atable();
 
   // transpose each block back
   for (int i = 0; i != mpi__->size(); ++i) {
     const int o = atab[i].first*size_;
-    mytranspose_(data_.get()+o, size_, atab[i].second, buf.get()+o);
+    for (size_t j = 0; j != size_; ++j)
+      copy_n(data_.get()+atab[i].first+j*naux_, atab[i].second, buf.get()+o+j*atab[i].second);
   }
 
   // last, issue all the send requests

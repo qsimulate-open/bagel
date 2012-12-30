@@ -30,15 +30,17 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <algorithm>
 
 namespace bagel {
 
 class Timer {
   protected:
     std::chrono::high_resolution_clock::time_point tp_; 
+    const int level_;
 
   public:
-    Timer() : tp_(std::chrono::high_resolution_clock::now()) {};
+    Timer(const int level = 0) : tp_(std::chrono::high_resolution_clock::now()), level_(level) {};
 
     // return duration in milliseconds
     double tick() {
@@ -49,10 +51,20 @@ class Timer {
     }
 
     // print out timing
-    void tick_print(const std::string& title, const int level = 0) {
-      const std::string indent(15+2*level, ' ');
-      const std::string mark = (level == 0 ? "o" : (level == 1 ? "*" : "-"));
-      std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setw(13) << std::setprecision(2) << tick() << std::endl;
+    void tick_print(std::string title) {
+      if (level_ == 0) {
+        // top level printout
+        std::cout << "       - " << std::left << std::setw(36) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
+      } else if (level_ == -1) {
+        std::transform(title.begin(), title.end(), title.begin(), ::toupper);
+        std::cout << "    * " << std::left << std::setw(39) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
+      } else if (level_ >= 1) {
+        const std::string indent(13+2*level_, ' ');
+        const std::string mark = (level_ == 1 ? "o" : (level_ == 2 ? "*" : "-"));
+        std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setw(13) << std::setprecision(2) << tick() << std::endl;
+      } else {
+        assert(false);
+      }
     }
 };
 

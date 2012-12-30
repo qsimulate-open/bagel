@@ -158,10 +158,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
-  const Matrix dmp2ao_part = *ref_->coeff() * *dmp2 ^ *ref_->coeff();
-  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part.data()) * *ocmat * 2.0;
+  const shared_ptr<const Matrix> dmp2ao_part(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * *ocmat * 2.0;
   // -1*K_al(d_rs)
-  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part.data(), -1.0) * *vcmat;
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part->data(), -1.0) * *vcmat;
 
   shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
   for (int i = 0; i != nocca; ++i)
@@ -199,8 +199,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<Matrix> dbarao(new Matrix(*dtotao - *d0ao*0.5));
 
   // size of naux
-  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao->data());
-  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao->data());
+  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao);
+  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao);
 
 
   // three-index derivatives (seperable part)...
@@ -238,7 +238,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->add_block(ncore, 0, nocc, nocca, *lip * *ocmat);
   wd->add_block(nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
   wd->add_block(nocca, nocca, nvirt, nvirt, *laq * *vcmat);
-  wd->add_block(0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao->data()) * *ocmat * 2.0));
+  wd->add_block(0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao) * *ocmat * 2.0));
   wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0) * *ocmat));
 
   wd->symmetrize();

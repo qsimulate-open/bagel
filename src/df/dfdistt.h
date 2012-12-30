@@ -49,11 +49,11 @@ class DFDistT {
     const size_t nindex2_;
 
     // second and third dimension
-    int start_;
-    int size_;
+    size_t start_;
+    size_t size_;
 
-    std::vector<int> tabstart_;
-    std::vector<int> tabsize_;
+    std::vector<size_t> tabstart_;
+    std::vector<size_t> tabsize_;
 
     const std::shared_ptr<const ParallelDF> df_;
 
@@ -61,7 +61,7 @@ class DFDistT {
     // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
     DFDistT(std::shared_ptr<const ParallelDF> in);
 
-    DFDistT(const size_t naux, const std::vector<int> bstart, const std::vector<int> bsize, const size_t n1, const size_t n2,
+    DFDistT(const size_t naux, const std::vector<size_t> bstart, const std::vector<size_t> bsize, const size_t n1, const size_t n2,
             const std::shared_ptr<const ParallelDF>);
 
     std::shared_ptr<DFDistT> clone() const;

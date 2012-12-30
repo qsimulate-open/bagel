@@ -53,6 +53,7 @@
 #include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/util/localization.h>
+#include <src/util/timer.h>
 #include <src/rel/dirac.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
@@ -80,8 +81,6 @@ extern void test_mp2f12();
 using std::cout;
 using std::endl;
 using namespace bagel;
-
-#include <src/parallel/paramatrix.h>
 
 int main(int argc, char** argv) {
 
@@ -117,11 +116,14 @@ int main(int argc, char** argv) {
 
     std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
 
+    // timer for each method
+    Timer timer(-1);
+
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       const std::string method = iter->first;
 
       if (method == "molecule") {
-        geom = std::shared_ptr<Geometry>(); // kill the previous one first
+        if (ref != nullptr) geom->discard_df(); 
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
         if (read_input<bool>(iter->second, "restart", false)) ref = std::shared_ptr<const Reference>();
         if (ref != nullptr) ref = ref->project_coeff(geom);
@@ -352,10 +354,14 @@ int main(int argc, char** argv) {
         //dimer->hamiltonian();
       }
       #endif
-    }
-    print_footer();
 
-    //test_solvers(geom);
+      cout << endl;
+      timer.tick_print("Method: " + method);
+      cout << endl;
+
+    }
+
+    print_footer();
 
   } catch (const std::exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;

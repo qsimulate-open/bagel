@@ -96,27 +96,11 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
     out = shared_from_this();
   } else {
     // in this case we first form overlap matrices
-    shared_ptr<Overlap> snew(new Overlap(geomin));
-    shared_ptr<Overlap> snew2(new Overlap(*snew));
-    shared_ptr<MixedBasis<OverlapBatch> > mixed(new MixedBasis<OverlapBatch>(geom_, geomin));
-    const int nnew = geomin->nbasis();
-    const int nold = geom_->nbasis();
+    shared_ptr<Matrix> snew(new Overlap(geomin));
+    snew->inverse_symmetric();
+    MixedBasis<OverlapBatch> mixed(geom_, geomin);
 
-    unique_ptr<int[]> ipiv(new int[nnew+1]);
-    dgesv_(nnew, nold, snew->data(), nnew, ipiv.get(), mixed->data(), nnew, ipiv[nnew]);
-    if (ipiv[nnew]) throw runtime_error("DGESV failed in Reference::project_coeff");
-
-    shared_ptr<Coeff> c(new Coeff(geomin));
-    dgemm_("N", "N", nnew, nold, nold, 1.0, mixed->data(), nnew, coeff_->data(), nold, 0.0, c->data(), nnew);
-
-#if 1
-    unique_ptr<double[]> diag(new double[nnew]);
-    Matrix m = *c % *snew2 * *c;
-    for (int i = nold; i < nnew; ++i) m.element(i,i) = 1.0;
-    m.diagonalize(diag.get());
-    for (int i = 0; i != nnew; ++i) dscal_(nnew, 1.0/sqrt(sqrt(diag[i])), m.data()+i*nnew, 1);
-    *c *= (m ^ m);
-#endif
+    shared_ptr<Coeff> c(new Coeff(*snew * mixed * *coeff_));
 
     out = shared_ptr<const Reference>(new Reference(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_));
   }

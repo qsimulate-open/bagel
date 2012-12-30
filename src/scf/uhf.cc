@@ -26,7 +26,6 @@
 #include <chrono>
 #include <src/scf/uhf.h>
 #include <src/prop/dipole.h>
-#include <src/parallel/paramatrix.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -37,7 +36,7 @@ void UHF::compute() {
   string indent = "  ";
 
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    ParaMatrix intermediate = *tildex_ % *hcore_ * *tildex_;
+    Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
     coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
@@ -88,11 +87,11 @@ void UHF::compute() {
     }
 
     {
-      shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *fockA * *tildex_));
+      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *fockA * *tildex_));
       intermediate->diagonalize(eig());
       coeff_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
     }{
-      shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*tildex_ % *fockB * *tildex_));
+      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *fockB * *tildex_));
       intermediate->diagonalize(eigB());
       coeffB_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
     }
@@ -119,8 +118,8 @@ void UHF::print_S2(const string tag) const {
 
 tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
   shared_ptr<Matrix> cinv(new Matrix(*coeff_));
-  cinv->inverse(); // TODO maybe unnecessary
-  shared_ptr<ParaMatrix> intermediate(new ParaMatrix(*cinv * *aodensity_ ^ *cinv));
+  cinv->inverse(); // TODO unnecessary
+  shared_ptr<Matrix> intermediate(new Matrix(*cinv * *aodensity_ ^ *cinv));
   *intermediate *= -1.0;
   unique_ptr<double[]> occup(new double[geom_->nbasis()]);
   intermediate->diagonalize(occup.get());

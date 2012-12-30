@@ -138,12 +138,18 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 #endif
 }
 
+const static size_t bsize = 100000000LU;
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest) {
 #ifdef HAVE_MPI_H
-  MPI_Request rq;
-  // I hate const_cast. Blame the MPI C binding
-  MPI_Isend(const_cast<double*>(sbuf), size, MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &rq);
+  vector<MPI_Request> rq;
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i) { 
+    MPI_Request c;
+    // I hate const_cast. Blame the MPI C binding
+    MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, cnt_, MPI_COMM_WORLD, &c);
+    rq.push_back(c);
+  }
   request_.insert(make_pair(cnt_, rq));
 #endif
   ++cnt_;
@@ -153,8 +159,13 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin) {
 #ifdef HAVE_MPI_H
-  MPI_Request rq;
-  MPI_Irecv(rbuf, size, MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &rq);
+  vector<MPI_Request> rq;
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i) { 
+    MPI_Request c;
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &c);
+    rq.push_back(c);
+  }
   request_.insert(make_pair(cnt_, rq));
 #endif
   ++cnt_;
@@ -166,7 +177,8 @@ void MPI_Interface::wait(const int rq) {
 #ifdef HAVE_MPI_H
   auto i = request_.find(rq);
   assert(i != request_.end());
-  MPI_Wait(&i->second, MPI_STATUS_IGNORE);
+  for (auto& j : i->second)
+    MPI_Wait(&j, MPI_STATUS_IGNORE);
 #endif
 }
 

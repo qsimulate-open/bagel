@@ -31,6 +31,7 @@
 #include <src/util/f77.h>
 #include <cassert>
 #include <cmath>
+#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
@@ -56,14 +57,17 @@ void Matrix1e::init() {
   // only lower half will be stored
 
   auto o0 = geom_->offsets().begin();
+  int u = 0;
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
     // iatom1 = iatom1;
     auto offset0 = o0->begin();
     for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
       auto offset1 = o0->begin();
       for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
-        array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-        computebatch(input, *offset0, *offset1);
+        if (u++ % mpi__->size() == mpi__->rank()) {
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+          computebatch(input, *offset0, *offset1);
+        }
       }
     }
 
@@ -73,14 +77,15 @@ void Matrix1e::init() {
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
         auto offset1 = o1->begin();
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
-
-          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          computebatch(input, *offset0, *offset1);
-
+          if (u++ % mpi__->size() == mpi__->rank()) {
+            array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+            computebatch(input, *offset0, *offset1);
+          }
         }
       }
     }
   }
+  mpi__->allreduce(data_.get(), size());
 
 }
 

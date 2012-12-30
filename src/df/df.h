@@ -34,7 +34,6 @@
 #include <stddef.h>
 #include <src/df/dfblock.h>
 #include <src/scf/atom.h>
-#include <src/parallel/paramatrix.h>
 #include <src/util/matrix.h>
 #include <src/df/dfinttask_old.h>
 
@@ -49,7 +48,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<DFBlock> block_;
     // hash key and process number
     std::map<int, int> global_table_;
-    std::vector<std::pair<int, int> > atable_;
+    std::vector<std::pair<size_t, size_t> > atable_;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -59,7 +58,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<const ParallelDF> df_;
     // data2_ is usually empty (except for the original DFDist)
     // AO two-index integrals ^ -1/2
-    std::shared_ptr<ParaMatrix> data2_;
+    std::shared_ptr<Matrix> data2_;
 
 
   public:
@@ -84,13 +83,20 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
-    const std::pair<int, int> atable(const int i) const { return atable_[i]; }
-    const std::vector<std::pair<int, int> >& atable() const { return atable_; }
+    const std::pair<size_t, size_t> atable(const int i) const { return atable_[i]; }
+    const std::vector<std::pair<size_t, size_t> >& atable() const { return atable_; }
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
-    std::shared_ptr<const ParaMatrix> data2() const { return data2_; }
+    std::shared_ptr<const Matrix> data2() const { return data2_; }
 
     int get_node(const int shelloffset) const;
+
+    // compute a J operator, given density matrices in AO basis
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den) const;
+
+    std::unique_ptr<double[]> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>()) const;
+
 };
 
 
@@ -105,6 +111,7 @@ class DFDist : public ParallelDF {
                      const std::vector<std::shared_ptr<const Atom> >&,
                      const std::vector<std::shared_ptr<const Atom> >&, const double thresh, const bool compute_inv);
     void make_table(const int nmax);
+    std::tuple<int, std::vector<std::shared_ptr<const Shell> > > get_ashell(const std::vector<std::shared_ptr<const Shell> >& all) const;
 
   public:
     // construction of a block from AO integrals
@@ -126,12 +133,6 @@ class DFDist : public ParallelDF {
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
     std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const { return compute_half_transform(c->data(), c->mdim()); }
-
-    // compute a J operator, given density matrices in AO basis
-    std::shared_ptr<Matrix> compute_Jop(const double* den) const;
-    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const double* den) const;
-
-    std::unique_ptr<double[]> compute_cd(const double* den) const;
 
 };
 

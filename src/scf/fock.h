@@ -39,7 +39,6 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/matrix.h>
 #include <src/scf/fock_base.h>
-#include <src/parallel/paramatrix.h>
 #include <src/util/timer.h>
 
 namespace bagel {
@@ -48,21 +47,19 @@ template<int DF>
 class Fock : public Fock_base {
   protected:
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = std::shared_ptr<Matrix>());
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const double scale_ex);
+    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
 
   public:
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d)
-     : Fock_base(a,b,c,d) {
-      fock_two_electron_part();
+    // Fock operator for DF cases
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
+         const std::shared_ptr<const Matrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
+     : Fock_base(a,b,c) {
+      fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
 
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
-         const std::shared_ptr<const Matrix> ocoeff, const double scale_ex = 1.0)
-     : Fock_base(a,b,c,d) {
-      fock_two_electron_part_with_coeff(ocoeff, scale_ex);
-      fock_one_electron_part();
-    }
+    // Fock operator
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, std::shared_ptr<const Matrix> ex,
@@ -80,7 +77,7 @@ class Fock : public Fock_base {
 template<int DF>
 void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
-  if (den_ex != nullptr && DF == 0) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
+  if (den_ex != density_) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
   if (den_ex == nullptr) den_ex = density_;
 
   const std::vector<std::shared_ptr<const Atom> > atoms = geom_->atoms();
@@ -257,9 +254,9 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
 #ifdef HAVE_MPI_H
-    Timer pdebug;
+    Timer pdebug(2);
 #endif
-    std::shared_ptr<ParaMatrix> coeff(new ParaMatrix(*den_ex));
+    std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));
     *coeff *= -1.0;
     int nocc = 0;
     {
@@ -275,67 +272,72 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     if (nocc == 0) return;
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Compute coeff (redundant)", 1);
+    pdebug.tick_print("Compute coeff (redundant)");
 #endif
 
     std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->data(), nocc);
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("First index transform", 1);
+    pdebug.tick_print("First index transform");
 #endif
 
     std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Metric multiply", 1);
+    pdebug.tick_print("Metric multiply");
 #endif
 
     *this += *half->form_2index(half, -0.5);
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Exchange build", 1);
+    pdebug.tick_print("Exchange build");
 #endif
 
-    *this += *df->compute_Jop(density_->data());
+    *this += *df->compute_Jop(density_);
 
 #ifdef HAVE_MPI_H
-    pdebug.tick_print("Coulomb build", 1);
+    pdebug.tick_print("Coulomb build");
 #endif
   }
 
 }
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const double scale_exchange) {
+void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
 #ifdef HAVE_MPI_H
-  Timer pdebug;
+  Timer pdebug(2);
 #endif
 
   std::shared_ptr<const DFDist> df = geom_->df();
   std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("First index transform", 1);
+  pdebug.tick_print("First index transform");
 #endif
 
   std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Metric multiply", 1);
+  pdebug.tick_print("Metric multiply");
 #endif
 
   *this += *half->form_2index(half, -1.0*scale_exchange);
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Exchange build", 1);
+  pdebug.tick_print("Exchange build");
 #endif
 
-  *this += *df->compute_Jop(density_->data());
+  if (rhf) {
+    std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
+    *this += *df->compute_Jop(halfbj, coeff);
+  } else {
+    *this += *df->compute_Jop(density_);
+  }
 
 #ifdef HAVE_MPI_H
-  pdebug.tick_print("Coulomb build", 1);
+  pdebug.tick_print("Coulomb build");
 #endif
 }
 

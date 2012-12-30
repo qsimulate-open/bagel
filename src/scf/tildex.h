@@ -27,7 +27,7 @@
 #ifndef __src_scf_tildex_h
 #define __src_scf_tildex_h
 
-#include <src/scf/overlap.h>
+#include <src/util/matrix.h>
 #include <memory>
 
 namespace bagel {
@@ -36,7 +36,7 @@ class TildeX : public Matrix {
   protected:
 
   public:
-    TildeX(const std::shared_ptr<Overlap> olp, const double thresh) : Matrix(*olp)  {
+    TildeX(const std::shared_ptr<const Overlap> olp, const double thresh) : Matrix(*olp)  {
       this->inverse_half(thresh);
     }
 

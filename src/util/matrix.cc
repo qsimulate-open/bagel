@@ -32,10 +32,14 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
+
+// if the dim of matrices is larger than this value, we use scalapack (when enabled) 
+static const int small = 100;
 
 Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m) {
   zero();
@@ -149,12 +153,26 @@ Matrix Matrix::operator*(const Matrix& o) const {
   const int m = mdim_;
   assert(mdim_ == o.ndim());
   const int n = o.mdim();
-
   Matrix out(l, n);
-  const double* odata = o.data();
-  double* outdata = out.data();
 
-  dgemm_("N", "N", l, n, m, 1.0, data(), l, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  if (l < small && n < small && m < small) {
+#endif
+    const double* odata = o.data();
+    double* outdata = out.data();
+    dgemm_("N", "N", l, n, m, 1.0, data(), l, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<int[]> desca = desc();
+    unique_ptr<int[]> descb = o.desc();
+    unique_ptr<int[]> descc = out.desc();
+    unique_ptr<double[]> locala = getlocal_(desca);
+    unique_ptr<double[]> localb = o.getlocal_(descb);
+    unique_ptr<double[]> localc = out.getlocal_(descc);
+    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
+    out.setlocal_(localc, descc);
+  }
+#endif
 
   return out;
 }
@@ -195,13 +213,26 @@ Matrix Matrix::operator%(const Matrix& o) const {
   const int m = ndim_;
   assert(ndim_ == o.ndim());
   const int n = o.mdim();
-
   Matrix out(l, n);
 
-  const double* odata = o.data();
-  double* outdata = out.data();
-
-  dgemm_("T", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  if (l < small && n < small && m < small) {
+#endif
+    const double* odata = o.data();
+    double* outdata = out.data();
+    dgemm_("T", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<int[]> desca = desc();
+    unique_ptr<int[]> descb = o.desc();
+    unique_ptr<int[]> descc = out.desc();
+    unique_ptr<double[]> locala = getlocal_(desca);
+    unique_ptr<double[]> localb = o.getlocal_(descb);
+    unique_ptr<double[]> localc = out.getlocal_(descc);
+    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
+    out.setlocal_(localc, descc);
+  }
+#endif
 
   return out;
 }
@@ -210,15 +241,29 @@ Matrix Matrix::operator%(const Matrix& o) const {
 Matrix Matrix::operator^(const Matrix& o) const {
   const int l = ndim_;
   const int m = mdim_;
+  assert(mdim_ == o.mdim());
   const int n = o.ndim();
 
   Matrix out(l, n);
 
-  assert(mdim_ == o.mdim());
-  const double* odata = o.data();
-  double* outdata = out.data();
-
-  dgemm_("N", "T", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  if (l < small && n < small && m < small) {
+#endif
+    const double* odata = o.data();
+    double* outdata = out.data();
+    dgemm_("N", "T", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<int[]> desca = desc();
+    unique_ptr<int[]> descb = o.desc();
+    unique_ptr<int[]> descc = out.desc();
+    unique_ptr<double[]> locala = getlocal_(desca);
+    unique_ptr<double[]> localb = o.getlocal_(descb);
+    unique_ptr<double[]> localc = out.getlocal_(descc);
+    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
+    out.setlocal_(localc, descc);
+  }
+#endif
 
   return out;
 }
@@ -243,15 +288,42 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(double* eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diagonalize(double*)"); 
   const int n = ndim_;
+  int info;
+
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
-  int info;
-  unique_ptr<double[]> work(new double[n*6]);
-  dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
-  if(info) throw runtime_error("diagonalize failed");
+#ifdef HAVE_SCALAPACK
+  if (n < small) {
+#endif
+    unique_ptr<double[]> work(new double[n*6]);
+    dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
+    mpi__->broadcast(data(), n*n, 0);
+  
+#ifdef HAVE_SCALAPACK
+  } else {
+    int localrow, localcol;
+    tie(localrow, localcol) = mpi__->numroc(n, n);
 
-  // in order to be consistent with signs
-  mpi__->broadcast(data(), n*n, 0);
+    unique_ptr<double[]> coeff(new double[localrow*localcol]);
+
+    unique_ptr<int[]> desca = desc();
+    unique_ptr<double[]> local = getlocal_(desca);
+
+    // first compute worksize
+    double wsize;
+    int liwork = 1;
+    pdsyevd_("V", "U", n, local.get(), desca.get(), eig, coeff.get(), desca.get(), &wsize, -1, &liwork, 1, info);
+    unique_ptr<int[]> iwork(new int[liwork]);
+    wsize =  max(131072.0, wsize*2.0);
+
+    const int lwork = round(wsize);
+    unique_ptr<double[]> work(new double[lwork]);
+    pdsyevd_("V", "U", n, local.get(), desca.get(), eig, coeff.get(), desca.get(), work.get(), lwork, iwork.get(), liwork, info);
+    setlocal_(coeff, desca);
+  }
+#endif
+
+  if (info) throw runtime_error("dsyev failed in Matrix");
 }
 
 
@@ -485,6 +557,21 @@ void Matrix::inverse() {
 }
 
 
+// compute S^{-1} using diagonalization 
+void Matrix::inverse_symmetric(const double thresh) {
+  assert(ndim_ == mdim_);
+  const int n = ndim_;
+  unique_ptr<double[]> vec(new double[n]);
+  diagonalize(vec.get());
+
+  for (int i = 0; i != n; ++i) {
+    double s = vec[i] > thresh ? 1.0/std::sqrt(vec[i]) : 0.0;
+    dscal_(n, s, data_.get()+i*n, 1);
+  }
+  *this = *this ^ *this;
+}
+
+
 // compute S^{-1/2}
 void Matrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
@@ -580,3 +667,93 @@ void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const
   assert(ndim == o.ndim() && mdim == o.mdim());
   add_block(ndim_i, mdim_i, ndim, mdim, o.data());
 }
+
+
+
+void Matrix::allreduce() {
+  mpi__->allreduce(data_.get(), size());
+}
+
+
+void Matrix::broadcast(const int root) {
+  mpi__->broadcast(data_.get(), size(), root);
+}
+
+
+#ifdef HAVE_SCALAPACK
+unique_ptr<int[]> Matrix::desc() const {
+  return mpi__->descinit(ndim_, mdim_);
+} 
+
+
+tuple<int, int> Matrix::local_size() const {
+  return mpi__->numroc(ndim_, mdim_);
+} 
+
+
+unique_ptr<double[]> Matrix::getlocal_(const unique_ptr<int[]>& desc) const {
+  int localrow, localcol;
+  tie(localrow, localcol) = local_size();
+
+  unique_ptr<double[]> local(new double[localrow*localcol]);
+
+  const int nblock = localrow/blocksize__;
+  const int mblock = localcol/blocksize__;
+  const size_t nstride = blocksize__*mpi__->nprow();
+  const size_t mstride = blocksize__*mpi__->npcol();
+  const int myprow = mpi__->myprow()*blocksize__;
+  const int mypcol = mpi__->mypcol()*blocksize__;
+
+  for (int i = 0; i != mblock; ++i)
+    for (int j = 0; j != nblock; ++j)
+      for (int id = 0; id != blocksize__; ++id) 
+        copy_n(element_ptr(myprow+j*nstride, mypcol+i*mstride+id), blocksize__, &local[j*blocksize__+localrow*(i*blocksize__+id)]); 
+
+  for (int id = 0; id != localcol % blocksize__; ++id) {
+    for (int j = 0; j != nblock; ++j)
+      copy_n(element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id), blocksize__, &local[j*blocksize__+localrow*(mblock*blocksize__+id)]); 
+    for (int jd = 0; jd != localrow % blocksize__; ++jd)
+      local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id);
+  }
+  for (int i = 0; i != mblock; ++i)
+    for (int id = 0; id != blocksize__; ++id) 
+      for (int jd = 0; jd != localrow % blocksize__; ++jd)
+        local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+i*mstride+id);
+
+  return local;
+}
+
+
+void Matrix::setlocal_(const unique_ptr<double[]>& local, const unique_ptr<int[]>& desc) {
+  zero();
+
+  int localrow, localcol;
+  tie(localrow, localcol) = local_size(); 
+
+  const int nblock = localrow/blocksize__;
+  const int mblock = localcol/blocksize__;
+  const size_t nstride = blocksize__*mpi__->nprow();
+  const size_t mstride = blocksize__*mpi__->npcol();
+  const int myprow = mpi__->myprow()*blocksize__;
+  const int mypcol = mpi__->mypcol()*blocksize__;
+
+  for (int i = 0; i != mblock; ++i)
+    for (int j = 0; j != nblock; ++j)
+      for (int id = 0; id != blocksize__; ++id) 
+        copy_n(&local[j*blocksize__+localrow*(i*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+i*mstride+id)); 
+
+  for (int id = 0; id != localcol % blocksize__; ++id) {
+    for (int j = 0; j != nblock; ++j)
+      copy_n(&local[j*blocksize__+localrow*(mblock*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id)); 
+    for (int jd = 0; jd != localrow % blocksize__; ++jd)
+      element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id) = local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)];
+  }
+  for (int i = 0; i != mblock; ++i)
+    for (int id = 0; id != blocksize__; ++id) 
+      for (int jd = 0; jd != localrow % blocksize__; ++jd)
+        element(myprow+nblock*nstride+jd, mypcol+i*mstride+id) = local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)];
+
+  // syncronize (this can be improved, but...)
+  allreduce();
+}
+#endif

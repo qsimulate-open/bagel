@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <memory>
 #include <list>
+#include <config.h>
 #include <src/util/f77.h>
 
 namespace bagel {
@@ -41,6 +42,15 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     std::unique_ptr<double[]> data_;
     const int ndim_;
     const int mdim_;
+
+    // for Scalapack BLAS3 operation
+#ifdef HAVE_SCALAPACK
+    std::unique_ptr<double[]> getlocal_(const std::unique_ptr<int[]>& desc) const;
+    void setlocal_(const std::unique_ptr<double[]>& loc, const std::unique_ptr<int[]>& desc);
+
+    std::unique_ptr<int[]> desc() const;
+    std::tuple<int, int> local_size() const;
+#endif
 
   public:
     Matrix() : ndim_(0), mdim_(0) {}
@@ -71,6 +81,8 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
+    // compute S^-1 using symmetric form.
+    void inverse_symmetric(const double thresh = 1.0e-8);
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
     // compute S^1/2. Same algorithm as above.
@@ -146,6 +158,9 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     double orthog(const std::list<std::shared_ptr<const Matrix> > o);
 
     void print(const std::string in = "", const int size = 10) const;
+
+    void allreduce();
+    void broadcast(const int root = 0);
 };
 
 }
