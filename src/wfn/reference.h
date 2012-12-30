@@ -30,6 +30,8 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <set>
+
 #include <src/scf/coeff.h>
 #include <src/scf/hcore.h>
 #include <src/scf/geometry.h>
@@ -43,7 +45,7 @@ namespace bagel {
 class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
-    // Geometry which this wave function is beloinging to
+    // Geometry which this wave function is belonging to
     const std::shared_ptr<const Geometry> geom_;
     // MO coefficients
     std::shared_ptr<const Coeff> coeff_;
@@ -105,6 +107,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nocc() const { return nclosed_ + nact_; }
     int ncore() const { return ncore_; }
     void set_ncore(const int i) { ncore_ = i; }
+
+    std::shared_ptr<const Reference> set_active(std::set<int> active_indices) const;
+    std::shared_ptr<const Reference> set_active(std::string array_string) const;
 
     // used in SA-CASSCF
     void set_nstate(const int i) { nstate_ = i; }

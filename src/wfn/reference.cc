@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <src/util/f77.h>
 #include <src/wfn/reference.h>
@@ -140,4 +142,69 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
   mpi__->broadcast(b->data(), b->size(), 0);
   coeffA_ = a;
   coeffB_ = b;
+}
+
+// This function currently assumes it is being called on a Reference object with no defined active space
+shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const {
+  const int nbasis = geom_->nbasis();
+
+  int nactive = active_indices.size();
+
+  int nclosed = nclosed_;
+  int nvirt = nbasis - nclosed;
+  for (auto& iter : active_indices) {
+    cout << iter << endl;
+    if (iter < nclosed_) --nclosed;
+    else --nvirt;
+  }
+
+  shared_ptr<Matrix> tmp_coeff(new Matrix(nbasis, nbasis));
+
+  int iclosed = 0;
+  int iactive = nclosed;
+  int ivirt = nclosed + nactive;
+  for (int i = 0; i < nclosed_; ++i) {
+    if ( active_indices.find(i) == active_indices.end() ) {
+      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iclosed));
+      ++iclosed;
+    }
+    else {
+      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
+      ++iactive;
+    }
+  }
+
+  for (int i = nclosed_; i < nbasis; ++i) {
+    if ( active_indices.find(i) == active_indices.end() ) {
+      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,ivirt));
+      ++ivirt;
+    }
+    else {
+      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
+      ++iactive;
+    }
+  }
+
+  shared_ptr<const Coeff> out_coeff(new const Coeff(*tmp_coeff));
+  shared_ptr<Reference> out(new Reference(geom_, out_coeff, nclosed, nactive, nvirt));
+
+  return out;
+}
+
+shared_ptr<const Reference> Reference::set_active(string active_string) const {
+  boost::regex r("(\\d+)");
+  boost::smatch what;
+
+  auto start = active_string.cbegin();
+  auto end = active_string.cend();
+  
+  set<int> active_set;
+
+  while( boost::regex_search(start, end, what, r) ) {
+    string int_string(what[1].first, what[1].second);
+    active_set.insert(boost::lexical_cast<int>(int_string) - 1);
+    start = what[0].second;
+  }
+
+  return set_active(active_set);
 }

@@ -340,36 +340,14 @@ int main(int argc, char** argv) {
       }
       #if 0 // <---- Testing environment
       else if (method == "testing") {
-        std::multimap<std::string, std::string> testdata = idata->get_input("testing");
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        #if 0
-        std::shared_ptr<Matrix> density = ref->coeff()->form_density_rhf(ref->nocc());
-        // for testing purposes, only using region_size right now which assigns the first "region_size" atoms to the first
-        // region and the rest to the second region.
-        int region_size = read_input<int>(testdata, "region_size", 0);
-        if(region_size <= 0) throw std::runtime_error("region_size should be greater than 0");
+        auto aiter = iter->second.find("active");
+        if (aiter != iter->second.end()) {
+          auto tmp_ref = ref->set_active(aiter->second);
+          ref = tmp_ref;
+        }
         
-        std::pair<int, int> pair1(0, region_size-1); std::pair<int,int> pair2(region_size,geom->natom()-1);
-        std::vector<std::pair<int, int> > bounds = {pair1, pair2};
-        std::shared_ptr<OrbitalLocalization> regionalize(new RegionLocalization(geom, density, bounds));
-
-        std::shared_ptr<Matrix> regional_mos = regionalize->localize();
-        //regional_mos->print("Regionalized MOs", geom->nbasis());
-
-        std::shared_ptr<const Coeff> regional_coeff(new const Coeff(*regional_mos));
-
-        #endif
-
-        #if 1
-        std::shared_ptr<Matrix> overlap(new Overlap(geom));
-        std::shared_ptr<OrbitalLocalization> pml(new PMLocalization(ref->geom(), ref->coeff(), ref->nocc()));
-        std::shared_ptr<Matrix> new_matrix = pml->localize();
-        std::shared_ptr<const Coeff> new_coeff(new const Coeff(*new_matrix));
-        #endif
-
-        ref = std::shared_ptr<Reference>(new Reference(geom, new_coeff, ref->nclosed(), ref->nact(), ref->nvirt()));
-        //dimer->set_sref(ref);
         //dimer->fci(testdata);
         //dimer->hamiltonian();
       }
