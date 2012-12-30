@@ -38,6 +38,9 @@
 using namespace std;
 using namespace bagel;
 
+// if the dim of matrices is larger than this value, we use scalapack (when enabled) 
+static const int small = 100;
+
 Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m) {
   zero();
 }
@@ -153,7 +156,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
   Matrix out(l, n);
 
 #ifdef HAVE_SCALAPACK
-  if (l < 100 && n < 100 && m < 100) {
+  if (l < small && n < small && m < small) {
 #endif
     const double* odata = o.data();
     double* outdata = out.data();
@@ -213,7 +216,7 @@ Matrix Matrix::operator%(const Matrix& o) const {
   Matrix out(l, n);
 
 #ifdef HAVE_SCALAPACK
-  if (l < 100 && n < 100 && m < 100) {
+  if (l < small && n < small && m < small) {
 #endif
     const double* odata = o.data();
     double* outdata = out.data();
@@ -244,7 +247,7 @@ Matrix Matrix::operator^(const Matrix& o) const {
   Matrix out(l, n);
 
 #ifdef HAVE_SCALAPACK
-  if (l < 100 && n < 100 && m < 100) {
+  if (l < small && n < small && m < small) {
 #endif
     const double* odata = o.data();
     double* outdata = out.data();
@@ -290,7 +293,7 @@ void Matrix::diagonalize(double* eig) {
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
 #ifdef HAVE_SCALAPACK
-  if (n < 100) {
+  if (n < small) {
 #endif
     unique_ptr<double[]> work(new double[n*6]);
     dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
