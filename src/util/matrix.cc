@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: matrix1e.cc
+// Filename: matrix.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -38,15 +38,21 @@
 using namespace std;
 using namespace bagel;
 
-// if the dim of matrices is larger than this value, we use scalapack (when enabled) 
-static const int small = 100;
 
-Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m) {
+Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m)
+#ifdef HAVE_SCALAPACK
+  , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
+#endif
+{
   zero();
 }
 
 
-Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_) {
+Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_)
+#ifdef HAVE_SCALAPACK
+  , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
+#endif
+{
   copy_n(o.data(), ndim_*mdim_, data());
 }
 
@@ -98,31 +104,20 @@ shared_ptr<Matrix> Matrix::merge(const shared_ptr<const Matrix> o) const {
 
 
 Matrix Matrix::operator+(const Matrix& o) const {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
   Matrix out(*this);
-  const int size = ndim_ * mdim_;
-  const double* odata = o.data();
-  double* outdata = out.data();
-
-  daxpy_(size, 1.0, odata, 1, outdata, 1);
-
+  out.daxpy(1.0, o);
   return out;
 }
 
 
 Matrix& Matrix::operator+=(const Matrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
-  daxpy_(ndim_*mdim_, 1.0, o.data(), 1, data(), 1);
+  daxpy(1.0, o);
   return *this;
 }
 
 
 Matrix& Matrix::operator-=(const Matrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
-  daxpy_(ndim_*mdim_, -1.0, o.data(), 1, data(), 1);
+  daxpy(-1.0, o);
   return *this;
 }
 
@@ -135,15 +130,8 @@ Matrix& Matrix::operator=(const Matrix& o) {
 
 
 Matrix Matrix::operator-(const Matrix& o) const {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
   Matrix out(*this);
-
-  const int size = ndim_ * mdim_;
-
-  const double* odata = o.data();
-  double* outdata = out.data();
-  daxpy_(size, -1.0, odata, 1, outdata, 1);
-
+  out.daxpy(-1.0, o);
   return out;
 }
 
@@ -155,23 +143,14 @@ Matrix Matrix::operator*(const Matrix& o) const {
   const int n = o.mdim();
   Matrix out(l, n);
 
-#ifdef HAVE_SCALAPACK
-  if (l < small && n < small && m < small) {
-#endif
-    const double* odata = o.data();
-    double* outdata = out.data();
-    dgemm_("N", "N", l, n, m, 1.0, data(), l, odata, o.ndim_, 0.0, outdata, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<int[]> desca = desc();
-    unique_ptr<int[]> descb = o.desc();
-    unique_ptr<int[]> descc = out.desc();
-    unique_ptr<double[]> locala = getlocal_(desca);
-    unique_ptr<double[]> localb = o.getlocal_(descb);
-    unique_ptr<double[]> localc = out.getlocal_(descc);
-    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
-    out.setlocal_(localc, descc);
-  }
+#ifndef HAVE_SCALAPACK
+  dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
+#else
+  unique_ptr<double[]> locala = getlocal_();
+  unique_ptr<double[]> localb = o.getlocal_();
+  unique_ptr<double[]> localc = out.getlocal_();
+  pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
 #endif
 
   return out;
@@ -215,23 +194,14 @@ Matrix Matrix::operator%(const Matrix& o) const {
   const int n = o.mdim();
   Matrix out(l, n);
 
-#ifdef HAVE_SCALAPACK
-  if (l < small && n < small && m < small) {
-#endif
-    const double* odata = o.data();
-    double* outdata = out.data();
-    dgemm_("T", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<int[]> desca = desc();
-    unique_ptr<int[]> descb = o.desc();
-    unique_ptr<int[]> descc = out.desc();
-    unique_ptr<double[]> locala = getlocal_(desca);
-    unique_ptr<double[]> localb = o.getlocal_(descb);
-    unique_ptr<double[]> localc = out.getlocal_(descc);
-    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
-    out.setlocal_(localc, descc);
-  }
+#ifndef HAVE_SCALAPACK
+  dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
+#else
+  unique_ptr<double[]> locala = getlocal_();
+  unique_ptr<double[]> localb = o.getlocal_();
+  unique_ptr<double[]> localc = out.getlocal_();
+  pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
 #endif
 
   return out;
@@ -246,23 +216,14 @@ Matrix Matrix::operator^(const Matrix& o) const {
 
   Matrix out(l, n);
 
-#ifdef HAVE_SCALAPACK
-  if (l < small && n < small && m < small) {
-#endif
-    const double* odata = o.data();
-    double* outdata = out.data();
-    dgemm_("N", "T", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<int[]> desca = desc();
-    unique_ptr<int[]> descb = o.desc();
-    unique_ptr<int[]> descc = out.desc();
-    unique_ptr<double[]> locala = getlocal_(desca);
-    unique_ptr<double[]> localb = o.getlocal_(descb);
-    unique_ptr<double[]> localc = out.getlocal_(descc);
-    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desca.get(), localb.get(), descb.get(), 0.0, localc.get(), descc.get());
-    out.setlocal_(localc, descc);
-  }
+#ifndef HAVE_SCALAPACK
+  dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
+#else
+  unique_ptr<double[]> locala = getlocal_();
+  unique_ptr<double[]> localb = o.getlocal_();
+  unique_ptr<double[]> localc = out.getlocal_();
+  pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
 #endif
 
   return out;
@@ -292,35 +253,29 @@ void Matrix::diagonalize(double* eig) {
 
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
-#ifdef HAVE_SCALAPACK
-  if (n < small) {
-#endif
-    unique_ptr<double[]> work(new double[n*6]);
-    dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
-    mpi__->broadcast(data(), n*n, 0);
-  
-#ifdef HAVE_SCALAPACK
-  } else {
-    int localrow, localcol;
-    tie(localrow, localcol) = mpi__->numroc(n, n);
+#ifndef HAVE_SCALAPACK
+  unique_ptr<double[]> work(new double[n*6]);
+  dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
+  mpi__->broadcast(data(), n*n, 0);
+#else
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
-    unique_ptr<double[]> coeff(new double[localrow*localcol]);
+  unique_ptr<double[]> coeff(new double[localrow*localcol]);
 
-    unique_ptr<int[]> desca = desc();
-    unique_ptr<double[]> local = getlocal_(desca);
+  unique_ptr<double[]> local = getlocal_();
 
-    // first compute worksize
-    double wsize;
-    int liwork = 1;
-    pdsyevd_("V", "U", n, local.get(), desca.get(), eig, coeff.get(), desca.get(), &wsize, -1, &liwork, 1, info);
-    unique_ptr<int[]> iwork(new int[liwork]);
-    wsize =  max(131072.0, wsize*2.0);
+  // first compute worksize
+  double wsize;
+  int liwork = 1;
+  pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &liwork, 1, info);
+  unique_ptr<int[]> iwork(new int[liwork]);
+  wsize =  max(131072.0, wsize*2.0);
 
-    const int lwork = round(wsize);
-    unique_ptr<double[]> work(new double[lwork]);
-    pdsyevd_("V", "U", n, local.get(), desca.get(), eig, coeff.get(), desca.get(), work.get(), lwork, iwork.get(), liwork, info);
-    setlocal_(coeff, desca);
-  }
+  const int lwork = round(wsize);
+  unique_ptr<double[]> work(new double[lwork]);
+  pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
+  setlocal_(coeff);
 #endif
 
   if (info) throw runtime_error("dsyev failed in Matrix");
@@ -347,12 +302,14 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
 
 
 void Matrix::daxpy(const double a, const Matrix& o) {
+  assert(ndim_ == o.ndim_);
+  assert(mdim_ == o.mdim_);
   daxpy_(ndim_*mdim_, a, o.data(), 1, data(), 1);
 }
 
 
 void Matrix::daxpy(const double a, const std::shared_ptr<const Matrix> o) {
-  daxpy_(ndim_*mdim_, a, o->data(), 1, data(), 1);
+  daxpy(a, *o);
 }
 
 
@@ -681,19 +638,9 @@ void Matrix::broadcast(const int root) {
 
 
 #ifdef HAVE_SCALAPACK
-unique_ptr<int[]> Matrix::desc() const {
-  return mpi__->descinit(ndim_, mdim_);
-} 
-
-
-tuple<int, int> Matrix::local_size() const {
-  return mpi__->numroc(ndim_, mdim_);
-} 
-
-
-unique_ptr<double[]> Matrix::getlocal_(const unique_ptr<int[]>& desc) const {
-  int localrow, localcol;
-  tie(localrow, localcol) = local_size();
+unique_ptr<double[]> Matrix::getlocal_() const {
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
   unique_ptr<double[]> local(new double[localrow*localcol]);
 
@@ -724,11 +671,11 @@ unique_ptr<double[]> Matrix::getlocal_(const unique_ptr<int[]>& desc) const {
 }
 
 
-void Matrix::setlocal_(const unique_ptr<double[]>& local, const unique_ptr<int[]>& desc) {
+void Matrix::setlocal_(const unique_ptr<double[]>& local) {
   zero();
 
-  int localrow, localcol;
-  tie(localrow, localcol) = local_size(); 
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
   const int nblock = localrow/blocksize__;
   const int mblock = localcol/blocksize__;

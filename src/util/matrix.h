@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: matrix1e.h
+// Filename: matrix.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-class Matrix { // Not to be confused with Matrix1e... at least for the moment
+class Matrix {
   protected:
     std::unique_ptr<double[]> data_;
     const int ndim_;
@@ -45,11 +45,11 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
 
     // for Scalapack BLAS3 operation
 #ifdef HAVE_SCALAPACK
-    std::unique_ptr<double[]> getlocal_(const std::unique_ptr<int[]>& desc) const;
-    void setlocal_(const std::unique_ptr<double[]>& loc, const std::unique_ptr<int[]>& desc);
+    std::unique_ptr<double[]> getlocal_() const;
+    void setlocal_(const std::unique_ptr<double[]>& loc);
 
-    std::unique_ptr<int[]> desc() const;
-    std::tuple<int, int> local_size() const;
+    const std::unique_ptr<int[]> desc_;
+    const std::tuple<int, int> localsize_;
 #endif
 
   public:
@@ -62,8 +62,8 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
     double* data() const { return data_.get(); }
-    double& data(const size_t i) { return *(data_.get()+i); }
-    const double& data(const size_t i) const { return *(data_.get()+i); }
+    double& data(const size_t i) { return *(data()+i); }
+    const double& data(const size_t i) const { return *(data()+i); }
     double& element(int i, int j) { return *element_ptr(i, j); }
     double* element_ptr(int i, int j) { return data()+i+j*ndim_; }
     const double& element(int i, int j) const { return *element_ptr(i, j); }
@@ -77,7 +77,7 @@ class Matrix { // Not to be confused with Matrix1e... at least for the moment
     std::shared_ptr<Matrix> slice(const int, const int) const;
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
     // diagonalize this matrix (overwritten by a coefficient matrix)
-    virtual void diagonalize(double* vec);
+    void diagonalize(double* vec);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
