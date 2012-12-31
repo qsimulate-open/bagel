@@ -253,9 +253,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     assert(ndim_ == df->nbasis0());
 
     // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
-#ifdef HAVE_MPI_H
     Timer pdebug(2);
-#endif
+
     std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));
     *coeff *= -1.0;
     int nocc = 0;
@@ -270,34 +269,19 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
       }
     }
     if (nocc == 0) return;
-
-#ifdef HAVE_MPI_H
     pdebug.tick_print("Compute coeff (redundant)");
-#endif
 
     std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->data(), nocc);
-
-#ifdef HAVE_MPI_H
     pdebug.tick_print("First index transform");
-#endif
 
     std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
-
-#ifdef HAVE_MPI_H
     pdebug.tick_print("Metric multiply");
-#endif
 
     *this += *half->form_2index(half, -0.5);
-
-#ifdef HAVE_MPI_H
     pdebug.tick_print("Exchange build");
-#endif
 
     *this += *df->compute_Jop(density_);
-
-#ifdef HAVE_MPI_H
     pdebug.tick_print("Coulomb build");
-#endif
   }
 
 }
@@ -306,28 +290,17 @@ template<int DF>
 void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
-#ifdef HAVE_MPI_H
   Timer pdebug(2);
-#endif
 
   std::shared_ptr<const DFDist> df = geom_->df();
   std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
-
-#ifdef HAVE_MPI_H
   pdebug.tick_print("First index transform");
-#endif
 
   std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
-
-#ifdef HAVE_MPI_H
   pdebug.tick_print("Metric multiply");
-#endif
 
   *this += *half->form_2index(half, -1.0*scale_exchange);
-
-#ifdef HAVE_MPI_H
   pdebug.tick_print("Exchange build");
-#endif
 
   if (rhf) {
     std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
@@ -335,10 +308,7 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
   } else {
     *this += *df->compute_Jop(density_);
   }
-
-#ifdef HAVE_MPI_H
   pdebug.tick_print("Coulomb build");
-#endif
 }
 
 }
