@@ -174,6 +174,7 @@ class Matrix : public std::enable_shared_from_this<Matrix> {
     std::unique_ptr<double[]> getlocal() const;
 #else
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
+    std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
 };
 
@@ -234,6 +235,8 @@ class DistMatrix {
     void zero() { fill(0.0); }
 
     std::shared_ptr<Matrix> matrix() const;
+
+    std::shared_ptr<const DistMatrix> form_density_rhf(const int n, const int off = 0) const;
 };
 #endif
 

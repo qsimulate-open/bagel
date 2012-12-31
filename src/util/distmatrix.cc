@@ -130,4 +130,13 @@ shared_ptr<Matrix> DistMatrix::matrix() const {
   return out;
 }
 
+
+shared_ptr<const DistMatrix> DistMatrix::form_density_rhf(const int nocc, const int off) const {
+  const int l = ndim_;
+  const int n = ndim_;
+  shared_ptr<DistMatrix> out(new DistMatrix(l, n));
+  pdgemm_("N", "T", l, n, nocc, 2.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
+  return out;
+}
+
 #endif
