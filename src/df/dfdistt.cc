@@ -23,12 +23,34 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/util/taskqueue.h>
 #include <src/util/f77.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/df/dfdistt.h>
+#include <src/util/timer.h>
 
 using namespace std;
 using namespace bagel;
+
+namespace bagel {
+struct CopyBlockTask {
+  private:
+    const double* const a_;
+    const size_t astride_;
+    double* const b_;
+    const size_t bstride_;
+    const size_t n_;
+    const size_t m_;
+  public:
+    CopyBlockTask(const double* const a, const size_t& ast, double* const b, const size_t& bst, const size_t& n, const size_t& m)
+      : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
+
+    void compute() {
+      for (size_t j = 0; j != m_; ++j) 
+        std::copy_n(a_+j*astride_, n_, b_+j*bstride_);
+    }
+};
+}
 
 DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
  : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()), df_(in->df()) {
@@ -71,12 +93,12 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   }
   for (auto& i : rrequest) mpi__->wait(i);
 
-  // second transpose each block
-  for (int i = 0; i != mpi__->size(); ++i) {
-    const int o = atab[i].first*size_;
-    for (size_t j = 0; j != size_; ++j)
-      copy_n(buf.get()+o+j*atab[i].second, atab[i].second, data_.get()+atab[i].first+j*naux_);
-  }
+  vector<CopyBlockTask> task;
+  task.reserve(mpi__->size());
+  for (int i = 0; i != mpi__->size(); ++i)
+    task.push_back(CopyBlockTask(buf.get()+atab[i].first*size_, atab[i].second, data_.get()+atab[i].first, naux_, atab[i].second, size_));
+  TaskQueue<CopyBlockTask> tq(task);
+  tq.compute(resources__->max_num_threads());
 
   for (auto& i : srequest) mpi__->wait(i);
 
@@ -117,12 +139,13 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   // information on the data layout
   vector<pair<size_t, size_t> > atab = df_->atable();
 
-  // transpose each block back
-  for (int i = 0; i != mpi__->size(); ++i) {
-    const int o = atab[i].first*size_;
-    for (size_t j = 0; j != size_; ++j)
-      copy_n(data_.get()+atab[i].first+j*naux_, atab[i].second, buf.get()+o+j*atab[i].second);
-  }
+  // copy using threads
+  vector<CopyBlockTask> task;
+  task.reserve(mpi__->size());
+  for (int i = 0; i != mpi__->size(); ++i)
+    task.push_back(CopyBlockTask(data_.get()+atab[i].first, naux_, buf.get()+atab[i].first*size_, atab[i].second, atab[i].second, size_));
+  TaskQueue<CopyBlockTask> tq(task);
+  tq.compute(resources__->max_num_threads());
 
   // last, issue all the send requests
   for (int i = 0; i != mpi__->size(); ++i) {
