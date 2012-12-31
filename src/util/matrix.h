@@ -37,7 +37,14 @@
 
 namespace bagel {
 
-class Matrix {
+#ifdef HAVE_SCALAPACK
+class DistMatrix;
+#else
+class Matrix;
+typedef Matrix DistMatrix;
+#endif
+
+class Matrix : public std::enable_shared_from_this<Matrix> {
   protected:
     std::unique_ptr<double[]> data_;
     const int ndim_;
@@ -45,7 +52,6 @@ class Matrix {
 
     // for Scalapack BLAS3 operation
 #ifdef HAVE_SCALAPACK
-    std::unique_ptr<double[]> getlocal_() const;
     void setlocal_(const std::unique_ptr<double[]>& loc);
 
     const std::unique_ptr<int[]> desc_;
@@ -53,10 +59,8 @@ class Matrix {
 #endif
 
   public:
-    Matrix() : ndim_(0), mdim_(0) {}
     Matrix(const int n, const int m);
     Matrix(const Matrix&);
-    ~Matrix();
 
     int size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
@@ -161,7 +165,77 @@ class Matrix {
 
     void allreduce();
     void broadcast(const int root = 0);
+
+    // return a shared pointer to this ifndef HAVE_SCALAPACK
+    std::shared_ptr<const DistMatrix> distmatrix() const;
+
+#ifdef HAVE_SCALAPACK
+    Matrix(const DistMatrix&);
+    std::unique_ptr<double[]> getlocal() const;
+#else
+    std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
+#endif
 };
+
+
+
+#ifdef HAVE_SCALAPACK
+
+// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
+class DistMatrix {
+  protected:
+    // global dimension
+    const int ndim_;
+    const int mdim_;
+
+    // distributed data
+    std::unique_ptr<double[]> local_;
+
+    // Scalapack specific
+    const std::unique_ptr<int[]> desc_;
+    const std::tuple<int, int> localsize_;
+
+  public:
+    DistMatrix(const int n, const int m);
+    DistMatrix(const DistMatrix&);
+    DistMatrix(const Matrix&);
+
+    const std::unique_ptr<double[]>& local() const { return local_; }
+
+    size_t size() const { return std::get<0>(localsize_)*std::get<1>(localsize_); }
+    int ndim() const { return ndim_; }
+    int mdim() const { return mdim_; }
+
+    void diagonalize(double* vec);
+
+    DistMatrix operator*(const DistMatrix&) const;
+    DistMatrix& operator*=(const DistMatrix&);
+    DistMatrix operator%(const DistMatrix&) const; // caution
+    DistMatrix operator^(const DistMatrix&) const; // caution
+    DistMatrix operator+(const DistMatrix& o) const { DistMatrix out(*this); out.daxpy(1.0, o); return out; }
+    DistMatrix operator-(const DistMatrix& o) const { DistMatrix out(*this); out.daxpy(-1.0, o); return out; }
+    DistMatrix& operator+=(const DistMatrix& o) { daxpy(1.0, o); return *this; }
+    DistMatrix& operator-=(const DistMatrix& o) { daxpy(-1.0, o); return *this; }
+    DistMatrix& operator=(const DistMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
+
+    std::shared_ptr<DistMatrix> clone() const { return std::shared_ptr<DistMatrix>(new DistMatrix(ndim_, mdim_)); }
+
+    void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
+    void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }
+
+    double ddot(const DistMatrix&) const;
+    double norm() const { return std::sqrt(ddot(*this)); }
+    double ddot(const std::shared_ptr<const DistMatrix> o) const { return ddot(*o); }
+    double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
+
+    void scale(const double a) { dscal_(size(), a, local_.get(), 1); }
+
+    void fill(const double a) { std::fill_n(local_.get(), size(), a); }
+    void zero() { fill(0.0); }
+
+    std::shared_ptr<Matrix> matrix() const;
+};
+#endif
 
 }
 

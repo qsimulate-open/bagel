@@ -37,6 +37,7 @@ namespace bagel {
 
 class UHF : public SCF_base {
   protected:
+    std::shared_ptr<Matrix> aodensity_;
     std::shared_ptr<Matrix> aodensityA_;
     std::shared_ptr<Matrix> aodensityB_;
     std::shared_ptr<const Coeff> coeffB_;

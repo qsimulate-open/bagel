@@ -48,7 +48,7 @@ DimerSCF::DimerSCF(const multimap<string, string>& idata, const shared_ptr<const
 void DimerSCF::compute() {
   string indent = "  ";
   //aodensity_ = dimer_->form_density_rhf(coeff_);
-  aodensity_ = coeff_->form_density_rhf(nocc_);
+  shared_ptr<Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;

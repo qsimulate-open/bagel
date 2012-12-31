@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#include <config.h>
 
 namespace bagel {
 
@@ -58,12 +59,12 @@ class Timer {
       } else if (level_ == -1) {
         std::transform(title.begin(), title.end(), title.begin(), ::toupper);
         std::cout << "    * " << std::left << std::setw(39) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
+#ifdef HAVE_MPI_H
       } else if (level_ >= 1) {
         const std::string indent(13+2*level_, ' ');
         const std::string mark = (level_ == 1 ? "o" : (level_ == 2 ? "*" : "-"));
         std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setw(13) << std::setprecision(2) << tick() << std::endl;
-      } else {
-        assert(false);
+#endif
       }
     }
 };

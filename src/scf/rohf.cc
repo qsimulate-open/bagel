@@ -59,8 +59,8 @@ void ROHF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     auto tp1 = high_resolution_clock::now();
 
-    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0,nocc_)));
-    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeffB_->slice(0, noccB_)));
+    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0,nocc_)));
+    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_)));
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 

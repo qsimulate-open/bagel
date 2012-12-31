@@ -58,8 +58,8 @@ void UHF::compute() {
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeff_->slice(0, nocc_)));
-    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, schwarz_, coeffB_->slice(0, noccB_)));
+    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_)));
+    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_)));
 
     energy_ = 0.5*(*aodensity_ * *hcore_+ (*fockA * *aodensityA_ + *fockB * *aodensityB_)*0.5).trace() + geom_->nuclear_repulsion();
 
@@ -117,8 +117,7 @@ void UHF::print_S2(const string tag) const {
 
 
 tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
-  shared_ptr<Matrix> cinv(new Matrix(*coeff_));
-  cinv->inverse(); // TODO unnecessary
+  shared_ptr<Matrix> cinv(new Matrix(*coeff_ % *overlap_));
   shared_ptr<Matrix> intermediate(new Matrix(*cinv * *aodensity_ ^ *cinv));
   *intermediate *= -1.0;
   unique_ptr<double[]> occup(new double[geom_->nbasis()]);

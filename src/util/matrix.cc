@@ -56,8 +56,12 @@ Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.nd
   copy_n(o.data(), ndim_*mdim_, data());
 }
 
-Matrix::~Matrix() {
+
+#ifdef HAVE_SCALAPACK
+Matrix::Matrix(const DistMatrix& o) : data_(new double[o.ndim()*o.mdim()]), ndim_(o.ndim()), mdim_(o.mdim()), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
+  setlocal_(o.local());
 }
+#endif
 
 
 shared_ptr<Matrix> Matrix::cut(const int n) const {
@@ -146,9 +150,9 @@ Matrix Matrix::operator*(const Matrix& o) const {
 #ifndef HAVE_SCALAPACK
   dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
 #else
-  unique_ptr<double[]> locala = getlocal_();
-  unique_ptr<double[]> localb = o.getlocal_();
-  unique_ptr<double[]> localc = out.getlocal_();
+  unique_ptr<double[]> locala = getlocal();
+  unique_ptr<double[]> localb = o.getlocal();
+  unique_ptr<double[]> localc = out.getlocal();
   pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
   out.setlocal_(localc);
 #endif
@@ -197,9 +201,9 @@ Matrix Matrix::operator%(const Matrix& o) const {
 #ifndef HAVE_SCALAPACK
   dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
 #else
-  unique_ptr<double[]> locala = getlocal_();
-  unique_ptr<double[]> localb = o.getlocal_();
-  unique_ptr<double[]> localc = out.getlocal_();
+  unique_ptr<double[]> locala = getlocal();
+  unique_ptr<double[]> localb = o.getlocal();
+  unique_ptr<double[]> localc = out.getlocal();
   pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
   out.setlocal_(localc);
 #endif
@@ -219,9 +223,9 @@ Matrix Matrix::operator^(const Matrix& o) const {
 #ifndef HAVE_SCALAPACK
   dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
 #else
-  unique_ptr<double[]> locala = getlocal_();
-  unique_ptr<double[]> localb = o.getlocal_();
-  unique_ptr<double[]> localc = out.getlocal_();
+  unique_ptr<double[]> locala = getlocal();
+  unique_ptr<double[]> localb = o.getlocal();
+  unique_ptr<double[]> localc = out.getlocal();
   pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
   out.setlocal_(localc);
 #endif
@@ -263,7 +267,7 @@ void Matrix::diagonalize(double* eig) {
 
   unique_ptr<double[]> coeff(new double[localrow*localcol]);
 
-  unique_ptr<double[]> local = getlocal_();
+  unique_ptr<double[]> local = getlocal();
 
   // first compute worksize
   double wsize;
@@ -382,19 +386,7 @@ unique_ptr<double[]> Matrix::diag() const {
 
 shared_ptr<Matrix> Matrix::transpose() const {
   shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
-
-#if 0
-  double *data = data_.get();
-  double *odata = out->data();
-  for(int i = 0; i < ndim_; ++i) {
-    for(int j = 0; j < mdim_; ++j) {
-      odata[i*mdim_ + j] = data[i + j*ndim_];
-    }
-  }
-#else
   mytranspose_(data_.get(), &ndim_, &mdim_, out->data()); 
-#endif
-
   return out;
 }
 
@@ -638,7 +630,7 @@ void Matrix::broadcast(const int root) {
 
 
 #ifdef HAVE_SCALAPACK
-unique_ptr<double[]> Matrix::getlocal_() const {
+unique_ptr<double[]> Matrix::getlocal() const {
   const int localrow = get<0>(localsize_);
   const int localcol = get<1>(localsize_);
 
@@ -704,3 +696,14 @@ void Matrix::setlocal_(const unique_ptr<double[]>& local) {
   allreduce();
 }
 #endif
+
+
+shared_ptr<const DistMatrix> Matrix::distmatrix() const {
+#ifdef HAVE_SCALAPACK
+  shared_ptr<const DistMatrix> out(new DistMatrix(*this));
+#else
+  shared_ptr<const DistMatrix> out = shared_from_this();
+#endif
+  return out;
+}
+

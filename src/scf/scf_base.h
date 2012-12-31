@@ -46,7 +46,6 @@ class SCF_base {
     std::shared_ptr<TildeX> tildex_;
     std::shared_ptr<const Overlap> overlap_;
     std::shared_ptr<const Hcore> hcore_;
-    std::shared_ptr<Matrix> aodensity_;
     std::shared_ptr<const Coeff> coeff_;
 
     int max_iter_;
@@ -71,7 +70,6 @@ class SCF_base {
     virtual void compute() = 0;
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
-    const std::shared_ptr<Matrix> aodensity() { return aodensity_; };
 
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };

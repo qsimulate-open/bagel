@@ -51,7 +51,7 @@ class Fock : public Fock_base {
 
   public:
     // Fock operator for DF cases
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
          const std::shared_ptr<const Matrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base(a,b,c) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
@@ -59,10 +59,10 @@ class Fock : public Fock_base {
     }
 
     // Fock operator
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<Matrix> c, std::shared_ptr<const Matrix> ex,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, std::shared_ptr<const Matrix> ex,
          const std::vector<double>& d)
      : Fock_base(a,b,c,d) {
       fock_two_electron_part(ex);
