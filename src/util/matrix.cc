@@ -39,26 +39,16 @@ using namespace std;
 using namespace bagel;
 
 
-Matrix::Matrix(const int n, const int m) : data_(new double[n*m]), ndim_(n), mdim_(m)
-#ifdef HAVE_SCALAPACK
-  , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
-#endif
-{
-  zero();
+Matrix::Matrix(const int n, const int m) : Matrix_base<double>(n,m) { 
 }
 
 
-Matrix::Matrix(const Matrix& o) : data_(new double[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_)
-#ifdef HAVE_SCALAPACK
-  , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
-#endif
-{
-  copy_n(o.data(), ndim_*mdim_, data());
+Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) { 
 }
 
 
 #ifdef HAVE_SCALAPACK
-Matrix::Matrix(const DistMatrix& o) : data_(new double[o.ndim()*o.mdim()]), ndim_(o.ndim()), mdim_(o.mdim()), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
+Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
   setlocal_(o.local());
 }
 #endif
@@ -391,26 +381,8 @@ shared_ptr<Matrix> Matrix::transpose() const {
 }
 
 
-void Matrix::fill_upper() {
-  assert(ndim_ == mdim_);
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = i+1; j != ndim_; ++j)
-      data_[i+j*ndim_] = data_[j+i*ndim_];
-}
-
-
-void Matrix::symmetrize() {
-  assert(ndim_ == mdim_);
-  const int n = mdim_;
-  for (int i = 0; i != n; ++i)
-    for (int j = i+1; j != n; ++j)
-      data_[i+j*n] = data_[j+i*n] = 0.5*(data_[i+j*n]+data_[j+i*n]);
-}
-
-
 void Matrix::antisymmetrize() {
   assert(ndim_ == mdim_);
-
   shared_ptr<Matrix> trans = transpose();
   *this -= *trans;
   *this *= 0.5;
@@ -581,121 +553,30 @@ void Matrix::print(const string name, const int size) const {
 }
 
 
-void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    copy_n(data + j*ndim, ndim, data_.get() + ndim_i + i*ndim_);
+void Matrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> data) {
+  copy_block(nstart, mstart, nsize, msize, data->data());
 }
- 
-
-void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]>& data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
-void Matrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
 
 
-unique_ptr<double[]> Matrix::get_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim) const {
-  unique_ptr<double[]> out(new double[ndim*mdim]); 
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) 
-    copy_n(data_.get() + ndim_i + i*ndim_, ndim, out.get() + j*ndim);
+shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
+  shared_ptr<Matrix> out(new Matrix(nsize, msize));
+  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
+    copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
   return out;
 }
 
 
-shared_ptr<Matrix> Matrix::get_submatrix(const int ndim_i, const int mdim_i, const int ndim, const int mdim) const {
-  shared_ptr<Matrix> out(new Matrix(ndim, mdim)); 
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) 
-    copy_n(data_.get() + ndim_i + i*ndim_, ndim, out->data_.get() + j*ndim);
-  return out;
+void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* data) {
+  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
+    daxpy_(nsize, 1.0, data + j*nsize, 1, data_.get() + nstart + i*ndim_, 1);
 }
 
 
-void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    daxpy_(ndim, 1.0, data + j*ndim, 1, data_.get() + ndim_i + i*ndim_, 1);
+void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
+  assert(nsize == o.ndim() && msize == o.mdim());
+  add_block(nstart, mstart, nsize, msize, o.data());
 }
 
-void Matrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& o) {
-  assert(ndim == o.ndim() && mdim == o.mdim());
-  add_block(ndim_i, mdim_i, ndim, mdim, o.data());
-}
-
-
-
-void Matrix::allreduce() {
-  mpi__->allreduce(data_.get(), size());
-}
-
-
-void Matrix::broadcast(const int root) {
-  mpi__->broadcast(data_.get(), size(), root);
-}
-
-
-#ifdef HAVE_SCALAPACK
-unique_ptr<double[]> Matrix::getlocal() const {
-  const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
-
-  unique_ptr<double[]> local(new double[localrow*localcol]);
-
-  const int nblock = localrow/blocksize__;
-  const int mblock = localcol/blocksize__;
-  const size_t nstride = blocksize__*mpi__->nprow();
-  const size_t mstride = blocksize__*mpi__->npcol();
-  const int myprow = mpi__->myprow()*blocksize__;
-  const int mypcol = mpi__->mypcol()*blocksize__;
-
-  for (int i = 0; i != mblock; ++i)
-    for (int j = 0; j != nblock; ++j)
-      for (int id = 0; id != blocksize__; ++id) 
-        copy_n(element_ptr(myprow+j*nstride, mypcol+i*mstride+id), blocksize__, &local[j*blocksize__+localrow*(i*blocksize__+id)]); 
-
-  for (int id = 0; id != localcol % blocksize__; ++id) {
-    for (int j = 0; j != nblock; ++j)
-      copy_n(element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id), blocksize__, &local[j*blocksize__+localrow*(mblock*blocksize__+id)]); 
-    for (int jd = 0; jd != localrow % blocksize__; ++jd)
-      local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id);
-  }
-  for (int i = 0; i != mblock; ++i)
-    for (int id = 0; id != blocksize__; ++id) 
-      for (int jd = 0; jd != localrow % blocksize__; ++jd)
-        local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+i*mstride+id);
-
-  return local;
-}
-
-
-void Matrix::setlocal_(const unique_ptr<double[]>& local) {
-  zero();
-
-  const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
-
-  const int nblock = localrow/blocksize__;
-  const int mblock = localcol/blocksize__;
-  const size_t nstride = blocksize__*mpi__->nprow();
-  const size_t mstride = blocksize__*mpi__->npcol();
-  const int myprow = mpi__->myprow()*blocksize__;
-  const int mypcol = mpi__->mypcol()*blocksize__;
-
-  for (int i = 0; i != mblock; ++i)
-    for (int j = 0; j != nblock; ++j)
-      for (int id = 0; id != blocksize__; ++id) 
-        copy_n(&local[j*blocksize__+localrow*(i*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+i*mstride+id)); 
-
-  for (int id = 0; id != localcol % blocksize__; ++id) {
-    for (int j = 0; j != nblock; ++j)
-      copy_n(&local[j*blocksize__+localrow*(mblock*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id)); 
-    for (int jd = 0; jd != localrow % blocksize__; ++jd)
-      element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id) = local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)];
-  }
-  for (int i = 0; i != mblock; ++i)
-    for (int id = 0; id != blocksize__; ++id) 
-      for (int jd = 0; jd != localrow % blocksize__; ++jd)
-        element(myprow+nblock*nstride+jd, mypcol+i*mstride+id) = local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)];
-
-  // syncronize (this can be improved, but...)
-  allreduce();
-}
-#endif
 
 
 shared_ptr<const DistMatrix> Matrix::distmatrix() const {

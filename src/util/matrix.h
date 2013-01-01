@@ -34,6 +34,7 @@
 #include <list>
 #include <config.h>
 #include <src/util/f77.h>
+#include <src/util/matrix_base.h>
 
 namespace bagel {
 
@@ -44,37 +45,11 @@ class Matrix;
 typedef Matrix DistMatrix;
 #endif
 
-class Matrix : public std::enable_shared_from_this<Matrix> {
-  protected:
-    std::unique_ptr<double[]> data_;
-    const int ndim_;
-    const int mdim_;
-
-    // for Scalapack BLAS3 operation
-#ifdef HAVE_SCALAPACK
-    void setlocal_(const std::unique_ptr<double[]>& loc);
-
-    const std::unique_ptr<int[]> desc_;
-    const std::tuple<int, int> localsize_;
-#endif
-
+class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<Matrix> {
   public:
     Matrix(const int n, const int m);
     Matrix(const Matrix&);
 
-    int size() const { return ndim_*mdim_; }
-    int ndim() const { return ndim_; }
-    int mdim() const { return mdim_; }
-    double* data() const { return data_.get(); }
-    double& data(const size_t i) { return *(data()+i); }
-    const double& data(const size_t i) const { return *(data()+i); }
-    double& element(int i, int j) { return *element_ptr(i, j); }
-    double* element_ptr(int i, int j) { return data()+i+j*ndim_; }
-    const double& element(int i, int j) const { return *element_ptr(i, j); }
-    const double* element_ptr(int i, int j) const { return data()+i+j*ndim_; }
-
-    void fill_upper();
-    void symmetrize();
     void antisymmetrize();
     std::shared_ptr<Matrix> cut(const int) const;
     std::shared_ptr<Matrix> resize(const int, const int) const;
@@ -91,14 +66,15 @@ class Matrix : public std::enable_shared_from_this<Matrix> {
     void inverse_half(const double thresh = 1.0e-8);
     // compute S^1/2. Same algorithm as above.
     void sqrt();
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]>& o);
+
+    using Matrix_base<double>::copy_block;
+    using Matrix_base<double>::get_block;
+
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    std::unique_ptr<double[]> get_block(const int nstart, const int mstart, const int ndim, const int mdim) const;
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const double* o);
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o) { add_block(nstart, mstart, ndim, mdim, *o); };
+    void add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* o);
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);
@@ -116,11 +92,6 @@ class Matrix : public std::enable_shared_from_this<Matrix> {
 
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
-
-    double& operator[](const size_t& i) { return data_[i]; }
-    const double& operator[](const size_t& i) const { return data_[i]; }
-    double& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
-    const double& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
 
     std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_)); }
 
@@ -150,8 +121,6 @@ class Matrix : public std::enable_shared_from_this<Matrix> {
     // returns diagonal elements
     std::unique_ptr<double[]> diag() const;
 
-    void fill(const double a) { std::fill(data(), data()+ndim_*mdim_, a); }
-    void zero() { fill(0.0); }
     void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 
@@ -163,15 +132,11 @@ class Matrix : public std::enable_shared_from_this<Matrix> {
 
     void print(const std::string in = "", const int size = 10) const;
 
-    void allreduce();
-    void broadcast(const int root = 0);
-
     // return a shared pointer to this ifndef HAVE_SCALAPACK
     std::shared_ptr<const DistMatrix> distmatrix() const;
 
 #ifdef HAVE_SCALAPACK
     Matrix(const DistMatrix&);
-    std::unique_ptr<double[]> getlocal() const;
 #else
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
     std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;

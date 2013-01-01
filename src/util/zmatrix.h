@@ -38,31 +38,11 @@
 
 namespace bagel {
 
-class ZMatrix {
-  protected:
-    std::unique_ptr<std::complex<double>[]> data_;
-    const int ndim_;
-    const int mdim_;
-
+class ZMatrix : public Matrix_base<std::complex<double> > {
   public:
-    ZMatrix() : ndim_(0), mdim_(0) {}
     ZMatrix(const int n, const int m);
     ZMatrix(const ZMatrix&);
-    ~ZMatrix();
 
-    int size() const { return ndim_*mdim_; }
-    int ndim() const { return ndim_; }
-    int mdim() const { return mdim_; }
-    std::complex<double>* data() const { return data_.get(); }
-    std::complex<double>& data(const size_t i) { return *(data_.get()+i); }
-    const std::complex<double>& data(const size_t i) const { return *(data_.get()+i); }
-    std::complex<double>& element(int i, int j) { return *element_ptr(i, j); }
-    std::complex<double>* element_ptr(int i, int j) { return data()+i+j*ndim_; }
-    const std::complex<double>& element(int i, int j) const { return *element_ptr(i, j); }
-    const std::complex<double>* element_ptr(int i, int j) const { return data()+i+j*ndim_; }
-
-    void fill_upper();
-    void symmetrize();
     void antisymmetrize();
     std::shared_ptr<ZMatrix> cut(const int) const;
     std::shared_ptr<ZMatrix> resize(const int, const int) const;
@@ -75,8 +55,9 @@ class ZMatrix {
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
+
+    using Matrix_base<std::complex<double> >::copy_block;
+    using Matrix_base<std::complex<double> >::get_block;
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
     // copy a block from a Matrix object to ZMatrix object and mutliply by coefficient coeff. If type = 0, coeff is purely real, else purely imaginary
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
@@ -99,11 +80,6 @@ class ZMatrix {
 
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
-
-    std::complex<double>& operator[](const size_t& i) { return data_[i]; }
-    const std::complex<double>& operator[](const size_t& i) const { return data_[i]; }
-    std::complex<double>& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
-    const std::complex<double>& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
 
     std::shared_ptr<ZMatrix> clone() const { return std::shared_ptr<ZMatrix>(new ZMatrix(ndim_, mdim_)); }
 
@@ -133,8 +109,6 @@ class ZMatrix {
     // returns diagonal elements
     std::unique_ptr<std::complex<double>[]> diag() const;
 
-    void fill(const std::complex<double> a) { std::fill(data(), data()+ndim_*mdim_, a); }
-    void zero() { fill(std::complex<double>(0.0, 0.0)); }
     void unit() { fill(std::complex<double>(0.0, 0.0)); for (int i = 0; i != ndim_; ++i) element(i,i) = std::complex<double>(1.0, 0.0); assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 

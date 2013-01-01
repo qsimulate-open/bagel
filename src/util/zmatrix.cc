@@ -37,16 +37,11 @@
 using namespace std;
 using namespace bagel;
 
-ZMatrix::ZMatrix(const int n, const int m) : data_(new complex<double>[n*m]), ndim_(n), mdim_(m) {
-  zero();
+ZMatrix::ZMatrix(const int n, const int m) : Matrix_base<complex<double> >(n, m) {
 }
 
 
-ZMatrix::ZMatrix(const ZMatrix& o) : data_(new complex<double>[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_) {
-  copy_n(o.data(), ndim_*mdim_, data());
-}
-
-ZMatrix::~ZMatrix() {
+ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double> >(o.ndim_, o.mdim_) {
 }
 
 
@@ -58,7 +53,6 @@ shared_ptr<ZMatrix> ZMatrix::cut(const int n) const {
       out->data_[j+i*n] = data_[j+i*ndim_];
   return out;
 }
-
 
 
 shared_ptr<ZMatrix> ZMatrix::resize(const int n, const int m) const {
@@ -349,23 +343,6 @@ shared_ptr<ZMatrix> ZMatrix::transpose() const {
 }
 
 
-void ZMatrix::fill_upper() {
-  assert(ndim_ == mdim_);
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = i+1; j != ndim_; ++j)
-      data_[i+j*ndim_] = data_[j+i*ndim_];
-}
-
-
-void ZMatrix::symmetrize() {
-  assert(ndim_ == mdim_);
-  const int n = mdim_;
-  for (int i = 0; i != n; ++i)
-    for (int j = i+1; j != n; ++j)
-      data_[i+j*n] = data_[j+i*n] = 0.5*(data_[i+j*n]+data_[j+i*n]);
-}
-
-
 void ZMatrix::antisymmetrize() {
   assert(ndim_ == mdim_);
 
@@ -515,14 +492,9 @@ void ZMatrix::print(const string component, const string name, const int size) c
 }
 
 
-void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    copy_n(data + j*ndim, ndim, data_.get() + ndim_i + i*ndim_);
+void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const ZMatrix> data) {
+  copy_block(nstart, mstart, nsize, msize, data->data());
 }
- 
-
-void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
-void ZMatrix::copy_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) { copy_block(ndim_i, mdim_i, ndim, mdim, data->data()); }
 
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
 //if (type == 0) {
