@@ -169,14 +169,14 @@ Matrix& Matrix::operator*=(const Matrix& o) {
 
 Matrix Matrix::operator*(const double& a) const {
   Matrix out(*this);
-  dscal_(ndim_*mdim_, a, out.data(), 1);
+  out *= a;
   return out;
 }
 
 
 Matrix Matrix::operator/(const double& a) const {
   Matrix out(*this);
-  dscal_(ndim_*mdim_, 1.0/a, out.data(), 1);
+  out /= a;
   return out;
 }
 
@@ -186,7 +186,7 @@ Matrix& Matrix::operator*=(const double& a) {
   return *this;
 }
 Matrix& Matrix::operator/=(const double& a) {
-  dscal_(ndim_*mdim_, 1.0/a, data_, 1);
+  *this *= 1.0/a;
   return *this;
 }
 
@@ -323,7 +323,7 @@ double Matrix::ddot(const Matrix& o) const {
 
 
 double Matrix::ddot(const std::shared_ptr<const Matrix> o) const {
-  return ddot_(ndim_*mdim_, data(), 1, o->data(), 1);
+  return ddot(*o);
 }
 
 

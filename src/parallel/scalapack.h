@@ -27,10 +27,11 @@
 #define __SRC_PARALLEL_SCALAPACK_H
 
 #include <config.h>
+#ifdef HAVE_SCALAPACK
 #include <memory>
 #include <cassert>
 #include <cmath>
-#ifdef HAVE_SCALAPACK
+#include <complex>
 
 extern "C" {
   // scalapck routines
@@ -48,6 +49,8 @@ extern "C" {
                const double*, const int*, const int*, const int*, const double*, double*, const int*, const int*, const int*); 
   void pdsyev_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, const int*); 
   void pdsyevd_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, int*, const int*, const int*); 
+  void pzheevd_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
+                std::complex<double>*, const int*, double*, const int*, int*, const int*, int*); 
 }
 
 static void sl_init_(int& i, const int j, const int k) { sl_init_(&i, &j, &k); }
@@ -83,6 +86,11 @@ static void pdsyevd_(const char* a, const char* b, const int dim, double* mat, c
   pdsyevd_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, iwork, &liwork, &info);
 }
 
+static void pzheevd_(const char* a, const char* b, const int dim, std::complex<double>* mat, const int* descm, double* eig, std::complex<double>* coeff, const int* descc,
+                     std::complex<double>* work, const int lwork, double* rwork, const int lrwork, int* iwork, const int liwork, int& info) {
+  const int one = 1;
+  pzheevd_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+}
 
 static std::pair<int, int> numgrid(int numproc) {
   int sq = static_cast<int>(std::sqrt(static_cast<double>(numproc)))+1;

@@ -87,38 +87,27 @@ shared_ptr<ZMatrix> ZMatrix::merge(const shared_ptr<const ZMatrix> o) const {
 
   shared_ptr<ZMatrix> out(new ZMatrix(ndim_, mdim_ + o->mdim_));
 
-  copy(data_.get(), data_.get() + ndim_*mdim_, out->data_.get());
-  copy(o->data_.get(), o->data_.get()+o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
+  copy_n(data_.get(), ndim_*mdim_, out->data_.get());
+  copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
   return out;
 }
 
 
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
   ZMatrix out(*this);
-  const int size = ndim_ * mdim_;
-  const complex<double>* odata = o.data();
-  complex<double>* outdata = out.data();
-
-  zaxpy_(size, 1.0, odata, 1, outdata, 1);
-
+  out.zaxpy(std::complex<double>(1.0,0.0), o);
   return out;
 }
 
 
 ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
-  zaxpy_(ndim_*mdim_, 1.0, o.data(), 1, data(), 1);
+  zaxpy(std::complex<double>(1.0,0.0), o);
   return *this;
 }
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-
-  zaxpy_(ndim_*mdim_, -1.0, o.data(), 1, data(), 1);
+  zaxpy(std::complex<double>(-1.0,0.0), o); 
   return *this;
 }
 
@@ -131,15 +120,8 @@ ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
 
 
 ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
   ZMatrix out(*this);
-
-  const int size = ndim_ * mdim_;
-
-  const complex<double>* odata = o.data();
-  complex<double>* outdata = out.data();
-  zaxpy_(size, -1.0, odata, 1, outdata, 1);
-
+  out.zaxpy(std::complex<double>(-1.0,0.0), o);
   return out;
 }
 
@@ -151,10 +133,7 @@ ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
   const int n = o.mdim();
 
   ZMatrix out(l, n);
-  const complex<double>* odata = o.data();
-  complex<double>* outdata = out.data();
-
-  zgemm3m_("N", "N", l, n, m, 1.0, data(), l, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
 
   return out;
 }
@@ -168,14 +147,14 @@ ZMatrix& ZMatrix::operator*=(const ZMatrix& o) {
 
 ZMatrix ZMatrix::operator*(const complex<double>& a) const {
   ZMatrix out(*this);
-  zscal_(ndim_*mdim_, a, out.data(), 1);
+  out *= a;
   return out;
 }
 
 
 ZMatrix ZMatrix::operator/(const complex<double>& a) const {
   ZMatrix out(*this);
-  zscal_(ndim_*mdim_, 1.0/a, out.data(), 1);
+  out /= a;
   return out;
 }
 
@@ -185,7 +164,7 @@ ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
   return *this;
 }
 ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
-  zscal_(ndim_*mdim_, 1.0/a, data_, 1);
+  *this *= 1.0/a;
   return *this;
 }
 
@@ -197,11 +176,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
   const int n = o.mdim();
 
   ZMatrix out(l, n);
-
-  const complex<double>* odata = o.data();
-  complex<double>* outdata = out.data();
-
-  zgemm3m_("C", "N", l, n, m, 1.0, data(), m, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
 
   return out;
 }
@@ -210,15 +185,11 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
 ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
   const int l = ndim_;
   const int m = mdim_;
+  assert(mdim_ == o.mdim());
   const int n = o.ndim();
 
   ZMatrix out(l, n);
-
-  assert(mdim_ == o.mdim());
-  const complex<double>* odata = o.data();
-  complex<double>* outdata = out.data();
-
-  zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, odata, o.ndim_, 0.0, outdata, l);
+  zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
 
   return out;
 }
@@ -243,8 +214,6 @@ ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
 void ZMatrix::diagonalize(double* eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)"); 
   const int n = ndim_;
-  // assume that the matrix is symmetric
-  // the leading order (nbasis supplied)
   int info;
   unique_ptr<double[]> rwork(new double[max(1, 3*ndim_-2)]);
 
@@ -283,7 +252,7 @@ void ZMatrix::zaxpy(const complex<double> a, const ZMatrix& o) {
 
 
 void ZMatrix::zaxpy(const complex<double> a, const std::shared_ptr<const ZMatrix> o) {
-  zaxpy_(ndim_*mdim_, a, o->data(), 1, data(), 1);
+  zaxpy(a, *o);
 }
 
 
@@ -293,7 +262,7 @@ complex<double> ZMatrix::zdotu(const ZMatrix& o) const {
 
 
 complex<double> ZMatrix::zdotu(const std::shared_ptr<const ZMatrix> o) const {
-  return zdotu_(ndim_*mdim_, data(), 1, o->data(), 1);
+  return zdotu(*o);
 }
 
 

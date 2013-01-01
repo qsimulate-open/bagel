@@ -23,8 +23,7 @@ o Parallelization needs more work
   - MP2 parallelism can be improved significantly 
   - Make sure that MoldenIO is MPI-safe.
   - FCI is not parallelized yet 
-  - Shell distribution to MPI processes (src/df/df.cc) should be optimized
-  - linear solver should be parallelized
+  - Shell distribution to MPI processes (src/df/df.cc) can be further optimized
 
 o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
 
