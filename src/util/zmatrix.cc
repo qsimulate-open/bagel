@@ -209,14 +209,34 @@ void ZMatrix::diagonalize(double* eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)"); 
   const int n = ndim_;
   int info;
-  unique_ptr<double[]> rwork(new double[max(1, 3*ndim_-2)]);
-
+#ifndef SCALAPACK
   unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
+  unique_ptr<double[]> rwork(new double[3*ndim_]);
   zheev_("V", "L", n, data(), n, eig, work.get(), n*6, rwork.get(), info);
-  if(info) throw runtime_error("diagonalize failed");
-
-  // in order to be consistent with signs
   mpi__->broadcast(data(), n*n, 0);
+#else
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
+
+  unique_ptr<complex<double>[]> coeff(new complex<double>[localrow*localcol]);
+  unique_ptr<complex<double>[]> local = getlocal();
+
+  // first compute worksize
+  double wsize;
+  int lrwork = 1;
+  int liwork = 1;
+  pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &lrwork, 1, &liwork, 1, info);
+  unique_ptr<double[]> rwork(new double[lrwork]);
+  unique_ptr<double[]> iwork(new int[liwork]);
+  wsize =  max(131072.0, wsize*2.0);
+
+  const int lwork = round(wsize);
+  unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
+  pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+  setlocal_(coeff);
+#endif
+
+  if(info) throw runtime_error("diagonalize failed");
 }
 
 

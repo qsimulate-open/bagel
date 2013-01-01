@@ -256,7 +256,6 @@ void Matrix::diagonalize(double* eig) {
   const int localcol = get<1>(localsize_);
 
   unique_ptr<double[]> coeff(new double[localrow*localcol]);
-
   unique_ptr<double[]> local = getlocal();
 
   // first compute worksize
