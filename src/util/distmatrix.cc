@@ -35,20 +35,14 @@ using namespace bagel;
 
 #ifdef HAVE_SCALAPACK
 
-DistMatrix::DistMatrix(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
-  local_ = unique_ptr<double[]>(new double[size()]);
-  zero();
-}
+DistMatrix::DistMatrix(const int n, const int m) : DistMatrix_base<double>(n,m) {}
 
 
-DistMatrix::DistMatrix(const DistMatrix& o) : ndim_(o.ndim_), mdim_(o.mdim_), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
-  local_ = unique_ptr<double[]>(new double[size()]);
-  *this = o;
-}
+DistMatrix::DistMatrix(const DistMatrix& o) : DistMatrix_base<double>(o) {} 
 
 
-DistMatrix::DistMatrix(const Matrix& o) : ndim_(o.ndim()), mdim_(o.mdim()), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
-  local_ = o.getlocal();
+DistMatrix::DistMatrix(const Matrix& o) : DistMatrix_base<double>(o.ndim(), o.mdim()) { 
+  copy_n(o.getlocal().get(), size(), local_.get());
 }
 
 

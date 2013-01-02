@@ -35,6 +35,7 @@
 #include <config.h>
 #include <src/util/f77.h>
 #include <src/util/matrix_base.h>
+#include <src/util/distmatrix_base.h>
 
 namespace bagel {
 
@@ -56,7 +57,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> slice(const int, const int) const;
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
     // diagonalize this matrix (overwritten by a coefficient matrix)
-    void diagonalize(double* vec);
+    void diagonalize(double* vec) override;
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
@@ -148,31 +149,13 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 #ifdef HAVE_SCALAPACK
 
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
-class DistMatrix {
-  protected:
-    // global dimension
-    const int ndim_;
-    const int mdim_;
-
-    // distributed data
-    std::unique_ptr<double[]> local_;
-
-    // Scalapack specific
-    const std::unique_ptr<int[]> desc_;
-    const std::tuple<int, int> localsize_;
-
+class DistMatrix : public DistMatrix_base<double> {
   public:
     DistMatrix(const int n, const int m);
     DistMatrix(const DistMatrix&);
     DistMatrix(const Matrix&);
 
-    const std::unique_ptr<double[]>& local() const { return local_; }
-
-    size_t size() const { return std::get<0>(localsize_)*std::get<1>(localsize_); }
-    int ndim() const { return ndim_; }
-    int mdim() const { return mdim_; }
-
-    void diagonalize(double* vec);
+    void diagonalize(double* vec) override;
 
     DistMatrix operator*(const DistMatrix&) const;
     DistMatrix& operator*=(const DistMatrix&);
@@ -195,9 +178,6 @@ class DistMatrix {
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
     void scale(const double a) { dscal_(size(), a, local_.get(), 1); }
-
-    void fill(const double a) { std::fill_n(local_.get(), size(), a); }
-    void zero() { fill(0.0); }
 
     std::shared_ptr<Matrix> matrix() const;
 
