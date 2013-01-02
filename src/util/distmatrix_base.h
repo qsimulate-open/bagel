@@ -27,14 +27,12 @@
 #ifndef __SRC_UTIL_DISTMATRIX_BASE_H
 #define __SRC_UTIL_DISTMATRIX_BASE_H
 
+#include <config.h>
 #include <cassert>
-#include <string>
 #include <algorithm>
 #include <memory>
-#include <list>
-#include <config.h>
-#include <src/util/f77.h>
-#include <src/util/matrix_base.h>
+#include <src/parallel/scalapack.h>
+#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 

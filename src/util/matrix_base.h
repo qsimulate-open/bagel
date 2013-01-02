@@ -29,11 +29,8 @@
 
 #include <config.h>
 #include <cassert>
-#include <string>
 #include <algorithm>
 #include <memory>
-#include <list>
-#include <src/util/f77.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
