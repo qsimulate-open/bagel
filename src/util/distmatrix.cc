@@ -105,7 +105,7 @@ void DistMatrix::diagonalize(double* eig) {
   const int lwork = round(wsize);
   unique_ptr<double[]> work(new double[lwork]);
   pdsyevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
-  if (info) throw runtime_error("dsyev failed in DistMatrix");
+  if (info) throw runtime_error("pdsyevd failed in DistMatrix");
 
   *this = tmp;
 }

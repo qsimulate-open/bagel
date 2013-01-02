@@ -32,13 +32,19 @@
 #include <algorithm>
 #include <memory>
 #include <list>
-#include <src/util/f77.h>
 #include <complex>
 #include <src/util/matrix.h>
 
 namespace bagel {
 
-class ZMatrix : public Matrix_base<std::complex<double> > {
+#ifdef HAVE_SCALAPACK
+class DistZMatrix;
+#else
+class ZMatrix;
+typedef ZMatrix DistZMatrix;
+#endif
+
+class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_shared_from_this<ZMatrix> {
   public:
     ZMatrix(const int n, const int m);
     ZMatrix(const ZMatrix&);
@@ -92,8 +98,8 @@ class ZMatrix : public Matrix_base<std::complex<double> > {
 
     void zaxpy(const std::complex<double>, const ZMatrix&);
     void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);
-    std::complex<double> zdotu(const ZMatrix&) const;
-    std::complex<double> zdotu(const std::shared_ptr<const ZMatrix>) const;
+    std::complex<double> zdotc(const ZMatrix&) const;
+    std::complex<double> zdotc(const std::shared_ptr<const ZMatrix>) const;
     double norm() const;
     double rms() const;
     std::complex<double> trace() const;
@@ -122,7 +128,56 @@ class ZMatrix : public Matrix_base<std::complex<double> > {
     void print(const std::string, const std::string in = "", const int size = 10) const;
 
     std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
+
+#ifdef HAVE_SCALAPACK
+    ZMatrix(const DistZMatrix&);
+#else
+    std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
+    std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0) const;
+#endif
 };
+
+
+#ifdef HAVE_SCALAPACK
+// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
+class DistZMatrix : public DistMatrix_base<std::complex<double> > {
+  public:
+    DistZMatrix(const int n, const int m);
+    DistZMatrix(const DistZMatrix&);
+    DistZMatrix(const ZMatrix&);
+
+    void diagonalize(double* vec) override;
+
+    DistZMatrix operator*(const DistZMatrix&) const;
+    DistZMatrix& operator*=(const DistZMatrix&);
+    DistZMatrix operator%(const DistZMatrix&) const; // caution
+    DistZMatrix operator^(const DistZMatrix&) const; // caution
+    DistZMatrix operator+(const DistZMatrix& o) const { DistZMatrix out(*this); out.zaxpy(1.0, o); return out; }
+    DistZMatrix operator-(const DistZMatrix& o) const { DistZMatrix out(*this); out.zaxpy(-1.0, o); return out; }
+    DistZMatrix& operator+=(const DistZMatrix& o) { zaxpy(1.0, o); return *this; }
+    DistZMatrix& operator-=(const DistZMatrix& o) { zaxpy(-1.0, o); return *this; }
+    DistZMatrix& operator=(const DistZMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
+
+    std::shared_ptr<DistZMatrix> clone() const { return std::shared_ptr<DistZMatrix>(new DistZMatrix(ndim_, mdim_)); }
+
+    void zaxpy(const double a, const DistZMatrix& o) { const std::complex<double> b(a); zaxpy(b,o); }
+    void zaxpy(const double a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a,*o); }
+    void zaxpy(const std::complex<double> a, const DistZMatrix& o) { assert(size() == o.size()); zaxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
+    void zaxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, *o); }
+
+    std::complex<double> zdotc(const DistZMatrix&) const;
+    std::complex<double> zdotc(const std::shared_ptr<const DistZMatrix> o) const { return zdotc(*o); }
+    double norm() const { return std::sqrt(zdotc(*this).real()); }
+    double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
+
+    void scale(const std::complex<double> a) { zscal_(size(), a, local_.get(), 1); }
+    void scale(const double a) { const std::complex<double> b(a); scale(b); }
+
+    std::shared_ptr<ZMatrix> matrix() const;
+
+    std::shared_ptr<const DistZMatrix> form_density_rhf(const int n, const int off = 0) const;
+};
+#endif
 
 }
 

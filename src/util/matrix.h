@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_util_matrix_h
-#define __src_util_matrix_h
+#ifndef __SRC_UTIL_MATRIX_H
+#define __SRC_UTIL_MATRIX_H
 
 #include <cassert>
 #include <string>
@@ -145,9 +145,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 };
 
 
-
 #ifdef HAVE_SCALAPACK
-
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
 class DistMatrix : public DistMatrix_base<double> {
   public:

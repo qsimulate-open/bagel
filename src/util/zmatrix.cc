@@ -233,7 +233,7 @@ void ZMatrix::diagonalize(double* eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)"); 
   const int n = ndim_;
   int info;
-#ifndef SCALAPACK
+#ifndef HAVE_SCALAPACK
   unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
   unique_ptr<double[]> rwork(new double[3*ndim_]);
   zheev_("V", "L", n, data(), n, eig, work.get(), n*6, rwork.get(), info);
@@ -243,24 +243,32 @@ void ZMatrix::diagonalize(double* eig) {
   const int localcol = get<1>(localsize_);
 
   unique_ptr<complex<double>[]> coeff(new complex<double>[localrow*localcol]);
+fill_n(coeff.get(), localrow*localcol, 0.0);
   unique_ptr<complex<double>[]> local = getlocal();
 
-  // first compute worksize
-  double wsize;
-  int lrwork = 1;
-  int liwork = 1;
-  pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &lrwork, 1, &liwork, 1, info);
-  unique_ptr<double[]> rwork(new double[lrwork]);
-  unique_ptr<double[]> iwork(new int[liwork]);
-  wsize =  max(131072.0, wsize*2.0);
+cout << local[0] << endl;
+cout << localrow << " " << localcol << endl;
+cout << zdotc_(localrow*localcol, coeff.get(), 1, coeff.get(), 1) << endl;
+cout << zdotc_(localrow*localcol, local.get(), 1, local.get(), 1) << endl;
+cout << "aaa" << endl;
 
-  const int lwork = round(wsize);
+  // first compute worksize
+  std::complex<double> wsize;
+  const int lrwork = 1 + 9*n + 3*localrow*localcol;
+  const int liwork = 7*n + 8*mpi__->npcol() + 2;
+  unique_ptr<double[]> rwork(new double[lrwork]);
+  unique_ptr<int[]> iwork(new int[liwork]);
+
+  pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+
+  const int lwork = round(max(131072.0, wsize.real()*2.0));
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
   pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+  if(info) throw runtime_error("diagonalize failed");
+
   setlocal_(coeff);
 #endif
 
-  if(info) throw runtime_error("diagonalize failed");
 }
 
 
@@ -294,18 +302,18 @@ void ZMatrix::zaxpy(const complex<double> a, const std::shared_ptr<const ZMatrix
 }
 
 
-complex<double> ZMatrix::zdotu(const ZMatrix& o) const {
-  return zdotu_(ndim_*mdim_, data(), 1, o.data(), 1);
+complex<double> ZMatrix::zdotc(const ZMatrix& o) const {
+  return zdotc_(ndim_*mdim_, data(), 1, o.data(), 1);
 }
 
 
-complex<double> ZMatrix::zdotu(const std::shared_ptr<const ZMatrix> o) const {
-  return zdotu(*o);
+complex<double> ZMatrix::zdotc(const std::shared_ptr<const ZMatrix> o) const {
+  return zdotc(*o);
 }
 
 
 double ZMatrix::norm() const {
-  complex<double> n = zdotu(*this);
+  complex<double> n = zdotc(*this);
   assert(fabs(n.imag()) < 1.0e-10);
   return n.real();
 }
@@ -418,10 +426,10 @@ void ZMatrix::purify_unitary() {
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> a = zdotu_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
+      const complex<double> a = zdotc_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
       zaxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
-    const complex<double> b = 1.0/sqrt(zdotu_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     zscal_(ndim_, b, &data_[i*ndim_], 1);
   }
 #endif
@@ -460,7 +468,7 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 
 complex<double> ZMatrix::orthog(const std::list<std::shared_ptr<const ZMatrix> > o) {
   for (auto& it : o) {
-    const complex<double> m = this->zdotu(it);
+    const complex<double> m = this->zdotc(it);
     this->zaxpy(-m, it);
   }
   const complex<double> n = norm();

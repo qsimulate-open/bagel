@@ -271,7 +271,7 @@ void Matrix::diagonalize(double* eig) {
   setlocal_(coeff);
 #endif
 
-  if (info) throw runtime_error("dsyev failed in Matrix");
+  if (info) throw runtime_error("dsyev/pdsyevd failed in Matrix");
 }
 
 
