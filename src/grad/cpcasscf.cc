@@ -120,7 +120,9 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
 //z->second()->project_out(civector_);
 
   // inverse matrix of C
-  shared_ptr<Matrix> cinv(new Matrix(*ref_->coeff())); cinv->inverse();
+//shared_ptr<Matrix> cinv(new Matrix(*ref_->coeff())); cinv->inverse();
+  shared_ptr<const Matrix> ovl(new Overlap(geom_));
+  shared_ptr<const Matrix> cinv(new Matrix(*ref_->coeff() % *ovl));
 
   // State averaged density matrix
   shared_ptr<const Matrix> dsa = ref_->rdm1_mat();
