@@ -24,6 +24,7 @@ o Parallelization needs more work
   - Make sure that MoldenIO is MPI-safe.
   - FCI is not parallelized yet 
   - Shell distribution to MPI processes (src/df/df.cc) can be further optimized
+  - Compatibility check between Scalapack and BLAS at configure time
 
 o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
 

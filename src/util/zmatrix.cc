@@ -243,14 +243,7 @@ void ZMatrix::diagonalize(double* eig) {
   const int localcol = get<1>(localsize_);
 
   unique_ptr<complex<double>[]> coeff(new complex<double>[localrow*localcol]);
-fill_n(coeff.get(), localrow*localcol, 0.0);
   unique_ptr<complex<double>[]> local = getlocal();
-
-cout << local[0] << endl;
-cout << localrow << " " << localcol << endl;
-cout << zdotc_(localrow*localcol, coeff.get(), 1, coeff.get(), 1) << endl;
-cout << zdotc_(localrow*localcol, local.get(), 1, local.get(), 1) << endl;
-cout << "aaa" << endl;
 
   // first compute worksize
   std::complex<double> wsize;
