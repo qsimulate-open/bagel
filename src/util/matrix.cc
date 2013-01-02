@@ -582,14 +582,17 @@ void Matrix::add_block(const int nstart, const int mstart, const int nsize, cons
 
 
 
-shared_ptr<DistMatrix> Matrix::distmatrix() const {
 #ifdef HAVE_SCALAPACK
+shared_ptr<DistMatrix> Matrix::distmatrix() const {
   shared_ptr<DistMatrix> out(new DistMatrix(*this));
-#else
-  shared_ptr<DistMatrix> out = shared_from_this();
-#endif
   return out;
 }
+#else
+shared_ptr<const Matrix> Matrix::distmatrix() const {
+  shared_ptr<const Matrix> out = shared_from_this();
+  return out;
+}
+#endif
 
 
 #ifndef HAVE_SCALAPACK

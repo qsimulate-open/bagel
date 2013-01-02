@@ -133,12 +133,13 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     void print(const std::string in = "", const int size = 10) const;
 
+#ifdef HAVE_SCALAPACK
     // return a shared pointer to this ifndef HAVE_SCALAPACK
     std::shared_ptr<DistMatrix> distmatrix() const;
 
-#ifdef HAVE_SCALAPACK
     Matrix(const DistMatrix&);
 #else
+    std::shared_ptr<const Matrix> distmatrix() const;
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
     std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
