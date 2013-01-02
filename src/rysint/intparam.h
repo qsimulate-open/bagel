@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: macros.h
+// Filename: intparam.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,12 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_RYSINT_INTPARAM_H
+#define __SRC_RYSINT_INTPARAM_H
 
-#ifndef __src_macros_h
-#define __src_macros_h
-
-#define SCHWARZ_THRESH 1.0e-12
-
-//#define ZDOT_RETURN
+static const int NDEBUG_PRINT = 1;
+static const int ANG_HRR_END = 7;
+static const int ANG_VRR_END = 14;
+static const int RYS_MAX = 13;
+static const double PRIM_SCREEN_THRESH = 1.0e-12;
 
 #endif
+

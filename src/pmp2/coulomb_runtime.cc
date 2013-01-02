@@ -100,7 +100,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
                     const double integral_bound = eri_obs_->schwarz(((m1      + k) * size + i0) * size + i1)
                                                 * eri_obs_->schwarz(((m3 - m2 + k) * size + i2) * size + i3);
-                    const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                    const bool skip_schwarz = integral_bound < schwarz_thresh__;
                     if (skip_schwarz) continue;
 
                     if (m2 != 0) {
@@ -192,7 +192,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
                     const double integral_bound = eri_cabs_->schwarz_ia(((m1      + k) * size_i + i0) * size_a + i1)
                                                 * eri_cabs_->schwarz_jb(((m3 - m2 + k) * size_j + i2) * size_b + i3);
-                    const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                    const bool skip_schwarz = integral_bound < schwarz_thresh__;
                     if (skip_schwarz) continue;
 
                     for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
@@ -272,7 +272,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
                     const double integral_bound = eri_cabs_d->schwarz_ia(((m1      + k) * size_i + i0) * size_a + i1)
                                                 * eri_cabs_d->schwarz_jb(((m3 - m2 + k) * size_j + i2) * size_b + i3);
-                    const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                    const bool skip_schwarz = integral_bound < schwarz_thresh__;
                     if (skip_schwarz) continue;
 
                     for (int j0 = b0offset, j0q = b0offset * q; j0 != b0offset + b0size; ++j0, j0q += q) { // center unit cell
@@ -350,7 +350,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
                     const double integral_bound = eri_cabs_t->schwarz_ia(((m1      + k) * size_i + i0) * size_a + i1)
                                                 * eri_cabs_t->schwarz_jb(((m3 - m2 + k) * size_j + i2) * size_b + i3);
-                    const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                    const bool skip_schwarz = integral_bound < schwarz_thresh__;
                     if (skip_schwarz) continue;
 
 //                  #pragma omp parallel for
@@ -444,7 +444,7 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
 
                   const double integral_bound = eri_obs_->schwarz(((m1      + k) * size + i0) * size + i1)
                                               * eri_obs_->schwarz(((m3 - m2 + k) * size + i2) * size + i3);
-                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                  const bool skip_schwarz = integral_bound < schwarz_thresh__;
                   if (skip_schwarz) continue;
 
                   if (m2 != 0) {

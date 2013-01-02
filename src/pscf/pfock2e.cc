@@ -29,7 +29,7 @@
 #include <iostream>
 #include <src/pscf/pfock.h>
 #include <src/rysint/eribatch.h>
-#include <src/macros.h>
+#include <src/util/constants.h>
 #include <fstream>
 #include <cassert>
 
@@ -101,7 +101,7 @@ void PFock::pfock_two_electron_part() {
 
                   const double integral_bound = file_->schwarz(((m1      + k) * size + i0) * size + i1)
                                               * file_->schwarz(((m3 - m2 + k) * size + i2) * size + i3);
-                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                  const bool skip_schwarz = integral_bound < schwarz_thresh__;
                   if (skip_schwarz) continue;
 
                   if (m2nonzero && mmmin){

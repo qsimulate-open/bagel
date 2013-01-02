@@ -27,8 +27,8 @@
 #ifndef __SRC_RYSINT_ERIROOTLIST_H
 #define __SRC_RYSINT_ERIROOTLIST_H
 
-#include <src/rysint/macros.h>
 #include <src/rysint/f77.h>
+#include <src/rysint/intparam.h>
 
 namespace bagel {
 

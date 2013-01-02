@@ -24,10 +24,10 @@
 //
 
 
-#ifndef __rysint_carsphlist_h
-#define __rysint_carsphlist_h
+#ifndef __SRC_RYSINT_CARSPHLIST_H
+#define __SRC_RYSINT_CARSPHLIST_H
 
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 
 namespace bagel {
 

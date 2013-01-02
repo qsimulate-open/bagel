@@ -28,10 +28,10 @@
 // can be called from outside through sortfunc_call.
 //
 
-#ifndef __src_rysint_sortlist_h
-#define __src_rysint_sortlist_h
+#ifndef __SRC_RYSINT_SORTLIST_H
+#define __SRC_RYSINT_SORTLIST_H
 
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 
 namespace bagel {
 

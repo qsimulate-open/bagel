@@ -32,7 +32,6 @@
 #include <cassert>
 #include <src/rysint/slaterbatch.h>
 #include <src/util/f77.h>
-#include <src/rysint/macros.h>
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>

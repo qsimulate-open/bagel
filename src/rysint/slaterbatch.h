@@ -30,7 +30,6 @@
 #include <vector>
 #include <src/rysint/int2d.h>
 #include <src/rysint/rysint.h>
-#include <src/rysint/macros.h>
 #include <memory>
 #include <tuple>
 

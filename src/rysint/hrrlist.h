@@ -28,11 +28,11 @@
 // can be called from outside through hrrfunc_call.
 //
 
-#ifndef __rysint_hrrlist_h
-#define __rysint_hrrlist_h
+#ifndef __SRC_RYSINT_HRRLIST_H
+#define __SRC_RYSINT_HRRLIST_H
 
 #include <array>
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 
 namespace bagel {
 

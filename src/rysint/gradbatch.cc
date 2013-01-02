@@ -32,7 +32,6 @@
 #include <stdexcept>
 #include <src/rysint/gradbatch.h>
 #include <src/rysint/inline.h>
-#include <src/rysint/macros.h>
 
 using namespace std;
 using namespace bagel;

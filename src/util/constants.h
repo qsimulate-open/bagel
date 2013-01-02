@@ -46,6 +46,11 @@ static const double numerical_zero__ = 1.0e-15;
 static const unsigned int large__ = 32;
 static const unsigned int nbit__ = 32;
 
+/************************************************************
+*  Misc constants                                           *
+************************************************************/
+static const double schwarz_thresh__ = 1.0e-12;  // TODO input
+
 }
 
 #endif

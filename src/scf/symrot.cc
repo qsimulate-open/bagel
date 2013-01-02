@@ -32,7 +32,7 @@
 #include <iomanip>
 #include <memory>
 #include <src/rysint/carsphlist.h>
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 
 using namespace std;
 using namespace bagel;

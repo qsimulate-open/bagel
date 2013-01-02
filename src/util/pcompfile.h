@@ -37,7 +37,7 @@
 #include <memory>
 #include <iostream>
 #include <algorithm>
-#include <src/macros.h>
+#include <src/util/constants.h>
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/pcoeff.h>
 #include <src/util/pmofile.h>
@@ -295,7 +295,7 @@ void PCompFile<T>::calculate_num_int_each() {
 
                 const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
                                             * schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
-                const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                const bool skip_schwarz = integral_bound < schwarz_thresh__;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
                 thisblock += b0size * b1size * b2size * b3size;
@@ -349,7 +349,7 @@ void PCompFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           const int b3size = basis_[i3]->nbasis();
           const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
                                       * schwarz_[(m3 - m2 + K_) * size * size + i2 * size + i3];
-          const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+          const bool skip_schwarz = integral_bound < schwarz_thresh__;
           blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
         }
       }
@@ -580,7 +580,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                   integral_bound = schwarz_[((q1 + K_) * size + i2) * size + i3]
                                  * schwarz_[((q3 + K_) * size + i0) * size + i1];
                 }
-                const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                const bool skip_schwarz = integral_bound < schwarz_thresh__;
                 blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
               }
             }

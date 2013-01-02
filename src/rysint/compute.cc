@@ -29,7 +29,6 @@
 #include <cassert>
 #include <src/rysint/eribatch.h>
 #include <src/util/f77.h>
-#include <src/rysint/macros.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/sortlist.h>
 #include <src/rysint/hrrlist.h>

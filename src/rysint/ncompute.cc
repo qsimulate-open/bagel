@@ -23,15 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#define PITWOHALF 17.493418327624862
-
 #include <iostream>
 #include <iomanip>
 #include <cmath>
 #include <algorithm>
 #include <src/rysint/naibatch.h>
 #include <src/util/f77.h>
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 #include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/hrrlist.h>
@@ -42,6 +40,7 @@ using namespace bagel;
 typedef std::shared_ptr<Atom> RefAtom;
 
 static const HRRList hrr;
+static const double PITWOHALF = 17.493418327624862;
 
 void NAIBatch::compute() {
   const double zero = 0.0;

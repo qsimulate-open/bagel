@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <src/util/f77.h>
 #include <src/osint/momentbatch.h>
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 #include <src/rysint/carsphlist.h>
 
 using namespace std;

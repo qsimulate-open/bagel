@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/slaterbatch.h>
-#include <src/macros.h>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
@@ -134,7 +134,7 @@ void Fock::slater_two_electron_part() {
                                            max(density_change_12, density_change_23)),
                                            max(density_change_03, density_change_13));
           const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
-          const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+          const bool skip_schwarz = integral_bound < schwarz_thresh__;
 #if 0
           if (skip_schwarz) continue;
 #endif

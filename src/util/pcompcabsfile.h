@@ -282,7 +282,7 @@ void PCompCABSFile<T>::calculate_num_int_each() {
 
                 const double integral_bound = schwarz_ia_[((m1 + k) * size_i_ + i0) * size_a_ + i1]
                                             * schwarz_jb_[((m3 - m2 + k) * size_j_ + i2) * size_b_ + i3];
-                const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                const bool skip_schwarz = integral_bound < schwarz_thresh__;
                 if (skip_schwarz) continue;
                 data_written += b0size * b1size * b2size * b3size;
                 thisblock += b0size * b1size * b2size * b3size;
@@ -379,7 +379,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
           const int b3size = basis_b_[i3]->nbasis();
           const double integral_bound = schwarz_ia_[((m1 + k) * size_i_ + i0) * size_a_ + i1]
                                       * schwarz_jb_[((m3 - m2 + k) * size_j_ + i2) * size_b_ + i3];
-          const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+          const bool skip_schwarz = integral_bound < schwarz_thresh__;
           blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
         }
       }
@@ -546,7 +546,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
                 double integral_bound = schwarz_ia_[((q1 + k) * size_i_ + i0) * size_a_ + i1]
                                       * schwarz_jb_[((q3 + k) * size_j_ + i2) * size_b_ + i3];
-                const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                const bool skip_schwarz = integral_bound < schwarz_thresh__;
                 blocks[iall + 1] = blocks[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
               }
             }

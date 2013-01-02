@@ -29,7 +29,6 @@
 
 #include <memory>
 #include <tuple>
-#include <src/rysint/macros.h>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
 #include <src/scf/geometry.h>

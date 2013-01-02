@@ -33,7 +33,6 @@
 #include <src/rysint/srootlist.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
-#include <src/rysint/macros.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/sinline.h>
 

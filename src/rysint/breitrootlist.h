@@ -27,7 +27,7 @@
 #ifndef __SRC_RYSINT_BREITROOTLIST_H
 #define __SRC_RYSINT_BREITROOTLIST_H
 
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 #include <src/rysint/f77.h>
 
 namespace bagel {

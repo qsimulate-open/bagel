@@ -26,12 +26,12 @@
 
 // Base class for the Rys-type integral evaluator
 
-#ifndef __src_rysint_rysint_h
-#define __src_rysint_rysint_h
+#ifndef __SRC_RYSINT_RYSINT_H
+#define __SRC_RYSINT_RYSINT_H
 
 #include <stddef.h>
 #include <src/scf/shell.h>
-#include <src/rysint/macros.h>
+#include <src/rysint/intparam.h>
 #include <src/parallel/resources.h>
 #include <tuple>
 #include <array>

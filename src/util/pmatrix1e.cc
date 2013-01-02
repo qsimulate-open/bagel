@@ -34,7 +34,6 @@
 #include <src/util/constants.h>
 #include <src/util/pmatrix1e.h>
 #include <src/util/f77.h>
-#include <src/macros.h>
 
 using namespace std;
 using namespace bagel;

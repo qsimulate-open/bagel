@@ -29,7 +29,6 @@
 #include <stdexcept>
 #include <tuple>
 #include <src/pmp2/pmp2.h>
-#include <src/macros.h>
 #include <src/util/paircompfile.h>
 #include <src/util/pcompcabsfile.h>
 #include <src/util/pmofile.h>

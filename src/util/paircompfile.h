@@ -177,7 +177,7 @@ void PairCompFile<T>::calculate_num_int_each() {
                 {
                   const double integral_bound = first->schwarz((m1 + K) * size * size + i0 * size + i1)
                                               * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                  const bool skip_schwarz = integral_bound < schwarz_thresh__;
                   if (!skip_schwarz) {
                     data_written1 += b0size * b1size * b2size * b3size;
                     thisblock1 += b0size * b1size * b2size * b3size;
@@ -186,7 +186,7 @@ void PairCompFile<T>::calculate_num_int_each() {
                 {
                   const double integral_bound = second->schwarz((m1 + K) * size * size + i0 * size + i1)
                                               * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-                  const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+                  const bool skip_schwarz = integral_bound < schwarz_thresh__;
                   if (!skip_schwarz) {
                     data_written2 += b0size * b1size * b2size * b3size;
                     thisblock2 += b0size * b1size * b2size * b3size;
@@ -260,13 +260,13 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
           {
             const double integral_bound = first->schwarz((m1 + K) * size * size + i0 * size + i1)
                                         * first->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-            const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+            const bool skip_schwarz = integral_bound < schwarz_thresh__;
             blocks1[iall + 1] = blocks1[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
           }
           {
             const double integral_bound = second->schwarz((m1 + K) * size * size + i0 * size + i1)
                                         * second->schwarz((m3 - m2 + K) * size * size + i2 * size + i3);
-            const bool skip_schwarz = integral_bound < SCHWARZ_THRESH;
+            const bool skip_schwarz = integral_bound < schwarz_thresh__;
             blocks2[iall + 1] = blocks2[iall] + (skip_schwarz ? 0 : (b0size * b1size * b2size * b3size));
           }
         }
