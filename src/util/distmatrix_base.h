@@ -85,22 +85,29 @@ class DistMatrix_base {
       const int mypcol = mpi__->mypcol()*blocksize__;
       for (int i = 0; i != mblock; ++i)
         for (int j = 0; j != nblock; ++j)
-          for (int id = 0; id != blocksize__; ++id) 
-            for (int k = 0; k != blocksize__; ++k)
-              local_[j*blocksize__+k+localrow*(i*blocksize__+id)] *= vec[mypcol+i*mstride+id];
+          for (int id = 0; id != blocksize__; ++id) {
+            const double x = vec[mypcol+i*mstride+id];
+            DataType* c = local_.get()+j*blocksize__+localrow*(i*blocksize__+id);
+            std::for_each(c, c+blocksize__, [x](DataType& a) { a*= x; });
+          }
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
-        for (int j = 0; j != nblock; ++j)
-          for (int k = 0; k != blocksize__; ++k)
-            local_[j*blocksize__+k+localrow*(mblock*blocksize__+id)] *= vec[mypcol+mblock*mstride+id];
+        for (int j = 0; j != nblock; ++j) {
+          const double x = vec[mypcol+mblock*mstride+id]; 
+          DataType* c = local_.get()+j*blocksize__+localrow*(mblock*blocksize__+id);
+          std::for_each(c, c+blocksize__, [x](DataType& a) { a*= x; });
+        }
 
-        for (int jd = 0; jd != localrow % blocksize__; ++jd)
-          local_[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] *= vec[mypcol+mblock*mstride+id];
+        const double x = vec[mypcol+mblock*mstride+id];
+        DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
+        std::for_each(c, c+(localrow%blocksize__), [x](DataType& a) { a*= x; });
       }
       for (int i = 0; i != mblock; ++i)
-        for (int id = 0; id != blocksize__; ++id) 
-          for (int jd = 0; jd != localrow % blocksize__; ++jd)
-            local_[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] *= vec[mypcol+i*mstride+id];
+        for (int id = 0; id != blocksize__; ++id) {
+          const double x = vec[mypcol+i*mstride+id];
+          DataType* c = local_.get()+nblock*blocksize__+localrow*(i*blocksize__+id);
+          std::for_each(c, c+(localrow%blocksize__), [x](DataType& a) { a*= x; });
+        }
     }
 };
 #endif
