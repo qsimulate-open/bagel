@@ -33,6 +33,8 @@
 #include <stdexcept>
 #include <boost/regex.hpp>
 
+namespace bagel {
+
 static void print_header() {
   std::cout << std::endl;
   std::cout << "  ===============================================================" << std::endl;
@@ -73,6 +75,8 @@ static int count_string(const std::string inputfile, const std::string keyword) 
   } catch (...) {
     throw;
   }
+}
+
 }
 
 #endif
