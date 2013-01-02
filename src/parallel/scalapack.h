@@ -50,7 +50,10 @@ extern "C" {
   void pzgemm_(const char*, const char*, const int*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, const int*, const int*,
                const std::complex<double>*, const int*, const int*, const int*, const std::complex<double>*, std::complex<double>*, const int*, const int*, const int*); 
   void pdsyev_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, const int*); 
-  void pdsyevd_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, int*, const int*, const int*); 
+  void pzheev_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
+               std::complex<double>*, const int*, double*, const int*, int*); 
+  void pdsyevd_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*,
+                double*, const int*, int*, const int*, const int*); 
   void pzheevd_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
                 std::complex<double>*, const int*, double*, const int*, int*, const int*, int*); 
 }
@@ -92,6 +95,12 @@ static void pzgemm_(const char* transa, const char* transb, const int l, const i
 static void pdsyev_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork, int& info) {
   const int one = 1;
   pdsyev_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, &info);
+}
+
+static void pzheev_(const char* a, const char* b, const int dim, std::complex<double>* mat, const int* descm, double* eig, std::complex<double>* coeff, const int* descc,
+                    std::complex<double>* work, const int lwork, double* rwork, const int lrwork, int& info) {
+  const int one = 1;
+  pzheev_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, rwork, &lrwork, &info);
 }
 
 static void pdsyevd_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork,
