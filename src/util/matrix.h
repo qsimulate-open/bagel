@@ -134,7 +134,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void print(const std::string in = "", const int size = 10) const;
 
     // return a shared pointer to this ifndef HAVE_SCALAPACK
-    std::shared_ptr<const DistMatrix> distmatrix() const;
+    std::shared_ptr<DistMatrix> distmatrix() const;
 
 #ifdef HAVE_SCALAPACK
     Matrix(const DistMatrix&);
@@ -166,6 +166,8 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix& operator=(const DistMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
 
     std::shared_ptr<DistMatrix> clone() const { return std::shared_ptr<DistMatrix>(new DistMatrix(ndim_, mdim_)); }
+
+    using DistMatrix_base<double>::scale;
 
     void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
     void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }

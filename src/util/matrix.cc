@@ -497,18 +497,25 @@ void Matrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
 
+#ifndef HAVE_SCALAPACK
+  diagonalize(vec.get());
   for (int i = 0; i != n; ++i) {
     double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
     dscal_(n, s, data_.get()+i*n, 1);
   }
+  *this = *this ^ *this;
+#else
+  unique_ptr<double[]> scal(new double[n]);
+  shared_ptr<DistMatrix> dist = distmatrix();
+  dist->diagonalize(vec.get());
+  for (int i = 0; i != n; ++i)
+    scal[i] = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+  dist->scale(scal.get());
+  *this = *(*dist ^ *dist).matrix();
+#endif
 
 #ifndef NDEBUG
-#if 0
-  for (int i = 0; i != n; ++i)
-    if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
-#endif
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]); 
@@ -517,9 +524,6 @@ void Matrix::inverse_half(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl; 
 #endif
-
-  *this = *this ^ *this;
-
 }
 
 // compute Hermitian square root, S^{1/2}
@@ -578,11 +582,11 @@ void Matrix::add_block(const int nstart, const int mstart, const int nsize, cons
 
 
 
-shared_ptr<const DistMatrix> Matrix::distmatrix() const {
+shared_ptr<DistMatrix> Matrix::distmatrix() const {
 #ifdef HAVE_SCALAPACK
-  shared_ptr<const DistMatrix> out(new DistMatrix(*this));
+  shared_ptr<DistMatrix> out(new DistMatrix(*this));
 #else
-  shared_ptr<const DistMatrix> out = shared_from_this();
+  shared_ptr<DistMatrix> out = shared_from_this();
 #endif
   return out;
 }

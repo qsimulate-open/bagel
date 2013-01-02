@@ -72,6 +72,36 @@ class DistMatrix_base {
 
     void fill(const DataType a) { std::fill_n(local_.get(), size(), a); }
     void zero() { const DataType zero(0.0); fill(zero); }
+
+    void scale(const double* vec) {
+      const int localrow = std::get<0>(localsize_);
+      const int localcol = std::get<1>(localsize_);
+
+      const int nblock = localrow/blocksize__;
+      const int mblock = localcol/blocksize__;
+      const size_t nstride = blocksize__*mpi__->nprow();
+      const size_t mstride = blocksize__*mpi__->npcol();
+      const int myprow = mpi__->myprow()*blocksize__;
+      const int mypcol = mpi__->mypcol()*blocksize__;
+      for (int i = 0; i != mblock; ++i)
+        for (int j = 0; j != nblock; ++j)
+          for (int id = 0; id != blocksize__; ++id) 
+            for (int k = 0; k != blocksize__; ++k)
+              local_[j*blocksize__+k+localrow*(i*blocksize__+id)] *= vec[mypcol+i*mstride+id];
+
+      for (int id = 0; id != localcol % blocksize__; ++id) {
+        for (int j = 0; j != nblock; ++j)
+          for (int k = 0; k != blocksize__; ++k)
+            local_[j*blocksize__+k+localrow*(mblock*blocksize__+id)] *= vec[mypcol+mblock*mstride+id];
+
+        for (int jd = 0; jd != localrow % blocksize__; ++jd)
+          local_[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] *= vec[mypcol+mblock*mstride+id];
+      }
+      for (int i = 0; i != mblock; ++i)
+        for (int id = 0; id != blocksize__; ++id) 
+          for (int jd = 0; jd != localrow % blocksize__; ++jd)
+            local_[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] *= vec[mypcol+i*mstride+id];
+    }
 };
 #endif
 
