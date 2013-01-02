@@ -47,6 +47,8 @@ extern "C" {
 
   void pdgemm_(const char*, const char*, const int*, const int*, const int*, const double*, const double*, const int*, const int*, const int*,
                const double*, const int*, const int*, const int*, const double*, double*, const int*, const int*, const int*); 
+  void pzgemm_(const char*, const char*, const int*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, const int*, const int*,
+               const std::complex<double>*, const int*, const int*, const int*, const std::complex<double>*, std::complex<double>*, const int*, const int*, const int*); 
   void pdsyev_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, const int*); 
   void pdsyevd_(const char*, const char*, const int*, double*, const int*, const int*, const int*, double*, double*, const int*, const int*, const int*, double*, const int*, int*, const int*, const int*); 
   void pzheevd_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
@@ -73,6 +75,18 @@ static void pdgemm_(const char* transa, const char* transb, const int l, const i
 static void pdgemm_(const char* transa, const char* transb, const int l, const int m, const int n, const double alpha, const double* a, const int* desca,
                     const double* b, const int* descb, const double beta, double* c, const int* descc) {
   pdgemm_(transa, transb, l, m, n, alpha, a, 1, 1, desca, b, 1, 1, descb, beta, c, 1, 1, descc);
+} 
+
+static void pzgemm_(const char* transa, const char* transb, const int l, const int m, const int n, const std::complex<double> alpha,
+                    const std::complex<double>* a, const int ia, const int ja, const int* desca,
+                    const std::complex<double>* b, const int ib, const int jb, const int* descb, const std::complex<double> beta,
+                    std::complex<double>* c, const int ic, const int jc, const int* descc) {
+  pzgemm_(transa, transb, &l, &m, &n, &alpha, a, &ia, &ja, desca, b, &ib, &jb, descb, &beta, c, &ic, &jc, descc);
+} 
+
+static void pzgemm_(const char* transa, const char* transb, const int l, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* a, const int* desca,
+                    const std::complex<double>* b, const int* descb, const std::complex<double> beta, std::complex<double>* c, const int* descc) {
+  pzgemm_(transa, transb, l, m, n, alpha, a, 1, 1, desca, b, 1, 1, descb, beta, c, 1, 1, descc);
 } 
 
 static void pdsyev_(const char* a, const char* b, const int dim, double* mat, const int* descm, double* eig, double* coeff, const int* descc, double* work, const int lwork, int& info) {

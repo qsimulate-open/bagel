@@ -125,9 +125,17 @@ ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
   const int m = mdim_;
   assert(mdim_ == o.ndim());
   const int n = o.mdim();
-
   ZMatrix out(l, n);
+
+#ifndef HAVE_SCALAPACK
   zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
+#else
+  unique_ptr<complex<double>[]> locala = getlocal();
+  unique_ptr<complex<double>[]> localb = o.getlocal();
+  unique_ptr<complex<double>[]> localc = out.getlocal();
+  pzgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
+#endif
 
   return out;
 }
@@ -168,9 +176,17 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
   const int m = ndim_;
   assert(ndim_ == o.ndim());
   const int n = o.mdim();
-
   ZMatrix out(l, n);
+
+#ifndef HAVE_SCALAPACK
   zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
+#else
+  unique_ptr<complex<double>[]> locala = getlocal();
+  unique_ptr<complex<double>[]> localb = o.getlocal();
+  unique_ptr<complex<double>[]> localc = out.getlocal();
+  pzgemm_("C", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
+#endif
 
   return out;
 }
@@ -181,9 +197,17 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
   const int m = mdim_;
   assert(mdim_ == o.mdim());
   const int n = o.ndim();
-
   ZMatrix out(l, n);
+
+#ifndef HAVE_SCALAPACK
   zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
+#else
+  unique_ptr<complex<double>[]> locala = getlocal();
+  unique_ptr<complex<double>[]> localb = o.getlocal();
+  unique_ptr<complex<double>[]> localc = out.getlocal();
+  pzgemm_("N", "C", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+  out.setlocal_(localc);
+#endif
 
   return out;
 }
