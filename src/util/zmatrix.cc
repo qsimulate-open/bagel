@@ -371,19 +371,7 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   shared_ptr<ZMatrix> out(new ZMatrix(mdim_, ndim_));
-
-#if 1
-  complex<double> *data = data_.get();
-  complex<double> *odata = out->data();
-  for(int i = 0; i < ndim_; ++i) {
-    for(int j = 0; j < mdim_; ++j) {
-      odata[i*mdim_ + j] = data[i + j*ndim_];
-    }
-  }
-#else
-//  mytranspose_(data_.get(), &ndim_, &mdim_, out->data()); 
-#endif
-
+  mytranspose_complex_(data_.get(), &ndim_, &mdim_, out->data()); 
   return out;
 }
 
