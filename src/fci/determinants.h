@@ -81,17 +81,17 @@ class Determinants {
       std::vector<int> out;
       for (int i = 0; i != norb_; ++i) if (bit[i]) out.push_back(i);
       return out;
-    };
+    }
 
     std::bitset<nbit__> numbers_to_bit(const std::vector<int>& num) const {
       std::bitset<nbit__> out(0);
       for (auto i = num.begin(); i != num.end(); ++i) out.set(*i);
       return out;
-    };
+    }
 
     // some utility functions
-    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
-    const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; };
+    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
+    const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
 
     // configuration list i^dagger j
     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
@@ -107,23 +107,22 @@ class Determinants {
 
   public:
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true);
-    ~Determinants() {};
 
     // static constants
     static const int Alpha = 0;
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); };
+    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }
 
-    size_t lena() const { return stringa_.size(); };
-    size_t lenb() const { return stringb_.size(); };
+    size_t lena() const { return stringa_.size(); }
+    size_t lenb() const { return stringb_.size(); }
 
     std::string print_bit(std::bitset<nbit__> bit) const {
       std::string out;
       for (int i = 0; i != norb_; ++i) { if (bit[i]) { out += "1"; } else { out += "."; } }
       return out;
-    };
+    }
 
     std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2) const {
       std::string out;
@@ -134,7 +133,7 @@ class Determinants {
         else { out += "."; }
       }
       return out;
-    };
+    }
 
     int sign(std::bitset<nbit__> bit, int i, int j) {
       // masking irrelevant bits
@@ -144,7 +143,7 @@ class Determinants {
       std::bitset<nbit__> jj((1 << max) - 1); 
       bit = (bit & ii) & jj;
       return 1 - ((bit.count() & 1) << 1);
-    };
+    }
 
     // maps bit to lexical numbers.
     template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
@@ -153,34 +152,34 @@ class Determinants {
       for (int i = 0; i != norb_; ++i) 
         if (bit[i]) { out += zkl(k,i, spin); ++k; }
       return out;
-    };
+    }
 
     void print(const double* const civec, const double thr) const;
-    std::bitset<nbit__> stringa(int i) { return stringa_[i]; };
-    std::bitset<nbit__> stringb(int i) { return stringb_[i]; };
-    const std::vector<std::bitset<nbit__> >& stringa() const { return stringa_; };
-    const std::vector<std::bitset<nbit__> >& stringb() const { return stringb_; };
+    std::bitset<nbit__> stringa(int i) { return stringa_[i]; }
+    std::bitset<nbit__> stringb(int i) { return stringb_[i]; }
+    const std::vector<std::bitset<nbit__> >& stringa() const { return stringa_; }
+    const std::vector<std::bitset<nbit__> >& stringb() const { return stringb_; }
 
     std::pair<std::vector<std::tuple<int, int, int> >, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
-    int nspin() const { return nelea_ - neleb_; }; 
-    int norb()  const { return norb_; };
-    int nelea() const { return nelea_; };
-    int neleb() const { return neleb_; };
+    int nspin() const { return nelea_ - neleb_; }
+    int norb()  const { return norb_; }
+    int nelea() const { return nelea_; }
+    int neleb() const { return neleb_; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phia(const int i) const { return phia_[i]; };
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phib(const int i) const { return phib_[i]; };
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phia(const int i) const { return phia_[i]; }
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phib(const int i) const { return phib_[i]; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupa(const int i) const { return phiupa_[i]; };
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupb(const int i) const { return phiupb_[i]; };
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupa(const int i) const { return phiupa_[i]; }
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupb(const int i) const { return phiupb_[i]; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidowna(const int i) const { return phidowna_[i]; };
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidownb(const int i) const { return phidownb_[i]; };
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidowna(const int i) const { return phidowna_[i]; }
+    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidownb(const int i) const { return phidownb_[i]; }
 
-    std::shared_ptr<Determinants> addalpha() { return detaddalpha_.lock();};
-    std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();};
-    std::shared_ptr<Determinants> addbeta() { return detaddbeta_.lock();};
-    std::shared_ptr<Determinants> rembeta() { return detrembeta_.lock();};
+    std::shared_ptr<Determinants> addalpha() { return detaddalpha_.lock();}
+    std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();}
+    std::shared_ptr<Determinants> addbeta() { return detaddbeta_.lock();}
+    std::shared_ptr<Determinants> rembeta() { return detrembeta_.lock();}
 };
 
 
@@ -230,7 +229,7 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string,
     std::sort(iter->begin(), iter->end());
   }
 #endif
-};
+}
 
 }
 

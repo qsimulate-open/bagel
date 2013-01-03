@@ -116,44 +116,57 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, sha
   const int lbt = int_det->lenb();
   const int lbs = base_det->lenb();
   const double* source_base = cc->data();
-
-  // TODO to be eliminated
   const int ij = norb*norb;
-  shared_ptr<Dvec> d(new Dvec(int_det, ij));
-  shared_ptr<Dvec> e(new Dvec(int_det, ij));
 
-  for (int k = 0; k < norb; ++k) {
-    for (int l = 0; l < norb; ++l) {
-      double* target_base = d->data(k*norb + l)->data();
-      for (auto& aiter : int_det->phiupa(k)) {
-        double *target = target_base + get<2>(aiter)*lbt;
-        const double *source = source_base + get<0>(aiter)*lbs;
-        for (auto& biter : int_det->phiupb(l)) {
-          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
-          target[get<2>(biter)] += sign * source[get<0>(biter)];
+  // this is going to be a parallel loop
+  for (size_t a = 0; a != base_det->lena(); ++a) {
+
+    unique_ptr<double[]>  buf(new double[lbt*ij]);
+    unique_ptr<double[]>  buf2(new double[lbt*ij]);
+    fill_n(buf.get(), lbt*ij, 0.0);
+
+    // TODO awful code
+    vector<vector<tuple<unsigned int, int, unsigned int> >::const_iterator> aiterlist;
+    for (int k = 0; k < norb; ++k) {
+      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
+        aiter = int_det->phiupa(k).end();
+      for (auto i = int_det->phiupa(k).begin(); i != int_det->phiupa(k).end(); ++i)
+        if (get<2>(*i) == a) aiter = i;
+      aiterlist.push_back(aiter);
+    }
+
+    for (int k = 0, kl = 0; k < norb; ++k) {
+      // look for the element whose third element is a 
+      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
+        aiter = aiterlist[k];
+      if (aiter != int_det->phiupa(k).end()) {
+        const double *source = cc->data() + get<0>(*aiter)*lbs;
+        for (int l = 0; l < norb; ++l, ++kl) {
+          for (auto& biter : int_det->phiupb(l)) {
+            const double sign = static_cast<double>(get<1>(*aiter)*get<1>(biter));
+            buf[get<2>(biter)+lbt*kl] += sign * source[get<0>(biter)];
+          }
         }
+      } else {
+        kl += norb;
       }
     }
-  }
+    dgemm_("n", "n", lbt, ij, ij, 1.0, buf.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf2.get(), lbt);
 
-  const int la = d->lena();
-  const int lb = d->lenb();
-  const int lenab = la*lb;
-  dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
-
-  double* target_base = sigma->data();
-
-  for (int i = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      const double* source_base = e->data(i*norb + j)->data();
-      for (auto& aiter : int_det->phiupa(i)) {
-        double *target = target_base + get<0>(aiter)*lbs;
-        const double *source = source_base + get<2>(aiter)*lbt;
-        for (auto& biter : int_det->phiupb(j)) {
-          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
-          target[get<0>(biter)] += sign * source[get<2>(biter)];
-        }
-      } 
+    for (int i = 0, kl = 0; i < norb; ++i) {
+      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
+        aiter = aiterlist[i];
+      if (aiter != int_det->phiupa(i).end()) {
+        double *target = sigma->data() + get<0>(*aiter)*lbs;
+        for (int j = 0; j < norb; ++j, ++kl) {
+          for (auto& biter : int_det->phiupb(j)) {
+            const double sign = static_cast<double>(get<1>(*aiter)*get<1>(biter));
+            target[get<0>(biter)] += sign * buf2[get<2>(biter)+lbt*kl];
+          }
+        } 
+      } else {
+        kl += norb;
+      }
     }
   }
 }
