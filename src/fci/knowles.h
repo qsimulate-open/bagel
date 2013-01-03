@@ -67,8 +67,7 @@ class KnowlesHandy : public FCI {
     KnowlesHandy(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI( a, b, ncore, nocc, nstate){
       update(ref_->coeff());
-    };
-    ~KnowlesHandy(){};
+    }
 
     void update(std::shared_ptr<const Coeff>) override;
 };

@@ -42,7 +42,7 @@
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
-#include <src/fci/harrison.h>
+#include <src/fci/distfci.h>
 #include <src/fci/knowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
@@ -261,12 +261,14 @@ int main(int argc, char** argv) {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
           const int norb = ref->geom()->nbasis();
-          if ( (nele) <= norb ) fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+          if ( nele <= norb ) fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
           else fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
           fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
           fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+        } else if (algorithm == "parallel" || algorithm == "dist") {
+          fci = std::shared_ptr<FCI>(new DistFCI(iter->second, ref));
         } else {
           throw std::runtime_error("unknown FCI algorithm specified.");
         }

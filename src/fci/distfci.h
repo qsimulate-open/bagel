@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci.h
-// Copyright (C) 2011 Toru Shiozaki
+// Filename: distfci.h
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,42 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Desc :: The implementation closely follows Harrison and Zarrabian
-//
+#ifndef __NEWINT_FCI_DISTFCI_H
+#define __NEWINT_FCI_DISTFCI_H
 
-#ifndef __NEWINT_FCI_HARRISONZARRABIAN_H
-#define __NEWINT_FCI_HARRISONZARRABIAN_H
-
-#include <tuple>
-#include <src/scf/scf.h>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <bitset>
-#include <src/util/input.h>
-#include <src/util/constants.h>
-#include <src/fci/dvec.h>
-#include <src/fci/mofile.h>
-#include <src/fci/fci.h>
-#include <src/fci/space.h>
-#include <src/fci/determinants.h>
-#include <src/wfn/rdm.h>
-#include <src/wfn/reference.h>
+#include <src/fci/harrison.h>
 
 namespace bagel {
 
-class HarrisonZarrabian : public FCI {
+// Parallel FCI based on Harrison-Zarrabian algorithm.
+// The algorithm is basically the same as written in    
+// Z. Gan and R. J. Harrison, SC '05: Proceedings of the 2005 ACM/IEEE conference on Supercomputing
+
+class DistFCI : public HarrisonZarrabian {
 
   protected:
-    //void create_Jiiii();
-
-    std::shared_ptr<Space> space_;
-
+    // const denom (so far implemented in HarrisonZarrabian)
+#if 0
     void const_denom() override;
-  
-    virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
+#endif
 
-    // run-time functions
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
+
+#if 0
+    // run-time functions implemented in HarrisonZarrabian
     void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_2aa  (std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
@@ -66,16 +53,18 @@ class HarrisonZarrabian : public FCI {
     void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
     void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
+#endif
+    // this function substitute sigma_2ab_1/2/3 in parallel execution. Dvec cannot be used here.
+    void sigma_2ab(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
-    HarrisonZarrabian(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, b, ncore, nocc, nstate) {
-      space_ = std::shared_ptr<Space>(new Space(det_, 1));
-      update(ref_->coeff());
-    }
-
-    void update(std::shared_ptr<const Coeff>) override; 
+    DistFCI(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
+            const int ncore = -1, const int nocc = -1, const int nstate = -1);
+    
+#if 0
+    void update(std::shared_ptr<const Coeff>) override;
+#endif
 };
 
 }
