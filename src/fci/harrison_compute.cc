@@ -114,8 +114,8 @@ void HarrisonZarrabian::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> si
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
-      const double hc = h * get<1>(iter);
-      daxpy_(lb, hc, cc->element_ptr(0, get<2>(iter)), 1, sigma->element_ptr(0, get<0>(iter)), 1); 
+      const double hc = h * iter.sign;
+      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1); 
     }
   }
 }
@@ -130,8 +130,8 @@ void HarrisonZarrabian::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> si
     for (int ip = 0; ip != ij; ++ip) {
       const double h = jop->mo1e(ip);
       for (auto& iter : cc->det()->phib(ip)) {
-        const double hc = h * get<1>(iter);
-        target_array0[get<0>(iter)] += hc * source_array0[get<2>(iter)];
+        const double hc = h * iter.sign;
+        target_array0[iter.target] += hc * source_array0[iter.source];
       }
     }
   }
@@ -223,11 +223,11 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
     for (int l = 0; l < norb; ++l) {
       double* target_base = d->data(k*norb + l)->data();
       for (auto& aiter : int_det->phiupa(k)) {
-        double *target = target_base + get<2>(aiter)*lbt;
-        const double *source = source_base + get<0>(aiter)*lbs;
+        double *target = target_base + aiter.source*lbt;
+        const double *source = source_base + aiter.target*lbs;
         for (auto& biter : int_det->phiupb(l)) {
-          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
-          target[get<2>(biter)] += sign * source[get<0>(biter)];
+          const double sign = aiter.sign * biter.sign;
+          target[biter.source] += sign * source[biter.target];
         }
       }
     }
@@ -255,11 +255,11 @@ void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e)
     for (int j = 0; j < norb; ++j) {
       const double* source_base = e->data(i*norb + j)->data();
       for (auto& aiter : int_det->phiupa(i)) {
-        double *target = target_base + get<0>(aiter)*lbt;
-        const double *source = source_base + get<2>(aiter)*lbs;
+        double *target = target_base + aiter.target*lbt;
+        const double *source = source_base + aiter.source*lbs;
         for (auto& biter : int_det->phiupb(j)) {
-          const double sign = static_cast<double>(get<1>(aiter)*get<1>(biter));
-          target[get<0>(biter)] += sign * source[get<2>(biter)];
+          const double sign = aiter.sign * biter.sign;
+          target[biter.target] += sign * source[biter.source];
         }
       } 
     }

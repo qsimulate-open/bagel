@@ -111,8 +111,8 @@ void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Dete
     assert((ndet->neleb()+1 == nplusdet->neleb()) && (ndet->nelea() == nplusdet->nelea()));
   }
 
-  std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phiup;
-  std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phidown;
+  std::vector<std::vector<DetMap> > phiup;
+  std::vector<std::vector<DetMap> > phidown;
 
   /* If space is an issue for these functions, I might be able to reduce the amount used... */
   phiup.resize(norb_);
@@ -136,7 +136,7 @@ void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Dete
         const unsigned int source = ndet->lexical<spin>(*iter); 
         std::bitset<nbit__> nbit = *iter; nbit.set(i); // created.
         const unsigned int target = nplusdet->lexical<spin>(nbit);
-        phiup[i].push_back(std::make_tuple(target, sign(nbit, i), source));
+        phiup[i].push_back(DetMap(target, sign(nbit, i), source));
       }
     }
   }
@@ -147,7 +147,7 @@ void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Dete
         const unsigned int source = nplusdet->lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); //annihilated.
         const unsigned int target = ndet->lexical<spin>(nbit);
-        phidown[i].push_back(std::make_tuple(target, sign(nbit, i), source));
+        phidown[i].push_back(DetMap(target, sign(nbit, i), source));
       }
     }
   }

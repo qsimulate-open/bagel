@@ -56,8 +56,8 @@ shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdat
     for (int ip = 0; ip != ij; ++ip) {
       const double h = hdata[ip];
       for (auto& iter : det->phia(ip)) {
-        const double hc = h * get<1>(iter);
-        daxpy_(lb, hc, cc->element_ptr(0, get<2>(iter)), 1, sigma->element_ptr(0, get<0>(iter)), 1); 
+        const double hc = h * iter.sign;
+        daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1); 
       }
     }
 
@@ -67,8 +67,8 @@ shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdat
       for (int ip = 0; ip != ij; ++ip) {
         const double h = hdata[ip];
         for (auto& iter : det->phib(ip)) {
-          const double hc = h * get<1>(iter);
-          target_array0[get<0>(iter)] += hc * source_array0[get<2>(iter)];
+          const double hc = h * iter.sign;
+          target_array0[iter.target] += hc * source_array0[iter.source];
         }
       }
     }
@@ -199,11 +199,11 @@ void Dimer::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d, const in
     for (int l = 0; l < nact; ++l) {
       double* target_base = d->data(k*nact + l)->data();
       for (auto aiter = int_det->phiupa(k).begin(); aiter != int_det->phiupa(k).end(); ++aiter) {
-        double *target = target_base + get<2>(*aiter)*lbt;
-        const double *source = source_base + get<0>(*aiter)*lbs;
+        double *target = target_base + aiter->source*lbt;
+        const double *source = source_base + aiter->target*lbs;
         for (auto biter = int_det->phiupb(l).begin(); biter != int_det->phiupb(l).end(); ++biter) {
-          const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target[get<2>(*biter)] += sign * source[get<0>(*biter)];
+          const double sign = aiter->sign * biter->sign;
+          target[biter->source] += sign * source[biter->target];
         }
       }
     }
@@ -230,11 +230,11 @@ void Dimer::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e, const int n
     for (int j = 0; j < nact; ++j) {
       const double* source_base = e->data(i*nact + j)->data();
       for (auto aiter = int_det->phiupa(i).begin(); aiter != int_det->phiupa(i).end(); ++aiter) {
-        double *target = target_base + get<0>(*aiter)*lbt;
-        const double *source = source_base + get<2>(*aiter)*lbs;
+        double *target = target_base + aiter->target*lbt;
+        const double *source = source_base + aiter->source*lbs;
         for (auto biter = int_det->phiupb(j).begin(); biter != int_det->phiupb(j).end(); ++biter) {
-          const double sign = static_cast<double>(get<1>(*aiter)*get<1>(*biter));
-          target[get<0>(*biter)] += sign * source[get<2>(*biter)];
+          const double sign = static_cast<double>(aiter->sign * biter->sign);
+          target[biter->target] += sign * source[biter->source];
         }
       } 
     }

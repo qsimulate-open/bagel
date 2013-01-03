@@ -305,9 +305,9 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, co
 
       // alpha-alpha
       for(auto& iter : det->phia(ac) ) {
-        const double sign = static_cast<double>(get<1>(iter));
-        double* target = target_base + get<0>(iter)*lb;
-        const double* source = source_base + get<2>(iter)*lb;
+        const double sign = static_cast<double>(iter.sign);
+        double* target = target_base + iter.target*lb;
+        const double* source = source_base + iter.source*lb;
         daxpy_(lb, sign, source, 1, target, 1);
       }
     }
@@ -349,9 +349,9 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, con
 
       // beta-beta
       for(auto& iter : det->phib(ac)) {
-        const double sign = static_cast<double>(get<1>(iter));
-        double* target_array = target_base + get<0>(iter);
-        const double* source = source_base + get<2>(iter);
+        const double sign = static_cast<double>(iter.sign);
+        double* target_array = target_base + iter.target;
+        const double* source = source_base + iter.source;
         daxpy_(la, sign, source, lb, target_array, lb);
       }
     }

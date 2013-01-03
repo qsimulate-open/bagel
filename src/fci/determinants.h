@@ -42,6 +42,13 @@
 
 namespace bagel {
 
+struct DetMap {
+  unsigned int target;
+  unsigned int source;
+  int sign;
+  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {}; 
+};
+
 // implements a determinant space
 class Determinants {
   friend class Space; // TODO Is this correct?
@@ -74,7 +81,7 @@ class Determinants {
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<std::bitset<nbit__> >& string,
-                     std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& target);
+                     std::vector<std::vector<DetMap> >& target);
 
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
@@ -94,16 +101,16 @@ class Determinants {
     const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
 
     // configuration list i^dagger j
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phia_;
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phib_;
+    std::vector<std::vector<DetMap> > phia_;
+    std::vector<std::vector<DetMap> > phib_;
 
     // configuration list i^dagger
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phiupa_;
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phiupb_;
+    std::vector<std::vector<DetMap> > phiupa_;
+    std::vector<std::vector<DetMap> > phiupb_;
 
     // configuration list i
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phidowna_;
-    std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > > phidownb_;
+    std::vector<std::vector<DetMap> > phidowna_;
+    std::vector<std::vector<DetMap> > phidownb_;
 
   public:
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true);
@@ -167,14 +174,14 @@ class Determinants {
     int nelea() const { return nelea_; }
     int neleb() const { return neleb_; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phia(const int i) const { return phia_[i]; }
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phib(const int i) const { return phib_[i]; }
+    const std::vector<DetMap>& phia(const int i) const { return phia_[i]; }
+    const std::vector<DetMap>& phib(const int i) const { return phib_[i]; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupa(const int i) const { return phiupa_[i]; }
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phiupb(const int i) const { return phiupb_[i]; }
+    const std::vector<DetMap>& phiupa(const int i) const { return phiupa_[i]; }
+    const std::vector<DetMap>& phiupb(const int i) const { return phiupb_[i]; }
 
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidowna(const int i) const { return phidowna_[i]; }
-    const std::vector<std::tuple<unsigned int, int, unsigned int> >& phidownb(const int i) const { return phidownb_[i]; }
+    const std::vector<DetMap>& phidowna(const int i) const { return phidowna_[i]; }
+    const std::vector<DetMap>& phidownb(const int i) const { return phidownb_[i]; }
 
     std::shared_ptr<Determinants> addalpha() { return detaddalpha_.lock();}
     std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();}
@@ -185,8 +192,7 @@ class Determinants {
 
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
-void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string,
-      std::vector<std::vector<std::tuple<unsigned int, int, unsigned int> > >& phi) {
+void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string, std::vector<std::vector<DetMap> >& phi) {
 
   phi.clear();
   phi.resize(compress_ ? norb_*(norb_+1)/2 : norb_*norb_);
@@ -206,7 +212,7 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string,
             mbit.set(j);
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
-            phi[minij+((maxij*(maxij+1))>>1)].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
+            phi[minij+((maxij*(maxij+1))>>1)].push_back(DetMap(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       } else if ((*iter)[i]) {
@@ -216,7 +222,7 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string,
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
-            phi[i+j*norb_].push_back(std::make_tuple(lexical<spin>(mbit), sign(mbit, i, j), source));
+            phi[i+j*norb_].push_back(DetMap(lexical<spin>(mbit), sign(mbit, i, j), source));
           }
         }
       }

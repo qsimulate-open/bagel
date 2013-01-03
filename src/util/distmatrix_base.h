@@ -86,27 +86,23 @@ class DistMatrix_base {
       for (int i = 0; i != mblock; ++i)
         for (int j = 0; j != nblock; ++j)
           for (int id = 0; id != blocksize__; ++id) {
-            const double x = vec[mypcol+i*mstride+id];
             DataType* c = local_.get()+j*blocksize__+localrow*(i*blocksize__+id);
-            std::for_each(c, c+blocksize__, [x](DataType& a) { a*= x; });
+            std::for_each(c, c+blocksize__, [&x = vec[mypcol+i*mstride+id]](DataType& a) { a*= x; });
           }
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
         for (int j = 0; j != nblock; ++j) {
-          const double x = vec[mypcol+mblock*mstride+id]; 
           DataType* c = local_.get()+j*blocksize__+localrow*(mblock*blocksize__+id);
-          std::for_each(c, c+blocksize__, [x](DataType& a) { a*= x; });
+          std::for_each(c, c+blocksize__, [&x = vec[mypcol+mblock*mstride+id]](DataType& a) { a*= x; });
         }
 
-        const double x = vec[mypcol+mblock*mstride+id];
         DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
-        std::for_each(c, c+(localrow%blocksize__), [x](DataType& a) { a*= x; });
+        std::for_each(c, c+(localrow%blocksize__), [&x = vec[mypcol+mblock*mstride+id]](DataType& a) { a*= x; });
       }
       for (int i = 0; i != mblock; ++i)
         for (int id = 0; id != blocksize__; ++id) {
-          const double x = vec[mypcol+i*mstride+id];
           DataType* c = local_.get()+nblock*blocksize__+localrow*(i*blocksize__+id);
-          std::for_each(c, c+(localrow%blocksize__), [x](DataType& a) { a*= x; });
+          std::for_each(c, c+(localrow%blocksize__), [&x = vec[mypcol+i*mstride+id]](DataType& a) { a*= x; });
         }
     }
 };

@@ -126,25 +126,20 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, sha
     fill_n(buf.get(), lbt*ij, 0.0);
 
     // TODO awful code
-    vector<vector<tuple<unsigned int, int, unsigned int> >::const_iterator> aiterlist;
-    for (int k = 0; k < norb; ++k) {
-      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
-        aiter = int_det->phiupa(k).end();
-      for (auto i = int_det->phiupa(k).begin(); i != int_det->phiupa(k).end(); ++i)
-        if (get<2>(*i) == a) aiter = i;
-      aiterlist.push_back(aiter);
-    }
+    vector<vector<DetMap>::const_iterator> aiterlist;
+    for (int k = 0; k < norb; ++k)
+      aiterlist.push_back(find_if(int_det->phiupa(k).begin(), int_det->phiupa(k).end(), [&a](const DetMap& i){ return i.source == a; }));
 
     for (int k = 0, kl = 0; k < norb; ++k) {
       // look for the element whose third element is a 
-      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
-        aiter = aiterlist[k];
+      vector<DetMap>::const_iterator aiter = aiterlist[k];
+
       if (aiter != int_det->phiupa(k).end()) {
-        const double *source = cc->data() + get<0>(*aiter)*lbs;
+        const double *source = cc->data() + aiter->target*lbs;
         for (int l = 0; l < norb; ++l, ++kl) {
-          for (auto& biter : int_det->phiupb(l)) {
-            const double sign = static_cast<double>(get<1>(*aiter)*get<1>(biter));
-            buf[get<2>(biter)+lbt*kl] += sign * source[get<0>(biter)];
+          for (auto& b : int_det->phiupb(l)) {
+            const double sign = aiter->sign * b.sign;
+            buf[b.source+lbt*kl] += sign * source[b.target];
           }
         }
       } else {
@@ -154,14 +149,14 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, sha
     dgemm_("n", "n", lbt, ij, ij, 1.0, buf.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf2.get(), lbt);
 
     for (int i = 0, kl = 0; i < norb; ++i) {
-      vector<tuple<unsigned int, int, unsigned int> >::const_iterator
-        aiter = aiterlist[i];
+      vector<DetMap>::const_iterator aiter = aiterlist[i];
+
       if (aiter != int_det->phiupa(i).end()) {
-        double *target = sigma->data() + get<0>(*aiter)*lbs;
+        double *target = sigma->data() + aiter->target*lbs;
         for (int j = 0; j < norb; ++j, ++kl) {
-          for (auto& biter : int_det->phiupb(j)) {
-            const double sign = static_cast<double>(get<1>(*aiter)*get<1>(biter));
-            target[get<0>(biter)] += sign * buf2[get<2>(biter)+lbt*kl];
+          for (auto& b : int_det->phiupb(j)) {
+            const double sign = aiter->sign * b.sign;
+            target[b.target] += sign * buf2[b.source+lbt*kl];
           }
         } 
       } else {

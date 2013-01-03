@@ -112,9 +112,9 @@ void FCI::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   for (int ip = 0; ip != ij; ++ip) {
     double* const target_base = d->data(ip)->data();
     for (auto& iter : cc->det()->phia(ip)) {
-      const double sign = static_cast<double>(get<1>(iter));
-      double* const target_array = target_base + get<2>(iter)*lb;
-      daxpy_(lb, sign, source_base + get<0>(iter)*lb, 1, target_array, 1);
+      const double sign = static_cast<double>(iter.sign);
+      double* const target_array = target_base + iter.source*lb;
+      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
     }
   }
 }
@@ -128,8 +128,8 @@ void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     for (int ip = 0; ip != ij; ++ip) {
       double* const target_array0 = d->data(ip)->element_ptr(0, i);
       for (auto& iter : cc->det()->phib(ip)) {
-        const double sign = static_cast<double>(get<1>(iter));
-        target_array0[get<2>(iter)] += sign * source_array0[get<0>(iter)]; 
+        const double sign = static_cast<double>(iter.sign);
+        target_array0[iter.source] += sign * source_array0[iter.target]; 
       }
     }
   }
@@ -142,8 +142,8 @@ void KnowlesHandy::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, 
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
-      const double hc = h * get<1>(iter);
-      daxpy_(lb, hc, cc->element_ptr(0, get<2>(iter)), 1, sigma->element_ptr(0, get<0>(iter)), 1); 
+      const double hc = h * iter.sign;
+      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1); 
     }
   }
 }
@@ -154,9 +154,9 @@ void KnowlesHandy::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) 
   for (int ip = 0; ip != ij; ++ip) { 
     const double* const source_base = e->data(ip)->data();
     for (auto& iter : e->det()->phia(ip)) {
-      const double sign = static_cast<double>(get<1>(iter)); 
-      double* const target_array = sigma->element_ptr(0, get<0>(iter));
-      daxpy_(lb, sign, source_base + lb*get<2>(iter), 1, target_array, 1);
+      const double sign = static_cast<double>(iter.sign); 
+      double* const target_array = sigma->element_ptr(0, iter.target);
+      daxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
     }
   }
 }
@@ -169,8 +169,8 @@ void KnowlesHandy::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) 
     for (int ip = 0; ip != ij; ++ip) {
       const double* const source_array0 = e->data(ip)->element_ptr(0, i);
       for (auto& iter : e->det()->phib(ip)) {
-        const double sign = static_cast<double>(get<1>(iter));
-        target_array0[get<0>(iter)] += sign * source_array0[get<2>(iter)]; 
+        const double sign = static_cast<double>(iter.sign);
+        target_array0[iter.target] += sign * source_array0[iter.source]; 
       }
     }
   }
@@ -187,8 +187,8 @@ void KnowlesHandy::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, 
     for (int ip = 0; ip != ij; ++ip) {
       const double h = jop->mo1e(ip);
       for (auto& iter : cc->det()->phib(ip)) {
-        const double hc = h * get<1>(iter);
-        target_array0[get<0>(iter)] += hc * source_array0[get<2>(iter)];
+        const double hc = h * iter.sign;
+        target_array0[iter.target] += hc * source_array0[iter.source];
       }
     }
   }
