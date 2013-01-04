@@ -25,6 +25,7 @@
 
 
 #include <src/fci/civec.h>
+#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
@@ -46,6 +47,15 @@ Civec::Civec(const Civec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
   cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
   cc_ptr_ = cc_.get();
   copy_n(o.cc(), lena_*lenb_, cc());
+}
+
+
+// TODO Not efficient.
+Civec::Civec(const DistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
+  cc_ = unique_ptr<double[]>(new double[size()]);
+  cc_ptr_ = cc_.get();
+  copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
+  mpi__->allreduce(cc_ptr_, size());
 }
 
 
@@ -115,4 +125,11 @@ Civec Civec::operator/(const Civec& o) const {
   Civec out(*this);
   out /= o;
   return out;
+}
+
+
+shared_ptr<DistCivec> Civec::distcivec() const {
+  shared_ptr<DistCivec> dist(new DistCivec(det_));
+  copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
+  return dist;
 }

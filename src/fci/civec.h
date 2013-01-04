@@ -38,6 +38,8 @@
 
 namespace bagel {
 
+class DistCivec;
+
 class Civec {
   protected:
     // The determinant space in which this Civec object is defined
@@ -53,10 +55,10 @@ class Civec {
 
     double* cc_ptr_;
 
-    double& cc(int i) { return *(cc_ptr_+i); };
-    const double& cc(int i) const { return *(cc_ptr_+i); };
-    double* cc() { return cc_ptr_; };
-    const double* cc() const { return cc_ptr_; };
+    double& cc(int i) { return *(cc_ptr_+i); }
+    const double& cc(int i) const { return *(cc_ptr_+i); }
+    double* cc() { return cc_ptr_; }
+    const double* cc() const { return cc_ptr_; }
 
   public:
     Civec(std::shared_ptr<const Determinants> det);
@@ -66,33 +68,33 @@ class Civec {
 
     // copy constructor
     Civec(const Civec& o);
+    // from a distribtued Civec
+    Civec(const DistCivec& o);
 
     // this is not a copy constructor.
     Civec(std::shared_ptr<Civec> o, std::shared_ptr<const Determinants> det);
 
-    ~Civec() { };
+    double* data() { return cc(); }
+    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }
+    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }
 
-    double* data() { return cc(); };
-    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }; // I RUNS FIRST
-    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }; // I RUNS FIRST
+    double& data(const int& i) { return cc(i); }
+    const double& data(const int& i) const { return cc(i); }
 
-    double& data(const int& i) { return cc(i); };
-    const double& data(const int& i) const { return cc(i); };
+    const double* data() const { return cc(); }
+    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }
 
-    const double* data() const { return cc(); };
-    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }; // I RUNS FIRST
+    std::shared_ptr<const Determinants> det() const { return det_; }
+    void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; }
 
-    std::shared_ptr<const Determinants> det() const { return det_; };
-    void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; };
+    void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); }
 
-    void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); };
-
-    int size() const { return lena_*lenb_; };
+    size_t size() const { return lena_*lenb_; }
 
     std::shared_ptr<Civec> transpose() const;
 
-    int lena() const { return lena_; };
-    int lenb() const { return lenb_; };
+    int lena() const { return lena_; }
+    int lenb() const { return lenb_; }
 
     // some functions for convenience
     void daxpy(double a, const Civec& other);
@@ -101,13 +103,13 @@ class Civec {
     double variance() const;
     void scale(const double a);
 
-    Civec& operator*=(const double& a) { scale(a); return *this; };
-    Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }; // <- note I used a stride 0
-    Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; };
+    Civec& operator*=(const double& a) { scale(a); return *this; }
+    Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }
+    Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; }
 
-    Civec& operator=(const Civec& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; };
-    Civec& operator+=(const Civec& o) { daxpy( 1.0, o); return *this; };
-    Civec& operator-=(const Civec& o) { daxpy(-1.0, o); return *this; };
+    Civec& operator=(const Civec& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; }
+    Civec& operator+=(const Civec& o) { daxpy( 1.0, o); return *this; }
+    Civec& operator-=(const Civec& o) { daxpy(-1.0, o); return *this; }
     Civec& operator/=(const Civec& o);
     Civec operator/(const Civec& o) const;
 
@@ -118,7 +120,50 @@ class Civec {
     double orthog(std::shared_ptr<const Civec> o);
     void project_out(std::shared_ptr<const Civec> o) { daxpy(-ddot(*o), *o); }
 
-    void print(const double thresh) const { det_->print(data(), thresh); };
+    void print(const double thresh) const { det_->print(data(), thresh); }
+
+    std::shared_ptr<DistCivec> distcivec() const;
+};
+
+
+class DistCivec {
+  protected:
+    // for compatibility with Civec
+    mutable std::shared_ptr<const Determinants> det_;
+
+    // global dimension
+    size_t lena_;
+    size_t lenb_;
+
+    // local storage
+    std::unique_ptr<double[]> local_;
+
+    // local alpha strings
+    size_t astart_;
+    size_t aend_;
+
+  public:
+    DistCivec(std::shared_ptr<const Determinants> det);
+
+    double* local() { return local_.get(); } 
+    const double* local() const { return local_.get(); } 
+
+    size_t size() const { return lena_*(aend_-astart_); }
+    size_t global_size() const { return lena_*lenb_; }
+    size_t lena() const { return lena_; }
+    size_t lenb() const { return lenb_; }
+
+    size_t astart() const { return astart_; }
+    size_t aend() const { return aend_; }
+    size_t asize() const { return aend_ - astart_; }
+
+    void zero() { std::fill_n(local_.get(), size(), 0.0); }
+
+    std::shared_ptr<Civec> civec() const { return std::shared_ptr<Civec>(new Civec(*this)); }
+    std::shared_ptr<const Determinants> det() const { return det_; }
+
+    std::shared_ptr<DistCivec> clone() const { return std::shared_ptr<DistCivec>(new DistCivec(det_)); }
+
 };
 
 }

@@ -267,8 +267,10 @@ int main(int argc, char** argv) {
           fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
           fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+#ifdef HAVE_MPI_H
         } else if (algorithm == "parallel" || algorithm == "dist") {
           fci = std::shared_ptr<FCI>(new DistFCI(iter->second, ref));
+#endif
         } else {
           throw std::runtime_error("unknown FCI algorithm specified.");
         }

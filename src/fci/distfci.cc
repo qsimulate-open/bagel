@@ -31,6 +31,7 @@
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
+#include <config.h>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -43,6 +44,9 @@ DistFCI::DistFCI(const multimap<string, string> a, shared_ptr<const Reference> b
  : HarrisonZarrabian(a, b, ncore, nocc, nstate) {
 
   cout << "    * Parallel algorithm will be used." << endl;
+#ifndef HAVE_MPI_H
+  throw logic_error("DistFCI can be used only with MPI");
+#endif
 
 }
     
@@ -115,53 +119,87 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, sha
 
   const int lbt = int_det->lenb();
   const int lbs = base_det->lenb();
-  const double* source_base = cc->data();
   const int ij = norb*norb;
 
   // this is going to be a parallel loop
   for (size_t a = 0; a != base_det->lena(); ++a) {
-
     unique_ptr<double[]>  buf(new double[lbt*ij]);
     unique_ptr<double[]>  buf2(new double[lbt*ij]);
     fill_n(buf.get(), lbt*ij, 0.0);
 
-    // TODO awful code
+    unique_ptr<double[]> bcolumn(new double[lbs]);
+
     vector<vector<DetMap>::const_iterator> aiterlist;
     for (int k = 0; k < norb; ++k)
-      aiterlist.push_back(find_if(int_det->phiupa(k).begin(), int_det->phiupa(k).end(), [&a](const DetMap& i){ return i.source == a; }));
+      aiterlist.push_back(find_if(int_det->phiupa(k).begin(), int_det->phiupa(k).end(), [&a](const DetMap& i) { return i.source == a; }));
 
-    for (int k = 0, kl = 0; k < norb; ++k) {
+    for (int k = 0; k < norb; ++k) {
       // look for the element whose third element is a 
-      vector<DetMap>::const_iterator aiter = aiterlist[k];
-
+      auto aiter = aiterlist[k];
       if (aiter != int_det->phiupa(k).end()) {
-        const double *source = cc->data() + aiter->target*lbs;
-        for (int l = 0; l < norb; ++l, ++kl) {
-          for (auto& b : int_det->phiupb(l)) {
-            const double sign = aiter->sign * b.sign;
-            buf[b.source+lbt*kl] += sign * source[b.target];
-          }
-        }
-      } else {
-        kl += norb;
+        // inter-node communication here
+        copy_n(cc->element_ptr(0, aiter->target), lbs, bcolumn.get()); 
+
+        for (int l = 0; l < norb; ++l)
+          for (auto& b : int_det->phiupb(l))
+            buf[b.source+lbt*(l+norb*k)] += aiter->sign * b.sign * bcolumn[b.target];
       }
     }
     dgemm_("n", "n", lbt, ij, ij, 1.0, buf.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf2.get(), lbt);
 
-    for (int i = 0, kl = 0; i < norb; ++i) {
-      vector<DetMap>::const_iterator aiter = aiterlist[i];
-
+    for (int i = 0; i < norb; ++i) {
+      auto aiter = aiterlist[i];
       if (aiter != int_det->phiupa(i).end()) {
-        double *target = sigma->data() + aiter->target*lbs;
-        for (int j = 0; j < norb; ++j, ++kl) {
-          for (auto& b : int_det->phiupb(j)) {
-            const double sign = aiter->sign * b.sign;
-            target[b.target] += sign * buf2[b.source+lbt*kl];
-          }
-        } 
-      } else {
-        kl += norb;
+        fill_n(bcolumn.get(), lbs, 0.0);
+        for (int j = 0; j < norb; ++j)
+          for (auto& b : int_det->phiupb(j))
+            bcolumn[b.target] += aiter->sign * b.sign * buf2[b.source+lbt*(j+norb*i)];
+
+        // inter-node communication here
+        daxpy_(lbs, 1.0, bcolumn.get(), 1, sigma->element_ptr(0, aiter->target), 1);
       }
     }
   }
+}
+
+
+void DistFCI::sigma_2bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
+
+  shared_ptr<const DistCivec> cc = ccg->distcivec();
+  shared_ptr<DistCivec> sigma = cc->clone();
+
+  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  const double* const source_base = cc->local();
+  double* target_base = sigma->local();
+  const int norb = norb_;
+
+  const int la = sigma->asize();
+  const int lb = sigma->lenb();
+  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter,++target_base) {
+    bitset<nbit__> nstring = *biter;
+    for (int i = 0; i != norb; ++i) {
+      if (!nstring[i]) continue;
+      for (int j = 0; j < i; ++j) {
+        if(!nstring[j]) continue;
+        const int ij_phase = base_det->sign(nstring,i,j);
+        bitset<nbit__> string_ij = nstring;
+        string_ij.reset(i); string_ij.reset(j);
+        for (int l = 0; l != norb; ++l) {
+          if (string_ij[l]) continue;
+          for (int k = 0; k < l; ++k) {
+            if (string_ij[k]) continue;
+            const int kl_phase = base_det->sign(string_ij,l,k);
+            const double phase = -static_cast<double>(ij_phase*kl_phase);
+            bitset<nbit__> string_ijkl = string_ij;
+            string_ijkl.set(k); string_ijkl.set(l);
+            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
+            const double* source = source_base + base_det->lexical<1>(string_ijkl);
+            daxpy_(la, temp, source, lb, target_base, lb);
+          }
+        }
+      }
+    }
+  }
+
+  *sigmag += *sigma->civec();
 }
