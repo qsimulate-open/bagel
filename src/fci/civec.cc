@@ -54,6 +54,7 @@ Civec::Civec(const Civec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
 Civec::Civec(const DistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
   cc_ = unique_ptr<double[]>(new double[size()]);
   cc_ptr_ = cc_.get();
+  fill_n(cc_ptr_, size(), 0.0);
   copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
   mpi__->allreduce(cc_ptr_, size());
 }

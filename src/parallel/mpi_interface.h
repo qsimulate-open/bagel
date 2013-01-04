@@ -52,6 +52,9 @@ class MPI_Interface {
     int myprow_;
     int mypcol_;
 
+    // maximum size of the MPI buffer
+    const static size_t bsize = 100000000LU;
+
   public:
     MPI_Interface(int argc, char** argv);
     ~MPI_Interface();
@@ -85,6 +88,9 @@ class MPI_Interface {
     int win_create(double* buf, const size_t size);
     void win_fence(const int win);
     void win_free(const int win);
+    void get(double* buf, const size_t len, const int rank, const size_t disp, const int win);
+    void put(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
+    void accumulate(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
 
     // scalapack
     int nprow() const { return nprow_; }

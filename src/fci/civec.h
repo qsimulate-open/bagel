@@ -176,6 +176,9 @@ class DistCivec {
     // MPI Window creation/annihilation for one-sided communication
     void open_window() const;
     void close_window() const;
+    void get_bstring(double* buf, const size_t a) const; 
+    void put_bstring(const double* buf, const size_t a) const; 
+    void accumulate_bstring(const double* buf, const size_t a) const; 
 
 };
 

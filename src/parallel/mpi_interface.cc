@@ -151,6 +151,7 @@ int MPI_Interface::win_create(double* buf, const size_t size) {
   MPI_Win win;
   MPI_Win_create(static_cast<void*>(buf), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
   window_.insert(make_pair(cnt_, win)); 
+  win_fence(cnt_);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -169,11 +170,38 @@ void MPI_Interface::win_free(const int win) {
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
+  win_fence(win);
   MPI_Win_free(&iter->second);
 #endif
 }
 
-const static size_t bsize = 100000000LU;
+
+void MPI_Interface::get(double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+#ifdef HAVE_MPI_H
+  auto iter = window_.find(win);
+  if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
+  MPI_Get(static_cast<void*>(buf), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second); 
+#endif
+}
+
+
+void MPI_Interface::put(const double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+#ifdef HAVE_MPI_H
+  auto iter = window_.find(win);
+  if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
+  MPI_Put(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second); 
+#endif
+}
+
+
+void MPI_Interface::accumulate(const double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+#ifdef HAVE_MPI_H
+  auto iter = window_.find(win);
+  if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
+  MPI_Accumulate(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, MPI_SUM, iter->second); 
+#endif
+}
+
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest) {
 #ifdef HAVE_MPI_H

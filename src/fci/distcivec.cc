@@ -34,9 +34,8 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   const int mpisize = mpi__->size();
   const size_t ablocksize = (lena_-1) / mpisize + 1;
   astart_ = ablocksize * mpi__->rank();
-  aend_   = min(ablocksize * (mpi__->rank()+1), lena_);
+  aend_   = min(astart_+ablocksize , lena_);
 
-  // fixed size so that we can use MPI_Win_create
   alloc_ = ablocksize*lenb_;
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), size(), 0.0);
@@ -53,4 +52,52 @@ void DistCivec::close_window() const {
   assert(win_ != -1);
   mpi__->win_free(win_);
   win_ = -1; 
+}
+
+
+void DistCivec::get_bstring(double* buf, const size_t a) const {
+  const int mpisize = mpi__->size();
+  const int mpirank = mpi__->rank();
+  const size_t ablocksize = (lena_-1) / mpisize + 1;
+  const size_t rank = a / ablocksize;
+  const size_t off = a % ablocksize;
+
+  assert(win_ != -1);
+  if (mpirank == rank) {
+    copy_n(local_.get()+off*lenb_, lenb_, buf);
+  } else {
+    mpi__->get(buf, lenb_, rank, off*lenb_, win_); 
+  }
+}
+
+
+void DistCivec::put_bstring(const double* buf, const size_t a) const {
+  const int mpisize = mpi__->size();
+  const int mpirank = mpi__->rank();
+  const size_t ablocksize = (lena_-1) / mpisize + 1;
+  const size_t rank = a / ablocksize;
+  const size_t off = a % ablocksize;
+
+  assert(win_ != -1);
+  if (mpirank == rank) {
+    copy_n(buf, lenb_, local_.get()+off*lenb_);
+  } else {
+    mpi__->put(buf, lenb_, rank, off*lenb_, win_); 
+  }
+}
+
+
+void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
+  const int mpisize = mpi__->size();
+  const int mpirank = mpi__->rank();
+  const size_t ablocksize = (lena_-1) / mpisize + 1;
+  const size_t rank = a / ablocksize;
+  const size_t off = a % ablocksize;
+
+  assert(win_ != -1);
+  if (mpirank == rank) {
+    daxpy_(lenb_, 1.0, buf, 1, local_.get()+off*lenb_, 1);
+  } else {
+    mpi__->accumulate(buf, lenb_, rank, off*lenb_, win_); 
+  }
 }

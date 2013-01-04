@@ -62,10 +62,6 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
-  /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  shared_ptr<Dvec> d(new Dvec(int_det, ij));
-  shared_ptr<Dvec> e(new Dvec(int_det, ij));
-
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);  
@@ -91,7 +87,6 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
-    d->zero();
 
     sigma_2ab(cc, sigma, jop);
     if (tprint) print_timing_("task2ab", start, timing);
@@ -114,23 +109,30 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 void DistFCI::sigma_1(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
 
   shared_ptr<const DistCivec> cc = ccg->distcivec();
-  cc->open_window();
-
   shared_ptr<DistCivec> sigma = cc->clone();
-  
-  assert(cc->det() == sigma->det());
+
+  sigma->open_window();
+
+  // TODO just prototype
   const int ij = nij(); 
-  const int lb = cc->lenb();
+  const size_t lb = cc->lenb();
+  unique_ptr<double[]> buf(new double[lb]);
+
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
-      const double hc = h * iter.sign;
-      // TODO to be replaced very soon
-      daxpy_(lb, hc, ccg->element_ptr(0, iter.source), 1, sigmag->element_ptr(0, iter.target), 1); 
+      // TODO this is not very efficient. Need to make a list beforehand
+      const int aloc = iter.source - sigma->astart();
+      if (aloc < 0 || aloc >= sigma->asize()) continue; 
+      fill_n(buf.get(), lb, 0.0);
+      daxpy_(lb, h*iter.sign, &cc->local(aloc*lb), 1, buf.get(), 1);
+      sigma->accumulate_bstring(buf.get(), iter.target);
     }
   }
 
-  cc->close_window();
+  sigma->close_window();
+
+  *sigmag += *sigma->civec();
 }
 
 
