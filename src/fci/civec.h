@@ -145,6 +145,9 @@ class DistCivec {
     // allocation size
     size_t alloc_;
 
+    // tag for MPI_Win
+    mutable int win_;
+
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
 
@@ -169,6 +172,10 @@ class DistCivec {
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     std::shared_ptr<DistCivec> clone() const { return std::shared_ptr<DistCivec>(new DistCivec(det_)); }
+
+    // MPI Window creation/annihilation for one-sided communication
+    void open_window() const;
+    void close_window() const;
 
 };
 

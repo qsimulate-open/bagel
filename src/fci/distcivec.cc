@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
+DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1) {
   const int mpisize = mpi__->size();
   const size_t ablocksize = (lena_-1) / mpisize + 1;
   astart_ = ablocksize * mpi__->rank();
@@ -43,3 +43,14 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
 }
 
 
+void DistCivec::open_window() const {
+  assert(win_ == -1);
+  win_ = mpi__->win_create(local_.get(), alloc_);
+}
+
+
+void DistCivec::close_window() const {
+  assert(win_ != -1);
+  mpi__->win_free(win_);
+  win_ = -1; 
+}

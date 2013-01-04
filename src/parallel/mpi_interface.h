@@ -44,6 +44,7 @@ class MPI_Interface {
 #ifdef HAVE_MPI_H
     // request handles
     std::map<int, std::vector<MPI_Request> > request_; 
+    std::map<int, MPI_Win> window_;
 #endif
     int nprow_; 
     int npcol_;
@@ -75,9 +76,15 @@ class MPI_Interface {
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
+    // one-sided communication with Isend, Irecv
     int request_send(const double* sbuf, const size_t size, const int dest);
     int request_recv(double* rbuf, const size_t size, const int source);
     void wait(const int rq);
+
+    // one-sided communication with Window
+    int win_create(double* buf, const size_t size);
+    void win_fence(const int win);
+    void win_free(const int win);
 
     // scalapack
     int nprow() const { return nprow_; }

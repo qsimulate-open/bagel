@@ -111,6 +111,29 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 }
 
 
+void DistFCI::sigma_1(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
+
+  shared_ptr<const DistCivec> cc = ccg->distcivec();
+  cc->open_window();
+
+  shared_ptr<DistCivec> sigma = cc->clone();
+  
+  assert(cc->det() == sigma->det());
+  const int ij = nij(); 
+  const int lb = cc->lenb();
+  for (int ip = 0; ip != ij; ++ip) {
+    const double h = jop->mo1e(ip);
+    for (auto& iter : cc->det()->phia(ip)) {
+      const double hc = h * iter.sign;
+      // TODO to be replaced very soon
+      daxpy_(lb, hc, ccg->element_ptr(0, iter.source), 1, sigmag->element_ptr(0, iter.target), 1); 
+    }
+  }
+
+  cc->close_window();
+}
+
+
 void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int norb = norb_;
 
