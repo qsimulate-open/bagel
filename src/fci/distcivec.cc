@@ -36,7 +36,9 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   astart_ = ablocksize * mpi__->rank();
   aend_   = min(ablocksize * (mpi__->rank()+1), lena_);
 
-  local_ = unique_ptr<double[]>(new double[size()]);
+  // fixed size so that we can use MPI_Win_create
+  alloc_ = ablocksize*lenb_;
+  local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), size(), 0.0);
 }
 

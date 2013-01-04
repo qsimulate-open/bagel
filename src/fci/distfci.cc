@@ -203,3 +203,18 @@ void DistFCI::sigma_2bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
 
   *sigmag += *sigma->civec();
 }
+
+
+void DistFCI::sigma_3(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
+
+  shared_ptr<const DistCivec> cc = ccg->distcivec();
+  shared_ptr<DistCivec> sigma = cc->clone();
+
+  for (int i = 0; i < cc->asize(); ++i)
+    for (int ip = 0; ip != nij(); ++ip)
+      for (auto& iter : cc->det()->phib(ip))
+        sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
+
+  *sigmag += *sigma->civec();
+}
+

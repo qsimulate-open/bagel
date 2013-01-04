@@ -142,8 +142,14 @@ class DistCivec {
     size_t astart_;
     size_t aend_;
 
+    // allocation size
+    size_t alloc_;
+
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
+
+    double& local(const size_t i) { return local_[i]; }
+    const double& local(const size_t i) const { return local_[i]; }
 
     double* local() { return local_.get(); } 
     const double* local() const { return local_.get(); } 
