@@ -79,16 +79,7 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     fcitime.tick_print("beta-beta");
 
     // (2ab) alpha-beta contributions
-//#define LOCAL_DEBUG
-#ifdef LOCAL_DEBUG
-shared_ptr<Dvec> d(new Dvec(int_det, norb_*norb_));
-shared_ptr<Dvec> e(new Dvec(int_det, norb_*norb_));
-sigma_2ab_1(cc,d);
-sigma_2ab_2(d,e,jop);
-sigma_2ab_3(sigma,e);
-#else
     sigma_2ab(cc, sigma, jop);
-#endif
     fcitime.tick_print("alpha-beta");
   }
 
@@ -178,8 +169,13 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
   const int rank = mpi__->rank();
   const int size = mpi__->size();
 
+  const size_t nloop = (int_det->lena()-1)/size+1;
+
   // shamelessly statically distributing across processes
-  for (size_t a = 0; a != int_det->lena(); ++a) {
+  for (size_t loop = 0; loop != nloop; ++loop) {
+
+    size_t a = rank + loop*size;
+    if (a >= int_det->lena()) { cc->fence(); break; } // fence needed, otherwise stall 
 
     const bitset<nbit__> astring = int_det->stringa(a);
 

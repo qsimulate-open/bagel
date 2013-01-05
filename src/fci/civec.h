@@ -33,6 +33,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <src/parallel/staticdist.h>
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
 
@@ -147,6 +148,9 @@ class DistCivec {
 
     // tag for MPI_Win
     mutable int win_;
+
+    // table for alpha string distribution
+    const StaticDist dist_;
 
   public:
     DistCivec(std::shared_ptr<const Determinants> det);

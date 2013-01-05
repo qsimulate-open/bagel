@@ -24,21 +24,19 @@
 //
 
 
+#include <sstream>
 #include <src/fci/civec.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1) {
-  const int mpisize = mpi__->size();
-  const size_t ablocksize = (lena_-1) / mpisize + 1;
-  astart_ = ablocksize * mpi__->rank();
-  aend_   = min(astart_+ablocksize , lena_);
+DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1), dist_(lena_, mpi__->size()) {
+  tie(astart_, aend_) = dist_.range(mpi__->rank()); 
 
-  alloc_ = ablocksize*lenb_;
+  alloc_ = size()*lenb_;
   local_ = unique_ptr<double[]>(new double[alloc_]);
-  fill_n(local_.get(), size(), 0.0);
+  fill_n(local_.get(), alloc_, 0.0);
 }
 
 
@@ -62,12 +60,9 @@ void DistCivec::fence() const {
 
 
 void DistCivec::get_bstring(double* buf, const size_t a) const {
-
-  const int mpisize = mpi__->size();
-  const int mpirank = mpi__->rank();
-  const size_t ablocksize = (lena_-1) / mpisize + 1;
-  const size_t rank = a / ablocksize;
-  const size_t off = a % ablocksize;
+  const size_t mpirank = mpi__->rank();
+  size_t rank, off;
+  tie(rank, off) = dist_.locate(a);
 
   assert(win_ != -1);
   if (mpirank == rank) {
@@ -79,11 +74,9 @@ void DistCivec::get_bstring(double* buf, const size_t a) const {
 
 
 void DistCivec::put_bstring(const double* buf, const size_t a) const {
-  const int mpisize = mpi__->size();
-  const int mpirank = mpi__->rank();
-  const size_t ablocksize = (lena_-1) / mpisize + 1;
-  const size_t rank = a / ablocksize;
-  const size_t off = a % ablocksize;
+  const size_t mpirank = mpi__->rank();
+  size_t rank, off;
+  tie(rank, off) = dist_.locate(a);
 
   assert(win_ != -1);
   if (mpirank == rank) {
@@ -95,11 +88,9 @@ void DistCivec::put_bstring(const double* buf, const size_t a) const {
 
 
 void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
-  const int mpisize = mpi__->size();
-  const int mpirank = mpi__->rank();
-  const size_t ablocksize = (lena_-1) / mpisize + 1;
-  const size_t rank = a / ablocksize;
-  const size_t off = a % ablocksize;
+  const size_t mpirank = mpi__->rank();
+  size_t rank, off;
+  tie(rank, off) = dist_.locate(a);
 
   assert(win_ != -1);
   if (mpirank == rank) {
