@@ -38,7 +38,6 @@
 #include <src/util/davidson.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
@@ -79,11 +78,6 @@ void FCI::common_init() {
 }
 
 FCI::~FCI() { }
-
-void FCI::print_timing_(const string label, high_resolution_clock::time_point& time, std::vector<pair<string, double> >& timing) const {
-  timing.push_back(make_pair(label, duration_cast<milliseconds>(high_resolution_clock::now()-time).count()*0.001));
-  time = high_resolution_clock::now();
-}
 
 // generate initial vectors
 //   - bits: bit patterns of low-energy determinants
@@ -167,6 +161,8 @@ shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
 
 
 void FCI::compute() {
+  Timer pdebug(2);
+
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
 
@@ -178,7 +174,8 @@ void FCI::compute() {
   cc_ = cc_tmp;
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc_); 
+  generate_guess(nelea_-neleb_, nstate_, cc_);
+  pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
@@ -192,10 +189,11 @@ void FCI::compute() {
   vector<int> conv(nstate_,0);
 
   for (int iter = 0; iter != max_iter_; ++iter) { 
-    auto tp1 = high_resolution_clock::now();
+    Timer fcitime;
 
     // form a sigma vector given cc
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
+    pdebug.tick_print("sigma vector");
 
     // constructing Dvec's for Davidson
     shared_ptr<const Dvec> ccn(new Dvec(cc_));
@@ -204,6 +202,7 @@ void FCI::compute() {
 
     // get residual and new vectors
     vector<shared_ptr<Civec> > errvec = davidson.residual();
+    pdebug.tick_print("davidson");
 
     // compute errors
     vector<double> errors;
@@ -211,6 +210,7 @@ void FCI::compute() {
       errors.push_back(errvec[i]->variance());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
+    pdebug.tick_print("error");
 
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling 
@@ -230,16 +230,15 @@ void FCI::compute() {
         cc_->data(ist)->orthog(tmp);
       }
     }
+    pdebug.tick_print("denominator");
 
     // printing out
-    auto tp2 = high_resolution_clock::now();
-    auto dr = duration_cast<milliseconds>(tp2-tp1);
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << dr.count()*0.001 << endl; 
+                              << fcitime.tick() << endl; 
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;

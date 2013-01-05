@@ -106,7 +106,6 @@ class FCI {
 
     // print functions
     void print_header() const;
-    void print_timing_(const std::string, std::chrono::high_resolution_clock::time_point& time, std::vector<std::pair<std::string, double> >&) const;
 
   public:
     // this constructor is ugly... to be fixed some day...

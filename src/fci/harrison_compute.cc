@@ -37,7 +37,6 @@
 static const bool tprint = false;
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
@@ -58,50 +57,41 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   shared_ptr<Dvec> e(new Dvec(int_det, ij));
 
   for (int istate = 0; istate != nstate; ++istate) {
+    Timer pdebug(2);
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
-    vector<pair<string, double> > timing;
-    auto start = high_resolution_clock::now();
-
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
     sigma_1(cc, sigma, jop);
-    if (tprint) print_timing_("task1", start, timing);
 
     // (task2) two electron contributions
-
     // (2aa) alpha-alpha contributions
     sigma_2aa(cc,sigma,jop);
-    if (tprint) print_timing_("task2aa", start, timing);
+    pdebug.tick_print("task2aa");
     
     // (2bb) beta-beta contributions
     /* Mostly the same as the alpha-alpha, except for data storage */
     sigma_2bb(cc, sigma, jop);
-    if (tprint) print_timing_("task2bb", start, timing);
+    pdebug.tick_print("task2bb");
 
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
     d->zero();
 
     sigma_2ab_1(cc, d);
-    if (tprint) print_timing_("task2ab-1", start, timing);
+    pdebug.tick_print("task2ab-1");
 
     sigma_2ab_2(d, e, jop);
-    if (tprint) print_timing_("task2ab-2", start, timing);
+    pdebug.tick_print("task2ab-2");
 
     sigma_2ab_3(sigma, e);
-    if (tprint) print_timing_("task2ab-3", start, timing);
+    pdebug.tick_print("task2ab-3");
     
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     sigma_3(cc, sigma, jop);
+    pdebug.tick_print("task3");
 
-    if (tprint) {
-      print_timing_("task3", start, timing);
-      cout << "     timing info" << endl;
-      for (auto& iter : timing )
-        cout << "    " << setw(10) << iter.first << setw(10) << setprecision(2) << iter.second << endl;
-    }
   }
 
   return sigmavec;

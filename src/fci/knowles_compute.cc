@@ -55,49 +55,42 @@ shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_p
 
 
   for (int istate = 0; istate != nstate; ++istate) {
+    Timer pdebug(2);
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
-    vector<pair<string, double> > timing;
-    auto start = high_resolution_clock::now();
-
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
     sigma_1(cc, sigma, jop);
-    if (tprint) print_timing_("task1", start, timing);
+    pdebug.tick_print("task1");
 
     // (task2) two electron contributions
     d->zero();
 
     // step (c) (task2a-1) D(Phib, Phia, ij) += sign C(Psib, Phi'a)
     sigma_2a1(cc, d);
-    if (tprint) print_timing_("task2a-1", start, timing);
+    pdebug.tick_print("task2a-1");
 
     // step (d) (task2a-2) D(Phib, Phia, ij) += sign C(Psib', Phia)
     sigma_2a2(cc, d);
-    if (tprint) print_timing_("task2a-2", start, timing);
+    pdebug.tick_print("task2a-2");
 
     // step (e) (task2b) E(Phib, Phia, kl) = D(Psib, Phia, ij) (ij|kl)
     sigma_2b(d, e, jop);
-    if (tprint) print_timing_("task2b", start, timing);
+    pdebug.tick_print("task2b");
 
     // step (f) (task2c-1) sigma(Phib, Phia') += sign E(Psib, Phia, kl)
     sigma_2c1(sigma, e);
-    if (tprint) print_timing_("task2c-1", start, timing);
+    pdebug.tick_print("task2c-1");
 
     // step (g) (task2c-2) sigma(Phib', Phia) += sign E(Psib, Phia, kl)
     sigma_2c2(sigma, e);
-    if (tprint) print_timing_("task2c-2", start, timing);
+    pdebug.tick_print("task2c-2");
 
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     sigma_3(cc, sigma, jop);
+    pdebug.tick_print("task3");
 
-    if (tprint) {
-      print_timing_("task3", start, timing);
-      cout << "     timing info" << endl;
-      for (auto& iter : timing)
-        cout << "    " << setw(10) << iter.first << setw(10) << setprecision(2) << iter.second << endl;
-    }
   }
 
   return sigmavec;
