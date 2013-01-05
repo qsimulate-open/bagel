@@ -55,7 +55,14 @@ void DistCivec::close_window() const {
 }
 
 
+void DistCivec::fence() const {
+  assert(win_ != -1);
+  mpi__->win_fence(win_);
+}
+
+
 void DistCivec::get_bstring(double* buf, const size_t a) const {
+
   const int mpisize = mpi__->size();
   const int mpirank = mpi__->rank();
   const size_t ablocksize = (lena_-1) / mpisize + 1;

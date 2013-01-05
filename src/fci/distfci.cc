@@ -79,7 +79,7 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     fcitime.tick_print("beta-beta");
 
     // (2ab) alpha-beta contributions
-#define LOCAL_DEBUG
+//#define LOCAL_DEBUG
 #ifdef LOCAL_DEBUG
 shared_ptr<Dvec> d(new Dvec(int_det, norb_*norb_));
 shared_ptr<Dvec> e(new Dvec(int_det, norb_*norb_));
@@ -96,6 +96,7 @@ sigma_2ab_3(sigma,e);
 }
 
 
+// accumulate Nci
 void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
 
   shared_ptr<const DistCivec> cc = ccg->distcivec();
@@ -160,57 +161,78 @@ void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
 }
 
 
-void DistFCI::sigma_2ab(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
+  shared_ptr<const DistCivec> cc = ccg->distcivec();
+  shared_ptr<DistCivec> sigma = cc->clone();
+
+  cc->open_window();
+  sigma->open_window();
 
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
-  const int lbt = int_det->lenb();
-  const int lbs = base_det->lenb();
+  const size_t lbt = int_det->lenb();
+  const size_t lbs = base_det->lenb();
   const int ij = norb_*norb_;
 
-  // this is going to be a parallel loop
-  for (size_t a = 0; a != base_det->lena(); ++a) {
-    unique_ptr<double[]>  buf(new double[lbt*ij]);
-    unique_ptr<double[]>  buf2(new double[lbt*ij]);
-    fill_n(buf.get(), lbt*ij, 0.0);
+  const int rank = mpi__->rank();
+  const int size = mpi__->size();
 
-    unique_ptr<double[]> bcolumn(new double[lbs]);
+  // shamelessly statically distributing across processes
+  for (size_t a = 0; a != int_det->lena(); ++a) {
 
-    vector<vector<DetMap>::const_iterator> aiterlist;
-    for (int k = 0; k < norb_; ++k)
-      aiterlist.push_back(find_if(int_det->phiupa(k).begin(), int_det->phiupa(k).end(), [&a](const DetMap& i) { return i.source == a; }));
+    const bitset<nbit__> astring = int_det->stringa(a);
 
-    for (int k = 0; k < norb_; ++k) {
-      // look for the element whose third element is a 
-      auto aiter = aiterlist[k];
-      if (aiter != int_det->phiupa(k).end()) {
-        // inter-node communication here
-        copy_n(cc->element_ptr(0, aiter->target), lbs, bcolumn.get()); 
+    // first receive all the data (nele_a * lenb)
+    unique_ptr<double[]>  buf(new double[lbs*norb_]);
+    fill_n(buf.get(), lbs*norb_, 0.0);
 
-        for (int l = 0; l < norb_; ++l)
-          for (auto& b : int_det->phiupb(l))
-            buf[b.source+lbt*(l+norb_*k)] += aiter->sign * b.sign * bcolumn[b.target];
+    for (int i = 0; i != norb_; ++i) {
+      if (!astring[i]) {
+        bitset<nbit__> tmp = astring; tmp.set(i);
+        cc->get_bstring(buf.get()+i*lbs, base_det->lexical<0>(tmp));
       }
     }
-    dgemm_("n", "n", lbt, ij, ij, 1.0, buf.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf2.get(), lbt);
+
+    // TODO can be smaller
+    unique_ptr<double[]>  buf2(new double[lbt*norb_*norb_]);
+    unique_ptr<double[]>  buf3(new double[lbt*norb_*norb_]);
+    fill_n(buf2.get(), lbt*norb_*norb_, 0.0);
+
+    // somehow I need to do this here, which means that all the processes sync here
+    // (which might not be too bad for static load balancing)
+    cc->fence();
+
+    for (int k = 0, kl = 0; k != norb_; ++k)
+      for (int l = 0; l != norb_; ++l, ++kl)
+        for (auto& b : int_det->phiupb(l))
+          buf2[b.source+lbt*kl] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+k*lbs];
+
+    dgemm_("n", "n", lbt, ij, ij, 1.0, buf2.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf3.get(), lbt);
 
     for (int i = 0; i < norb_; ++i) {
-      auto aiter = aiterlist[i];
-      if (aiter != int_det->phiupa(i).end()) {
-        fill_n(bcolumn.get(), lbs, 0.0);
-        for (int j = 0; j < norb_; ++j)
-          for (auto& b : int_det->phiupb(j))
-            bcolumn[b.target] += aiter->sign * b.sign * buf2[b.source+lbt*(j+norb_*i)];
+      if (astring[i]) continue;
+      bitset<nbit__> atarget = astring; atarget.set(i);
+      const double asign = base_det->sign(astring, -1, i);
+      
+      unique_ptr<double[]> bcolumn(new double[lbs]);
+      fill_n(bcolumn.get(), lbs, 0.0);
 
-        // inter-node communication here
-        daxpy_(lbs, 1.0, bcolumn.get(), 1, sigma->element_ptr(0, aiter->target), 1);
+      for (int j = 0; j < norb_; ++j) {
+        for (auto& b : int_det->phiupb(j))
+          bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*i)];
       }
+      sigma->accumulate_bstring(bcolumn.get(), base_det->lexical<0>(atarget));
     }
   }
+
+  sigma->close_window();
+  cc->close_window();
+  *sigmag += *sigma->civec();
 }
 
 
+// beta-beta block has no communication (and should be cheap)
 void DistFCI::sigma_bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
 
   shared_ptr<const DistCivec> cc = ccg->distcivec();
