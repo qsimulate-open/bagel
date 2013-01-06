@@ -62,7 +62,7 @@ void DFBlock::ao_init() {
   // allocation of the data area
   data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
 
-  const shared_ptr<const Shell> i3(new Shell(b1_.front()->spherical()));
+  const shared_ptr<const Shell> i3(new Shell(aux_.front()->spherical()));
 
   // making a task list
   vector<DFIntTask> tasks;

@@ -190,7 +190,7 @@ void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const ve
   int tmpa = 0;
   vector<int> aof;
   for (auto& i : ashell) { aof.push_back(tmpa); tmpa += i->nbasis(); }
-  const shared_ptr<const Shell> b3(new Shell(atoms0.front()->shells().front()->spherical()));
+  const shared_ptr<const Shell> b3(new Shell(ashell.front()->spherical()));
 
   // naive static distribution
   int u = 0;

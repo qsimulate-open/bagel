@@ -109,7 +109,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
       auto oa2 = geom_->aux_offsets().begin();
       for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
         // dummy shell
-        const shared_ptr<const Shell> b3(new Shell((*a0)->shells().front()->spherical()));
+        const shared_ptr<const Shell> b3(new Shell((*a2)->shells().front()->spherical()));
 
         auto o0 = oa0->begin();
         for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
