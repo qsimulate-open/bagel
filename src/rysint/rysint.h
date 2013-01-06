@@ -60,7 +60,8 @@ class RysInt {
     double *bkup_;
 
     std::array<std::shared_ptr<const Shell>,4> basisinfo_;
-    bool spherical_;
+    bool spherical1_;
+    bool spherical2_;
 
     // information on how many derivatives you take
     // 0 for ERI, 1 for gradients, etc. Set to 0 in the constructor, and will be

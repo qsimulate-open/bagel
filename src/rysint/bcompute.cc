@@ -102,7 +102,7 @@ void BreitBatch::compute() {
     // Cartesian to spherical 01 if necesarry
     // data will be stored in cdata
     const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
-    if (spherical_ && need_sph01) {
+    if (spherical1_ && need_sph01) {
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_ * csize_;
       if (!swapped)
@@ -110,6 +110,8 @@ void BreitBatch::compute() {
       else
         carsphlist.carsphfunc_call(carsphindex, nloops, cdata, bkup_);
       swapped = (swapped ^ true);
+      a = asph;
+      b = bsph;
     }
 
 
@@ -117,7 +119,7 @@ void BreitBatch::compute() {
     // data will be stored in cdata: cont01{ xyzab{ cont23{ xyzf{ } } } }  if cartesian
     // data will be stored in bkup_: cont01{ xyzab{ cont23{ xyzf{ } } } }  if spherical
     if (basisinfo_[0]->angular_number() != 0) {
-      const int m = spherical_ ? (asph * bsph) : (a * b);
+      const int m = a * b;
       const int n = cont2size_ * cont3size_ * csize_;
       const int nloop = cont0size_ * cont1size_;
       int offset = 0;
@@ -137,10 +139,8 @@ void BreitBatch::compute() {
     // data will be stored in cdata: cont01{ xyzab{ cont23{ xyzcd{ } } } } if spherical
     if (basisinfo_[3]->angular_number() != 0) {
       const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
-      if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, cdata);
-      else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, cdata);
-      else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, cdata, CD_, bkup_);
-      else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, cdata, CD_, bkup_);
+      if (swapped) hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, cdata);
+      else         hrr.hrrfunc_call(hrr_index, contsize_ * a * b, cdata, CD_, bkup_);
     } else {
       swapped = (swapped ^ true);
     }
@@ -148,7 +148,7 @@ void BreitBatch::compute() {
     // Cartesian to spherical 23 if necesarry
     // data will be stored in bkup_
     const bool need_sph23 = basisinfo_[2]->angular_number() > 1;
-    if (spherical_ && need_sph23) {
+    if (spherical2_ && need_sph23) {
       const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
       const int nloops = contsize_ * asph * bsph;
       if (swapped)
@@ -156,10 +156,6 @@ void BreitBatch::compute() {
       else
         carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, cdata);
       swapped = (swapped ^ true);
-    }
-    if (spherical_) {
-      a = asph;
-      b = bsph;
       c = csph;
       d = dsph;
     }
@@ -169,14 +165,13 @@ void BreitBatch::compute() {
     double *target_now = swapped ? bkup_ : cdata;
     double *source_now = swapped ? cdata : bkup_;
 
-    const SortList sort(spherical_);
-
     // Sort cont23 and xyzcd
     // data will be stored in cdata: cont01{ xyzab{ cont3d{ cont2c{ } } } }
     if (basisinfo_[2]->angular_number() != 0) {
+      const SortList sort2(spherical2_);
       const int nloop = a * b * cont0size_ * cont1size_;
       const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-      sort.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
+      sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
       swapped = (swapped ^ true);
     }
@@ -198,9 +193,10 @@ void BreitBatch::compute() {
     // Sort cont01 and xyzab
     // data will be stored in cdata: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
     if (basisinfo_[0]->angular_number() != 0) {
+      const SortList sort1(spherical1_);
       const int nloop = c * d * cont2size_ * cont3size_;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
+      sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
       swapped = (swapped ^ true);
     }

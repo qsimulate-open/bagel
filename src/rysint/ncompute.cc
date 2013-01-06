@@ -68,7 +68,7 @@ void NAIBatch::compute() {
   const int alc = size_alloc_;
   fill(data_, data_ + alc, zero);
 
-  const SortList sort(spherical_);
+  const SortList sort(spherical1_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -147,7 +147,7 @@ void NAIBatch::compute() {
 
   // Cartesian to spherical 01 if necesarry
   // data will be stored in bkup_
-  if (spherical_) {
+  if (spherical1_) {
     struct CarSphList carsphlist;
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_;
@@ -156,7 +156,7 @@ void NAIBatch::compute() {
 
   // Sort cont01 and xyzab
   // data will be stored in data_: cont1b{ cont0a{ } }
-  if (spherical_) {
+  if (spherical1_) {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort.sortfunc_call(index, data_, bkup_, cont1size_, cont0size_, 1, swap01_);
   } else {

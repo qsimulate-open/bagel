@@ -38,7 +38,9 @@ using namespace std;
 using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
- : basisinfo_(info), spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
+ : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
+  assert(spherical1_ == info[1]->spherical());
+  assert(spherical2_ == info[3]->spherical());
 
   if (stack == nullptr) {
     stack_ = resources__->get();
@@ -51,8 +53,8 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
 
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
- : spherical_(info.front()->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
-  shared_ptr<const Shell> dum(new Shell(spherical_));
+ : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
+  shared_ptr<const Shell> dum(new Shell(spherical2_));
   basisinfo_ = {{ info[0], info[1], dum, dum }};
 
   if (stack == nullptr) {
@@ -102,6 +104,7 @@ void RysInt::set_swap_info(const bool swap_bra_ket) {
       swap0123_ = true;
       tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
         = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
+      swap(spherical1_, spherical2_);
     }
   }
 }
@@ -144,8 +147,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
   const int asize_final = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4;
   const int csize_final = (ang2 + 1) * (ang2 + 2) * (ang3 + 1) * (ang3 + 2) / 4;
 
-  const int asize_final_sph = spherical_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_final;
-  const int csize_final_sph = spherical_ ? (2 * ang2 + 1) * (2 * ang3 + 1) : csize_final;
+  const int asize_final_sph = spherical1_ ? (2 * ang0 + 1) * (2 * ang1 + 1) : asize_final;
+  const int csize_final_sph = spherical2_ ? (2 * ang2 + 1) * (2 * ang3 + 1) : csize_final;
 
   int cnt = 0;
   for (int i = cmin_; i <= cmax_; ++i) {

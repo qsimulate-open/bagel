@@ -48,8 +48,8 @@ void GradBatch::compute() {
   const int ang3 = basisinfo_[3]->angular_number();
   const int absize_cart = (ang0+1) * (ang0+2) * (ang1+1) * (ang1+2) / 4;
   const int cdsize_cart = (ang2+1) * (ang2+2) * (ang3+1) * (ang3+2) / 4;
-  const int absize_sph = spherical_ ? (2*ang0+1)*(2*ang1+1) : absize_cart;
-  const int cdsize_sph = spherical_ ? (2*ang2+1)*(2*ang3+1) : cdsize_cart;
+  const int absize_sph = spherical1_ ? (2*ang0+1)*(2*ang1+1) : absize_cart;
+  const int cdsize_sph = spherical2_ ? (2*ang2+1)*(2*ang3+1) : cdsize_cart;
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
@@ -57,8 +57,6 @@ void GradBatch::compute() {
 
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
-
-  const SortList sort(spherical_);
 
   // loop over gradient...
   double* cdata = data_;
@@ -88,19 +86,6 @@ void GradBatch::compute() {
         basisinfo_[3]->contractions(), basisinfo_[3]->contraction_upper(), basisinfo_[3]->contraction_lower(), cont3size_);
     }
 
-    target_now = bkup_;
-    source_now = cdata;
-    // Cartesian to spherical 01 if necesarry
-    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
-    const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
-    if (spherical_ && need_sph01) {
-      const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      const int nloops = contsize_ * cdsize_cart;
-      carsphlist.carsphfunc_call(carsphindex, nloops, source_now, target_now);
-    } else {
-      swapped = (swapped ^ true);
-    }
-
     int a = (ang0 + 1) * (ang0 + 2) / 2;
     int b = (ang1 + 1) * (ang1 + 2) / 2;
     int c = (ang2 + 1) * (ang2 + 2) / 2;
@@ -110,16 +95,31 @@ void GradBatch::compute() {
     const int csph = 2 * ang2 + 1;
     const int dsph = 2 * ang3 + 1;
 
+    target_now = bkup_;
+    source_now = cdata;
+    // Cartesian to spherical 01 if necesarry
+    // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
+    const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
+    if (spherical1_ && need_sph01) {
+      const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
+      const int nloops = contsize_ * cdsize_cart;
+      carsphlist.carsphfunc_call(carsphindex, nloops, source_now, target_now);
+      a = asph;
+      b = bsph;
+    } else {
+      swapped = (swapped ^ true);
+    }
+
     target_now = swapped ? bkup_ : cdata;
     source_now = swapped ? cdata : bkup_;
     // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
     if (basisinfo_[0]->angular_number() != 0) {
-      const int m = spherical_ ? (asph * bsph) : (a * b);
+      const int m = a * b;
       const int n = cont2size_ * cont3size_ * cdsize_cart;
       const int nloop = cont0size_ * cont1size_;
       int offset = 0;
       for (int i = 0; i != nloop; ++i, offset += m * n)
-        mytranspose_(source_now+offset, &m, &n, target_now+offset);
+        mytranspose_(source_now+offset, m, n, target_now+offset);
     } else {
       swapped = (swapped ^ true);
     }
@@ -130,19 +130,17 @@ void GradBatch::compute() {
     // data will be stored in bkup_
     // the result will be 0(1(x0(x1(2(3(x2(x3)))))))
     const bool need_sph23 = basisinfo_[2]->angular_number() > 1;
-    if (spherical_ && need_sph23) {
+    if (spherical2_ && need_sph23) {
       const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
       const int nloops = contsize_ * asph * bsph;
       carsphlist.carsphfunc_call(carsphindex, nloops, source_now, target_now);
+      c = csph;
+      d = dsph;
     } else {
       swapped = (swapped ^ true);
     }
 
-    if (spherical_) {
-      a = asph;
-      b = bsph;
-      c = csph;
-      d = dsph;
+    if (spherical1_) {
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -153,7 +151,8 @@ void GradBatch::compute() {
     if (basisinfo_[2]->angular_number() != 0) {
       const int nloop = a * b * cont0size_ * cont1size_;
       const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-      sort.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
+      const SortList sort2(spherical2_);
+      sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
       swapped = (swapped ^ true);
     }
@@ -177,7 +176,8 @@ void GradBatch::compute() {
     if (basisinfo_[0]->angular_number() != 0) {
       const int nloop = c * d * cont2size_ * cont3size_;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
+      const SortList sort1(spherical1_);
+      sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
       swapped = (swapped ^ true);
     }

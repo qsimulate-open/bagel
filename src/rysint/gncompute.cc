@@ -92,7 +92,7 @@ void GNAIBatch::compute() {
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   assert(acsize*primsize_ == size_block_);
 
-  const SortList sort(spherical_);
+  const SortList sort(spherical1_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -260,7 +260,7 @@ void GNAIBatch::compute() {
     // data will be stored in bkup_
     target = cdata;
     source = bkup_;
-    if (spherical_) {
+    if (spherical1_) {
       struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
@@ -269,7 +269,7 @@ void GNAIBatch::compute() {
 
     // Sort cont01 and xyzab
     // data will be stored in data_: cont1b{ cont0a{ } }
-    if (spherical_) {
+    if (spherical1_) {
       target = bkup_;
       source = cdata;
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();

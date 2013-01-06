@@ -126,7 +126,7 @@ void SlaterBatch::compute() {
   // Cartesian to spherical 01 if necesarry
   // data will be stored in data_
   struct CarSphList carsphlist;
-  if (spherical_) {
+  if (spherical1_) {
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_ * csize_;
     if (!swapped) {
@@ -139,6 +139,8 @@ void SlaterBatch::compute() {
         carsphlist.carsphfunc_call(carsphindex, nloops, data2_, bkup2_);
     }
     swapped = (swapped ^ true);
+    a = asph;
+    b = bsph;
   }
 
 
@@ -146,21 +148,21 @@ void SlaterBatch::compute() {
   // data will be stored in data_: cont01{ xyzab{ cont23{ xyzf{ } } } }  if cartesian
   // data will be stored in bkup_: cont01{ xyzab{ cont23{ xyzf{ } } } }  if spherical
   {
-    const int m = spherical_ ? (asph * bsph) : (a * b);
+    const int m = a * b;
     const int n = cont2size_ * cont3size_ * csize_;
     const int nloop = cont0size_ * cont1size_;
     int offset = 0;
     if (swapped) {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
-        mytranspose_(&data_[offset], &m, &n, &bkup_[offset]);
+        mytranspose_(&data_[offset], m, n, &bkup_[offset]);
         if (yukawa_)
-          mytranspose_(&data2_[offset], &m, &n, &bkup2_[offset]);
+          mytranspose_(&data2_[offset], m, n, &bkup2_[offset]);
       }
     } else {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
-        mytranspose_(&bkup_[offset], &m, &n, &data_[offset]);
+        mytranspose_(&bkup_[offset], m, n, &data_[offset]);
         if (yukawa_)
-          mytranspose_(&bkup2_[offset], &m, &n, &data2_[offset]);
+          mytranspose_(&bkup2_[offset], m, n, &data2_[offset]);
       }
     }
   }
@@ -171,16 +173,12 @@ void SlaterBatch::compute() {
   {
     if (basisinfo_[3]->angular_number() != 0) {
       const int hrr_index = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
-      if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup_, CD_, data_);
-      else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
-      else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data_, CD_, bkup_);
-      else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
+      if (swapped) hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, data_);
+      else         hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data_, CD_, bkup_);
 
       if (yukawa_) {
-        if (swapped && spherical_)       hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, bkup2_, CD_, data2_);
-        else if (swapped)                hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
-        else if (!swapped && spherical_) hrr.hrrfunc_call(hrr_index, contsize_ * asph * bsph, data2_, CD_, bkup2_);
-        else                             hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
+        if (swapped) hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup2_, CD_, data2_);
+        else         hrr.hrrfunc_call(hrr_index, contsize_ * a * b, data2_, CD_, bkup2_);
       }
     } else {
       swapped = (swapped ^ true);
@@ -189,7 +187,7 @@ void SlaterBatch::compute() {
 
   // Cartesian to spherical 23 if necesarry
   // data will be stored in bkup_
-  if (spherical_) {
+  if (spherical2_) {
     const int carsphindex = basisinfo_[2]->angular_number() * ANG_HRR_END + basisinfo_[3]->angular_number();
     const int nloops = contsize_ * asph * bsph;
     if (swapped) {
@@ -202,8 +200,6 @@ void SlaterBatch::compute() {
         carsphlist.carsphfunc_call(carsphindex, nloops, bkup2_, data2_);
     }
     swapped = (swapped ^ true);
-    a = asph;
-    b = bsph;
     c = csph;
     d = dsph;
   }
@@ -213,16 +209,15 @@ void SlaterBatch::compute() {
   double *data_now_2 = swapped ? bkup2_ : data2_;
   double *bkup_now_2 = swapped ? data2_ : bkup2_;
 
-  const SortList sort(spherical_);
-
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   {
+    const SortList sort2(spherical2_);
     const int nloop = a * b * cont0size_ * cont1size_;
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
-    sort.sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
+    sort2.sortfunc_call(index, data_now, bkup_now, cont3size_, cont2size_, nloop, swap23_);
     if (yukawa_)
-      sort.sortfunc_call(index, data_now_2, bkup_now_2, cont3size_, cont2size_, nloop, swap23_);
+      sort2.sortfunc_call(index, data_now_2, bkup_now_2, cont3size_, cont2size_, nloop, swap23_);
   }
 
   // transpose batch
@@ -238,11 +233,12 @@ void SlaterBatch::compute() {
   // Sort cont01 and xyzab
   // data will be stored in data_: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
   {
+    const SortList sort1(spherical1_);
     const int nloop = c * d * cont2size_ * cont3size_;
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort.sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
+    sort1.sortfunc_call(index, data_now, bkup_now, cont1size_, cont0size_, nloop, swap01_);
     if (yukawa_)
-      sort.sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
+      sort1.sortfunc_call(index, data_now_2, bkup_now_2, cont1size_, cont0size_, nloop, swap01_);
   }
 
   if (swapped) {
