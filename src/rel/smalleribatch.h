@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.h
+// Filename: smalleribatch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,43 +24,43 @@
 //
 
 
-#ifndef __SRC_REL_DIRAC_H
-#define __SRC_REL_DIRAC_H
+#ifndef __SRC_REL_SMALLERIBATCH_H
+#define __SRC_REL_SMALLERIBATCH_H
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/wfn/reference.h>
+#include <stddef.h>
+#include <src/scf/shell.h>
 #include <src/scf/geometry.h>
-#include <src/scf/kinetic.h>
+#include <memory>
+#include <src/rysint/eribatch.h>
+#include <src/rel/relshell.h>
 #include <src/util/matrix.h>
-#include <src/scf/scf_base.h>
-#include <src/rel/smallnai.h>
+#include <src/parallel/resources.h>
 
 namespace bagel {
 
-class Dirac : public SCF_base {
+class SmallERIBatch {
   protected:
-    const std::shared_ptr<const Matrix> kinetic_;
-    const std::shared_ptr<const Matrix> nai_;
-    const std::shared_ptr<const SmallNAI> smallnai_;
+    double* data_;
 
-    std::shared_ptr<ZMatrix> hcore_construct();
-    std::shared_ptr<ZMatrix> s12_construct();
+    // size info
+    size_t size_block_;
+    size_t size_alloc_;
+
+    const std::array<std::shared_ptr<const RelShell>,4> shells_;
+
+    std::shared_ptr<StackMem> stack_;
 
   public:
-    Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-     : SCF_base(idata_, geom->relativistic(), re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
-    }
-    ~Dirac() {};
+    SmallERIBatch(std::array<std::shared_ptr<const RelShell>,4> info);
 
-    void compute() override;
+    ~SmallERIBatch();
 
-    std::shared_ptr<Reference> conv_to_ref() const override;
+    void compute();
 
-    void print_eig(const std::unique_ptr<double[]>&);
+    void eri_compute(double* eri) const;
 
+    size_t size_block() const { return size_block_; }
+    size_t size_alloc() const { return size_alloc_; }
 };
 
 }

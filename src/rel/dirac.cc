@@ -41,6 +41,17 @@ void Dirac::compute() {
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
   interm.diagonalize(eig.get()); 
 
+  // coefficient matrix
+  shared_ptr<ZMatrix> coeff(new ZMatrix(*s12 * interm));
+
+  // make a relativistic version of Coeff class (c.f. coeff.h in src/scf)
+  // only implement form_density_rhf..
+  const int nele = geom_->nele();
+//shared_ptr<ZCoeff> coeff(new ZMatrix(*s12 * interm));
+//shared_ptr<ZMatrix> density = coeff->form_density_rhf(geom_->nele());
+
+//const energy = hcore->ddot(*density);
+
   print_eig(eig);
 }
 

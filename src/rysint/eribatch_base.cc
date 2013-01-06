@@ -46,8 +46,8 @@ static const double pimhalf__ = 1.0/sqrt(pi__);
 static const double T_thresh__ = 1.0e-8;
 
 
-ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit)
- : RysInt(o) {
+ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit, shared_ptr<StackMem> stack)
+ : RysInt(o, stack) {
 
   breit_ = breit;
 

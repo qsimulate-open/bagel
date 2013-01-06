@@ -29,8 +29,8 @@ using namespace std;
 using namespace bagel;
 
 
-ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
-:  ERIBatch_base(_info, max_density, 0) {
+ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum,
+                   std::shared_ptr<StackMem> stack) :  ERIBatch_base(_info, max_density, 0) {
 
 }
 
