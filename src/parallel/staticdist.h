@@ -61,7 +61,7 @@ class StaticDist {
       for (size_t i = 0; i != nproc_; ++i) {
         if (element < start_[i+1]) return std::make_tuple(i, element-start_[i]);
       }
-      assert("wrong call to StaticDist::iproc");
+      throw std::runtime_error("wrong call to StaticDist::iproc");
       return std::make_tuple(0,0);
     }
 
