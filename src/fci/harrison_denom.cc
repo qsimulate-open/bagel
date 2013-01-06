@@ -31,67 +31,94 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
+#include <src/util/taskqueue.h>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
+class HZDenomTask {
+  protected:
+    double* out_;
+    const std::bitset<nbit__> a_; 
+    const std::shared_ptr<const Determinants> det_;
+    const double* jop_;
+    const double* kop_;
+    const double* h_;
+
+  public:
+    HZDenomTask(double* o, const std::bitset<nbit__>& a, const std::shared_ptr<const Determinants>& det, const double* j, const double* k, const double* diag)
+      : out_(o), a_(a), det_(det), jop_(j), kop_(k), h_(diag) { } 
+
+    void compute() {
+      const int nspin = det_->nspin(); 
+      const int nspin2 = nspin*nspin;
+      const int norb = det_->norb();
+      double* iter = out_;
+      const std::bitset<nbit__> ia = a_;
+      for (auto& ib : det_->stringb()) {
+        const int nopen = (ia^ib).count();
+        const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
+        *iter = 0.0;
+        for (int i = 0; i != norb; ++i) {
+          const int nia = ia[i];
+          const int nib = ib[i];
+          const int niab = nia + nib;
+          const int Ni = (nia ^ nib);
+          for (int j = 0; j != i; ++j) {
+            const int nja = ia[j];
+            const int njb = ib[j];
+            const int Nj = (nja ^ njb);
+            const int addj = niab * (nja + njb); 
+            *iter += jop_[j+norb*i] * 2.0 * addj - kop_[j+norb*i] * (F*Ni*Nj + addj);
+          }
+          *iter += h_[i] * niab - kop_[i+norb*i] * 0.5 * (Ni - niab*niab);
+        }
+        ++iter;
+      }
+    }
+
+};
+
 void HarrisonZarrabian::const_denom() {
-  vector<double> jop, kop;
-  jop.resize(norb_*norb_);
-  kop.resize(norb_*norb_);
+  Timer denom_t;
+  unique_ptr<double[]> h(new double[norb_]);
+  unique_ptr<double[]> jop(new double[norb_*norb_]);
+  unique_ptr<double[]> kop(new double[norb_*norb_]);
+
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
       jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
-    }
-  }
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j) {
       kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
     }
+    h[i] = jop_->mo1e(i,i);
   }
+  denom_t.tick_print("jop, kop");
 
-  shared_ptr<Civec> tmp(new Civec(det()));
-  denom_ = tmp;
-  const int nspin = det()->nspin(); 
-  const int nspin2 = nspin*nspin;
+  denom_ = shared_ptr<Civec>(new Civec(det()));
 
   double* iter = denom_->data();
+  vector<HZDenomTask> tasks;
+  tasks.reserve(det()->stringa().size());
   for (auto& ia : det()->stringa()) {
-    for (auto& ib : det()->stringb()) {
-      const int nopen = (ia^ib).count();
-      const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
-      *iter = 0.0;
-      for (int i = 0; i != norb_; ++i) {
-        const int nia = ia[i];
-        const int nib = ib[i];
-        const int niab = nia + nib;
-        const int Ni = (nia ^ nib);
-        for (int j = 0; j != i; ++j) {
-          const int nja = ia[j];
-          const int njb = ib[j];
-          const int Nj = (nja ^ njb);
-          const int addj = niab * (nja + njb); 
-          *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
-        }
-        *iter += jop_->mo1e(i,i) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
-      }
-      ++iter;
-    }
+    tasks.push_back(HZDenomTask(iter, ia, det_, jop.get(), kop.get(), h.get()));
+    iter += det()->stringb().size();
   }
+
+  TaskQueue<HZDenomTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
+  denom_t.tick_print("denom");
 }
 
 void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  auto tp1 = high_resolution_clock::now();
+  Timer timer;
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
 
   // right now full basis is used. 
-  auto tp2 = high_resolution_clock::now();
-  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
-          duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
+  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();
 }

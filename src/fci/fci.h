@@ -111,7 +111,6 @@ class FCI {
     // this constructor is ugly... to be fixed some day...
     FCI(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
-    ~FCI();
     void compute();
 
     virtual void update(std::shared_ptr<const Coeff> ) = 0;

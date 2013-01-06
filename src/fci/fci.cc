@@ -77,8 +77,6 @@ void FCI::common_init() {
   det_ = shared_ptr<const Determinants>(new Determinants(norb_, nelea_, neleb_));
 }
 
-FCI::~FCI() { }
-
 // generate initial vectors
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
