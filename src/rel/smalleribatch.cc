@@ -32,11 +32,12 @@
 using namespace std;
 using namespace bagel;
 
-SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const RelShell>,4> info)
+SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const RelShell>,3> info)
   : shells_(info), stack_(resources__->get()) {
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
   size_alloc_ = size_block_ * 4;
   data_ = stack_->get(size_alloc_);
+  fill(data_, data_+size_alloc_, 0.0);
 }
 
 
@@ -48,7 +49,8 @@ SmallERIBatch::~SmallERIBatch() {
 void SmallERIBatch::compute() {
 
   const int s0size = shells_[0]->nbasis();
-  const int gamma = 2 * s0size;
+  const int s1size = shells_[1]->nbasis();
+  const int s2size = shells_[2]->nbasis();
   const int a1size_inc = shells_[1]->aux_inc()->nbasis();
   const int a2size_inc = shells_[2]->aux_inc()->nbasis();
   const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
@@ -58,21 +60,30 @@ void SmallERIBatch::compute() {
 
   // first compute uncontracted ERI with auxiliary basis (cartesian)
 
-  double* eri = stack_->get(gamma * a1 * a2);
+  double* eri = stack_->get(s0size * a1 * a2);
 
   eri_compute(eri);
 
-  double* ints = stack_->get(gamma*a1*shells_[2]->nbasis());
+  double* ints = stack_->get(s0size*a1*s2size);
+  double* ints2 = stack_->get(s0size*s1size*s2size);
+
+  array<double* const,3> data = {{data_+size_block_, data_+size_block_*2, data_+size_block_*3}};
+  array<int,3> f = {{1,2,0}};
+  array<int,3> b = {{2,0,1}};
+
   for (int i = 0; i != 3; ++i) {
-    dgemm_("N", "N", gamma*a1, shells_[2]->nbasis(), a2, 1.0, eri, gamma*a1, shells_[2]->small(i)->data(), a2, 0.0, ints, gamma*a1);
-    for (int k = 0; k != 3; ++k) {
-      double* ints2 = stack_->get(gamma*shells_[1]->nbasis()*shells_[2]->nbasis());
-      for (int j = 0; j != shells_[2]->nbasis(); ++j) {
-        dgemm_("N", "N", gamma, shells_[1]->nbasis(), a1, 1.0, ints+j*gamma*a1, gamma, shells_[1]->small(k)->data(), a1, 0.0, ints2+j*gamma*shells_[1]->nbasis(), gamma); 
+    dgemm_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->small(i)->data(), a2, 0.0, ints, s0size*a1);
+    //why is this loop required?
+    //for (int k = 0; k != 3; ++k) {
+      for (int j = 0; j != s2size; ++j) {
+        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(i)->data(), a1, 1.0, data_+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, -1.0, ints+j*s0size*a1, s0size, shells_[1]->small(b[i])->data(), a1, 1.0, data[b[i]]+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(f[i])->data(), a1, 1.0, data[i]+j*s0size*s1size, s0size); 
       }
       // set ints2 to appropriate places
       //const double factor ...
-    }
+      //dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, ints2+j*s0size*s1size, s0size); 
+    //}
   }
 
 #if 0
@@ -115,7 +126,6 @@ void SmallERIBatch::eri_compute(double* eri) const {
   // shells_[0] is aux function, shelles_[1] and [2] are basis 
 
   const int s0size = shells_[0]->nbasis();
-  const int gamma = s0size;
   const int a1size_inc = shells_[1]->aux_inc()->nbasis();
   const int a2size_inc = shells_[2]->aux_inc()->nbasis();
   const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
