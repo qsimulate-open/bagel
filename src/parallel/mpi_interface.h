@@ -81,7 +81,6 @@ class MPI_Interface {
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one-sided communication with Isend, Irecv
-#if 0
     template<class T>
     int request_send(const T* sbuf, const size_t size, const int dest, const int tag = -1) {
 #ifdef HAVE_MPI_H
@@ -104,7 +103,6 @@ class MPI_Interface {
       ++cnt_;
       return cnt_-1;
     }
-#endif
     int request_send(const double* sbuf, const size_t size, const int dest, const int tag = -1);
     int request_send(const size_t* sbuf, const size_t size, const int dest, const int tag = -1);
     int request_recv(double* rbuf, const size_t size, const int source = -1, const int tag = -1);

@@ -99,3 +99,16 @@ void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
     mpi__->accumulate(buf, lenb_, rank, off*lenb_, win_); 
   }
 }
+
+
+void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a) const {
+  const size_t mpirank = mpi__->rank();
+  size_t rank, off;
+  tie(rank, off) = dist_.locate(a);
+
+  if (mpirank == rank) {
+    daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
+  } else {
+    send_.request_send(std::move(buf), lenb_, rank, off); 
+  }
+}

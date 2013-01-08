@@ -36,6 +36,7 @@
 #include <src/parallel/staticdist.h>
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
+#include <src/parallel/request.h>
 
 namespace bagel {
 
@@ -152,6 +153,10 @@ class DistCivec {
     // table for alpha string distribution
     const StaticDist dist_;
 
+    // MPI send/receive management
+    mutable AccRequest accum_;
+    mutable SendRequest send_;
+
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
 
@@ -184,6 +189,7 @@ class DistCivec {
     void get_bstring(double* buf, const size_t a) const; 
     void put_bstring(const double* buf, const size_t a) const; 
     void accumulate_bstring(const double* buf, const size_t a) const; 
+    void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
 
 };
 

@@ -39,12 +39,14 @@ namespace bagel {
 class SendRequest {
   protected:
     struct Probe {
-      const size_t size[3];
+      const size_t size[4];
       const size_t tag;
       size_t target; // 1 ready, 0 not
       const size_t rank;
+      const size_t off;
       std::unique_ptr<double[]> buf;
-      Probe(const size_t s, const size_t c, const size_t t, const size_t ra, std::unique_ptr<double[]>& b) : size{s,c,ra}, tag(c), target(t), rank(ra), buf(std::move(b)) { }
+      Probe(const size_t s, const size_t c, const size_t t, const size_t ra, const size_t o, std::unique_ptr<double[]>& b)
+        : size{s,c,ra,o}, tag(c), target(t), rank(ra), off(o), buf(std::move(b)) { }
     };
 
     size_t counter_;
@@ -56,11 +58,11 @@ class SendRequest {
   public:
     SendRequest() : counter_(0) {}
 
-    void request_send(std::unique_ptr<double[]> buf, const size_t size, const int dest) {
+    void request_send(std::unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
       // sending size
-      std::shared_ptr<Probe> p(new Probe(size, counter_, 0, dest, buf));
+      std::shared_ptr<Probe> p(new Probe(size, counter_, 0, dest, off, buf));
       ++counter_;
-      const int srq = mpi__->request_send(p->size,    3, dest, p->tag);
+      const int srq = mpi__->request_send(p->size,    4, dest, p->tag);
       const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
       auto m = inactive_.insert(std::make_pair(rrq, p));
       assert(m.second);
@@ -95,40 +97,65 @@ class SendRequest {
 // receives using MPI_irecv and accumulate to the local destination
 class AccRequest {
   protected:
+    double* const data_;
+
     struct Double_ptr {
       double* ptr;
       Double_ptr(double* p) : ptr(p) { }
     };
 
+    struct Prep {
+      const std::shared_ptr<Double_ptr> ptr;
+      const size_t size;
+      const size_t off;
+      std::unique_ptr<double[]> buf;
+      Prep(std::shared_ptr<Double_ptr> p, const size_t s, const size_t o, std::unique_ptr<double[]> b) : ptr(p), size(s), off(o), buf(std::move(b)) {}
+    };
+
     std::map<int, std::unique_ptr<size_t[]> > calls_;
-    std::map<int, std::tuple<std::shared_ptr<Double_ptr>, std::unique_ptr<double[]> > > requests_;
+    // buffer pointer, size, offset at the target, and buffer
+    std::map<int, std::shared_ptr<Prep> > requests_;
 
     void init() {
       // we should compute the number of messnages to receive?
       // receives
       const int dest = 0;
-      std::unique_ptr<size_t[]> buf(new size_t[3]);
+      std::unique_ptr<size_t[]> buf(new size_t[4]);
       // receives size,tag,rank
-      const int rq = mpi__->request_recv(buf.get(), 3); 
+      const int rq = mpi__->request_recv(buf.get(), 4); 
       auto m = calls_.insert(std::make_pair(rq, std::move(buf)));
       assert(m.second);
     }
 
   public:
-    AccRequest() {}
+    AccRequest(double* const d = nullptr) : data_(d) {}
 
     void flush() {
       for (auto i = calls_.begin(); i != calls_.end(); ) {
         // if this has already arrived, create a buffer, and return the address.
         if (mpi__->test(i->first)) {
-          std::unique_ptr<double[]> buffer(new double[i->second[0]]);
-          const int tag = i->second[1];
+          const int size = i->second[0];
+          const int tag  = i->second[1];
           const int rank = i->second[2];
+          const int off  = i->second[3];
+          // allocating buffer
+          std::unique_ptr<double[]> buffer(new double[size]);
           std::shared_ptr<Double_ptr> ptr(new Double_ptr(buffer.get()));
-          const int rq = mpi__->request_send<Double_ptr>(&*ptr, sizeof(struct Double_ptr), rank, tag);
-          auto m = requests_.insert(std::make_pair(rq, std::make_tuple(ptr, std::move(buffer))));
+          // sending back the buffer address
+          const int sq = mpi__->request_send<Double_ptr>(&*ptr, sizeof(struct Double_ptr), rank, tag);
+          const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
+          auto m = requests_.insert(std::make_pair(rq, std::shared_ptr<Prep>(new Prep(ptr, size, off, std::move(buffer)))));
           assert(m.second);
           i = calls_.erase(i);
+        } else {
+          ++i;
+        }
+      }
+
+      for (auto i = requests_.begin(); i != requests_.end(); ++i) {
+        if (mpi__->test(i->first)) {
+          daxpy_(i->second->size, 1.0, i->second->buf.get(), 1, data_+i->second->off, 1);
+          i = requests_.erase(i); 
         } else {
           ++i;
         }

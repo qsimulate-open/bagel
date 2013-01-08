@@ -31,3 +31,5 @@ o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or 
 o Clean up interface to localization routines, especially PM
 
 o One could reduce the number of diagonalization in ROHF
+
+o config.h should be placed under bagel or something
