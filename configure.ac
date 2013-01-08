@@ -5,7 +5,7 @@ AC_PREREQ(2.57)
 AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.cc])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 m4_include([m4/acx_mpi.m4])
 
