@@ -81,7 +81,9 @@ class MPI_Interface {
 
     // one-sided communication with Isend, Irecv
     int request_send(const double* sbuf, const size_t size, const int dest);
+    int request_send(const size_t* sbuf, const size_t size, const int dest);
     int request_recv(double* rbuf, const size_t size, const int source);
+    int request_recv(size_t* rbuf, const size_t size, const int source);
     void wait(const int rq);
     bool test(const int rq);
 

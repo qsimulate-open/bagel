@@ -220,6 +220,24 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 }
 
 
+int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest) {
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i) { 
+    MPI_Request c;
+    // I hate const_cast. Blame the MPI C binding
+    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, cnt_, MPI_COMM_WORLD, &c);
+    rq.push_back(c);
+  }
+  request_.insert(make_pair(cnt_, rq));
+#endif
+  ++cnt_;
+  return cnt_-1;
+}
+
+
+
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin) {
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
@@ -227,6 +245,22 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
   for (int i = 0; i != nbatch; ++i) { 
     MPI_Request c;
     MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &c);
+    rq.push_back(c);
+  }
+  request_.insert(make_pair(cnt_, rq));
+#endif
+  ++cnt_;
+  return cnt_-1;
+}
+
+
+int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origin) {
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i) { 
+    MPI_Request c;
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, origin, MPI_ANY_TAG, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
   request_.insert(make_pair(cnt_, rq));
