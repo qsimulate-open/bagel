@@ -91,12 +91,20 @@ class SendRequest {
       }
     }
 
+    // wait for all calls
+    void wait() {
+      for (auto& i : inactive_) mpi__->wait(i.first);
+      for (auto& i : requests_) mpi__->wait(i.first);
+    }
+
 };
 
 
 // receives using MPI_irecv and accumulate to the local destination
 class AccRequest {
   protected:
+
+    size_t total_;
     double* const data_;
 
     struct Double_ptr {
@@ -128,7 +136,9 @@ class AccRequest {
     }
 
   public:
-    AccRequest(double* const d = nullptr) : data_(d) {}
+    AccRequest(const int total, double* const d) : total_(total), data_(d) {
+      for (size_t i = 0; i != total_; ++i) init();
+    }
 
     void flush() {
       for (auto i = calls_.begin(); i != calls_.end(); ) {
@@ -161,6 +171,13 @@ class AccRequest {
         }
       }
     }
+
+    // wait for all calls
+    void wait() {
+      for (auto& i : calls_)    mpi__->wait(i.first);
+      for (auto& i : requests_) mpi__->wait(i.first);
+    }
+
 
 };
 

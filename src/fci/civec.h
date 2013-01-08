@@ -154,8 +154,8 @@ class DistCivec {
     const StaticDist dist_;
 
     // MPI send/receive management
-    mutable AccRequest accum_;
-    mutable SendRequest send_;
+    std::shared_ptr<AccRequest> accum_;
+    std::shared_ptr<SendRequest> send_;
 
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
@@ -190,6 +190,8 @@ class DistCivec {
     void put_bstring(const double* buf, const size_t a) const; 
     void accumulate_bstring(const double* buf, const size_t a) const; 
     void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
+    void flush() const;
+    void wait() const;
 
 };
 

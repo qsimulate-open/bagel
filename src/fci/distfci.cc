@@ -158,7 +158,6 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
   shared_ptr<DistCivec> sigma = cc->clone();
 
   cc->open_window();
-  sigma->open_window();
 
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
@@ -219,11 +218,12 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
         for (auto& b : int_det->phiupb(j))
           bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*i)];
       }
-      sigma->accumulate_bstring(bcolumn.get(), base_det->lexical<0>(atarget));
+      sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
     }
+    sigma->flush();
   }
 
-  sigma->close_window();
+  sigma->wait();
   cc->close_window();
   *sigmag += *sigma->civec();
 }

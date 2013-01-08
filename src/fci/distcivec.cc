@@ -37,6 +37,9 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   alloc_ = size()*lenb_;
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
+
+  accum_ = shared_ptr<AccRequest>(new AccRequest(0, local_.get()));
+  send_  = shared_ptr<SendRequest>(new SendRequest());
 }
 
 
@@ -109,6 +112,18 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
   if (mpirank == rank) {
     daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
   } else {
-    send_.request_send(std::move(buf), lenb_, rank, off); 
+    send_->request_send(std::move(buf), lenb_, rank, off); 
   }
+}
+
+
+void DistCivec::flush() const {
+  send_->flush();
+  accum_->flush(); 
+}
+
+
+void DistCivec::wait() const {
+  send_->wait();
+  accum_->wait();
 }
