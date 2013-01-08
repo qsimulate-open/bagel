@@ -39,12 +39,12 @@ namespace bagel {
 class SendRequest {
   protected:
     struct Probe {
-      const size_t size;
+      const size_t size[3];
       const size_t tag;
-      size_t ready; // 1 ready, 0 not
-      const int rank;
+      size_t target; // 1 ready, 0 not
+      const size_t rank;
       std::unique_ptr<double[]> buf;
-      Probe(const size_t s, const size_t c, const size_t r, const int ra, std::unique_ptr<double[]>& b) : size(s), tag(c), ready(r), rank(ra), buf(std::move(b)) { }
+      Probe(const size_t s, const size_t c, const size_t t, const size_t ra, std::unique_ptr<double[]>& b) : size{s,c,ra}, tag(c), target(t), rank(ra), buf(std::move(b)) { }
     };
 
     size_t counter_;
@@ -60,8 +60,8 @@ class SendRequest {
       // sending size
       std::shared_ptr<Probe> p(new Probe(size, counter_, 0, dest, buf));
       ++counter_;
-      const int srq = mpi__->request_send(&p->size,  1, dest, p->tag);
-      const int rrq = mpi__->request_recv(&p->ready, 1, dest, p->tag);
+      const int srq = mpi__->request_send(p->size,    3, dest, p->tag);
+      const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
       auto m = inactive_.insert(std::make_pair(rrq, p));
       assert(m.second);
     }
@@ -71,7 +71,7 @@ class SendRequest {
       // if receive buffer at the destination is created, send the message
       for (auto i = inactive_.begin(); i != inactive_.end(); ) {
         if (mpi__->test(i->first)) {
-          int j = mpi__->request_send(i->second->buf.get(), i->second->size, i->second->rank);
+          int j = mpi__->request_send(i->second->buf.get(), i->second->size[0], i->second->rank);
           auto m = requests_.insert(std::make_pair(j, std::move(i->second->buf)));
           assert(m.second);
           i = inactive_.erase(i); 
@@ -95,13 +95,44 @@ class SendRequest {
 // receives using MPI_irecv and accumulate to the local destination
 class AccRequest {
   protected:
+    struct Double_ptr {
+      double* ptr;
+      Double_ptr(double* p) : ptr(p) { }
+    };
 
+    std::map<int, std::unique_ptr<size_t[]> > calls_;
+    std::map<int, std::tuple<std::shared_ptr<Double_ptr>, std::unique_ptr<double[]> > > requests_;
+
+    void init() {
+      // we should compute the number of messnages to receive?
+      // receives
+      const int dest = 0;
+      std::unique_ptr<size_t[]> buf(new size_t[3]);
+      // receives size,tag,rank
+      const int rq = mpi__->request_recv(buf.get(), 3); 
+      auto m = calls_.insert(std::make_pair(rq, std::move(buf)));
+      assert(m.second);
+    }
 
   public:
     AccRequest() {}
 
     void flush() {
-      // receives 
+      for (auto i = calls_.begin(); i != calls_.end(); ) {
+        // if this has already arrived, create a buffer, and return the address.
+        if (mpi__->test(i->first)) {
+          std::unique_ptr<double[]> buffer(new double[i->second[0]]);
+          const int tag = i->second[1];
+          const int rank = i->second[2];
+          std::shared_ptr<Double_ptr> ptr(new Double_ptr(buffer.get()));
+          const int rq = mpi__->request_send<Double_ptr>(&*ptr, sizeof(struct Double_ptr), rank, tag);
+          auto m = requests_.insert(std::make_pair(rq, std::make_tuple(ptr, std::move(buffer))));
+          assert(m.second);
+          i = calls_.erase(i);
+        } else {
+          ++i;
+        }
+      }
     }
 
 };
