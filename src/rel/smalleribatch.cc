@@ -67,23 +67,18 @@ void SmallERIBatch::compute() {
   double* ints = stack_->get(s0size*a1*s2size);
   double* ints2 = stack_->get(s0size*s1size*s2size);
 
-  array<double* const,3> data = {{data_+size_block_, data_+size_block_*2, data_+size_block_*3}};
-  array<int,3> f = {{1,2,0}};
-  array<int,3> b = {{2,0,1}};
+  array<double* const,4> data = {{data_, data_+size_block_, data_+size_block_*2, data_+size_block_*3}};
+  array<double,9> coeff = {{1.0,1.0,-1.0,-1.0,1.0,1.0,1.0,-1.0,1.0}};
+  array<int,9> b = {{0,1,3,1,0,2,3,2,0}};
 
   for (int i = 0; i != 3; ++i) {
     dgemm_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->small(i)->data(), a2, 0.0, ints, s0size*a1);
-    //why is this loop required?
-    //for (int k = 0; k != 3; ++k) {
+    for (int k = 0; k != 3; ++k) {
       for (int j = 0; j != s2size; ++j) {
-        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(i)->data(), a1, 1.0, data_+j*s0size*s1size, s0size); 
-        dgemm_("N", "N", s0size, s1size, a1, -1.0, ints+j*s0size*a1, s0size, shells_[1]->small(b[i])->data(), a1, 1.0, data[b[i]]+j*s0size*s1size, s0size); 
-        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(f[i])->data(), a1, 1.0, data[i]+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 1.0, ints2+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, coeff[k+3*i], ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 1.0, data[b[k+3*i]]+j*s0size*s1size, s0size); 
       }
-      // set ints2 to appropriate places
-      //const double factor ...
-      //dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, ints2+j*s0size*s1size, s0size); 
-    //}
+    }
   }
 
 #if 0
