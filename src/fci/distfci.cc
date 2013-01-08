@@ -114,7 +114,7 @@ void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
       for (int l = 0; l != norb_; ++l) {
         if (string_i[l]) continue;
         bitset<nbit__> string_il = string_i; string_il.set(l);
-        const size_t aloc = base_det->lexical<0>(string_il) - cc->astart();
+        const int aloc = base_det->lexical<0>(string_il) - cc->astart();
         if (aloc < 0 || aloc >= cc->asize()) continue; 
 
         const double fac = jop->mo1e(min(i,l)+max(i,l)*(max(i,l)+1)/2) * base_det->sign(string_il,l,i);
@@ -137,7 +137,7 @@ void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
 
-            const size_t aloc = base_det->lexical<0>(string_ijkl) - cc->astart();
+            const int aloc = base_det->lexical<0>(string_ijkl) - cc->astart();
             if (aloc < 0 || aloc >= cc->asize()) continue; 
 
             const double fac = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
