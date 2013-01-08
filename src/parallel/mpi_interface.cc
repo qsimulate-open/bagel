@@ -246,6 +246,21 @@ void MPI_Interface::wait(const int rq) {
 }
 
 
+bool MPI_Interface::test(const int rq) {
+  bool out = true;
+#ifdef HAVE_MPI_H
+  auto i = request_.find(rq);
+  assert(i != request_.end());
+  for (auto& j : i->second) {
+    int b;
+    MPI_Test(&j, &b, MPI_STATUS_IGNORE);
+    out &= b;
+  }
+#endif
+  return out;
+}
+
+
 pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
 #ifdef HAVE_SCALAPACK
   return make_pair(numroc_(ndim, blocksize__, myprow_, 0, nprow_),

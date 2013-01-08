@@ -83,6 +83,7 @@ class MPI_Interface {
     int request_send(const double* sbuf, const size_t size, const int dest);
     int request_recv(double* rbuf, const size_t size, const int source);
     void wait(const int rq);
+    bool test(const int rq);
 
     // one-sided communication with Window
     int win_create(double* buf, const size_t size);
