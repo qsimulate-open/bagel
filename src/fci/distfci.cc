@@ -30,7 +30,7 @@
 #include <src/fci/distfci.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
-#include <src/parallel/request.h>
+//#include <src/parallel/request.h>
 #include <vector>
 #include <config.h>
 
