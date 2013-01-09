@@ -115,7 +115,8 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
   array<unsigned int,4> sam, cam;
   for (int i = 0; i != 4; ++i) sam[i] = (am[i]+1)*(am[i]+2)/2;
   for (int i = 0; i != 4; ++i) cam[i] = 2*am[i]+1;
-  if (!spherical_) cam = sam;
+  if (!spherical1_) { cam[0] = sam[0]; cam[1] = sam[1]; }
+  if (!spherical2_) { cam[2] = sam[2]; cam[3] = sam[3]; }
 
   array<size_t, 4> dim = {{cam[0]*ce[0].size(), cam[1]*ce[1].size(), cam[2]*ce[2].size(), cam[3]*ce[3].size()}};
   array<size_t, 4> base;
@@ -424,7 +425,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
           }
           double* ints = stack_->libint_t_ptr(0)->targets[0];
 
-          if (spherical_) {
+          if (spherical1_ || spherical2_) {
             const size_t batchsize = sam[0]*sam[1]*cam[2]*cam[3];
             double* area = stack_->get(batchsize);
             const int carsphindex = am[2] * ANG_HRR_END + am[3];
@@ -432,17 +433,23 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysIn
             const int m = cam[2]*cam[3];
             const int n = sam[0]*sam[1];
             const int nn = cam[0]*cam[1];
-            carsphlist.carsphfunc_call(carsphindex, n, ints, area);
+            if (spherical2_) {
+              carsphlist.carsphfunc_call(carsphindex, n, ints, area);
+            } else {
+              copy_n(ints, m*n, area);
+            }
             mytranspose_(area, m, n, ints);
-            carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
-            copy_n(area, nn*m, ints);
+            if (spherical1_) {
+              carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
+              copy_n(area, nn*m, ints);
+            }
             stack_->release(batchsize, area);
           }
 
           // ijkl runs over xyz components
           int ijkl = 0;
           array<int,4> id;
-          if (!spherical_) {
+          if (!(spherical1_ || spherical2_)) {
             for (int i = 0; i != cam[0]; ++i) {
               id[0] = i;
               for (int j = 0; j != cam[1]; ++j) {
