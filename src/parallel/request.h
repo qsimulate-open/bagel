@@ -101,11 +101,15 @@ class SendRequest {
     }
 
     // wait for all calls
-    void wait() {
+    void wait1() {
       for (auto& i : send_)     mpi__->wait(i);
       flush();
+    }
+    void wait2() {
       for (auto& i : inactive_) mpi__->wait(i.first);
       flush();
+    }
+    void wait3() {
       for (auto& i : requests_) mpi__->wait(i.first);
       flush();
     }
@@ -184,11 +188,15 @@ class AccRequest {
     }
 
     // wait for all calls
-    void wait() {
+    void wait1() {
       for (auto& i : calls_) mpi__->wait(i.first);
       flush();
+    }
+    void wait2() {
       for (auto& i : send_)  mpi__->wait(i);
       flush();
+    }
+    void wait3() {
       for (auto& i : requests_) mpi__->wait(i.first);
       flush();
     }

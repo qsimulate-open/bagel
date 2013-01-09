@@ -129,6 +129,10 @@ void DistCivec::flush() const {
 
 
 void DistCivec::wait() const {
-  send_->wait();
-  accum_->wait();
+  send_->wait1();
+  accum_->wait1();
+  send_->wait2();
+  accum_->wait2();
+  send_->wait3();
+  accum_->wait3();
 }

@@ -184,9 +184,6 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
       if (aloc >= 0 && aloc < sigma->asize()) ++cmm;
     }
   }
-resources__->proc()->cout_on();
-cout << mpi__->rank() << " " << cmm << endl;
-resources__->proc()->cout_off();
   sigma->init_accumulate_buf(cmm);
 
   // shamelessly statically distributing across processes
