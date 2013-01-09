@@ -79,6 +79,8 @@ void SmallERIBatch::compute() {
     }
   }
 
+stack_->release(s0size*a1*s2size, ints);
+stack_->release(s0size*a1*a2, eri);
 #if 0
   std::array<shared_ptr<Matrix>,3> ints;
   for (int i = 0; i != 3; ++i)

@@ -25,7 +25,6 @@
 
 #include <numeric>
 #include <iomanip>
-#include <src/df/dfinttask.h>
 #include <src/util/taskqueue.h>
 #include <src/df/dfblock.h>
 #include <src/rysint/libint.h>
@@ -52,55 +51,6 @@ DFBlock::DFBlock(vector<shared_ptr<const Shell> > a, vector<shared_ptr<const She
   for (auto& i : b2_)  { b2off_.push_back(tmpb2); tmpb2 += i->nbasis(); }
   assert(tmpa == asize_ && tmpb1 == b1size_ && tmpb2 == b2size_);
 
-
-  ao_init();
-}
-
-
-// protected functions
-void DFBlock::ao_init() {
-  // allocation of the data area
-  data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
-
-  const shared_ptr<const Shell> i3(new Shell(aux_.front()->spherical()));
-
-  // making a task list
-  vector<DFIntTask> tasks;
-  tasks.reserve(b1_.size()*b2_.size()*aux_.size());
-
-  // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
-  assert(b1_ == b2_);
-  
-  auto j2 = b2off_.begin();
-  for (auto& i2 : b2_) { 
-    auto j1 = b1off_.begin();
-    for (auto& i1 : b1_) { 
-      // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
-      if (*j1 <= *j2) {
-        auto j0 = aoff_.begin();
-        for (auto& i0 : aux_) { 
-          tasks.push_back(DFIntTask(array<shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, vector<int>{*j2, *j1, *j0}, this));
-          ++j0;
-        }
-      }
-      ++j1;
-    }
-    ++j2;
-  }
-
-  TaskQueue<DFIntTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
-}
-
-
-pair<const double*, shared_ptr<RysInt> > DFBlock::compute_batch(array<shared_ptr<const Shell>,4>& input) {
-#ifdef LIBINT_INTERFACE
-  shared_ptr<Libint> eribatch(new Libint(input));
-#else
-  shared_ptr<ERIBatch> eribatch(new ERIBatch(input, 2.0));
-#endif
-  eribatch->compute();
-  return make_pair(eribatch->data(), eribatch);
 }
 
 

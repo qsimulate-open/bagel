@@ -27,13 +27,11 @@
 #define __SRC_DF_DFINTTASK_H
 
 #include <src/scf/shell.h>
-#include <src/df/dfblock.h>
+#include <src/rysint/rysint.h>
 
 namespace bagel {
 
 class DFIntTask {
-  friend class DFBlock;
-
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
     std::array<int,3> offset_; // at most 3 elements

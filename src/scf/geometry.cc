@@ -220,7 +220,11 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
     auto tp1 = chrono::high_resolution_clock::now();
-    df_ = form_fit<ERIFit>(thresh, true); // true means we construct J^-1/2
+#ifdef LIBINT_INTERFACE
+    df_ = form_fit<DFDist_ints<Libint> >(thresh, true); // true means we construct J^-1/2
+#else
+    df_ = form_fit<DFDist_ints<ERIBatch> >(thresh, true); // true means we construct J^-1/2
+#endif
 
     auto tp2 = chrono::high_resolution_clock::now();
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << chrono::duration_cast<chrono::milliseconds>(tp2-tp1).count()*0.001 <<

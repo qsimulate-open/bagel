@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: libint.h
+// Filename: dfock.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -8,7 +8,7 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,30 +24,34 @@
 //
 
 
-#ifdef LIBINT_INTERFACE
+#ifndef __SRC_REL_DFOCK_H
+#define __SRC_REL_DFOCK_H
 
-#ifndef __SRC_RYSINT_LIBINT_H
-#define __SRC_RYSINT_LIBINT_H
-
-#include <src/rysint/rysint.h>
+#include <memory>
+#include <string>
+#include <map>
+#include <src/wfn/reference.h>
+#include <src/scf/geometry.h>
+#include <src/util/zmatrix.h>
 
 namespace bagel {
 
-class Libint : public RysInt {
+class DFock : public ZMatrix {
   protected:
-    void root_weight(int){};
-    void compute_ssss(double){};
+    std::shared_ptr<const Geometry> geom_;
+    void two_electron_part(const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf, const double scale_ex);
 
   public:
-    Libint(const std::array<std::shared_ptr<const Shell>,4>&, const double dum = 0.0);
-    ~Libint() {};
+    DFock(const std::shared_ptr<const Geometry> a, 
+          const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
+     : ZMatrix(a->nbasis(), a->nbasis()), geom_(a) {
+       two_electron_part(ocoeff, rhf, scale_ex);
+    }
 
-    void compute() {};
+//    std::shared_ptr<Reference> conv_to_ref() const override;
 
 };
 
 }
-
-#endif
 
 #endif

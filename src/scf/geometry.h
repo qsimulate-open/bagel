@@ -33,7 +33,7 @@
 #include <src/scf/atom.h>
 #include <src/scf/petite.h>
 #include <memory>
-#include <src/df/fit.h>
+#include <src/df/df.h>
 #include <src/util/input.h>
 
 namespace bagel {

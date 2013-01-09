@@ -562,3 +562,19 @@ shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) {
   }
   return out;
 }
+
+shared_ptr<Matrix> ZMatrix::get_real_part() {
+  shared_ptr<Matrix> out(new Matrix(this->ndim(), this->mdim()));
+  for (int i = 0; i != this->size(); ++i) {
+    out->data(i) = real(this->data(i));
+  }
+  return out;
+}
+
+shared_ptr<Matrix> ZMatrix::get_imag_part() {
+  shared_ptr<Matrix> out(new Matrix(this->ndim(), this->mdim()));
+  for (int i = 0; i != this->size(); ++i) {
+    out->data(i) = imag(this->data(i));
+  }
+  return out;
+}

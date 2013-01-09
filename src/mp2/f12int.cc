@@ -25,9 +25,15 @@
 
 
 #include <stddef.h>
+#include <src/df/df.h>
 #include <src/mp2/f12int.h>
 #include <iostream>
 #include <iomanip>
+
+// TODO this is WRONG!!!!!!!! TODO TODO
+#include <src/rysint/eribatch.h> 
+#define SlaterFit DFDist_ints<ERIBatch>
+#define YukawaFit DFDist_ints<ERIBatch>
 
 using namespace std;
 using namespace bagel;

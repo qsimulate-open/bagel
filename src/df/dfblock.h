@@ -33,6 +33,8 @@
 #include <vector>
 #include <src/util/matrix.h>
 #include <src/scf/shell.h>
+#include <src/util/timer.h>
+#include <src/util/taskqueue.h>
 #include <src/rysint/rysint.h>
 
 namespace bagel {
@@ -65,9 +67,7 @@ class DFBlock {
     const size_t b1start_; 
     const size_t b2start_; 
 
-    void ao_init();
-
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
+    virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) { assert(false); }
 
   public:
     // construction of a block from AO integrals
@@ -145,6 +145,60 @@ class DFBlock {
     // use with caution
     std::unique_ptr<double[]> release_data() { return std::move(data_); }
 };
+
+}
+
+#include <src/df/dfinttask.h>
+
+namespace bagel {
+
+template<class TBatch>
+class DFBlock_ints : public DFBlock {
+  protected:
+    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
+      std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
+      eribatch->compute();
+      return std::make_pair(eribatch->data(), eribatch);
+    }
+
+    void ao_init() {
+      // allocation of the data area
+      data_ = std::unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
+
+      const std::shared_ptr<const Shell> i3(new Shell(aux_.front()->spherical()));
+
+      // making a task list
+      std::vector<DFIntTask> tasks;
+      tasks.reserve(b1_.size()*b2_.size()*aux_.size());
+
+      // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
+      assert(b1_ == b2_);
+  
+      auto j2 = b2off_.begin();
+      for (auto& i2 : b2_) { 
+        auto j1 = b1off_.begin();
+        for (auto& i1 : b1_) { 
+          // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
+          if (*j1 <= *j2) {
+            auto j0 = aoff_.begin();
+            for (auto& i0 : aux_)
+              tasks.push_back(DFIntTask(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::vector<int>{*j2, *j1, *j0++}, this));
+          }
+          ++j1;
+        }
+        ++j2;
+      }
+      TaskQueue<DFIntTask> tq(tasks);
+      tq.compute(resources__->max_num_threads());
+    }
+
+  public:
+    // construction of a block from AO integrals
+    DFBlock_ints(std::vector<std::shared_ptr<const Shell> > a, std::vector<std::shared_ptr<const Shell> > b1, std::vector<std::shared_ptr<const Shell> > b2,
+             const int as, const int b1s, const int b2s) : DFBlock(a, b1, b2, as, b1s, b2s) { ao_init(); }
+    
+}; 
+
 
 }
 

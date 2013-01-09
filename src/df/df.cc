@@ -153,34 +153,14 @@ tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<sh
 }
 
 
-void DFDist::common_init(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
+void DFDist::common_init2(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
                          const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
-
   Timer time;
-
-  // 3index Integral is now made in DFBlock.
-  vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
-  for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
-  for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
-  for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
-
-  // Decide how we distribute (dynamic distribution).
-  // TODO we need a parallel queue server!
-
-  // construction of DFBlock computes integrals
-#ifndef HAVE_MPI_H
-  block_ = shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
-#else
-  int astart;
-  vector<shared_ptr<const Shell> > myashell;
-  tie(astart, myashell) = get_ashell(ashell);
-  block_ = shared_ptr<DFBlock>(new DFBlock(myashell, b1shell, b2shell, astart, 0, 0));
-#endif
-
-  time.tick_print("3-index ints");
 
   // make a global hash table
   make_table(mpi__->size());
+  vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
+  for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
