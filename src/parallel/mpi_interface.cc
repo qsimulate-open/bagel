@@ -222,6 +222,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 
 int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest, const int tag) {
 #ifdef HAVE_MPI_H
+  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) { 

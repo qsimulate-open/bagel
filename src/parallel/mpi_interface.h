@@ -33,7 +33,6 @@
 #include <vector>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
- #include <src/parallel/mpi_interface.h>
 #endif
 
 namespace bagel {
@@ -81,28 +80,6 @@ class MPI_Interface {
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one-sided communication with Isend, Irecv
-    template<class T>
-    int request_send(const T* sbuf, const size_t size, const int dest, const int tag = -1) {
-#ifdef HAVE_MPI_H
-      MPI_Request c;
-      // I hate const_cast. Blame the MPI C binding
-      MPI_Isend(const_cast<T*>(sbuf), size, MPI_BYTE, dest, tag, MPI_COMM_WORLD, &c);
-      request_.insert(make_pair(cnt_, std::vector<MPI_Request>{c}));
-#endif
-      ++cnt_;
-      return cnt_-1;
-    }
-    template<class T>
-    int request_recv(T* rbuf, const size_t size, const int source = -1, const int tag = -1) { 
-#ifdef HAVE_MPI_H
-      MPI_Request c;
-      // I hate const_cast. Blame the MPI C binding
-      MPI_Irecv(rbuf, size, MPI_BYTE, source, tag, MPI_COMM_WORLD, &c);
-      request_.insert(std::make_pair(cnt_, std::vector<MPI_Request>{c}));
-#endif
-      ++cnt_;
-      return cnt_-1;
-    }
     int request_send(const double* sbuf, const size_t size, const int dest, const int tag = -1);
     int request_send(const size_t* sbuf, const size_t size, const int dest, const int tag = -1);
     int request_recv(double* rbuf, const size_t size, const int source = -1, const int tag = -1);
