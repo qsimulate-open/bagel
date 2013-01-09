@@ -28,12 +28,11 @@
 #include <iomanip>
 #include <src/rel/smallnaibatch.h>
 #include <src/rysint/naibatch.h>
-#include <src/rel/relshell.h>
 
 using namespace std;
 using namespace bagel;
 
-SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const RelShell>,2> info, std::shared_ptr<const Geometry> geom)
+SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom)
   : geom_(geom), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
   for (int i = 0; i != 4; ++i)

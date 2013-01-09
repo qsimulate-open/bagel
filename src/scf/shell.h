@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
@@ -51,6 +52,16 @@ class Shell {
     std::vector<int> contraction_lower_;
 
     int nbasis_;
+
+    // whether a relativistic part is initialized
+    bool relativistic_;
+
+    // protected members for relativistic calculations
+    std::array<std::shared_ptr<const Matrix>,3> small_; 
+    std::shared_ptr<const Shell> aux_inc_;
+    std::shared_ptr<const Shell> aux_dec_;
+    std::shared_ptr<const Matrix> overlap_compute_() const;
+    std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
 
   public:
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
@@ -91,6 +102,13 @@ class Shell {
     std::shared_ptr<const Shell> kinetic_balance_uncont(int) const;
 
     std::shared_ptr<const Shell> cartesian_shell() const;
+
+    void init_relativistic();
+
+    // Relativistic 
+    const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
+    const std::shared_ptr<const Shell> aux_inc() const { assert(relativistic_); return aux_inc_; }
+    const std::shared_ptr<const Shell> aux_dec() const { assert(relativistic_); return aux_dec_; }
 };
 
 }

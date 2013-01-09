@@ -30,7 +30,6 @@
 #include <array>
 #include <vector>
 #include <string>
-#include <src/rel/relshell.h>
 #include <src/scf/shell.h>
 #include <memory>
 
@@ -44,7 +43,6 @@ class Atom {
     std::string name_;
     std::array<double,3> position_;
     std::vector<std::shared_ptr<const Shell> > shells_;
-    std::vector<std::shared_ptr<const RelShell> > relshells_;
     int atom_number_;
     double atom_charge_;
     int nbasis_;
@@ -72,7 +70,6 @@ class Atom {
     const std::array<double,3> position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
     const std::vector<std::shared_ptr<const Shell> >& shells() const { return shells_; }
-    const std::vector<std::shared_ptr<const RelShell> >& relshells() const { return relshells_; }
     int nshell() const { return shells_.size(); }
 
     bool dummy() const { return atom_number_ == 0; }
@@ -97,7 +94,6 @@ class Atom {
 
     // inititalize relativistic calculation
     std::shared_ptr<const Atom> relativistic() const;
-    bool rel_initialized() const { return !relshells_.empty(); }
 };
 
 }

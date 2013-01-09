@@ -27,13 +27,12 @@
 #include <iostream>
 #include <iomanip>
 #include <src/rel/smalleribatch.h>
-#include <src/rel/relshell.h>
 
 using namespace std;
 using namespace bagel;
 
-SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const RelShell>,3> info)
-  : shells_(info), stack_(resources__->get()) {
+SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
+  : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
   size_alloc_ = size_block_ * 4;
   data_ = stack_->get(size_alloc_);

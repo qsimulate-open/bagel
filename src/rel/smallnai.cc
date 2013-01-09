@@ -25,7 +25,6 @@
 
 
 #include <stddef.h>
-#include <src/rel/relshell.h>
 #include <src/rel/smallnai.h>
 #include <src/rel/smallnaibatch.h>
 
@@ -33,8 +32,6 @@ using namespace std;
 using namespace bagel;
 
 SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
-  if (!geom->rel_initialized())
-    throw logic_error("SmallNAI called with a non-relativistic geometry object.");
 
   for (int i = 0; i != 4; ++i) {
     shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis())); 
@@ -56,7 +53,7 @@ void SmallNAI::print() const {
 }
 
 
-void SmallNAI::computebatch(const array<shared_ptr<const RelShell>,2>& input, const int offsetb0, const int offsetb1) {
+void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -80,10 +77,10 @@ void SmallNAI::init() {
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
     // iatom0 = iatom1;
     auto offset0 = o0->begin();
-    for (auto b0 = (*a0)->relshells().begin(); b0 != (*a0)->relshells().end(); ++b0, ++offset0) {
+    for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
       auto offset1 = o0->begin();
-      for (auto b1 = (*a0)->relshells().begin(); b1 != (*a0)->relshells().end(); ++b1, ++offset1) {
-        array<shared_ptr<const RelShell>,2> input = {{*b1, *b0}};
+      for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
+        array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
         computebatch(input, *offset0, *offset1);
       }
     }
@@ -91,10 +88,10 @@ void SmallNAI::init() {
     auto o1 = o0+1;
     for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
       auto offset0 = o0->begin();
-      for (auto b0 = (*a0)->relshells().begin(); b0 != (*a0)->relshells().end(); ++b0, ++offset0) {
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
         auto offset1 = o1->begin();
-        for (auto b1 = (*a1)->relshells().begin(); b1 != (*a1)->relshells().end(); ++b1, ++offset1) {
-          array<shared_ptr<const RelShell>,2> input = {{*b1, *b0}};
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           computebatch(input, *offset0, *offset1);
         }
       }

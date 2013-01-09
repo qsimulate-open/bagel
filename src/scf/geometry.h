@@ -178,7 +178,6 @@ class Geometry {
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic() const;
 
-    bool rel_initialized() const { return atoms_.front()->rel_initialized(); }
 };
 
 }

@@ -27,6 +27,7 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/util/matrix.h>
+#include <src/rel/smalleribatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,10 +36,10 @@ void DFock::two_electron_part(const std::shared_ptr<const ZMatrix> ocoeff, const
 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
 
-#if 0
 //large part
   complex<double> imag (0.0,1.0);
   std::shared_ptr<const DFDist> df = geom_->df();
+//std::shared_ptr<const DFDist> dfs = geom_->form_fit<DFDist_ints<SmallERIBatch> >(1.0e-8, false); // TODO thresh should be controlled from the input deck
 
   std::shared_ptr<const Matrix> rocoeff = ocoeff->get_real_part(); 
   std::shared_ptr<const Matrix> iocoeff = ocoeff->get_imag_part(); 
@@ -48,6 +49,7 @@ void DFock::two_electron_part(const std::shared_ptr<const ZMatrix> ocoeff, const
   std::shared_ptr<DFHalfDist> rhalf = rhalfbj->apply_J();
   std::shared_ptr<DFHalfDist> ihalf = ihalfbj->apply_J();
 
+#if 0
   *this += *rhalf->form_2index(rhalf, -1.0*scale_exchange);
   *this += *ihalf->form_2index(ihalf, -1.0*scale_exchange);
   shared_ptr<Matrix> cross = rhalf->form_2index(ihalf, -2.0*scale_exchange);

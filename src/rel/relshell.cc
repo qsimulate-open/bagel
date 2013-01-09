@@ -24,7 +24,7 @@
 //
 
 #include <array>
-#include <src/rel/relshell.h>
+#include <src/scf/shell.h>
 #include <src/osint/momentbatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/osint/overlapbatch.h>
@@ -35,7 +35,9 @@ using namespace bagel;
 const static CarSphList carsphlist;
 
 
-RelShell::RelShell(const shared_ptr<const Shell> o) : Shell(*o), aux_inc_(kinetic_balance_uncont(1)), aux_dec_(kinetic_balance_uncont(-1)) {
+void Shell::init_relativistic() {
+  aux_dec_ = kinetic_balance_uncont(-1);
+  aux_inc_ = kinetic_balance_uncont(1);
 
   // overlap = S^-1 between auxiliary functions
   shared_ptr<const Matrix> overlap = overlap_compute_();
@@ -44,8 +46,7 @@ RelShell::RelShell(const shared_ptr<const Shell> o) : Shell(*o), aux_inc_(kineti
   small_ = moment_compute_(overlap);
 }
 
-
-shared_ptr<const Matrix> RelShell::overlap_compute_() const {
+shared_ptr<const Matrix> Shell::overlap_compute_() const {
 
   const int asize_inc = aux_inc_->nbasis();
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
@@ -81,7 +82,7 @@ shared_ptr<const Matrix> RelShell::overlap_compute_() const {
 }
 
 
-array<shared_ptr<const Matrix>,3> RelShell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
+array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
   const int ssize = nbasis();
   const int asize_inc = aux_inc_->nbasis();
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;

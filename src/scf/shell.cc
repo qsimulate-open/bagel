@@ -34,7 +34,7 @@ using namespace bagel;
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double> >& _contr,  const vector<pair<int, int> >& _range)
  : spherical_(sph), position_(_position), angular_number_(_ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false) {
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false) {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());

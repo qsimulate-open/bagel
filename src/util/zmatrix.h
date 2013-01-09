@@ -70,8 +70,8 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
 
-    std::shared_ptr<Matrix> get_real_part();
-    std::shared_ptr<Matrix> get_imag_part();
+    std::shared_ptr<Matrix> get_real_part() const;
+    std::shared_ptr<Matrix> get_imag_part() const;
 
     ZMatrix operator*(const ZMatrix&) const;
     ZMatrix& operator*=(const ZMatrix&);

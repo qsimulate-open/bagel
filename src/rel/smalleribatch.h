@@ -32,7 +32,6 @@
 #include <src/scf/geometry.h>
 #include <memory>
 #include <src/rysint/eribatch.h>
-#include <src/rel/relshell.h>
 #include <src/util/matrix.h>
 #include <src/parallel/resources.h>
 
@@ -46,12 +45,12 @@ class SmallERIBatch {
     size_t size_block_;
     size_t size_alloc_;
 
-    const std::array<std::shared_ptr<const RelShell>,3> shells_;
+    const std::array<std::shared_ptr<const Shell>,3> shells_;
 
     std::shared_ptr<StackMem> stack_;
 
   public:
-    SmallERIBatch(std::array<std::shared_ptr<const RelShell>,3> info);
+    SmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy);
 
     ~SmallERIBatch();
 

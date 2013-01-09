@@ -32,7 +32,6 @@
 #include <src/scf/geometry.h>
 #include <memory>
 #include <src/rysint/naibatch.h>
-#include <src/rel/relshell.h>
 #include <src/util/matrix.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
@@ -44,14 +43,14 @@ class SmallNAIBatch {
     std::array<std::shared_ptr<Matrix>,4> data_;
 
     const std::shared_ptr<const Geometry> geom_;
-    const std::array<std::shared_ptr<const RelShell>,2> shells_;
+    const std::array<std::shared_ptr<const Shell>,2> shells_;
 
     const size_t size_block_;
 
     void do_nothing();
 
   public:
-    SmallNAIBatch(std::array<std::shared_ptr<const RelShell>,2> info, std::shared_ptr<const Geometry> geom);
+    SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom);
     ~SmallNAIBatch();
 
     void compute();
