@@ -71,19 +71,17 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     vector<pair<string, double> > timing;
     Timer fcitime(1);
 
-    // (1aa, 2aa) alpha-alpha contributions
     sigma_aa(cc,sigma,jop);
     fcitime.tick_print("alpha-alpha");
     
-    // (1bb, 2bb) beta-beta contributions
     sigma_ab(cc, sigma, jop);
     fcitime.tick_print("alpha-beta");
 
+    sigma_bb(cc, sigma, jop);
+    fcitime.tick_print("beta-beta");
+
     sigma->wait();
     sigmavec->data(istate) = sigma->civec();
-
-    sigma_bb(ccvec->data(istate), sigmavec->data(istate), jop);
-    fcitime.tick_print("beta-beta");
   }
 
   return sigmavec;
@@ -239,10 +237,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
 
 // beta-beta block has no communication (and should be cheap)
-void DistFCI::sigma_bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
+void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
   const double* const source_base = cc->local();
@@ -279,6 +274,5 @@ void DistFCI::sigma_bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
       for (auto& iter : cc->det()->phib(ip))
         sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
 
-  *sigmag += *sigma->civec();
 }
 
