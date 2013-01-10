@@ -46,14 +46,9 @@ class DistFCI : public HarrisonZarrabian {
 
     std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
 
-    void sigma_1a(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-
-    // run-time functions implemented in HarrisonZarrabian
     void sigma_bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-
-    // this function substitute sigma_2ab_1/2/3 in parallel execution. Dvec cannot be used here.
-    void sigma_2ab(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_ab(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
 
   public:
     // this constructor is ugly... to be fixed some day...

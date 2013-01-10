@@ -65,8 +65,8 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
-    shared_ptr<const Civec> cc = ccvec->data(istate);  
-    shared_ptr<Civec> sigma = sigmavec->data(istate);  
+    shared_ptr<const DistCivec> cc = ccvec->data(istate)->distcivec();
+    shared_ptr<DistCivec> sigma = sigmavec->data(istate)->distcivec();
 
     vector<pair<string, double> > timing;
     Timer fcitime(1);
@@ -76,12 +76,14 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     fcitime.tick_print("alpha-alpha");
     
     // (1bb, 2bb) beta-beta contributions
-    sigma_bb(cc, sigma, jop);
-    fcitime.tick_print("beta-beta");
-
-    // (2ab) alpha-beta contributions
-    sigma_2ab(cc, sigma, jop);
+    sigma_ab(cc, sigma, jop);
     fcitime.tick_print("alpha-beta");
+
+    sigma->wait();
+    sigmavec->data(istate) = sigma->civec();
+
+    sigma_bb(ccvec->data(istate), sigmavec->data(istate), jop);
+    fcitime.tick_print("beta-beta");
   }
 
   return sigmavec;
@@ -89,10 +91,7 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 
 
 // accumulate Nci
-void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
+void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   sigma->open_window();
 
@@ -149,13 +148,10 @@ void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
     sigma->accumulate_bstring(buf.get(), a);
   }
   sigma->close_window();
-  *sigmag += *sigma->civec();
 }
 
 
-void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
+void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   cc->open_window();
 
@@ -238,9 +234,7 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
     sigma->flush();
   }
 
-  sigma->wait();
   cc->close_window();
-  *sigmag += *sigma->civec();
 }
 
 
