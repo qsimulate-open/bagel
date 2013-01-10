@@ -81,6 +81,7 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     fcitime.tick_print("beta-beta");
 
     sigma->wait();
+    fcitime.tick_print("wait");
     sigmavec->data(istate) = sigma->civec();
   }
 
@@ -243,7 +244,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   const double* const source_base = cc->local();
   double* target_base = sigma->local();
 
-  const int lb = sigma->lenb();
+  const size_t lb = sigma->lenb();
   for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter,++target_base) {
     bitset<nbit__> nstring = *biter;
     for (int i = 0; i != norb_; ++i) {
