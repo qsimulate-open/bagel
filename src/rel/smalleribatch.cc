@@ -33,6 +33,9 @@ using namespace bagel;
 
 SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
+
+  assert(info[0]->dummy());
+
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
   size_alloc_ = size_block_ * 4;
   data_ = stack_->get(size_alloc_);

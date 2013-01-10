@@ -89,7 +89,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
   // Spin adapt detseeds
   int oindex = 0;
   vector<bitset<nbit__> > done;
-  for( auto& it : bits ) {
+  for (auto& it : bits) {
     bitset<nbit__> alpha = it.second;
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
@@ -105,7 +105,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
 
     pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
-    for( auto& iter : adapt.first ) {
+    for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }   
 

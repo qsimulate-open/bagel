@@ -65,23 +65,24 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
-    shared_ptr<const Civec> cc = ccvec->data(istate);  
-    shared_ptr<Civec> sigma = sigmavec->data(istate);  
+    shared_ptr<const DistCivec> cc = ccvec->data(istate)->distcivec();
+    shared_ptr<DistCivec> sigma = sigmavec->data(istate)->distcivec();
 
     vector<pair<string, double> > timing;
     Timer fcitime(1);
 
-    // (1aa, 2aa) alpha-alpha contributions
     sigma_aa(cc,sigma,jop);
     fcitime.tick_print("alpha-alpha");
     
-    // (1bb, 2bb) beta-beta contributions
+    sigma_ab(cc, sigma, jop);
+    fcitime.tick_print("alpha-beta");
+
     sigma_bb(cc, sigma, jop);
     fcitime.tick_print("beta-beta");
 
-    // (2ab) alpha-beta contributions
-    sigma_2ab(cc, sigma, jop);
-    fcitime.tick_print("alpha-beta");
+    sigma->wait();
+    fcitime.tick_print("wait");
+    sigmavec->data(istate) = sigma->civec();
   }
 
   return sigmavec;
@@ -89,20 +90,16 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 
 
 // accumulate Nci
-void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
-
-  sigma->open_window();
+void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
-  const int lb = sigma->lenb();
+  sigma->init_accumulate_buf(sigma->asize()*(mpi__->size()-1));
 
-  unique_ptr<double[]> buf(new double[lb]);
+  const size_t lb = sigma->lenb();
   
   for (size_t a = 0; a != base_det->lena(); ++a) {
+    unique_ptr<double[]> buf(new double[lb]);
     fill_n(buf.get(), lb, 0.0);
     const bitset<nbit__> nstring = base_det->stringa(a);
 
@@ -146,16 +143,14 @@ void DistFCI::sigma_aa(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
         }
       }
     }
-    sigma->accumulate_bstring(buf.get(), a);
+    // TODO this communication pattern might not be optimal
+    sigma->accumulate_bstring_buf(buf, a);
+    sigma->flush();
   }
-  sigma->close_window();
-  *sigmag += *sigma->civec();
 }
 
 
-void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
+void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   cc->open_window();
 
@@ -238,24 +233,27 @@ void DistFCI::sigma_2ab(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, s
     sigma->flush();
   }
 
-  sigma->wait();
   cc->close_window();
-  *sigmag += *sigma->civec();
 }
 
 
 // beta-beta block has no communication (and should be cheap)
-void DistFCI::sigma_bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, shared_ptr<const MOFile> jop) const {
-
-  shared_ptr<const DistCivec> cc = ccg->distcivec();
-  shared_ptr<DistCivec> sigma = cc->clone();
+void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
-  const double* const source_base = cc->local();
-  double* target_base = sigma->local();
+  const size_t lb = sigma->lenb();
+  const size_t la = sigma->asize();
 
-  const int lb = sigma->lenb();
-  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter,++target_base) {
+  unique_ptr<double[]> target(new double[la*lb]);
+  unique_ptr<double[]> source(new double[la*lb]);
+
+  // (astart:aend, b)
+  mytranspose_(cc->local(), lb, la, source.get());
+  fill_n(target.get(), la*lb, 0.0);
+  double* target_base = target.get();
+  const double* const source_base = source.get();
+
+  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter, target_base += la) {
     bitset<nbit__> nstring = *biter;
     for (int i = 0; i != norb_; ++i) {
       if (!nstring[i]) continue;
@@ -272,19 +270,22 @@ void DistFCI::sigma_bb(shared_ptr<const Civec> ccg, shared_ptr<Civec> sigmag, sh
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
-            const double* source = source_base + base_det->lexical<1>(string_ijkl);
-            daxpy_(sigma->asize(), temp, source, lb, target_base, lb);
+            const double temp = phase * (jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k));
+            const double* sptr = source_base + base_det->lexical<1>(string_ijkl)*la;
+
+            daxpy_(sigma->asize(), temp, sptr, 1, target_base, 1);
           }
         }
       }
     }
   }
+  mytranspose_(target.get(), la, lb, source.get());
+  daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
+
   for (int i = 0; i < cc->asize(); ++i)
     for (int ip = 0; ip != nij(); ++ip)
       for (auto& iter : cc->det()->phib(ip))
         sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
 
-  *sigmag += *sigma->civec();
 }
 
