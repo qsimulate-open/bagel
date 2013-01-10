@@ -45,7 +45,7 @@ class DFFullDist;
 class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
   protected:
     // blocks that this process has
-    std::shared_ptr<DFBlock> block_;
+    std::vector<std::shared_ptr<DFBlock> > block_;
     // hash key and process number
     std::map<int, int> global_table_;
     std::vector<std::pair<size_t, size_t> > atable_;
@@ -69,8 +69,10 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     size_t nindex2() const { return nindex2_; }
     size_t size() const { return naux_*nindex1_*nindex2_; }
 
-    std::shared_ptr<DFBlock> block() { return block_; }
-    std::shared_ptr<const DFBlock> block() const { return block_; }
+    std::vector<std::shared_ptr<DFBlock> >& block() { return block_; }
+    const std::vector<std::shared_ptr<DFBlock> >& block() const { return block_; }
+    std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }
+    std::shared_ptr<const DFBlock> block(const size_t i) const { return block_[i]; }
 
     void add_block(std::shared_ptr<DFBlock> o);
 
@@ -155,13 +157,14 @@ class DFDist_ints : public DFDist {
 
       // Decide how we distribute (dynamic distribution).
       // construction of DFBlock computes integrals
+      block_.resize(1);
 #ifndef HAVE_MPI_H
-      block_ = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(ashell, b1shell, b2shell, 0, 0, 0));
+      block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(ashell, b1shell, b2shell, 0, 0, 0));
 #else
       int astart;
       std::vector<std::shared_ptr<const Shell> > myashell;
       std::tie(astart, myashell) = get_ashell(ashell);
-      block_ = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(myashell, b1shell, b2shell, astart, 0, 0));
+      block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(myashell, b1shell, b2shell, astart, 0, 0));
 #endif
     }
 

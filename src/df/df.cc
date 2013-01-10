@@ -61,23 +61,26 @@ int ParallelDF::get_node(const int off) const {
 
 
 shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  shared_ptr<Matrix> out = (!swap) ? block_->form_2index(o->block_, a) : o->block_->form_2index(block_, a);
+  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = (!swap) ? block_[0]->form_2index(o->block_[0], a) : o->block_[0]->form_2index(block_[0], a);
   out->allreduce();
   return out;
 }
 
 
 unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  unique_ptr<double[]> out = (!swap) ? block_->form_4index(o->block_, a) : o->block_->form_4index(block_, a);
+  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  unique_ptr<double[]> out = (!swap) ? block_[0]->form_4index(o->block_[0], a) : o->block_[0]->form_4index(block_[0], a);
 
   // all reduce
-  const size_t size = block_->b2size()*o->block_->b2size() * block_->b1size()*o->block_->b1size();
+  const size_t size = block_[0]->b2size()*o->block_[0]->b2size() * block_[0]->b1size()*o->block_[0]->b1size();
   mpi__->allreduce(out.get(), size);
   return out;
 }
 
 
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
+  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
 #ifdef HAVE_MPI_H
   shared_ptr<Matrix> out(new Matrix(naux_, naux_));
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
@@ -87,34 +90,38 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
   out->allreduce();
   return out;
 #else
-  return block_->form_aux_2index(o->block_, a);
+  return block_[0]->form_aux_2index(o->block_[0], a);
 #endif
 }
 
 
 void ParallelDF::daxpy(const double a, const shared_ptr<const ParallelDF> o) {
-  block_->daxpy(a, o->block_);
+  assert(block_.size() == o->block_.size());
+  auto j = o->block_.begin();
+  for (auto& i : block_)
+    i->daxpy(a, *j++);
 }
 
 
 void ParallelDF::scale(const double a) {
-  block_->scale(a);
+  for (auto& i : block_)
+    i->scale(a);
 }
 
 
 void ParallelDF::add_block(shared_ptr<DFBlock> o) {
-  assert(block_ == nullptr);
-  block_ = o;
+  block_.push_back(o);
 }
 
 
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   // first thing is to find the node
   const int inode = get_node(i); 
 
   // ask for the data to inode
   if (inode == mpi__->rank()) {
-    return block_->get_block(i, id, j, jd, k, kd);
+    return block_[0]->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
@@ -125,10 +132,11 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void DFDist::add_direct_product(const vector<const double*> cd, const vector<const double*> dd, const double a) {
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
 
   for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
-    block_->add_direct_product(*c+block_->astart(), *d, a);
+    block_[0]->add_direct_product(*c+block_[0]->astart(), *d, a);
 }
 
 
@@ -204,8 +212,8 @@ void DFDist::make_table(const int nblock) {
   unique_ptr<int[]> rec(new int[2*mpi__->size()]);
   fill_n(rec.get(), 2*mpi__->size(), 0);
 
-  send[0] = block_->astart();
-  send[1] = block_->asize();
+  send[0] = block_[0]->astart();
+  send[1] = block_[0]->asize();
   mpi__->allgather(send.get(), 2, rec.get(), 2); 
 
   // reformatting to map
@@ -237,7 +245,8 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o,
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   unique_ptr<double[]> tmp0 = o->compute_cd(den, data2_);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  shared_ptr<Matrix> out = block_->form_mat(tmp0.get()+block_->astart());
+  if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0.get()+block_[0]->astart());
   // all reduce
   out->allreduce();
   return out;
@@ -253,8 +262,9 @@ unique_ptr<double[]> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, 
   fill_n(tmp0.get(), naux_, 0.0);
 
   // D = (D|rs)*d_rs
-  unique_ptr<double[]> tmp = block_->form_vec(den);
-  copy_n(tmp.get(), block_->asize(), tmp0.get()+block_->astart());
+  if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
+  unique_ptr<double[]> tmp = block_[0]->form_vec(den);
+  copy_n(tmp.get(), block_[0]->asize(), tmp0.get()+block_[0]->astart());
   // All reduce
   mpi__->allreduce(tmp0.get(), naux_);
 
@@ -267,7 +277,8 @@ unique_ptr<double[]> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, 
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(shared_from_this(), nocc));
-  out->add_block(block_->transform_second(c, nocc));
+  for (auto& i : block_) 
+    out->add_block(i->transform_second(c, nocc));
   return out;
 }
 
@@ -277,40 +288,46 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const siz
 
 shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nocc));
-  out->add_block(block_->transform_third(c, nocc));
+  for (auto& i : block_) 
+    out->add_block(i->transform_third(c, nocc));
   return out;
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::copy() const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nindex1_));
-  out->add_block(block_->copy());
+  for (auto& i : block_) 
+    out->add_block(i->copy());
   return out;
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::clone() const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nindex1_));
-  out->add_block(block_->clone());
+  for (auto& i : block_) 
+    out->add_block(i->clone());
   return out;
 }
 
 
 shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
   shared_ptr<DFDist> out(new DFDist(df_));
-  out->add_block(block_->transform_second(c, df_->nindex1(), true));
+  for (auto& i : block_) 
+    out->add_block(i->transform_second(c, df_->nindex1(), true));
   return out;
 }
 
 
 void DFHalfDist::rotate_occ(const double* d) {
-  block_ = block_->transform_second(d, nindex1_);
+  for (auto& i : block_)
+    i = i->transform_second(d, nindex1_);
 }
 
 
 shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nindex1_)); 
-  out->add_block(block_->transform_third(den, nindex2_));
+  for (auto& i : block_) 
+    out->add_block(i->transform_third(den, nindex2_));
   return out;
 }
 
@@ -326,27 +343,31 @@ shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den, const double 
 
 shared_ptr<DFFullDist> DFFullDist::copy() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->copy());
+  for (auto& i : block_) 
+    out->add_block(i->copy());
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::clone() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->clone());
+  for (auto& i : block_) 
+    out->add_block(i->clone());
   return out;
 }
 
 
 void DFFullDist::symmetrize() {
-  block_->symmetrize();
+  for (auto& i : block_)
+    i->symmetrize();
 }
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
   shared_ptr<DFHalfDist> out(new DFHalfDist(df_, nindex1_));
-  out->add_block(block_->transform_third(c, df_->nindex2(), true));
+  for (auto& i : block_) 
+    out->add_block(i->transform_third(c, df_->nindex2(), true));
   return out;
 }
 
@@ -354,28 +375,32 @@ shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
 // 2RDM contractions
 shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM() const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->apply_rhf_2RDM());
+  for (auto& i : block_) 
+    out->add_block(i->apply_rhf_2RDM());
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const double* bmat) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->apply_uhf_2RDM(amat, bmat));
+  for (auto& i : block_) 
+    out->add_block(i->apply_uhf_2RDM(amat, bmat));
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->apply_2RDM(rdm, rdm1, nclosed, nact));
+  for (auto& i : block_) 
+    out->add_block(i->apply_2RDM(rdm, rdm1, nclosed, nact));
   return out;
 }
 
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
-  out->add_block(block_->apply_2RDM(rdm));
+  for (auto& i : block_) 
+    out->add_block(i->apply_2RDM(rdm));
   return out;
 }
 
@@ -387,15 +412,19 @@ shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DF
 
 
 unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullDist> o, const double a, const size_t n) const {
-  unique_ptr<double[]> out = block_->form_4index_1fixed(o->block_, a, n);
-  const size_t size = block_->b1size() * block_->b2size() * o->block_->b1size();
+  // TODO needs more work
+  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  unique_ptr<double[]> out = block_[0]->form_4index_1fixed(o->block_[0], a, n);
+  const size_t size = block_[0]->b1size() * block_[0]->b2size() * o->block_[0]->b1size();
   mpi__->allreduce(out.get(), size);
   return out;
 }
 
 
 void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
-  block_->copy_block(o->block_->form_Dj(c, jdim), jdim, off*block_->asize());
+  // TODO needs more work
+  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  block_[0]->copy_block(o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize());
 }
 
 
@@ -412,8 +441,12 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
   work->get_paralleldf(out);
   mult.tick_print("Return DFDist");
 #else
-  out->block_->zero();
-  out->block_->contrib_apply_J(block_, d);
+  auto j = block_.begin();
+  for (auto& i : out->block_) {
+    i->zero();
+    i->contrib_apply_J(*j, d);
+    ++j;
+  }
 #endif
   return out; 
 }
@@ -430,8 +463,12 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
   work->get_paralleldf(out);
   mult.tick_print("Return DFDist");
 #else
-  out->block_->zero();
-  out->block_->contrib_apply_J(block_, d);
+  auto j = block_.begin();
+  for (auto& i : out->block_) {
+    i->zero();
+    i->contrib_apply_J(*j, d);
+    ++j;
+  }
 #endif
   return out;
 }

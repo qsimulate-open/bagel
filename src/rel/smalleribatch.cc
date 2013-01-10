@@ -80,27 +80,6 @@ void SmallERIBatch::compute() {
 
 stack_->release(s0size*a1*s2size, ints);
 stack_->release(s0size*a1*a2, eri);
-#if 0
-  std::array<shared_ptr<Matrix>,3> ints;
-  for (int i = 0; i != 3; ++i)
-    ints[i] = shared_ptr<Matrix>(new Matrix(*shells_[0]->small(i) % *eri));
-
-  array<int,3> f = {{2,3,1}};
-  array<int,3> b = {{3,1,2}};
-
-  // 0) x^x + y^y + z^z
-  // 1) x^y - y^x
-  // 2) y^z - z^y
-  // 3) z^x - x^z
-
-  // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
-  for (int i = 0; i != 3; ++i) {
-    *data_[0]    += *ints[i]      * *shells_[1]->small(i);
-    *data_[b[i]] += *ints[b[i]-1] * *shells_[1]->small(i);
-    *data_[i+1]  -= *ints[f[i]-1] * *shells_[1]->small(i);
-  }
-#endif
-
 }
 
 

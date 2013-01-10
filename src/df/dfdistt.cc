@@ -75,7 +75,9 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   unique_ptr<double[]> buf(new double[naux_*size_]);
 
   // source block
-  shared_ptr<const DFBlock> source = in->block();
+  // TODO we need to generalize this function to multi-DFBlock cases
+  if (in->block().size() != 1) throw logic_error("dfdistt, block size is hardwired to 1");
+  shared_ptr<const DFBlock> source = in->block(0);
 
   // information on the data layout
   vector<pair<size_t, size_t> > atab = df_->atable();
@@ -127,11 +129,14 @@ shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
 
 
 void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
+  // TODO we need to generalize this function to multi-DFBlock cases
+  if (out->block().size() != 1) throw logic_error("dfdistt, block size is hardwired to 1");
+
   // first, issue all the receive requests
   vector<int> request;
   for (int i = 0; i != mpi__->size(); ++i)
     if (i != mpi__->rank())
-      request.push_back(mpi__->request_recv(out->block()->get()+out->block()->asize()*tabstart_[i], out->block()->asize()*tabsize_[i], i));
+      request.push_back(mpi__->request_recv(out->block(0)->get()+out->block(0)->asize()*tabstart_[i], out->block(0)->asize()*tabsize_[i], i));
 
   // second form a matrix
   unique_ptr<double[]> buf(new double[naux_*size_]);
@@ -152,7 +157,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     if (i != mpi__->rank()) {
       request.push_back(mpi__->request_send(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
-      copy_n(buf.get()+atab[i].first*size_, out->block()->asize()*tabsize_[i], out->block()->get()+out->block()->asize()*tabstart_[i]);
+      copy_n(buf.get()+atab[i].first*size_, out->block(0)->asize()*tabsize_[i], out->block(0)->get()+out->block(0)->asize()*tabstart_[i]);
     }
   }
   for (auto& i : request) mpi__->wait(i);
