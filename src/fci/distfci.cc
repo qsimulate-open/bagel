@@ -241,11 +241,19 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
-  const double* const source_base = cc->local();
-  double* target_base = sigma->local();
-
   const size_t lb = sigma->lenb();
-  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter,++target_base) {
+  const size_t la = sigma->asize();
+
+  unique_ptr<double[]> target(new double[la*lb]);
+  unique_ptr<double[]> source(new double[la*lb]);
+
+  // (astart:aend, b)
+  mytranspose_(cc->local(), lb, la, source.get());
+  fill_n(target.get(), la*lb, 0.0);
+  double* target_base = target.get();
+  const double* const source_base = source.get();
+
+  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter, target_base += la) {
     bitset<nbit__> nstring = *biter;
     for (int i = 0; i != norb_; ++i) {
       if (!nstring[i]) continue;
@@ -262,14 +270,18 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
-            const double* source = source_base + base_det->lexical<1>(string_ijkl);
-            daxpy_(sigma->asize(), temp, source, lb, target_base, lb);
+            const double temp = phase * (jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k));
+            const double* sptr = source_base + base_det->lexical<1>(string_ijkl)*la;
+
+            daxpy_(sigma->asize(), temp, sptr, 1, target_base, 1);
           }
         }
       }
     }
   }
+  mytranspose_(target.get(), la, lb, source.get());
+  daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
+
   for (int i = 0; i < cc->asize(); ++i)
     for (int ip = 0; ip != nij(); ++ip)
       for (auto& iter : cc->det()->phib(ip))
