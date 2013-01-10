@@ -38,6 +38,8 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
 
+  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
+  send_  = shared_ptr<SendRequest>(new SendRequest());
 }
 
 
@@ -104,8 +106,7 @@ void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
 
 void DistCivec::init_accumulate_buf(const size_t cmm) {
   // calculate the number of accumulate call from others
-  accum_ = shared_ptr<AccRequest>(new AccRequest(cmm, local_.get()));
-  send_  = shared_ptr<SendRequest>(new SendRequest());
+  accum_->init_request(cmm);
 }
 
 

@@ -121,7 +121,6 @@ class SendRequest {
 class AccRequest {
   protected:
 
-    size_t total_;
     double* const data_;
 
     struct Prep {
@@ -149,8 +148,11 @@ class AccRequest {
     }
 
   public:
-    AccRequest(const int total, double* const d) : total_(total), data_(d) {
-      for (size_t i = 0; i != total_; ++i) init();
+    AccRequest(double* const d) : data_(d) { }
+
+    void init_request(const int total) {
+      for (size_t i = 0; i != total; ++i)
+        init();
     }
 
     void flush() {

@@ -93,15 +93,14 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 // accumulate Nci
 void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
-  sigma->open_window();
-
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
-  const int lb = sigma->lenb();
+  sigma->init_accumulate_buf(sigma->asize()*(mpi__->size()-1));
 
-  unique_ptr<double[]> buf(new double[lb]);
+  const int lb = sigma->lenb();
   
   for (size_t a = 0; a != base_det->lena(); ++a) {
+    unique_ptr<double[]> buf(new double[lb]);
     fill_n(buf.get(), lb, 0.0);
     const bitset<nbit__> nstring = base_det->stringa(a);
 
@@ -145,9 +144,10 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
         }
       }
     }
-    sigma->accumulate_bstring(buf.get(), a);
+    // TODO this communication pattern might not be optimal
+    sigma->accumulate_bstring_buf(buf, a);
+    sigma->flush();
   }
-  sigma->close_window();
 }
 
 
