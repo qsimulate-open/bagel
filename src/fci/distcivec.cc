@@ -34,7 +34,7 @@ using namespace bagel;
 DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1), dist_(lena_, mpi__->size()) {
   tie(astart_, aend_) = dist_.range(mpi__->rank()); 
 
-  alloc_ = size()*lenb_;
+  alloc_ = size();
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
 

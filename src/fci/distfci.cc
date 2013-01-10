@@ -95,7 +95,7 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   sigma->init_accumulate_buf(sigma->asize()*(mpi__->size()-1));
 
-  const int lb = sigma->lenb();
+  const size_t lb = sigma->lenb();
   
   for (size_t a = 0; a != base_det->lena(); ++a) {
     unique_ptr<double[]> buf(new double[lb]);
