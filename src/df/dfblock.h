@@ -67,7 +67,10 @@ class DFBlock {
     const size_t b1start_; 
     const size_t b2start_; 
 
-    virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) { assert(false); }
+    virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
+      assert(false);
+      return std::pair<const double*, std::shared_ptr<RysInt> >();
+    }
 
   public:
     // construction of a block from AO integrals
