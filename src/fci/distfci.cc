@@ -31,6 +31,8 @@
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
 #include <src/parallel/request.h>
+#include <src/util/combination.hpp>
+#include <src/util/comb.h>
 #include <vector>
 #include <config.h>
 
@@ -200,7 +202,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
       }
     }
 
-    // TODO can be smaller
+    // TODO buffer should be nelec size (not norb size)
     unique_ptr<double[]>  buf2(new double[lbt*norb_*norb_]);
     unique_ptr<double[]>  buf3(new double[lbt*norb_*norb_]);
     fill_n(buf2.get(), lbt*norb_*norb_, 0.0);
@@ -240,7 +242,11 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 // beta-beta block has no communication (and should be cheap)
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
+  if (neleb_ < 2) return;
+
+  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
+
   const size_t lb = sigma->lenb();
   const size_t la = sigma->asize();
 
@@ -250,32 +256,58 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   // (astart:aend, b)
   mytranspose_(cc->local(), lb, la, source.get());
   fill_n(target.get(), la*lb, 0.0);
-  double* target_base = target.get();
-  const double* const source_base = source.get();
 
-  for (auto biter = base_det->stringb().begin(); biter != base_det->stringb().end(); ++biter, target_base += la) {
-    bitset<nbit__> nstring = *biter;
-    for (int i = 0; i != norb_; ++i) {
-      if (!nstring[i]) continue;
-      for (int j = 0; j < i; ++j) {
-        if(!nstring[j]) continue;
-        const int ij_phase = base_det->sign(nstring,i,j);
-        bitset<nbit__> string_ij = nstring;
-        string_ij.reset(i); string_ij.reset(j);
-        for (int l = 0; l != norb_; ++l) {
-          if (string_ij[l]) continue;
-          for (int k = 0; k < l; ++k) {
-            if (string_ij[k]) continue;
-            const int kl_phase = base_det->sign(string_ij,l,k);
-            const double phase = -static_cast<double>(ij_phase*kl_phase);
-            bitset<nbit__> string_ijkl = string_ij;
-            string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * (jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k));
-            const double* sptr = source_base + base_det->lexical<1>(string_ijkl)*la;
+  // preparing Hamiltonian
+  const int npack = norb_*(norb_-1)/2;
+  unique_ptr<double[]> hamil(new double[npack*npack]);
+  for (int i = 0, ijkl = 0; i != norb_; ++i)
+    for (int j = 0; j < i; ++j)
+      for (int l = 0; l != norb_; ++l)
+        for (int k = 0; k < l; ++k, ++ijkl)
+          hamil[ijkl] = jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k);
 
-            daxpy_(sigma->asize(), temp, sptr, 1, target_base, 1);
-          }
-        }
+  const static Comb comb;
+  const int lengb = comb.c(norb_, neleb_-2);
+  vector<bitset<nbit__> > intb(lengb, bitset<nbit__>(0));
+  vector<int> data(norb_);
+  iota(data.begin(), data.end(), 0);
+  auto sa = intb.begin();
+  do {
+    for (int i=0; i < neleb_-2; ++i) sa->set(data[i]);
+    ++sa;
+  } while (boost::next_combination(data.begin(), data.begin()+neleb_-2, data.end()));
+
+  // loop over intermediate string
+  for (auto& b : intb) {
+
+    // TODO buffer should be nelec size (not norb size)
+    unique_ptr<double[]> ints(new double[npack*la]);
+    unique_ptr<double[]> ints2(new double[npack*la]);
+    fill_n(ints.get(), npack*la, 0.0);
+
+    // first gather elements with correct sign 
+    for (int i = 0, ij = 0; i != norb_; ++i) {
+      if (b[i]) continue;
+      for (int j = 0; j < i; ++j, ++ij) {
+        if(b[j]) continue;
+        const double ij_phase = base_det->sign(b,i,j);
+        bitset<nbit__> bt = b; bt.set(i); bt.set(j);
+        const int boff = base_det->lexical<1>(bt);
+        daxpy_(la, ij_phase, source.get()+la*boff, 1, ints.get()+la*ij, 1); 
+      }
+    }
+
+    // call dgemm
+    dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil.get(), npack, 0.0, ints2.get(), la); 
+
+    for (int l = 0, kl = 0; l != norb_; ++l) {
+      if (b[l]) continue;
+      for (int k = 0; k < l; ++k, ++kl) {
+        if (b[k]) continue;
+        const double kl_phase = -base_det->sign(b,l,k);
+        bitset<nbit__> string_ijkl = b;
+        string_ijkl.set(k); string_ijkl.set(l);
+        daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target.get()+la*base_det->lexical<1>(string_ijkl), 1);
       }
     }
   }
