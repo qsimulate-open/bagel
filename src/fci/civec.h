@@ -47,8 +47,8 @@ class Civec {
     // The determinant space in which this Civec object is defined
     mutable std::shared_ptr<const Determinants> det_;
 
-    int lena_;
-    int lenb_;
+    size_t lena_;
+    size_t lenb_;
 
     // !!CAUTION!!
     // cc is formated so that B runs first.
@@ -57,8 +57,8 @@ class Civec {
 
     double* cc_ptr_;
 
-    double& cc(int i) { return *(cc_ptr_+i); }
-    const double& cc(int i) const { return *(cc_ptr_+i); }
+    double& cc(const size_t& i) { return *(cc_ptr_+i); }
+    const double& cc(const size_t& i) const { return *(cc_ptr_+i); }
     double* cc() { return cc_ptr_; }
     const double* cc() const { return cc_ptr_; }
 
@@ -80,8 +80,8 @@ class Civec {
     double& element(size_t i, size_t j) { return cc(i+j*lenb_); }
     double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }
 
-    double& data(const int& i) { return cc(i); }
-    const double& data(const int& i) const { return cc(i); }
+    double& data(const size_t& i) { return cc(i); }
+    const double& data(const size_t& i) const { return cc(i); }
 
     const double* data() const { return cc(); }
     const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }
@@ -95,8 +95,8 @@ class Civec {
 
     std::shared_ptr<Civec> transpose() const;
 
-    int lena() const { return lena_; }
-    int lenb() const { return lenb_; }
+    size_t lena() const { return lena_; }
+    size_t lenb() const { return lenb_; }
 
     // some functions for convenience
     void daxpy(double a, const Civec& other);

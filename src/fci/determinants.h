@@ -120,7 +120,7 @@ class Determinants {
     static const int Beta = 1;
 
     // string size
-    std::tuple<int, int> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }
+    std::tuple<size_t, size_t> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }
 
     size_t lena() const { return stringa_.size(); }
     size_t lenb() const { return stringb_.size(); }
