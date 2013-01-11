@@ -53,7 +53,7 @@ class DFIntTask {
       const size_t naux = dfblock_->asize_;
 
       // all slot in
-      for (int i = 0; i != p->blocks(); ++i) {
+      for (int i = 0; i != p->nblocks(); ++i) {
         const double* ppt = p->data(i);
         if (rank_ == 3) {
           double* const data = dfblock_->data_.get();

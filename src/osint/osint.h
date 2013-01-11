@@ -79,7 +79,7 @@ class OSInt : public Integral {
     OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSInt();
 
-    int blocks() override { int blocks = 1; return blocks; }
+    int nblocks() override { return 1; }
     double* data(const int i) override { return data_; }
     const double* data() const { return data_; };
 
