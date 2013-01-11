@@ -35,10 +35,11 @@
 #include <array>
 #include <memory>
 #include <src/parallel/resources.h>
+#include <src/rysint/integral.h>
 
 namespace bagel {
 
-class OSInt {
+class OSInt : public Integral {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
@@ -78,8 +79,7 @@ class OSInt {
     OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSInt();
 
-    virtual void compute() = 0;
-
+    double* data(const int i) override { return data_; }
     const double* data() const { return data_; };
 
     // since this is convenient for gradient evaluation....

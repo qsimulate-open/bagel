@@ -37,10 +37,11 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <src/rysint/integral.h>
 
 namespace bagel {
 
-class RysInt {
+class RysInt : public Integral {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -124,6 +125,7 @@ class RysInt {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
+    double* data(const int i) override { assert(i == 0); return data_; }
     double* data() { return data_; } // TODO for debug
     const double* data() const { return data_; }
     const double* data2() const { return data2_; }

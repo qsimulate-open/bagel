@@ -34,10 +34,11 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/matrix.h>
 #include <src/parallel/resources.h>
+#include <src/rysint/integral.h>
 
 namespace bagel {
 
-class SmallERIBatch {
+class SmallERIBatch : public Integral {
   protected:
     double* data_;
 
@@ -55,6 +56,8 @@ class SmallERIBatch {
     ~SmallERIBatch();
 
     void compute();
+
+    double* data(const int i) override { assert(false); return nullptr; }
 
     void eri_compute(double* eri) const;
 

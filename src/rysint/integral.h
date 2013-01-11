@@ -1,14 +1,14 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfock.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: integral.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,35 +24,26 @@
 //
 
 
-#ifndef __SRC_REL_DFOCK_H
-#define __SRC_REL_DFOCK_H
+// Base class for all integral classes
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/wfn/reference.h>
-#include <src/scf/geometry.h>
-#include <src/util/zmatrix.h>
-#include <src/df/df.h>
+#ifndef __SRC_RYSINT_INTEGRAL_H
+#define __SRC_RYSINT_INTEGRAL_H
 
 namespace bagel {
 
-class DFock : public ZMatrix {
+class Integral {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    void two_electron_part(const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf, const double scale_ex);
 
   public:
-    DFock(const std::shared_ptr<const Geometry> a, 
-          const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : ZMatrix(a->nbasis(), a->nbasis()), geom_(a) {
-       two_electron_part(ocoeff, rhf, scale_ex);
-    }
+    Integral() {}
 
-//    std::shared_ptr<Reference> conv_to_ref() const override;
+    virtual void compute() = 0;
+
+    virtual double* data(const int i) = 0;
 
 };
 
 }
 
 #endif
+
