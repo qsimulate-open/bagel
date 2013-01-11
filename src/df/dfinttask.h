@@ -46,7 +46,7 @@ class DFIntTask {
     DFIntTask() {};
 
     void compute() {
-      std::pair<const double*, std::shared_ptr<RysInt> > p = dfblock_->compute_batch(shell_);
+      std::pair<const double*, std::shared_ptr<Integral> > p = dfblock_->compute_batch(shell_);
       const double* ppt = p.first;
 
       assert(dfblock_->b1size_ == dfblock_->b2size_);
