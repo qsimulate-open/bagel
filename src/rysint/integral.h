@@ -41,6 +41,8 @@ class Integral {
 
     virtual double* data(const int i) = 0;
 
+    virtual int blocks() = 0;
+
 };
 
 }

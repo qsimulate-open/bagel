@@ -57,12 +57,15 @@ class SmallERIBatch : public Integral {
 
     void compute();
 
-    double* data(const int i) override { assert(false); return nullptr; }
+    //double* data(const int i) override { assert(false); return nullptr; }
+    double* data(const int i) override;
 
     void eri_compute(double* eri) const;
 
     size_t size_block() const { return size_block_; }
     size_t size_alloc() const { return size_alloc_; }
+
+    int blocks() override { int blocks = 4; return blocks; };
 };
 
 }

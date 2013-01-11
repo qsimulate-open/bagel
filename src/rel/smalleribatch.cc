@@ -48,6 +48,12 @@ SmallERIBatch::~SmallERIBatch() {
   resources__->release(stack_);
 }
 
+double* SmallERIBatch::data(const int i) {
+  double* out = stack_->get(size_block_);
+  copy_n(data_+i*size_block_, size_block_, out);
+  return out;
+}
+
 void SmallERIBatch::compute() {
 
   const int s0size = shells_[0]->nbasis();

@@ -67,9 +67,9 @@ class DFBlock {
     const size_t b1start_; 
     const size_t b2start_; 
 
-    virtual std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
+    virtual std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
       assert(false);
-      return std::pair<const double*, std::shared_ptr<RysInt> >();
+      return std::shared_ptr<Integral>();
     }
 
   public:
@@ -158,10 +158,10 @@ namespace bagel {
 template<class TBatch>
 class DFBlock_ints : public DFBlock {
   protected:
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
+    std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) {
       std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
       eribatch->compute();
-      return std::make_pair(eribatch->data(), eribatch);
+      return eribatch;
     }
 
     void ao_init() {
