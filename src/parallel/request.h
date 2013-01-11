@@ -181,7 +181,7 @@ class AccRequest {
       for (auto i = requests_.begin(); i != requests_.end(); ) {
         if (mpi__->test(i->first)) {
           std::shared_ptr<Prep> p = i->second;
-          daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off*p->size, 1);
+          daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
           i = requests_.erase(i); 
         } else {
           ++i;

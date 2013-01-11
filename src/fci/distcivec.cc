@@ -118,7 +118,7 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
   if (mpirank == rank) {
     daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
   } else {
-    send_->request_send(std::move(buf), lenb_, rank, off); 
+    send_->request_send(std::move(buf), lenb_, rank, off*lenb_);
   }
 }
 
