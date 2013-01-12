@@ -1,0 +1,179 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: request.cc
+// Copyright (C) 2013 Toru Shiozaki
+//
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and\/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+#include <src/parallel/request.h>
+#include <src/util/f77.h>
+
+using namespace std;
+using namespace bagel;
+
+
+const static size_t probe_key = (1 << 30);
+const static size_t pool_size = 0;
+
+// SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
+SendRequest::SendRequest() : counter_(probe_key/mpi__->size()*mpi__->rank()) {
+
+}
+
+void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
+  // sending size
+  shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
+  ++counter_;
+  const int srq = mpi__->request_send(p->size,    4, dest, probe_key);
+  const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
+  auto m = inactive_.insert(make_pair(rrq, p));
+  send_.push_back(srq);
+  assert(m.second);
+}
+
+void SendRequest::flush() {
+
+  // if receive buffer at the destination is created, send the message
+  for (auto i = inactive_.begin(); i != inactive_.end(); ) {
+    if (mpi__->test(i->first)) {
+      shared_ptr<Probe> p = i->second;
+      assert(round(p->target) == p->tag);
+      const int srq = mpi__->request_send(p->buf.get(), p->size[0], p->targetrank, p->tag);
+      auto m = requests_.insert(make_pair(srq, move(p->buf)));
+      assert(m.second);
+      i = inactive_.erase(i);
+    } else {
+      ++i;
+    }
+  }
+
+  // if the message is sent, delete the request
+  for (auto i = requests_.begin(); i != requests_.end(); ) {
+    if (mpi__->test(i->first))
+      i = requests_.erase(i);
+    else
+      ++i;
+  }
+}
+
+// wait for all calls
+void SendRequest::wait1() {
+  for (auto& i : send_)     mpi__->wait(i);
+  flush();
+}
+
+
+void SendRequest::wait2() {
+  for (auto& i : inactive_) mpi__->wait(i.first);
+  flush();
+}
+
+
+void SendRequest::wait3() {
+  for (auto& i : requests_) mpi__->wait(i.first);
+  flush();
+}
+
+
+void AccRequest::init() {
+  // we should compute the number of messnages to receive?
+  // receives
+  const int dest = 0;
+  unique_ptr<size_t[]> buf(new size_t[4]);
+  // receives size,tag,rank
+  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key); 
+  auto m = calls_.insert(make_pair(rq, move(buf)));
+  assert(m.second);
+}
+
+
+void AccRequest::init_request_(const int total) {
+  for (size_t i = 0; i != total; ++i)
+    init();
+}
+
+
+AccRequest::AccRequest(double* const d) : data_(d) {
+  init_request_(pool_size);
+}
+
+
+void AccRequest::init_request(const int total) {
+  for (size_t i = 0; i != total; ++i)
+    init();
+}
+
+
+void AccRequest::flush() {
+  size_t cnt = 0;
+  for (auto i = calls_.begin(); i != calls_.end(); ) {
+    // if this has already arrived, create a buffer, and return the address.
+    if (mpi__->test(i->first)) {
+      const int size = i->second[0];
+      const int tag  = i->second[1];
+      const int rank = i->second[2];
+      const int off  = i->second[3];
+      // allocating buffer
+      unique_ptr<double[]> buffer(new double[size]);
+      buffer[0] = tag;
+      // sending back the buffer address
+      const int sq = mpi__->request_send(buffer.get(), 1, rank, tag);
+      const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
+      send_.push_back(sq);
+      auto m = requests_.insert(make_pair(rq, shared_ptr<Prep>(new Prep(size, off, move(buffer)))));
+      assert(m.second);
+      i = calls_.erase(i);
+      ++cnt;
+    } else {
+      ++i;
+    }
+  }
+//init_request_(cnt);
+
+  for (auto i = requests_.begin(); i != requests_.end(); ) {
+    if (mpi__->test(i->first)) {
+      shared_ptr<Prep> p = i->second;
+      daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
+      i = requests_.erase(i); 
+    } else {
+      ++i;
+    }
+  }
+}
+
+
+// wait for all calls
+void AccRequest::wait1() {
+  for (auto& i : calls_) mpi__->wait(i.first);
+  flush();
+}
+
+
+void AccRequest::wait2() {
+  for (auto& i : send_)  mpi__->wait(i);
+  flush();
+}
+
+
+void AccRequest::wait3() {
+  for (auto& i : requests_) mpi__->wait(i.first);
+  flush();
+}
