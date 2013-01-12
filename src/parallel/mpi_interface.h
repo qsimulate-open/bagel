@@ -85,6 +85,7 @@ class MPI_Interface {
     int request_recv(double* rbuf, const size_t size, const int source = -1, const int tag = -1);
     int request_recv(size_t* rbuf, const size_t size, const int source = -1, const int tag = -1);
     void wait(const int rq);
+    void cancel(const int rq);
     bool test(const int rq);
 
     // one-sided communication with Window

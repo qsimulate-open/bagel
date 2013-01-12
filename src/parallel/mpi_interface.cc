@@ -281,6 +281,16 @@ void MPI_Interface::wait(const int rq) {
 }
 
 
+void MPI_Interface::cancel(const int rq) {
+#ifdef HAVE_MPI_H
+  auto i = request_.find(rq);
+  assert(i != request_.end());
+  for (auto& j : i->second)
+    MPI_Cancel(&j);
+#endif
+}
+
+
 bool MPI_Interface::test(const int rq) {
   bool out = true;
 #ifdef HAVE_MPI_H
