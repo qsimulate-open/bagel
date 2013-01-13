@@ -164,26 +164,22 @@ class DFDist_ints : public DFDist {
       const int nblocks = TBatch::nblocks();
       block_.resize(nblocks);
 
+      int astart;
+      std::vector<std::shared_ptr<const Shell> > myashell;
+      std::tie(astart, myashell) = get_ashell(ashell);
+
       // make empty dfblocks
-      for (int i = 0; i != nblocks; ++i) {
-#ifndef HAVE_MPI_H
-        block_[i] = std::shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
-#else
-        int astart;
-        std::vector<std::shared_ptr<const Shell> > myashell;
-        std::tie(astart, myashell) = get_ashell(ashell);
+      for (int i = 0; i != nblocks; ++i)
         block_[i] = std::shared_ptr<DFBlock>(new DFBlock(myashell, b1shell, b2shell, astart, 0, 0));
-#endif
-      }
 
       // making a task list
       std::vector<DFIntTask<TBatch> > tasks;
-      tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
+      tasks.reserve(b1shell.size()*b2shell.size()*myashell.size());
 
       // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
       assert(b1shell == b2shell);
 
-      const std::shared_ptr<const Shell> i3(new Shell(ashell.front()->spherical()));
+      const std::shared_ptr<const Shell> i3(new Shell(myashell.front()->spherical()));
 
       auto j2 = block_[0]->b2off().begin();
       for (auto& i2 : b2shell) {
@@ -192,7 +188,7 @@ class DFDist_ints : public DFDist {
           // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
           if (*j1 <= *j2) {
             auto j0 = block_[0]->aoff().begin();
-            for (auto& i0 : ashell) {
+            for (auto& i0 : myashell) {
               tasks.push_back(DFIntTask<TBatch>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::vector<int>{*j2, *j1, *j0}, block_));
               ++j0;
             }
@@ -203,6 +199,7 @@ class DFDist_ints : public DFDist {
       }
       TaskQueue<DFIntTask<TBatch> > tq(tasks);
       tq.compute(resources__->max_num_threads());
+      time.tick_print("3-index ints");
     }
 
   public:
