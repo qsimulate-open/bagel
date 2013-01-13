@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   mpi__ = new MPI_Interface(argc, argv);
   {
     // TODO will be interfaced to input
-    int num_threads = 1;
+    int num_threads = 8;
 #ifdef _OPENMP
     omp_set_num_threads(num_threads);
 #endif
