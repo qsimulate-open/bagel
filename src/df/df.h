@@ -203,20 +203,6 @@ class DFDist_ints : public DFDist {
       }
       TaskQueue<DFIntTask<TBatch> > tq(tasks);
       tq.compute(resources__->max_num_threads());
-
-      // Decide how we distribute (dynamic distribution).
-      // construction of DFBlock computes integrals
-#if 0
-      block_.resize(1);
-#ifdef HAVE_MPI_H
-      block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(ashell, b1shell, b2shell, 0, 0, 0));
-#else
-      int astart;
-      std::vector<std::shared_ptr<const Shell> > myashell;
-      std::tie(astart, myashell) = get_ashell(ashell);
-      block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(myashell, b1shell, b2shell, astart, 0, 0));
-#endif
-#endif
     }
 
   public:
