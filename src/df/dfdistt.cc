@@ -144,6 +144,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   vector<int> request;
 
   // we need buffer n regions (n is the number of blocks) 
+  assert(out->block().size() == data_.size());
   vector<shared_ptr<Matrix> > bufv;
   for (auto& i : data_) bufv.push_back(i->clone());
 
