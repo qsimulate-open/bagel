@@ -43,10 +43,13 @@ class Matrix_base {
     const size_t ndim_;
     const size_t mdim_;
 
+    // if this matrix is used within node
+    bool localized_;
+
     // for Scalapack BLAS3 operation
 #ifdef HAVE_SCALAPACK
-    const std::unique_ptr<int[]> desc_;
-    const std::tuple<int, int> localsize_;
+    std::unique_ptr<int[]> desc_;
+    std::tuple<int, int> localsize_;
 
     void setlocal_(const std::unique_ptr<DataType[]>& local) {
       zero();
@@ -83,17 +86,25 @@ class Matrix_base {
 #endif
 
   public:
-     Matrix_base(const size_t n, const size_t m) : data_(new DataType[n*m]), ndim_(n), mdim_(m)
+    Matrix_base(const size_t n, const size_t m, const bool local = false) : data_(new DataType[n*m]), ndim_(n), mdim_(m), localized_(local) {
 #ifdef HAVE_SCALAPACK
-     , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
+      if (!localized_) {
+        desc_ = mpi__->descinit(ndim_, mdim_);
+        localsize_ = mpi__->numroc(ndim_, mdim_);
+      }
 #endif
-    { zero(); }
+      zero();
+    }
 
-    Matrix_base(const Matrix_base& o) : data_(new DataType[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_)
+    Matrix_base(const Matrix_base& o) : data_(new DataType[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
-     , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
+      if (!localized_) {
+        desc_ = mpi__->descinit(ndim_, mdim_);
+        localsize_ = mpi__->numroc(ndim_, mdim_);
+      }
 #endif
-    { std::copy_n(o.data_.get(), size(), data_.get()); }
+      std::copy_n(o.data_.get(), size(), data_.get());
+    }
 
     size_t size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
@@ -156,6 +167,10 @@ class Matrix_base {
     void broadcast(const int root = 0) {
       mpi__->broadcast(data_.get(), size(), root);
     }
+
+    // if we use this matrix within node, or in parallel
+    void localize() { localized_ = true; }
+    bool localized() const { return localized_; }
 
 #ifdef HAVE_SCALAPACK
     std::unique_ptr<DataType[]> getlocal() const {

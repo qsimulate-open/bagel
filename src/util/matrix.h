@@ -48,7 +48,11 @@ typedef Matrix DistMatrix;
 
 class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<Matrix> {
   public:
-    Matrix(const int n, const int m);
+#ifdef HAVE_SCALAPACK
+    Matrix(const int n, const int m, const bool localized = false);
+#else
+    Matrix(const int n, const int m, const bool localized = true);
+#endif
     Matrix(const Matrix&);
 
     void antisymmetrize();
@@ -94,7 +98,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
 
-    std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_)); }
+    std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_, localized_)); }
 
     // returns exp(*this)
     std::shared_ptr<Matrix> exp(const int deg = 6) const;

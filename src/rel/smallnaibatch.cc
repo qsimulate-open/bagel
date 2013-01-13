@@ -36,7 +36,7 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
   : geom_(geom), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
   for (int i = 0; i != 4; ++i)
-     data_[i] = shared_ptr<Matrix>(new Matrix(shells_[0]->nbasis(), shells_[1]->nbasis()));
+     data_[i] = shared_ptr<Matrix>(new Matrix(shells_[0]->nbasis(), shells_[1]->nbasis(), true));
 }
 
 
@@ -80,7 +80,7 @@ shared_ptr<Matrix> SmallNAIBatch::nai_compute() const {
   const int a0 = a0size_inc + a0size_dec;
   const int a1 = a1size_inc + a1size_dec;
 
-  shared_ptr<Matrix> nai(new Matrix(a0, a1));
+  shared_ptr<Matrix> nai(new Matrix(a0, a1, true));
   {
     shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, geom_));
     naic->compute();

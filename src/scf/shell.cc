@@ -144,6 +144,7 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 
 
 void Shell::init_relativistic() {
+  relativistic_ = true;
   aux_dec_ = kinetic_balance_uncont(-1);
   aux_inc_ = kinetic_balance_uncont(1);
 
@@ -160,7 +161,7 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
-  shared_ptr<Matrix> overlap(new Matrix(a,a));
+  shared_ptr<Matrix> overlap(new Matrix(a,a, true));
 
   {
     OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_inc_}});
@@ -211,7 +212,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
   const double* carea0 = coeff0->data();
   const double* carea1 = coeff1->data();
 
-  shared_ptr<Matrix> tmparea(new Matrix(ssize,a));
+  shared_ptr<Matrix> tmparea(new Matrix(ssize,a, true));
   array<shared_ptr<const Matrix>,3> out;
 
   const static CarSphList carsphlist;

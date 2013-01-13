@@ -86,7 +86,7 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
   shared_ptr<DFDistT> work2 = this == o.get() ? work : shared_ptr<DFDistT>(new DFDistT(o));
   assert(work->size() == work2->size());
-  dgemm_("T", "N", naux_, naux_, work->size(), a, work->data()->data(), work->size(), work2->data()->data(), work2->size(), 0.0, out->data(), naux_); 
+  dgemm_("T", "N", naux_, naux_, work->size(), a, work->data(), work->size(), work2->data(), work2->size(), 0.0, out->data(), naux_); 
   out->allreduce();
   return out;
 #else
@@ -202,6 +202,8 @@ void DFDist::common_init2(const vector<shared_ptr<const Atom> >& atoms0, const v
 
   if (compute_inverse) {
     data2_->inverse_half(throverlap);
+    // will use data2_ within node
+    data2_->localize();
     time.tick_print("computing inverse");
   }
 }

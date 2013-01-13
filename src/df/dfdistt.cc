@@ -69,7 +69,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   start_ = tabstart_[mpi__->rank()];
   size_ = tabsize_[mpi__->rank()];
 
-  data_ = shared_ptr<Matrix>(new Matrix(naux_, size_));
+  // Local matrix (true means local)
+  data_ = shared_ptr<Matrix>(new Matrix(naux_, size_, true));
 
   // second form a matrix
   shared_ptr<Matrix> buf = data_->clone();
@@ -109,7 +110,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 
 DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<size_t> size, const size_t nindex1, const size_t nindex2,
                  const shared_ptr<const ParallelDF> p)
- : data_(new Matrix(naux, size[mpi__->rank()])), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
+ : data_(new Matrix(naux, size[mpi__->rank()], true)), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
    tabstart_(start), tabsize_(size), df_(p) {
 
 }
@@ -124,6 +125,7 @@ shared_ptr<DFDistT> DFDistT::clone() const {
 shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
   shared_ptr<DFDistT> out = clone();
   *out->data_ = *d % *data_; 
+//dgemm_("T", "N", naux_, size_, naux_, 1.0, d->data(), naux_, data_->data(), naux_, 0.0, out->data_->data(), naux_); 
   return out;
 }
 

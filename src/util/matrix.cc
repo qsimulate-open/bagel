@@ -39,7 +39,7 @@ using namespace std;
 using namespace bagel;
 
 
-Matrix::Matrix(const int n, const int m) : Matrix_base<double>(n,m) { 
+Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) { 
 }
 
 
@@ -135,16 +135,21 @@ Matrix Matrix::operator*(const Matrix& o) const {
   const int m = mdim_;
   assert(mdim_ == o.ndim());
   const int n = o.mdim();
-  Matrix out(l, n);
+  Matrix out(l, n, localized_);
 
-#ifndef HAVE_SCALAPACK
-  dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
-#else
-  unique_ptr<double[]> locala = getlocal();
-  unique_ptr<double[]> localb = o.getlocal();
-  unique_ptr<double[]> localc = out.getlocal();
-  pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
-  out.setlocal_(localc);
+#ifdef HAVE_SCALAPACK
+  assert(localized_ == o.localized_);
+  if (localized_) {
+#endif
+    dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<double[]> locala = getlocal();
+    unique_ptr<double[]> localb = o.getlocal();
+    unique_ptr<double[]> localc = out.getlocal();
+    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    out.setlocal_(localc);
+  }
 #endif
 
   return out;
@@ -186,16 +191,21 @@ Matrix Matrix::operator%(const Matrix& o) const {
   const int m = ndim_;
   assert(ndim_ == o.ndim());
   const int n = o.mdim();
-  Matrix out(l, n);
+  Matrix out(l, n, localized_);
 
-#ifndef HAVE_SCALAPACK
-  dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
-#else
-  unique_ptr<double[]> locala = getlocal();
-  unique_ptr<double[]> localb = o.getlocal();
-  unique_ptr<double[]> localc = out.getlocal();
-  pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
-  out.setlocal_(localc);
+#ifdef HAVE_SCALAPACK
+  assert(localized_ == o.localized_);
+  if (localized_) {
+#endif
+    dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<double[]> locala = getlocal();
+    unique_ptr<double[]> localb = o.getlocal();
+    unique_ptr<double[]> localc = out.getlocal();
+    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    out.setlocal_(localc);
+  }
 #endif
 
   return out;
@@ -208,16 +218,21 @@ Matrix Matrix::operator^(const Matrix& o) const {
   assert(mdim_ == o.mdim());
   const int n = o.ndim();
 
-  Matrix out(l, n);
+  Matrix out(l, n, localized_);
 
-#ifndef HAVE_SCALAPACK
-  dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
-#else
-  unique_ptr<double[]> locala = getlocal();
-  unique_ptr<double[]> localb = o.getlocal();
-  unique_ptr<double[]> localc = out.getlocal();
-  pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
-  out.setlocal_(localc);
+#ifdef HAVE_SCALAPACK
+  assert(localized_ == o.localized_);
+  if (localized_) {
+#endif
+    dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<double[]> locala = getlocal();
+    unique_ptr<double[]> localb = o.getlocal();
+    unique_ptr<double[]> localc = out.getlocal();
+    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    out.setlocal_(localc);
+  }
 #endif
 
   return out;
@@ -252,6 +267,7 @@ void Matrix::diagonalize(double* eig) {
   dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
   mpi__->broadcast(data(), n*n, 0);
 #else
+  assert(!localized_);
   const int localrow = get<0>(localsize_);
   const int localcol = get<1>(localsize_);
 
