@@ -40,8 +40,8 @@ template<typename DataType>
 class Matrix_base {
   protected:
     std::unique_ptr<DataType[]> data_;
-    const int ndim_;
-    const int mdim_;
+    const size_t ndim_;
+    const size_t mdim_;
 
     // for Scalapack BLAS3 operation
 #ifdef HAVE_SCALAPACK
@@ -83,7 +83,7 @@ class Matrix_base {
 #endif
 
   public:
-     Matrix_base(const int n, const int m) : data_(new DataType[n*m]), ndim_(n), mdim_(m)
+     Matrix_base(const size_t n, const size_t m) : data_(new DataType[n*m]), ndim_(n), mdim_(m)
 #ifdef HAVE_SCALAPACK
      , desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_))
 #endif
@@ -95,22 +95,22 @@ class Matrix_base {
 #endif
     { std::copy_n(o.data_.get(), size(), data_.get()); }
 
-    int size() const { return ndim_*mdim_; }
+    size_t size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
 
     void fill_upper() {
       assert(ndim_ == mdim_);
-      for (int i = 0; i != mdim_; ++i)
-        for (int j = i+1; j != ndim_; ++j)
+      for (size_t i = 0; i != mdim_; ++i)
+        for (size_t j = i+1; j != ndim_; ++j)
           data_[i+j*ndim_] = data_[j+i*ndim_];
     }
 
     void symmetrize() {
       assert(ndim_ == mdim_);
-      const int n = mdim_;
-      for (int i = 0; i != n; ++i)
-        for (int j = i+1; j != n; ++j)
+      const size_t n = mdim_;
+      for (size_t i = 0; i != n; ++i)
+        for (size_t j = i+1; j != n; ++j)
           data_[i+j*n] = data_[j+i*n] = 0.5*(data_[i+j*n]+data_[j+i*n]);
     }
 
@@ -120,7 +120,7 @@ class Matrix_base {
     void fill(const DataType a) { std::fill_n(data(), size(), a); }
 
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const DataType* dat) {
-      for (int i = mstart, j = 0; i != mstart + msize; ++i, ++j)
+      for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
         std::copy_n(dat + j*nsize, nsize, data_.get() + nstart + i*ndim_);
     }
 
@@ -130,7 +130,7 @@ class Matrix_base {
 
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
       std::unique_ptr<DataType[]> out(new DataType[nsize*msize]); 
-      for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
+      for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
         std::copy_n(data_.get() + nstart + i*ndim_, nsize, out.get() + j*nsize);
       return out;
     }
@@ -144,10 +144,10 @@ class Matrix_base {
     DataType& data(const size_t i) { return *(data()+i); }
     const DataType& data(const size_t i) const { return *(data()+i); }
 
-    DataType& element(int i, int j) { return *element_ptr(i, j); }
-    DataType* element_ptr(int i, int j) { return data()+i+j*ndim_; }
-    const DataType& element(int i, int j) const { return *element_ptr(i, j); }
-    const DataType* element_ptr(int i, int j) const { return data()+i+j*ndim_; }
+    DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
+    DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }
+    const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
+    const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim_; }
 
     void allreduce() {
       mpi__->allreduce(data_.get(), size());

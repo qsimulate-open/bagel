@@ -280,7 +280,7 @@ void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
   complex<double>* ublock = U->data();
   complex<double>* vblock = V->data();
   int info = 0;
-  zgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S.get(), ublock, &ndim_, vblock, &mdim_, work.get(), &lwork, rwork.get(), &info);
+  zgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, rwork.get(), info);
   if (info != 0) throw runtime_error("zgesvd failed in ZMatrix::svd");
 }
 
@@ -371,7 +371,7 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   shared_ptr<ZMatrix> out(new ZMatrix(mdim_, ndim_));
-  mytranspose_complex_(data_.get(), &ndim_, &mdim_, out->data()); 
+  mytranspose_complex_(data_.get(), ndim_, mdim_, out->data()); 
   return out;
 }
 
@@ -496,7 +496,7 @@ void ZMatrix::inverse_half(const double thresh) {
 }
 
 
-void ZMatrix::print(const string component, const string name, const int size) const {
+void ZMatrix::print(const string component, const string name, const size_t size) const {
 
   cout << "++++ " + name + " ++++" << endl;
   if (component == "R")  {

@@ -69,10 +69,10 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   start_ = tabstart_[mpi__->rank()];
   size_ = tabsize_[mpi__->rank()];
 
-  data_ = unique_ptr<double[]>(new double[naux_*size_]);
+  data_ = shared_ptr<Matrix>(new Matrix(naux_, size_));
 
   // second form a matrix
-  unique_ptr<double[]> buf(new double[naux_*size_]);
+  shared_ptr<Matrix> buf = data_->clone();
 
   // source block
   // TODO we need to generalize this function to multi-DFBlock cases
@@ -87,10 +87,10 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
       srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i));
-      rrequest.push_back(mpi__->request_recv(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
+      rrequest.push_back(mpi__->request_recv(buf->data()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
       assert(source->asize()*tabsize_[i] == atab[i].second*size_);
-      copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf.get()+atab[i].first*size_); 
+      copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf->data()+atab[i].first*size_); 
     }
   }
   for (auto& i : rrequest) mpi__->wait(i);
@@ -98,7 +98,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   vector<CopyBlockTask> task;
   task.reserve(mpi__->size());
   for (int i = 0; i != mpi__->size(); ++i)
-    task.push_back(CopyBlockTask(buf.get()+atab[i].first*size_, atab[i].second, data_.get()+atab[i].first, naux_, atab[i].second, size_));
+    task.push_back(CopyBlockTask(buf->data()+atab[i].first*size_, atab[i].second, data_->data()+atab[i].first, naux_, atab[i].second, size_));
   TaskQueue<CopyBlockTask> tq(task);
   tq.compute(resources__->max_num_threads());
 
@@ -109,7 +109,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 
 DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<size_t> size, const size_t nindex1, const size_t nindex2,
                  const shared_ptr<const ParallelDF> p)
- : data_(new double[naux*size[mpi__->rank()]]), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
+ : data_(new Matrix(naux, size[mpi__->rank()])), naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]),
    tabstart_(start), tabsize_(size), df_(p) {
 
 }
@@ -123,7 +123,7 @@ shared_ptr<DFDistT> DFDistT::clone() const {
 
 shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
   shared_ptr<DFDistT> out = clone();
-  dgemm_("T", "N", naux_, size_, naux_, 1.0, d->data(), naux_, data_.get(), naux_, 0.0, out->data_.get(), naux_); 
+  *out->data_ = *d % *data_; 
   return out;
 }
 
@@ -139,7 +139,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
       request.push_back(mpi__->request_recv(out->block(0)->get()+out->block(0)->asize()*tabstart_[i], out->block(0)->asize()*tabsize_[i], i));
 
   // second form a matrix
-  unique_ptr<double[]> buf(new double[naux_*size_]);
+  shared_ptr<Matrix> buf = data_->clone();
 
   // information on the data layout
   vector<pair<size_t, size_t> > atab = df_->atable();
@@ -148,16 +148,16 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   vector<CopyBlockTask> task;
   task.reserve(mpi__->size());
   for (int i = 0; i != mpi__->size(); ++i)
-    task.push_back(CopyBlockTask(data_.get()+atab[i].first, naux_, buf.get()+atab[i].first*size_, atab[i].second, atab[i].second, size_));
+    task.push_back(CopyBlockTask(data_->data()+atab[i].first, naux_, buf->data()+atab[i].first*size_, atab[i].second, atab[i].second, size_));
   TaskQueue<CopyBlockTask> tq(task);
   tq.compute(resources__->max_num_threads());
 
   // last, issue all the send requests
   for (int i = 0; i != mpi__->size(); ++i) {
     if (i != mpi__->rank()) {
-      request.push_back(mpi__->request_send(buf.get()+atab[i].first*size_, atab[i].second*size_, i));
+      request.push_back(mpi__->request_send(buf->data()+atab[i].first*size_, atab[i].second*size_, i));
     } else {
-      copy_n(buf.get()+atab[i].first*size_, out->block(0)->asize()*tabsize_[i], out->block(0)->get()+out->block(0)->asize()*tabstart_[i]);
+      copy_n(buf->data()+atab[i].first*size_, out->block(0)->asize()*tabsize_[i], out->block(0)->get()+out->block(0)->asize()*tabstart_[i]);
     }
   }
   for (auto& i : request) mpi__->wait(i);

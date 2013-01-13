@@ -289,7 +289,7 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   double* ublock = U->data();
   double* vblock = V->data();
   int info = 0;
-  dgesvd_("A", "A", &ndim_, &mdim_, cblock, &ndim_, S.get(), ublock, &ndim_, vblock, &mdim_, work.get(), &lwork, &info);
+  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
 }
 
@@ -375,7 +375,7 @@ unique_ptr<double[]> Matrix::diag() const {
 
 shared_ptr<Matrix> Matrix::transpose() const {
   shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
-  mytranspose_(data_.get(), &ndim_, &mdim_, out->data()); 
+  mytranspose_(data_.get(), ndim_, mdim_, out->data()); 
   return out;
 }
 
@@ -543,7 +543,7 @@ void Matrix::sqrt() {
 }
 
 
-void Matrix::print(const string name, const int size) const {
+void Matrix::print(const string name, const size_t size) const {
 
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != min(size,ndim_); ++i) {

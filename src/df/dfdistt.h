@@ -30,6 +30,7 @@
 #include <map>
 #include <cassert>
 #include <src/df/df.h>
+#include <src/util/matrix.h>
 
 namespace bagel {
 
@@ -40,7 +41,7 @@ namespace bagel {
 
 class DFDistT {
   protected:
-    std::unique_ptr<double[]> data_;
+    std::shared_ptr<Matrix> data_;
 
     // first dimension is naux_ (global)
     const size_t naux_;
@@ -72,7 +73,7 @@ class DFDistT {
 
     int size() const { return size_; }
     int start() const { return start_; }
-    const double* data() const { return data_.get(); } 
+    const std::shared_ptr<const Matrix> data() const { return data_; } 
 }; 
     
 }

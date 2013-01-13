@@ -71,18 +71,18 @@ extern "C" {
              std::complex<double>* b, const int* ldb, std::complex<double>* work, const int* lwork, int* info);
  void zgesv_(const int* n, const int* nrhs, std::complex<double>* a, const int* lda, int* ipiv,
              std::complex<double>* b, const int* ldb, int* info);
- void dgesvd_(const char*, const char*, const int*, const int*, double*, const int*, const double*,
-     double*, const int*, double*, const int*,  double*, const int*, int*);
- void zgesvd_(const char*, const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
-     std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*);
+ void dgesvd_(const char*, const char*, const int*, const int*, double*, const int*, double*, double*, const int*, double*, const int*,  double*, const int*, int*);
+ void zgesvd_(const char*, const char*, const int*, const int*, std::complex<double>*, const int*, double*,
+              std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*);
  void zgesdd_(const char*, const int*, const int*, std::complex<double>*, const int*, const double*,
-     std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*, int*);
+              std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*, int*);
 
  // outer product
  void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*);
 }
 
 static void mytranspose_(const double* a, const int b, const int c, double* d) { mytranspose_(a,&b,&c,d); }
+static void mytranspose_complex_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d) { mytranspose_complex_(a,&b,&c,d); }
 
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
                    const double alpha, const double* a, const int lda, const double* b, const int ldb,
@@ -128,6 +128,10 @@ static void drot_(const int a, const double* b, const int c, const double* d, co
                  { drot_(&a, b, &c, d, &e, &f, &g); }
 static void drot_(const int a, std::unique_ptr<double[]> b, const int c, std::unique_ptr<double[]> d, const int e, const double f, const double g)
                  { drot_(&a, b.get(), &c, d.get(), &e, &f, &g); }
+static void dgesvd_(const char* a, const char* b, const int c, const int d, double* e, const int f, double* g, double* h, const int i, double* j, const int k,
+                    double* l, const int m, int& n) { dgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,&n); } 
+static void zgesvd_(const char* a, const char* b, const int c, const int d, std::complex<double>* e, const int f, double* g, std::complex<double>* h,
+                    const int i, std::complex<double>* j, const int k, std::complex<double>* l, const int m, double* n, int& o) { zgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,n,&o); } 
 
 static void zgemm3m_(const char* transa, const char* transb, const int m, const int n, const int k,
                      const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,

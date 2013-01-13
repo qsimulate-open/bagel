@@ -128,7 +128,7 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
     std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix> > o);
 
     // first parameter must be "R", "I", or "T" to print real part, imaginary part, or total
-    void print(const std::string, const std::string in = "", const int size = 10) const;
+    void print(const std::string, const std::string in = "", const size_t size = 10) const;
 
     std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
 
