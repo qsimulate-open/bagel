@@ -36,6 +36,11 @@
 #include <src/scf/atom.h>
 #include <src/util/matrix.h>
 #include <src/df/dfinttask_old.h>
+#include <src/df/dfinttask.h>
+#include <src/scf/shell.h>
+#include <src/util/timer.h>
+#include <src/util/taskqueue.h>
+#include <src/rysint/rysint.h>
 
 namespace bagel {
 
@@ -155,16 +160,62 @@ class DFDist_ints : public DFDist {
       for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
       for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
 
+      // get number of dfblocks
+      const int nblocks = TBatch::nblocks();
+      block_.resize(nblocks);
+
+      // make empty dfblocks
+      for (int i = 0; i != nblocks; ++i) {
+#ifndef HAVE_MPI_H
+        block_[i] = std::shared_ptr<DFBlock>(new DFBlock(ashell, b1shell, b2shell, 0, 0, 0));
+#else
+        int astart;
+        std::vector<std::shared_ptr<const Shell> > myashell;
+        std::tie(astart, myashell) = get_ashell(ashell);
+        block_[i] = std::shared_ptr<DFBlock>(new DFBlock(myashell, b1shell, b2shell, astart, 0, 0));
+#endif
+      }
+
+      // making a task list
+      std::vector<DFIntTask<TBatch> > tasks;
+      tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
+
+      // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
+      assert(b1shell == b2shell);
+
+      const std::shared_ptr<const Shell> i3(new Shell(ashell.front()->spherical()));
+
+      auto j2 = block_[0]->b2off().begin();
+      for (auto& i2 : b2shell) {
+        auto j1 = block_[0]->b1off().begin();
+        for (auto& i1 : b1shell) {
+          // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
+          if (*j1 <= *j2) {
+            auto j0 = block_[0]->aoff().begin();
+            for (auto& i0 : ashell) {
+              tasks.push_back(DFIntTask<TBatch>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::vector<int>{*j2, *j1, *j0}, block_));
+              ++j0;
+            }
+          }
+          ++j1;
+        }
+        ++j2;
+      }
+      TaskQueue<DFIntTask<TBatch> > tq(tasks);
+      tq.compute(resources__->max_num_threads());
+
       // Decide how we distribute (dynamic distribution).
       // construction of DFBlock computes integrals
+#if 0
       block_.resize(1);
-#ifndef HAVE_MPI_H
+#ifdef HAVE_MPI_H
       block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(ashell, b1shell, b2shell, 0, 0, 0));
 #else
       int astart;
       std::vector<std::shared_ptr<const Shell> > myashell;
       std::tie(astart, myashell) = get_ashell(ashell);
       block_[0] = std::shared_ptr<DFBlock>(new DFBlock_ints<TBatch>(myashell, b1shell, b2shell, astart, 0, 0));
+#endif
 #endif
     }
 

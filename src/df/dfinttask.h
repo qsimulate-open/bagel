@@ -8,12 +8,12 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can reblocksribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// The BAGEL package is blocksributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Library General Public License for more details.
@@ -26,60 +26,45 @@
 #ifndef __SRC_DF_DFINTTASK_H
 #define __SRC_DF_DFINTTASK_H
 
+#include <src/df/dfblock.h>
 #include <src/scf/shell.h>
 #include <src/rysint/rysint.h>
 
 namespace bagel {
 
-class DFIntTask {
+class DFIntTask_base {
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
     std::array<int,3> offset_; // at most 3 elements
     int rank_;
-    DFBlock* dfblock_;
+    std::vector<std::shared_ptr<DFBlock> > dfblocks_;
+
+    virtual std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) = 0;
+    virtual int nblocks() const = 0;
 
   public:
-    DFIntTask(std::array<std::shared_ptr<const Shell>,4>&& a, std::vector<int>&& b, DFBlock* df) : shell_(a), rank_(b.size()), dfblock_(df) {
-      int j = 0;
-      for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
-    }
-    DFIntTask() {};
+    DFIntTask_base(std::array<std::shared_ptr<const Shell>,4>& a, std::vector<int>& b, std::vector<std::shared_ptr<DFBlock> >& df);
 
-    void compute() {
+    void compute();
 
-      std::shared_ptr<Integral> p = dfblock_->compute_batch(shell_);
-      assert(dfblock_->b1size_ == dfblock_->b2size_);
-      const size_t nbin = dfblock_->b1size_;
-      const size_t naux = dfblock_->asize_;
-
-      // all slot in
-      for (int i = 0; i != p->nblocks(); ++i) {
-        const double* ppt = p->data(i);
-        if (rank_ == 3) {
-          double* const data = dfblock_->data_.get();
-          for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
-            for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1) {
-              for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++ppt) {
-                data[j2+naux*(j1+nbin*j0)] = data[j2+naux*(j0+nbin*j1)] = *ppt;
-              }
-            }
-          }
-        
-#if 0
-      } else if (rank_ == 2) {
-        double* const data = df_->data2_.get();
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
-          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
-            data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
-          }
-        }
-#endif
-        } else {
-          assert(false);
-        }
-      }
-    };
 };
+
+template <typename TBatch>
+class DFIntTask : public DFIntTask_base {
+  protected:
+    std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override {
+      std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
+      eribatch->compute();
+      return eribatch;
+    }
+
+    int nblocks() const override { return TBatch::nblocks(); }
+
+  public:
+    DFIntTask(std::array<std::shared_ptr<const Shell>,4>&& a, std::vector<int>&& b, std::vector<std::shared_ptr<DFBlock> >& df) : DFIntTask_base(a,b,df) {} 
+
+};
+
 
 }
 

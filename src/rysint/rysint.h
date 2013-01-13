@@ -123,7 +123,8 @@ class RysInt : public Integral {
     ~RysInt();
 
     virtual void compute() = 0;
-    int nblocks() override { return 1; }
+    static int nblocks() { return 1; }
+//  int nblocks() override { return 1; }
 
     /// retrieve a batch of integrals
     double* data(const int i) override { assert(i == 0); return data_; }

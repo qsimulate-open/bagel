@@ -51,6 +51,9 @@ DFBlock::DFBlock(vector<shared_ptr<const Shell> > a, vector<shared_ptr<const She
   for (auto& i : b2_)  { b2off_.push_back(tmpb2); tmpb2 += i->nbasis(); }
   assert(tmpa == asize_ && tmpb1 == b1size_ && tmpb2 == b2size_);
 
+  // initiallize data?
+  data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
+
 }
 
 
