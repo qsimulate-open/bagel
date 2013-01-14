@@ -285,6 +285,14 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const siz
 }
 
 
+shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const double* c, const size_t nocc) const {
+  shared_ptr<DFHalfDist> out(new DFHalfDist(shared_from_this(), nocc));
+  for (auto& i : block_) 
+    out->add_block(i->transform_third(c, nocc)->swap());
+  return out;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

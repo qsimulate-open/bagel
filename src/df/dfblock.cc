@@ -130,6 +130,17 @@ void DFBlock::symmetrize() {
 }
 
 
+shared_ptr<DFBlock> DFBlock::swap() const {
+  unique_ptr<double[]> dat(new double[asize_*b1size_*b2size_]);
+  for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2)
+    for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
+      copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
+
+  shared_ptr<DFBlock> out(new DFBlock(dat, asize_, b2size_, b1size_, astart_, b2start_, b1start_));
+  return out;
+}
+
+
 shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM() const {
   assert(b1size_ == b2size_);
   const int nocc = b1size_;

@@ -143,6 +143,10 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
     std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const { return compute_half_transform(c->data(), c->mdim()); }
 
+    // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const double* c, const size_t nocc) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const { return compute_half_transform_swap(c->data(), c->mdim()); }
+
 };
 
 

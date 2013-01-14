@@ -119,6 +119,9 @@ class DFBlock {
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)
     void symmetrize();
 
+    // exchange b1 and b2
+    std::shared_ptr<DFBlock> swap() const;
+
     // 2RDM contractions
     std::shared_ptr<DFBlock> apply_rhf_2RDM() const; 
     std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const; 
