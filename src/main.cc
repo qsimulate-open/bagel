@@ -43,6 +43,7 @@
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
 #include <src/fci/distfci.h>
+#include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>

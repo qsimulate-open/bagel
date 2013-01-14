@@ -26,7 +26,9 @@
 #ifndef __NEWINT_FCI_DISTFCI_H
 #define __NEWINT_FCI_DISTFCI_H
 
-#include <src/fci/harrison.h>
+#include <memory>
+#include <src/fci/fci.h>
+#include <src/fci/space.h>
 
 namespace bagel {
 
@@ -36,14 +38,18 @@ namespace bagel {
 //
 // The implementation is based on the HarrisonZarrabian class written by Shane Parker.
 
-class DistFCI : public HarrisonZarrabian {
+class DistFCI : public FCI {
 
   protected:
-    // const denom (so far implemented in HarrisonZarrabian)
-#if 0
-    void const_denom() override;
-#endif
 
+    std::shared_ptr<Space> space_;
+
+    // const_denom function here only makes a denom for local data of DistCivec. This is called from FCI
+    void const_denom() override;
+
+    void compute() override;
+
+    // just to confort FCI
     std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
 
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
@@ -55,9 +61,7 @@ class DistFCI : public HarrisonZarrabian {
     DistFCI(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
             const int ncore = -1, const int nocc = -1, const int nstate = -1);
     
-#if 0
     void update(std::shared_ptr<const Coeff>) override;
-#endif
 };
 
 }

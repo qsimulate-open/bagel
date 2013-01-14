@@ -33,23 +33,24 @@
 #include <src/parallel/request.h>
 #include <src/util/combination.hpp>
 #include <src/util/comb.h>
+#include <src/fci/hzdenomtask.h>
 #include <vector>
 #include <config.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
-
 using namespace std;
-using namespace chrono;
 using namespace bagel;
 
 DistFCI::DistFCI(const multimap<string, string> a, shared_ptr<const Reference> b, const int ncore, const int nocc, const int nstate)
- : HarrisonZarrabian(a, b, ncore, nocc, nstate) {
+ : FCI(a, b, ncore, nocc, nstate) {
 
-  cout << "    * Parallel algorithm will be used." << endl;
 #ifndef HAVE_MPI_H
   throw logic_error("DistFCI can be used only with MPI");
 #endif
+
+  cout << "    * Parallel algorithm will be used." << endl;
+
+  space_ = std::shared_ptr<Space>(new Space(det_, 1));
+  update(ref_->coeff());
 
 }
 
@@ -300,5 +301,141 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
       for (auto& iter : cc->det()->phib(ip))
         sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
 
+}
+
+
+
+void DistFCI::compute() {
+  Timer pdebug(2);
+
+  // at the moment I only care about C1 symmetry, with dynamics in mind
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
+
+  // some constants
+  //const int ij = nij(); 
+
+  // Creating an initial CI vector
+  shared_ptr<Dvec> cc_tmp(new Dvec(det_, nstate_)); // B runs first
+  cc_ = cc_tmp;
+
+  // find determinants that have small diagonal energies
+  generate_guess(nelea_-neleb_, nstate_, cc_);
+  pdebug.tick_print("guess generation");
+
+  // nuclear energy retrieved from geometry
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+
+  // Davidson utility
+  DavidsonDiag<Civec> davidson(nstate_, max_iter_);
+
+  // main iteration starts here
+  cout << "  === FCI iteration ===" << endl << endl;
+  // 0 means not converged
+  vector<int> conv(nstate_,0);
+
+  for (int iter = 0; iter != max_iter_; ++iter) { 
+    Timer fcitime;
+
+    // form a sigma vector given cc
+    shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
+    pdebug.tick_print("sigma vector");
+
+    // constructing Dvec's for Davidson
+    shared_ptr<const Dvec> ccn(new Dvec(cc_));
+    shared_ptr<const Dvec> sigman(new Dvec(sigma));
+    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
+
+    // get residual and new vectors
+    vector<shared_ptr<Civec> > errvec = davidson.residual();
+    pdebug.tick_print("davidson");
+
+    // compute errors
+    vector<double> errors;
+    for (int i = 0; i != nstate_; ++i) {
+      errors.push_back(errvec[i]->variance());
+      conv[i] = static_cast<int>(errors[i] < thresh_);
+    }
+    pdebug.tick_print("error");
+
+    if (!*min_element(conv.begin(), conv.end())) {
+      // denominator scaling 
+      for (int ist = 0; ist != nstate_; ++ist) {
+        if (conv[ist]) continue;
+        const int size = cc_->data(ist)->size();
+        double* target_array = cc_->data(ist)->data();
+        double* source_array = errvec[ist]->data();
+        double* denom_array = denom_->data();
+        const double en = energies[ist];
+        for (int i = 0; i != size; ++i) {
+          target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+        }
+        davidson.orthog(cc_->data(ist));
+        list<shared_ptr<const Civec> > tmp;
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst)); 
+        cc_->data(ist)->orthog(tmp);
+      }
+    }
+    pdebug.tick_print("denominator");
+
+    // printing out
+    if (nstate_ != 1 && iter) cout << endl;
+    for (int i = 0; i != nstate_; ++i) {
+      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
+                              << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
+                              << fcitime.tick() << endl; 
+      energy_[i] = energies[i]+nuc_core;
+    }
+    if (*min_element(conv.begin(), conv.end())) break;
+  }
+  // main iteration ends here
+
+  shared_ptr<Dvec> s(new Dvec(davidson.civec()));
+  s->print();
+  cc_ = shared_ptr<Dvec>(new Dvec(s));
+}
+
+
+void DistFCI::update(shared_ptr<const Coeff> c) {
+  // iiii file to be created (MO transformation).
+  // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
+  Timer timer;
+  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
+
+  // right now full basis is used. 
+  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
+
+  const_denom();
+}
+
+
+void DistFCI::const_denom() {
+  Timer denom_t;
+  unique_ptr<double[]> h(new double[norb_]);
+  unique_ptr<double[]> jop(new double[norb_*norb_]);
+  unique_ptr<double[]> kop(new double[norb_*norb_]);
+
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
+    }
+    h[i] = jop_->mo1e(i,i);
+  }
+  denom_t.tick_print("jop, kop");
+
+  denom_ = shared_ptr<Civec>(new Civec(det()));
+
+  double* iter = denom_->data();
+  vector<HZDenomTask> tasks;
+  tasks.reserve(det()->stringa().size());
+  for (auto& ia : det()->stringa()) {
+    tasks.push_back(HZDenomTask(iter, ia, det_, jop.get(), kop.get(), h.get()));
+    iter += det()->stringb().size();
+  }
+
+  TaskQueue<HZDenomTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
+  denom_t.tick_print("denom");
 }
 
