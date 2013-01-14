@@ -33,6 +33,7 @@
 #include <src/parallel/request.h>
 #include <src/util/combination.hpp>
 #include <src/util/comb.h>
+#include <src/util/simpletasks.h>
 #include <src/fci/hzdenomtask.h>
 #include <vector>
 #include <config.h>
@@ -224,6 +225,59 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 }
 
 
+namespace bagel {
+class DistBBTask {
+  protected:
+    const size_t la;
+    const double* source;
+    double* target;
+    const double* hamil;
+    std::shared_ptr<Determinants> base_det;
+    const std::bitset<nbit__> b;
+    std::vector<boost::mutex>* mutex;
+
+  public:
+    DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<Determinants> det, const std::bitset<nbit__>& bs, std::vector<boost::mutex>* m)
+      : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {} 
+
+    void compute() {
+      // TODO buffer should be nelec size (not norb size)
+      const size_t norb_ = base_det->norb();
+      const size_t npack = norb_*(norb_-1)/2;
+      std::unique_ptr<double[]> ints(new double[npack*la]);
+      std::unique_ptr<double[]> ints2(new double[npack*la]);
+      std::fill_n(ints.get(), npack*la, 0.0);
+
+      // first gather elements with correct sign
+      for (int i = 0, ij = 0; i != norb_; ++i) {
+        if (b[i]) { ij += i; continue; }
+        for (int j = 0; j < i; ++j, ++ij) {
+          if(b[j]) continue;
+          std::bitset<nbit__> bt = b; bt.set(i); bt.set(j);
+          const double ij_phase = base_det->sign(bt,i,j);
+          daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij, 1);
+        }
+      }
+
+      // call dgemm
+      dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil, npack, 0.0, ints2.get(), la);
+
+      for (int k = 0, kl = 0; k != norb_; ++k) {
+        if (b[k]) { kl += k; continue; }
+        for (int l = 0; l < k; ++l, ++kl) {
+          if (b[l]) continue;
+          bitset<nbit__> bt = b; bt.set(k); bt.set(l);
+          const double kl_phase = base_det->sign(bt,k,l);
+          boost::lock_guard<boost::mutex> lock((*mutex)[base_det->lexical<1>(bt)]);
+          daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target+la*base_det->lexical<1>(bt), 1);
+        }
+      }
+    }
+
+};
+}
+
+
 // beta-beta block has no communication (and should be cheap)
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
@@ -259,37 +313,15 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+neleb_-2, data.end()));
 
+  vector<boost::mutex> mutex(lb);
   // loop over intermediate string
-  for (auto& b : intb) {
-    // TODO buffer should be nelec size (not norb size)
-    unique_ptr<double[]> ints(new double[npack*la]);
-    unique_ptr<double[]> ints2(new double[npack*la]);
-    fill_n(ints.get(), npack*la, 0.0);
+  vector<DistBBTask> tasks;
+  tasks.reserve(intb.size());
+  for (auto& b : intb)
+    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil.get(), base_det, b, &mutex));
+  TaskQueue<DistBBTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
 
-    // first gather elements with correct sign
-    for (int i = 0, ij = 0; i != norb_; ++i) {
-      if (b[i]) { ij += i; continue; }
-      for (int j = 0; j < i; ++j, ++ij) {
-        if(b[j]) continue;
-        bitset<nbit__> bt = b; bt.set(i); bt.set(j);
-        const double ij_phase = base_det->sign(bt,i,j);
-        daxpy_(la, ij_phase, source.get()+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij, 1);
-      }
-    }
-
-    // call dgemm
-    dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil.get(), npack, 0.0, ints2.get(), la);
-
-    for (int k = 0, kl = 0; k != norb_; ++k) {
-      if (b[k]) { kl += k; continue; }
-      for (int l = 0; l < k; ++l, ++kl) {
-        if (b[l]) continue;
-        bitset<nbit__> bt = b; bt.set(k); bt.set(l);
-        const double kl_phase = base_det->sign(bt,k,l);
-        daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target.get()+la*base_det->lexical<1>(bt), 1);
-      }
-    }
-  }
   mytranspose_(target.get(), la, lb, source.get());
   daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
 
