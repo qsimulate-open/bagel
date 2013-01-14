@@ -280,6 +280,8 @@ class DistBBTask {
 // beta-beta block has no communication (and should be cheap)
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
+  Timer timebb(2);
+
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
   const size_t lb = sigma->lenb();
@@ -291,6 +293,8 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   // (astart:aend, b)
   mytranspose_(cc->local(), lb, la, source.get());
   fill_n(target.get(), la*lb, 0.0);
+
+  timebb.tick_print("transposition");
 
   // preparing Hamiltonian
   const size_t npack = norb_*(norb_-1)/2;
@@ -312,6 +316,8 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+neleb_-2, data.end()));
 
+  timebb.tick_print("prep");
+
   vector<boost::mutex> mutex(lb);
   // loop over intermediate string
   vector<DistBBTask> tasks;
@@ -321,14 +327,19 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   TaskQueue<DistBBTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
 
+  timebb.tick_print("2-e part");
+
   mytranspose_(target.get(), la, lb, source.get());
   daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
+
+  timebb.tick_print("transposition");
 
   for (int i = 0; i < cc->asize(); ++i)
     for (int ip = 0; ip != nij(); ++ip)
       for (auto& iter : cc->det()->phib(ip))
         sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
 
+  timebb.tick_print("1-e part");
 }
 
 
