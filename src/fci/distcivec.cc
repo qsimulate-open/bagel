@@ -38,8 +38,6 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
 
-  send_  = shared_ptr<SendRequest>(new SendRequest());
-  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
 }
 
 
@@ -48,8 +46,6 @@ DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o
   alloc_ = size();
   local_ = unique_ptr<double[]>(new double[alloc_]);
   copy_n(o.local_.get(), alloc_, local_.get());
-  send_  = shared_ptr<SendRequest>(new SendRequest());
-  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
 }
 
 
@@ -121,7 +117,9 @@ void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
 }
 
 
-void DistCivec::init_accum() {
+void DistCivec::init_mpi() {
+  send_  = shared_ptr<SendRequest>(new SendRequest());
+  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
   accum_->init_request();
 }
 
@@ -145,7 +143,7 @@ void DistCivec::flush() const {
 }
 
 
-void DistCivec::wait() const {
+void DistCivec::terminate_mpi() {
   send_->wait1();
   // when wait1 of send_ is over, accum should be ready. Hence only flush.
   accum_->flush();
@@ -153,6 +151,10 @@ void DistCivec::wait() const {
   accum_->wait2();
   send_->wait3();
   accum_->wait3();
+
+  // cancel all MPI calls
+  send_  = shared_ptr<SendRequest>();
+  accum_ = shared_ptr<AccRequest>();
 }
 
 

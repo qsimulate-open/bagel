@@ -68,8 +68,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     shared_ptr<DistCivec> sigma = cc->clone(); 
     sigma->zero();
 
-    // TODO. I don't know why we cannot initialize the queue in the constructor
-    sigma->init_accum();
+    sigma->init_mpi();
 
     vector<pair<string, double> > timing;
     Timer fcitime(1);
@@ -83,7 +82,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     sigma_bb(cc, sigma, jop);
     fcitime.tick_print("beta-beta");
 
-    sigma->wait();
+    sigma->terminate_mpi();
     fcitime.tick_print("wait");
 
     sigmavec.push_back(sigma);
