@@ -35,3 +35,5 @@ o Clean up interface to localization routines, especially PM
 o One could reduce the number of diagonalization in ROHF
 
 o config.h should be placed under bagel or something
+
+o Parallel gradients broken

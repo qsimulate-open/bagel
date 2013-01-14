@@ -28,14 +28,12 @@
 #include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <src/util/f77.h>
 #include <src/smith/prim_op.h>
 #include <src/prop/dipole.h>
 #include <src/grad/gradeval.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
@@ -49,7 +47,7 @@ void MP2Grad::compute() { }
 
 template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
-  auto tp1 = high_resolution_clock::now();
+  Timer time;
 
   const size_t ncore = ref_->ncore();
 
@@ -79,9 +77,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const DFFullDist> bv = full->apply_J();
   shared_ptr<DFFullDist> gia = bv->clone();
 
-  auto tp2 = high_resolution_clock::now();
-  auto dr1 = duration_cast<milliseconds>(tp2-tp1);
-  cout << setw(60) << left << "    * 3-index integral transformation done" << right << setw(10) << setprecision(2) << dr1.count()*0.001 << endl << endl;
+  time.tick_print("3-index integral transform");
 
   // assemble
   unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
@@ -131,9 +127,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis);
   }
 
-  auto tp3 = high_resolution_clock::now();
-  auto dr2 = duration_cast<milliseconds>(tp3-tp2);
-  cout << left << setw(60) << "    * assembly (+ unrelaxed density matrices) done" << right << setw(10) << setprecision(2) << dr2.count()*0.001 << endl << endl;
+  time.tick_print("assembly (+ unrelaxed rdm)");
+  cout << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 
   // L''aq = 2 Gia(D|ia) (D|iq)
@@ -169,9 +164,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
 
-  auto tp4 = high_resolution_clock::now();
-  auto dr3 = duration_cast<milliseconds>(tp4-tp3);
-  cout << setw(60) << left << "    * Right hand side of CPHF done" << right << setw(10) << setprecision(2) << dr3.count()*0.001 << endl << endl;
+  time.tick_print("Right hand side of CPHF");
+  cout << endl;
 
   // solving CPHF
   shared_ptr<CPHF> cphf(new CPHF(grad, ref_->eig(), halfjj, ref_));
@@ -189,9 +183,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  auto tp5 = high_resolution_clock::now();
-  auto dr4 = duration_cast<milliseconds>(tp5-tp4);
-  cout << setw(60) << left << "    * CPHF solved" << right << setw(10) << setprecision(2) << dr4.count()*0.001 << endl;
+  time.tick_print("CPHF solved");
 
   // one electron matrices
   shared_ptr<Matrix> dmp2ao(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
@@ -244,16 +236,14 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->symmetrize();
   shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
 
-  auto tp6 = high_resolution_clock::now();
-  auto dr5 = duration_cast<milliseconds>(tp6-tp5);
-  cout << setw(60) << left << "    * Density matrices computed" << right << setw(10) << setprecision(2) << dr5.count()*0.001 << endl;
+  time.tick_print("Density matrices computed");
+  cout << endl;
 
   // gradient evaluation
   shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
 
-  auto tp7 = high_resolution_clock::now();
-  auto dr6 = duration_cast<milliseconds>(tp7-tp6);
-  cout << setw(60) << left << "    * Gradient integrals contracted " << setprecision(2) << right << setw(10) << dr6.count()*0.001 << endl << endl;
+  time.tick_print("Gradient integrals contracted");
+  cout << endl;
 
   // set proper energy_
   energy_ = ref_->energy() + ecorr;
