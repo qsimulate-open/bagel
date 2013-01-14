@@ -16,7 +16,7 @@ o when input areas are empty, methods are not called
 
 o Stack size is hardwired now
 
-o F12 DF factory is disabled now (see "#define SlaterFit DFDist" in src/df/fit.h). It is easy to make it again, though. 
+o F12 DF factory now calls ERIBatch 
 
 o Parallelization needs more work
 
@@ -25,6 +25,8 @@ o Parallelization needs more work
   - FCI is not parallelized yet 
   - Shell distribution to MPI processes (src/df/df.cc) can be further optimized
   - Compatibility check between Scalapack and BLAS at configure time
+
+o DistFCI needs to be more threaded
 
 o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
 
