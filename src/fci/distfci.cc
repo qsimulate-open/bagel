@@ -240,36 +240,60 @@ class DistBBTask {
       : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {} 
 
     void compute() {
-      // TODO buffer should be nelec size (not norb size)
       const size_t norb_ = base_det->norb();
-      const size_t npack = norb_*(norb_-1)/2;
-      std::unique_ptr<double[]> ints(new double[npack*la]);
-      std::unique_ptr<double[]> ints2(new double[npack*la]);
-      std::fill_n(ints.get(), npack*la, 0.0);
+      if (b.count()+2 == base_det->neleb()) {
+        // TODO buffer should be nelec size (not norb size)
+        const size_t npack = norb_*(norb_-1)/2;
+        std::unique_ptr<double[]> ints(new double[npack*la]);
+        std::unique_ptr<double[]> ints2(new double[npack*la]);
+        std::fill_n(ints.get(), npack*la, 0.0);
 
-      // first gather elements with correct sign
-      for (int i = 0, ij = 0; i != norb_; ++i) {
-        if (b[i]) { ij += i; continue; }
-        for (int j = 0; j < i; ++j, ++ij) {
-          if(b[j]) continue;
-          std::bitset<nbit__> bt = b; bt.set(i); bt.set(j);
-          const double ij_phase = base_det->sign(bt,i,j);
-          daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij, 1);
+        // first gather elements with correct sign
+        for (int i = 0, ij = 0; i != norb_; ++i) {
+          if (b[i]) { ij += i; continue; }
+          for (int j = 0; j < i; ++j, ++ij) {
+            if(b[j]) continue;
+            std::bitset<nbit__> bt = b; bt.set(i); bt.set(j);
+            const double ij_phase = base_det->sign(bt,i,j);
+            daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij, 1);
+          }
         }
-      }
 
-      // call dgemm
-      dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil, npack, 0.0, ints2.get(), la);
+        // call dgemm
+        dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil, npack, 0.0, ints2.get(), la);
 
-      for (int k = 0, kl = 0; k != norb_; ++k) {
-        if (b[k]) { kl += k; continue; }
-        for (int l = 0; l < k; ++l, ++kl) {
-          if (b[l]) continue;
-          bitset<nbit__> bt = b; bt.set(k); bt.set(l);
-          const double kl_phase = base_det->sign(bt,k,l);
-          boost::lock_guard<boost::mutex> lock((*mutex)[base_det->lexical<1>(bt)]);
-          daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target+la*base_det->lexical<1>(bt), 1);
+        for (int k = 0, kl = 0; k != norb_; ++k) {
+          if (b[k]) { kl += k; continue; }
+          for (int l = 0; l < k; ++l, ++kl) {
+            if (b[l]) continue;
+            bitset<nbit__> bt = b; bt.set(k); bt.set(l);
+            const double kl_phase = base_det->sign(bt,k,l);
+            const size_t ib = base_det->lexical<1>(bt);
+            boost::lock_guard<boost::mutex> lock((*mutex)[ib]);
+            daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target+la*ib, 1);
+          }
         }
+      } else if (b.count()+1 == base_det->neleb()) {
+        std::unique_ptr<double[]> ints(new double[la*norb_]);
+        std::unique_ptr<double[]> ints2(new double[la*norb_]);
+        std::fill_n(ints.get(), la*norb_, 0.0);
+        for (int i = 0; i != norb_; ++i) {
+          if (b[i]) continue;
+          bitset<nbit__> bt = b; bt.set(i);
+          const double ij_phase = base_det->sign(bt, -1, i);
+          daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*i, 1);
+        }
+        dgemm_("N", "N", la, norb_, norb_, 1.0, ints.get(), la, hamil, norb_, 0.0, ints2.get(), la); 
+        for (int i = 0; i != norb_; ++i) {
+          if (b[i]) continue;
+          std::bitset<nbit__> bt = b; bt.set(i);
+          const double ij_phase = base_det->sign(bt, -1, i);
+          const size_t ib = base_det->lexical<1>(bt);
+          boost::lock_guard<boost::mutex> lock((*mutex)[ib]);
+          daxpy_(la, ij_phase, ints2.get()+la*i, 1, target+la*ib, 1);
+        }
+      } else {
+        assert(false);
       }
     }
 
@@ -283,6 +307,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   Timer timebb(2);
 
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  const shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   const size_t lb = sigma->lenb();
   const size_t la = sigma->asize();
@@ -298,12 +323,17 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   // preparing Hamiltonian
   const size_t npack = norb_*(norb_-1)/2;
-  unique_ptr<double[]> hamil(new double[npack*npack]);
-  for (int i = 0, ijkl = 0; i != norb_; ++i)
-    for (int j = 0; j < i; ++j)
+  unique_ptr<double[]> hamil1(new double[norb_*norb_]);
+  unique_ptr<double[]> hamil2(new double[npack*npack]);
+  for (int i = 0, ij = 0, ijkl = 0; i != norb_; ++i) {
+    for (int j = 0; j <= i; ++j, ++ij) {
+      hamil1[j+norb_*i] = hamil1[i+norb_*j] = jop_->mo1e(ij); 
+      if (i == j) continue;
       for (int k = 0; k != norb_; ++k)
         for (int l = 0; l < k; ++l, ++ijkl)
-          hamil[ijkl] = jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k);
+          hamil2[ijkl] = jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k);
+    }
+  }
 
   const static Comb comb;
   const size_t lengb = comb.c(norb_, neleb_-2);
@@ -323,7 +353,9 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   vector<DistBBTask> tasks;
   tasks.reserve(intb.size());
   for (auto& b : intb)
-    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil.get(), base_det, b, &mutex));
+    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil2.get(), base_det, b, &mutex));
+  for (auto& b : int_det->stringb())
+    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil1.get(), base_det, b, &mutex));
   TaskQueue<DistBBTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
 
@@ -333,13 +365,6 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
 
   timebb.tick_print("transposition");
-
-  for (int i = 0; i < cc->asize(); ++i)
-    for (int ip = 0; ip != nij(); ++ip)
-      for (auto& iter : cc->det()->phib(ip))
-        sigma->local(iter.target+cc->lenb()*i) += jop->mo1e(ip) * iter.sign * cc->local(iter.source+cc->lenb()*i);
-
-  timebb.tick_print("1-e part");
 }
 
 
