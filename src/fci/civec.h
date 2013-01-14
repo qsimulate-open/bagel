@@ -191,7 +191,7 @@ class DistCivec {
     void accumulate_bstring(const double* buf, const size_t a) const; 
 
     // MPI Isend Irecv
-    void init_accumulate_buf(const size_t cmm);
+    void init_accum();
     void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
     void flush() const;
     void wait() const;

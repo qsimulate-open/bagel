@@ -94,17 +94,16 @@ class AccRequest {
     std::vector<int> send_;
 
     void init();
-    void init_request_(const int total);
 
   public:
     AccRequest(double* const d);
+    ~AccRequest();
 
-    void init_request(const int total);
+    void init_request();
 
     void flush();
 
     // wait for all calls
-    void wait1();
     void wait2();
     void wait3();
 

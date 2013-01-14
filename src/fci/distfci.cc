@@ -70,6 +70,9 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
     shared_ptr<const DistCivec> cc = ccvec->data(istate)->distcivec();
     shared_ptr<DistCivec> sigma = sigmavec->data(istate)->distcivec();
 
+    // TODO. I don't know why we cannot initialize the queue in the constructor
+    sigma->init_accum();
+
     vector<pair<string, double> > timing;
     Timer fcitime(1);
 
@@ -95,8 +98,6 @@ shared_ptr<Dvec> DistFCI::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<co
 void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
-
-  sigma->init_accumulate_buf(sigma->asize()*(mpi__->size()-1));
 
   const size_t lb = sigma->lenb();
 
@@ -167,21 +168,6 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   const int size = mpi__->size();
 
   const size_t nloop = (int_det->lena()-1)/size+1;
-
-  // initialize remote accumulate with Isend/Irecv. We need an expected number of calls to receive.
-  size_t cmm = 0;
-  for (size_t a = 0; a != int_det->lena(); ++a) {
-    // if local, we don't count
-    if (a % size == rank) continue;
-    const bitset<nbit__> astring = int_det->stringa(a);
-    for (int i = 0; i != norb_; ++i) {
-      if (astring[i]) continue;
-      bitset<nbit__> tmp = astring; tmp.set(i);
-      const int aloc = base_det->lexical<0>(tmp) - sigma->astart();
-      if (aloc >= 0 && aloc < sigma->asize()) ++cmm;
-    }
-  }
-  sigma->init_accumulate_buf(cmm);
 
   // shamelessly statically distributing across processes
   for (size_t loop = 0; loop != nloop; ++loop) {

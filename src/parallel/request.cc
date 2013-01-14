@@ -25,13 +25,14 @@
 
 #include <src/parallel/request.h>
 #include <src/util/f77.h>
+#include <boost/thread/thread.hpp>
 
 using namespace std;
 using namespace bagel;
 
 
 const static size_t probe_key = (1 << 30);
-const static size_t pool_size = 0;
+const static size_t pool_size = 100;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 SendRequest::SendRequest() : counter_(probe_key/mpi__->size()*mpi__->rank()) {
@@ -76,19 +77,22 @@ void SendRequest::flush() {
 
 // wait for all calls
 void SendRequest::wait1() {
-  for (auto& i : send_)     mpi__->wait(i);
+  for (auto& i : send_)
+    mpi__->wait(i);
   flush();
 }
 
 
 void SendRequest::wait2() {
-  for (auto& i : inactive_) mpi__->wait(i.first);
+  for (auto& i : inactive_)
+    mpi__->wait(i.first);
   flush();
 }
 
 
 void SendRequest::wait3() {
-  for (auto& i : requests_) mpi__->wait(i.first);
+  for (auto& i : requests_)
+    mpi__->wait(i.first);
   flush();
 }
 
@@ -96,7 +100,6 @@ void SendRequest::wait3() {
 void AccRequest::init() {
   // we should compute the number of messnages to receive?
   // receives
-  const int dest = 0;
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
   const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key); 
@@ -105,19 +108,18 @@ void AccRequest::init() {
 }
 
 
-void AccRequest::init_request_(const int total) {
-  for (size_t i = 0; i != total; ++i)
-    init();
-}
-
-
 AccRequest::AccRequest(double* const d) : data_(d) {
-  init_request_(pool_size);
 }
 
 
-void AccRequest::init_request(const int total) {
-  for (size_t i = 0; i != total; ++i)
+AccRequest::~AccRequest() {
+  for (auto& i : calls_)
+    mpi__->cancel(i.first);
+}
+
+
+void AccRequest::init_request() {
+  for (size_t i = 0; i != pool_size; ++i)
     init();
 }
 
@@ -146,7 +148,8 @@ void AccRequest::flush() {
       ++i;
     }
   }
-//init_request_(cnt);
+  for (int i = 0; i != cnt; ++i)
+    init(); 
 
   for (auto i = requests_.begin(); i != requests_.end(); ) {
     if (mpi__->test(i->first)) {
@@ -160,20 +163,15 @@ void AccRequest::flush() {
 }
 
 
-// wait for all calls
-void AccRequest::wait1() {
-  for (auto& i : calls_) mpi__->wait(i.first);
-  flush();
-}
-
-
 void AccRequest::wait2() {
-  for (auto& i : send_)  mpi__->wait(i);
+  for (auto& i : send_)
+    mpi__->wait(i);
   flush();
 }
 
 
 void AccRequest::wait3() {
-  for (auto& i : requests_) mpi__->wait(i.first);
+  for (auto& i : requests_)
+    mpi__->wait(i.first);
   flush();
 }
