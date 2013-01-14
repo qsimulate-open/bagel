@@ -125,6 +125,7 @@ void DistCivec::init_mpi() {
 
 
 void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a) const {
+  assert(accum_ && send_);
   const size_t mpirank = mpi__->rank();
   size_t rank, off;
   tie(rank, off) = dist_.locate(a);
@@ -138,12 +139,15 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
 
 
 void DistCivec::flush() const {
+  assert(accum_ && send_);
   send_->flush();
   accum_->flush(); 
 }
 
 
 void DistCivec::terminate_mpi() {
+  assert(accum_ && send_);
+
   send_->wait1();
   // when wait1 of send_ is over, accum should be ready. Hence only flush.
   accum_->flush();
