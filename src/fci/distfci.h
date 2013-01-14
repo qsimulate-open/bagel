@@ -27,6 +27,7 @@
 #define __NEWINT_FCI_DISTFCI_H
 
 #include <memory>
+#include <vector>
 #include <src/fci/fci.h>
 #include <src/fci/space.h>
 
@@ -41,16 +42,26 @@ namespace bagel {
 class DistFCI : public FCI {
 
   protected:
-
     std::shared_ptr<Space> space_;
+    std::shared_ptr<DistCivec> denom_;
 
     // const_denom function here only makes a denom for local data of DistCivec. This is called from FCI
     void const_denom() override;
 
+    // FCI compute function using DistCivec
     void compute() override;
 
+    // denominator
+    void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec> > out);
+
+    // Determinant seeds in parallel 
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__> > > detseeds(const int ndet) override;
+
     // just to confort FCI
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override
+      { throw std::logic_error("DistFCI::form_sigma disabled"); }
+
+    std::vector<std::shared_ptr<DistCivec> > form_sigma(std::vector<std::shared_ptr<DistCivec> >&, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;

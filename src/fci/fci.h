@@ -91,7 +91,7 @@ class FCI {
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
     // generate spin-adapted guess configurations
-    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__> > > detseeds(const int ndet);
+    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__> > > detseeds(const int ndet);
 
     /* Virtual functions -- these MUST be defined in the derived class*/
     // denominator

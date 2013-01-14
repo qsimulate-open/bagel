@@ -162,8 +162,8 @@ class Determinants {
     }
 
     void print(const double* const civec, const double thr) const;
-    std::bitset<nbit__> stringa(int i) { return stringa_[i]; }
-    std::bitset<nbit__> stringb(int i) { return stringb_[i]; }
+    const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
+    const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
     const std::vector<std::bitset<nbit__> >& stringa() const { return stringa_; }
     const std::vector<std::bitset<nbit__> >& stringb() const { return stringb_; }
 

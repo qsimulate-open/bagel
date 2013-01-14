@@ -130,7 +130,6 @@ class Civec {
 
 class DistCivec {
   protected:
-    // for compatibility with Civec
     mutable std::shared_ptr<const Determinants> det_;
 
     // global dimension
@@ -159,6 +158,9 @@ class DistCivec {
 
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
+    DistCivec(const DistCivec& o);
+
+    DistCivec& operator=(const DistCivec& o);
 
     double& local(const size_t i) { return local_[i]; }
     const double& local(const size_t i) const { return local_[i]; }
@@ -195,6 +197,17 @@ class DistCivec {
     void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
     void flush() const;
     void wait() const;
+
+    // utility functions
+    double norm() const;
+    double variance() const;
+    double ddot(const DistCivec& o) const;
+    void scale(const double a);
+    void daxpy(const double a, const DistCivec& o);
+
+    void project_out(std::shared_ptr<const DistCivec> o) { daxpy(-ddot(*o), *o); }
+    double orthog(std::list<std::shared_ptr<const DistCivec> > c);
+    double orthog(std::shared_ptr<const DistCivec> o);
 
 };
 

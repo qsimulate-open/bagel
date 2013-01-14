@@ -138,6 +138,15 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 }
 
 
+void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_LONG_LONG, static_cast<void*>(rec), rsize, MPI_LONG_LONG, MPI_COMM_WORLD);
+#endif
+}
+
+
 void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding

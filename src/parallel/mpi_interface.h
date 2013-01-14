@@ -77,6 +77,7 @@ class MPI_Interface {
     // broadcast of const objects. Use with caution...
     void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
+    void allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const; 
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one-sided communication with Isend, Irecv

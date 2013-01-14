@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 
 DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1), dist_(lena_, mpi__->size()) {
-  tie(astart_, aend_) = dist_.range(mpi__->rank()); 
+  tie(astart_, aend_) = dist_.range(mpi__->rank());
 
   alloc_ = size();
   local_ = unique_ptr<double[]>(new double[alloc_]);
@@ -41,6 +41,23 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   send_  = shared_ptr<SendRequest>(new SendRequest());
   accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
 }
+
+
+DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), win_(-1), dist_(lena_, mpi__->size()) {
+  tie(astart_, aend_) = dist_.range(mpi__->rank());
+  alloc_ = size();
+  local_ = unique_ptr<double[]>(new double[alloc_]);
+  copy_n(o.local_.get(), alloc_, local_.get());
+  send_  = shared_ptr<SendRequest>(new SendRequest());
+  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
+}
+
+
+DistCivec& DistCivec::operator=(const DistCivec& o) {
+  assert(o.size() == size());
+  copy_n(o.local_.get(), alloc_, local_.get());
+  return *this;
+} 
 
 
 void DistCivec::open_window() const {
@@ -130,9 +147,54 @@ void DistCivec::flush() const {
 
 void DistCivec::wait() const {
   send_->wait1();
+  // when wait1 of send_ is over, accum should be ready. Hence only flush.
   accum_->flush();
   send_->wait2();
   accum_->wait2();
   send_->wait3();
   accum_->wait3();
+}
+
+
+double DistCivec::ddot(const DistCivec& o) const {
+  assert(size() == o.size());
+  double sum = size() ? ddot_(size(), local_.get(), 1, o.local_.get(), 1) : 0.0;
+  mpi__->allreduce(&sum, 1);
+  return sum;
+}
+
+
+double DistCivec::norm() const {
+  return std::sqrt(ddot(*this));
+}
+
+
+void DistCivec::daxpy(const double a, const DistCivec& o) {
+  assert(size() == o.size());
+  daxpy_(size(), a, o.local(), 1, local(), 1);
+}
+
+
+void DistCivec::scale(const double a) {
+  dscal_(size(), a, local(), 1);
+}
+
+
+double DistCivec::orthog(list<shared_ptr<const DistCivec> > c) {
+  for (auto& iter : c)
+    project_out(iter);
+  const double norm = this->norm();
+  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+  scale(scal);
+  return 1.0/scal;
+}
+
+double DistCivec::orthog(shared_ptr<const DistCivec> o) {
+  list<shared_ptr<const DistCivec> > v = {o};
+  return orthog(v);
+}
+
+
+double DistCivec::variance() const {
+  return ddot(*this) / (lena_*lenb_);
 }

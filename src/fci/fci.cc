@@ -168,8 +168,7 @@ void FCI::compute() {
   //const int ij = nij(); 
 
   // Creating an initial CI vector
-  shared_ptr<Dvec> cc_tmp(new Dvec(det_, nstate_)); // B runs first
-  cc_ = cc_tmp;
+  cc_ = shared_ptr<Dvec>(new Dvec(det_, nstate_)); // B runs first
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_);
