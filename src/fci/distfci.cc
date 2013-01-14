@@ -33,7 +33,6 @@
 #include <src/parallel/request.h>
 #include <src/util/combination.hpp>
 #include <src/util/comb.h>
-#include <src/util/simpletasks.h>
 #include <src/fci/hzdenomtask.h>
 #include <vector>
 #include <config.h>
