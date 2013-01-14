@@ -480,9 +480,9 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
   vector<size_t> aall(mpi__->size()*ndet);
   vector<size_t> ball(mpi__->size()*ndet);
   vector<double> eall(mpi__->size()*ndet);
-  mpi__->allgather(&aarray[0], ndet, &aall[0], aall.size()); 
-  mpi__->allgather(&barray[0], ndet, &ball[0], ball.size()); 
-  mpi__->allgather(&en[0],     ndet, &eall[0], eall.size()); 
+  mpi__->allgather(&aarray[0], ndet, &aall[0], ndet); 
+  mpi__->allgather(&barray[0], ndet, &ball[0], ndet); 
+  mpi__->allgather(&en[0],     ndet, &eall[0], ndet); 
 
   tmp.clear();
   for (int i = 0; i != aall.size(); ++i) {
