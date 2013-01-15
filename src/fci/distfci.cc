@@ -74,7 +74,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     vector<pair<string, double> > timing;
     Timer fcitime(1);
 
-    sigma_aa(cc,sigma,jop);
+    sigma_aa(cc, sigma, jop);
     fcitime.tick_print("alpha-alpha");
 
     sigma_ab(cc, sigma, jop);
@@ -152,9 +152,56 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 }
 
 
+namespace bagel {
+class DistABTask {
+  protected:
+    std::unique_ptr<double[]> buf;
+    std::unique_ptr<double[]> buf2;
+    std::unique_ptr<double[]> buf3;
+    std::shared_ptr<Determinants> base_det;
+    std::shared_ptr<Determinants> int_det;
+    const std::bitset<nbit__> astring;
+    std::shared_ptr<const MOFile> jop;
+    shared_ptr<DistCivec> sigma;
+
+  public:
+    DistABTask(std::unique_ptr<double[]>& b1, std::unique_ptr<double[]>& b2, std::unique_ptr<double[]>& b3,
+               std::shared_ptr<Determinants> b, std::shared_ptr<Determinants> i, const std::bitset<nbit__>& a, std::shared_ptr<const MOFile> j, shared_ptr<DistCivec> s)
+     : buf(std::move(b1)), buf2(std::move(b2)), buf3(std::move(b3)), base_det(b), int_det(i), astring(a), jop(j), sigma(s) { }
+
+    void compute() {
+      const int norb_ = base_det->norb();
+      const int ij = norb_*norb_; 
+      const size_t lbs = base_det->lenb();
+      const size_t lbt = int_det->lenb();
+      for (int k = 0, kl = 0; k != norb_; ++k)
+        for (int l = 0; l != norb_; ++l, ++kl)
+          for (auto& b : int_det->phiupb(l))
+            buf2[b.source+lbt*kl] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+k*lbs];
+
+      dgemm_("n", "n", lbt, ij, ij, 1.0, buf2.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf3.get(), lbt);
+
+      for (int i = 0; i < norb_; ++i) {
+        if (astring[i]) continue;
+        bitset<nbit__> atarget = astring; atarget.set(i);
+        const double asign = base_det->sign(astring, -1, i);
+
+        unique_ptr<double[]> bcolumn(new double[lbs]);
+        fill_n(bcolumn.get(), lbs, 0.0);
+
+        for (int j = 0; j < norb_; ++j) {
+          for (auto& b : int_det->phiupb(j))
+            bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*i)];
+        }
+        sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
+      }
+    }
+};
+}
+
+
 void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
-  Timer time(2);
   cc->open_window();
 
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
@@ -169,9 +216,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   const size_t nloop = (int_det->lena()-1)/size+1;
 
-  time.tick_print("start");
   // shamelessly statically distributing across processes
-  vector<double> times(5);
   for (size_t loop = 0; loop != nloop; ++loop) {
 
     size_t a = rank + loop*size;
@@ -200,44 +245,13 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     // (which might not be too bad for static load balancing)
     cc->fence();
 
-    times[0] += time.tick();
+    DistABTask task(buf, buf2, buf3, base_det, int_det, astring, jop, sigma); 
+    task.compute();
 
-    for (int k = 0, kl = 0; k != norb_; ++k)
-      for (int l = 0; l != norb_; ++l, ++kl)
-        for (auto& b : int_det->phiupb(l))
-          buf2[b.source+lbt*kl] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+k*lbs];
-
-    times[1] += time.tick();
-
-    dgemm_("n", "n", lbt, ij, ij, 1.0, buf2.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf3.get(), lbt);
-
-    times[2] += time.tick();
-
-    for (int i = 0; i < norb_; ++i) {
-      if (astring[i]) continue;
-      bitset<nbit__> atarget = astring; atarget.set(i);
-      const double asign = base_det->sign(astring, -1, i);
-
-      unique_ptr<double[]> bcolumn(new double[lbs]);
-      fill_n(bcolumn.get(), lbs, 0.0);
-
-      for (int j = 0; j < norb_; ++j) {
-        for (auto& b : int_det->phiupb(j))
-          bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*i)];
-      }
-      sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
-    }
-    times[3] += time.tick();
     sigma->flush();
-    times[4] += time.tick();
   }
 
-  cout << "                 * alpha-beta:       " << setprecision(2);
-  for (auto& i : times) cout << setw(8) << i << " ";
-  cout << endl;
-
   cc->close_window();
-  time.tick_print("end");
 }
 
 
