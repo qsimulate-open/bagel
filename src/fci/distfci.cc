@@ -154,6 +154,7 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
 void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
+  Timer time(2);
   cc->open_window();
 
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
@@ -168,9 +169,9 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   const size_t nloop = (int_det->lena()-1)/size+1;
 
+  time.tick_print("start");
   // shamelessly statically distributing across processes
-  Timer time;
-  vector<double> times(4);
+  vector<double> times(5);
   for (size_t loop = 0; loop != nloop; ++loop) {
 
     size_t a = rank + loop*size;
@@ -228,6 +229,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     }
     times[3] += time.tick();
     sigma->flush();
+    times[4] += time.tick();
   }
 
   cout << "                 * alpha-beta:       " << setprecision(2);
@@ -235,6 +237,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   cout << endl;
 
   cc->close_window();
+  time.tick_print("end");
 }
 
 
