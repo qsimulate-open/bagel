@@ -169,6 +169,8 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   const size_t nloop = (int_det->lena()-1)/size+1;
 
   // shamelessly statically distributing across processes
+  Timer time;
+  vector<double> times(4);
   for (size_t loop = 0; loop != nloop; ++loop) {
 
     size_t a = rank + loop*size;
@@ -197,12 +199,18 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     // (which might not be too bad for static load balancing)
     cc->fence();
 
+    times[0] += time.tick();
+
     for (int k = 0, kl = 0; k != norb_; ++k)
       for (int l = 0; l != norb_; ++l, ++kl)
         for (auto& b : int_det->phiupb(l))
           buf2[b.source+lbt*kl] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+k*lbs];
 
+    times[1] += time.tick();
+
     dgemm_("n", "n", lbt, ij, ij, 1.0, buf2.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf3.get(), lbt);
+
+    times[2] += time.tick();
 
     for (int i = 0; i < norb_; ++i) {
       if (astring[i]) continue;
@@ -218,8 +226,13 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
       }
       sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
     }
+    times[3] += time.tick();
     sigma->flush();
   }
+
+  cout << "                 * alpha-beta:       " << setprecision(2);
+  for (auto& i : times) cout << setw(8) << i << " ";
+  cout << endl;
 
   cc->close_window();
 }
