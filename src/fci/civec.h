@@ -211,6 +211,9 @@ class DistCivec {
     double orthog(std::list<std::shared_ptr<const DistCivec> > c);
     double orthog(std::shared_ptr<const DistCivec> o);
 
+    // mutex
+    boost::mutex& mutex(const size_t& i) const { return mutex_[i]; }
+
 };
 
 }

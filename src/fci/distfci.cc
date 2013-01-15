@@ -292,7 +292,10 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   timebb.tick_print("2-e part");
 
   mytranspose_(target.get(), la, lb, source.get());
-  daxpy_(la*lb, 1.0, source.get(), 1, sigma->local(), 1);
+  for (size_t i = 0; i != la; ++i) {
+    boost::lock_guard<boost::mutex> lock(sigma->mutex(i));
+    daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
+  }
 
   timebb.tick_print("transposition");
 }
