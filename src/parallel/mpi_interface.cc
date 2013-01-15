@@ -34,7 +34,10 @@ using namespace bagel;
 MPI_Interface::MPI_Interface(int argc, char** argv)
  : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0) {
 #ifdef HAVE_MPI_H
-  MPI_Init(&argc, &argv);
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  if (MPI_THREAD_MULTIPLE != provided)
+    throw runtime_error("MPI_THREAD_MULTIPLE is not supported in your MPI library.");
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(mpi__->size());
   if (mpi__->rank() == 0)
