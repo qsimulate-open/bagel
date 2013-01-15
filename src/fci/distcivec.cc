@@ -38,6 +38,7 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
 
+  mutex_ = vector<boost::mutex>(asize());
 }
 
 
@@ -46,6 +47,8 @@ DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o
   alloc_ = size();
   local_ = unique_ptr<double[]>(new double[alloc_]);
   copy_n(o.local_.get(), alloc_, local_.get());
+
+  mutex_ = vector<boost::mutex>(asize());
 }
 
 
@@ -89,37 +92,9 @@ void DistCivec::get_bstring(double* buf, const size_t a) const {
 }
 
 
-void DistCivec::put_bstring(const double* buf, const size_t a) const {
-  const size_t mpirank = mpi__->rank();
-  size_t rank, off;
-  tie(rank, off) = dist_.locate(a);
-
-  assert(win_ != -1);
-  if (mpirank == rank) {
-    copy_n(buf, lenb_, local_.get()+off*lenb_);
-  } else {
-    mpi__->put(buf, lenb_, rank, off*lenb_, win_); 
-  }
-}
-
-
-void DistCivec::accumulate_bstring(const double* buf, const size_t a) const {
-  const size_t mpirank = mpi__->rank();
-  size_t rank, off;
-  tie(rank, off) = dist_.locate(a);
-
-  assert(win_ != -1);
-  if (mpirank == rank) {
-    daxpy_(lenb_, 1.0, buf, 1, local_.get()+off*lenb_, 1);
-  } else {
-    mpi__->accumulate(buf, lenb_, rank, off*lenb_, win_); 
-  }
-}
-
-
 void DistCivec::init_mpi() {
   send_  = shared_ptr<SendRequest>(new SendRequest());
-  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get()));
+  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
   accum_->init_request();
 }
 
@@ -131,6 +106,7 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
   tie(rank, off) = dist_.locate(a);
 
   if (mpirank == rank) {
+    boost::lock_guard<boost::mutex> lock(mutex_[off]);
     daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
   } else {
     send_->request_send(std::move(buf), lenb_, rank, off*lenb_);

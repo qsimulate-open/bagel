@@ -108,7 +108,7 @@ void AccRequest::init() {
 }
 
 
-AccRequest::AccRequest(double* const d) : data_(d) {
+AccRequest::AccRequest(double* const d, vector<boost::mutex>* m) : data_(d), mutex_(m) {
 }
 
 
@@ -154,6 +154,10 @@ void AccRequest::flush() {
   for (auto i = requests_.begin(); i != requests_.end(); ) {
     if (mpi__->test(i->first)) {
       shared_ptr<Prep> p = i->second;
+      // for the time being, we only consider matrices for mutex
+      assert(p->off % p->size == 0 && mutex_->size() > p->off/p->size);
+      boost::lock_guard<boost::mutex> lock((*mutex_)[p->off/p->size]);
+      // perform daxpy
       daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
       i = requests_.erase(i); 
     } else {

@@ -32,6 +32,7 @@
 #include <cassert>
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
+#include <boost/thread/mutex.hpp>
 
 namespace bagel {
 
@@ -79,6 +80,7 @@ class AccRequest {
   protected:
 
     double* const data_;
+    std::vector<boost::mutex>* mutex_;
 
     struct Prep {
       const size_t size;
@@ -96,7 +98,7 @@ class AccRequest {
     void init();
 
   public:
-    AccRequest(double* const d);
+    AccRequest(double* const d, std::vector<boost::mutex>* m);
     ~AccRequest();
 
     void init_request();

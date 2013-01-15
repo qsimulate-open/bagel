@@ -37,6 +37,7 @@
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
 #include <src/parallel/request.h>
+#include <boost/thread/mutex.hpp>
 
 namespace bagel {
 
@@ -156,6 +157,9 @@ class DistCivec {
     std::shared_ptr<AccRequest> accum_;
     std::shared_ptr<SendRequest> send_;
 
+    // mutex for write accesses to local_
+    mutable std::vector<boost::mutex> mutex_;
+
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
     DistCivec(const DistCivec& o);
@@ -189,8 +193,6 @@ class DistCivec {
     void close_window() const;
     void fence() const;
     void get_bstring(double* buf, const size_t a) const; 
-    void put_bstring(const double* buf, const size_t a) const; 
-    void accumulate_bstring(const double* buf, const size_t a) const; 
 
     // MPI Isend Irecv
     void init_mpi();
