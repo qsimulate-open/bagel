@@ -31,16 +31,15 @@
 using namespace std;
 using namespace bagel;
 
-
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-SendRequest::SendRequest() : counter_(probe_key__/mpi__->size()*mpi__->rank()) {
+SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
 
 }
 
 void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
-  ++counter_;
+  counter_ += mpi__->size();
   const int srq = mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
   auto m = inactive_.insert(make_pair(rrq, p));

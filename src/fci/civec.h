@@ -191,11 +191,13 @@ class DistCivec {
 
     std::shared_ptr<DistCivec> clone() const { return std::shared_ptr<DistCivec>(new DistCivec(det_)); }
 
+#if 0
     // MPI Window creation/annihilation for one-sided communication
     void open_window() const;
     void close_window() const;
     void fence() const;
     void get_bstring(double* buf, const size_t a) const; 
+#endif
 
     // MPI Isend Irecv
     void init_mpi_accumulate() const;

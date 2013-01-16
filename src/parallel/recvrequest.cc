@@ -86,7 +86,7 @@ void PutRequest::flush() {
 /////////////////////////
 
 
-RecvRequest::RecvRequest() : counter_(probe_key__/mpi__->size()*mpi__->rank() + probe_key__ + 1) {
+RecvRequest::RecvRequest() : counter_(probe_key2__ + mpi__->rank() + 1) {
 
 }
 
@@ -94,7 +94,7 @@ RecvRequest::RecvRequest() : counter_(probe_key__/mpi__->size()*mpi__->rank() + 
 int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off) {
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
-  ++counter_;
+  counter_ += mpi__->size();
   const int srq = mpi__->request_send(p->size, 4, dest, probe_key__*2);
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);

@@ -61,6 +61,7 @@ DistCivec& DistCivec::operator=(const DistCivec& o) {
 } 
 
 
+#if 0
 void DistCivec::open_window() const {
   assert(win_ == -1);
   win_ = mpi__->win_create(local_.get(), alloc_);
@@ -92,6 +93,7 @@ void DistCivec::get_bstring(double* buf, const size_t a) const {
     mpi__->get(buf, lenb_, rank, off*lenb_, win_); 
   }
 }
+#endif
 
 
 void DistCivec::init_mpi_accumulate() const {
@@ -143,6 +145,7 @@ void DistCivec::flush_accumulate() const {
   accum_->flush(); 
 }
 
+
 void DistCivec::flush_recv() const {
   assert(put_);
   put_->flush();
@@ -180,6 +183,7 @@ void DistCivec::terminate_mpi_accumulate() const {
   send_  = shared_ptr<SendRequest>();
   accum_ = shared_ptr<AccRequest>();
 }
+
 
 void DistCivec::terminate_mpi_recv() const {
   assert(put_ && recv_);
@@ -230,6 +234,7 @@ double DistCivec::orthog(list<shared_ptr<const DistCivec> > c) {
   scale(scal);
   return 1.0/scal;
 }
+
 
 double DistCivec::orthog(shared_ptr<const DistCivec> o) {
   list<shared_ptr<const DistCivec> > v = {o};
