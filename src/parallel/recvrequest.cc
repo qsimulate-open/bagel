@@ -115,14 +115,19 @@ bool RecvRequest::wait() {
     }
   }
 
-  for (auto i = request_.begin(); i != request_.end(); ) {
-    if (mpi__->test(i->first)) {
-      i = request_.erase(i);
-    } else {
-      ++i;
+  if (done) {
+    for (auto& i : request_)
+      mpi__->wait(i.first);
+    request_.clear();
+  } else {
+    for (auto i = request_.begin(); i != request_.end(); ) {
+      if (mpi__->test(i->first)) {
+        i = request_.erase(i);
+      } else {
+        ++i;
+      }
     }
   }
-  assert(!done || request_.empty());
   return done;
 }
 
