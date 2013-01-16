@@ -92,10 +92,13 @@ void DistCivec::get_bstring(double* buf, const size_t a) const {
 }
 
 
-void DistCivec::init_mpi() {
+void DistCivec::init_mpi() const {
   send_  = shared_ptr<SendRequest>(new SendRequest());
   accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
+  put_   = shared_ptr<PutRequest>(new PutRequest(local_.get()));
+  recv_  = shared_ptr<RecvRequest>(new RecvRequest());
   accum_->init_request();
+  put_->init_request();
 }
 
 
@@ -114,14 +117,35 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
 }
 
 
+void DistCivec::get_bstring_buf(double* buf, const size_t a) const {
+  assert(put_ && recv_);
+  const size_t mpirank = mpi__->rank();
+  size_t rank, off;
+  tie(rank, off) = dist_.locate(a);
+
+  if (mpirank == rank) {
+    copy_n(local_.get()+off*lenb_, lenb_, buf);
+  } else {
+    recv_->request_recv(buf, lenb_, rank, off*lenb_);
+  }
+}
+
+
 void DistCivec::flush() const {
   assert(accum_ && send_);
   send_->flush();
   accum_->flush(); 
+  put_->flush();
 }
 
 
-void DistCivec::terminate_mpi() {
+void DistCivec::recv_wait() const {
+  recv_->wait();
+  put_->wait();
+}
+
+
+void DistCivec::terminate_mpi() const {
   assert(accum_ && send_);
 
   send_->wait1();
@@ -132,9 +156,15 @@ void DistCivec::terminate_mpi() {
   send_->wait3();
   accum_->wait3();
 
+  // recv server
+  recv_->wait();
+  put_->wait();
+
   // cancel all MPI calls
   send_  = shared_ptr<SendRequest>();
   accum_ = shared_ptr<AccRequest>();
+  recv_  = shared_ptr<RecvRequest>();
+  put_   = shared_ptr<PutRequest>();
 }
 
 

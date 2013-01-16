@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: request.cc
+// Filename: accrequest.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/parallel/request.h>
+#include <src/parallel/accrequest.h>
 #include <src/util/f77.h>
 #include <boost/thread/thread.hpp>
 
@@ -80,6 +80,7 @@ void SendRequest::wait1() {
   for (auto& i : send_)
     mpi__->wait(i);
   flush();
+  send_.clear();
 }
 
 
@@ -87,6 +88,7 @@ void SendRequest::wait2() {
   for (auto& i : inactive_)
     mpi__->wait(i.first);
   flush();
+  inactive_.clear();
 }
 
 
@@ -94,6 +96,7 @@ void SendRequest::wait3() {
   for (auto& i : requests_)
     mpi__->wait(i.first);
   flush();
+  requests_.clear();
 }
 
 
@@ -171,6 +174,7 @@ void AccRequest::wait2() {
   for (auto& i : send_)
     mpi__->wait(i);
   flush();
+  send_.clear();
 }
 
 
@@ -178,4 +182,5 @@ void AccRequest::wait3() {
   for (auto& i : requests_)
     mpi__->wait(i.first);
   flush();
+  requests_.clear();
 }

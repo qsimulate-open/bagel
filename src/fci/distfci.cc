@@ -30,7 +30,6 @@
 #include <src/fci/distfci.h>
 #include <src/util/davidson.h>
 #include <src/util/constants.h>
-#include <src/parallel/request.h>
 #include <src/util/combination.hpp>
 #include <src/util/comb.h>
 #include <src/fci/hzdenomtask.h>
@@ -157,8 +156,6 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
 void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
-  cc->open_window();
-
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
 
@@ -171,24 +168,25 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   const size_t nloop = (int_det->lena()-1)/size+1;
 
+  cc->init_mpi();
+
   // shamelessly statically distributing across processes
   for (size_t loop = 0; loop != nloop; ++loop) {
-
     size_t a = rank + loop*size;
-    if (a >= int_det->lena()) { cc->fence(); break; } // fence needed, otherwise stall
+    if (a >= int_det->lena()) break;
 
     const bitset<nbit__> astring = int_det->stringa(a);
     DistABTask task(astring, base_det, int_det, jop, cc, sigma); 
 
-    // TODO get rid of fence
-    // somehow I need to do this here, which means that all the processes sync here
-    // (which might not be too bad for static load balancing)
-    cc->fence();
+    mpi__->barrier();
+    cout << "a" << endl;
+    cc->recv_wait();
+    cout << "b" << endl;
 
     task.compute();
   }
 
-  cc->close_window();
+  cc->terminate_mpi();
 }
 
 

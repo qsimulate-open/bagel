@@ -36,7 +36,8 @@
 #include <src/parallel/staticdist.h>
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
-#include <src/parallel/request.h>
+#include <src/parallel/accrequest.h>
+#include <src/parallel/recvrequest.h>
 #include <boost/thread/mutex.hpp>
 
 namespace bagel {
@@ -154,8 +155,10 @@ class DistCivec {
     const StaticDist dist_;
 
     // MPI send/receive management
-    std::shared_ptr<AccRequest> accum_;
-    std::shared_ptr<SendRequest> send_;
+    mutable std::shared_ptr<AccRequest> accum_;
+    mutable std::shared_ptr<SendRequest> send_;
+    mutable std::shared_ptr<PutRequest> put_;
+    mutable std::shared_ptr<RecvRequest> recv_;
 
     // mutex for write accesses to local_
     mutable std::vector<boost::mutex> mutex_;
@@ -195,10 +198,12 @@ class DistCivec {
     void get_bstring(double* buf, const size_t a) const; 
 
     // MPI Isend Irecv
-    void init_mpi();
+    void init_mpi() const;
     void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
+    void get_bstring_buf(double* buf, const size_t a) const; 
     void flush() const;
-    void terminate_mpi();
+    void terminate_mpi() const;
+    void recv_wait() const;
 
     // utility functions
     double norm() const;

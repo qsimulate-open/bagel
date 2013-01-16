@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: request.h
+// Filename: recvrequest.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_PARALLEL_REQUEST_H
-#define __SRC_PARALLEL_REQUEST_H
+#ifndef __SRC_PARALLEL_RECVREQUEST_H
+#define __SRC_PARALLEL_RECVREQUEST_H
 
 #include <map>
 #include <memory>
@@ -36,10 +36,7 @@
 
 namespace bagel {
 
-
-// SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-// one needs to periodically call "void request_test()" 
-class SendRequest {
+class RecvRequest {
   protected:
     struct Probe {
       const size_t size[4];
@@ -48,67 +45,42 @@ class SendRequest {
       const size_t myrank;
       const size_t targetrank;
       const size_t off;
-      std::unique_ptr<double[]> buf;
-      Probe(const size_t s, const size_t c, const size_t r, const size_t t, const size_t o, std::unique_ptr<double[]>& b)
-        : size{s,c,r,o}, tag(c), myrank(r), targetrank(t), off(o), buf(std::move(b)) { }
+      // buf is the target area (which is local)
+      double* buf;
+      Probe(const size_t s, const size_t c, const size_t r, const size_t t, const size_t o, double* b)
+        : size{s,c,r,o}, tag(c), myrank(r), targetrank(t), off(o), buf(b) { }
     };
 
     size_t counter_;
 
     // tuple contains: size, if ready, target rank, and buffer 
-    std::map<int, std::shared_ptr<Probe> > inactive_;
-    std::map<int, std::unique_ptr<double[]> > requests_;
-    std::vector<int> send_;
+    std::map<int, std::shared_ptr<Probe> > request_;
 
   public:
-    SendRequest();
-
-    void request_send(std::unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off);
-
-    void flush();
-
-    // wait for all calls
-    void wait1();
-    void wait2();
-    void wait3();
+    RecvRequest();
+    // return mpi tag
+    int request_recv(double* target, const size_t size, const int dest, const size_t off);
+    void wait();
 
 };
 
 
 // receives using MPI_irecv and accumulate to the local destination
-class AccRequest {
+class PutRequest {
   protected:
-
-    double* const data_;
-    std::vector<boost::mutex>* mutex_;
-
-    struct Prep {
-      const size_t size;
-      const size_t off;
-      std::unique_ptr<double[]> buf;
-      Prep(const size_t s, const size_t o, std::unique_ptr<double[]> b) : size(s), off(o), buf(std::move(b)) {}
-    };
-
     std::map<int, std::unique_ptr<size_t[]> > calls_;
-    // buffer pointer, size, offset at the target, and buffer
-    std::map<int, std::shared_ptr<Prep> > requests_;
-
     std::vector<int> send_;
 
     void init();
+    const double* const data_;
 
   public:
-    AccRequest(double* const d, std::vector<boost::mutex>* m);
-    ~AccRequest();
+    PutRequest(const double* d);
+    ~PutRequest();
 
     void init_request();
-
     void flush();
-
-    // wait for all calls
-    void wait2();
-    void wait3();
-
+    void wait();
 };
 
 }
