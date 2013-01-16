@@ -28,6 +28,7 @@
 #define __src_util_constants_h
 
 #include <cmath>
+#include <stddef.h>
 
 namespace bagel {
 
@@ -50,6 +51,12 @@ static const unsigned int nbit__ = 32;
 *  Misc constants                                           *
 ************************************************************/
 static const double schwarz_thresh__ = 1.0e-12;  // TODO input
+
+/************************************************************
+*  MPI parameters                                           *
+************************************************************/
+const static size_t probe_key__ = (1 << 28);
+const static size_t pool_size__ = 100;
 
 }
 

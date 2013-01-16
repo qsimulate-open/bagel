@@ -26,16 +26,14 @@
 #include <src/parallel/accrequest.h>
 #include <src/util/f77.h>
 #include <boost/thread/thread.hpp>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
 
 
-const static size_t probe_key = (1 << 30);
-const static size_t pool_size = 100;
-
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-SendRequest::SendRequest() : counter_(probe_key/mpi__->size()*mpi__->rank()) {
+SendRequest::SendRequest() : counter_(probe_key__/mpi__->size()*mpi__->rank()) {
 
 }
 
@@ -43,7 +41,7 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
   ++counter_;
-  const int srq = mpi__->request_send(p->size,    4, dest, probe_key);
+  const int srq = mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
   auto m = inactive_.insert(make_pair(rrq, p));
   send_.push_back(srq);
@@ -76,11 +74,18 @@ void SendRequest::flush() {
 }
 
 // wait for all calls
-void SendRequest::wait1() {
-  for (auto& i : send_)
-    mpi__->wait(i);
+bool SendRequest::wait1() {
+  bool done = true;
+  for (auto i = send_.begin(); i != send_.end(); ) {
+    if (mpi__->test(*i)) {
+      i = send_.erase(i);
+    } else {
+      ++i;
+      done = false;
+    }
+  }
   flush();
-  send_.clear();
+  return done;
 }
 
 
@@ -105,7 +110,7 @@ void AccRequest::init() {
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key); 
+  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__); 
   auto m = calls_.insert(make_pair(rq, move(buf)));
   assert(m.second);
 }
@@ -122,7 +127,7 @@ AccRequest::~AccRequest() {
 
 
 void AccRequest::init_request() {
-  for (size_t i = 0; i != pool_size; ++i)
+  for (size_t i = 0; i != pool_size__; ++i)
     init();
 }
 

@@ -68,7 +68,7 @@ class SendRequest {
     void flush();
 
     // wait for all calls
-    void wait1();
+    bool wait1();
     void wait2();
     void wait3();
 

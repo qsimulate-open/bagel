@@ -25,6 +25,8 @@
 
 
 #include <sstream>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp> 
 #include <src/fci/civec.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -140,25 +142,35 @@ void DistCivec::flush() const {
 
 
 void DistCivec::recv_wait() const {
-  recv_->wait();
-  put_->wait();
+  assert(put_ && recv_);
+  bool done;
+  do {
+    done = recv_->wait();
+    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+  } while (!done);
 }
 
 
 void DistCivec::terminate_mpi() const {
   assert(accum_ && send_);
 
-  send_->wait1();
-  // when wait1 of send_ is over, accum should be ready. Hence only flush.
-  accum_->flush();
-  send_->wait2();
-  accum_->wait2();
-  send_->wait3();
-  accum_->wait3();
+  bool done;
+  do {
+    done = send_->wait1();
+    // when wait1 of send_ is over, accum should be ready. Hence only flush.
+    accum_->flush();
+    send_->wait2();
+    accum_->wait2();
+    send_->wait3();
+    accum_->wait3();
+    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+  } while (!done);
 
   // recv server
-  recv_->wait();
-  put_->wait();
+  do {
+    done = recv_->wait();
+    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+  } while (!done);
 
   // cancel all MPI calls
   send_  = shared_ptr<SendRequest>();

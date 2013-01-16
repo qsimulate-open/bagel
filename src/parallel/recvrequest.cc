@@ -23,16 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <boost/thread/thread.hpp>
 #include <src/parallel/recvrequest.h>
 #include <src/util/f77.h>
-#include <boost/thread/thread.hpp>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
 
-
-const static size_t probe_key = (1 << 30);
-const static size_t pool_size = 100;
 
 // PutRequest receives probe and returns data
 PutRequest::PutRequest(const double* d) : data_(d) { 
@@ -41,7 +39,7 @@ PutRequest::PutRequest(const double* d) : data_(d) {
 
 
 void PutRequest::init_request() {
-  for (size_t i = 0; i != pool_size; ++i)
+  for (size_t i = 0; i != pool_size__; ++i)
     init();
 }
 
@@ -51,13 +49,14 @@ void PutRequest::init() {
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key); 
+  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__*4);
   auto m = calls_.insert(make_pair(rq, move(buf)));
   assert(m.second);
 }
 
 
 PutRequest::~PutRequest() {
+  assert(calls_.size() == pool_size__);
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
@@ -72,7 +71,7 @@ void PutRequest::flush() {
       const int tag  = i->second[1];
       const int rank = i->second[2];
       const int off  = i->second[3];
-      send_.push_back(mpi__->request_send(data_+off, size, rank, tag));
+      mpi__->request_send(data_+off, size, rank, tag);
       i = calls_.erase(i);
       ++cnt;
     } else {
@@ -84,18 +83,10 @@ void PutRequest::flush() {
 }
 
 
-void PutRequest::wait() {
-  flush();
-  for (auto& i : send_) mpi__->wait(i);
-  send_.clear();
-}
-
-
-
 /////////////////////////
 
 
-RecvRequest::RecvRequest() : counter_(probe_key/mpi__->size()*mpi__->rank() + probe_key) {
+RecvRequest::RecvRequest() : counter_(probe_key__/mpi__->size()*mpi__->rank() + probe_key__ + 1) {
 
 }
 
@@ -104,7 +95,8 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
   ++counter_;
-  const int srq = mpi__->request_send(p->size, 4, dest, probe_key);
+  const int srq = mpi__->request_send(p->size, 4, dest, probe_key__*4);
+  probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
   auto m = request_.insert(make_pair(rrq, p));
   assert(m.second);
@@ -112,9 +104,25 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
 }
 
 
-void RecvRequest::wait() {
-  for (auto& i : request_)
-    mpi__->wait(i.first);
-  request_.clear();
+bool RecvRequest::wait() {
+  bool done = true;
+  for (auto i = probe_.begin(); i != probe_.end(); ) {
+    if (mpi__->test(*i)) {
+      i = probe_.erase(i);
+    } else {
+      done = false;
+      ++i;
+    }
+  }
+
+  for (auto i = request_.begin(); i != request_.end(); ) {
+    if (mpi__->test(i->first)) {
+      i = request_.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  assert(!done || request_.empty());
+  return done;
 }
 

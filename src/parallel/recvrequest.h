@@ -36,6 +36,22 @@
 
 namespace bagel {
 
+// receives using MPI_irecv and accumulate to the local destination
+class PutRequest {
+  protected:
+    std::map<int, std::unique_ptr<size_t[]> > calls_;
+
+    void init();
+    const double* const data_;
+
+  public:
+    PutRequest(const double* d);
+    ~PutRequest();
+
+    void init_request();
+    void flush();
+};
+
 class RecvRequest {
   protected:
     struct Probe {
@@ -55,32 +71,14 @@ class RecvRequest {
 
     // tuple contains: size, if ready, target rank, and buffer 
     std::map<int, std::shared_ptr<Probe> > request_;
+    std::vector<int> probe_;
 
   public:
     RecvRequest();
     // return mpi tag
     int request_recv(double* target, const size_t size, const int dest, const size_t off);
-    void wait();
+    bool wait();
 
-};
-
-
-// receives using MPI_irecv and accumulate to the local destination
-class PutRequest {
-  protected:
-    std::map<int, std::unique_ptr<size_t[]> > calls_;
-    std::vector<int> send_;
-
-    void init();
-    const double* const data_;
-
-  public:
-    PutRequest(const double* d);
-    ~PutRequest();
-
-    void init_request();
-    void flush();
-    void wait();
 };
 
 }
