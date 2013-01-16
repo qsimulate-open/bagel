@@ -130,6 +130,10 @@ class DFDist : public ParallelDF {
       : ParallelDF(naux, nbas, nbas) {
     }
 
+    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block) : ParallelDF(naux, nbas, nbas) {
+      block_.push_back(block);
+    }
+
     DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df; }
 
     bool has_2index() const { return data2_.get() != nullptr; };
@@ -146,6 +150,16 @@ class DFDist : public ParallelDF {
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const double* c, const size_t nocc) const;
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const { return compute_half_transform_swap(c->data(), c->mdim()); }
+
+    // split up smalleri integrals into 6 dfdist objects
+    std::vector<std::shared_ptr<DFDist> > split_blocks() const {
+      std::vector<std::shared_ptr<DFDist> > out;
+      assert(nindex1_ == nindex2_);
+      for (auto& i : block_)
+        out.push_back(std::shared_ptr<DFDist>(new DFDist(nindex1_, naux_, i)));
+      return out;
+    }
+
 
 };
 

@@ -36,25 +36,28 @@ void DFock::two_electron_part(const std::shared_ptr<const ZMatrix> ocoeff, const
 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
 
-//large part
   complex<double> imag (0.0,1.0);
   std::shared_ptr<const DFDist> df = geom_->df();
-//std::shared_ptr<const DFDist> dfs = geom_->form_fit<DFDist_ints<SmallERIBatch> >(1.0e-8, false); // TODO thresh should be controlled from the input deck
+  std::shared_ptr<const DFDist> dfs = geom_->form_fit<DFDist_ints<SmallERIBatch> >(1.0e-8, false); // TODO thresh should be controlled from the input deck
+  dfs_ = dfs->split_blocks();
 
-#if 0
- dfs[0] = shared_ptr<DFDist_ints>(new DFDist_ints(geom_->nbasis(), geom_->naux(), batch[0]))
- dfs[1] = shared_ptr<DFDist_ints>(new DFDist_ints(batch[1]))
- dfs[2] = shared_ptr<DFDist_ints>(new DFDist_ints(batch[2]))
- dfs[3] = shared_ptr<DFDist_ints>(new DFDist_ints(batch[3]))
-#endif
-
+  // Get Coefficients
   std::shared_ptr<const Matrix> rocoeff = ocoeff->get_real_part(); 
   std::shared_ptr<const Matrix> iocoeff = ocoeff->get_imag_part(); 
 
+  // Large Half Transforms
   std::shared_ptr<DFHalfDist> rhalfbj = df->compute_half_transform(rocoeff);
   std::shared_ptr<DFHalfDist> ihalfbj = df->compute_half_transform(iocoeff);
-  std::shared_ptr<DFHalfDist> rhalf = rhalfbj->apply_J();
-  std::shared_ptr<DFHalfDist> ihalf = ihalfbj->apply_J();
+
+  // Small Half Transforms
+#if 0
+  for (auto& i : dfs_)  {
+    rhalf_dfs_ = i->compute_half_transform(rocoeff);
+    ihalf_dfs_ = i->compute_half_transform(iocoeff);
+  }
+#endif
+
+
 
 #if 0
   *this += *rhalf->form_2index(rhalf, -1.0*scale_exchange);
