@@ -47,13 +47,14 @@ class OrbitalLocalization {
 
     const int nclosed_;
     const int nact_;
+    const int nvirt_;
 
     int iter_;
     double thresh_;
 
   public:
-    OrbitalLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0) : 
-      geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact) {}
+    OrbitalLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0, const int nvirt = 0) : 
+      geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {}
     OrbitalLocalization(std::shared_ptr<const Reference> ref) : 
       OrbitalLocalization( ref->geom(), ref->coeff(), ref->nclosed(), ref->nact() ) { ref_ = ref; }
 
@@ -64,12 +65,13 @@ class OrbitalLocalization {
 class RegionLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int> > bounds_;
+    std::vector<int> sizes_;
     std::shared_ptr<Matrix> sqrt_S_;
     std::shared_ptr<Matrix> S_inverse_half_;
 
   public:
     RegionLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, std::vector<int> region_sizes, 
-      const int nclosed, const int nact) : OrbitalLocalization(geom, coeff, nclosed, nact) {common_init(region_sizes);}
+      const int nclosed, const int nact, const int nvirt = 0) : OrbitalLocalization(geom, coeff, nclosed, nact, nvirt) {common_init(region_sizes);}
     RegionLocalization(std::shared_ptr<const Reference> ref, std::vector<int> region_sizes) : 
       OrbitalLocalization(ref) {common_init(region_sizes);}
 
@@ -90,8 +92,8 @@ class PMLocalization : public OrbitalLocalization {
     std::shared_ptr<Matrix> S_;
 
   public:
-    PMLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0) :
-      OrbitalLocalization(geom, coeff, nclosed, nact) {common_init(geom);}
+    PMLocalization(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Coeff> coeff, const int nclosed, const int nact = 0, const int nvirt = 0) :
+      OrbitalLocalization(geom, coeff, nclosed, nact, nvirt) {common_init(geom);}
     PMLocalization(std::shared_ptr<const Reference> ref) : OrbitalLocalization(ref) {common_init(ref->geom());}
 
     std::shared_ptr<const Coeff> localize(const int iter = 50, const double thresh = 1.0e-8) override;

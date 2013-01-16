@@ -48,10 +48,13 @@ void RegionLocalization::common_init(vector<int> sizes) {
   for (auto& isize : sizes) {
     int start = geom_->offset(natom).front();
     int end = (((natom + isize) >= (geom_->natom())) ? geom_->nbasis() : geom_->offset(natom + isize).front() );
+    sizes_.push_back(end - start);
     bounds_.push_back(make_pair(start, end));
 
     natom += isize;
   }
+
+  if (natom != geom_->natom()) throw runtime_error("Improper number of atoms in the defined regions of RegionLocalization");
 
   sqrt_S_ = shared_ptr<Matrix>(new Overlap(geom_)); sqrt_S_->sqrt();
   S_inverse_half_ = shared_ptr<Matrix>(new Overlap(geom_)); S_inverse_half_->inverse_half();
@@ -64,23 +67,8 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   shared_ptr<Matrix> ortho_density(new Matrix( (*sqrt_S_) * (*density) * (*sqrt_S_) ));
 
   // transform will hold the eigenvectors of each block
-  shared_ptr<Matrix> T(new Matrix(nbasis, nbasis));
-  vector<double> eigenvalues;
-
-  // Go through each region and diagonalize the blocks, the eigenvectors form T
-  for(auto& iregion : bounds_) {
-    const int start = iregion.first;
-    const int fence = iregion.second;
-    const int size_i = fence - start;
-
-    shared_ptr<Matrix> D_i = ortho_density->get_submatrix(start, start, size_i, size_i);
-
-    vector<double> eig_i(size_i);
-    D_i->diagonalize(eig_i.data());
-
-    eigenvalues.insert(eigenvalues.end(), eig_i.begin(), eig_i.end());
-    T->copy_block(start, start, size_i, size_i, D_i->data());
-  }
+  vector<double> eigenvalues(nbasis, 0.0);
+  shared_ptr<Matrix> T = ortho_density->diagonalize_blocks(eigenvalues.data(), sizes_);
 
   *ortho_density = (*T) % (*ortho_density) * (*T);
 
@@ -204,10 +192,9 @@ shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double th
     
 
   // If there is virtual left, localize it
-  const int nvirt = geom_->nbasis() - (nact_ + nclosed_);
-  if ( nvirt != 0 ) {
+  if ( nvirt_ != 0 ) {
     cout << "  Localizing virtual space" << endl;
-    localize_space(new_coeff, nclosed_ + nact_, nvirt);
+    localize_space(new_coeff, nclosed_ + nact_, nvirt_);
   }
   else {
     cout << "  No virtual space to localize" << endl << endl;
