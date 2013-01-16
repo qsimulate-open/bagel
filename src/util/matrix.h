@@ -62,6 +62,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(double* vec) override;
+    std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks);
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
@@ -76,6 +77,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     using Matrix_base<double>::get_block;
 
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
+    void copy_block(const int nstart, const int mstart, const std::shared_ptr<const Matrix> o);
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o) { add_block(nstart, mstart, ndim, mdim, *o); };

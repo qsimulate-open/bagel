@@ -290,6 +290,25 @@ void Matrix::diagonalize(double* eig) {
   if (info) throw runtime_error("dsyev/pdsyevd failed in Matrix");
 }
 
+shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
+  if ( !( (ndim_ == mdim_) && (ndim_ == accumulate(blocks.begin(), blocks.end(), 0))) ) throw logic_error("illegal call of Matrix::diagonalize_blocks");
+
+#ifndef HAVE_SCALAPACK
+  shared_ptr<Matrix> out(new Matrix(ndim_,ndim_));
+
+  int location = 0;
+  for(auto& block_size : blocks) {
+    shared_ptr<Matrix> submat = this->get_submatrix(location, location, block_size, block_size);
+    submat->diagonalize(eig + location);
+    out->copy_block(location,location,submat);
+    location += block_size;
+  }
+#else
+  assert(false);
+#endif
+
+  return out;
+}
 
 void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
@@ -574,6 +593,11 @@ void Matrix::print(const string name, const size_t size) const {
 
 void Matrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> data) {
   copy_block(nstart, mstart, nsize, msize, data->data());
+}
+
+
+void Matrix::copy_block(const int nstart, const int mstart, const shared_ptr<const Matrix> mat) {
+  copy_block(nstart, mstart, mat->ndim(), mat->mdim(), mat->data());
 }
 
 
