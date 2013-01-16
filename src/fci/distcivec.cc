@@ -94,12 +94,16 @@ void DistCivec::get_bstring(double* buf, const size_t a) const {
 }
 
 
-void DistCivec::init_mpi() const {
+void DistCivec::init_mpi_accumulate() const {
   send_  = shared_ptr<SendRequest>(new SendRequest());
   accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
+  accum_->init_request();
+}
+
+
+void DistCivec::init_mpi_recv() const {
   put_   = shared_ptr<PutRequest>(new PutRequest(local_.get()));
   recv_  = shared_ptr<RecvRequest>(new RecvRequest());
-  accum_->init_request();
   put_->init_request();
 }
 
@@ -133,10 +137,14 @@ void DistCivec::get_bstring_buf(double* buf, const size_t a) const {
 }
 
 
-void DistCivec::flush() const {
+void DistCivec::flush_accumulate() const {
   assert(accum_ && send_);
   send_->flush();
   accum_->flush(); 
+}
+
+void DistCivec::flush_recv() const {
+  assert(put_);
   put_->flush();
 }
 
@@ -145,13 +153,15 @@ void DistCivec::recv_wait() const {
   assert(put_ && recv_);
   bool done;
   do {
-    done = recv_->wait();
+    done = recv_->wait1();
+    put_->flush();
+    recv_->wait2(done);
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 }
 
 
-void DistCivec::terminate_mpi() const {
+void DistCivec::terminate_mpi_accumulate() const {
   assert(accum_ && send_);
 
   bool done;
@@ -166,15 +176,23 @@ void DistCivec::terminate_mpi() const {
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 
-  // recv server
+  // cancel all MPI calls
+  send_  = shared_ptr<SendRequest>();
+  accum_ = shared_ptr<AccRequest>();
+}
+
+void DistCivec::terminate_mpi_recv() const {
+  assert(put_ && recv_);
+
+  bool done;
   do {
-    done = recv_->wait();
+    done = recv_->wait1();
+    put_->flush();
+    recv_->wait2(done);
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 
   // cancel all MPI calls
-  send_  = shared_ptr<SendRequest>();
-  accum_ = shared_ptr<AccRequest>();
   recv_  = shared_ptr<RecvRequest>();
   put_   = shared_ptr<PutRequest>();
 }

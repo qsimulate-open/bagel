@@ -69,7 +69,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     shared_ptr<DistCivec> sigma = cc->clone(); 
     sigma->zero();
 
-    sigma->init_mpi();
+    sigma->init_mpi_accumulate();
 
     vector<pair<string, double> > timing;
     Timer fcitime(1);
@@ -83,7 +83,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     sigma_bb(cc, sigma, jop);
     fcitime.tick_print("beta-beta");
 
-    sigma->terminate_mpi();
+    sigma->terminate_mpi_accumulate();
     fcitime.tick_print("wait");
 
     sigmavec.push_back(sigma);
@@ -147,7 +147,7 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     }
     // TODO this communication pattern might not be optimal
     sigma->accumulate_bstring_buf(buf, a);
-    sigma->flush();
+    sigma->flush_accumulate();
   }
 }
 
@@ -168,7 +168,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   const size_t nloop = (int_det->lena()-1)/size+1;
 
-  cc->init_mpi();
+  cc->init_mpi_recv();
 
   // shamelessly statically distributing across processes
   for (size_t loop = 0; loop != nloop; ++loop) {
@@ -178,15 +178,12 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     const bitset<nbit__> astring = int_det->stringa(a);
     DistABTask task(astring, base_det, int_det, jop, cc, sigma); 
 
-    mpi__->barrier();
-    cout << "a" << endl;
     cc->recv_wait();
-    cout << "b" << endl;
 
     task.compute();
   }
 
-  cc->terminate_mpi();
+  cc->terminate_mpi_recv();
 }
 
 

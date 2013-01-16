@@ -49,7 +49,7 @@ void PutRequest::init() {
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__*4);
+  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__*2);
   auto m = calls_.insert(make_pair(rq, move(buf)));
   assert(m.second);
 }
@@ -95,7 +95,7 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
   ++counter_;
-  const int srq = mpi__->request_send(p->size, 4, dest, probe_key__*4);
+  const int srq = mpi__->request_send(p->size, 4, dest, probe_key__*2);
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
   auto m = request_.insert(make_pair(rrq, p));
@@ -104,7 +104,7 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
 }
 
 
-bool RecvRequest::wait() {
+bool RecvRequest::wait1() {
   bool done = true;
   for (auto i = probe_.begin(); i != probe_.end(); ) {
     if (mpi__->test(*i)) {
@@ -114,7 +114,10 @@ bool RecvRequest::wait() {
       ++i;
     }
   }
+  return done;
+}
 
+void RecvRequest::wait2(const bool done) {
   if (done) {
     for (auto& i : request_)
       mpi__->wait(i.first);
@@ -128,6 +131,5 @@ bool RecvRequest::wait() {
       }
     }
   }
-  return done;
 }
 

@@ -77,7 +77,8 @@ class RecvRequest {
     RecvRequest();
     // return mpi tag
     int request_recv(double* target, const size_t size, const int dest, const size_t off);
-    bool wait();
+    bool wait1();
+    void wait2(const bool done);
 
 };
 
