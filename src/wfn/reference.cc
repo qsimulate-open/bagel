@@ -137,7 +137,6 @@ shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const
   int nclosed = nclosed_;
   int nvirt = nbasis - nclosed;
   for (auto& iter : active_indices) {
-    cout << iter << endl;
     if (iter < nclosed_) --nclosed;
     else --nvirt;
   }

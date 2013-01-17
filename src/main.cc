@@ -296,6 +296,8 @@ int main(int argc, char** argv) {
           dimer = std::shared_ptr<Dimer>(new Dimer(geom,disp));
         }
 
+        dimer->driver(iter->second);
+
         geom = dimer->sgeom();
         ref = dimer->sref();
 
@@ -349,12 +351,19 @@ int main(int argc, char** argv) {
       else if (method == "testing") {
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
 
-        auto aiter = iter->second.find("active");
-        if (aiter != iter->second.end()) {
-          auto tmp_ref = ref->set_active(aiter->second);
-          ref = tmp_ref;
-        }
+        dimer->set_sref(ref);
+
+        //auto aiter = iter->second.find("active");
+        //if (aiter != iter->second.end()) {
+        //  auto tmp_ref = ref->set_active(aiter->second);
+        //  ref = tmp_ref;
+        //}
+
+        dimer->set_active(iter->second);
         
+        dimer->localize(iter->second);
+        ref = dimer->sref();
+
         //dimer->fci(testdata);
         //dimer->hamiltonian();
       }

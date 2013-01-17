@@ -31,6 +31,7 @@
 #include <src/scf/fock.h>
 #include <src/fci/harrison.h>
 #include <src/dimer/dimer.h>
+#include <src/wfn/reference.h>
 
 using namespace std;
 using namespace bagel;
@@ -249,16 +250,31 @@ void Dimer::orthonormalize() {
 }
 
 void Dimer::fci(multimap<string,string> idata) {
+  const int noccA = nele_.first/2;
+  const int noccB = nele_.second/2;
+  const int nocc  = noccA + noccB;
+
+  const int nclosedA = ncore_.first;
+  const int nclosedB = ncore_.second;
+  const int nclosed = nclosedA + nclosedB;
+
+  const int nactA = nact_.first;
+  const int nactB = nact_.second;
+  const int nact = nactA + nactB;
+
   { // Start FCI on unit A
     // Move occupied orbitals of unit B to form the core orbitals
-    shared_ptr<Matrix> Amatrix = scoeff_->slice(nbasis_.first, nbasis_.first + ncore_.second)->merge(scoeff_->slice(0,nbasis_.first));
+    shared_ptr<Matrix> Amatrix(new Matrix(dimerbasis_, dimerbasis_));
+    Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0));
+    Amatrix->copy_block(0, nclosed, dimerbasis_, noccB - nclosedB, scoeff_->element_ptr(0,nclosed + nactA));
+    Amatrix->copy_block(0, nclosedA + noccB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed));
     shared_ptr<Coeff> Acoeff(new Coeff(*Amatrix));
 
     // Set up variables for this fci
-    shared_ptr<Reference> Aref(new Reference(sgeom_, Acoeff, (nele_.first + nele_.second)/2, 0, 0));
+    const int ncore = nclosedA + noccB;
+    const int norb  = nactA;
 
-    const int ncore = ncore_.second; // ncore in this set up is all the occupied orbitals of unit B
-    const int norb  = nbasis_.first; // Assuming use of the whole space
+    shared_ptr<Reference> Aref(new Reference(sgeom_, Acoeff, ncore, norb, 0));
 
     // for now let's just hardcode in HZ. This can maybe be changed later
     shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Aref, ncore, norb));
@@ -268,14 +284,17 @@ void Dimer::fci(multimap<string,string> idata) {
   }
 
   { // Start FCI on unit B
-    shared_ptr<Matrix> Bmatrix = scoeff_->slice(0,ncore_.first)->merge(scoeff_->slice(nbasis_.first, nbasis_.first + nbasis_.second));
+    shared_ptr<Matrix> Bmatrix(new Matrix(dimerbasis_, dimerbasis_));
+    Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0));
+    Bmatrix->copy_block(0, nclosed, dimerbasis_, noccA - nclosedA, scoeff_->element_ptr(0,nclosed));
+    Bmatrix->copy_block(0, noccA + nclosedB, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA));
     shared_ptr<Coeff> Bcoeff(new Coeff(*Bmatrix));
 
     // Set up variables for this fci
-    shared_ptr<Reference> Bref(new Reference(sgeom_, Bcoeff, (nele_.first + nele_.second)/2, 0, 0));
+    const int ncore = nclosedB + noccA;
+    const int norb  = nactB;
 
-    const int ncore = ncore_.first;
-    const int norb = nbasis_.second;
+    shared_ptr<Reference> Bref(new Reference(sgeom_, Bcoeff, ncore, norb, 0));
 
     // HZ fci
     shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Bref, ncore, norb));
@@ -284,12 +303,14 @@ void Dimer::fci(multimap<string,string> idata) {
     ccvecs_.second = fci->civectors();
   }
 
-  // Wavefunctions came from FCI calculations, so I should know the following
-  ncore_ = make_pair(0,0);
-  nact_ = make_pair(nbasis_.first, nbasis_.second);
-  nvirt_ = make_pair(0,0);
-
+  // For good measure
   symmetric_ = false;
+}
+
+void Dimer::scf(multimap<string, string> idata) {
+  shared_ptr<SCF_base> this_scf(new SCF<1>(idata, sgeom_, sref_));
+  this_scf->compute();
+  set_sref(this_scf->conv_to_ref());
 }
 
 void Dimer::localize(multimap<string, string> idata) {
@@ -305,5 +326,158 @@ void Dimer::localize(multimap<string, string> idata) {
   }
   else throw std::runtime_error("Unrecognized orbital localization method");
 
-  set_coeff(localization->localize());
+  shared_ptr<const Matrix> local_coeff = localization->localize();
+  shared_ptr<Matrix> S(new Overlap(sgeom_));
+  shared_ptr<Matrix> overlaps(new Matrix( (*proj_coeff_) % (*S) * (*local_coeff)));
+
+  const int nclosed = ncore_.first + ncore_.second;
+  const int nact = nact_.first + nact_.second;
+  const int nvirt = nvirt_.first + nvirt_.second;
+
+  multimap<double, int> Anorms;
+  set<int> closed_setA, closed_setB;
+  for(int i = 0; i < nclosed; ++i) {
+    double* cdata = overlaps->element_ptr(0,i);
+    double norm = ddot_(nbasis_.first, cdata, 1, cdata, 1);
+
+    if (norm > 0.7) closed_setA.insert(i);
+    else if (norm < 0.3) closed_setB.insert(i);
+    else throw runtime_error("Trouble in classifying orbitals");
+  }
+
+  set<int> active_setA, active_setB;
+  for(int i = nclosed; i < nclosed + nact; ++i) {
+    double* cdata = overlaps->element_ptr(0,i);
+    double norm = ddot_(nbasis_.first, cdata, 1, cdata, 1);
+
+    if (norm > 0.7) active_setA.insert(i);
+    else if (norm < 0.3) active_setB.insert(i);
+    else throw runtime_error("Trouble in classifying orbitals");
+  }
+
+  shared_ptr<Matrix> new_coeff(new Matrix(dimerbasis_, dimerbasis_));
+  int imo = 0;
+
+  for(auto& iset : closed_setA) {
+    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
+    ++imo;
+  }
+  for(auto& iset : closed_setB) {
+    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
+    ++imo;
+  }
+
+  for(auto& iset : active_setA) {
+    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
+    ++imo;
+  }
+  for(auto& iset : active_setB) {
+    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
+    ++imo;
+  }
+
+  copy_n(local_coeff->element_ptr(0,nclosed + nact), dimerbasis_*nvirt, new_coeff->element_ptr(0,imo));
+
+  shared_ptr<const Coeff> out(new Coeff(*new_coeff));
+
+  set_coeff(out);
+}
+
+void Dimer::set_active(multimap<string, string> idata) {
+  auto Aiter = idata.find("active_A");
+  auto Biter = idata.find("active_B");
+  auto iter = idata.find("active");
+
+  string Alist, Blist;
+
+  if(iter == idata.end() && Aiter == idata.end() && Biter == idata.end())
+    throw runtime_error("Active space of the dimer MUST be specified in some way.");
+  if(iter != idata.end()) {
+    Alist = iter->second;
+    Blist = iter->second;
+  }
+  if(Aiter != idata.end()) Alist = Aiter->second;
+  if(Biter != idata.end()) Blist = Biter->second;
+
+  // Make new References
+  pair<shared_ptr<const Reference>, shared_ptr<const Reference> > active_refs = 
+        make_pair(refs_.first->set_active(Alist), refs_.second->set_active(Blist));
+
+  // Update Dimer info
+  const int nclosedA = active_refs.first->nclosed();
+  const int nclosedB = active_refs.second->nclosed();
+  ncore_ = make_pair(nclosedA, nclosedB);
+
+  const int nactA = active_refs.first->nact();
+  const int nactB = active_refs.second->nact();
+  nact_ = make_pair(nactA, nactB);
+  const int nact = nactA + nactB;
+
+  const int nvirtA = active_refs.first->nvirt();
+  const int nvirtB = active_refs.second->nvirt();
+  nvirt_ = make_pair(nvirtA, nvirtB);
+
+  shared_ptr<Matrix> active(new Matrix(dimerbasis_, nact));
+
+  const int nbasisA = nbasis_.first;
+  const int nbasisB = nbasis_.second;
+
+  active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
+  active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
+
+  shared_ptr<Matrix> S(new Overlap(sgeom_));
+  shared_ptr<Matrix> overlaps(new Matrix( (*sref_->coeff()) % (*S) * (*active)));
+  double* odata = overlaps->data();
+
+  multimap<double, int> norms;
+
+  for(int i = 0; i < dimerbasis_; ++i, ++odata) {
+    double norm = ddot_(nact, odata, dimerbasis_, odata, dimerbasis_);
+    norms.insert(make_pair(norm, i));
+  }
+
+  auto norm_iter = norms.rbegin();
+  set<int> active_list;
+  for(int i = 0; i < nact; ++i, ++norm_iter) active_list.insert(norm_iter->second);
+
+  set_sref(sref_->set_active(active_list));
+}
+
+void Dimer::driver(multimap<string, string> idata) {
+  // SCF
+  scf(idata);
+  shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(ncore_.first + ncore_.second);
+  shared_ptr<Matrix> dimercoeff = scoeff_;
+
+  // Set active space based on overlap
+  if(proj_coeff_ == nullptr) throw runtime_error("For Dimer::driver, Dimer must be constructed from a HF reference");
+  else set_active(idata);
+
+  // Localize
+  localize(idata);
+
+  // Sub-diagonalize Fock Matrix
+  shared_ptr<const Matrix> hcore(new Hcore(sgeom_));
+  shared_ptr<Matrix> fock(new Fock<1>(sgeom_, hcore, dimerdensity, dimercoeff));
+  Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
+
+  Matrix transform(dimerbasis_, dimerbasis_);
+  transform.add_diag(1.0);
+
+  const int subsize = ncore_.first + ncore_.second + nact_.first + nact_.second;
+  vector<int> subsizes = {ncore_.first, ncore_.second, nact_.first, nact_.second};
+  vector<double> subeigs(dimerbasis_, 0.0);
+
+  shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
+  transform.copy_block(0,0,diag_blocks);
+
+  shared_ptr<Matrix> ncoeff(new Matrix(*scoeff_ * transform));
+  set_coeff(ncoeff);
+  sref_->set_eig(subeigs);
+
+  // FCI
+  fci(idata);
+
+  // Hamiltonian
+  hamiltonian();
 }

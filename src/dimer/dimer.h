@@ -106,6 +106,10 @@ class Dimer {
         scoeff_ = std::shared_ptr<Coeff>(new Coeff(*coeff));
         sref_->set_coeff(coeff);
       };
+      void set_coeff(std::shared_ptr<const Matrix> mat) {
+        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*mat));
+        sref_->set_coeff(std::shared_ptr<const Coeff>(new const Coeff(*mat)));
+      };
 
       std::pair<const int, const int> nbasis() const {return nbasis_; };
       std::pair<const int, const int> ncore() const { return ncore_; };
@@ -118,11 +122,15 @@ class Dimer {
       std::shared_ptr<Coeff> overlap() const; 
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const;
 
+      void set_active(std::multimap<std::string, std::string> idata);
+
       // Calculations
       void hamiltonian();
+      void scf(std::multimap<std::string, std::string> idata); // SCF on dimer
       void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
-      
       void localize(std::multimap<std::string, std::string> idata);
+
+      void driver(std::multimap<std::string, std::string> idata);
 
    private:
       void construct_geometry();
