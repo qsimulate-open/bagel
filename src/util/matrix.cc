@@ -305,6 +305,7 @@ shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
   }
 #else
   assert(false);
+  shared_ptr<Matrix> out = shared_ptr<Matrix>();
 #endif
 
   return out;
