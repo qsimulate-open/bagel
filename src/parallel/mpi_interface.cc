@@ -103,6 +103,13 @@ void MPI_Interface::allreduce(double* a, const size_t size) const {
 }
 
 
+void MPI_Interface::allreduce(int* a, const size_t size) const {
+#ifdef HAVE_MPI_H
+  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#endif
+}
+
+
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);

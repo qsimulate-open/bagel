@@ -169,13 +169,15 @@ void DistCivec::terminate_mpi_accumulate() const {
 
   bool done;
   do {
-    done = send_->wait1();
-    // when wait1 of send_ is over, accum should be ready. Hence only flush.
+    done = send_->test1();
     accum_->flush();
-    send_->wait2();
-    accum_->wait2();
-    send_->wait3();
-    accum_->wait3();
+    done &= send_->test2();
+    done &= accum_->test2();
+    done &= send_->test3();
+    done &= accum_->test3();
+    int d = done ? 0 : 1; 
+    mpi__->allreduce(&d, 1);
+    done = d == 0;
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 

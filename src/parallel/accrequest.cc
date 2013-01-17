@@ -49,6 +49,14 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
 
 void SendRequest::flush() {
 
+  for (auto i = send_.begin(); i != send_.end(); ) {
+    if (mpi__->test(*i)) {
+      i = send_.erase(i);
+    } else { 
+      ++i;
+    }
+  }
+
   // if receive buffer at the destination is created, send the message
   for (auto i = inactive_.begin(); i != inactive_.end(); ) {
     if (mpi__->test(i->first)) {
@@ -73,34 +81,30 @@ void SendRequest::flush() {
 }
 
 // wait for all calls
-bool SendRequest::wait1() {
+bool SendRequest::test1() {
   bool done = true;
-  for (auto i = send_.begin(); i != send_.end(); ) {
-    if (mpi__->test(*i)) {
-      i = send_.erase(i);
-    } else {
-      ++i;
-      done = false;
-    }
-  }
+  for (auto& i : send_)
+    if (!mpi__->test(i)) done = false; 
   flush();
   return done;
 }
 
 
-void SendRequest::wait2() {
+bool SendRequest::test2() {
+  bool done = true;
   for (auto& i : inactive_)
-    mpi__->wait(i.first);
+    if (!mpi__->test(i.first)) done = false;
   flush();
-  inactive_.clear();
+  return done;
 }
 
 
-void SendRequest::wait3() {
+bool SendRequest::test3() {
+  bool done = true;
   for (auto& i : requests_)
-    mpi__->wait(i.first);
+    if (!mpi__->test(i.first)) done = false;
   flush();
-  requests_.clear();
+  return done;
 }
 
 
@@ -174,17 +178,19 @@ void AccRequest::flush() {
 }
 
 
-void AccRequest::wait2() {
+bool AccRequest::test2() {
+  bool done = true;
   for (auto& i : send_)
-    mpi__->wait(i);
+    if (!mpi__->test(i)) done = false;
   flush();
-  send_.clear();
+  return done;
 }
 
 
-void AccRequest::wait3() {
-  for (auto& i : requests_)
-    mpi__->wait(i.first);
+bool AccRequest::test3() {
+  bool done = true;
+  for (auto i : requests_)
+    if (!mpi__->test(i.first)) done = false;
   flush();
-  requests_.clear();
+  return done;
 }

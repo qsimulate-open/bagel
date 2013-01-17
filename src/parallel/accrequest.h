@@ -68,9 +68,9 @@ class SendRequest {
     void flush();
 
     // wait for all calls
-    bool wait1();
-    void wait2();
-    void wait3();
+    bool test1();
+    bool test2();
+    bool test3();
 
 };
 
@@ -106,8 +106,8 @@ class AccRequest {
     void flush();
 
     // wait for all calls
-    void wait2();
-    void wait3();
+    bool test2();
+    bool test3();
 
 };
 

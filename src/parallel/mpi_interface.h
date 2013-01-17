@@ -69,6 +69,7 @@ class MPI_Interface {
     // sum reduce to the root process
     void reduce(double*, const size_t size, const int root) const;
     // sum reduce and broadcast to each process
+    void allreduce(int*, const size_t size) const;
     void allreduce(double*, const size_t size) const;
     void allreduce(std::complex<double>*, const size_t size) const;
     // broadcast
