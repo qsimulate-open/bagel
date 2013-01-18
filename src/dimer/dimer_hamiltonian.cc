@@ -60,26 +60,13 @@ void Dimer::hamiltonian() {
 
   dimerstates_ = nstatesA*nstatesB;
 
-  cout << " ===== Starting construction of dimer hamiltonian ===== " << endl;
+  cout << " ===== Starting construction of dimer Hamiltonian ===== " << endl;
 
   space_ = shared_ptr<Space>(new Space(ccvecs_.first->det(), 1));
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
-  // Construct reorganized reference to compute DimerJop
-  shared_ptr<Matrix> tmp_mat = scoeff_->slice(0,ncore_.first);
-  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first, nbasis_.first + ncore_.second));
-
-  tmp_mat = tmp_mat->merge(scoeff_->slice(ncore_.first, ncore_.first + nact_.first));
-  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first + ncore_.second, nbasis_.first + ncore_.second + nact_.second));
-
-  tmp_mat = tmp_mat->merge(scoeff_->slice(ncore_.first + nact_.first, nbasis_.first));
-  tmp_mat = tmp_mat->merge(scoeff_->slice(nbasis_.first + ncore_.second + nact_.second, nbasis_.first + nbasis_.second));
-
-  shared_ptr<Coeff> coeff(new Coeff(*tmp_mat));
-  shared_ptr<Reference> ref(new Reference(sgeom_, coeff, sref_->nclosed(), sref_->nact(), sref_->nvirt()));
-
   // create jop_ object (which effectively includes all closed-closed interactions)
-  jop_ = shared_ptr<DimerJop>(new DimerJop(ref, ncore, ncore + nact_.first, ncore + nact, scoeff_));
+  jop_ = shared_ptr<DimerJop>(new DimerJop(sref_, ncore, ncore + nact_.first, ncore + nact, scoeff_));
 
   // compute close-close
   cout << "  o Computing closed-closed interactions" << endl;
@@ -238,19 +225,11 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
 
   // alpha-alpha
   shared_ptr<Matrix> E_ac_alpha = form_EFmatrices_alpha(ccvecs_.first, nstates_.first, ijA);
-
-  // are the monomers identical?
-  shared_ptr<Matrix> F_bd_alpha;
-  if(symmetric_) F_bd_alpha = E_ac_alpha;
-  else F_bd_alpha = form_EFmatrices_alpha(ccvecs_.second, nstates_.second, ijB);
+  shared_ptr<Matrix> F_bd_alpha = form_EFmatrices_alpha(ccvecs_.second, nstates_.second, ijB);
 
   // beta-beta
   shared_ptr<Matrix> E_ac_beta = form_EFmatrices_beta(ccvecs_.first, nstates_.first, ijA);
-
-  // are the monomers identical?
-  shared_ptr<Matrix> F_bd_beta;
-  if(symmetric_) F_bd_beta = E_ac_beta;
-  else F_bd_beta = form_EFmatrices_beta(ccvecs_.second, nstates_.second, ijB);
+  shared_ptr<Matrix> F_bd_beta = form_EFmatrices_beta(ccvecs_.second, nstates_.second, ijB);
 
   shared_ptr<Matrix> tmp(new Matrix(dimerstates_, dimerstates_));
 
@@ -261,8 +240,7 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   *tmp += (*E_ac_beta) * (*J_abcd) ^ (*F_bd_alpha);
 
   // reorder, currently (AA',BB'), want (AB, A'B')
-  shared_ptr<Matrix> out(new Matrix(*tmp));
-  out->zero();
+  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
   double* odata = out->data();
   double* tdata = tmp->data();
@@ -323,8 +301,7 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_alpha(shared_ptr<const Dvec> ccvec, co
     }
   }
 
-  shared_ptr<Matrix> out(new Matrix(*tmp->transpose()));
-  return out;
+  return tmp->transpose();
 }
 
 shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, const int nstates, const int ij) const{
@@ -366,8 +343,7 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, con
     }
   }
 
-  shared_ptr<Matrix> out(new Matrix(*tmp->transpose()));
-  return out;
+  return tmp->transpose();
 }
 
 shared_ptr<Matrix> Dimer::form_JKmatrix(const int ijA, const int ijB) const {
