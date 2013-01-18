@@ -33,6 +33,7 @@
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 
 namespace bagel {
 
@@ -44,12 +45,15 @@ class PutRequest {
     void init();
     const double* const data_;
 
+    std::shared_ptr<boost::thread> server_;
+    void flush();
+
   public:
     PutRequest(const double* d);
     ~PutRequest();
 
     void init_request();
-    void flush();
+    void periodic();
 };
 
 class RecvRequest {
@@ -77,8 +81,8 @@ class RecvRequest {
     RecvRequest();
     // return mpi tag
     int request_recv(double* target, const size_t size, const int dest, const size_t off);
-    bool wait1();
-    void wait2(const bool done);
+    bool test1();
+    bool test2();
 
 };
 

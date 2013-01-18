@@ -176,11 +176,13 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     if (a >= int_det->lena()) break;
 
     const bitset<nbit__> astring = int_det->stringa(a);
+#if 0
     DistABTask task(astring, base_det, int_det, jop, cc, sigma); 
 
     cc->recv_wait();
 
     task.compute();
+#endif
   }
 
   cc->terminate_mpi_recv();

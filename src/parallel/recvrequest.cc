@@ -34,6 +34,7 @@ using namespace bagel;
 
 // PutRequest receives probe and returns data
 PutRequest::PutRequest(const double* d) : data_(d) { 
+  server_ = shared_ptr<boost::thread>(new boost::thread(boost::bind(&PutRequest::periodic, this)));
 
 }
 
@@ -56,9 +57,9 @@ void PutRequest::init() {
 
 
 PutRequest::~PutRequest() {
-  assert(calls_.size() == pool_size__);
   for (auto& i : calls_)
     mpi__->cancel(i.first);
+  server_->interrupt();
 }
 
 
@@ -83,6 +84,14 @@ void PutRequest::flush() {
 }
 
 
+void PutRequest::periodic() {
+  while (1) {
+    flush();
+    boost::this_thread::sleep(boost::posix_time::milliseconds(100)); 
+  }
+}
+
+
 /////////////////////////
 
 
@@ -104,7 +113,7 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
 }
 
 
-bool RecvRequest::wait1() {
+bool RecvRequest::test1() {
   bool done = true;
   for (auto i = probe_.begin(); i != probe_.end(); ) {
     if (mpi__->test(*i)) {
@@ -117,19 +126,16 @@ bool RecvRequest::wait1() {
   return done;
 }
 
-void RecvRequest::wait2(const bool done) {
-  if (done) {
-    for (auto& i : request_)
-      mpi__->wait(i.first);
-    request_.clear();
-  } else {
-    for (auto i = request_.begin(); i != request_.end(); ) {
-      if (mpi__->test(i->first)) {
-        i = request_.erase(i);
-      } else {
-        ++i;
-      }
+bool RecvRequest::test2() {
+  bool done = true;
+  for (auto i = request_.begin(); i != request_.end(); ) {
+    if (mpi__->test(i->first)) {
+      i = request_.erase(i);
+    } else {
+      done = false;
+      ++i;
     }
   }
+  return done;
 }
 

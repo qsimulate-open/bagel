@@ -148,7 +148,7 @@ void DistCivec::flush_accumulate() const {
 
 void DistCivec::flush_recv() const {
   assert(put_);
-  put_->flush();
+//put_->flush();
 }
 
 
@@ -156,9 +156,8 @@ void DistCivec::recv_wait() const {
   assert(put_ && recv_);
   bool done;
   do {
-    done = recv_->wait1();
-    put_->flush();
-    recv_->wait2(done);
+    done = recv_->test1();
+    done &= recv_->test2();
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 }
@@ -192,9 +191,8 @@ void DistCivec::terminate_mpi_recv() const {
 
   bool done;
   do {
-    done = recv_->wait1();
-    put_->flush();
-    recv_->wait2(done);
+    done = recv_->test1();
+    done &= recv_->test2();
     if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
   } while (!done);
 
