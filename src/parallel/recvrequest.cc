@@ -45,6 +45,7 @@ PutRequest::PutRequest(const double* d) : data_(d) {
 void PutRequest::init_request() {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
+  mpi__->barrier();
 }
 
 
@@ -54,20 +55,25 @@ void PutRequest::init() {
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
   const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__*2);
-  auto m = calls_.insert(make_pair(rq, move(buf)));
-  assert(m.second);
+  {
+    lock_guard<mutex> lock(block_);
+    auto m = calls_.insert(make_pair(rq, move(buf)));
+    assert(m.second);
+  }
 }
 
 
 PutRequest::~PutRequest() {
-  for (auto& i : calls_)
-    mpi__->cancel(i.first);
+  mpi__->barrier();
   thread_alive_ = false;
   server_->join();
+  for (auto& i : calls_)
+    mpi__->cancel(i.first);
 }
 
 
 void PutRequest::flush() {
+  lock_guard<mutex> lock(block_);
   size_t cnt = 0;
   for (auto i = calls_.begin(); i != calls_.end(); ) {
     // if this has already arrived, send data 
@@ -91,7 +97,7 @@ void PutRequest::flush() {
 void PutRequest::periodic() {
   while (thread_alive_) {
     flush();
-    this_thread::sleep_for(chrono::milliseconds(1)); 
+    this_thread::sleep_for(chrono::microseconds(100)); 
   }
 }
 

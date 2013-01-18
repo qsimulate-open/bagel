@@ -45,6 +45,9 @@ class PutRequest {
     void init();
     const double* const data_;
 
+    // this mutex is for MPI calls
+    std::mutex block_;
+
     std::shared_ptr<std::thread> server_;
     bool thread_alive_;
     void flush();

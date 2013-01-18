@@ -227,6 +227,7 @@ void MPI_Interface::accumulate(const double* buf, const size_t len, const int ra
 
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest, const int tag) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -244,6 +245,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 
 
 int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest, const int tag) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   vector<MPI_Request> rq;
@@ -263,6 +265,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
 
 
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin, const int tag) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -279,6 +282,7 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
 
 
 int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origin, const int tag) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -295,6 +299,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
 
 
 void MPI_Interface::wait(const int rq) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto i = request_.find(rq);
   assert(i != request_.end());
@@ -305,6 +310,7 @@ void MPI_Interface::wait(const int rq) {
 
 
 void MPI_Interface::cancel(const int rq) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto i = request_.find(rq);
   assert(i != request_.end());
@@ -317,9 +323,14 @@ void MPI_Interface::cancel(const int rq) {
 bool MPI_Interface::test(const int rq) {
   bool out = true;
 #ifdef HAVE_MPI_H
+  vector<MPI_Request> r;
+  {
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
-  for (auto& j : i->second) {
+  r = i->second;
+  }
+  for (auto& j : r) {
     int b;
     MPI_Test(&j, &b, MPI_STATUS_IGNORE);
     out &= b;
@@ -328,6 +339,8 @@ bool MPI_Interface::test(const int rq) {
   return out;
 }
 
+
+// ScaLapack interfaces
 
 pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
 #ifdef HAVE_SCALAPACK

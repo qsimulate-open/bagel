@@ -30,6 +30,7 @@
 #include <config.h>
 #include <memory>
 #include <complex>
+#include <mutex>
 #include <vector>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
@@ -54,6 +55,9 @@ class MPI_Interface {
 
     // maximum size of the MPI buffer
     const static size_t bsize = 100000000LU;
+
+    // mutex for isend and irecv
+    std::mutex mpimutex_;
 
   public:
     MPI_Interface(int argc, char** argv);

@@ -158,7 +158,7 @@ void DistCivec::recv_wait() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
+    if (!done) this_thread::sleep_for(chrono::microseconds(100));
   } while (!done);
 }
 
@@ -168,8 +168,9 @@ void DistCivec::terminate_mpi_accumulate() const {
 
   bool done;
   do {
-    done = send_->test1();
     accum_->flush();
+    send_->flush();
+    done = send_->test1();
     done &= send_->test2();
     done &= accum_->test2();
     done &= send_->test3();
@@ -177,7 +178,7 @@ void DistCivec::terminate_mpi_accumulate() const {
     int d = done ? 0 : 1; 
     mpi__->allreduce(&d, 1);
     done = d == 0;
-    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
+    if (!done) this_thread::sleep_for(chrono::microseconds(100));
   } while (!done);
 
   // cancel all MPI calls
@@ -195,6 +196,8 @@ void DistCivec::terminate_mpi_recv() const {
     done &= recv_->test2();
     if (!done) this_thread::sleep_for(chrono::milliseconds(1));
   } while (!done);
+
+  mpi__->barrier();
 
   // cancel all MPI calls
   recv_  = shared_ptr<RecvRequest>();
