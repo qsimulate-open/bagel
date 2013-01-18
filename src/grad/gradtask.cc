@@ -94,7 +94,7 @@ void GradTask::compute() {
       }
     }
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
-      boost::lock_guard<boost::mutex> lock(ge_->mutex_[iatom]);
+      lock_guard<mutex> lock(ge_->mutex_[iatom]);
       ge_->grad_->data(3*iatom+0) += grad_local->data(3*iatom+0);
       ge_->grad_->data(3*iatom+1) += grad_local->data(3*iatom+1);
       ge_->grad_->data(3*iatom+2) += grad_local->data(3*iatom+2);
@@ -130,7 +130,7 @@ void GradTask::compute() {
         sum[icart] += ddot_(sblock, ppt, 1, db1.get(), 1);
         sum[icart] += ddot_(sblock, ppt, 1, db3.get(), 1);
       }
-      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[iatom]]);
+      lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
         ge_->grad_->data(jatom[iatom], icart) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
@@ -161,7 +161,7 @@ void GradTask::compute() {
           }
         }
       }
-      boost::lock_guard<boost::mutex> lock(ge_->mutex_[jatom[iatom]]);
+      lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
       for (int icart = 0; icart != 3; ++icart)
         ge_->grad_->data(jatom[iatom],icart) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);

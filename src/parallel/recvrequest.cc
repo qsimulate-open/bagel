@@ -23,7 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <boost/thread/thread.hpp>
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
+
+#include <thread>
 #include <src/parallel/recvrequest.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
@@ -34,8 +37,8 @@ using namespace bagel;
 
 // PutRequest receives probe and returns data
 PutRequest::PutRequest(const double* d) : data_(d) { 
-  server_ = shared_ptr<boost::thread>(new boost::thread(boost::bind(&PutRequest::periodic, this)));
-
+  server_ = shared_ptr<thread>(new thread(&PutRequest::periodic, this));
+  thread_alive_ = true;
 }
 
 
@@ -59,7 +62,8 @@ void PutRequest::init() {
 PutRequest::~PutRequest() {
   for (auto& i : calls_)
     mpi__->cancel(i.first);
-  server_->interrupt();
+  thread_alive_ = false;
+  server_->join();
 }
 
 
@@ -85,9 +89,9 @@ void PutRequest::flush() {
 
 
 void PutRequest::periodic() {
-  while (1) {
+  while (thread_alive_) {
     flush();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100)); 
+    this_thread::sleep_for(chrono::milliseconds(1)); 
   }
 }
 

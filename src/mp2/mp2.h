@@ -33,7 +33,7 @@
 #include <src/wfn/reference.h>
 #include <string>
 #include <map>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 namespace bagel {
 
@@ -47,7 +47,7 @@ class MP2 {
     int ncore_;
 
     double energy_;
-    boost::mutex mut_;
+    std::mutex mut_;
 
   public:
     MP2(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>,

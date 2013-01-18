@@ -38,7 +38,7 @@
 #include <src/fci/determinants.h>
 #include <src/parallel/accrequest.h>
 #include <src/parallel/recvrequest.h>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 namespace bagel {
 
@@ -161,7 +161,7 @@ class DistCivec {
     mutable std::shared_ptr<RecvRequest> recv_;
 
     // mutex for write accesses to local_
-    mutable std::vector<boost::mutex> mutex_;
+    mutable std::vector<std::mutex> mutex_;
 
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
@@ -223,7 +223,7 @@ class DistCivec {
     double orthog(std::shared_ptr<const DistCivec> o);
 
     // mutex
-    boost::mutex& mutex(const size_t& i) const { return mutex_[i]; }
+    std::mutex& cimutex(const size_t& i) const { return mutex_[i]; }
 
 };
 

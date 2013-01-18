@@ -29,7 +29,7 @@
 #include <bitset>
 #include <src/util/constants.h>
 #include <src/fci/determinants.h>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 namespace bagel {
 
@@ -41,10 +41,10 @@ class DistBBTask {
     const double* hamil;
     std::shared_ptr<Determinants> base_det;
     const std::bitset<nbit__> b;
-    std::vector<boost::mutex>* mutex;
+    std::vector<std::mutex>* mutex;
 
   public:
-    DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<Determinants> det, const std::bitset<nbit__>& bs, std::vector<boost::mutex>* m)
+    DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<Determinants> det, const std::bitset<nbit__>& bs, std::vector<std::mutex>* m)
       : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {} 
 
     void compute() {
@@ -77,7 +77,7 @@ class DistBBTask {
             std::bitset<nbit__> bt = b; bt.set(k); bt.set(l);
             const double kl_phase = base_det->sign(bt,k,l);
             const size_t ib = base_det->lexical<1>(bt);
-            boost::lock_guard<boost::mutex> lock((*mutex)[ib]);
+            std::lock_guard<std::mutex> lock((*mutex)[ib]);
             daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target+la*ib, 1);
           }
         }
@@ -97,7 +97,7 @@ class DistBBTask {
           std::bitset<nbit__> bt = b; bt.set(i);
           const double ij_phase = base_det->sign(bt, -1, i);
           const size_t ib = base_det->lexical<1>(bt);
-          boost::lock_guard<boost::mutex> lock((*mutex)[ib]);
+          std::lock_guard<std::mutex> lock((*mutex)[ib]);
           daxpy_(la, ij_phase, ints2.get()+la*i, 1, target+la*ib, 1);
         }
       } else {

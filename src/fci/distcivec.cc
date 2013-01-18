@@ -23,10 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
 
 #include <sstream>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp> 
 #include <src/fci/civec.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -40,7 +40,7 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
   local_ = unique_ptr<double[]>(new double[alloc_]);
   fill_n(local_.get(), alloc_, 0.0);
 
-  mutex_ = vector<boost::mutex>(asize());
+  mutex_ = vector<mutex>(asize());
 }
 
 
@@ -50,7 +50,7 @@ DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o
   local_ = unique_ptr<double[]>(new double[alloc_]);
   copy_n(o.local_.get(), alloc_, local_.get());
 
-  mutex_ = vector<boost::mutex>(asize());
+  mutex_ = vector<mutex>(asize());
 }
 
 
@@ -117,10 +117,10 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
   tie(rank, off) = dist_.locate(a);
 
   if (mpirank == rank) {
-    boost::lock_guard<boost::mutex> lock(mutex_[off]);
+    lock_guard<mutex> lock(mutex_[off]);
     daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
   } else {
-    send_->request_send(std::move(buf), lenb_, rank, off*lenb_);
+    send_->request_send(move(buf), lenb_, rank, off*lenb_);
   }
 }
 
@@ -158,7 +158,7 @@ void DistCivec::recv_wait() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
   } while (!done);
 }
 
@@ -177,7 +177,7 @@ void DistCivec::terminate_mpi_accumulate() const {
     int d = done ? 0 : 1; 
     mpi__->allreduce(&d, 1);
     done = d == 0;
-    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
   } while (!done);
 
   // cancel all MPI calls
@@ -193,7 +193,7 @@ void DistCivec::terminate_mpi_recv() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
   } while (!done);
 
   // cancel all MPI calls

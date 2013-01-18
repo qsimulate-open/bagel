@@ -25,7 +25,6 @@
 
 #include <src/parallel/accrequest.h>
 #include <src/util/f77.h>
-#include <boost/thread/thread.hpp>
 #include <src/util/constants.h>
 
 using namespace std;
@@ -119,7 +118,7 @@ void AccRequest::init() {
 }
 
 
-AccRequest::AccRequest(double* const d, vector<boost::mutex>* m) : data_(d), mutex_(m) {
+AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), mutex_(m) {
 }
 
 
@@ -167,7 +166,7 @@ void AccRequest::flush() {
       shared_ptr<Prep> p = i->second;
       // for the time being, we only consider matrices for mutex
       assert(p->off % p->size == 0 && mutex_->size() > p->off/p->size);
-      boost::lock_guard<boost::mutex> lock((*mutex_)[p->off/p->size]);
+      lock_guard<mutex> lock((*mutex_)[p->off/p->size]);
       // perform daxpy
       daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
       i = requests_.erase(i); 

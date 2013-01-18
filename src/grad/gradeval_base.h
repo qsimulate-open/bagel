@@ -32,7 +32,7 @@
 #include <src/grad/gradfile.h>
 #include <src/scf/geometry.h>
 #include <src/util/matrix.h>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 namespace bagel {
 
@@ -96,7 +96,7 @@ class GradEval_base {
 
     // the results will be stored in grad_ and grad2_ (seperate area for multi-threading);
     std::shared_ptr<GradFile> grad_;
-    std::vector<boost::mutex> mutex_;
+    std::vector<std::mutex> mutex_;
 
   public:
     GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(new GradFile(g->natom())), mutex_(g->natom()) { };

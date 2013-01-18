@@ -32,8 +32,8 @@
 #include <cassert>
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <mutex>
+#include <thread>
 
 namespace bagel {
 
@@ -45,7 +45,8 @@ class PutRequest {
     void init();
     const double* const data_;
 
-    std::shared_ptr<boost::thread> server_;
+    std::shared_ptr<std::thread> server_;
+    bool thread_alive_;
     void flush();
 
   public:

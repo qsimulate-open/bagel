@@ -32,7 +32,8 @@
 #include <atomic>
 #include <memory>
 #include <stdexcept>
-#include <boost/thread/thread.hpp>
+#include <thread>
+#include <vector>
 #include <config.h>
 #ifdef HAVE_MKL_H
   #include "mkl_service.h"
@@ -58,9 +59,9 @@ class TaskQueue {
 #ifndef _OPENMP
       for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-      std::list<std::shared_ptr<boost::thread> > threads;
+      std::list<std::shared_ptr<std::thread> > threads;
       for (int i = 0; i != num_threads; ++i)
-        threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(boost::bind(&TaskQueue<T>::compute_one_thread, this))));
+        threads.push_back(std::shared_ptr<std::thread>(new std::thread(&TaskQueue<T>::compute_one_thread, this)));
       for (auto& i : threads)
         i->join();
 #else

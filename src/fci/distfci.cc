@@ -238,17 +238,17 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   timebb.tick_print("prep");
 
-  vector<boost::mutex> mutex(lb);
+  vector<mutex> localmutex(lb);
   // loop over intermediate string
   vector<DistBBTask> tasks;
   tasks.reserve(intb.size());
 
   // two electron part
   for (auto& b : intb)
-    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil2.get(), base_det, b, &mutex));
+    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex));
   // one electron part
   for (auto& b : int_det->stringb())
-    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil1.get(), base_det, b, &mutex));
+    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex));
 
   TaskQueue<DistBBTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -257,7 +257,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   mytranspose_(target.get(), la, lb, source.get());
   for (size_t i = 0; i != la; ++i) {
-    boost::lock_guard<boost::mutex> lock(sigma->mutex(i));
+    lock_guard<mutex> lock(sigma->cimutex(i));
     daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
   }
 
