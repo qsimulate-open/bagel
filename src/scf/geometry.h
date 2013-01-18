@@ -147,7 +147,7 @@ class Geometry {
     // Returns the Petite list.
     std::shared_ptr<Petite> plist() const { return plist_; }
 
-    // Rerurns DF data
+    // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
     void discard_df() { df_ = std::shared_ptr<DFDist>(); }
 

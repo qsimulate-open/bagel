@@ -193,7 +193,6 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
-  #if 0
   shared_ptr<Matrix> tmpcoeff = proj_coeff_->slice(0,ncloA);
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA, nbasisA+ncloB));
 
@@ -204,9 +203,6 @@ void Dimer::construct_coeff() {
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
 
   scoeff_ = shared_ptr<Coeff>(new Coeff(*tmpcoeff));
-  #else
-  scoeff_ = shared_ptr<Coeff>(new Coeff(*proj_coeff_));
-  #endif
 } 
 
 shared_ptr<Coeff> Dimer::overlap() const {
@@ -386,7 +382,7 @@ void Dimer::localize(multimap<string, string> idata) {
 void Dimer::set_active(multimap<string, string> idata) {
   auto Aiter = idata.find("active_A");
   auto Biter = idata.find("active_B");
-  auto iter = idata.find("active");
+  auto iter = idata.find("dimer_active");
 
   string Alist, Blist;
 
