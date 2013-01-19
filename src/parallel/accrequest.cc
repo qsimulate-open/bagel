@@ -118,8 +118,8 @@ void AccRequest::init() {
   {
     lock_guard<mutex> lock(mutex_);
     auto m = calls_.insert(make_pair(rq, move(buf)));
+    assert(m.second);
   }
-  assert(m.second);
 }
 
 
