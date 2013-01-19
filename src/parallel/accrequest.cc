@@ -36,6 +36,7 @@ using namespace bagel;
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
   turn_on();
+  mpi__->soft_barrier();
 }
 
 
@@ -97,6 +98,7 @@ AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_
     init();
   mpi__->barrier();
   turn_on();
+  mpi__->soft_barrier();
 }
 
 
@@ -113,7 +115,10 @@ void AccRequest::init() {
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
   const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__); 
-  auto m = calls_.insert(make_pair(rq, move(buf)));
+  {
+    lock_guard<mutex> lock(mutex_);
+    auto m = calls_.insert(make_pair(rq, move(buf)));
+  }
   assert(m.second);
 }
 
