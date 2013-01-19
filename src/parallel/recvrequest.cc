@@ -55,6 +55,7 @@ void PutRequest::init() {
 
 
 PutRequest::~PutRequest() {
+  mpi__->soft_barrier();
   turn_off();
   for (auto& i : calls_)
     mpi__->cancel(i.first);

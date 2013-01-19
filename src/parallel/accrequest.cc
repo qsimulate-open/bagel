@@ -40,6 +40,7 @@ SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
 
 
 SendRequest::~SendRequest() {
+  mpi__->soft_barrier();
   turn_off();
 }
 
@@ -100,6 +101,7 @@ AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_
 
 
 AccRequest::~AccRequest() {
+  mpi__->soft_barrier();
   turn_off();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
