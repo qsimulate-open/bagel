@@ -95,7 +95,7 @@ int DistCivec::get_bstring_buf(double* buf, const size_t a) const {
   size_t rank, off;
   tie(rank, off) = dist_.locate(a);
 
-  int out = 0;
+  int out = -1;
   if (mpirank == rank) {
     copy_n(local_.get()+off*lenb_, lenb_, buf);
   } else {

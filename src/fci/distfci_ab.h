@@ -65,7 +65,8 @@ class DistABTask {
       for (int i = 0; i != norb_; ++i) {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
-          requests_.push_back(cc->get_bstring_buf(buf.get()+i*lbs, base_det->lexical<0>(tmp)));
+          const int j = cc->get_bstring_buf(buf.get()+i*lbs, base_det->lexical<0>(tmp));
+          if (j >= 0) requests_.push_back(j);
         }
       }
 
