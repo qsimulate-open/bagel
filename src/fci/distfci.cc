@@ -172,6 +172,8 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   cc->init_mpi_recv();
 
+  vector<shared_ptr<DistABTask> > tasks;
+
   // shamelessly statically distributing across processes
   for (size_t loop = 0; loop != nloop; ++loop) {
     size_t a = rank + loop*size;
@@ -179,16 +181,33 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
     const bitset<nbit__> astring = int_det->stringa(a);
 
-    DistABTask task(astring, base_det, int_det, jop, cc, sigma); 
+    tasks.push_back(shared_ptr<DistABTask>(new DistABTask(astring, base_det, int_det, jop, cc, sigma)));
 
-    bool done;
-    do {
-      done = task.test();
-      if (!done) this_thread::sleep_for(sleeptime__);
-    } while (!done);
-
-    task.compute();
+    for (auto i = tasks.begin(); i != tasks.end(); ) {
+      if ((*i)->test()) {
+        (*i)->compute();
+        i = tasks.erase(i);
+      } else {
+        ++i;
+      }
+    }
   }
+
+  bool done;
+  do {
+    done = true;
+    for (auto i = tasks.begin(); i != tasks.end(); ) {
+      if ((*i)->test()) {
+        (*i)->compute();
+        i = tasks.erase(i);
+      } else {
+        ++i;
+        done = false;
+      }
+    }
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+
 
   cc->terminate_mpi_recv();
 

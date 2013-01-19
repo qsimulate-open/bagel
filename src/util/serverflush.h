@@ -56,10 +56,6 @@ class ServerFlush {
     ServerFlush() : thread_alive_(false) {
     }
 
-    ~ServerFlush() {
-      turn_off();
-    }
-
     void turn_on() {
       std::lock_guard<std::mutex> lock(mut_);
       assert(!thread_alive_);

@@ -40,7 +40,7 @@ SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
 
 
 SendRequest::~SendRequest() {
-
+  turn_off();
 }
 
 
