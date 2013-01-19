@@ -23,10 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// TODO until GCC fixes this bug
-#define _GLIBCXX_USE_NANOSLEEP
-
-#include <thread>
 #include <src/parallel/recvrequest.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
@@ -36,11 +32,11 @@ using namespace bagel;
 
 
 // PutRequest receives probe and returns data
-PutRequest::PutRequest(const double* d) : data_(d), thread_alive_(true) {
+PutRequest::PutRequest(const double* d) : data_(d) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
   mpi__->barrier();
-  server_ = shared_ptr<thread>(new thread(&PutRequest::periodic, this));
+  turn_on();
 }
 
 
@@ -59,18 +55,9 @@ void PutRequest::init() {
 
 
 PutRequest::~PutRequest() {
-  thread_alive_ = false;
-  server_->join();
+  turn_off();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
-}
-
-
-void PutRequest::periodic() {
-  while (thread_alive_) {
-    flush();
-    this_thread::sleep_for(sleeptime__); 
-  }
 }
 
 

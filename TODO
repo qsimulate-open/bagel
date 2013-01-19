@@ -37,3 +37,5 @@ o One could reduce the number of diagonalization in ROHF
 o config.h should be placed under bagel or something
 
 o Parallel gradients broken
+
+o Optimize sheeeptime__ (util/constants.h) with realistic calculations

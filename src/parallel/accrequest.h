@@ -28,19 +28,19 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <cassert>
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
-#include <thread>
-#include <mutex>
+#include <src/util/serverflush.h>
 
 namespace bagel {
 
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 // one needs to periodically call "void flush()" 
-class SendRequest {
+class SendRequest : public ServerFlush {
   protected:
     struct Probe {
       const size_t size[4];
@@ -59,17 +59,11 @@ class SendRequest {
     // mutex for protected members of this class
     std::mutex mutex_;
 
-    // flush thread
-    std::shared_ptr<std::thread> server_;
-    // controls the life time of the flush thread
-    std::atomic<bool> thread_alive_;
-
     // tuple contains: size, if ready, target rank, and buffer 
     std::map<int, std::shared_ptr<Probe> > inactive_;
     std::map<int, std::unique_ptr<double[]> > requests_;
 
-    void flush();
-    void periodic();
+    void flush() override;
 
   public:
     SendRequest();
@@ -83,7 +77,7 @@ class SendRequest {
 
 
 // receives using MPI_irecv and accumulate to the local destination
-class AccRequest {
+class AccRequest : public ServerFlush {
   protected:
 
     double* const data_;
@@ -100,11 +94,6 @@ class AccRequest {
     // mutex for protected members of this class
     std::mutex mutex_;
 
-    // flush thread
-    std::shared_ptr<std::thread> server_;
-    // controls the life time of the flush thread
-    std::atomic<bool> thread_alive_;
-
     // speculative calls to receive probes
     std::map<int, std::unique_ptr<size_t[]> > calls_;
     // requests to receive data from send_
@@ -113,7 +102,6 @@ class AccRequest {
     // one speculative call
     void init();
     void flush();
-    void periodic();
 
   public:
     AccRequest(double* const d, std::vector<std::mutex>* m);

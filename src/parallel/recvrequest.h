@@ -28,17 +28,17 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <cassert>
+#include <src/util/serverflush.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
-#include <mutex>
-#include <thread>
 
 namespace bagel {
 
 // receives using MPI_irecv and accumulate to the local destination
-class PutRequest {
+class PutRequest : public ServerFlush {
   protected:
     std::map<int, std::unique_ptr<size_t[]> > calls_;
 
@@ -48,10 +48,7 @@ class PutRequest {
     // this mutex is for MPI calls
     std::mutex block_;
 
-    std::shared_ptr<std::thread> server_;
-    std::atomic<bool> thread_alive_;
-    void flush();
-    void periodic();
+    void flush() override;
 
   public:
     PutRequest(const double* d);

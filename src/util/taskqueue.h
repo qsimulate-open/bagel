@@ -32,7 +32,11 @@
 #include <atomic>
 #include <memory>
 #include <stdexcept>
+
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
 #include <thread>
+
 #include <vector>
 #include <config.h>
 #ifdef HAVE_MKL_H

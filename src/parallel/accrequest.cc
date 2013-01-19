@@ -34,14 +34,13 @@ using namespace std;
 using namespace bagel;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1), thread_alive_(true) {
-  server_ = shared_ptr<thread>(new thread(&SendRequest::periodic, this));
+SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
+  turn_on();
 }
 
 
 SendRequest::~SendRequest() {
-  thread_alive_ = false;
-  server_->join();
+
 }
 
 
@@ -54,14 +53,6 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
   auto m = inactive_.insert(make_pair(rrq, p));
   assert(m.second);
-}
-
-
-void SendRequest::periodic() {
-  while (thread_alive_) {
-    flush();
-    this_thread::sleep_for(sleeptime__); 
-  }
 }
 
 
@@ -100,38 +91,28 @@ bool SendRequest::test() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m), thread_alive_(true) {
+AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
   mpi__->barrier();
-  server_ = shared_ptr<thread>(new thread(&AccRequest::periodic, this));
+  turn_on();
 }
 
 
 AccRequest::~AccRequest() {
-  thread_alive_ = false;
-  server_->join();
+  turn_off();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
 
 
 void AccRequest::init() {
-  lock_guard<mutex> lock(mutex_);
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
   const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__); 
   auto m = calls_.insert(make_pair(rq, move(buf)));
   assert(m.second);
-}
-
-
-void AccRequest::periodic() {
-  while (thread_alive_) {
-    flush();
-    this_thread::sleep_for(sleeptime__); 
-  }
 }
 
 
