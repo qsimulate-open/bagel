@@ -94,16 +94,7 @@ void SendRequest::flush() {
 
 bool SendRequest::test() {
   lock_guard<mutex> lock(mutex_);
-  bool done = true;
-  for (auto i = requests_.begin(); i != requests_.end(); ) {
-    if (mpi__->test(i->first)) {
-      i = requests_.erase(i);
-    } else {
-      ++i;
-      done = false;
-    }
-  }
-  return done;
+  return requests_.empty() && inactive_.empty();
 }
 
 
@@ -195,13 +186,5 @@ void AccRequest::flush() {
 
 bool AccRequest::test() {
   lock_guard<mutex> lock(mutex_);
-  bool done = true;
-  for (auto i = requests_.begin(); i != requests_.end(); )
-    if (mpi__->test(i->first)) {
-      i = requests_.erase(i);
-    } else {
-      ++i;
-      done = false;
-    } 
-  return done;
+  return requests_.empty();
 }
