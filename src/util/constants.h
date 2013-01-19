@@ -28,6 +28,7 @@
 #define __src_util_constants_h
 
 #include <cmath>
+#include <chrono>
 #include <stddef.h>
 
 namespace bagel {
@@ -58,6 +59,7 @@ static const double schwarz_thresh__ = 1.0e-12;  // TODO input
 const static size_t probe_key__  = (1 << 20);
 const static size_t probe_key2__ = (1 << 26);
 const static size_t pool_size__ = 100;
+const static std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
 
 }
 

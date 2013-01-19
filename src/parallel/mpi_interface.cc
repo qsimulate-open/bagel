@@ -23,8 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
+
 #include <cassert>
+#include <thread>
 #include <stdexcept>
+#include <src/util/constants.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -33,15 +38,12 @@ using namespace bagel;
 
 MPI_Interface::MPI_Interface(int argc, char** argv)
  : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
+
 #ifdef HAVE_MPI_H
-#if 0
-  int provided;
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  if (MPI_THREAD_MULTIPLE != provided)
-    throw runtime_error("MPI_THREAD_MULTIPLE is not supported in your MPI library.");
-#else
   MPI_Init(&argc, &argv);
-#endif
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
+  MPI_Comm_size(MPI_COMM_WORLD, &size_);
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(size());
   if (rank() == 0)
@@ -49,6 +51,9 @@ MPI_Interface::MPI_Interface(int argc, char** argv)
   sl_init_(context_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
 #endif
+#else
+  rank_ = 0;
+  size_ = 1;
 #endif
 }
 
@@ -65,36 +70,32 @@ MPI_Interface::~MPI_Interface() {
 }
 
 
-int MPI_Interface::rank() const {
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  return rank;
-#else
-  return 0;
-#endif
-}
-
-
-int MPI_Interface::size() const {
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  return size;
-#else
-  return 1;
-#endif
-}
-
-
 void MPI_Interface::barrier() const {
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
+
+
+// barrier without locking mutex all the time
+void MPI_Interface::soft_barrier() {
+  vector<int> receive;
+  vector<size_t> msg(size_);
+  for (int i = 0; i != size_; ++i) {
+    if (i == rank_) continue;
+    request_send(&msg[rank_], 1, i, (1<<30));
+    receive.push_back(mpi__->request_recv(&msg[i], 1, i, (1<<30)));
+  }
+  bool done;
+  do {
+    done = true;
+    for (auto& i : receive)
+      if (!mpi__->test(i)) done = false;
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+}
+
 
 void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
   lock_guard<mutex> lock(mpimutex_);

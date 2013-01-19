@@ -151,7 +151,7 @@ void DistCivec::recv_wait() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) this_thread::sleep_for(chrono::microseconds(100));
+    if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 }
 
@@ -171,7 +171,7 @@ void DistCivec::terminate_mpi_accumulate() const {
     int d = done ? 0 : 1; 
     mpi__->allreduce(&d, 1);
     done = d == 0;
-    if (!done) this_thread::sleep_for(chrono::microseconds(100));
+    if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 
   // cancel all MPI calls
@@ -187,26 +187,11 @@ void DistCivec::terminate_mpi_recv() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) this_thread::sleep_for(chrono::microseconds(100));
+    if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 
   // barrier here. But we cannot use mpi__->barrier(), since it locks the mutex
-  // instead we send out messages
-  const int size = mpi__->size();
-  const int rank = mpi__->rank();
-  vector<int> receive;
-  vector<size_t> msg(size);
-  for (int i = 0; i != size; ++i) {
-    if (i == rank) continue;
-    mpi__->request_send(&msg[rank], 1, i, (1<<30));
-    receive.push_back(mpi__->request_recv(&msg[i], 1, i, (1<<30)));
-  }
-  do {
-    done = true;
-    for (auto& i : receive)
-      if (!mpi__->test(i)) done = false;
-    if (!done) this_thread::sleep_for(chrono::microseconds(100));
-  } while (!done);
+  mpi__->soft_barrier();
 
   // cancel all MPI calls
   recv_  = shared_ptr<RecvRequest>();

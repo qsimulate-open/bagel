@@ -41,6 +41,9 @@ namespace bagel {
 
 class MPI_Interface {
   protected:
+    int rank_;
+    int size_;
+
     int cnt_;
 #ifdef HAVE_MPI_H
     // request handles
@@ -63,13 +66,15 @@ class MPI_Interface {
     MPI_Interface(int argc, char** argv);
     ~MPI_Interface();
 
-    int rank() const;
-    int size() const;
+    int rank() const { return rank_; }
+    int size() const { return size_; }
     bool last() const { return rank() == size()-1; }
 
     // collective functions
     // barrier
     void barrier() const;
+    // barrier but with less mutex lock
+    void soft_barrier();
     // sum reduce to the root process
     void reduce(double*, const size_t size, const int root) const;
     // sum reduce and broadcast to each process

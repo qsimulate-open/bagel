@@ -93,7 +93,7 @@ void PutRequest::flush() {
 void PutRequest::periodic() {
   while (thread_alive_) {
     flush();
-    this_thread::sleep_for(chrono::microseconds(100)); 
+    this_thread::sleep_for(sleeptime__); 
   }
 }
 
