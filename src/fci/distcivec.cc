@@ -64,7 +64,6 @@ DistCivec& DistCivec::operator=(const DistCivec& o) {
 void DistCivec::init_mpi_accumulate() const {
   send_  = shared_ptr<SendRequest>(new SendRequest());
   accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
-  accum_->init_request();
 }
 
 
@@ -105,40 +104,17 @@ int DistCivec::get_bstring_buf(double* buf, const size_t a) const {
 }
 
 
-void DistCivec::flush_accumulate() const {
-  assert(accum_ && send_);
-  send_->flush();
-  accum_->flush(); 
-}
-
-
-void DistCivec::recv_wait() const {
-  assert(put_ && recv_);
-  bool done;
-  do {
-    done = recv_->test();
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-}
-
-
 void DistCivec::terminate_mpi_accumulate() const {
   assert(accum_ && send_);
 
   bool done;
   do {
-    accum_->flush();
-    send_->flush();
-    done = send_->test1();
-    done &= send_->test2();
-    done &= accum_->test2();
-    done &= send_->test3();
-    done &= accum_->test3();
-    int d = done ? 0 : 1; 
-    mpi__->allreduce(&d, 1);
-    done = d == 0;
+    done = send_->test();
+    done &= accum_->test();
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
+
+  mpi__->soft_barrier();
 
   // cancel all MPI calls
   send_  = shared_ptr<SendRequest>();

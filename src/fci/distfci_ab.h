@@ -114,7 +114,6 @@ class DistABTask {
         }
         sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
       }
-      sigma->flush_accumulate();
     }
 };
 

@@ -150,7 +150,6 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     }
     // TODO this communication pattern might not be optimal
     sigma->accumulate_bstring_buf(buf, a);
-    sigma->flush_accumulate();
   }
 }
 

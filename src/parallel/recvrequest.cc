@@ -66,6 +66,14 @@ PutRequest::~PutRequest() {
 }
 
 
+void PutRequest::periodic() {
+  while (thread_alive_) {
+    flush();
+    this_thread::sleep_for(sleeptime__); 
+  }
+}
+
+
 void PutRequest::flush() {
   size_t cnt = 0;
   {
@@ -87,14 +95,6 @@ void PutRequest::flush() {
   }
   for (int i = 0; i != cnt; ++i)
     init();
-}
-
-
-void PutRequest::periodic() {
-  while (thread_alive_) {
-    flush();
-    this_thread::sleep_for(sleeptime__); 
-  }
 }
 
 

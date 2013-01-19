@@ -51,12 +51,11 @@ class PutRequest {
     std::shared_ptr<std::thread> server_;
     std::atomic<bool> thread_alive_;
     void flush();
+    void periodic();
 
   public:
     PutRequest(const double* d);
     ~PutRequest();
-
-    void periodic();
 };
 
 class RecvRequest {

@@ -32,6 +32,7 @@
 #include <cassert>
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
+#include <thread>
 #include <mutex>
 
 namespace bagel {
@@ -55,22 +56,28 @@ class SendRequest {
 
     size_t counter_;
 
+    // mutex for protected members of this class
+    std::mutex mutex_;
+
+    // flush thread
+    std::shared_ptr<std::thread> server_;
+    // controls the life time of the flush thread
+    std::atomic<bool> thread_alive_;
+
     // tuple contains: size, if ready, target rank, and buffer 
     std::map<int, std::shared_ptr<Probe> > inactive_;
     std::map<int, std::unique_ptr<double[]> > requests_;
-    std::vector<int> send_;
+
+    void flush();
+    void periodic();
 
   public:
     SendRequest();
+    ~SendRequest();
 
     void request_send(std::unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off);
 
-    void flush();
-
-    // wait for all calls
-    bool test1();
-    bool test2();
-    bool test3();
+    bool test();
 
 };
 
@@ -80,7 +87,8 @@ class AccRequest {
   protected:
 
     double* const data_;
-    std::vector<std::mutex>* mutex_;
+    // mutex for the target data_ (for each alpha string)
+    std::vector<std::mutex>* datamutex_;
 
     struct Prep {
       const size_t size;
@@ -89,25 +97,29 @@ class AccRequest {
       Prep(const size_t s, const size_t o, std::unique_ptr<double[]> b) : size(s), off(o), buf(std::move(b)) {}
     };
 
+    // mutex for protected members of this class
+    std::mutex mutex_;
+
+    // flush thread
+    std::shared_ptr<std::thread> server_;
+    // controls the life time of the flush thread
+    std::atomic<bool> thread_alive_;
+
+    // speculative calls to receive probes
     std::map<int, std::unique_ptr<size_t[]> > calls_;
-    // buffer pointer, size, offset at the target, and buffer
+    // requests to receive data from send_
     std::map<int, std::shared_ptr<Prep> > requests_;
 
-    std::vector<int> send_;
-
+    // one speculative call
     void init();
+    void flush();
+    void periodic();
 
   public:
     AccRequest(double* const d, std::vector<std::mutex>* m);
     ~AccRequest();
 
-    void init_request();
-
-    void flush();
-
-    // wait for all calls
-    bool test2();
-    bool test3();
+    bool test();
 
 };
 

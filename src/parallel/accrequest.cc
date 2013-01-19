@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
+
 #include <src/parallel/accrequest.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
@@ -31,30 +34,39 @@ using namespace std;
 using namespace bagel;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
-
+SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1), thread_alive_(true) {
+  server_ = shared_ptr<thread>(new thread(&SendRequest::periodic, this));
 }
 
+
+SendRequest::~SendRequest() {
+  thread_alive_ = false;
+  server_->join();
+}
+
+
 void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
+  lock_guard<mutex> lock(mutex_);
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
   counter_ += mpi__->size();
-  const int srq = mpi__->request_send(p->size,    4, dest, probe_key__);
+  mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
   auto m = inactive_.insert(make_pair(rrq, p));
-  send_.push_back(srq);
   assert(m.second);
 }
 
-void SendRequest::flush() {
 
-  for (auto i = send_.begin(); i != send_.end(); ) {
-    if (mpi__->test(*i)) {
-      i = send_.erase(i);
-    } else { 
-      ++i;
-    }
+void SendRequest::periodic() {
+  while (thread_alive_) {
+    flush();
+    this_thread::sleep_for(sleeptime__); 
   }
+}
+
+
+void SendRequest::flush() {
+  lock_guard<mutex> lock(mutex_);
 
   // if receive buffer at the destination is created, send the message
   for (auto i = inactive_.begin(); i != inactive_.end(); ) {
@@ -79,36 +91,42 @@ void SendRequest::flush() {
   }
 }
 
-// wait for all calls
-bool SendRequest::test1() {
+
+bool SendRequest::test() {
+  lock_guard<mutex> lock(mutex_);
   bool done = true;
-  for (auto& i : send_)
-    if (!mpi__->test(i)) done = false; 
-  flush();
+  for (auto i = requests_.begin(); i != requests_.end(); ) {
+    if (mpi__->test(i->first)) {
+      i = requests_.erase(i);
+    } else {
+      ++i;
+      done = false;
+    }
+  }
   return done;
 }
 
 
-bool SendRequest::test2() {
-  bool done = true;
-  for (auto& i : inactive_)
-    if (!mpi__->test(i.first)) done = false;
-  flush();
-  return done;
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m), thread_alive_(true) {
+  for (size_t i = 0; i != pool_size__; ++i)
+    init();
+  mpi__->barrier();
+  server_ = shared_ptr<thread>(new thread(&AccRequest::periodic, this));
 }
 
 
-bool SendRequest::test3() {
-  bool done = true;
-  for (auto& i : requests_)
-    if (!mpi__->test(i.first)) done = false;
-  flush();
-  return done;
+AccRequest::~AccRequest() {
+  thread_alive_ = false;
+  server_->join();
+  for (auto& i : calls_)
+    mpi__->cancel(i.first);
 }
 
 
 void AccRequest::init() {
-  // we should compute the number of messnages to receive?
+  lock_guard<mutex> lock(mutex_);
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
@@ -118,78 +136,72 @@ void AccRequest::init() {
 }
 
 
-AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), mutex_(m) {
-}
-
-
-AccRequest::~AccRequest() {
-  for (auto& i : calls_)
-    mpi__->cancel(i.first);
-}
-
-
-void AccRequest::init_request() {
-  for (size_t i = 0; i != pool_size__; ++i)
-    init();
+void AccRequest::periodic() {
+  while (thread_alive_) {
+    flush();
+    this_thread::sleep_for(sleeptime__); 
+  }
 }
 
 
 void AccRequest::flush() {
   size_t cnt = 0;
-  for (auto i = calls_.begin(); i != calls_.end(); ) {
-    // if this has already arrived, create a buffer, and return the address.
-    if (mpi__->test(i->first)) {
-      const int size = i->second[0];
-      const int tag  = i->second[1];
-      const int rank = i->second[2];
-      const int off  = i->second[3];
-      // allocating buffer
-      unique_ptr<double[]> buffer(new double[size]);
-      buffer[0] = tag;
-      // sending back the buffer address
-      const int sq = mpi__->request_send(buffer.get(), 1, rank, tag);
-      const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
-      send_.push_back(sq);
-      auto m = requests_.insert(make_pair(rq, shared_ptr<Prep>(new Prep(size, off, move(buffer)))));
-      assert(m.second);
-      i = calls_.erase(i);
-      ++cnt;
-    } else {
-      ++i;
+  {
+    lock_guard<mutex> lock(mutex_);
+    for (auto i = calls_.begin(); i != calls_.end(); ) {
+      // if this has already arrived, create a buffer, and return the address.
+      if (mpi__->test(i->first)) {
+        const int size = i->second[0];
+        const int tag  = i->second[1];
+        const int rank = i->second[2];
+        const int off  = i->second[3];
+        // allocating buffer
+        unique_ptr<double[]> buffer(new double[size]);
+        buffer[0] = tag;
+        // sending back the buffer address
+        mpi__->request_send(buffer.get(), 1, rank, tag);
+        const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
+        auto m = requests_.insert(make_pair(rq, shared_ptr<Prep>(new Prep(size, off, move(buffer)))));
+        assert(m.second);
+        i = calls_.erase(i);
+        ++cnt;
+      } else {
+        ++i;
+      }
     }
   }
+
   for (int i = 0; i != cnt; ++i)
     init(); 
 
-  for (auto i = requests_.begin(); i != requests_.end(); ) {
-    if (mpi__->test(i->first)) {
-      shared_ptr<Prep> p = i->second;
-      // for the time being, we only consider matrices for mutex
-      assert(p->off % p->size == 0 && mutex_->size() > p->off/p->size);
-      lock_guard<mutex> lock((*mutex_)[p->off/p->size]);
-      // perform daxpy
-      daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
-      i = requests_.erase(i); 
-    } else {
-      ++i;
+  {
+    lock_guard<mutex> lock(mutex_);
+    for (auto i = requests_.begin(); i != requests_.end(); ) {
+      if (mpi__->test(i->first)) {
+        shared_ptr<Prep> p = i->second;
+        // for the time being, we only consider matrices for mutex
+        assert(p->off % p->size == 0 && datamutex_->size() > p->off/p->size);
+        lock_guard<mutex> lock((*datamutex_)[p->off/p->size]);
+        // perform daxpy
+        daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
+        i = requests_.erase(i); 
+      } else {
+        ++i;
+      }
     }
   }
 }
 
 
-bool AccRequest::test2() {
+bool AccRequest::test() {
+  lock_guard<mutex> lock(mutex_);
   bool done = true;
-  for (auto& i : send_)
-    if (!mpi__->test(i)) done = false;
-  flush();
-  return done;
-}
-
-
-bool AccRequest::test3() {
-  bool done = true;
-  for (auto i : requests_)
-    if (!mpi__->test(i.first)) done = false;
-  flush();
+  for (auto i = requests_.begin(); i != requests_.end(); )
+    if (mpi__->test(i->first)) {
+      i = requests_.erase(i);
+    } else {
+      ++i;
+      done = false;
+    } 
   return done;
 }
