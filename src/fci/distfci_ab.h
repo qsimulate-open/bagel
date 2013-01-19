@@ -48,6 +48,8 @@ class DistABTask {
     std::unique_ptr<double[]> buf2;
     std::unique_ptr<double[]> buf3;
 
+    std::vector<int> requests_;
+
   public:
     DistABTask(const std::bitset<nbit__> ast, std::shared_ptr<Determinants> b, std::shared_ptr<Determinants> i, std::shared_ptr<const MOFile> j,
                std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> s)
@@ -63,7 +65,7 @@ class DistABTask {
       for (int i = 0; i != norb_; ++i) {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
-          cc->get_bstring_buf(buf.get()+i*lbs, base_det->lexical<0>(tmp));
+          requests_.push_back(cc->get_bstring_buf(buf.get()+i*lbs, base_det->lexical<0>(tmp)));
         }
       }
 
@@ -71,6 +73,18 @@ class DistABTask {
       buf2 = std::unique_ptr<double[]>(new double[lbt*norb_*norb_]);
       buf3 = std::unique_ptr<double[]>(new double[lbt*norb_*norb_]);
       std::fill_n(buf2.get(), lbt*norb_*norb_, 0.0);
+    }
+
+    bool test() {
+      bool out = true;
+      for (auto i = requests_.begin(); i != requests_.end(); )
+        if (mpi__->test(*i)) {
+          i = requests_.erase(i);
+        } else {
+          ++i;
+          out = false;
+        }
+      return out;
     }
 
     void compute() {

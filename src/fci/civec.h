@@ -195,7 +195,7 @@ class DistCivec {
     void terminate_mpi_accumulate() const;
 
     void init_mpi_recv() const;
-    void get_bstring_buf(double* buf, const size_t a) const; 
+    int get_bstring_buf(double* buf, const size_t a) const; 
     void recv_wait() const;
     void terminate_mpi_recv() const;
 

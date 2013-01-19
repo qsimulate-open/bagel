@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// TODO until GCC fixes this bug
+#define _GLIBCXX_USE_NANOSLEEP
+
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -179,7 +182,11 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
     DistABTask task(astring, base_det, int_det, jop, cc, sigma); 
 
-    cc->recv_wait();
+    bool done;
+    do {
+      done = task.test();
+      if (!done) this_thread::sleep_for(sleeptime__);
+    } while (!done);
 
     task.compute();
   }
@@ -194,8 +201,6 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 // beta-beta block has no communication (and should be cheap)
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
-  Timer timebb(2);
-
   const shared_ptr<Determinants> base_det = space_->finddet(0,0);
   const shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
@@ -208,8 +213,6 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   // (astart:aend, b)
   mytranspose_(cc->local(), lb, la, source.get());
   fill_n(target.get(), la*lb, 0.0);
-
-  timebb.tick_print("transposition");
 
   // preparing Hamiltonian
   const size_t npack = norb_*(norb_-1)/2;
@@ -236,8 +239,6 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     ++sa;
   } while (boost::next_combination(data.begin(), data.begin()+neleb_-2, data.end()));
 
-  timebb.tick_print("prep");
-
   vector<mutex> localmutex(lb);
   // loop over intermediate string
   vector<DistBBTask> tasks;
@@ -253,15 +254,11 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   TaskQueue<DistBBTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
 
-  timebb.tick_print("2-e part");
-
   mytranspose_(target.get(), la, lb, source.get());
   for (size_t i = 0; i != la; ++i) {
     lock_guard<mutex> lock(sigma->cimutex(i));
     daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
   }
-
-  timebb.tick_print("transposition");
 }
 
 

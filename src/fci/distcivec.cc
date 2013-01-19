@@ -61,41 +61,6 @@ DistCivec& DistCivec::operator=(const DistCivec& o) {
 } 
 
 
-#if 0
-void DistCivec::open_window() const {
-  assert(win_ == -1);
-  win_ = mpi__->win_create(local_.get(), alloc_);
-}
-
-
-void DistCivec::close_window() const {
-  assert(win_ != -1);
-  mpi__->win_free(win_);
-  win_ = -1; 
-}
-
-
-void DistCivec::fence() const {
-  assert(win_ != -1);
-  mpi__->win_fence(win_);
-}
-
-
-void DistCivec::get_bstring(double* buf, const size_t a) const {
-  const size_t mpirank = mpi__->rank();
-  size_t rank, off;
-  tie(rank, off) = dist_.locate(a);
-
-  assert(win_ != -1);
-  if (mpirank == rank) {
-    copy_n(local_.get()+off*lenb_, lenb_, buf);
-  } else {
-    mpi__->get(buf, lenb_, rank, off*lenb_, win_); 
-  }
-}
-#endif
-
-
 void DistCivec::init_mpi_accumulate() const {
   send_  = shared_ptr<SendRequest>(new SendRequest());
   accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
@@ -124,17 +89,19 @@ void DistCivec::accumulate_bstring_buf(unique_ptr<double[]>& buf, const size_t a
 }
 
 
-void DistCivec::get_bstring_buf(double* buf, const size_t a) const {
+int DistCivec::get_bstring_buf(double* buf, const size_t a) const {
   assert(put_ && recv_);
   const size_t mpirank = mpi__->rank();
   size_t rank, off;
   tie(rank, off) = dist_.locate(a);
 
+  int out = 0;
   if (mpirank == rank) {
     copy_n(local_.get()+off*lenb_, lenb_, buf);
   } else {
-    recv_->request_recv(buf, lenb_, rank, off*lenb_);
+    out = recv_->request_recv(buf, lenb_, rank, off*lenb_);
   }
+  return out;
 }
 
 
@@ -149,8 +116,7 @@ void DistCivec::recv_wait() const {
   assert(put_ && recv_);
   bool done;
   do {
-    done = recv_->test1();
-    done &= recv_->test2();
+    done = recv_->test();
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 }
@@ -185,8 +151,7 @@ void DistCivec::terminate_mpi_recv() const {
 
   bool done;
   do {
-    done = recv_->test1();
-    done &= recv_->test2();
+    done = recv_->test();
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 

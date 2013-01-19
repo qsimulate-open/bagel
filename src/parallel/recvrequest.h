@@ -86,8 +86,7 @@ class RecvRequest {
     RecvRequest();
     // return mpi tag
     int request_recv(double* target, const size_t size, const int dest, const size_t off);
-    bool test1();
-    bool test2();
+    bool test();
 
 };
 

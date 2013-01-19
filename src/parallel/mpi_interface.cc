@@ -80,7 +80,7 @@ void MPI_Interface::barrier() const {
 
 // barrier without locking mutex all the time
 void MPI_Interface::soft_barrier() {
-  vector<int> receive;
+  vector<int> receive; receive.reserve(size_-1);
   vector<size_t> msg(size_);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
@@ -90,8 +90,13 @@ void MPI_Interface::soft_barrier() {
   bool done;
   do {
     done = true;
-    for (auto& i : receive)
-      if (!mpi__->test(i)) done = false;
+    for (auto i = receive.begin(); i != receive.end(); )
+      if (mpi__->test(*i)) {
+        i = receive.erase(i);
+      } else {
+        ++i;
+        done = false;
+      }
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 }

@@ -120,21 +120,7 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
 }
 
 
-bool RecvRequest::test1() {
-  lock_guard<mutex> lock(block_);
-  bool done = true;
-  for (auto i = probe_.begin(); i != probe_.end(); ) {
-    if (mpi__->test(*i)) {
-      i = probe_.erase(i);
-    } else {
-      done = false;
-      ++i;
-    }
-  }
-  return done;
-}
-
-bool RecvRequest::test2() {
+bool RecvRequest::test() {
   lock_guard<mutex> lock(block_);
   bool done = true;
   for (auto i = request_.begin(); i != request_.end(); ) {
