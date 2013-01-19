@@ -321,16 +321,12 @@ void MPI_Interface::cancel(const int rq) {
 
 
 bool MPI_Interface::test(const int rq) {
+  lock_guard<mutex> lock(mpimutex_);
   bool out = true;
 #ifdef HAVE_MPI_H
-  vector<MPI_Request> r;
-  {
-  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
-  r = i->second;
-  }
-  for (auto& j : r) {
+  for (auto& j : i->second) {
     int b;
     MPI_Test(&j, &b, MPI_STATUS_IGNORE);
     out &= b;

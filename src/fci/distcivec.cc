@@ -146,12 +146,6 @@ void DistCivec::flush_accumulate() const {
 }
 
 
-void DistCivec::flush_recv() const {
-  assert(put_);
-//put_->flush();
-}
-
-
 void DistCivec::recv_wait() const {
   assert(put_ && recv_);
   bool done;
@@ -194,10 +188,11 @@ void DistCivec::terminate_mpi_recv() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    if (!done) this_thread::sleep_for(chrono::milliseconds(1));
+    int d = done ? 0 : 1; 
+    mpi__->allreduce(&d, 1);
+    done = d == 0;
+    if (!done) this_thread::sleep_for(chrono::microseconds(100));
   } while (!done);
-
-  mpi__->barrier();
 
   // cancel all MPI calls
   recv_  = shared_ptr<RecvRequest>();

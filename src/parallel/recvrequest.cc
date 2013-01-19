@@ -36,9 +36,7 @@ using namespace bagel;
 
 
 // PutRequest receives probe and returns data
-PutRequest::PutRequest(const double* d) : data_(d) { 
-  server_ = shared_ptr<thread>(new thread(&PutRequest::periodic, this));
-  thread_alive_ = true;
+PutRequest::PutRequest(const double* d) : data_(d), thread_alive_(true) {
 }
 
 
@@ -46,6 +44,7 @@ void PutRequest::init_request() {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
   mpi__->barrier();
+  server_ = shared_ptr<thread>(new thread(&PutRequest::periodic, this));
 }
 
 
@@ -73,24 +72,26 @@ PutRequest::~PutRequest() {
 
 
 void PutRequest::flush() {
-  lock_guard<mutex> lock(block_);
   size_t cnt = 0;
-  for (auto i = calls_.begin(); i != calls_.end(); ) {
-    // if this has already arrived, send data 
-    if (mpi__->test(i->first)) {
-      const int size = i->second[0];
-      const int tag  = i->second[1];
-      const int rank = i->second[2];
-      const int off  = i->second[3];
-      mpi__->request_send(data_+off, size, rank, tag);
-      i = calls_.erase(i);
-      ++cnt;
-    } else {
-      ++i;
+  {
+    lock_guard<mutex> lock(block_);
+    for (auto i = calls_.begin(); i != calls_.end(); ) {
+      // if this has already arrived, send data 
+      if (mpi__->test(i->first)) {
+        const int size = i->second[0];
+        const int tag  = i->second[1];
+        const int rank = i->second[2];
+        const int off  = i->second[3];
+        mpi__->request_send(data_+off, size, rank, tag);
+        i = calls_.erase(i);
+        ++cnt;
+      } else {
+        ++i;
+      }
     }
   }
   for (int i = 0; i != cnt; ++i)
-    init(); 
+    init();
 }
 
 

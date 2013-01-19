@@ -49,7 +49,7 @@ class PutRequest {
     std::mutex block_;
 
     std::shared_ptr<std::thread> server_;
-    bool thread_alive_;
+    std::atomic<bool> thread_alive_;
     void flush();
 
   public:
