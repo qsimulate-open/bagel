@@ -33,7 +33,7 @@
 using namespace std;
 using namespace bagel;
 
-DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), win_(-1), dist_(lena_, mpi__->size()) {
+DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()) {
   tie(astart_, aend_) = dist_.range(mpi__->rank());
 
   alloc_ = size();
@@ -44,7 +44,7 @@ DistCivec::DistCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det-
 }
 
 
-DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), win_(-1), dist_(lena_, mpi__->size()) {
+DistCivec::DistCivec(const DistCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), dist_(lena_, mpi__->size()) {
   tie(astart_, aend_) = dist_.range(mpi__->rank());
   alloc_ = size();
   local_ = unique_ptr<double[]>(new double[alloc_]);
@@ -106,7 +106,6 @@ void DistCivec::init_mpi_accumulate() const {
 void DistCivec::init_mpi_recv() const {
   put_   = shared_ptr<PutRequest>(new PutRequest(local_.get()));
   recv_  = shared_ptr<RecvRequest>(new RecvRequest());
-  put_->init_request();
 }
 
 
@@ -188,9 +187,24 @@ void DistCivec::terminate_mpi_recv() const {
   do {
     done = recv_->test1();
     done &= recv_->test2();
-    int d = done ? 0 : 1; 
-    mpi__->allreduce(&d, 1);
-    done = d == 0;
+    if (!done) this_thread::sleep_for(chrono::microseconds(100));
+  } while (!done);
+
+  // barrier here. But we cannot use mpi__->barrier(), since it locks the mutex
+  // instead we send out messages
+  const int size = mpi__->size();
+  const int rank = mpi__->rank();
+  vector<int> receive;
+  vector<size_t> msg(size);
+  for (int i = 0; i != size; ++i) {
+    if (i == rank) continue;
+    mpi__->request_send(&msg[rank], 1, i, (1<<30));
+    receive.push_back(mpi__->request_recv(&msg[i], 1, i, (1<<30)));
+  }
+  do {
+    done = true;
+    for (auto& i : receive)
+      if (!mpi__->test(i)) done = false;
     if (!done) this_thread::sleep_for(chrono::microseconds(100));
   } while (!done);
 

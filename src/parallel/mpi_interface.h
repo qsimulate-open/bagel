@@ -57,7 +57,7 @@ class MPI_Interface {
     const static size_t bsize = 100000000LU;
 
     // mutex for isend and irecv
-    std::mutex mpimutex_;
+    mutable std::mutex mpimutex_;
 
   public:
     MPI_Interface(int argc, char** argv);

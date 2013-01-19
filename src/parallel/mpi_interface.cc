@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 
 MPI_Interface::MPI_Interface(int argc, char** argv)
- : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0) {
+ : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
 #ifdef HAVE_MPI_H
 #if 0
   int provided;
@@ -43,8 +43,8 @@ MPI_Interface::MPI_Interface(int argc, char** argv)
   MPI_Init(&argc, &argv);
 #endif
 #ifdef HAVE_SCALAPACK
-  tie(nprow_, npcol_) = numgrid(mpi__->size());
-  if (mpi__->rank() == 0)
+  tie(nprow_, npcol_) = numgrid(size());
+  if (rank() == 0)
     cout << "  * process grid (" << nprow_ << ", " << npcol_ << ") will be used" << endl;
   sl_init_(context_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
@@ -66,6 +66,7 @@ MPI_Interface::~MPI_Interface() {
 
 
 int MPI_Interface::rank() const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -77,6 +78,7 @@ int MPI_Interface::rank() const {
 
 
 int MPI_Interface::size() const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   int size;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -88,12 +90,14 @@ int MPI_Interface::size() const {
 
 
 void MPI_Interface::barrier() const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
 
 void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root, MPI_COMM_WORLD);
 #endif
@@ -101,6 +105,7 @@ void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
 
 
 void MPI_Interface::allreduce(double* a, const size_t size) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
@@ -108,6 +113,7 @@ void MPI_Interface::allreduce(double* a, const size_t size) const {
 
 
 void MPI_Interface::allreduce(int* a, const size_t size) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #endif
@@ -115,6 +121,7 @@ void MPI_Interface::allreduce(int* a, const size_t size) const {
 
 
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
@@ -122,6 +129,7 @@ void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 
 
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
 #endif
@@ -129,6 +137,7 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 
 
 void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
 #endif
@@ -136,6 +145,7 @@ void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int r
 
 
 void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // sometimes we need to broadcast const objects for consistency...
   double* aa = const_cast<double*>(a);
@@ -145,6 +155,7 @@ void MPI_Interface::broadcast_force(const double* a, const size_t size, const in
 
 
 void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
@@ -153,6 +164,7 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 
 
 void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   // I hate const_cast. Blame the MPI C binding
@@ -162,6 +174,7 @@ void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* re
 
 
 void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
@@ -170,6 +183,7 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 
 
 int MPI_Interface::win_create(double* buf, const size_t size) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Win win;
   MPI_Win_create(static_cast<void*>(buf), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
@@ -181,6 +195,7 @@ int MPI_Interface::win_create(double* buf, const size_t size) {
 }
 
 void MPI_Interface::win_fence(const int win) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
@@ -190,6 +205,7 @@ void MPI_Interface::win_fence(const int win) {
 
 
 void MPI_Interface::win_free(const int win) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
@@ -200,6 +216,7 @@ void MPI_Interface::win_free(const int win) {
 
 
 void MPI_Interface::get(double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
@@ -209,6 +226,7 @@ void MPI_Interface::get(double* buf, const size_t len, const int rank, const siz
 
 
 void MPI_Interface::put(const double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
@@ -218,6 +236,7 @@ void MPI_Interface::put(const double* buf, const size_t len, const int rank, con
 
 
 void MPI_Interface::accumulate(const double* buf, const size_t len, const int rank, const size_t disp, const int win) {
+  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");

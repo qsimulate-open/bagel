@@ -37,10 +37,6 @@ using namespace bagel;
 
 // PutRequest receives probe and returns data
 PutRequest::PutRequest(const double* d) : data_(d), thread_alive_(true) {
-}
-
-
-void PutRequest::init_request() {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
   mpi__->barrier();
@@ -53,7 +49,7 @@ void PutRequest::init() {
   // receives
   unique_ptr<size_t[]> buf(new size_t[4]);
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__*2);
+  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key2__);
   {
     lock_guard<mutex> lock(block_);
     auto m = calls_.insert(make_pair(rq, move(buf)));
@@ -63,7 +59,6 @@ void PutRequest::init() {
 
 
 PutRequest::~PutRequest() {
-  mpi__->barrier();
   thread_alive_ = false;
   server_->join();
   for (auto& i : calls_)
@@ -112,10 +107,11 @@ RecvRequest::RecvRequest() : counter_(probe_key2__ + mpi__->rank() + 1) {
 
 
 int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off) {
+  lock_guard<mutex> lock(block_);
   // sending size
   shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
   counter_ += mpi__->size();
-  const int srq = mpi__->request_send(p->size, 4, dest, probe_key__*2);
+  const int srq = mpi__->request_send(p->size, 4, dest, probe_key2__);
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
   auto m = request_.insert(make_pair(rrq, p));
@@ -125,6 +121,7 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
 
 
 bool RecvRequest::test1() {
+  lock_guard<mutex> lock(block_);
   bool done = true;
   for (auto i = probe_.begin(); i != probe_.end(); ) {
     if (mpi__->test(*i)) {
@@ -138,6 +135,7 @@ bool RecvRequest::test1() {
 }
 
 bool RecvRequest::test2() {
+  lock_guard<mutex> lock(block_);
   bool done = true;
   for (auto i = request_.begin(); i != request_.end(); ) {
     if (mpi__->test(i->first)) {

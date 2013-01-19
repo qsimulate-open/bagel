@@ -56,7 +56,6 @@ class PutRequest {
     PutRequest(const double* d);
     ~PutRequest();
 
-    void init_request();
     void periodic();
 };
 
@@ -80,6 +79,8 @@ class RecvRequest {
     // tuple contains: size, if ready, target rank, and buffer 
     std::map<int, std::shared_ptr<Probe> > request_;
     std::vector<int> probe_;
+
+    std::mutex block_;
 
   public:
     RecvRequest();
