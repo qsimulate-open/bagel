@@ -68,7 +68,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // one electron part
   double core_energy;
-  unique_ptr<double[]> buf1e;
+  shared_ptr<const Matrix> buf1e;
   tie(buf1e, core_energy) = compute_mo1e(nstart, nfence);
 
   // two electron part.
@@ -80,7 +80,7 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 }
 
 
-void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) {
+void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2e) {
 
   // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
@@ -120,7 +120,7 @@ void MOFile::compress(unique_ptr<double[]>& buf1e, unique_ptr<double[]>& buf2e) 
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
-      mo1e_[ij] = buf1e[j+i*nocc];
+      mo1e_[ij] = buf1e->element(j,i);
       if (!hz_) {
         for (int k = 0; k != nocc; ++k)
           mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
@@ -136,13 +136,12 @@ void MOFile::update_1ext_ints(const vector<double>& coeff) {
 }
 
 
-tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const int nfence) {
+tuple<shared_ptr<const Matrix>, double> Jop::compute_mo1e(const int nstart, const int nfence) {
 
   const int ncore = nstart;
   double core_energy = 0.0;
 
   shared_ptr<Matrix> fock0(new Matrix(*ref_->hcore()));
-  const double* cdata = coeff_->data() + nstart*nbasis_;
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
     shared_ptr<Matrix> den = coeff_->form_density_rhf(ncore);
@@ -153,13 +152,10 @@ tuple<unique_ptr<double[]>, double> Jop::compute_mo1e(const int nstart, const in
   fock0->fill_upper();
 
   Matrix aobuff(nbasis_, nbasis_);
-  dgemm_("n","n",nbasis_,nocc_,nbasis_,1.0,fock0->data(),nbasis_,cdata,nbasis_,0.0,aobuff.data(),nbasis_);
+  shared_ptr<const Matrix> ocoeff = coeff_->slice(nstart, nfence);
+  shared_ptr<const Matrix> mat(new Matrix(*ocoeff % *fock0 * *ocoeff));
 
-  unique_ptr<double[]> buf(new double[nocc_*nocc_]);
-  unique_ptr<double[]> out(new double[nocc_*nocc_]);
-  dgemm_("t","n",nocc_,nocc_,nbasis_,1.0,cdata,nbasis_,aobuff.data(),nbasis_,0.0,out.get(),nocc_);
-
-  return make_tuple(move(out), core_energy);
+  return make_tuple(mat, core_energy);
 }
 
 

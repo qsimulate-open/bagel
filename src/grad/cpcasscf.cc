@@ -205,19 +205,19 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
           for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
             Htilde2[ll+nact*(kk+nact*(jj+nact*ii))] = buf2[l+nocca*(k+nocca*(j+nocca*i))];
 
-    unique_ptr<double[]> Htilde1(new double[nact*nact]);
+    shared_ptr<Matrix> Htilde1(new Matrix(nact,nact, true));
     for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
       for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
-        Htilde1[jj+nact*ii] = htilde->element(j,i);
+        (*Htilde1)[jj+nact*ii] = htilde->element(j,i);
         for (int k = 0; k != nclosed; ++k)
-          Htilde1[jj+nact*ii] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
+          (*Htilde1)[jj+nact*ii] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
       }
     }
     // factor of 2 in the equation
-    dscal_(nact*nact,           2.0, Htilde1.get(), 1);
+    *Htilde1 *= 2.0;
     dscal_(nact*nact*nact*nact, 2.0, Htilde2.get(), 1);
 
-    shared_ptr<MOFile> top(new Htilde(ref_, nclosed, nocca, move(Htilde1), move(Htilde2)));
+    shared_ptr<MOFile> top(new Htilde(ref_, nclosed, nocca, Htilde1, move(Htilde2)));
     vector<int> tmp(z1->ij(), 0);
     shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
 
