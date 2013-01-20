@@ -85,13 +85,13 @@ void MPI_Interface::soft_barrier() {
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
     request_send(&msg[rank_], 1, i, (1<<30));
-    receive.push_back(mpi__->request_recv(&msg[i], 1, i, (1<<30)));
+    receive.push_back(request_recv(&msg[i], 1, i, (1<<30)));
   }
   bool done;
   do {
     done = true;
     for (auto i = receive.begin(); i != receive.end(); )
-      if (mpi__->test(*i)) {
+      if (test(*i)) {
         i = receive.erase(i);
       } else {
         ++i;

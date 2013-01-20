@@ -35,6 +35,7 @@ using namespace bagel;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
+  mpi__->soft_barrier();
   turn_on();
   mpi__->soft_barrier();
 }
@@ -43,6 +44,7 @@ SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
 SendRequest::~SendRequest() {
   mpi__->soft_barrier();
   turn_off();
+  mpi__->soft_barrier();
 }
 
 
@@ -96,7 +98,7 @@ bool SendRequest::test() {
 AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
-  mpi__->barrier();
+  mpi__->soft_barrier();
   turn_on();
   mpi__->soft_barrier();
 }
@@ -105,6 +107,7 @@ AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_
 AccRequest::~AccRequest() {
   mpi__->soft_barrier();
   turn_off();
+  mpi__->soft_barrier();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
@@ -130,10 +133,10 @@ void AccRequest::flush() {
     for (auto i = calls_.begin(); i != calls_.end(); ) {
       // if this has already arrived, create a buffer, and return the address.
       if (mpi__->test(i->first)) {
-        const int size = i->second[0];
-        const int tag  = i->second[1];
-        const int rank = i->second[2];
-        const int off  = i->second[3];
+        const size_t size = i->second[0];
+        const size_t tag  = i->second[1];
+        const size_t rank = i->second[2];
+        const size_t off  = i->second[3];
         // allocating buffer
         unique_ptr<double[]> buffer(new double[size]);
         buffer[0] = tag;
