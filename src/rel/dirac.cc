@@ -47,10 +47,15 @@ void Dirac::compute() {
   // make a relativistic version of Coeff class (c.f. coeff.h in src/scf)
   // only implement form_density_rhf..
   const int nele = geom_->nele();
-//shared_ptr<ZCoeff> coeff(new ZMatrix(*s12 * interm));
-//shared_ptr<ZMatrix> density = coeff->form_density_rhf(geom_->nele());
+  const int row = geom_->nbasis();
+  const int column = 2 * geom_->nbasis();
+  
+  //coefficient matrix slice for dfock
+  array<shared_ptr<ZMatrix>, 4> ocoeff;
+  for (int i = 0; i != 4; ++i)
+    ocoeff[i] = coeff->get_submatrix(i*row, column, row, nele);
 
-//const energy = hcore->ddot(*density);
+  //const energy = hcore->ddot(*density);
 
   print_eig(eig);
 }

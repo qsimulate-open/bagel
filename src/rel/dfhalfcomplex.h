@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfock.h
+// Filename: dfhalfcomplex.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,35 +24,34 @@
 //
 
 
-#ifndef __SRC_REL_DFOCK_H
-#define __SRC_REL_DFOCK_H
+#ifndef __SRC_REL_DFHALFCOMPLEX_H
+#define __SRC_REL_DFHALFCOMPLEX_H
 
 #include <memory>
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/scf/geometry.h>
 #include <src/util/zmatrix.h>
+#include <src/util/matrix.h>
 #include <src/df/df.h>
-#include <src/rel/dfhalfcomplex.h>
 
 namespace bagel {
 
-class DFock : public ZMatrix {
+class DFHalfComplex {
   protected:
-    std::array<std::shared_ptr<Matrix>, 2> rdata_;
-    std::array<std::shared_ptr<Matrix>, 2> idata_;
-    //std::vector<std::shared_ptr<Matrix> > rsmall_data_;
-    //std::vector<std::shared_ptr<Matrix> > ismall_data_;
-    std::shared_ptr<const Geometry> geom_;
-    void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
+    std::array<std::shared_ptr<DFHalfDist>, 2> dfdata_;
+    std::array<std::shared_ptr<Matrix>, 2> data_;
+    std::pair<const int, const int> coord_;
 
   public:
-    DFock(const std::shared_ptr<const Geometry> a, 
-          const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : ZMatrix(a->nbasis(), a->nbasis()), geom_(a) {
-       two_electron_part(ocoeff, rhf, scale_ex);
-    }
+    DFHalfComplex(const std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, 
+                  const bool, std::pair<const int, const int>);
+
+    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfdata_; }
+    std::shared_ptr<DFHalfDist> get_real() { return dfdata_[0]; }
+    std::shared_ptr<DFHalfDist> get_imag() { return dfdata_[1]; }
+    std::pair<const int, const int> get_coord() { return coord_; }
+    //std::pair<std::pair<const int, const int>, std::shared_ptr<ZMatrix> > form_2index_complex(std::shared_ptr<const DFHalfComplex>);
 
 //    std::shared_ptr<Reference> conv_to_ref() const override;
 

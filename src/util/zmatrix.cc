@@ -578,3 +578,11 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
   }
   return out;
 }
+
+shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
+  shared_ptr<ZMatrix> out(new ZMatrix(nsize, msize));
+  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
+    copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
+  return out;
+}
+
