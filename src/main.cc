@@ -56,6 +56,7 @@
 #include <src/util/localization.h>
 #include <src/util/timer.h>
 #include <src/rel/dirac.h>
+#include <src/transp/transp.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
 #include <src/smith/CAS_all_active.h>
@@ -234,6 +235,11 @@ int main(int argc, char** argv) {
         std::shared_ptr<Opt<MP2Grad> > opt(new Opt<MP2Grad>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
+
+      } else if (method == "transp") {
+
+        std::shared_ptr<Transp> tran(new Transp(iter->second, geom, ref));
+        tran->compute();
 
       } else if (method == "smith") {
 
