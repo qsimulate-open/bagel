@@ -62,13 +62,16 @@ void Transp::compute() {
   // Also if you add an input keyword "nstate = 10" within transp, you can change the numer of states
   {
     // all of them are singlet
-    KnowlesHandy g(multimap<string, string>(), ref_, 18, 6, nstate_);
+    multimap<string, string> options;
+    options.insert(make_pair("thresh", "1.0e-15"));
+    KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }
   {
     // all of them are triplet
     multimap<string, string> options;
     options.insert(make_pair("nspin", "2"));
+    options.insert(make_pair("thresh", "1.0e-15"));
     KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }
@@ -78,6 +81,7 @@ void Transp::compute() {
     multimap<string, string> options;
     options.insert(make_pair("charge", "1"));
     options.insert(make_pair("nspin", "1"));
+    options.insert(make_pair("thresh", "1.0e-15"));
     KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }
