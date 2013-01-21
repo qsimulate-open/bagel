@@ -91,8 +91,8 @@ class MPI_Interface {
     void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
 
     // one-sided communication with Isend, Irecv
-    int request_send(const double* sbuf, const size_t size, const int dest, const int tag = -1);
-    int request_send(const size_t* sbuf, const size_t size, const int dest, const int tag = -1);
+    int request_send(const double* sbuf, const size_t size, const int dest, const int tag);
+    int request_send(const size_t* sbuf, const size_t size, const int dest, const int tag);
     int request_recv(double* rbuf, const size_t size, const int source = -1, const int tag = -1);
     int request_recv(size_t* rbuf, const size_t size, const int source = -1, const int tag = -1);
     void wait(const int rq);
