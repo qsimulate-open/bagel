@@ -408,10 +408,6 @@ Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> g
 }
 
 
-Geometry::~Geometry() {
-}
-
-
 void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom> > atoms, const multimap<string, string> geominfo){
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
