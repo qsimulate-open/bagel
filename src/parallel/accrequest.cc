@@ -35,16 +35,12 @@ using namespace bagel;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
 SendRequest::~SendRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
 }
 
 
@@ -60,7 +56,7 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
 }
 
 
-void SendRequest::flush() {
+void SendRequest::flush_() {
   lock_guard<mutex> lock(mutex_);
 
   // if receive buffer at the destination is created, send the message
@@ -98,16 +94,12 @@ bool SendRequest::test() {
 AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
 AccRequest::~AccRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
@@ -126,7 +118,7 @@ void AccRequest::init() {
 }
 
 
-void AccRequest::flush() {
+void AccRequest::flush_() {
   size_t cnt = 0;
   {
     lock_guard<mutex> lock(mutex_);

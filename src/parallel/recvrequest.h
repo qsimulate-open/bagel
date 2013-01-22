@@ -52,7 +52,7 @@ class PutRequest : public ServerFlush {
     // this mutex is for MPI calls
     std::mutex block_;
 
-    void flush() override;
+    void flush_() override;
 
   public:
     PutRequest(const double* d);

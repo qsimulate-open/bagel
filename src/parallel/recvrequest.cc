@@ -35,9 +35,7 @@ using namespace bagel;
 PutRequest::PutRequest(const double* d) : data_(d) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
@@ -56,15 +54,13 @@ void PutRequest::init() {
 
 
 PutRequest::~PutRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
 
 
-void PutRequest::flush() {
+void PutRequest::flush_() {
   size_t cnt = 0;
   {
     lock_guard<mutex> lock(block_);

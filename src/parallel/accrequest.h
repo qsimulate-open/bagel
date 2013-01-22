@@ -63,7 +63,7 @@ class SendRequest : public ServerFlush {
     std::map<int, std::shared_ptr<Probe> > inactive_;
     std::map<int, std::shared_ptr<Probe> > requests_;
 
-    void flush() override;
+    void flush_() override;
 
   public:
     SendRequest();
@@ -106,7 +106,7 @@ class AccRequest : public ServerFlush {
 
     // one speculative call
     void init();
-    void flush();
+    void flush_();
 
   public:
     AccRequest(double* const d, std::vector<std::mutex>* m);

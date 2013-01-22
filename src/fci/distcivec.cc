@@ -111,10 +111,16 @@ void DistCivec::terminate_mpi_accumulate() const {
   do {
     done = send_->test();
     done &= accum_->test();
+#ifndef USE_SERVER_THREAD
+    // in case no thread is running behind, we need to cycle this to flush
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0;
+    if (!done) send_->flush();
+    if (!done) accum_->flush();
+#endif
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
-
-  mpi__->soft_barrier();
 
   // cancel all MPI calls
   send_  = shared_ptr<SendRequest>();
@@ -128,11 +134,15 @@ void DistCivec::terminate_mpi_recv() const {
   bool done;
   do {
     done = recv_->test();
+#ifndef USE_SERVER_THREAD
+    // in case no thread is running behind, we need to cycle this to flush
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0; 
+    if (!done) put_->flush();
+#endif
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
-
-  // barrier here. But we cannot use mpi__->barrier(), since it locks the mutex
-  mpi__->soft_barrier();
 
   // cancel all MPI calls
   recv_  = shared_ptr<RecvRequest>();
