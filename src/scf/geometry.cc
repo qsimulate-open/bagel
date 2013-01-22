@@ -33,7 +33,6 @@
 #include <stdexcept>
 #include <chrono>
 #include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
 #include <src/rysint/eribatch.h>
 #include <src/scf/geometry.h>
 #include <src/io/moldenin.h>
@@ -41,6 +40,7 @@
 #include <src/util/constants.h>
 #include <src/util/quatern.h>
 #include <src/rysint/libint.h>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -93,7 +93,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
         const string z_str(what[4].first, what[4].second);
         const double prefac = angstrom ? ang2bohr__ : 1.0 ;
         array<double,3> positions
-          = {{boost::lexical_cast<double>(x_str)*prefac, boost::lexical_cast<double>(y_str)*prefac, boost::lexical_cast<double>(z_str)*prefac}};
+          = {{lexical_cast<double>(x_str)*prefac, lexical_cast<double>(y_str)*prefac, lexical_cast<double>(z_str)*prefac}};
         if (aname != "q") {
           // standard atom construction
           auto next = what[0].second;
@@ -110,7 +110,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
           const boost::regex charge_reg(",\\s*([0-9\\.-]+)\\s*\\)");
           if (regex_search(next, end, what, charge_reg)) {
             const string charge_str(what[1].first, what[1].second);
-            const double charge = boost::lexical_cast<double>(charge_str);
+            const double charge = lexical_cast<double>(charge_str);
             RefAtom catom(new Atom(spherical_, aname, positions, charge));
             atoms_.push_back(catom);
           } else {

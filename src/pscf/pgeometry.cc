@@ -31,8 +31,8 @@
 #include <iomanip>
 #include <stdexcept>
 #include <regex>
-#include <boost/lexical_cast.hpp>
 #include <cmath>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -81,28 +81,28 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
       foundL = regex_search(start, end, what, regnumber);
       if (foundL) {
         string tmp_str(what[0].first, what[0].second);
-        L_ = boost::lexical_cast<int>(tmp_str);
+        L_ = lexical_cast<int>(tmp_str);
       }
     } else if (regex_search(start, end, what, regS)) {
       start = what[0].second;
       foundS = regex_search(start, end, what, regnumber);
       if (foundS) {
         string tmp_str(what[0].first, what[0].second);
-        S_ = boost::lexical_cast<int>(tmp_str);
+        S_ = lexical_cast<int>(tmp_str);
       }
     } else if (regex_search(start, end, what, regK)) {
       start = what[0].second;
       foundK = regex_search(start, end, what, regnumber);
       if (foundK) {
         string tmp_str(what[0].first, what[0].second);
-        K_ = boost::lexical_cast<int>(tmp_str);
+        K_ = lexical_cast<int>(tmp_str);
       }
     } else if (regex_search(start, end, what, rega)) {
       start = what[0].second;
       founda = regex_search(start, end, what, regdouble);
       if (founda) {
         string tmp_str(what[0].first, what[0].second);
-        A_ = boost::lexical_cast<double>(tmp_str);
+        A_ = lexical_cast<double>(tmp_str);
       }
     } else {
       break;
