@@ -40,7 +40,11 @@ namespace bagel {
 // receives using MPI_irecv and accumulate to the local destination
 class PutRequest : public ServerFlush {
   protected:
-    std::map<int, std::unique_ptr<size_t[]> > calls_;
+    struct Call {
+      std::unique_ptr<size_t[]> buf;
+      Call() : buf(new size_t[4]) { }
+    };
+    std::map<int, std::shared_ptr<Call> > calls_;
 
     void init();
     const double* const data_;
