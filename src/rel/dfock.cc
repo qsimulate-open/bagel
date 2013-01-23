@@ -98,8 +98,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   small_half[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,0), make_pair(1,1)));
 
   // XY
-  small_half[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,1), make_pair(0,0)));
-  small_half[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,1), make_pair(1,1)));
+  small_half[2] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,1), make_pair(0,0)));
+  small_half[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,1), make_pair(1,1)));
 
   // XZ
   small_half[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,2), make_pair(0,1)));
