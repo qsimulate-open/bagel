@@ -24,13 +24,13 @@
 //
 
 #include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
 #include <src/osint/overlapbatch.h>
 #include <src/util/mixedbasis.h>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -185,7 +185,7 @@ shared_ptr<const Reference> Reference::set_active(string active_string) const {
 
   while( boost::regex_search(start, end, what, r) ) {
     string int_string(what[1].first, what[1].second);
-    active_set.insert(boost::lexical_cast<int>(int_string) - 1);
+    active_set.insert(lexical_cast<int>(int_string) - 1);
     start = what[0].second;
   }
 

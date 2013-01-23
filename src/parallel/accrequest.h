@@ -61,9 +61,9 @@ class SendRequest : public ServerFlush {
 
     // tuple contains: size, if ready, target rank, and buffer 
     std::map<int, std::shared_ptr<Probe> > inactive_;
-    std::map<int, std::unique_ptr<double[]> > requests_;
+    std::map<int, std::shared_ptr<Probe> > requests_;
 
-    void flush() override;
+    void flush_() override;
 
   public:
     SendRequest();
@@ -84,6 +84,11 @@ class AccRequest : public ServerFlush {
     // mutex for the target data_ (for each alpha string)
     std::vector<std::mutex>* datamutex_;
 
+    struct Call {
+      std::unique_ptr<size_t[]> buf;
+      Call() : buf(new size_t[4]) { }
+    };
+
     struct Prep {
       const size_t size;
       const size_t off;
@@ -95,13 +100,13 @@ class AccRequest : public ServerFlush {
     std::mutex mutex_;
 
     // speculative calls to receive probes
-    std::map<int, std::unique_ptr<size_t[]> > calls_;
+    std::map<int, std::shared_ptr<Call> > calls_;
     // requests to receive data from send_
     std::map<int, std::shared_ptr<Prep> > requests_;
 
     // one speculative call
     void init();
-    void flush();
+    void flush_();
 
   public:
     AccRequest(double* const d, std::vector<std::mutex>* m);

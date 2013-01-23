@@ -101,7 +101,6 @@ class Geometry {
     Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry> >);
-    ~Geometry();
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
     const std::vector<std::shared_ptr<const Atom> >& atoms() const { return atoms_; }

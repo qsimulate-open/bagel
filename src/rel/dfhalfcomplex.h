@@ -42,16 +42,21 @@ class DFHalfComplex {
     std::array<std::shared_ptr<DFHalfDist>, 2> dfdata_;
     std::array<std::shared_ptr<Matrix>, 2> data_;
     std::pair<const int, const int> coord_;
+    std::pair<const int, const int> basis_; 
+    int dim_;
 
   public:
     DFHalfComplex(const std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, 
-                  const bool, std::pair<const int, const int>);
+                  const bool, std::pair<const int, const int>, std::pair<const int, const int>);
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfdata_; }
     std::shared_ptr<DFHalfDist> get_real() { return dfdata_[0]; }
     std::shared_ptr<DFHalfDist> get_imag() { return dfdata_[1]; }
-    std::pair<const int, const int> get_coord() { return coord_; }
-    //std::pair<std::pair<const int, const int>, std::shared_ptr<ZMatrix> > form_2index_complex(std::shared_ptr<const DFHalfComplex>);
+    std::pair<const int, const int> coord() { return coord_; }
+    std::pair<const int, const int> basis() { return basis_; }
+
+    std::array<std::shared_ptr<Matrix>, 2> form_2index_complex(std::shared_ptr<DFHalfComplex>);
+    std::pair<const int, const double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
 
 //    std::shared_ptr<Reference> conv_to_ref() const override;
 

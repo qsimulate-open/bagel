@@ -28,12 +28,27 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <boost/algorithm/string.hpp>
 #include <src/util/input.h>
 #include <boost/regex.hpp>
 
 using namespace std;
 using namespace bagel;
+
+static vector<string> split(const string& s, const string& delimiters) {
+  vector<string> out;
+  size_t current;
+  size_t next = -1;
+  do {
+    current = next + 1;
+    next = s.find_first_of(delimiters, current);
+    const string now = s.substr(current, next - current);
+    out.push_back(now);
+  } while (next != std::string::npos);
+  return out;
+}
+static string &ltrim(string &s) { s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace)))); return s; }
+static string &rtrim(string &s) { s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end()); return s; }
+static string &trim(string &s) { return ltrim(rtrim(s)); }
 
 InputData::InputData(const string filename) : inputfile_(filename) {
   ifstream ifs;
@@ -84,31 +99,27 @@ InputData::InputData(const string filename) : inputfile_(filename) {
   }
 
   // first split with { and }
-  vector<string> blocks;
-  vector<string> pairs;
-  vector<string> lines;
   if (content.find("}") == string::npos) throw runtime_error("Check your input format");
-  split(blocks, content, boost::is_any_of("}"));
+  vector<string> blocks = split(content, "}");
   for (auto& it : blocks) {
     if (it.size() == 0) continue;
-    split(pairs, it, boost::is_any_of("{"));
+    vector<string> pairs = split(it, "{");
     if (pairs[1].size() > 0) {
-      boost::trim(pairs[0]);
+      trim(pairs[0]);
       string tag = pairs[0];
       transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
 
-      split(lines, pairs[1], boost::is_any_of(";"));
+      vector<string> lines = split(pairs[1], ";");
       multimap<string, string> tmp;
       for (auto& i : lines) {
         if (i.size() > 0) {
-          vector<string> ll;
-          split(ll, i, boost::is_any_of("="));
+          vector<string> ll = split(i, "=");
           if (ll.size() != 2) {
             stringstream ss;
             ss << "There seem " << ll.size()-1 << " '=' in a single directive. Check your input.";
             throw runtime_error(ss.str());
           }
-          boost::trim(ll[0]); boost::trim(ll[1]);
+          trim(ll[0]); trim(ll[1]);
           transform(ll[0].begin(), ll[0].end(), ll[0].begin(), ::tolower);
           transform(ll[1].begin(), ll[1].end(), ll[1].begin(), ::tolower);
           tmp.insert(make_pair(ll[0],ll[1]));

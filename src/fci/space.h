@@ -68,10 +68,10 @@ class Space {
     template <int spin>
     void form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ); // links two Determinants objects
 
-    const int key_(const int a, const int b) { return ( a*large__ + b ); }
-    const int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
+    int key_(const int a, const int b) { return ( a*large__ + b ); }
+    int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
-    const int sign(std::bitset<nbit__> bit, int i) {
+    int sign(std::bitset<nbit__> bit, int i) {
       const std::bitset<nbit__> ii( (1 << (i)) - 1 );
       bit = bit & ii;
       return (1 - ((bit.count() & 1 ) << 1));

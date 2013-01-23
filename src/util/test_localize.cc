@@ -54,7 +54,7 @@ double pm_localization(std::string filename) {
       if (localizemethod == "region") {
         std::vector<int> sizes;
         auto bound = iter->second.equal_range("region");
-        for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(boost::lexical_cast<int>(isizes->second));
+        for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
         localization = std::shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
       }   

@@ -29,6 +29,7 @@
 #include <cassert>
 #include <thread>
 #include <stdexcept>
+#include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
@@ -80,7 +81,7 @@ void MPI_Interface::barrier() const {
 
 // barrier without locking mutex all the time
 void MPI_Interface::soft_barrier() {
-  vector<int> receive; receive.reserve(size_-1);
+  vector<int> receive; receive.reserve(size_);
   vector<size_t> msg(size_);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
@@ -90,13 +91,8 @@ void MPI_Interface::soft_barrier() {
   bool done;
   do {
     done = true;
-    for (auto i = receive.begin(); i != receive.end(); )
-      if (test(*i)) {
-        i = receive.erase(i);
-      } else {
-        ++i;
-        done = false;
-      }
+    for (auto& i : receive)
+      if (!test(i)) { done = false; break; }
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 }
@@ -131,6 +127,30 @@ void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
+}
+
+
+void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
+  vector<size_t> receive;
+  vector<size_t> msg(size_*size);
+
+  for (int i = 0; i != size_; ++i) {
+    if (i == rank_) continue;
+    request_send(a, size, i, (1<<30)+1);
+    receive.push_back(request_recv(&msg[i*size], size, i, (1<<30)+1));
+  }
+  bool done;
+  do {
+    done = true;
+    for (auto& i : receive)
+      if (!test(i)) { done = false; break; }
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+
+  for (int i = 0; i != size_; ++i)
+    if (i != rank_) {
+      for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
+    } 
 }
 
 
