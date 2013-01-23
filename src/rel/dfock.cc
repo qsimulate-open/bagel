@@ -89,44 +89,57 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
   // Small Half Transforms; swapped only needs xy, xz, and yz
 
-#if 1 
   array<shared_ptr<DFHalfComplex>, 18> small_half;
+  const int a_basis = 2;
+  const int b_basis = 3;
 
   // XX
-  small_half[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[2], iocoeff[2], false, make_pair(0,0)));
-  small_half[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[3], iocoeff[3], false, make_pair(0,0)));
+  small_half[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,0), make_pair(0,0)));
+  small_half[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,0), make_pair(1,1)));
 
   // XY
-  small_half[2] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], false, make_pair(0,1)));
-  small_half[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], false, make_pair(0,1)));
+  small_half[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,1), make_pair(0,0)));
+  small_half[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,1), make_pair(1,1)));
 
   // XZ
-  small_half[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], false, make_pair(0,2)));
-  small_half[5] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], false, make_pair(0,2)));
+  small_half[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(0,2), make_pair(0,1)));
+  small_half[5] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(0,2), make_pair(1,0)));
 
   // YX
-  small_half[6] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], true, make_pair(1,0)));
-  small_half[7] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], true, make_pair(1,0)));
+  small_half[6] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], true, make_pair(1,0), make_pair(0,0)));
+  small_half[7] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], true, make_pair(1,0), make_pair(1,1)));
 
   // YY
-  small_half[8] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[2], iocoeff[2], false, make_pair(1,1)));
-  small_half[9] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[3], iocoeff[3], false, make_pair(1,1)));
+  small_half[8] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(1,1), make_pair(0,0)));
+  small_half[9] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(1,1), make_pair(1,1)));
 
   // YZ
-  small_half[10] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], false, make_pair(1,2)));
-  small_half[11] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], false, make_pair(1,2)));
+  small_half[10] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(1,2), make_pair(0,1)));
+  small_half[11] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(1,2), make_pair(1,0)));
 
   // ZX
-  small_half[12] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], true, make_pair(2,0)));
-  small_half[13] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], true, make_pair(2,0)));
+  small_half[12] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[a_basis], iocoeff[a_basis], true, make_pair(2,0), make_pair(0,1)));
+  small_half[13] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[b_basis], iocoeff[b_basis], true, make_pair(2,0), make_pair(1,0)));
 
   // ZY
-  small_half[14] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], true, make_pair(2,1)));
-  small_half[15] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], true, make_pair(2,1)));
+  small_half[14] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[a_basis], iocoeff[a_basis], true, make_pair(2,1), make_pair(0,1)));
+  small_half[15] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[b_basis], iocoeff[b_basis], true, make_pair(2,1), make_pair(1,0)));
 
   // ZZ
-  small_half[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[2], iocoeff[2], false, make_pair(2,2)));
-  small_half[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[3], iocoeff[3], false, make_pair(2,2)));
+  small_half[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[a_basis], iocoeff[a_basis], false, make_pair(2,2), make_pair(0,0)));
+  small_half[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[b_basis], iocoeff[b_basis], false, make_pair(2,2), make_pair(1,1)));
 
-#endif
+  //Multiply all the dfhalfcomplexes together
+  array<shared_ptr<Matrix>, 648> small_k;
+  for (int i = 0; i != small_half.size(); ++i) {
+    for (int j = i; j != small_half.size(); ++j) {
+      pair<const int, const int> index = make_pair(small_half[i]->basis().second, small_half[j]->basis().second);
+      array<shared_ptr<Matrix>, 2> small_data;
+      small_data = small_half[i]->form_2index_complex(small_half[j]);
+      //insert into Larger Matrix Here?
+      //figure out duplicate blocks
+    }
+  }
+
+
 }
