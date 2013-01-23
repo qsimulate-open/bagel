@@ -365,23 +365,26 @@ void DistFCI::compute() {
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling 
       for (int ist = 0; ist != nstate_; ++ist) {
-        if (conv[ist]) continue;
-        shared_ptr<DistCivec> c = errvec[ist]->clone(); 
-        const int size = c->size();
-        double* target_array = c->local();
-        double* source_array = errvec[ist]->local();
-        double* denom_array = denom_->local();
-        const double en = energies[ist];
-        // TODO this should be threaded
-        for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+        if (!conv[ist]) {
+          shared_ptr<DistCivec> c = errvec[ist]->clone(); 
+          const int size = c->size();
+          double* target_array = c->local();
+          double* source_array = errvec[ist]->local();
+          double* denom_array = denom_->local();
+          const double en = energies[ist];
+          // TODO this should be threaded
+          for (int i = 0; i != size; ++i) {
+            target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+          }
+          davidson.orthog(c);
+          list<shared_ptr<const DistCivec> > tmp;
+          for (int jst = 0; jst != ist; ++jst)
+            if (!conv[ist]) tmp.push_back(cc.at(jst)); 
+          c->orthog(tmp);
+          cc.push_back(c);
+        } else {
+          cc.push_back(shared_ptr<DistCivec>());
         }
-        davidson.orthog(c);
-        list<shared_ptr<const DistCivec> > tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc.at(jst)); 
-        c->orthog(tmp);
-
-        cc.push_back(c);
       }
     }
     pdebug.tick_print("denominator");
