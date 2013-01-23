@@ -56,7 +56,7 @@ void MoldenIO::const_scales() {
   vector<double> s_scale = { 1.0 };
   vector<double> p_scale = { 1.0, 1.0, 1.0 };
   vector<double> d_scale = { 1.0, ::sqrt(3.0), 1.0, ::sqrt(3.0), ::sqrt(3.0), 1.0 };
-  // The f functions are definitely not right, but I'll get to that later
+  // TODO The f functions are definitely not right, but I'll get to that later
   vector<double> f_scale = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
 
