@@ -29,6 +29,7 @@
 #include <cassert>
 #include <thread>
 #include <stdexcept>
+#include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
@@ -80,7 +81,7 @@ void MPI_Interface::barrier() const {
 
 // barrier without locking mutex all the time
 void MPI_Interface::soft_barrier() {
-  vector<int> receive; receive.reserve(size_-1);
+  vector<int> receive; receive.reserve(size_);
   vector<size_t> msg(size_);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
@@ -90,13 +91,8 @@ void MPI_Interface::soft_barrier() {
   bool done;
   do {
     done = true;
-    for (auto i = receive.begin(); i != receive.end(); )
-      if (test(*i)) {
-        i = receive.erase(i);
-      } else {
-        ++i;
-        done = false;
-      }
+    for (auto& i : receive)
+      if (!test(i)) { done = false; break; }
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
 }
@@ -131,6 +127,30 @@ void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
+}
+
+
+void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
+  vector<size_t> receive(size_);
+  vector<size_t> msg(size_*size);
+
+  for (int i = 0; i != size_; ++i) {
+    if (i == rank_) continue;
+    request_send(a, size, i, (1<<30)+1);
+    receive.push_back(request_recv(&msg[i*size], size, i, (1<<30)+1));
+  }
+  bool done;
+  do {
+    done = true;
+    for (auto& i : receive)
+      if (!test(i)) { done = false; break; }
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+
+  for (int i = 0; i != size_; ++i)
+    if (i != rank_) {
+      for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
+    } 
 }
 
 
@@ -259,7 +279,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
   for (int i = 0; i != nbatch; ++i) { 
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, (tag == -1 ? cnt_ : tag), MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
   request_.insert(make_pair(cnt_, rq));
@@ -278,7 +298,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
   for (int i = 0; i != nbatch; ++i) { 
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, (tag == -1 ? cnt_ : tag), MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
   request_.insert(make_pair(cnt_, rq));

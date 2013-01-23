@@ -31,8 +31,6 @@
 #include <stdexcept>
 #include <memory>
 
-#include <boost/lexical_cast.hpp>
-
 #include <src/scf/overlap.h>
 #include <src/scf/coeff.h>
 #include <src/scf/geometry.h>
@@ -55,7 +53,9 @@
 #include <src/util/constants.h>
 #include <src/util/localization.h>
 #include <src/util/timer.h>
+#include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
+#include <src/transp/transp.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
 #include <src/smith/CAS_all_active.h>
@@ -235,6 +235,11 @@ int main(int argc, char** argv) {
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
+      } else if (method == "transp") {
+
+        std::shared_ptr<Transp> tran(new Transp(iter->second, geom, ref));
+        tran->compute();
+
       } else if (method == "smith") {
 
         std::string method = read_input<std::string>(iter->second, "method", "mp2");
@@ -321,7 +326,7 @@ int main(int argc, char** argv) {
         if (localizemethod == "region") {
           std::vector<int> sizes;
           auto bound = iter->second.equal_range("region");
-          for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(boost::lexical_cast<int>(isizes->second));
+          for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
           localization = std::shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
         }

@@ -89,8 +89,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
     // first issue all the send and receive requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != mpi__->rank()) {
-        srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i));
-        rrequest.push_back(mpi__->request_recv(buf->data()+atab[i].first*size_, atab[i].second*size_, i));
+        srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i, mpi__->rank()));
+        rrequest.push_back(mpi__->request_recv(buf->data()+atab[i].first*size_, atab[i].second*size_, i, i));
       } else {
         assert(source->asize()*tabsize_[i] == atab[i].second*size_);
         copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf->data()+atab[i].first*size_); 
@@ -156,7 +156,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     // first, issue all the receive requests
     for (int i = 0; i != mpi__->size(); ++i)
       if (i != mpi__->rank())
-        request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*tabstart_[i], iblock->asize()*tabsize_[i], i));
+        request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*tabstart_[i], iblock->asize()*tabsize_[i], i, i));
 
     // information on the data layout
     vector<pair<size_t, size_t> > atab = df_->atable();
@@ -172,7 +172,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     // last, issue all the send requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != mpi__->rank()) {
-        request.push_back(mpi__->request_send((*buf)->data()+atab[i].first*size_, atab[i].second*size_, i));
+        request.push_back(mpi__->request_send((*buf)->data()+atab[i].first*size_, atab[i].second*size_, i, mpi__->rank()));
       } else {
         copy_n((*buf)->data()+atab[i].first*size_, out->block(0)->asize()*tabsize_[i], out->block(0)->get()+out->block(0)->asize()*tabstart_[i]);
       }

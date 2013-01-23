@@ -39,13 +39,13 @@ class ServerFlush {
   protected:
     std::atomic<bool> thread_alive_;
 
-    virtual void flush() = 0;
+    virtual void flush_() = 0;
 
     std::shared_ptr<std::thread> server_;
 
     void periodic() {
       while (thread_alive_) {
-        flush();
+        flush_();
         std::this_thread::sleep_for(sleeptime__); 
       }
     }
@@ -60,16 +60,27 @@ class ServerFlush {
       std::lock_guard<std::mutex> lock(mut_);
       assert(!thread_alive_);
       thread_alive_ = true;
+#ifdef USE_SERVER_THREAD
       server_ = std::shared_ptr<std::thread>(new std::thread(&ServerFlush::periodic, this));
+#endif
     }
 
     void turn_off() {
       std::lock_guard<std::mutex> lock(mut_);
       if (thread_alive_) {
         thread_alive_ = false;
+#ifdef USE_SERVER_THREAD
         server_->join();
+#endif
       }
     }
+
+#ifndef USE_SERVER_THREAD
+    void flush() {
+      std::lock_guard<std::mutex> lock(mut_);
+      if (thread_alive_) flush_();
+    }
+#endif
 };
 
 }

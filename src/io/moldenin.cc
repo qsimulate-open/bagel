@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <map>
 #include <boost/regex.hpp> 
-#include <boost/lexical_cast.hpp>
 
 #include <fstream>
 #include <vector>
@@ -42,6 +41,7 @@
 #include <src/wfn/reference.h>
 #include <src/util/constants.h>
 #include <src/util/atommap.h>
+#include <src/util/lexical_cast.h>
 
 using namespace bagel;
 using namespace std;
@@ -210,9 +210,9 @@ void MoldenIn::read() {
 
           array<double,3> pos;
 
-          pos[0] = boost::lexical_cast<double>(x_str)*scale;
-          pos[1] = boost::lexical_cast<double>(y_str)*scale;
-          pos[2] = boost::lexical_cast<double>(z_str)*scale;
+          pos[0] = lexical_cast<double>(x_str)*scale;
+          pos[1] = lexical_cast<double>(y_str)*scale;
+          pos[2] = lexical_cast<double>(z_str)*scale;
           
           positions.push_back(pos);
 
@@ -241,7 +241,7 @@ void MoldenIn::read() {
         vector<tuple<string,vector<double>,vector<double> > > atom_basis_info;
 
         const string atom_no_str(matches[1].first, matches[1].second);
-        const int atom_no = boost::lexical_cast<int>(atom_no_str.c_str());
+        const int atom_no = lexical_cast<int>(atom_no_str.c_str());
 
         gto_order_.push_back(atom_no);
 
@@ -256,7 +256,7 @@ void MoldenIn::read() {
           atomic_shell_order.push_back(atommap.angular_number(ang_l));
 
           const string num_exp_string(matches[2].first, matches[2].second);
-          const int num_exponents = boost::lexical_cast<int>(num_exp_string);
+          const int num_exponents = lexical_cast<int>(num_exp_string);
 
           vector<double> exponents;
           vector<double> coefficients;
@@ -272,8 +272,8 @@ void MoldenIn::read() {
             exp_string = boost::regex_replace(exp_string, Dd, "E");
             coeff_string = boost::regex_replace(coeff_string, Dd, "E");
 
-            const double exponent = boost::lexical_cast<double>(exp_string);
-            const double coeff = boost::lexical_cast<double>(coeff_string);
+            const double exponent = lexical_cast<double>(exp_string);
+            const double coeff = lexical_cast<double>(coeff_string);
 
             exponents.push_back(exponent);
             coefficients.push_back(coeff);
@@ -319,7 +319,7 @@ void MoldenIn::read() {
 
         while(boost::regex_search(line.c_str(),matches,coeff_re)){
           string mo_string(matches[1].first, matches[1].second);
-          double coeff = boost::lexical_cast<double>(mo_string);
+          double coeff = lexical_cast<double>(mo_string);
 
           movec.push_back(coeff);
           getline(ifs_,line);

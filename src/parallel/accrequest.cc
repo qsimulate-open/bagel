@@ -35,16 +35,12 @@ using namespace bagel;
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
 SendRequest::SendRequest() : counter_(probe_key__+mpi__->rank()+1) {
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
 SendRequest::~SendRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
 }
 
 
@@ -60,7 +56,7 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
 }
 
 
-void SendRequest::flush() {
+void SendRequest::flush_() {
   lock_guard<mutex> lock(mutex_);
 
   // if receive buffer at the destination is created, send the message
@@ -69,7 +65,7 @@ void SendRequest::flush() {
       shared_ptr<Probe> p = i->second;
       assert(round(p->target) == p->tag);
       const int srq = mpi__->request_send(p->buf.get(), p->size[0], p->targetrank, p->tag);
-      auto m = requests_.insert(make_pair(srq, move(p->buf)));
+      auto m = requests_.insert(make_pair(srq, p));
       assert(m.second);
       i = inactive_.erase(i);
     } else {
@@ -98,16 +94,12 @@ bool SendRequest::test() {
 AccRequest::AccRequest(double* const d, vector<mutex>* m) : data_(d), datamutex_(m) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
 AccRequest::~AccRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
@@ -115,28 +107,28 @@ AccRequest::~AccRequest() {
 
 void AccRequest::init() {
   // receives
-  unique_ptr<size_t[]> buf(new size_t[4]);
+  shared_ptr<Call> call(new Call());
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key__); 
+  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key__); 
   {
     lock_guard<mutex> lock(mutex_);
-    auto m = calls_.insert(make_pair(rq, move(buf)));
+    auto m = calls_.insert(make_pair(rq, call));
     assert(m.second);
   }
 }
 
 
-void AccRequest::flush() {
+void AccRequest::flush_() {
   size_t cnt = 0;
   {
     lock_guard<mutex> lock(mutex_);
     for (auto i = calls_.begin(); i != calls_.end(); ) {
       // if this has already arrived, create a buffer, and return the address.
       if (mpi__->test(i->first)) {
-        const size_t size = i->second[0];
-        const size_t tag  = i->second[1];
-        const size_t rank = i->second[2];
-        const size_t off  = i->second[3];
+        const size_t size = i->second->buf[0];
+        const size_t tag  = i->second->buf[1];
+        const size_t rank = i->second->buf[2];
+        const size_t off  = i->second->buf[3];
         // allocating buffer
         unique_ptr<double[]> buffer(new double[size]);
         buffer[0] = tag;

@@ -211,6 +211,15 @@ class DistCivec {
     // mutex
     std::mutex& cimutex(const size_t& i) const { return mutex_[i]; }
 
+// if we use a dedicated server. currently not using this. defined in src/util/serverflush.h
+#ifndef USE_SERVER_THREAD
+    void flush() const {
+      if (accum_) accum_->flush(); 
+      if (send_ ) send_->flush(); 
+      if (put_  ) put_->flush(); 
+    }
+#endif
+
 };
 
 }

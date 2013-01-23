@@ -35,12 +35,12 @@
 #include <algorithm>
 #include <stdexcept>
 #include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
 #include <tuple>
 #include <src/util/quatern.h>
 #include <src/osint/overlapbatch.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -132,26 +132,26 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
             }
             const string ang(what[1].first, what[1].second);
             const string exp_str(what[2].first, what[2].second);
-            exponents.push_back(boost::lexical_cast<double>(exp_str));
+            exponents.push_back(lexical_cast<double>(exp_str));
             angular_number = ang;
 
             start = what[0].second;
             vector<double> tmp;
             while(regex_search(start, end, what, coeff_line)) {
               const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(boost::lexical_cast<double>(coeff_str));
+              tmp.push_back(lexical_cast<double>(coeff_str));
               start = what[0].second;
             }
             coefficients.push_back(tmp);
           } else if (regex_search(start, end, what, other_line)) {
             const string exp_str(what[1].first, what[1].second);
-            exponents.push_back(boost::lexical_cast<double>(exp_str));
+            exponents.push_back(lexical_cast<double>(exp_str));
 
             start = what[0].second;
             vector<double> tmp;
             while(regex_search(start, end, what, coeff_line)) {
               const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(boost::lexical_cast<double>(coeff_str));
+              tmp.push_back(lexical_cast<double>(coeff_str));
               start = what[0].second;
             }
             coefficients.push_back(tmp);

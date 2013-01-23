@@ -93,6 +93,7 @@ PFile<T>::PFile(const long fsize, const int k, const bool late_init) : filesize_
 };
 
 
+#include <unistd.h>
 template<class T>
 PFile<T>::~PFile() {
   unlink(filename_.c_str());

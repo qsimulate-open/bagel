@@ -67,11 +67,14 @@ void FCI::common_init() {
     if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
   }
 
+  // additional charge
+  const int charge = read_input<int>(idata_, "charge", 0);
+
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = read_input<int>(idata_, "nspin", 0);
-  if ((geom_->nele()+nspin) % 2 != 0) throw runtime_error("Invalid nspin specified");
-  nelea_ = (geom_->nele()+nspin)/2 - ncore_;
-  neleb_ = (geom_->nele()-nspin)/2 - ncore_;
+  if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
+  nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
+  neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");

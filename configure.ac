@@ -110,5 +110,6 @@ AC_CONFIG_FILES([Makefile
                  src/casscf/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
-                 src/rel/Makefile])
+                 src/rel/Makefile
+                 src/transp/Makefile])
 AC_OUTPUT

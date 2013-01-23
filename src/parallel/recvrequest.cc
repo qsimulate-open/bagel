@@ -35,46 +35,42 @@ using namespace bagel;
 PutRequest::PutRequest(const double* d) : data_(d) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
-  mpi__->soft_barrier();
   turn_on();
-  mpi__->soft_barrier();
 }
 
 
 void PutRequest::init() {
   // we should compute the number of messnages to receive?
   // receives
-  unique_ptr<size_t[]> buf(new size_t[4]);
+  shared_ptr<Call> call(new Call());
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(buf.get(), 4, -1, probe_key2__);
+  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__);
   {
     lock_guard<mutex> lock(block_);
-    auto m = calls_.insert(make_pair(rq, move(buf)));
+    auto m = calls_.insert(make_pair(rq, call));
     assert(m.second);
   }
 }
 
 
 PutRequest::~PutRequest() {
-  mpi__->soft_barrier();
   turn_off();
-  mpi__->soft_barrier();
   for (auto& i : calls_)
     mpi__->cancel(i.first);
 }
 
 
-void PutRequest::flush() {
+void PutRequest::flush_() {
   size_t cnt = 0;
   {
     lock_guard<mutex> lock(block_);
     for (auto i = calls_.begin(); i != calls_.end(); ) {
       // if this has already arrived, send data 
       if (mpi__->test(i->first)) {
-        const int size = i->second[0];
-        const int tag  = i->second[1];
-        const int rank = i->second[2];
-        const int off  = i->second[3];
+        const int size = i->second->buf[0];
+        const int tag  = i->second->buf[1];
+        const int rank = i->second->buf[2];
+        const int off  = i->second->buf[3];
         mpi__->request_send(data_+off, size, rank, tag);
         i = calls_.erase(i);
         ++cnt;

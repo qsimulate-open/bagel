@@ -150,6 +150,9 @@ void DistFCI::sigma_aa(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     }
     // TODO this communication pattern might not be optimal
     sigma->accumulate_bstring_buf(buf, a);
+#ifndef USE_SERVER_THREAD
+    sigma->flush();
+#endif
   }
 }
 
@@ -184,6 +187,10 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     tasks.push_back(shared_ptr<DistABTask>(new DistABTask(astring, base_det, int_det, jop, cc, sigma)));
 
     do {
+#ifndef USE_SERVER_THREAD
+      cc->flush();
+      sigma->flush();
+#endif
       for (auto i = tasks.begin(); i != tasks.end(); ) {
         if ((*i)->test()) {
           (*i)->compute();
@@ -208,9 +215,15 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
         done = false;
       }
     }
+#ifndef USE_SERVER_THREAD
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0;
+    if (!done) cc->flush();
+    if (!done) sigma->flush();
+#endif
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
-
 
   cc->terminate_mpi_recv();
 
@@ -249,6 +262,11 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     }
   }
 
+#ifndef USE_SERVER_THREAD
+  // for accumulate in aa and ab
+  sigma->flush();
+#endif
+
   const static Comb comb;
   const size_t lengb = comb.c(norb_, neleb_-2);
   vector<bitset<nbit__> > intb(lengb, bitset<nbit__>(0));
@@ -280,6 +298,11 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     lock_guard<mutex> lock(sigma->cimutex(i));
     daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
   }
+
+  // for accumulate in aa and ab
+#ifndef USE_SERVER_THREAD
+  sigma->flush();
+#endif
 }
 
 

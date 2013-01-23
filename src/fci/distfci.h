@@ -48,9 +48,6 @@ class DistFCI : public FCI {
     // const_denom function here only makes a denom for local data of DistCivec. This is called from FCI
     void const_denom() override;
 
-    // FCI compute function using DistCivec
-    void compute() override;
-
     // denominator
     void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec> > out);
 
@@ -73,6 +70,10 @@ class DistFCI : public FCI {
             const int ncore = -1, const int nocc = -1, const int nstate = -1);
     
     void update(std::shared_ptr<const Coeff>) override;
+
+    // FCI compute function using DistCivec
+    void compute() override;
+
 };
 
 }
