@@ -304,7 +304,7 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
 
   if (rhf) {
     std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
-    *this += *df->compute_Jop(halfbj, coeff);
+    *this += *df->compute_Jop(half, coeff, true);
   } else {
     *this += *df->compute_Jop(density_);
   }
