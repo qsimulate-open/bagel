@@ -67,9 +67,12 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
   vector<shared_ptr<DistCivec> > sigmavec;
 
   for (int istate = 0; istate != nstate; ++istate) {
-    if (conv[istate]) continue;
+    if (conv[istate]) {
+      sigmavec.push_back(shared_ptr<DistCivec>());
+      continue;
+    }
     shared_ptr<const DistCivec> cc = ccvec[istate];
-    shared_ptr<DistCivec> sigma = cc->clone(); 
+    shared_ptr<DistCivec> sigma = cc->clone();
     sigma->zero();
 
     sigma->init_mpi_accumulate();
@@ -254,7 +257,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   unique_ptr<double[]> hamil2(new double[npack*npack]);
   for (int i = 0, ij = 0, ijkl = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
-      hamil1[j+norb_*i] = hamil1[i+norb_*j] = jop_->mo1e(ij); 
+      hamil1[j+norb_*i] = hamil1[i+norb_*j] = jop_->mo1e(ij);
       if (i == j) continue;
       for (int k = 0; k != norb_; ++k)
         for (int l = 0; l < k; ++l, ++ijkl)
@@ -311,10 +314,10 @@ void DistFCI::compute() {
   Timer pdebug(2);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
 
   // some constants
-  //const int ij = nij(); 
+  //const int ij = nij();
 
   // Creating an initial CI vector
   vector<shared_ptr<DistCivec> > cc(nstate_);
@@ -336,7 +339,7 @@ void DistFCI::compute() {
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
-  for (int iter = 0; iter != max_iter_; ++iter) { 
+  for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
 
     // form a sigma vector given cc
@@ -345,8 +348,8 @@ void DistFCI::compute() {
 
     // constructing Dvec's for Davidson
     vector<shared_ptr<const DistCivec> > ccn, sigman;
-    for (auto& i : cc) ccn.push_back(i);
-    for (auto& i : sigma) sigman.push_back(i);
+    for (auto& i : cc) if (i) ccn.push_back(i);
+    for (auto& i : sigma) if (i) sigman.push_back(i);
     const vector<double> energies = davidson.compute(ccn, sigman);
 
     // get residual and new vectors
@@ -363,10 +366,10 @@ void DistFCI::compute() {
 
     cc.clear();
     if (!*min_element(conv.begin(), conv.end())) {
-      // denominator scaling 
+      // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (!conv[ist]) {
-          shared_ptr<DistCivec> c = errvec[ist]->clone(); 
+          shared_ptr<DistCivec> c = errvec[ist]->clone();
           const int size = c->size();
           double* target_array = c->local();
           double* source_array = errvec[ist]->local();
@@ -379,7 +382,7 @@ void DistFCI::compute() {
           davidson.orthog(c);
           list<shared_ptr<const DistCivec> > tmp;
           for (int jst = 0; jst != ist; ++jst)
-            if (!conv[ist]) tmp.push_back(cc.at(jst)); 
+            if (!conv[jst]) tmp.push_back(cc.at(jst));
           c->orthog(tmp);
           cc.push_back(c);
         } else {
@@ -395,7 +398,7 @@ void DistFCI::compute() {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << fcitime.tick() << endl; 
+                              << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;
@@ -414,7 +417,7 @@ void DistFCI::update(shared_ptr<const Coeff> c) {
   Timer timer;
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
 
-  // right now full basis is used. 
+  // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();
@@ -487,13 +490,13 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
   vector<size_t> aall(mpi__->size()*ndet);
   vector<size_t> ball(mpi__->size()*ndet);
   vector<double> eall(mpi__->size()*ndet);
-  mpi__->allgather(&aarray[0], ndet, &aall[0], ndet); 
-  mpi__->allgather(&barray[0], ndet, &ball[0], ndet); 
-  mpi__->allgather(&en[0],     ndet, &eall[0], ndet); 
+  mpi__->allgather(&aarray[0], ndet, &aall[0], ndet);
+  mpi__->allgather(&barray[0], ndet, &ball[0], ndet);
+  mpi__->allgather(&en[0],     ndet, &eall[0], ndet);
 
   tmp.clear();
   for (int i = 0; i != aall.size(); ++i) {
-    tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i]))); 
+    tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
   }
 
   vector<pair<bitset<nbit__> , bitset<nbit__> > > out;
@@ -528,7 +531,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea_-neleb_) continue; 
+    if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
 
     // check if this orbital configuration is already used
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
