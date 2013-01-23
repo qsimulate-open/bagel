@@ -131,7 +131,7 @@ void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 
 
 void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
-  vector<size_t> receive(size_);
+  vector<size_t> receive;
   vector<size_t> msg(size_*size);
 
   for (int i = 0; i != size_; ++i) {
