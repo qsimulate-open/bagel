@@ -262,29 +262,32 @@ void Matrix::diagonalize(double* eig) {
 
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
-#ifndef HAVE_SCALAPACK
-  unique_ptr<double[]> work(new double[n*6]);
-  dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
-  mpi__->broadcast(data(), n*n, 0);
-#else
-  assert(!localized_);
-  const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
+#ifdef HAVE_SCALAPACK
+  if (localized_) {
+#endif
+    unique_ptr<double[]> work(new double[n*6]);
+    dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
+    mpi__->broadcast(data(), n*n, 0);
+#ifdef HAVE_SCALAPACK
+  } else {  
+    const int localrow = get<0>(localsize_);
+    const int localcol = get<1>(localsize_);
 
-  unique_ptr<double[]> coeff(new double[localrow*localcol]);
-  unique_ptr<double[]> local = getlocal();
+    unique_ptr<double[]> coeff(new double[localrow*localcol]);
+    unique_ptr<double[]> local = getlocal();
 
-  // first compute worksize
-  double wsize;
-  int liwork = 1;
-  pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &liwork, 1, info);
-  unique_ptr<int[]> iwork(new int[liwork]);
-  wsize =  max(131072.0, wsize*2.0);
+    // first compute worksize
+    double wsize;
+    int liwork = 1;
+    pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &liwork, 1, info);
+    unique_ptr<int[]> iwork(new int[liwork]);
+    wsize =  max(131072.0, wsize*2.0);
 
-  const int lwork = round(wsize);
-  unique_ptr<double[]> work(new double[lwork]);
-  pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
-  setlocal_(coeff);
+    const int lwork = round(wsize);
+    unique_ptr<double[]> work(new double[lwork]);
+    pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
+    setlocal_(coeff);
+  }
 #endif
 
   if (info) throw runtime_error("dsyev/pdsyevd failed in Matrix");

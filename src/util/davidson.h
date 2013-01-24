@@ -53,29 +53,24 @@ class DavidsonDiag {
     std::shared_ptr<Matrix> mat_;
     // scratch area for diagonalization
     std::shared_ptr<Matrix> scr_;
-    std::vector<double> vec_;
+    std::unique_ptr<double[]> vec_;
     // an eigenvector
     std::shared_ptr<Matrix> eig_;
-    // work area in a lapack routine
-    std::vector<double> work_;
-    int lwork_;
 
     // for convenience below
-    double& mat(int i, int j) { return mat_->element(i,j); };
+    double& mat(int i, int j) { return mat_->element(i,j); }
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), mat_(new Matrix(max_,max_)), scr_(new Matrix(max_,max_)) {
-      vec_.resize(max_);
-      work_.resize(max_*5);
-      lwork_ = max_*5;
-    };
-    ~DavidsonDiag(){};
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), mat_(new Matrix(max_,max_,true)),
+                                 scr_(new Matrix(max_,max_,true)), vec_(new double[max_]) {
+    }
+    ~DavidsonDiag(){}
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
       assert(nstate_ == 1);
       return compute(std::vector<std::shared_ptr<const T> >{cc},
                      std::vector<std::shared_ptr<const T> >{cs}).front();
-    };
+    }
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T> > cc, std::vector<std::shared_ptr<const T> > cs) {
       if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
@@ -93,13 +88,13 @@ class DavidsonDiag {
       // diagonalize matrix to get
       *scr_ = *mat_; 
       int info = 0;
-      scr_->diagonalize(&vec_[0]);
+      scr_->diagonalize(vec_.get());
       eig_ = scr_->slice(0,nstate_);
 
       std::vector<double> out(nstate_);
-      std::copy(vec_.begin(), vec_.begin()+nstate_, out.begin());
+      std::copy_n(vec_.get(), nstate_, &out[0]);
       return out;
-    };
+    }
 
     // perhaps can be cleaner.
     std::vector<std::shared_ptr<T> > residual() {
@@ -118,7 +113,7 @@ class DavidsonDiag {
         out.push_back(tmp);
       }
       return out;
-    };
+    }
 
     // returns ci vector
     std::vector<std::shared_ptr<T> > civec() {
@@ -133,7 +128,7 @@ class DavidsonDiag {
         out.push_back(tmp);
       }
       return out;
-    };
+    }
 
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
