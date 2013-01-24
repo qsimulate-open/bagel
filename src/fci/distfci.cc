@@ -189,21 +189,25 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
     tasks.push_back(shared_ptr<DistABTask>(new DistABTask(astring, base_det, int_det, jop, cc, sigma)));
 
-    do {
+    for (auto i = tasks.begin(); i != tasks.end(); ) {
+      if ((*i)->test()) {
+         (*i)->compute();
+        i = tasks.erase(i);
+      } else {
+        ++i;
+      }
+    }
+#ifndef USE_SERVER_THREAD
+    cc->flush();
+    sigma->flush();
+#endif
+    if (tasks.size() > pool_size__) {
+      this_thread::sleep_for(sleeptime__);
 #ifndef USE_SERVER_THREAD
       cc->flush();
       sigma->flush();
 #endif
-      for (auto i = tasks.begin(); i != tasks.end(); ) {
-        if ((*i)->test()) {
-          (*i)->compute();
-          i = tasks.erase(i);
-        } else {
-          ++i;
-        }
-      }
-      if (tasks.size() > pool_size__) this_thread::sleep_for(sleeptime__);
-    } while (tasks.size() > pool_size__);
+    }
   }
 
   bool done;
