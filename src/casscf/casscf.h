@@ -77,8 +77,8 @@ class CASSCF {
 
     const std::shared_ptr<const Matrix> hcore_;
 
-    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::vector<double>) const;
-    std::vector<double> form_natural_orbs();
+    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::shared_ptr<Matrix>) const;
+    std::shared_ptr<Matrix> form_natural_orbs();
 
     std::vector<double> schwarz_;
 

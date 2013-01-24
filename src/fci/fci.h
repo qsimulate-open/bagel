@@ -98,7 +98,7 @@ class FCI {
     virtual void const_denom() = 0;
 
     // functions related to natural orbitals
-    void update_rdms(const std::vector<double>& coeff); 
+    void update_rdms(const std::shared_ptr<Matrix>& coeff); 
 
     // internal function for RDM1 and RDM2 computations 
     std::tuple<std::shared_ptr<RDM<1> >, std::shared_ptr<RDM<2> > >
@@ -152,7 +152,7 @@ class FCI {
     std::shared_ptr<const RDM<1> > rdm1_av() const { return rdm1_av_; };
     std::shared_ptr<const RDM<2> > rdm2_av() const { return rdm2_av_; };
     // move to natural orbitals
-    std::pair<std::vector<double>, std::vector<double> > natorb_convert();
+    std::pair<std::shared_ptr<Matrix>, std::vector<double> > natorb_convert();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 

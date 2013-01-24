@@ -87,13 +87,10 @@ class DavidsonDiag {
       }
       // diagonalize matrix to get
       *scr_ = *mat_; 
-      int info = 0;
       scr_->diagonalize(vec_.get());
       eig_ = scr_->slice(0,nstate_);
 
-      std::vector<double> out(nstate_);
-      std::copy_n(vec_.get(), nstate_, &out[0]);
-      return out;
+      return std::vector<double>(vec_.get(), vec_.get()+nstate_);
     }
 
     // perhaps can be cleaner.

@@ -75,7 +75,7 @@ void SuperCI::compute() {
     auto start0 = high_resolution_clock::now();
 
     // here make a natural orbitals and update the coefficients
-    vector<double> natorb = form_natural_orbs();
+    shared_ptr<Matrix> natorb = form_natural_orbs();
 
     shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
 
@@ -180,8 +180,8 @@ void SuperCI::compute() {
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix> tmp(new Matrix(*rot));
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, &(natorb[0]), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
-                                                                        tmp->element_ptr(nclosed_, 0), nbasis_);
+      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
+                                                                          tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix> tmp2(new Matrix(*tailor_rotation(tmp)));
       shared_ptr<Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));

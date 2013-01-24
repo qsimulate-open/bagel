@@ -281,16 +281,16 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
 }
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<vector<double>, vector<double> > FCI::natorb_convert() {
+pair<shared_ptr<Matrix>, vector<double> > FCI::natorb_convert() {
   assert(rdm1_av_ != nullptr);
-  pair<vector<double>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
+  pair<shared_ptr<Matrix>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   return natorb;
 }
 
 
-void FCI::update_rdms(const vector<double>& coeff) {
+void FCI::update_rdms(const shared_ptr<Matrix>& coeff) {
   for (auto iter = rdm1_.begin(); iter != rdm1_.end(); ++iter)
     (*iter)->transform(coeff);
   for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)

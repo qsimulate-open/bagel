@@ -110,7 +110,7 @@ class MOFile {
 
     std::shared_ptr<DFHalfDist> mo2e_1ext() { return mo2e_1ext_; };
     std::shared_ptr<const DFHalfDist> mo2e_1ext() const { return mo2e_1ext_; };
-    void update_1ext_ints(const std::vector<double>& coeff);
+    void update_1ext_ints(const std::shared_ptr<const Matrix>& coeff);
 
 };
 

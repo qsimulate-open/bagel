@@ -130,9 +130,10 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2
 }
 
 
-void MOFile::update_1ext_ints(const vector<double>& coeff) {
+void MOFile::update_1ext_ints(const shared_ptr<const Matrix>& coeff) {
   assert(mo2e_1ext_->nocc() == nocc_);
-  mo2e_1ext_->rotate_occ(&(coeff[0]));
+  assert(coeff->ndim() == nocc_);
+  mo2e_1ext_->rotate_occ(coeff->data());
 }
 
 

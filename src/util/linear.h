@@ -87,7 +87,7 @@ class Linear {
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
       std::copy(prod_.get(), prod_.get()+max_, vec_.get());
       dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
-      if (info) throw std::runtime_error("dsyev failed in Linear");
+      if (info) throw std::runtime_error("dgesv failed in Linear");
 
       std::shared_ptr<T> out(new T(*grad_));
       int cnt = 0;

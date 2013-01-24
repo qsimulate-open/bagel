@@ -119,23 +119,21 @@ class RDM : public RDM_base {
       return out;
     }
 
-    std::pair<std::vector<double>, std::vector<double> > generate_natural_orbitals() const {
+    std::pair<std::shared_ptr<Matrix>, std::vector<double> > generate_natural_orbitals() const {
       static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
-      std::vector<double> buf(dim_*dim_);
+      std::shared_ptr<Matrix> buf(new Matrix(dim_,dim_,true));
+      buf->add_diag(2.0);
+      daxpy_(dim_*dim_, -1.0, data(), 1, buf->data(), 1);
+
       std::vector<double> vec(dim_);
-      for (int i = 0; i != dim_; ++i) buf[i+i*dim_] = 2.0;
-      daxpy_(dim_*dim_, -1.0, data(), 1, &(buf[0]), 1);
-      int lwork = 5*dim_;
-      std::unique_ptr<double[]> work(new double[lwork]);
-      int info;
-      dsyev_("V", "U", dim_, &(buf[0]), dim_, &(vec[0]), work.get(), lwork, info);
-      assert(!info);
+      buf->diagonalize(&vec[0]);
+
       for (auto& i : vec) i = 2.0-i;
       return std::make_pair(buf, vec);
     }
 
-    void transform(const std::vector<double>& coeff) {
-      const double* start = &(coeff[0]);
+    void transform(const std::shared_ptr<Matrix>& coeff) {
+      const double* start = coeff->data();
       std::unique_ptr<double[]> buf(new double[dim_*dim_]);
       if (rank == 1) {
         dgemm_("N", "N", dim_, dim_, dim_, 1.0, data(), dim_, start, dim_, 0.0, buf.get(), dim_);

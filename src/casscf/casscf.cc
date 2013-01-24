@@ -269,20 +269,20 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 }
 
 
-shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold, vector<double> mat) const {
+shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold, shared_ptr<Matrix> mat) const {
   shared_ptr<const Matrix> cnew(new const Matrix(*dynamic_cast<const Matrix*>(cold.get())));
   int nbas = geom_->nbasis();
-  dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, &(mat[0]), nact_,
+  dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
   return shared_ptr<const Coeff>(new Coeff(*cnew));
 }
 
 
 
-vector<double> CASSCF::form_natural_orbs() {
+shared_ptr<Matrix> CASSCF::form_natural_orbs() {
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
-    const pair<vector<double>, vector<double> > natorb = fci_->natorb_convert();
+    const pair<shared_ptr<Matrix>, vector<double> > natorb = fci_->natorb_convert();
     // new coefficients
     shared_ptr<const Coeff> new_coeff = update_coeff(coeff_, natorb.first);
     coeff_ = new_coeff;
