@@ -780,14 +780,10 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
-  unique_ptr<double[]> bb(new double[primsize*primsize]);
+  shared_ptr<Matrix> bb(new Matrix(primsize,primsize,true));
+  dgemm_("T", "N", primsize, primsize, cartsize, -1.0, bdag.get(), cartsize, bdag.get(), cartsize, 0.0, bb->data(), primsize);
   unique_ptr<double[]> eig(new double[primsize]);
-  dgemm_("T", "N", primsize, primsize, cartsize, -1.0, bdag.get(), cartsize, bdag.get(), cartsize, 0.0, bb.get(), primsize);
-  const int lwork = primsize*5;
-  unique_ptr<double[]> work(new double[lwork]);
-  int info;
-  dsyev_("V", "U", primsize, bb.get(), primsize, eig.get(), work.get(), lwork, info);
-  if (info) throw runtime_error("DSYEV failed in Geometry::compute_internal_coordinate");
+  bb->diagonalize(eig.get());
 
   int ninternal = 0;
   for (int i = 0; i != primsize; ++i) {
@@ -805,7 +801,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   // form B = U^+ Bprim
   unique_ptr<double[]> bnew(new double[cartsize*cartsize]);
   fill(bnew.get(), bnew.get()+cartsize*cartsize, 0.0);
-  dgemm_("T", "T", ninternal, cartsize, primsize, 1.0, bb, primsize, bdag, cartsize, 0.0, bnew, cartsize);
+  dgemm_("T", "T", ninternal, cartsize, primsize, 1.0, bb->data(), primsize, bdag.get(), cartsize, 0.0, bnew.get(), cartsize);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
   unique_ptr<double[]> bdmnew(new double[cartsize*cartsize]);
