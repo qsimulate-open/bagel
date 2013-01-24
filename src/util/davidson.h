@@ -50,26 +50,23 @@ class DavidsonDiag {
     std::list<std::shared_ptr<const T> > sigma_;
 
     // contains
-    std::vector<double> mat_;
+    std::shared_ptr<Matrix> mat_;
     // scratch area for diagonalization
-    std::vector<double> scr_;
+    std::shared_ptr<Matrix> scr_;
     std::vector<double> vec_;
     // an eigenvector
-    std::vector<double> eig_;
+    std::shared_ptr<Matrix> eig_;
     // work area in a lapack routine
     std::vector<double> work_;
     int lwork_;
 
     // for convenience below
-    double& mat(int i, int j) { return mat_[i+j*max_]; };
+    double& mat(int i, int j) { return mat_->element(i,j); };
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0) {
-      mat_.resize(max_*max_);
-      scr_.resize(max_*max_);
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), mat_(new Matrix(max_,max_)), scr_(new Matrix(max_,max_)) {
       vec_.resize(max_);
       work_.resize(max_*5);
-      eig_.resize(max_*nstate_);
       lwork_ = max_*5;
     };
     ~DavidsonDiag(){};
@@ -94,12 +91,11 @@ class DavidsonDiag {
         }
       }
       // diagonalize matrix to get
-      std::copy(mat_.begin(), mat_.end(), scr_.begin());
+      *scr_ = *mat_; 
       int info = 0;
-      dsyev_("V", "U", &size_, &(scr_[0]), &max_, &(vec_[0]), &(work_[0]), &lwork_, &info);
-      if (info != 0) throw std::runtime_error("dsyev in davidson failed");
-      // copy energies and eigen functions
-      std::copy(scr_.begin(), scr_.begin()+nstate_*max_, eig_.begin());
+      scr_->diagonalize(&vec_[0]);
+      eig_ = scr_->slice(0,nstate_);
+
       std::vector<double> out(nstate_);
       std::copy(vec_.begin(), vec_.begin()+nstate_, out.begin());
       return out;
@@ -113,11 +109,11 @@ class DavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->daxpy(-vec_[i]*eig_[i*max_+k], **iter);
+          tmp->daxpy(-vec_[i]*eig_->element(k,i), **iter);
         }
         k = 0;
         for (auto iter = sigma_.begin(); iter != sigma_.end(); ++iter, ++k) {
-          tmp->daxpy(eig_[i*max_+k], **iter);
+          tmp->daxpy(eig_->element(k,i), **iter);
         }
         out.push_back(tmp);
       }
@@ -132,7 +128,7 @@ class DavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->daxpy(eig_[i*max_+k], **iter);
+          tmp->daxpy((*eig_)[i*max_+k], **iter);
         }
         out.push_back(tmp);
       }

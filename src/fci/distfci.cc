@@ -77,7 +77,6 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
 
     sigma->init_mpi_accumulate();
 
-    vector<pair<string, double> > timing;
     Timer fcitime(1);
 
     sigma_aa(cc, sigma, jop);
@@ -520,7 +519,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
 //   - nspin: #alpha - #beta
 //   - out:
 void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec> > out) {
-  int ndet = nstate_*10;
+  int ndet = nstate_+10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__> > > bits = detseeds(ndet);
 
