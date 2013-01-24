@@ -151,7 +151,7 @@ tuple<shared_ptr<const Matrix>, double> Jop::compute_mo1e(const int nstart, cons
   }
   fock0->fill_upper();
 
-  Matrix aobuff(nbasis_, nbasis_);
+  Matrix aobuff(nbasis_, nbasis_); // TODO Is this doing anything?
   shared_ptr<const Matrix> ocoeff = coeff_->slice(nstart, nfence);
   shared_ptr<const Matrix> mat(new Matrix(*ocoeff % *fock0 * *ocoeff));
 

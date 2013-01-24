@@ -215,23 +215,25 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   // ijA and ijB need to match the compression of the det
   const int nactA = nact_.first;
   const int ijA = nactA*nactA;
+  const int nstatesA = nstates_.first;
 
   const int nactB = nact_.second;
   const int ijB = nactB*nactB;
+  const int nstatesB = nstates_.second;
 
   // build JK and J matrices
   shared_ptr<Matrix> JK_abcd = form_JKmatrix(ijA, ijB);
   shared_ptr<Matrix> J_abcd = form_Jmatrix(ijA, ijB);
 
   // alpha-alpha
-  shared_ptr<Matrix> E_ac_alpha = form_EFmatrices_alpha(ccvecs_.first, nstates_.first, ijA);
-  shared_ptr<Matrix> F_bd_alpha = form_EFmatrices_alpha(ccvecs_.second, nstates_.second, ijB);
+  shared_ptr<Matrix> E_ac_alpha = form_EFmatrices_alpha(ccvecs_.first, nstatesA, ijA);
+  shared_ptr<Matrix> F_bd_alpha = form_EFmatrices_alpha(ccvecs_.second, nstatesB, ijB);
 
   // beta-beta
-  shared_ptr<Matrix> E_ac_beta = form_EFmatrices_beta(ccvecs_.first, nstates_.first, ijA);
-  shared_ptr<Matrix> F_bd_beta = form_EFmatrices_beta(ccvecs_.second, nstates_.second, ijB);
+  shared_ptr<Matrix> E_ac_beta = form_EFmatrices_beta(ccvecs_.first, nstatesA, ijA);
+  shared_ptr<Matrix> F_bd_beta = form_EFmatrices_beta(ccvecs_.second, nstatesB, ijB);
 
-  shared_ptr<Matrix> tmp(new Matrix(dimerstates_, dimerstates_));
+  shared_ptr<Matrix> tmp(new Matrix(nstatesA*nstatesA, nstatesB*nstatesB));
 
   *tmp += (*E_ac_alpha) * (*JK_abcd) ^ (*F_bd_alpha);
   *tmp += (*E_ac_beta) * (*JK_abcd) ^ (*F_bd_beta);
@@ -242,16 +244,15 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   // reorder, currently (AA',BB'), want (AB, A'B')
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
-  double* odata = out->data();
-  double* tdata = tmp->data();
-
-  const int nstatesA = nstates_.first;
-  const int nstatesB = nstates_.second;
   for(int B = 0; B < nstatesB; ++B) {
     for(int A = 0; A < nstatesA; ++A) {
+      const int AB = A + B*nstatesA;
       for(int Bp = 0; Bp < nstatesB; ++Bp) {
-        for(int Ap = 0; Ap < nstatesA; ++Ap, ++odata) {
-          *odata = tdata[A + nstatesA*Ap + (B + nstatesB*Bp)*nstatesA*nstatesA];
+        const int BBp = Bp + B*nstatesB;
+        for(int Ap = 0; Ap < nstatesA; ++Ap) {
+          const int ABp = Ap + Bp*nstatesA;
+          const int AAp = Ap + A*nstatesA;
+          out->element(AB,ABp) = tmp->element(AAp,BBp);
         }
       }
     }
@@ -336,9 +337,9 @@ shared_ptr<Matrix> Dimer::form_EFmatrices_beta(shared_ptr<const Dvec> ccvec, con
     // | C > ^A_ac is done
     for(int statep = 0; statep < nstates; ++statep) {
       const double *adata = ccvec->data(statep)->data();
-      for(int ac = 0; ac < ij; ++ac) {
+      for(int ac = 0; ac < ij; ++ac, ++edata) {
         const double *cdata = c->data(ac)->data();
-        *edata++ = ddot_(lab, adata, 1, cdata, 1);
+        *edata = ddot_(lab, adata, 1, cdata, 1);
       }
     }
   }
@@ -356,7 +357,7 @@ shared_ptr<Matrix> Dimer::form_JKmatrix(const int ijA, const int ijB) const {
     for(int d = 0; d < nactB; ++d) {
       for(int a = 0; a < nactA; ++a) {
         for(int c = 0; c < nactA; ++c, ++odata) {
-          *odata = jop_->mo2e_hz(act<0>(a), act<1>(b), act<0>(c), act<1>(d)) - jop_->mo2e_hz(act<0>(a), act<1>(b), act<1>(d), act<0>(c));
+          *odata = jop_->mo2e_hz(act<0>(a), act<1>(b), act<0>(c), act<1>(d)) - jop_->mo2e_hz(act<1>(b), act<0>(a), act<0>(c), act<1>(d));
         }
       }
     }
