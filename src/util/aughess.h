@@ -46,34 +46,27 @@ class AugHess {
     const std::shared_ptr<const T> grad_;
 
     // contains
-    std::unique_ptr<double[]> mat_;
+    std::shared_ptr<Matrix> mat_;
     std::unique_ptr<double[]> prod_;
     // scratch area for diagonalization
-    std::unique_ptr<double[]> scr_;
+    std::shared_ptr<Matrix> scr_;
     std::unique_ptr<double[]> vec_;
     // an eigenvector
     std::unique_ptr<double[]> eig_;
-    // work area in a lapack routine
-    std::unique_ptr<double[]> work_;
-    int lwork_;
-    int info;
 
     // for convenience below
-    double& mat(int i, int j) { return mat_[i+j*max_]; };
-    double& scr(int i, int j) { return scr_[i+j*max_]; };
+    double& mat(int i, int j) { return mat_->element(i,j); }
+    double& scr(int i, int j) { return scr_->element(i,j); }
 
 
   public:
     AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
-      mat_(new double[ndim*ndim]),
+      mat_(new Matrix(ndim,ndim,true)),
       prod_(new double[ndim]),
-      scr_(new double[ndim*ndim]),
+      scr_(new Matrix(ndim,ndim,true)),
       vec_(new double[ndim]),
-      eig_(new double[ndim]),
-      work_(new double[ndim*5]),
-      lwork_(ndim*5) {
-    };
-    ~AugHess() {};
+      eig_(new double[ndim]) {
+    }
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
 
@@ -91,17 +84,17 @@ class AugHess {
       prod_[size_-1] = c->ddot(*grad_);
 
       // set to scr_
-      std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
+      *scr_ = *mat_;
       // adding (1,0) vector as an additional basis function
       for (int i = 0; i != size_; ++i) {
         scr(size_, i) = scr(i, size_) = prod_[i];
       }
       scr(size_, size_) = 0.0;
-      dsyev_("V", "U", size_+1, scr_, max_, eig_, work_, lwork_, info);
-      if (info) throw std::runtime_error("dsyev failed in AugHess");
+      scr_->diagonalize(eig_.get());
 
       // scale eigenfunction
-      for (int i = 0; i != size_; ++i) vec_[i] = scr_[i] / scr_[size_];
+      for (int i = 0; i != size_; ++i)
+        vec_[i] = scr_->element(i,0) / scr_->element(size_,0);
 
       std::shared_ptr<T> out(new T(*grad_));
       int cnt = 0;
@@ -111,9 +104,9 @@ class AugHess {
       }
       assert(cnt == size_);
       return out;
-    };
+    }
 
-    double eig() const { return eig_[0]; };
+    double eig() const { return eig_[0]; }
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();
@@ -122,7 +115,7 @@ class AugHess {
         out->daxpy(vec_[cnt], *i);
       }
       return out;
-    };
+    }
 
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
