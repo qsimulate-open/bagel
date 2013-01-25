@@ -60,6 +60,9 @@ class DistFCI : public FCI {
 
     std::vector<std::shared_ptr<DistCivec> > form_sigma(std::vector<std::shared_ptr<DistCivec> >&, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
+    void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop,
+                  const std::shared_ptr<const Determinants>, const std::shared_ptr<const Determinants>) const;
+
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_ab(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;

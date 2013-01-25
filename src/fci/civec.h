@@ -160,6 +160,10 @@ class DistCivec {
     // mutex for write accesses to local_
     mutable std::vector<std::mutex> mutex_;
 
+    // for transpose, buffer can be appended
+    mutable std::shared_ptr<DistCivec> buf_;
+    mutable std::vector<int> transp_;
+
   public:
     DistCivec(std::shared_ptr<const Determinants> det);
     DistCivec(const DistCivec& o);
@@ -219,6 +223,9 @@ class DistCivec {
       if (put_  ) put_->flush(); 
     }
 #endif
+
+    std::shared_ptr<DistCivec> transpose() const;
+    void transpose_wait();
 
 };
 

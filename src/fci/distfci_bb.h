@@ -39,12 +39,12 @@ class DistBBTask {
     const double* source;
     double* target;
     const double* hamil;
-    std::shared_ptr<Determinants> base_det;
+    std::shared_ptr<const Determinants> base_det;
     const std::bitset<nbit__> b;
     std::vector<std::mutex>* mutex;
 
   public:
-    DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<Determinants> det, const std::bitset<nbit__>& bs, std::vector<std::mutex>* m)
+    DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<const Determinants> det, const std::bitset<nbit__>& bs, std::vector<std::mutex>* m)
       : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {} 
 
     void compute() {

@@ -113,7 +113,7 @@ class Determinants {
     std::vector<std::vector<DetMap> > phidownb_;
 
   public:
-    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true);
+    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, bool mute = false);
 
     // static constants
     static const int Alpha = 0;
@@ -124,6 +124,8 @@ class Determinants {
 
     size_t lena() const { return stringa_.size(); }
     size_t lenb() const { return stringb_.size(); }
+
+    std::shared_ptr<Determinants> transpose() const { return std::shared_ptr<Determinants>(new Determinants(norb_, neleb_, nelea_, compress_, true)); }
 
     std::string print_bit(std::bitset<nbit__> bit) const {
       std::string out;
@@ -142,7 +144,7 @@ class Determinants {
       return out;
     }
 
-    int sign(std::bitset<nbit__> bit, int i, int j) {
+    int sign(std::bitset<nbit__> bit, int i, int j) const {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);

@@ -58,7 +58,7 @@ DistCivec& DistCivec::operator=(const DistCivec& o) {
   assert(o.size() == size());
   copy_n(o.local_.get(), alloc_, local_.get());
   return *this;
-} 
+}
 
 
 void DistCivec::init_mpi_accumulate() const {
@@ -138,7 +138,7 @@ void DistCivec::terminate_mpi_recv() const {
     // in case no thread is running behind, we need to cycle this to flush
     size_t d = done ? 0 : 1;
     mpi__->soft_allreduce(&d, 1);
-    done = d == 0; 
+    done = d == 0;
     if (!done) put_->flush();
 #endif
     if (!done) this_thread::sleep_for(sleeptime__);
@@ -165,14 +165,18 @@ double DistCivec::norm() const {
 
 void DistCivec::daxpy(const double a, const DistCivec& o) {
   assert(size() == o.size());
-  if (size())
-    daxpy_(size(), a, o.local(), 1, local(), 1);
+  for (size_t i = 0; i != asize(); ++i) {
+    lock_guard<mutex> lock(mutex_[i]);
+    daxpy_(lenb_, a, o.local()+i*lenb_, 1, local()+i*lenb_, 1);
+  }
 }
 
 
 void DistCivec::scale(const double a) {
-  if (size())
-    dscal_(size(), a, local(), 1);
+  for (size_t i = 0; i != asize(); ++i) {
+    lock_guard<mutex> lock(mutex_[i]);
+    dscal_(lenb_, a, local()+i*lenb_, 1);
+  }
 }
 
 
@@ -194,4 +198,48 @@ double DistCivec::orthog(shared_ptr<const DistCivec> o) {
 
 double DistCivec::variance() const {
   return ddot(*this) / (lena_*lenb_);
+}
+
+
+shared_ptr<DistCivec> DistCivec::transpose() const {
+  shared_ptr<Determinants> det = det_->transpose();
+  shared_ptr<DistCivec> out(new DistCivec(det));
+
+  const size_t myrank = mpi__->rank();
+
+  // transpose each segment
+  shared_ptr<DistCivec> trans = clone();
+  for (int i = 0; i != mpi__->size(); ++i) {
+    tuple<size_t, size_t> outrange = out->dist_.range(i);
+    tuple<size_t, size_t> thisrange = dist_.range(i);
+
+    unique_ptr<double[]> tmp(new double[out->dist_.size(i)*asize()]);
+    for (size_t j = 0; j != asize(); ++j)
+      copy_n(local()+get<0>(outrange)+j*lenb_, out->dist_.size(i), tmp.get()+j*out->dist_.size(i));
+
+    const size_t off = get<0>(outrange)*asize();
+    copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
+    if (i != myrank) {
+      out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
+      out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*get<0>(thisrange), out->asize()*dist_.size(i), i, i));
+    } else {
+      copy_n(trans->local()+off, out->asize()*asize(), out->local()+astart()*out->asize());
+    }
+  }
+
+  // keep trans
+  out->buf_ = trans;
+  return out;
+}
+
+
+void DistCivec::transpose_wait() {
+  for (auto& i : transp_)
+    mpi__->wait(i); 
+
+  assert(buf_);
+  mytranspose_(local(), asize(), lenb_, buf_->local());
+  copy_n(buf_->local(), asize()*lenb_, local());
+
+  buf_ = shared_ptr<DistCivec>();
 }
