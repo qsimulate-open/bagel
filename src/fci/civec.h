@@ -172,7 +172,7 @@ class DistCivec {
     double* local() { return local_.get(); } 
     const double* local() const { return local_.get(); } 
 
-    size_t size() const { return lena_*(aend_-astart_); }
+    size_t size() const { return lenb_*(aend_-astart_); }
     size_t global_size() const { return lena_*lenb_; }
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }

@@ -47,10 +47,10 @@ class StaticDist {
         throw std::runtime_error(ss.str());
       }
 
+      const size_t maxsize = (nele_-1) / nproc_ + 1;
+      const size_t ares = (nele_-1) % nproc_ + 1;
       for (size_t i = 0; i != nproc_; ++i) {
-        const size_t maxsize = (nele_-1) / nproc_ + 1;
-        const size_t ares = (nele_-1) % nproc_ + 1;
-        start_.push_back((maxsize-1) * i + std::min(ares, i));
+        start_.push_back((maxsize-1) * i + std::min(i, ares));
       }
       start_.push_back(nele);
     }

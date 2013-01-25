@@ -160,13 +160,6 @@ pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int s
   vector<int> open = bit_to_numbers(salpha^beta_without_common);
   assert((salpha^beta_without_common) == (salpha|beta_without_common));
 
-#if 0
-  // the first bit pattern for alpha (to determine the sign) 
-  bitset<nbit__> init_alpha = common_plus_alpha;
-  // There may be a better way to do this with bitset...?
-  for (int i=0; i!=nalpha; ++i) init_alpha.flip(open[i]);
-#endif
-
   // take a linear combination to make a vector singlet coupled.
   // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
   assert(nalpha*2 == open.size());

@@ -173,16 +173,13 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   const int rank = mpi__->rank();
   const int size = mpi__->size();
 
-  const size_t nloop = (int_det->lena()-1)/size+1;
-
   cc->init_mpi_recv();
 
   vector<shared_ptr<DistABTask> > tasks;
 
   // shamelessly statically distributing across processes
-  for (size_t loop = 0; loop != nloop; ++loop) {
-    size_t a = rank + loop*size;
-    if (a >= int_det->lena()) break;
+  for (size_t a = 0; a != int_det->lena(); ++a) {
+    if (a%size != rank) continue;
 
     const bitset<nbit__> astring = int_det->stringa(a);
 
@@ -502,12 +499,17 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
     tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
   }
 
-  vector<pair<bitset<nbit__> , bitset<nbit__> > > out;
-  auto iter = tmp.rbegin();
-  for (int i = 0; i != ndet; ++i) {
-    out.push_back(make_pair(det_->stringb(iter->second.first), det_->stringa(iter->second.second)));
-    ++iter;
+  auto c = tmp.rbegin();
+  for (int i = 0; i != ndet; ++i, ++c) {
+    ball[i] = c->second.first;
+    aall[i] = c->second.second;
   }
+  mpi__->broadcast(&aall[0], ndet, 0);
+  mpi__->broadcast(&ball[0], ndet, 0);
+
+  vector<pair<bitset<nbit__> , bitset<nbit__> > > out;
+  for (int i = 0; i != ndet; ++i)
+    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
 
   return out;
 }
@@ -519,7 +521,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
 //   - nspin: #alpha - #beta
 //   - out:
 void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec> > out) {
-  int ndet = nstate_+10;
+  int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__> > > bits = detseeds(ndet);
 

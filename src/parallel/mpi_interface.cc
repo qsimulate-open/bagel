@@ -154,6 +154,15 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
 }
 
 
+void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) const {
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+  MPI_Bcast(static_cast<void*>(a), size, MPI_LONG_LONG, root, MPI_COMM_WORLD);
+#endif
+}
+
+
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H

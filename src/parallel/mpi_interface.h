@@ -84,6 +84,7 @@ class MPI_Interface {
     // all reduce but with less mutex lock
     void soft_allreduce(size_t*, const size_t size);
     // broadcast
+    void broadcast(size_t*, const size_t size, const int root) const;
     void broadcast(double*, const size_t size, const int root) const;
     void broadcast(std::complex<double>*, const size_t size, const int root) const;
     // broadcast of const objects. Use with caution...
