@@ -75,9 +75,8 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
     shared_ptr<DistCivec> sigma = cc->clone();
     sigma->zero();
 
-    sigma->init_mpi_accumulate();
-
     Timer fcitime(1);
+    sigma->init_mpi_accumulate();
 
     sigma_aa(cc, sigma, jop);
     fcitime.tick_print("alpha-alpha");
@@ -346,7 +345,7 @@ void DistFCI::compute() {
     vector<shared_ptr<DistCivec> > sigma = form_sigma(cc, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    // constructing Dvec's for Davidson
+    // Davidson
     vector<shared_ptr<const DistCivec> > ccn, sigman;
     for (auto& i : cc) if (i) ccn.push_back(i);
     for (auto& i : sigma) if (i) sigman.push_back(i);
@@ -465,14 +464,12 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
 
   double* diter = denom_->local();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
-    for (auto& b : det()->stringb()) {
-      const double din = -(*diter);
+    for (size_t ib = 0; ib != det_->lenb(); ++ib) {
+      const double din = -*diter++;
       if (tmp.begin()->first < din) {
-        const size_t ib = det_->lexical<1>(b);
         tmp.insert(make_pair(din, make_pair(ib, ia)));
         tmp.erase(tmp.begin());
       }
-      ++diter;
     }
   }
 
@@ -499,6 +496,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > DistFCI::detseeds(const int ndet
     tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
   }
 
+  // sync'ing to make sure the consistency
   auto c = tmp.rbegin();
   for (int i = 0; i != ndet; ++i, ++c) {
     ball[i] = c->second.first;
@@ -548,7 +546,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     out[oindex]->zero();
     for (auto& ad : adapt.first) {
       const int aloc = get<1>(ad) - out[oindex]->astart();
-      if (aloc >= 0 && aloc < out[oindex]->aend())
+      if (aloc >= 0 && aloc < out[oindex]->asize())
         out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
     }
 

@@ -109,7 +109,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea_-neleb_) continue; 
+    if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
 
     // check if this orbital configuration is already used
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
@@ -119,7 +119,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
-    }   
+    }
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
@@ -147,7 +147,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > FCI::detseeds(const int ndet) {
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
         tmp.erase(tmp.begin());
-      } 
+      }
       ++diter;
     }
   }
@@ -167,17 +167,17 @@ void FCI::print_header() const {
 shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
   shared_ptr<const CIWfn> out(new const CIWfn(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_));
   return out;
-};  
+}
 
 
 void FCI::compute() {
   Timer pdebug(2);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment."); 
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
 
   // some constants
-  //const int ij = nij(); 
+  //const int ij = nij();
 
   // Creating an initial CI vector
   cc_ = shared_ptr<Dvec>(new Dvec(det_, nstate_)); // B runs first
@@ -197,7 +197,7 @@ void FCI::compute() {
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
-  for (int iter = 0; iter != max_iter_; ++iter) { 
+  for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
 
     // form a sigma vector given cc
@@ -222,7 +222,7 @@ void FCI::compute() {
     pdebug.tick_print("error");
 
     if (!*min_element(conv.begin(), conv.end())) {
-      // denominator scaling 
+      // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         const int size = cc_->data(ist)->size();
@@ -235,7 +235,7 @@ void FCI::compute() {
         }
         davidson.orthog(cc_->data(ist));
         list<shared_ptr<const Civec> > tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst)); 
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
       }
     }
@@ -247,7 +247,7 @@ void FCI::compute() {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << fcitime.tick() << endl; 
+                              << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
     }
     if (*min_element(conv.begin(), conv.end())) break;

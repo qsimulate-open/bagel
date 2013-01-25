@@ -152,7 +152,7 @@ void DistCivec::terminate_mpi_recv() const {
 
 double DistCivec::ddot(const DistCivec& o) const {
   assert(size() == o.size());
-  double sum = size() ? ddot_(size(), local_.get(), 1, o.local_.get(), 1) : 0.0;
+  double sum = size() ? ddot_(size(), local(), 1, o.local(), 1) : 0.0;
   mpi__->allreduce(&sum, 1);
   return sum;
 }
@@ -165,12 +165,14 @@ double DistCivec::norm() const {
 
 void DistCivec::daxpy(const double a, const DistCivec& o) {
   assert(size() == o.size());
-  daxpy_(size(), a, o.local(), 1, local(), 1);
+  if (size())
+    daxpy_(size(), a, o.local(), 1, local(), 1);
 }
 
 
 void DistCivec::scale(const double a) {
-  dscal_(size(), a, local(), 1);
+  if (size())
+    dscal_(size(), a, local(), 1);
 }
 
 
@@ -180,7 +182,7 @@ double DistCivec::orthog(list<shared_ptr<const DistCivec> > c) {
   const double norm = this->norm();
   const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
   scale(scal);
-  return 1.0/scal;
+  return norm;
 }
 
 
