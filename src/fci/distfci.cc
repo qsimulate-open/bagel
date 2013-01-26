@@ -94,6 +94,7 @@ vector<shared_ptr<DistCivec> > DistFCI::form_sigma(vector<shared_ptr<DistCivec> 
 
     sigma_aa->transpose_wait();
     sigma->daxpy(1.0, *sigma_aa);
+    fcitime.tick_print("wait1");
 
     sigma->terminate_mpi_accumulate();
     fcitime.tick_print("wait");
@@ -141,13 +142,6 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
     cc->flush();
     sigma->flush();
 #endif
-    if (tasks.size() > pool_size__) {
-      this_thread::sleep_for(sleeptime__);
-#ifndef USE_SERVER_THREAD
-      cc->flush();
-      sigma->flush();
-#endif
-    }
   }
 
   bool done;
