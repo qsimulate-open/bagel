@@ -50,35 +50,49 @@ class DistBBTask {
     void compute() {
       const size_t norb_ = base_det->norb();
       if (b.count()+2 == base_det->neleb()) {
-        // TODO buffer should be nelec size (not norb size)
-        const size_t npack = norb_*(norb_-1)/2;
+        const size_t nunoc = norb_ - b.count();
+        const size_t npack = nunoc*(nunoc-1)/2;
         std::unique_ptr<double[]> ints(new double[npack*la]);
         std::unique_ptr<double[]> ints2(new double[npack*la]);
         std::fill_n(ints.get(), npack*la, 0.0);
 
+        // form Hamiltonian
+        std::unique_ptr<double[]> h(new double[npack*npack]);
+        for (int i = 0, ijkl = 0, ij1 = 0; i != norb_; ++i) {
+          if (b[i]) { ij1 += i; continue; }
+          for (int j = 0; j < i; ++j, ++ij1) {
+            if(b[j]) continue;
+            for (int k = 0, kl1 = ij1*norb_*(norb_-1)/2; k != norb_; ++k) {
+              if (b[k]) { kl1 += k; continue; }
+              for (int l = 0; l < k; ++l, ++kl1)
+                if (!b[l]) h[ijkl++] = hamil[kl1];
+            }
+          }
+        }
+
         // first gather elements with correct sign
         for (int i = 0, ij = 0; i != norb_; ++i) {
-          if (b[i]) { ij += i; continue; }
-          for (int j = 0; j < i; ++j, ++ij) {
+          if (b[i]) continue;
+          for (int j = 0; j < i; ++j) {
             if(b[j]) continue;
             std::bitset<nbit__> bt = b; bt.set(i); bt.set(j);
             const double ij_phase = base_det->sign(bt,i,j);
-            daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij, 1);
+            daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij++, 1);
           }
         }
 
         // call dgemm
-        dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, hamil, npack, 0.0, ints2.get(), la);
+        dgemm_("N", "N", la, npack, npack, 1.0, ints.get(), la, h.get(), npack, 0.0, ints2.get(), la);
 
         for (int k = 0, kl = 0; k != norb_; ++k) {
-          if (b[k]) { kl += k; continue; }
-          for (int l = 0; l < k; ++l, ++kl) {
+          if (b[k]) continue;
+          for (int l = 0; l < k; ++l) {
             if (b[l]) continue;
             std::bitset<nbit__> bt = b; bt.set(k); bt.set(l);
             const double kl_phase = base_det->sign(bt,k,l);
             const size_t ib = base_det->lexical<1>(bt);
             std::lock_guard<std::mutex> lock((*mutex)[ib]);
-            daxpy_(la, kl_phase, ints2.get()+la*kl, 1, target+la*ib, 1);
+            daxpy_(la, kl_phase, ints2.get()+la*kl++, 1, target+la*ib, 1);
           }
         }
       } else if (b.count()+1 == base_det->neleb()) {
