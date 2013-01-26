@@ -92,7 +92,7 @@ if test x${use_mkl} = xyes; then
         fi
     fi
 fi
-if test x${with_mpi} = xyes; then
+if test x${with_mpi} != xno; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
 
