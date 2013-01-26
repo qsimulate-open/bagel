@@ -47,9 +47,11 @@ class MPI_Interface {
 
     int cnt_;
     // request handles
+#ifdef HAVE_MPI_H
     std::map<int, std::vector<MPI_Request> > request_; 
 #if 0
     std::map<int, MPI_Win> window_;
+#endif
 #endif
     int nprow_; 
     int npcol_;
