@@ -32,6 +32,7 @@
 #include <complex>
 #include <mutex>
 #include <vector>
+#include <map>
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
@@ -45,9 +46,9 @@ class MPI_Interface {
     int size_;
 
     int cnt_;
-#ifdef HAVE_MPI_H
     // request handles
     std::map<int, std::vector<MPI_Request> > request_; 
+#if 0
     std::map<int, MPI_Win> window_;
 #endif
     int nprow_; 
@@ -102,6 +103,7 @@ class MPI_Interface {
     void cancel(const int rq);
     bool test(const int rq);
 
+#if 0
     // one-sided communication with Window
     int win_create(double* buf, const size_t size);
     void win_fence(const int win);
@@ -109,6 +111,7 @@ class MPI_Interface {
     void get(double* buf, const size_t len, const int rank, const size_t disp, const int win);
     void put(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
     void accumulate(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
+#endif
 
     // scalapack
     int nprow() const { return nprow_; }

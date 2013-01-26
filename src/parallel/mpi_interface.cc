@@ -26,6 +26,7 @@
 // TODO until GCC fixes this bug
 #define _GLIBCXX_USE_NANOSLEEP
 
+#include <iostream>
 #include <cassert>
 #include <thread>
 #include <stdexcept>
@@ -217,6 +218,7 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 }
 
 
+#if 0
 int MPI_Interface::win_create(double* buf, const size_t size) {
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
@@ -278,6 +280,7 @@ void MPI_Interface::accumulate(const double* buf, const size_t len, const int ra
   MPI_Accumulate(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, MPI_SUM, iter->second); 
 #endif
 }
+#endif
 
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest, const int tag) {
