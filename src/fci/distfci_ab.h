@@ -45,8 +45,6 @@ class DistABTask {
     std::shared_ptr<DistCivec> sigma;
 
     std::unique_ptr<double[]> buf;
-    std::unique_ptr<double[]> buf2;
-    std::unique_ptr<double[]> buf3;
 
     std::vector<int> requests_;
 
@@ -59,21 +57,16 @@ class DistABTask {
       const size_t lbs = base_det->lenb();
       const size_t lbt = int_det->lenb();
 
-      buf = std::unique_ptr<double[]>(new double[lbs*norb_]);
-      std::fill_n(buf.get(), lbs*norb_, 0.0);
+      buf = std::unique_ptr<double[]>(new double[lbs*(norb_-astring.count())]);
 
-      for (int i = 0; i != norb_; ++i) {
+      for (int i = 0, k = 0; i != norb_; ++i) {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
-          const int j = cc->get_bstring_buf(buf.get()+i*lbs, base_det->lexical<0>(tmp));
+          const int j = cc->get_bstring_buf(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
           if (j >= 0) requests_.push_back(j);
         }
       }
 
-      // TODO buffer should be nelec size (not norb size)
-      buf2 = std::unique_ptr<double[]>(new double[lbt*norb_*norb_]);
-      buf3 = std::unique_ptr<double[]>(new double[lbt*norb_*norb_]);
-      std::fill_n(buf2.get(), lbt*norb_*norb_, 0.0);
     }
 
     bool test() {
@@ -89,18 +82,43 @@ class DistABTask {
     }
 
     void compute() {
+      // TODO buffer should be nelec size (not norb size)
       const int norb_ = base_det->norb();
-      const int ij = norb_*norb_; 
       const size_t lbs = base_det->lenb();
       const size_t lbt = int_det->lenb();
-      for (int k = 0, kl = 0; k != norb_; ++k)
-        for (int l = 0; l != norb_; ++l, ++kl)
-          for (auto& b : int_det->phiupb(l))
-            buf2[b.source+lbt*kl] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+k*lbs];
 
-      dgemm_("n", "n", lbt, ij, ij, 1.0, buf2.get(), lbt, jop->mo2e_ptr(), ij, 0.0, buf3.get(), lbt);
+      const size_t ndima = norb_ - astring.count();
 
-      for (int i = 0; i < norb_; ++i) {
+      std::unique_ptr<double[]> buf2(new double[lbt*ndima*norb_]);
+      std::unique_ptr<double[]> buf3(new double[lbt*ndima*norb_]);
+      std::unique_ptr<double[]> h(new double[ndima*ndima*norb_*norb_]);
+      std::fill_n(buf2.get(), lbt*ndima*norb_, 0.0);
+
+      // form Hamiltonian
+      for (int i = 0, ijkl = 0; i != norb_; ++i) {
+        if (astring[i]) continue;
+        for (int j = 0; j != norb_; ++j) {
+          for (int k = 0; k != norb_; ++k) {
+            if (astring[k]) continue;
+            for (int l = 0; l != norb_; ++l)
+              h[ijkl++] = jop->mo2e(l+norb_*k,j+norb_*i);
+          }
+        }
+      }
+
+      for (int k = 0, i = 0; k != norb_; ++k) {
+        if (!astring[k]) {
+          for (int l = 0; l != norb_; ++l)
+            for (auto& b : int_det->phiupb(l))
+              buf2[b.source+lbt*(l+norb_*i)] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+i*lbs];
+          ++i;
+        }
+      }
+
+      const int ij = ndima*norb_;
+      dgemm_("n", "n", lbt, ij, ij, 1.0, buf2, lbt, h, ij, 0.0, buf3, lbt);
+
+      for (int i = 0, k = 0; i < norb_; ++i) {
         if (astring[i]) continue;
         std::bitset<nbit__> atarget = astring; atarget.set(i);
         const double asign = base_det->sign(astring, -1, i);
@@ -110,9 +128,10 @@ class DistABTask {
 
         for (int j = 0; j < norb_; ++j) {
           for (auto& b : int_det->phiupb(j))
-            bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*i)];
+            bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*k)];
         }
         sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
+        ++k;
       }
     }
 };
