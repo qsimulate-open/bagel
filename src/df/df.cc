@@ -161,14 +161,11 @@ tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<sh
 }
 
 
-void DFDist::common_init2(const vector<shared_ptr<const Atom> >& atoms0, const vector<shared_ptr<const Atom> >& atoms1,
-                         const vector<shared_ptr<const Atom> >& aux_atoms, const double throverlap, const bool compute_inverse) {
+void DFDist::common_init2(const vector<shared_ptr<const Shell> >& ashell, const double throverlap, const bool compute_inverse) {
   Timer time;
 
   // make a global hash table
   make_table(mpi__->size());
-  vector<shared_ptr<const Shell> > ashell, b1shell, b2shell;
-  for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
@@ -219,11 +216,17 @@ void DFDist::make_table(const int nblock) {
   mpi__->allgather(send.get(), 2, rec.get(), 2); 
 
   // reformatting to map
+  vector<int> minmax;
   int* buf = rec.get();
   for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2) {
     global_table_.insert(make_pair(*buf+*(buf+1), inode));
     atable_.push_back(make_pair(*buf, *(buf+1)));
+    minmax.push_back(*(buf+1));
   }
+#ifdef HAVE_MPI_H
+  cout << "    o Min and Max asize: " << setw(7) << *min_element(minmax.begin(), minmax.end()) << " "
+                                      << setw(7) << *max_element(minmax.begin(), minmax.end()) << endl;
+#endif
 }
 
 

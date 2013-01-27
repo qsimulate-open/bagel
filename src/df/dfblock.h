@@ -28,14 +28,10 @@
 
 #include <numeric>
 #include <memory>
-#include <list>
 #include <cassert>
-#include <vector>
 #include <src/util/matrix.h>
-#include <src/scf/shell.h>
 #include <src/util/timer.h>
-#include <src/util/taskqueue.h>
-#include <src/rysint/rysint.h>
+#include <src/parallel/staticdist.h>
 
 namespace bagel {
 
@@ -48,33 +44,31 @@ class DFBlock {
     // aux_ runs fastest, b2_ runs slowest
     std::unique_ptr<double[]> data_;
  
-    std::vector<std::shared_ptr<const Shell> > aux_;
-    std::vector<std::shared_ptr<const Shell> > b1_;
-    std::vector<std::shared_ptr<const Shell> > b2_;
-    // offset within the block
-    std::vector<int> aoff_;
-    std::vector<int> b1off_;
-    std::vector<int> b2off_;
-
     // dimensions of the block
-    const size_t asize_;
-    const size_t b1size_;
-    const size_t b2size_;
+    size_t asize_;
+    size_t b1size_;
+    size_t b2size_;
 
     // a set of offsets of this block in the entire DF integrals
-    const size_t astart_; 
-    const size_t b1start_; 
-    const size_t b2start_; 
+    size_t astart_; 
+    size_t b1start_; 
+    size_t b2start_; 
+
+    // allocation info
+    size_t size_alloc_;
+    std::shared_ptr<const StaticDist> dist_;
 
   public:
     // construction of a block from AO integrals
-    DFBlock(std::vector<std::shared_ptr<const Shell> > a, std::vector<std::shared_ptr<const Shell> > b1, std::vector<std::shared_ptr<const Shell> > b2,
-            const int as, const int b1s, const int b2s);
+    DFBlock(const size_t naux, const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s);
 
     // construction of a block from data (unique_ptr<double[]>)
     DFBlock(std::unique_ptr<double[]>& d, const size_t a, const size_t b1, const size_t b2,
                                           const int as, const int b1s, const int b2s)
      : data_(std::move(d)), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { }
+
+    // average the asize between MPI processes (block will be described by dist_)
+    void average();
 
     std::shared_ptr<DFBlock> transform_second(const double* const c, const int nocc, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(const double* const c, const int nocc, const bool trans = false) const;
@@ -82,11 +76,6 @@ class DFBlock {
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
-
-    // offsets
-    const std::vector<int>& aoff() const { return aoff_; }
-    const std::vector<int>& b1off() const { return b1off_; }
-    const std::vector<int>& b2off() const { return b2off_; }
 
     // dimensions of the block
     size_t asize() const { return asize_; }

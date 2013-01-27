@@ -36,23 +36,16 @@ using namespace bagel;
 using namespace std;
 
 
-DFBlock::DFBlock(vector<shared_ptr<const Shell> > a, vector<shared_ptr<const Shell> > b1, vector<shared_ptr<const Shell> > b2,
-            const int as, const int b1s, const int b2s)
-: aux_(a), b1_(b1), b2_(b2),
-  asize_(accumulate(a.begin(), a.end(),    0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-  b1size_(accumulate(b1.begin(), b1.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-  b2size_(accumulate(b2.begin(), b2.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); })), 
-  astart_(as), b1start_(b1s), b2start_(b2s) {
+DFBlock::DFBlock(const size_t naux, const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
+ : asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s), dist_(new StaticDist(naux, mpi__->size())) {
 
-  // ugly code..
-  int tmpa = 0, tmpb1 = 0, tmpb2 = 0;
-  for (auto& i : aux_) { aoff_.push_back(tmpa); tmpa += i->nbasis(); }
-  for (auto& i : b1_)  { b1off_.push_back(tmpb1); tmpb1 += i->nbasis(); }
-  for (auto& i : b2_)  { b2off_.push_back(tmpb2); tmpb2 += i->nbasis(); }
-  assert(tmpa == asize_ && tmpb1 == b1size_ && tmpb2 == b2size_);
+  size_alloc_ = max(dist_->size(mpi__->rank()), asize_) * b1size_*b2size_; 
+  data_ = unique_ptr<double[]>(new double[size_alloc_]);
 
-  // initiallize data?
-  data_ = unique_ptr<double[]>(new double[asize_*b1size_*b2size_]);
+}
+
+
+void DFBlock::average() {
 
 }
 
