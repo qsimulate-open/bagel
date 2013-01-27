@@ -26,6 +26,9 @@ o Parallelization needs more work
   - Shell distribution to MPI processes (src/df/df.cc) can be further optimized
   - Compatibility check between Scalapack and BLAS at configure time
 
+o Parallel gradients broken
+  - Back transformed DFDist obejcts need to be realigned with the shell boundaries
+
 o DistFCI needs to be more threaded
 
 o Molden orbitals printed by BAGEL won't open in VMD. Is this a bug in BAGEL or VMD?
@@ -35,7 +38,5 @@ o Clean up interface to localization routines, especially PM
 o One could reduce the number of diagonalization in ROHF
 
 o config.h should be placed under bagel or something
-
-o Parallel gradients broken
 
 o Optimize sheeeptime__ (util/constants.h) with realistic calculations
