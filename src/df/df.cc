@@ -141,9 +141,11 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 
 
 tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<shared_ptr<const Shell> >& all) const {
-  const int batchsize = naux_ / mpi__->size();
-  const int start = batchsize*mpi__->rank();
-  const int end   = mpi__->rank() != mpi__->size()-1 ? batchsize*mpi__->rank() + batchsize : naux_;
+  int start, end;
+  {
+    StaticDist d(naux_, mpi__->size());
+    tie(start, end) = d.range(mpi__->rank());
+  }
 
   int out1;
   vector<shared_ptr<const Shell> > out2;
