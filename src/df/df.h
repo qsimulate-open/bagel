@@ -227,7 +227,7 @@ class DFDist_ints : public DFDist {
 
       for (auto& i : block_)
         i->average();
-      time.tick_print("3-index ints");
+      time.tick_print("3-index ints post");
     }
 
   public:
