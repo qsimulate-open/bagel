@@ -68,10 +68,11 @@ void DFBlock::average() {
   assert(o_end - t_end >= 0);
   assert(o_start - t_start >= 0);
 
-  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION, NO TRAP!!
-
+  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
   const size_t asendsize = o_end - t_end;
   const size_t arecvsize = o_start - t_start;
+
+  assert(asendsize < t_end-t_start && arecvsize < t_end-t_start);
 
   unique_ptr<double[]> sendbuf;
   unique_ptr<double[]> recvbuf;
@@ -118,7 +119,7 @@ void DFBlock::average() {
     mpi__->wait(recvtag);
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
       for (size_t b1 = 0; b1 != b1size_; ++b1)
-        for (size_t a = 0; a != asize_; ++a, ++i)
+        for (size_t a = 0; a != arecvsize; ++a, ++i)
           data_[a+asize_*(b1+b1size_*b2)] = recvbuf[i];
   }
 
