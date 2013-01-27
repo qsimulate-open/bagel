@@ -48,6 +48,8 @@ class Dirac : public SCF_base {
     std::shared_ptr<ZMatrix> hcore_construct();
     std::shared_ptr<ZMatrix> s12_construct();
 
+    double energy_;
+
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
