@@ -46,6 +46,84 @@ DFBlock::DFBlock(const size_t naux, const size_t a, const size_t b1, const size_
 
 
 void DFBlock::average() {
+  // first get the original asizes
+  size_t send[2] = { astart_, asize_ };
+  unique_ptr<size_t[]> rec(new size_t[2*mpi__->size()]);
+  fill_n(rec.get(), 2*mpi__->size(), 0);
+  mpi__->allgather(send, 2, rec.get(), 2); 
+
+  vector<pair<size_t, size_t> > atable;
+  size_t* buf = rec.get();
+  for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2)
+    atable.push_back(make_pair(*buf, *(buf+1)));
+
+  // first make a send and receive buffer
+  const int myrank = mpi__->rank();
+  const size_t o_start = atable[myrank].first;
+  const size_t o_end   = o_start + atable[myrank].second;
+  assert(o_start == astart_ && o_end == astart_+asize_);
+  size_t t_start, t_end;
+  tie(t_start, t_end) = dist_->range(myrank);
+
+  assert(o_end - t_end >= 0);
+  assert(o_start - t_start >= 0);
+
+  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION, NO TRAP!!
+
+  const size_t asendsize = o_end - t_end;
+  const size_t arecvsize = o_start - t_start;
+
+  unique_ptr<double[]> sendbuf;
+  unique_ptr<double[]> recvbuf;
+  int sendtag;
+  int recvtag; 
+
+  if (asendsize) { 
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
+    const size_t retsize = asize_ - asendsize;
+    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+      for (size_t b1 = 0; b1 != b1size_; ++b1)
+        for (size_t a = retsize; a != asize_; ++a, ++i)
+          sendbuf[i] = data_[a+asize_*(b1+b1size_*b2)]; 
+    // send to the next node
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank+1, myrank);
+  }
+
+  if (arecvsize) {
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size_*b2size_]);
+    // recv from the previous node
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank-1, myrank-1);
+  }
+
+  // second move local data
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize_ - asendsize;
+    if (t_size <= asize_) { 
+      for (size_t i = 0; i != b1size_*b2size_; ++i)
+        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size); 
+    } else {
+      for (long long int i = b1size_*b2size_-1; i >= 0; --i)
+        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size); 
+    }
+  }
+
+  // set new astart_ and asize_
+  asize_ = t_end - t_start; 
+  astart_ = t_start;
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication 
+    mpi__->wait(recvtag);
+    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+      for (size_t b1 = 0; b1 != b1size_; ++b1)
+        for (size_t a = 0; a != asize_; ++a, ++i)
+          data_[a+asize_*(b1+b1size_*b2)] = recvbuf[i];
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
 
 }
 

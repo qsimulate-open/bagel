@@ -215,18 +215,11 @@ void DFDist::make_table(const int nblock) {
   send[1] = block_[0]->asize();
   mpi__->allgather(send.get(), 2, rec.get(), 2); 
 
-  // reformatting to map
-  vector<int> minmax;
   int* buf = rec.get();
   for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2) {
     global_table_.insert(make_pair(*buf+*(buf+1), inode));
     atable_.push_back(make_pair(*buf, *(buf+1)));
-    minmax.push_back(*(buf+1));
   }
-#ifdef HAVE_MPI_H
-  cout << "    o Min and Max asize: " << setw(7) << *min_element(minmax.begin(), minmax.end()) << " "
-                                      << setw(7) << *max_element(minmax.begin(), minmax.end()) << endl;
-#endif
 }
 
 

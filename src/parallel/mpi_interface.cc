@@ -30,6 +30,7 @@
 #include <cassert>
 #include <thread>
 #include <stdexcept>
+#include <algorithm>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/parallel/scalapack.h>
@@ -195,6 +196,9 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
 #endif
 }
 
@@ -205,6 +209,9 @@ void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* re
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_LONG_LONG, static_cast<void*>(rec), rsize, MPI_LONG_LONG, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
 #endif
 }
 
@@ -214,6 +221,9 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
 #endif
 }
 

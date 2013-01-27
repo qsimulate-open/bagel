@@ -77,6 +77,9 @@ class DFBlock {
     std::shared_ptr<DFBlock> copy() const;
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
+    // dist
+    const std::shared_ptr<const StaticDist>& dist() const { return dist_; }
+
     // dimensions of the block
     size_t asize() const { return asize_; }
     size_t b1size() const { return b1size_; }
