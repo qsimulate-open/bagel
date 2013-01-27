@@ -236,8 +236,6 @@ class DFDist_ints : public DFDist {
       : DFDist(nbas, naux, atoms, aux_atoms, thr, inverse, dum) {
       std::vector<std::shared_ptr<const Shell> > ashell;
       for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
-      // randomize for better balancing
-      std::random_shuffle(ashell.begin(), ashell.end());
       common_init1(atoms, atoms, ashell, thr, inverse);
       common_init2(ashell, thr, inverse);
     }
