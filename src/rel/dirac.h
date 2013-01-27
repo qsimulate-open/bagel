@@ -36,6 +36,7 @@
 #include <src/util/matrix.h>
 #include <src/scf/scf_base.h>
 #include <src/rel/smallnai.h>
+#include <src/util/input.h>
 
 namespace bagel {
 
@@ -48,12 +49,21 @@ class Dirac : public SCF_base {
     std::shared_ptr<ZMatrix> hcore_construct();
     std::shared_ptr<ZMatrix> s12_construct();
 
+    int max_iter_;
+    int diis_start_;
+    double thresh_scf_;
     double energy_;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
      : SCF_base(idata_, geom->relativistic(), re), kinetic_(new Kinetic(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
+      // reading input keywords
+      max_iter_ = read_input<int>(idata_, "maxiter", 100);
+      max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
+      diis_start_ = read_input<int>(idata_, "diis_start", 1);
+      thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
+      thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
     }
     ~Dirac() {};
 

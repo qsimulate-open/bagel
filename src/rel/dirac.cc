@@ -76,11 +76,6 @@ void Dirac::compute() {
   cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", RKB) ===" << endl << indent << endl;
 
   DIIS<ZMatrix> diis(5);
-  // TODO these are going to be read from input >>>>>>>>>>>>>
-  const int max_iter_ = 100;
-  const int diis_start_ = 0;
-  const double thresh_scf_ = 1.0e-8;
-  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
