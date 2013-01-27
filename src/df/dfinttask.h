@@ -28,41 +28,45 @@
 
 #include <src/df/dfblock.h>
 #include <src/scf/shell.h>
-#include <src/rysint/rysint.h>
+#include <src/rysint/integral.h>
 
 namespace bagel {
 
-class DFIntTask_base {
+template <typename TBatch, int N>
+class DFIntTask {
   protected:
-    std::array<std::shared_ptr<const Shell>,4> shell_;
-    std::array<int,3> offset_; // at most 3 elements
-    int rank_;
-    std::vector<std::shared_ptr<DFBlock> > dfblocks_;
+    const std::array<std::shared_ptr<const Shell>,4> shell_;
+    const std::array<int,3> offset_; // at most 3 elements
+    std::array<std::shared_ptr<DFBlock>,N> dfblocks_;
 
-    virtual std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) = 0;
-    virtual int nblocks() const = 0;
-
-  public:
-    DFIntTask_base(std::array<std::shared_ptr<const Shell>,4>& a, std::vector<int>& b, std::vector<std::shared_ptr<DFBlock> >& df);
-
-    void compute();
-
-};
-
-template <typename TBatch>
-class DFIntTask : public DFIntTask_base {
-  protected:
-    std::shared_ptr<Integral> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input) override {
+    std::shared_ptr<Integral> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
       std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
       eribatch->compute();
       return eribatch;
     }
 
-    int nblocks() const override { return TBatch::nblocks(); }
-
   public:
-    DFIntTask(std::array<std::shared_ptr<const Shell>,4>&& a, std::vector<int>&& b, std::vector<std::shared_ptr<DFBlock> >& df) : DFIntTask_base(a,b,df) {} 
+    DFIntTask(const std::array<std::shared_ptr<const Shell>,4>&& a, const std::array<int,3>&& b, std::array<std::shared_ptr<DFBlock>,N>& df)
+     : shell_(a), offset_(b), dfblocks_(df) { };
 
+    void compute() {
+      std::shared_ptr<Integral> p = compute_batch(shell_);
+
+      // all slot in
+      for (int i = 0; i != N; ++i) {
+        assert(dfblocks_[i]->b1size() == dfblocks_[i]->b2size());
+        const size_t nbin = dfblocks_[i]->b1size();
+        const size_t naux = dfblocks_[i]->asize();
+        const double* ppt = p->data(i);
+        double* const data = dfblocks_[i]->get();
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
+          for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
+            std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j1+nbin*j0)); 
+            std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j0+nbin*j1)); 
+          }
+        }
+      }
+    }
 };
 
 

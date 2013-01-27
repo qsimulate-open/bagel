@@ -192,13 +192,17 @@ class DFDist_ints : public DFDist {
         block_[i] = std::shared_ptr<DFBlock>(new DFBlock(myashell, b1shell, b2shell, astart, 0, 0));
 
       // making a task list
-      std::vector<DFIntTask<TBatch> > tasks;
+      std::vector<DFIntTask<TBatch,TBatch::nblocks()> > tasks;
       tasks.reserve(b1shell.size()*b2shell.size()*myashell.size());
 
       // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
       assert(b1shell == b2shell);
 
       const std::shared_ptr<const Shell> i3(new Shell(myashell.front()->spherical()));
+
+      // due to performance issue, we need to reshape it to array
+      std::array<std::shared_ptr<DFBlock>,TBatch::nblocks()> blk;
+      for (int i = 0; i != nblocks; ++i) blk[i] = block_[i];
 
       auto j2 = block_[0]->b2off().begin();
       for (auto& i2 : b2shell) {
@@ -208,7 +212,7 @@ class DFDist_ints : public DFDist {
           if (*j1 <= *j2) {
             auto j0 = block_[0]->aoff().begin();
             for (auto& i0 : myashell) {
-              tasks.push_back(DFIntTask<TBatch>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::vector<int>{*j2, *j1, *j0}, block_));
+              tasks.push_back(DFIntTask<TBatch,TBatch::nblocks()>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{*j2, *j1, *j0}}, blk));
               ++j0;
             }
           }
@@ -216,7 +220,8 @@ class DFDist_ints : public DFDist {
         }
         ++j2;
       }
-      TaskQueue<DFIntTask<TBatch> > tq(tasks);
+      time.tick_print("3-index ints prep");
+      TaskQueue<DFIntTask<TBatch,nblocks> > tq(tasks);
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
     }

@@ -66,7 +66,7 @@ class SmallERIBatch : public Integral {
     size_t size_alloc() const { return size_alloc_; }
 
     // need to return 6 blocks
-    static int nblocks() { return 6; }
+    constexpr static int nblocks() { return 6; }
 };
 
 }
