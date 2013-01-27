@@ -42,6 +42,7 @@ ZMatrix::ZMatrix(const int n, const int m) : Matrix_base<complex<double> >(n, m)
 
 
 ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double> >(o.ndim_, o.mdim_) {
+  *this = o;
 }
 
 

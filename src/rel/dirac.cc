@@ -98,8 +98,7 @@ void Dirac::compute() {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << prod.imag();
       throw runtime_error(ss.str());
     }
-    // TODO understand why 1.0 instead of 0.5?
-    energy_ = 1.0*aodensity->zdotc(*hcore+*fock).real() + geom_->nuclear_repulsion();
+    energy_ = 0.5*aodensity->zdotc(*hcore+*fock).real() + geom_->nuclear_repulsion();
 
     shared_ptr<const ZMatrix> error_vector(new ZMatrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
     const double error = error_vector->rms();
