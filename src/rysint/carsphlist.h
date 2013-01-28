@@ -27,6 +27,7 @@
 #ifndef __SRC_RYSINT_CARSPHLIST_H
 #define __SRC_RYSINT_CARSPHLIST_H
 
+#include <functional>
 #include <src/rysint/intparam.h>
 
 namespace bagel {
@@ -68,7 +69,7 @@ struct CarSphList {
     return (carsphfunc[i])(a0, a1, a2);
   };
 
-  void (*carsphfunc[ANG_HRR_END * ANG_HRR_END])(const int, const double*, double*);
+  std::function<void (const int, const double*, double*)> carsphfunc[ANG_HRR_END * ANG_HRR_END];
 };
 
 }

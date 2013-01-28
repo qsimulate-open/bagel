@@ -27,6 +27,7 @@
 #ifndef __SRC_RYSINT_BREITROOTLIST_H
 #define __SRC_RYSINT_BREITROOTLIST_H
 
+#include <functional>
 #include <src/rysint/intparam.h>
 #include <src/rysint/f77.h>
 
@@ -34,7 +35,7 @@ namespace bagel {
 
 struct BreitRootList  {
   private:
-    void (*rfunc[RYS_MAX + 1])(const double*, double*, double*, const int*);
+    std::function<void (const double*, double*, double*, const int*)> rfunc[RYS_MAX + 1];
 
   public:
     BreitRootList() {
@@ -53,7 +54,7 @@ struct BreitRootList  {
       rfunc[13] = &breitroot13_;
     }
 
-    void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { (rfunc[i])(a1, a2, a3, &a4); }
+    void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, &a4); }
 
 };
 

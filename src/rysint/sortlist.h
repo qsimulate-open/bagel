@@ -31,6 +31,7 @@
 #ifndef __SRC_RYSINT_SORTLIST_H
 #define __SRC_RYSINT_SORTLIST_H
 
+#include <functional>
 #include <src/rysint/intparam.h>
 
 namespace bagel {
@@ -101,7 +102,7 @@ struct SortList {
     return (sortfunc[i])(a1, a2, a3, a4, a5, a6);
   };
 
-  void (*sortfunc[ANG_HRR_END * ANG_HRR_END])(double*, const double*, const int, const int, const int, const bool);
+  std::function<void (double*, const double*, const int, const int, const int, const bool)> sortfunc[ANG_HRR_END * ANG_HRR_END];
 };
 
 }

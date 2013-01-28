@@ -27,6 +27,7 @@
 #ifndef __SRC_RYSINT_SROOTLIST_H
 #define __SRC_RYSINT_SROOTLIST_H
 
+#include <functional>
 #include <src/rysint/intparam.h>
 
 struct SRootList  {
@@ -34,7 +35,7 @@ struct SRootList  {
     SRootList();
     ~SRootList();
 
-    void (*srfunc[RYS_MAX + 1])(const double*, const double*, double*, double*, const int*);
+    std::function<void (const double*, const double*, double*, double*, const int*)> srfunc[RYS_MAX + 1];
 
     void srootfunc_call(const unsigned int i, const double* a0, const double* a1, double* a2, double* a3, const int* a4) {
       return (srfunc[i])(a0, a1, a2, a3, a4);

@@ -31,6 +31,7 @@
 #ifndef __SRC_RYSINT_HRRLIST_H
 #define __SRC_RYSINT_HRRLIST_H
 
+#include <functional>
 #include <array>
 #include <src/rysint/intparam.h>
 
@@ -63,10 +64,10 @@ struct HRRList {
   static void perform_HRR_c0_66(const int, const double*, const std::array<double,3>&, double*);
 
   void hrrfunc_call(const unsigned int i, const int a0, const double* a1, const std::array<double,3>& a2, double* a3) const {
-    return (hrrfunc[i])(a0, a1, a2, a3);
+    return hrrfunc[i](a0, a1, a2, a3);
   };
 
-  void (*hrrfunc[ANG_HRR_END * ANG_HRR_END])(const int, const double*, const std::array<double,3>&, double*);
+  std::function<void (const int, const double*, const std::array<double,3>&, double*)> hrrfunc[ANG_HRR_END * ANG_HRR_END];
 };
 
 }
