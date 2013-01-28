@@ -31,6 +31,7 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/constants.h>
 #include <src/util/f77.h>
+#include <src/util/simple.h>
 
 using namespace bagel;
 using namespace std;
@@ -46,22 +47,10 @@ DFBlock::DFBlock(const size_t naux, const size_t a, const size_t b1, const size_
 
 
 void DFBlock::average() {
-  // first get the original asizes
-  size_t send[2] = { astart_, asize_ };
-  unique_ptr<size_t[]> rec(new size_t[2*mpi__->size()]);
-  fill_n(rec.get(), 2*mpi__->size(), 0);
-  mpi__->allgather(send, 2, rec.get(), 2); 
-
-  vector<pair<size_t, size_t> > atable;
-  size_t* buf = rec.get();
-  for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2)
-    atable.push_back(make_pair(*buf, *(buf+1)));
-
   // first make a send and receive buffer
+  const size_t o_start = astart_;
+  const size_t o_end   = o_start + asize_;
   const int myrank = mpi__->rank();
-  const size_t o_start = atable[myrank].first;
-  const size_t o_end   = o_start + atable[myrank].second;
-  assert(o_start == astart_ && o_end == astart_+asize_);
   size_t t_start, t_end;
   tie(t_start, t_end) = dist_->range(myrank);
 
@@ -76,16 +65,21 @@ void DFBlock::average() {
 
   unique_ptr<double[]> sendbuf;
   unique_ptr<double[]> recvbuf;
-  int sendtag;
-  int recvtag; 
+  int sendtag = 0;
+  int recvtag = 0;
 
   if (asendsize) { 
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
+
     sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
     const size_t retsize = asize_ - asendsize;
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
-      for (size_t b1 = 0; b1 != b1size_; ++b1)
-        for (size_t a = retsize; a != asize_; ++a, ++i)
-          sendbuf[i] = data_[a+asize_*(b1+b1size_*b2)]; 
+      task.push_back(CopyBlockTask(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_));
+
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
+
     // send to the next node
     sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank+1, myrank);
   }
@@ -117,10 +111,13 @@ void DFBlock::average() {
   if (arecvsize) {
     // wait for recv communication 
     mpi__->wait(recvtag);
+
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
-      for (size_t b1 = 0; b1 != b1size_; ++b1)
-        for (size_t a = 0; a != arecvsize; ++a, ++i)
-          data_[a+asize_*(b1+b1size_*b2)] = recvbuf[i];
+      task.push_back(CopyBlockTask(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_));
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
   }
 
   // wait for send communication

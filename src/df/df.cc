@@ -172,24 +172,21 @@ void DFDist::common_init2(const vector<shared_ptr<const Shell> >& ashell, const 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist> > tasks;
   tasks.reserve(ashell.size()*ashell.size());
-  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
 
-  int tmpa = 0;
-  vector<int> aof;
-  for (auto& i : ashell) { aof.push_back(tmpa); tmpa += i->nbasis(); }
+  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
   const shared_ptr<const Shell> b3(new Shell(ashell.front()->spherical()));
 
   // naive static distribution
   int u = 0;
-  auto o0 = aof.begin();
+  int o0 = 0;
   for (auto& b0 : ashell) {
-    auto o1 = aof.begin();
+    int o1 = 0;
     for (auto& b1 : ashell) {
-      if (*o0 <= *o1 && (u++ % mpi__->size() == mpi__->rank()))
-        tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, vector<int>{*o0, *o1}, this));
-      ++o1;
+      if (o0 <= o1 && (u++ % mpi__->size() == mpi__->rank()))
+        tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this));
+      o1 += b1->nbasis();
     }
-    ++o0;
+    o0 += b0->nbasis();
   }
 
   // these shell loops will be distributed across threads

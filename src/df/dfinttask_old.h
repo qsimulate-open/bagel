@@ -39,15 +39,12 @@ template<typename T>
 class DFIntTask_OLD {
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
-    std::array<int,3> offset_; // at most 3 elements
+    std::array<int,2> offset_; // at most 3 elements
     int rank_;
     T* df_;
 
   public:
-    DFIntTask_OLD(std::array<std::shared_ptr<const Shell>,4>&& a, std::vector<int>&& b, T* df) : shell_(a), rank_(b.size()), df_(df) {
-      int j = 0;
-      for (auto i = b.begin(); i != b.end(); ++i, ++j) offset_[j] = *i;
-    }
+    DFIntTask_OLD(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,2>&& b, T* df) : shell_(a), offset_(b), rank_(b.size()), df_(df) { }
 
     void compute() {
       std::pair<const double*, std::shared_ptr<RysInt> > p = df_->compute_batch(shell_);

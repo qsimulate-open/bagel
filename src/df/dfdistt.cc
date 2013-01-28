@@ -28,29 +28,10 @@
 #include <src/parallel/mpi_interface.h>
 #include <src/df/dfdistt.h>
 #include <src/util/timer.h>
+#include <src/util/simple.h>
 
 using namespace std;
 using namespace bagel;
-
-namespace bagel {
-struct CopyBlockTask {
-  private:
-    const double* const a_;
-    const size_t astride_;
-    double* const b_;
-    const size_t bstride_;
-    const size_t n_;
-    const size_t m_;
-  public:
-    CopyBlockTask(const double* const a, const size_t& ast, double* const b, const size_t& bst, const size_t& n, const size_t& m)
-      : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
-
-    void compute() {
-      for (size_t j = 0; j != m_; ++j) 
-        std::copy_n(a_+j*astride_, n_, b_+j*bstride_);
-    }
-};
-}
 
 DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
  : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()), df_(in->df()) {
