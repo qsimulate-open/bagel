@@ -123,14 +123,9 @@ class DFDist : public ParallelDF {
     std::tuple<int, std::vector<std::shared_ptr<const Shell> > > get_ashell(const std::vector<std::shared_ptr<const Shell> >& all) const;
 
   public:
-    // construction of a block from AO integrals
-    DFDist(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms,
-                                           const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse, const double dum)
-      : ParallelDF(naux, nbas, nbas) {
-    }
-
-    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block) : ParallelDF(naux, nbas, nbas) {
-      block_.push_back(block);
+    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>()) : ParallelDF(naux, nbas, nbas) {
+      if (block)
+        block_.push_back(block);
     }
 
     DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df; }
@@ -231,9 +226,8 @@ class DFDist_ints : public DFDist {
     }
 
   public:
-    DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms,
-                                           const std::vector<std::shared_ptr<const Atom> >& aux_atoms, const double thr, const bool inverse, const double dum)
-      : DFDist(nbas, naux, atoms, aux_atoms, thr, inverse, dum) {
+    DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms, const std::vector<std::shared_ptr<const Atom> >& aux_atoms,
+                const double thr, const bool inverse, const double dum) : DFDist(nbas, naux) {
       std::vector<std::shared_ptr<const Shell> > ashell;
       for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
       common_init1(atoms, atoms, ashell, thr, inverse);

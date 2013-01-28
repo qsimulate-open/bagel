@@ -307,6 +307,10 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
   } // end of batch loop
 
+  // shuffle, but deterministic 
+  srand(0);
+  random_shuffle(shells_.begin(), shells_.end(), [](const int& i) { return rand()%i; });
+
 }
 
 
