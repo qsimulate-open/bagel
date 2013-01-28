@@ -137,6 +137,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     double orthog(const std::list<std::shared_ptr<const Matrix> > o);
 
+    std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
+
     void print(const std::string in = "", const size_t size = 10) const;
 
 #ifdef HAVE_SCALAPACK

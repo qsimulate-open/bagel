@@ -30,84 +30,72 @@
 #include <list>
 #include <src/util/f77.h>
 #include <memory>
+#include <src/util/matrix.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have daxpy and ddot functions.
 // T must have clone() function that returns shared_ptr<T>
+// Mat should be either Matrix or ZMatrix. Needs Mat::solve function
 
 namespace bagel {
 
-template <class T>
+template <class T, typename Mat = Matrix>
 class DIIS {
-  typedef std::shared_ptr<const T> RefT;
-  typedef std::list<std::pair<RefT, RefT> > Container_type_;
+  typedef std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T> > > Container_type_;
   typedef typename Container_type_::iterator iterator;
 
   protected:
     const int ndiis_;
-    const int nld_;
-    const int lwork_;
 
     Container_type_ data_;
 
-    std::unique_ptr<double[]> matrix_;
-    std::unique_ptr<double[]> matrix_save_;
-    std::unique_ptr<double[]> coeff_;
-    std::unique_ptr<double[]> work_;
-    std::unique_ptr<int[]> ipiv_;
+    std::shared_ptr<Mat> matrix_;
+    std::shared_ptr<Mat> coeff_;
 
   public:
-    DIIS(const int ndiis) : ndiis_(ndiis), nld_(ndiis+1), lwork_((ndiis+1)*(ndiis+1)),
-      matrix_(new double[(ndiis+1)*(ndiis+1)]),
-      matrix_save_(new double[(ndiis+1)*(ndiis+1)]),
-      coeff_(new double[ndiis+1]),
-      work_(new double[(ndiis+1)*(ndiis+1)]),
-      ipiv_(new int[(ndiis+1)*(ndiis+1)]) { };
+    DIIS(const int ndiis) : ndiis_(ndiis), matrix_(new Mat(ndiis+1, ndiis+1, true)), coeff_(new Mat(ndiis+1, 1)) { }
 
-    ~DIIS() { };
+    ~DIIS() { }
 
-    std::shared_ptr<T> extrapolate(const std::pair<RefT, RefT> input) {
-      RefT v = input.first;
-      RefT e = input.second;
+    std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T> > input) {
+      std::shared_ptr<const T> v = input.first;
+      std::shared_ptr<const T> e = input.second;
       data_.push_back(input);
-      const int size = nld_ * nld_;
 
       if (data_.size() > ndiis_) {
         data_.pop_front();
         for (int i = 1; i != ndiis_; ++i) {
           for (int j = 1; j != ndiis_; ++j)
-            matrix_[(j - 1) + (i - 1) * nld_] = matrix_save_[j + i * nld_];
+            matrix_->element(j-1, i-1) = matrix_->element(j, i);
         }
-      } else if (data_.size() != 1) {
-        std::copy_n(matrix_save_.get(), size, matrix_.get());
       }
       const int cnum = data_.size();
       iterator data_iter = data_.begin();
 
+      // left hand side
       for (int i = 0; i != cnum - 1; ++i, ++data_iter)
-        matrix_[(cnum - 1) + i * nld_] = matrix_[i + (cnum - 1) * nld_] = e->ddot(*(data_iter->second));
-      matrix_[(cnum - 1) + (cnum - 1) * nld_] = e->ddot(e);
+        matrix_->element(cnum-1, i) = matrix_->element(i, cnum-1) = e->ddot(*(data_iter->second));
+      matrix_->element(cnum-1, cnum-1)= e->ddot(e);
       for (int i = 0; i != cnum; ++i)
-        matrix_[cnum + i * nld_] = matrix_[i + cnum * nld_] = -1.0;
-      matrix_[cnum + cnum * nld_] = 0.0;
-      for (int i = 0; i != cnum; ++i) coeff_[i] = 0.0;
-      coeff_[cnum] = -1.0;
+        matrix_->element(cnum, i) = matrix_->element(i, cnum) = -1.0;
+      matrix_->element(cnum, cnum) = 0.0;
 
-      std::copy_n(matrix_.get(), size, matrix_save_.get());
+      // right hand side
+      for (int i = 0; i != cnum; ++i)
+        coeff_->element(i,0) = 0.0;
+      coeff_->element(cnum,0) = -1.0;
 
-      const int cdim = cnum + 1;
-      int info;
-      dsysv_("U", cdim, 1, matrix_, nld_, ipiv_, coeff_, nld_, work_, lwork_, info);
-      if (info) throw std::runtime_error("DSYSV failed in diis.h");
+      // solve the linear equation
+      coeff_ = coeff_->solve(matrix_, cnum+1);
 
+      // take a linear combination
       std::shared_ptr<T> out = input.first->clone();
-
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)
-        out->daxpy(coeff_[i], *(data_iter->first));
+        out->daxpy(coeff_->element(i,0), *(data_iter->first));
 
       return out;
-    };
+    }
 
 };
 

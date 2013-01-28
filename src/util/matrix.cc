@@ -516,6 +516,21 @@ void Matrix::inverse() {
 }
 
 
+// this is a vector B, and solve AC = B, returns C
+shared_ptr<Matrix> Matrix::solve(std::shared_ptr<const Matrix> A, const int n) const {
+  Matrix As = *A;
+  shared_ptr<Matrix> out(new Matrix(*this));
+  assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
+
+  unique_ptr<int[]> ipiv(new int[n]);
+  int info;
+  dgesv_(n, out->mdim(), As.data(), As.ndim(), ipiv.get(), out->data(), out->ndim(), info);
+  if (info) throw std::runtime_error("DSYSV failed in diis.h");
+
+  return out;
+}
+
+
 // compute S^{-1} using diagonalization 
 void Matrix::inverse_symmetric(const double thresh) {
   assert(ndim_ == mdim_);
