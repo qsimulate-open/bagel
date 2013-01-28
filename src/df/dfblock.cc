@@ -37,10 +37,14 @@ using namespace bagel;
 using namespace std;
 
 
-DFBlock::DFBlock(const size_t naux, const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
- : asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s), dist_(new StaticDist(naux, mpi__->size())) {
+DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist, std::shared_ptr<const StaticDist> adist_shell,
+                 const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
+ : adist_(adist), adist_shell_(adist_shell), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  size_alloc_ = max(dist_->size(mpi__->rank()), asize_) * b1size_*b2size_; 
+  // for consistency
+  assert(adist_shell_->size(mpi__->rank()) == asize_);
+
+  size_alloc_ = max(adist_->size(mpi__->rank()), asize_) * b1size_*b2size_; 
   data_ = unique_ptr<double[]>(new double[size_alloc_]);
 
 }
@@ -52,7 +56,7 @@ void DFBlock::average() {
   const size_t o_end   = o_start + asize_;
   const int myrank = mpi__->rank();
   size_t t_start, t_end;
-  tie(t_start, t_end) = dist_->range(myrank);
+  tie(t_start, t_end) = adist_->range(myrank);
 
   assert(o_end - t_end >= 0);
   assert(o_start - t_start >= 0);

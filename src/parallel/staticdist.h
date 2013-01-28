@@ -55,6 +55,9 @@ class StaticDist {
       start_.push_back(nele);
     }
 
+    // a vector of start and size
+    StaticDist(const std::vector<size_t>& o) : nele_(o.back()), nproc_(o.size()-1), start_(o) { }
+
     // vector of pairs of astart and asize
     std::vector<std::pair<size_t, size_t>> atable() const {
       std::vector<std::pair<size_t, size_t>> out;

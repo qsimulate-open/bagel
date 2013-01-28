@@ -54,12 +54,6 @@ ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2)
 }
 
 
-int ParallelDF::get_node(const int off) const {
-  int out = df_->global_table_.upper_bound(off)->second;
-  return out;
-}
-
-
 shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   shared_ptr<Matrix> out = (!swap) ? block_[0]->form_2index(o->block_[0], a) : o->block_[0]->form_2index(block_[0], a);
@@ -163,11 +157,8 @@ tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shar
 }
 
 
-void DFDist::common_init2(const vector<shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse) {
+void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse) {
   Timer time;
-
-  // make a global hash table
-  make_table(mpi__->size());
 
   // generates a task of integral evaluations
   vector<DFIntTask_OLD<DFDist>> tasks;
@@ -205,20 +196,15 @@ void DFDist::common_init2(const vector<shared_ptr<const Shell>>& ashell, const d
 }
 
 
-void DFDist::make_table(const int nblock) {
-  unique_ptr<int[]> send(new int[2]);
-  unique_ptr<int[]> rec(new int[2*mpi__->size()]);
-  fill_n(rec.get(), 2*mpi__->size(), 0);
+void DFDist::make_table(const size_t astart) {
+  vector<size_t> rec(mpi__->size());
+  fill(rec.begin(), rec.end(), 0);
 
-  send[0] = block_[0]->astart();
-  send[1] = block_[0]->asize();
-  mpi__->allgather(send.get(), 2, rec.get(), 2); 
+  mpi__->allgather(&astart, 1, &rec[0], 1); 
 
-  int* buf = rec.get();
-  for (int inode = 0; inode != mpi__->size(); ++inode, buf += 2) {
-    global_table_.insert(make_pair(*buf+*(buf+1), inode));
-    atable_.push_back(make_pair(*buf, *(buf+1)));
-  }
+  rec.push_back(naux_);
+  adist_shell_ = shared_ptr<const StaticDist>(new StaticDist(rec));
+  adist_ = adist_shell_;
 }
 
 

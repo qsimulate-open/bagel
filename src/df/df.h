@@ -53,7 +53,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::vector<std::shared_ptr<DFBlock>> block_;
     // hash key and process number
     std::map<int, int> global_table_;
-    std::vector<std::pair<size_t, size_t>> atable_;
+    std::shared_ptr<const StaticDist> adist_shell_;
+    std::shared_ptr<const StaticDist> adist_;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -79,6 +80,9 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }
     std::shared_ptr<const DFBlock> block(const size_t i) const { return block_[i]; }
 
+    std::shared_ptr<const StaticDist> adist_shell() const { return adist_shell_; }
+    std::shared_ptr<const StaticDist> adist() const { return adist_; }
+
     void add_block(std::shared_ptr<DFBlock> o);
 
     std::shared_ptr<Matrix> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
@@ -90,13 +94,10 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
-    const std::pair<size_t, size_t> atable(const int i) const { return atable_[i]; }
-    const std::vector<std::pair<size_t, size_t>>& atable() const { return atable_; }
-
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
 
-    int get_node(const int shelloffset) const;
+    int get_node(const int shelloffset) const { return 0; }
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
@@ -113,11 +114,10 @@ class DFDist : public ParallelDF {
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
-    virtual void common_init1(const std::vector<std::shared_ptr<const Atom>>&,
-                              const std::vector<std::shared_ptr<const Atom>>&,
-                              const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv) { assert(false); }
-    void common_init2(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
-    void make_table(const int nmax);
+    void make_table(const size_t nmax);
+    // compute 2-index integrals ERI
+    void compute_2index(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
+
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all) const;
 
   public:
@@ -159,52 +159,32 @@ class DFDist : public ParallelDF {
 template<class TBatch>
 class DFDist_ints : public DFDist {
   protected:
-    void common_init1(const std::vector<std::shared_ptr<const Atom>>& atoms0,
-                      const std::vector<std::shared_ptr<const Atom>>& atoms1,
-                      const std::vector<std::shared_ptr<const Shell>>& ashell, const double thresh, const bool compute_inv) override {
+    void compute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,
+                        const std::vector<std::shared_ptr<const Shell>>& b1shell,
+                        const std::vector<std::shared_ptr<const Shell>>& b2shell, 
+                        const size_t asize, const size_t b1size, const size_t b2size,
+                        const size_t astart, const double thresh, const bool compute_inv) {
       Timer time;
-
-      // 3index Integral is now made in DFBlock.
-      std::vector<std::shared_ptr<const Shell>> b1shell, b2shell;
-      for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
-      for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
-
-      // get number of dfblocks
-      const int nblocks = TBatch::nblocks();
-      block_.resize(nblocks);
-
-      int astart;
-      std::vector<std::shared_ptr<const Shell>> myashell;
-      std::tie(astart, myashell) = get_ashell(ashell);
-
-      // make empty dfblocks
-      const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      for (int i = 0; i != nblocks; ++i)
-        block_[i] = std::shared_ptr<DFBlock>(new DFBlock(naux_, asize, b1size, b2size, astart, 0, 0));
 
       // making a task list
       std::vector<DFIntTask<TBatch,TBatch::nblocks()>> tasks;
-      tasks.reserve(b1shell.size()*b2shell.size()*myashell.size());
+      tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
 
-      // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
-      assert(b1shell == b2shell);
-
-      const std::shared_ptr<const Shell> i3(new Shell(myashell.front()->spherical()));
+      const std::shared_ptr<const Shell> i3(new Shell(ashell.front()->spherical()));
 
       // due to performance issue, we need to reshape it to array
       std::array<std::shared_ptr<DFBlock>,TBatch::nblocks()> blk;
-      for (int i = 0; i != nblocks; ++i) blk[i] = block_[i];
+      for (int i = 0; i != TBatch::nblocks(); ++i) blk[i] = block_[i];
 
       int j2 = 0;
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
           // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
+          assert(b1shell == b2shell);
           if (j1 <= j2) {
             int j0 = 0;
-            for (auto& i0 : myashell) {
+            for (auto& i0 : ashell) {
               tasks.push_back(DFIntTask<TBatch,TBatch::nblocks()>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk));
               j0 += i0->nbasis();
             }
@@ -214,7 +194,7 @@ class DFDist_ints : public DFDist {
         j2 += i2->nbasis();
       }
       time.tick_print("3-index ints prep");
-      TaskQueue<DFIntTask<TBatch,nblocks>> tq(tasks);
+      TaskQueue<DFIntTask<TBatch,TBatch::nblocks()>> tq(tasks);
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
@@ -226,10 +206,31 @@ class DFDist_ints : public DFDist {
   public:
     DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
                 const double thr, const bool inverse, const double dum) : DFDist(nbas, naux) {
-      std::vector<std::shared_ptr<const Shell>> ashell;
+
+      // 3index Integral is now made in DFBlock.
+      std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
       for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
-      common_init1(atoms, atoms, ashell, thr, inverse);
-      common_init2(ashell, thr, inverse);
+      for (auto& i : atoms)     b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
+      for (auto& i : atoms)     b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
+
+      // distribute auxiliary shells to each nodes
+      int astart;
+      std::vector<std::shared_ptr<const Shell>> myashell;
+      std::tie(astart, myashell) = get_ashell(ashell);
+
+      make_table(astart);
+
+      // make empty dfblocks
+      const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
+      const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
+      const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
+      for (int i = 0; i != TBatch::nblocks(); ++i)
+        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist_, adist_shell_, asize, b1size, b2size, astart, 0, 0)));
+
+      // 3-index integrals
+      compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
+      // 2-index integrals
+      compute_2index(ashell, thr, inverse);
     }
 
 };

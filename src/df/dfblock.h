@@ -43,6 +43,10 @@ class DFBlock {
   protected:
     // aux_ runs fastest, b2_ runs slowest
     std::unique_ptr<double[]> data_;
+
+    // distribution information
+    std::shared_ptr<const StaticDist> adist_;
+    std::shared_ptr<const StaticDist> adist_shell_;
  
     // dimensions of the block
     size_t asize_;
@@ -56,11 +60,11 @@ class DFBlock {
 
     // allocation info
     size_t size_alloc_;
-    std::shared_ptr<const StaticDist> dist_;
 
   public:
     // construction of a block from AO integrals
-    DFBlock(const size_t naux, const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s);
+    DFBlock(std::shared_ptr<const StaticDist> adist, std::shared_ptr<const StaticDist> adist_shell,
+            const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s);
 
     // construction of a block from data (unique_ptr<double[]>)
     DFBlock(std::unique_ptr<double[]>& d, const size_t a, const size_t b1, const size_t b2,
@@ -78,7 +82,8 @@ class DFBlock {
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
     // dist
-    const std::shared_ptr<const StaticDist>& dist() const { return dist_; }
+    const std::shared_ptr<const StaticDist>& adist() const { return adist_; }
+    const std::shared_ptr<const StaticDist>& adist_shell() const { return adist_shell_; }
 
     // dimensions of the block
     size_t asize() const { return asize_; }
