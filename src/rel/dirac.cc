@@ -76,7 +76,7 @@ void Dirac::compute() {
   cout << endl;
   cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", RKB) ===" << endl << indent << endl;
 
-  DIIS<DistZMatrix> diis(5);
+  DIIS<DistZMatrix, ZMatrix> diis(5);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
@@ -114,13 +114,10 @@ void Dirac::compute() {
       break;
     }
 
-#if 0
-    // TODO use DIIS
     if (iter >= diis_start_) {
-      fock = diis.extrapolate(make_pair(fock, error_vector));
-      pdebug.tick_print("DIIS");
+      distfock = diis.extrapolate(make_pair(distfock, error_vector));
+      ptime.tick_print("DIIS");
     }
-#endif
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
     intermediate.diagonalize(eig.get());

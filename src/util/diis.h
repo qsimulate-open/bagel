@@ -30,7 +30,9 @@
 #include <list>
 #include <src/util/f77.h>
 #include <memory>
+#include <type_traits>
 #include <src/util/matrix.h>
+#include <src/util/zmatrix.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have daxpy and ddot functions.
@@ -73,8 +75,11 @@ class DIIS {
       iterator data_iter = data_.begin();
 
       // left hand side
-      for (int i = 0; i != cnum - 1; ++i, ++data_iter)
+      for (int i = 0; i != cnum - 1; ++i, ++data_iter) {
         matrix_->element(cnum-1, i) = matrix_->element(i, cnum-1) = e->ddot(*(data_iter->second));
+        if (std::is_same<ZMatrix, Mat>::value)
+          matrix_->element(i, cnum-1) = std::conj(matrix_->element(i, cnum-1)); 
+      }
       matrix_->element(cnum-1, cnum-1)= e->ddot(e);
       for (int i = 0; i != cnum; ++i)
         matrix_->element(cnum, i) = matrix_->element(i, cnum) = -1.0;

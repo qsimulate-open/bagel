@@ -340,7 +340,7 @@ void Matrix::daxpy(const double a, const Matrix& o) {
 }
 
 
-void Matrix::daxpy(const double a, const std::shared_ptr<const Matrix> o) {
+void Matrix::daxpy(const double a, const shared_ptr<const Matrix> o) {
   daxpy(a, *o);
 }
 
@@ -350,7 +350,7 @@ double Matrix::ddot(const Matrix& o) const {
 }
 
 
-double Matrix::ddot(const std::shared_ptr<const Matrix> o) const {
+double Matrix::ddot(const shared_ptr<const Matrix> o) const {
   return ddot(*o);
 }
 
@@ -441,7 +441,7 @@ void Matrix::purify_unitary() {
   if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != ndim_; ++j) {
-      buf.element(j,i) /= std::sqrt(std::sqrt(vec[i]));
+      buf.element(j,i) /= sqrt(sqrt(vec[i]));
     }
   }
   *this = ((buf ^ buf) * *this);
@@ -489,7 +489,7 @@ void Matrix::purify_idempotent(const Matrix& s) {
 }
 
 
-double Matrix::orthog(const std::list<std::shared_ptr<const Matrix> > o) {
+double Matrix::orthog(const list<shared_ptr<const Matrix> > o) {
   for (auto& it : o) {
     const double m = this->ddot(it);
     this->daxpy(-m, it);
@@ -517,7 +517,7 @@ void Matrix::inverse() {
 
 
 // this is a vector B, and solve AC = B, returns C
-shared_ptr<Matrix> Matrix::solve(std::shared_ptr<const Matrix> A, const int n) const {
+shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
   shared_ptr<Matrix> out(new Matrix(*this));
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
@@ -525,7 +525,7 @@ shared_ptr<Matrix> Matrix::solve(std::shared_ptr<const Matrix> A, const int n) c
   unique_ptr<int[]> ipiv(new int[n]);
   int info;
   dgesv_(n, out->mdim(), As.data(), As.ndim(), ipiv.get(), out->data(), out->ndim(), info);
-  if (info) throw std::runtime_error("DSYSV failed in diis.h");
+  if (info) throw runtime_error("DGESV failed");
 
   return out;
 }
