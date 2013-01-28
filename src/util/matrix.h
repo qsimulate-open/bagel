@@ -43,7 +43,7 @@ namespace bagel {
 class DistMatrix;
 #else
 class Matrix;
-typedef Matrix DistMatrix;
+using DistMatrix = Matrix;
 #endif
 
 class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<Matrix> {

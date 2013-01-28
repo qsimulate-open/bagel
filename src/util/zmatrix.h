@@ -41,7 +41,7 @@ namespace bagel {
 class DistZMatrix;
 #else
 class ZMatrix;
-typedef ZMatrix DistZMatrix;
+using DistZMatrix = ZMatrix;
 #endif
 
 class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_shared_from_this<ZMatrix> {

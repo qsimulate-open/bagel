@@ -43,8 +43,8 @@ namespace bagel {
 
 template <class T, typename Mat = Matrix>
 class DIIS {
-  typedef std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>> Container_type_;
-  typedef typename Container_type_::iterator iterator;
+  using Container_type_ = std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>>;
+  using iterator = typename Container_type_::iterator;
 
   protected:
     const int ndiis_;

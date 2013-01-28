@@ -51,7 +51,7 @@ struct DetMap {
 
 // implements a determinant space
 class Determinants {
-  friend class Space; // TODO Is this correct?
+  friend class Space;
 
   protected:
     // assuming that the number of active orbitals are the same in alpha and beta.

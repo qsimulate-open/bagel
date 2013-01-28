@@ -59,8 +59,8 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
 vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
   vector<GradTask> out;
-  size_t nshell = 0;
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();
+  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
@@ -92,10 +92,11 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
 
 vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o) {
   vector<GradTask> out;
-  size_t nshell = 0;
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0) nshell += (*a0)->shells().size();
-  size_t nshell2 = 0;
-  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0) nshell2 += (*a0)->shells().size();
+  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+  const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+
   out.reserve(nshell*(nshell+1)*nshell2/2);
 
   // loop over atoms (using symmetry b0 <-> b1)
@@ -137,8 +138,8 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
 
 vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den) {
   vector<GradTask> out;
-  size_t nshell2 = 0;
-  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0) nshell2 += (*a0)->shells().size();
+  const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
   shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));

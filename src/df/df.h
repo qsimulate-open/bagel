@@ -110,8 +110,6 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
 class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
-  friend class DFFullDist;
-  friend class DFHalfDist;
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
@@ -238,7 +236,6 @@ class DFDist_ints : public DFDist {
 
 
 class DFHalfDist : public ParallelDF {
-  friend class DFFullDist;
   protected:
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
