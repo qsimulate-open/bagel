@@ -135,8 +135,10 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
     std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
 
 #ifdef HAVE_SCALAPACK
+    std::shared_ptr<DistZMatrix> distmatrix() const;
     ZMatrix(const DistZMatrix&);
 #else
+    std::shared_ptr<const ZMatrix> distmatrix() const;
     std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
     std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0) const;
 #endif

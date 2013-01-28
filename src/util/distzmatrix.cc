@@ -132,7 +132,7 @@ shared_ptr<const DistZMatrix> DistZMatrix::form_density_rhf(const int nocc, cons
   const int l = ndim_;
   const int n = ndim_;
   shared_ptr<DistZMatrix> out(new DistZMatrix(l, n));
-  pzgemm_("N", "C", l, n, nocc, 2.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
+  pzgemm_("N", "C", l, n, nocc, 1.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
   return out;
 }
 

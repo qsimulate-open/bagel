@@ -36,10 +36,10 @@ using namespace bagel;
 void Dirac::compute() {
   Timer scftime;
   string indent = "  ";
-
-  shared_ptr<ZMatrix> hcore = hcore_construct();
-  shared_ptr<ZMatrix> s12 = s12_construct();
   const int n = geom_->nbasis();
+
+  shared_ptr<const DistZMatrix> hcore = hcore_construct()->distmatrix();
+  shared_ptr<const DistZMatrix> s12 = s12_construct()->distmatrix();
   shared_ptr<ZMatrix> overlap(new ZMatrix(4*n, 4*n));
   {
     // Maybe you would want to make a DOverlap class.
@@ -51,8 +51,10 @@ void Dirac::compute() {
     overlap->copy_real_block(one, 2*n, 2*n, n, n, k12); 
     overlap->copy_real_block(one, 3*n, 3*n, n, n, k12); 
   }
+  // distributed hcore and overlap
+  shared_ptr<const DistZMatrix> distovl  = overlap->distmatrix();
 
-  ZMatrix interm = *s12 % *hcore * *s12;
+  DistZMatrix interm = *s12 % *hcore * *s12;
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
   interm.diagonalize(eig.get()); 
 
@@ -64,9 +66,8 @@ void Dirac::compute() {
   const int nneg = 2 * geom_->nbasis(); 
   
   // coefficient matrix
-  shared_ptr<const ZMatrix> coeff(new ZMatrix(*s12 * interm));
-  shared_ptr<const ZMatrix> ocoeff = coeff->slice(nneg, nneg+nele);
-  shared_ptr<const ZMatrix> aodensity(new ZMatrix(*ocoeff ^ *ocoeff));
+  shared_ptr<const DistZMatrix> coeff(new DistZMatrix(*s12 * interm));
+  shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
@@ -75,27 +76,30 @@ void Dirac::compute() {
   cout << endl;
   cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", RKB) ===" << endl << indent << endl;
 
-  DIIS<ZMatrix> diis(5);
+  DIIS<DistZMatrix> diis(5);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    // TODO fock construction here
+    // TODO fock construction here. Fock construction requires a local copy of coeff
+    shared_ptr<ZMatrix> mcoeff = coeff->matrix()->slice(nneg, nele+nneg);
 #if 0
-    shared_ptr<ZMatrix> fock(new DFock(...));
+    shared_ptr<const ZMatrix> fock(new DFock(..., mcoeff,...));
 #else
-    shared_ptr<ZMatrix> fock = hcore;
+    shared_ptr<const ZMatrix> fock = hcore->matrix();
 #endif
+    // distribute
+    shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
-    const complex<double> prod = aodensity->zdotc(*hcore+*fock);
+    const complex<double> prod = aodensity->zdotc(*hcore+*distfock);
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << prod.imag();
       throw runtime_error(ss.str());
     }
-    energy_ = 0.5*aodensity->zdotc(*hcore+*fock).real() + geom_->nuclear_repulsion();
+    energy_ = 0.5*prod.real() + geom_->nuclear_repulsion();
 
-    shared_ptr<const ZMatrix> error_vector(new ZMatrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
+    shared_ptr<const DistZMatrix> error_vector(new DistZMatrix(*distfock**aodensity**distovl - *distovl**aodensity**distfock));
     const double error = error_vector->rms();
 
     ptime.tick_print("Fock build");
@@ -118,11 +122,11 @@ void Dirac::compute() {
     }
 #endif
 
-    ZMatrix intermediate(*coeff % *fock * *coeff);
+    DistZMatrix intermediate(*coeff % *distfock * *coeff);
     intermediate.diagonalize(eig.get());
-    coeff = shared_ptr<const ZMatrix>(new ZMatrix(*coeff * intermediate));
-    ocoeff = coeff->slice(nneg, nneg+nele);
-    aodensity = shared_ptr<const ZMatrix>(new ZMatrix(*ocoeff ^ *ocoeff));
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*coeff * intermediate));
+
+    aodensity = coeff->form_density_rhf(nele, nneg); 
 
   }
 

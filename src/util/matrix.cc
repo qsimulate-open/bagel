@@ -641,7 +641,6 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 
 #ifndef HAVE_SCALAPACK
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
-  const int nb = ndim_;
   shared_ptr<const Matrix> tmp = this->slice(offset, offset+n); 
   shared_ptr<Matrix> out(new Matrix(*tmp ^ *tmp));
   *out *= 2.0;

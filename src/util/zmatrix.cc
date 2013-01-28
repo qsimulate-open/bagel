@@ -41,9 +41,15 @@ ZMatrix::ZMatrix(const int n, const int m) : Matrix_base<complex<double> >(n, m)
 }
 
 
-ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double> >(o.ndim_, o.mdim_) {
-  *this = o;
+ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double> >(o) {
 }
+
+
+#ifdef HAVE_SCALAPACK
+ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double> >(o.ndim(), o.mdim()) {
+  setlocal_(o.local());
+}
+#endif
 
 
 shared_ptr<ZMatrix> ZMatrix::cut(const int n) const {
@@ -587,3 +593,24 @@ shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, c
   return out;
 }
 
+
+#ifdef HAVE_SCALAPACK
+shared_ptr<DistZMatrix> ZMatrix::distmatrix() const {
+  shared_ptr<DistZMatrix> out(new DistZMatrix(*this));
+  return out;
+}
+#else
+shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
+  shared_ptr<const ZMatrix> out = shared_from_this();
+  return out;
+}
+#endif
+
+
+#ifndef HAVE_SCALAPACK
+shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset) const {
+  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n); 
+  shared_ptr<const ZMatrix> out(new ZMatrix(*tmp ^ *tmp));
+  return out;
+}
+#endif
