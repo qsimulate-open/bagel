@@ -15,7 +15,13 @@ AC_PROG_F77([gfortran])
 AC_PROG_FC([gfortran])
 
 AC_ARG_WITH(mpi, [AS_HELP_STRING([--with-mpi],[Use MPI. Please make sure mpicxx and mpif90 are in $PATH])], [with_mpi=$withval], [with_mpi=no])
-if test x${with_mpi} = x; then
+if test x${with_mpi} = xopenmpi ; then
+    echo "..openmpi requested.."
+elif test x${with_mpi} = xintel ; then
+    echo "..Intel mpi requested.."
+elif test x${with_mpi} = xmvapich ; then
+    echo "..mvapich requested.."
+elif test x${with_mpi} != xno ; then
     AC_MSG_ERROR("Please specify MPI implementation (openmpi, intel, mvapich)")
 fi
 if test x${with_mpi} != xno; then
