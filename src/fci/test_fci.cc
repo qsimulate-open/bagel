@@ -35,13 +35,13 @@ std::vector<double> fci_energy(std::string inp) {
   // a bit ugly to hardwire an input file, but anyway...
   std::shared_ptr<InputData> idata(new InputData("../../test/" + inp + ".in"));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   std::shared_ptr<Reference> ref;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "df-hf") {
-      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (iter->first == "df-rohf"){

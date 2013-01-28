@@ -47,10 +47,10 @@ void SuperCI::compute() {
   // DIIS: will be turned on at iter = diis_start_ (>1),
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC
-  shared_ptr<HPW_DIIS<Matrix> > diis;
+  shared_ptr<HPW_DIIS<Matrix>> diis;
 
   // BFGS: optional quasi-second-order MCSCF
-//shared_ptr<BFGS<RotFile> > bfgs;
+//shared_ptr<BFGS<RotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -62,7 +62,7 @@ void SuperCI::compute() {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
       shared_ptr<Matrix> tmp(new Matrix(*coeff_));
-      diis = shared_ptr<HPW_DIIS<Matrix> >(new HPW_DIIS<Matrix>(10, tmp));
+      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, tmp));
     }
 
     // first perform CASCI to obtain RDMs
@@ -90,8 +90,8 @@ void SuperCI::compute() {
     one_body_operators(f, fact, factp, gaa, denom_);
 
     // BFGS initialization
-    shared_ptr<BFGS<RotFile> > mbfgs(new BFGS<RotFile>(denom_));
-//  if (iter == 0) bfgs = shared_ptr<BFGS<RotFile> >(new BFGS(denom_));
+    shared_ptr<BFGS<RotFile>> mbfgs(new BFGS<RotFile>(denom_));
+//  if (iter == 0) bfgs = shared_ptr<BFGS<RotFile>>(new BFGS(denom_));
 
 
     // first, <proj|H|0> is computed

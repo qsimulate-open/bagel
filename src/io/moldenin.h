@@ -42,13 +42,13 @@ namespace bagel {
         bool is_spherical_;
         bool cartesian_;
 
-        std::vector<std::shared_ptr<const Atom> > atoms_;
+        std::vector<std::shared_ptr<const Atom>> atoms_;
 
-        std::vector<std::vector<double> > mo_coefficients_;
+        std::vector<std::vector<double>> mo_coefficients_;
 
-        std::vector<std::vector<std::vector<std::pair<int, double> > > > lmtuv_;
+        std::vector<std::vector<std::vector<std::pair<int, double>>>> lmtuv_;
         std::vector<int> gto_order_;
-        std::vector<std::vector<int> > shell_orders_;
+        std::vector<std::vector<int>> shell_orders_;
 
         void compute_transforms();
         std::vector<double> transform_cart(std::vector<double> in, int ang_l);
@@ -58,7 +58,7 @@ namespace bagel {
 
         void read();
 
-        MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom> >& atoms_);
+        MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
         MoldenIn& operator>> (std::shared_ptr<const Coeff>& coeff);
         MoldenIn& operator>> (std::shared_ptr<const Reference>& ref);
 

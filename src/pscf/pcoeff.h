@@ -41,7 +41,7 @@ class PCoeff : public PMatrix1e {
 
     PMatrix1e form_density_rhf(const bool return_ao=true) const;
 
-    std::pair<std::shared_ptr<PCoeff>, std::shared_ptr<PCoeff> >
+    std::pair<std::shared_ptr<PCoeff>, std::shared_ptr<PCoeff>>
           split(const int nrow1, const int nrow2);
 
 };

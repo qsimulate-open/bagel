@@ -71,7 +71,7 @@ Dvec::Dvec(shared_ptr<const Dvec> o) : det_(o->det_), lena_(o->lena_), lenb_(o->
 }
 
 
-Dvec::Dvec(vector<shared_ptr<Civec> > o) : det_(o.front()->det()), ij_(o.size()) {
+Dvec::Dvec(vector<shared_ptr<Civec>> o) : det_(o.front()->det()), ij_(o.size()) {
   lena_ = det_->lena();
   lenb_ = det_->lenb();
   dvec_ = o;
@@ -79,8 +79,8 @@ Dvec::Dvec(vector<shared_ptr<Civec> > o) : det_(o.front()->det()), ij_(o.size())
 
 
 // returns a vector of Civec's which correspond to an unconverged state
-vector<shared_ptr<Civec> > Dvec::dvec(const vector<int>& conv) {
-  vector<shared_ptr<Civec> > out;
+vector<shared_ptr<Civec>> Dvec::dvec(const vector<int>& conv) {
+  vector<shared_ptr<Civec>> out;
   int i = 0;
   for (auto& iter : dvec_)
     if (conv[i++] == 0) out.push_back(iter);
@@ -88,8 +88,8 @@ vector<shared_ptr<Civec> > Dvec::dvec(const vector<int>& conv) {
 }
 
 
-vector<shared_ptr<const Civec> > Dvec::dvec(const vector<int>& conv) const {
-  vector<shared_ptr<const Civec> > out;
+vector<shared_ptr<const Civec>> Dvec::dvec(const vector<int>& conv) const {
+  vector<shared_ptr<const Civec>> out;
   int i = 0;
   for (auto& iter : dvec_)
     if (conv[i++] == 0) out.push_back(iter);

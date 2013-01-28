@@ -53,7 +53,7 @@ class PMatrix1e {
     const int totalsize_;
 
     virtual void init();
-    virtual void computebatch(const std::vector<std::shared_ptr<const Shell> >&,
+    virtual void computebatch(const std::vector<std::shared_ptr<const Shell>>&,
         const int, const int, const int, const int) { assert(false); };
 
     std::shared_ptr<PData> data_;
@@ -116,7 +116,7 @@ class PMatrix1e {
     double rms() const;
     double trace() const;
 
-    std::pair<std::shared_ptr<PMatrix1e>, std::shared_ptr<PMatrix1e> >
+    std::pair<std::shared_ptr<PMatrix1e>, std::shared_ptr<PMatrix1e>>
       split(const int nrow1, const int nrow2) const;
     std::shared_ptr<PMatrix1e> merge(const std::shared_ptr<PMatrix1e>) const;
 

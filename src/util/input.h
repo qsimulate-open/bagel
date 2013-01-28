@@ -39,7 +39,7 @@ namespace bagel {
 
 class InputData {
   protected:
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > >data_;
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>>data_;
     const std::string inputfile_;
 
   public:
@@ -60,7 +60,7 @@ class InputData {
       return data_.end() != iter;
     };
 
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > data() { return data_; };
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> data() { return data_; };
 
 };
 

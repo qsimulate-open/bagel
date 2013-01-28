@@ -93,15 +93,15 @@ class PMOFile : public PFile<T> {
     PMOFile<T> operator-(const PMOFile<T>&) const;
     PMOFile<T> operator*(const std::complex<double>&) const;
 
-    std::shared_ptr<PMOFile<T> > copy() const;
-    std::shared_ptr<PMOFile<T> > clone() const;
+    std::shared_ptr<PMOFile<T>> copy() const;
+    std::shared_ptr<PMOFile<T>> clone() const;
     void scale(double a);
 
     // Flip and add to this.
     void flip_symmetry();
-    std::shared_ptr<PMOFile<T> > flip_sort() const;
+    std::shared_ptr<PMOFile<T>> flip_sort() const;
 
-    std::shared_ptr<PMOFile<T> > contract(std::shared_ptr<PMOFile<T> >, std::string);
+    std::shared_ptr<PMOFile<T>> contract(std::shared_ptr<PMOFile<T>>, std::string);
 
     void print() const;
     void rprint() const;
@@ -201,8 +201,8 @@ void PMOFile<T>::sort_inside_blocks() {
 
 
 template<class T>
-std::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
-  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+std::shared_ptr<PMOFile<T>> PMOFile<T>::copy() const {
+  std::shared_ptr<PMOFile<T>> out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
                                                     astart_, afence_, bstart_, bfence_,
                                                     offset_, false));
@@ -218,8 +218,8 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::copy() const {
 
 
 template<class T>
-std::shared_ptr<PMOFile<T> > PMOFile<T>::clone() const {
-  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+std::shared_ptr<PMOFile<T>> PMOFile<T>::clone() const {
+  std::shared_ptr<PMOFile<T>> out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     istart_, ifence_, jstart_, jfence_,
                                                     astart_, afence_, bstart_, bfence_,
                                                     offset_, false));
@@ -231,7 +231,7 @@ template<class T>
 void PMOFile<T>::flip_symmetry() {
   const int k = this->K_;
 
-  std::shared_ptr<PMOFile<T> > other = this->copy();
+  std::shared_ptr<PMOFile<T>> other = this->copy();
 
   T* buffer1 = new T[blocksize_];
   T* buffer2 = new T[other->blocksize_];
@@ -276,10 +276,10 @@ void PMOFile<T>::flip_symmetry() {
 
 
 template<class T>
-std::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
+std::shared_ptr<PMOFile<T>> PMOFile<T>::flip_sort() const {
   const int k = this->K_;
 
-  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, this->filesize_, this->K_,
+  std::shared_ptr<PMOFile<T>> out(new PMOFile<T>(geom_, this->filesize_, this->K_,
                                                     jstart_, jfence_, istart_, ifence_,
                                                     bstart_, bfence_, astart_, afence_,
                                                     false));
@@ -323,7 +323,7 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::flip_sort() const {
 
 
 template<class T>
-std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > other, std::string jobname) {
+std::shared_ptr<PMOFile<T>> PMOFile<T>::contract(std::shared_ptr<PMOFile<T>> other, std::string jobname) {
 
   std::cout << "  Entering " << jobname << " contraction..." << std::endl;
   const int k = this->K_;
@@ -354,7 +354,7 @@ std::shared_ptr<PMOFile<T> > PMOFile<T>::contract(std::shared_ptr<PMOFile<T> > o
 
   const size_t out_blocksize = ijsize * mnsize;
   const size_t out_filesize = kkk8 * out_blocksize;
-  std::shared_ptr<PMOFile<T> > out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
+  std::shared_ptr<PMOFile<T>> out(new PMOFile<T>(geom_, out_filesize, k, istart_, ifence_, jstart_, jfence_,
                                                     mstart, mfence, nstart, nfence, false));
 
   const int k2 = std::max(k+k, 1);

@@ -43,7 +43,7 @@ namespace bagel {
 
 template <class T, typename Mat = Matrix>
 class DIIS {
-  typedef std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T> > > Container_type_;
+  typedef std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>> Container_type_;
   typedef typename Container_type_::iterator iterator;
 
   protected:
@@ -59,7 +59,7 @@ class DIIS {
 
     ~DIIS() { }
 
-    std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T> > input) {
+    std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>> input) {
       std::shared_ptr<const T> v = input.first;
       std::shared_ptr<const T> e = input.second;
       data_.push_back(input);

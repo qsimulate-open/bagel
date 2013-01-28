@@ -38,11 +38,11 @@ double pm_localization(std::string filename) {
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
   std::shared_ptr<const Reference> ref;
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "df-hf") {
-      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
 

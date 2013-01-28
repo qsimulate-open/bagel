@@ -47,7 +47,7 @@ class Storage_base {
     // length of this storage
     size_t length_;
     // this relates hash keys, block number, and block lengths (in this order).
-    std::map<size_t, std::pair<size_t, size_t> > hashtable_;
+    std::map<size_t, std::pair<size_t, size_t>> hashtable_;
     std::vector<bool> initialized_;
 
 
@@ -89,7 +89,7 @@ class Storage_base {
 
 class Storage_Incore : public Storage_base {
   protected:
-    std::vector<std::unique_ptr<double[]> > data_;
+    std::vector<std::unique_ptr<double[]>> data_;
 
   public:
     Storage_Incore(const std::map<size_t, size_t>& size, bool init);

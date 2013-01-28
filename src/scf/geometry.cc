@@ -45,8 +45,6 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<const Atom> RefAtom;
-
 const static AtomMap atommap_;
 
 Geometry::Geometry(const multimap<string, string> geominfo)
@@ -100,7 +98,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
           const boost::regex end_reg("\\)");
           if (!regex_search(next, end, what, end_reg))
             throw runtime_error("One of the atom lines is corrupt");
-          RefAtom catom(new Atom(spherical_, aname, positions, basisfile_));
+          shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, basisfile_));
           atoms_.push_back(catom);
         } else {
           // dummy atom construction
@@ -111,7 +109,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
           if (regex_search(next, end, what, charge_reg)) {
             const string charge_str(what[1].first, what[1].second);
             const double charge = lexical_cast<double>(charge_str);
-            RefAtom catom(new Atom(spherical_, aname, positions, charge));
+            shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, charge));
             atoms_.push_back(catom);
           } else {
             throw runtime_error("No charge specified for dummy atom(s)");
@@ -129,7 +127,7 @@ Geometry::Geometry(const multimap<string, string> geominfo)
   if (!auxfile_.empty()) {
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
-        RefAtom catom(new Atom(spherical_, iatom->name(), iatom->position(), auxfile_));
+        shared_ptr<const Atom> catom(new Atom(spherical_, iatom->name(), iatom->position(), auxfile_));
         aux_atoms_.push_back(catom);
       } else {
         // we need a dummy atom here to be consistent in gradient computations
@@ -221,9 +219,9 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
     auto tp1 = chrono::high_resolution_clock::now();
 #ifdef LIBINT_INTERFACE
-    df_ = form_fit<DFDist_ints<Libint> >(thresh, true); // true means we construct J^-1/2
+    df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
 #else
-    df_ = form_fit<DFDist_ints<ERIBatch> >(thresh, true); // true means we construct J^-1/2
+    df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
 #endif
 
     auto tp2 = chrono::high_resolution_clock::now();
@@ -267,8 +265,8 @@ Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap
     Quatern<double> opd = op.dagger();
 
     // first subtract mc, rotate, and then add oc
-    vector<shared_ptr<const Atom> > newatoms;
-    vector<shared_ptr<const Atom> > newauxatoms;
+    vector<shared_ptr<const Atom>> newatoms;
+    vector<shared_ptr<const Atom>> newauxatoms;
     for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
       assert((*i)->position() == (*j)->position());
       Quatern<double> source = (*i)->position();
@@ -311,7 +309,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
 ************************************************************/
-Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
+Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
    spherical_(nmer.front()->spherical_), symmetry_(nmer.front()->symmetry_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
    overlap_thresh_(nmer.front()->overlap_thresh_), external_(nmer.front()->external_)
 {
@@ -341,8 +339,8 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
    }
 
    /* atoms_ and aux_atoms_ can be merged */
-   vector<shared_ptr<const Atom> > new_atoms;
-   vector<shared_ptr<const Atom> > new_aux_atoms;
+   vector<shared_ptr<const Atom>> new_atoms;
+   vector<shared_ptr<const Atom>> new_aux_atoms;
    for(auto& inmer : nmer) {
       auto iatoms = inmer->atoms();
       auto iaux = inmer->aux_atoms();
@@ -376,7 +374,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry> > nmer) :
                                                                           << setw(7) << external_[2] << ") a.u." << endl << endl;
 }
 
-Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> geominfo)
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<string, string> geominfo)
   : spherical_(true), input_(""), atoms_(atoms), lmax_(0) {
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
@@ -408,7 +406,7 @@ Geometry::Geometry(const vector<RefAtom> atoms, const multimap<string, string> g
 }
 
 
-void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom> > atoms, const multimap<string, string> geominfo){
+void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, const multimap<string, string> geominfo){
 
   schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
   overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8);
@@ -539,9 +537,9 @@ array<double,3> Geometry::charge_center() const {
 
 
 vector<double> Geometry::schwarz() const {
-  vector<shared_ptr<const Shell> > basis;
+  vector<shared_ptr<const Shell>> basis;
   for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
-    const vector<shared_ptr<const Shell> > tmp = (*aiter)->shells();
+    const vector<shared_ptr<const Shell>> tmp = (*aiter)->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());
   }
   const int size = basis.size();
@@ -604,7 +602,7 @@ class Node {
     const std::shared_ptr<const Atom> myself_;
     const int num_;
     // in order to avoid cyclic references
-    std::list<std::weak_ptr<Node> > connected_;
+    std::list<std::weak_ptr<Node>> connected_;
 
 
   public:
@@ -621,8 +619,8 @@ class Node {
     const std::shared_ptr<const Atom> atom() const { return myself_; };
     int num() const { return num_; };
 
-    std::set<std::shared_ptr<Node> > common_center(const std::shared_ptr<Node> o) const {
-      std::set<std::shared_ptr<Node> > out;
+    std::set<std::shared_ptr<Node>> common_center(const std::shared_ptr<Node> o) const {
+      std::set<std::shared_ptr<Node>> out;
       for (auto& c : connected_) {
         if (c.lock()->connected_with(o)) out.insert(c.lock());
       }
@@ -648,10 +646,10 @@ using namespace Bagel::Geometry;
 array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
 
-  vector<vector<double> > out;
+  vector<vector<double>> out;
   const size_t size = natom()*3;
 
-  list<shared_ptr<Node> > nodes;
+  list<shared_ptr<Node>> nodes;
   int n = 0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
     if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
@@ -688,7 +686,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     auto j = i;
     for (++j; j != nodes.end(); ++j) {
-      std::set<std::shared_ptr<Node> > center = (*i)->common_center(*j);
+      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
         const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
         cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
@@ -723,7 +721,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
-      std::set<std::shared_ptr<Node> > center = (*i)->common_center(*j);
+      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
@@ -840,7 +838,7 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
   shared_ptr<Geometry> geom(new Geometry(*this));
 
   // except for atoms_->shells
-  vector<shared_ptr<const Atom> > atom;
+  vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;

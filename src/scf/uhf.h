@@ -61,13 +61,13 @@ class UHF : public SCF_base {
 
     ~UHF() {};
 
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>, std::shared_ptr<Matrix> > form_density_uhf() const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> form_density_uhf() const;
 
     virtual void compute() override;
 
     std::shared_ptr<Reference> conv_to_ref() const;
     // return the natural orbital coefficients and nclosed and nact
-    std::tuple<std::shared_ptr<Coeff>, int, std::vector<std::shared_ptr<RDM<1> > > > natural_orbitals() const;
+    std::tuple<std::shared_ptr<Coeff>, int, std::vector<std::shared_ptr<RDM<1>>>> natural_orbitals() const;
 };
 
 }

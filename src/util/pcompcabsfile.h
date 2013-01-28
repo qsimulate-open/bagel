@@ -39,7 +39,7 @@ class PCompCABSFile : public PCompFile<T> {
     void init_schwarz_ia();
     std::vector<double> schwarz_jb_;
     std::vector<double> schwarz_ia_;
-    std::vector<std::shared_ptr<const Shell> > cabs_basis_;
+    std::vector<std::shared_ptr<const Shell>> cabs_basis_;
     std::vector<int> aux_offset_;
 
     const bool i_is_cabs_;
@@ -52,10 +52,10 @@ class PCompCABSFile : public PCompFile<T> {
     std::vector<int> offset_a_;
     std::vector<int> offset_b_;
 
-    std::vector<std::shared_ptr<const Shell> > basis_i_;
-    std::vector<std::shared_ptr<const Shell> > basis_j_;
-    std::vector<std::shared_ptr<const Shell> > basis_a_;
-    std::vector<std::shared_ptr<const Shell> > basis_b_;
+    std::vector<std::shared_ptr<const Shell>> basis_i_;
+    std::vector<std::shared_ptr<const Shell>> basis_j_;
+    std::vector<std::shared_ptr<const Shell>> basis_a_;
+    std::vector<std::shared_ptr<const Shell>> basis_b_;
 
     int size_i_;
     int size_j_;
@@ -104,7 +104,7 @@ class PCompCABSFile : public PCompFile<T> {
     void store_integrals();
     void eval_new_block(double*, int, int, int);
 
-    std::shared_ptr<PMOFile<std::complex<double> > >
+    std::shared_ptr<PMOFile<std::complex<double>>>
       mo_transform_cabs_aux(std::shared_ptr<PCoeff>,
                             std::shared_ptr<PCoeff>,
                             std::shared_ptr<PCoeff>,
@@ -150,10 +150,10 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
     offset_b_.insert(offset_b_.end(), tmpb.begin(), tmpb.end());
   }
   {
-    const std::vector<std::shared_ptr<const Shell> > tmpi = i_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<std::shared_ptr<const Shell> > tmpj = j_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<std::shared_ptr<const Shell> > tmpa = a_is_cabs_ ? cabs_basis_ : this->basis_;
-    const std::vector<std::shared_ptr<const Shell> > tmpb = b_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<const Shell>> tmpi = i_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<const Shell>> tmpj = j_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<const Shell>> tmpa = a_is_cabs_ ? cabs_basis_ : this->basis_;
+    const std::vector<std::shared_ptr<const Shell>> tmpb = b_is_cabs_ ? cabs_basis_ : this->basis_;
     basis_i_.insert(basis_i_.end(), tmpi.begin(), tmpi.end());
     basis_j_.insert(basis_j_.end(), tmpj.begin(), tmpj.end());
     basis_a_.insert(basis_a_.end(), tmpa.begin(), tmpa.end());
@@ -415,7 +415,7 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
 
 template<class T>
-std::shared_ptr<PMOFile<std::complex<double> > >
+std::shared_ptr<PMOFile<std::complex<double>>>
   PCompCABSFile<T>::mo_transform_cabs_aux(std::shared_ptr<PCoeff> coeff_i,
                                           std::shared_ptr<PCoeff> coeff_j,
                                           std::shared_ptr<PCoeff> coeff_a,
@@ -470,8 +470,8 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
-  std::shared_ptr<PMOFile<std::complex<double> > >
-    mo_int(new PMOFile<std::complex<double> >(this->geom_, filesize, k,
+  std::shared_ptr<PMOFile<std::complex<double>>>
+    mo_int(new PMOFile<std::complex<double>>(this->geom_, filesize, k,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 
@@ -501,10 +501,10 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
   size_t allocsize = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
-  PFile<std::complex<double> > intermediate_mmK(std::max(KK*nv, nv), k, false);
+  PFile<std::complex<double>> intermediate_mmK(std::max(KK*nv, nv), k, false);
   std::complex<double>* intermediate_novv = new std::complex<double>[novv];
-  PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), k, false);
-  PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), k, true);
+  PFile<std::complex<double>> intermediate_mKK(std::max(nov * KK * KK, nov), k, false);
+  PFile<std::complex<double>> intermediate_KKK(std::max(novv * KK * KK * KK, novv), k, true);
 
   for (int q1 = -s; q1 <= s; ++q1) {
     const bool q1_front = (q1 == -s);
@@ -579,7 +579,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                     for (int j1 = 0; j1 != b1size; ++j1, label += cn2) {
                       for (int j2 = 0; j2 != b2size; ++j2, label += cn1) {
                         for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {
-                          *label = static_cast<std::complex<double> >(*ndata);
+                          *label = static_cast<std::complex<double>>(*ndata);
                         }
                         label -= b3size;
                       }

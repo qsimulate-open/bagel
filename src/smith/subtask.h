@@ -44,18 +44,18 @@ template<int N, int M, typename T>
 class SubTask {
   protected:
     const std::array<const Index, N> block_index_;
-    const std::array<std::shared_ptr<const Tensor<T> >, M> in_;
-    const std::shared_ptr<Tensor<T> > out_;
+    const std::array<std::shared_ptr<const Tensor<T>>, M> in_;
+    const std::shared_ptr<Tensor<T>> out_;
 
   public:
-    SubTask(const std::array<const Index, N>& i, const std::array<std::shared_ptr<const Tensor<T> >, M>& j, std::shared_ptr<Tensor<T> >& k)
+    SubTask(const std::array<const Index, N>& i, const std::array<std::shared_ptr<const Tensor<T>>, M>& j, std::shared_ptr<Tensor<T>>& k)
       : block_index_(i), in_(j), out_(k) { }
 
     virtual void compute() = 0;
 
     const Index& block(const size_t& i) const { return block_index_[i]; } 
-    const std::shared_ptr<const Tensor<T> >& in_tensor(const size_t& i) const { return in_[i]; }
-    const std::shared_ptr<Tensor<T> >& out_tensor() const { return out_; }
+    const std::shared_ptr<const Tensor<T>>& in_tensor(const size_t& i) const { return in_[i]; }
+    const std::shared_ptr<Tensor<T>>& out_tensor() const { return out_; }
 };
 
 }

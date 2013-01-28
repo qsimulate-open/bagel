@@ -64,7 +64,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
     shared_ptr<const DFBlock> source = iblock;
 
     // information on the data layout
-    vector<pair<size_t, size_t> > atab = df_->block(0)->dist()->atable();
+    vector<pair<size_t, size_t>> atab = df_->block(0)->dist()->atable();
 
     vector<int> rrequest;
     // first issue all the send and receive requests
@@ -126,7 +126,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
 
   // we need buffer n regions (n is the number of blocks) 
   assert(out->block().size() == data_.size());
-  vector<shared_ptr<Matrix> > bufv;
+  vector<shared_ptr<Matrix>> bufv;
   for (auto& i : data_) bufv.push_back(i->clone());
 
   auto dat = data_.begin();
@@ -140,7 +140,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
         request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*tabstart_[i], iblock->asize()*tabsize_[i], i, i));
 
     // information on the data layout
-    vector<pair<size_t, size_t> > atab = df_->block(0)->dist()->atable();
+    vector<pair<size_t, size_t>> atab = df_->block(0)->dist()->atable();
 
     // copy using threads
     vector<CopyBlockTask> task;

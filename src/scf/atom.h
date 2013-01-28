@@ -42,7 +42,7 @@ class Atom {
 
     std::string name_;
     std::array<double,3> position_;
-    std::vector<std::shared_ptr<const Shell> > shells_;
+    std::vector<std::shared_ptr<const Shell>> shells_;
     int atom_number_;
     double atom_charge_;
     int nbasis_;
@@ -50,7 +50,7 @@ class Atom {
 
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
-    void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double> > > > in);
+    void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
 
     void common_init();
 
@@ -58,8 +58,8 @@ class Atom {
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string basisfile);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
-         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double> > >);
-    Atom(const std::string name, const std::vector<std::shared_ptr<const Shell> > shell);
+         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
+    Atom(const std::string name, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const Atom&, const std::array<double,3>&);
     Atom(const Atom&, const double*);
     ~Atom() {}
@@ -69,7 +69,7 @@ class Atom {
     double atom_charge() const { return atom_charge_;}
     const std::array<double,3> position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
-    const std::vector<std::shared_ptr<const Shell> >& shells() const { return shells_; }
+    const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
 
     bool dummy() const { return atom_number_ == 0; }

@@ -57,13 +57,13 @@ class SpinFreeMethod {
 
     double e0_;
 
-    std::shared_ptr<Tensor<T> > v2_;
-    std::shared_ptr<Tensor<T> > f1_;
-    std::shared_ptr<Tensor<T> > h1_;
-    std::shared_ptr<Tensor<T> > rdm1_;
-    std::shared_ptr<Tensor<T> > rdm2_;
-    std::shared_ptr<Tensor<T> > rdm3_;
-    std::shared_ptr<Tensor<T> > rdm4_;
+    std::shared_ptr<Tensor<T>> v2_;
+    std::shared_ptr<Tensor<T>> f1_;
+    std::shared_ptr<Tensor<T>> h1_;
+    std::shared_ptr<Tensor<T>> rdm1_;
+    std::shared_ptr<Tensor<T>> rdm2_;
+    std::shared_ptr<Tensor<T>> rdm3_;
+    std::shared_ptr<Tensor<T>> rdm4_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -126,7 +126,7 @@ class SpinFreeMethod {
     const double& denom_h(const size_t i) const { return denom_->denom_h(i); }
     const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
 
-    void update_amplitude(std::shared_ptr<Tensor<T> > t, const std::shared_ptr<Tensor<T> > r, const bool put = false) {
+    void update_amplitude(std::shared_ptr<Tensor<T>> t, const std::shared_ptr<Tensor<T>> r, const bool put = false) {
 
       // ranks of t and r are assumed to be the same
 
@@ -544,7 +544,7 @@ class SpinFreeMethod {
       // rdms
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {active_, active_};
-        rdm1_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        rdm1_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
         const int nclo = ref_->nclosed();
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
@@ -561,7 +561,7 @@ class SpinFreeMethod {
       }
       if (!ref_->rdm2().empty()) {
         std::vector<IndexRange> o = {active_, active_, active_, active_};
-        rdm2_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+        rdm2_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
         const int nclo = ref_->nclosed();
         for (auto& i3 : active_) {
           for (auto& i2 : active_) {
@@ -586,14 +586,14 @@ class SpinFreeMethod {
       if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
         {
           std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-          rdm3_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(o, false));
+          rdm3_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
           std::vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
-          rdm4_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(p, false));
+          rdm4_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(p, false));
         }
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
-        std::shared_ptr<RDM<3> > rdm3;
-        std::shared_ptr<RDM<4> > rdm4;
+        std::shared_ptr<RDM<3>> rdm3;
+        std::shared_ptr<RDM<4>> rdm4;
         std::tie(rdm3, rdm4) = ref_->compute_rdm34(0);
 
         const int nclo = ref_->nclosed();
@@ -646,8 +646,8 @@ class SpinFreeMethod {
             fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
         // TODO hardwired 0
-        std::shared_ptr<RDM<1> > rdm1(new RDM<1>(*ref_->rdm1(0)));
-        std::shared_ptr<RDM<2> > rdm2(new RDM<2>(*ref_->rdm2(0)));
+        std::shared_ptr<RDM<1>> rdm1(new RDM<1>(*ref_->rdm1(0)));
+        std::shared_ptr<RDM<2>> rdm2(new RDM<2>(*ref_->rdm2(0)));
 
         // construct denominator
         denom_ = std::shared_ptr<const Denom>(new Denom(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));

@@ -71,8 +71,8 @@ class Determinants {
     // Knowles & Handy lexical mapping
     std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
     // string lists
-    std::vector<std::bitset<nbit__> > stringa_;
-    std::vector<std::bitset<nbit__> > stringb_;
+    std::vector<std::bitset<nbit__>> stringa_;
+    std::vector<std::bitset<nbit__>> stringb_;
 
     // lexical maps (Zkl)
     void const_lexical_mapping_();
@@ -80,8 +80,8 @@ class Determinants {
     void const_string_lists_();
     // single displacement vectors Phi's
     template <int>
-    void const_phis_(const std::vector<std::bitset<nbit__> >& string,
-                     std::vector<std::vector<DetMap> >& target);
+    void const_phis_(const std::vector<std::bitset<nbit__>>& string,
+                     std::vector<std::vector<DetMap>>& target);
 
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
@@ -101,16 +101,16 @@ class Determinants {
     const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
 
     // configuration list i^dagger j
-    std::vector<std::vector<DetMap> > phia_;
-    std::vector<std::vector<DetMap> > phib_;
+    std::vector<std::vector<DetMap>> phia_;
+    std::vector<std::vector<DetMap>> phib_;
 
     // configuration list i^dagger
-    std::vector<std::vector<DetMap> > phiupa_;
-    std::vector<std::vector<DetMap> > phiupb_;
+    std::vector<std::vector<DetMap>> phiupa_;
+    std::vector<std::vector<DetMap>> phiupb_;
 
     // configuration list i
-    std::vector<std::vector<DetMap> > phidowna_;
-    std::vector<std::vector<DetMap> > phidownb_;
+    std::vector<std::vector<DetMap>> phidowna_;
+    std::vector<std::vector<DetMap>> phidownb_;
 
   public:
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, bool mute = false);
@@ -166,10 +166,10 @@ class Determinants {
     void print(const double* const civec, const double thr) const;
     const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
     const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
-    const std::vector<std::bitset<nbit__> >& stringa() const { return stringa_; }
-    const std::vector<std::bitset<nbit__> >& stringb() const { return stringb_; }
+    const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
+    const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
 
-    std::pair<std::vector<std::tuple<int, int, int> >, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
+    std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
     int nspin() const { return nelea_ - neleb_; }
     int norb()  const { return norb_; }
@@ -194,7 +194,7 @@ class Determinants {
 
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
-void Determinants::const_phis_(const std::vector<std::bitset<nbit__> >& string, std::vector<std::vector<DetMap> >& phi) {
+void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, std::vector<std::vector<DetMap>>& phi) {
 
   phi.clear();
   phi.resize(compress_ ? norb_*(norb_+1)/2 : norb_*norb_);

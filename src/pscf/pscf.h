@@ -57,7 +57,7 @@ class PSCF {
     // created at constructor, deleted at destructor.
     double* eig_;
     void print_eig(const double*) const;
-    std::shared_ptr<PCompFile<ERIBatch> > ao_eri_;
+    std::shared_ptr<PCompFile<ERIBatch>> ao_eri_;
 
     double obtain_energy(const PMatrix1e&, const PMatrix1e&, const PMatrix1e&);
 
@@ -77,7 +77,7 @@ class PSCF {
       const std::vector<double> out(eig_, eig_+length);
       return out;
     }
-    std::shared_ptr<PCompFile<ERIBatch> > ao_eri() { return ao_eri_; };
+    std::shared_ptr<PCompFile<ERIBatch>> ao_eri() { return ao_eri_; };
 };
 
 }

@@ -43,7 +43,7 @@ using namespace bagel;
 
 MP2::MP2(const multimap<string, string> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
 
-  scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(input, g, ref));
+  scf_ = std::shared_ptr<SCF<1>>(new SCF<1>(input, g, ref));
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 

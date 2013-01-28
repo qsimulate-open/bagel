@@ -96,11 +96,11 @@ void FCI::common_init() {
 void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec> out) {
   int ndet = nstate_*10;
   start_over:
-  vector<pair<bitset<nbit__>, bitset<nbit__> > > bits = detseeds(ndet);
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
 
   // Spin adapt detseeds
   int oindex = 0;
-  vector<bitset<nbit__> > done;
+  vector<bitset<nbit__>> done;
   for (auto& it : bits) {
     bitset<nbit__> alpha = it.second;
     bitset<nbit__> beta = it.first;
@@ -115,7 +115,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
     done.push_back(open_bit);
 
-    pair<vector<tuple<int, int, int> >, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    pair<vector<tuple<int, int, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
@@ -136,8 +136,8 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
 }
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__> > > FCI::detseeds(const int ndet) {
-  multimap<double, pair<bitset<nbit__>,bitset<nbit__> > > tmp;
+vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
+  multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
@@ -152,7 +152,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__> > > FCI::detseeds(const int ndet) {
     }
   }
   assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
-  vector<pair<bitset<nbit__> , bitset<nbit__> > > out;
+  vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
   return out;
@@ -210,7 +210,7 @@ void FCI::compute() {
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
-    vector<shared_ptr<Civec> > errvec = davidson.residual();
+    vector<shared_ptr<Civec>> errvec = davidson.residual();
     pdebug.tick_print("davidson");
 
     // compute errors
@@ -234,7 +234,7 @@ void FCI::compute() {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
         davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const Civec> > tmp;
+        list<shared_ptr<const Civec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
       }

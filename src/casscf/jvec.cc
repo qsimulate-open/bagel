@@ -35,8 +35,8 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
   const double* const cc = coeff->data();
   const size_t nocc = nclosed+nact;
 
-  shared_ptr<RDM<1> > rdm1_av = fci->rdm1_av();
-  shared_ptr<RDM<2> > rdm = fci->rdm2_av();
+  shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
+  shared_ptr<RDM<2>> rdm = fci->rdm2_av();
 
   // half_ = J^{-1/2}(D|ix)
   half_ = df->compute_half_transform(cc, nocc)->apply_J();

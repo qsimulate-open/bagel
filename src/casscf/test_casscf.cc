@@ -35,7 +35,7 @@ double cas_energy(std::string filename) {
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "casscf") {

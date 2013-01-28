@@ -221,7 +221,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
   /// cooo loop starts here.
   {
-    shared_ptr<PCompCABSFile<ERIBatch> >
+    shared_ptr<PCompCABSFile<ERIBatch>>
       eri_cabs_d(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, false, false, false, "NULL"));
     const size_t allocsize_cs = eri_cabs_d->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
@@ -301,7 +301,7 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
   /// coco loop starts here.
   if (do_two_cabs) {
-    shared_ptr<PCompCABSFile<ERIBatch> >
+    shared_ptr<PCompCABSFile<ERIBatch>>
       eri_cabs_t(new PCompCABSFile<ERIBatch>(geom_, gamma, true, false, true, false, false, "NULL"));
     const size_t allocsize_cs = eri_cabs_t->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];

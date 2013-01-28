@@ -76,7 +76,7 @@ PMatrix1e PCoeff::form_density_rhf(const bool return_ao) const {
 }
 
 
-pair<shared_ptr<PCoeff>, shared_ptr<PCoeff> > PCoeff::split(const int nrow1, const int nrow2) {
+pair<shared_ptr<PCoeff>, shared_ptr<PCoeff>> PCoeff::split(const int nrow1, const int nrow2) {
   shared_ptr<PCoeff> out1(new PCoeff(geom_, nrow1, mdim_));
   shared_ptr<PCoeff> out2(new PCoeff(geom_, nrow2, mdim_));
 

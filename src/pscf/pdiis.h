@@ -43,7 +43,7 @@
 template <class T>
 class PDIIS {
   typedef std::shared_ptr<T> RefT;
-  typedef std::list<std::pair<RefT, RefT> > Container_type_;
+  typedef std::list<std::pair<RefT, RefT>> Container_type_;
   typedef typename Container_type_::iterator iterator;
   typedef std::complex<double> Complex;
 

@@ -35,8 +35,8 @@ using namespace std;
 using namespace bagel;
 
 void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont,
-                       const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0,
-                       const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
+                       const vector<vector<double>>& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0,
+                       const vector<vector<double>>& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int worksize = nsize * pdim1;
   double* const work = stack_->get(worksize);
   double* current_cont = cont;
@@ -62,8 +62,8 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
 
 
 void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const double* prim, const int pdim0, const int pdim1, double* cont,
-                       const vector<vector<double> >& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0,
-                       const vector<vector<double> >& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
+                       const vector<vector<double>>& coeff0, const vector<int>& upper0, const vector<int>& lower0, const int cdim0,
+                       const vector<vector<double>>& coeff1, const vector<int>& upper1, const vector<int>& lower1, const int cdim1) {
   const int worksize = pdim1 * ac;
   double* const work = stack_->get(worksize);
   double* current_cont = cont;
@@ -94,8 +94,8 @@ void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const 
 
 
 void RysInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
-                                 const vector<vector<double> >& coeff0, const vector<pair<int, int> >& ranges0, const int cdim0,
-                                 const vector<vector<double> >& coeff1, const vector<pair<int, int> >& ranges1, const int cdim1) {
+                                 const vector<vector<double>>& coeff0, const vector<pair<int, int>>& ranges0, const int cdim0,
+                                 const vector<vector<double>>& coeff1, const vector<pair<int, int>>& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
   double* const work = stack_->get(worksize);

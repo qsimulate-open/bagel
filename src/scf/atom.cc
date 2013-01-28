@@ -53,7 +53,7 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
-  const vector<shared_ptr<const Shell> > old_shells = old.shells();
+  const vector<shared_ptr<const Shell>> old_shells = old.shells();
   for(auto& s : old_shells)
     shells_.push_back(s->move_atom(displacement));
 }
@@ -64,13 +64,13 @@ Atom::Atom(const Atom& old, const double* displacement)
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
 
-  const vector<shared_ptr<const Shell> > old_shells = old.shells();
+  const vector<shared_ptr<const Shell>> old_shells = old.shells();
   for (auto& s : old_shells)
     shells_.push_back(s->move_atom(displacement));
 }
 
 
-Atom::Atom(const string nm, vector<shared_ptr<const Shell> > shell)
+Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
 : name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
@@ -89,7 +89,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   ifs.open(filename.c_str());
 
   // basis_info will be used in the construction of Basis_batch
-  vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
+  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
 
   if (!ifs.is_open()) {
     throw runtime_error("Basis file not found");
@@ -114,7 +114,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
         // temporary storage of info
         string angular_number;
         vector<double> exponents;
-        vector<vector<double> > coefficients;
+        vector<vector<double>> coefficients;
         while (!ifs.eof()) {
           getline(ifs, buffer);
           if (buffer.empty()) continue;
@@ -175,14 +175,14 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double> > > in)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   // tuple
-  vector<tuple<string, vector<double>, vector<vector<double> > > > basis_info;
+  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
   for (auto& iele : in) {
     vector<double> tmp = get<2>(iele);
-    vector<vector<double> > tmp2;
+    vector<vector<double>> tmp2;
     for (auto& i : tmp) tmp2.push_back(vector<double>(1, i));
     basis_info.push_back(make_tuple(get<0>(iele), get<1>(iele), tmp2));
   }
@@ -229,11 +229,11 @@ which was the reason why the third argument was a vector of a vector.
 
 
 // convert basis_info to vector<Shell>
-void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double> > > > in) {
+void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double>>>> in) {
 
   for (int i = 0; i <= atommap_.max_angular_number(); ++i) {
-    vector<vector<double> > contractions;
-    vector<pair<int, int> > contranges;
+    vector<vector<double>> contractions;
+    vector<pair<int, int>> contranges;
     vector<double> exponents;
 
     int offset = 0;
@@ -243,7 +243,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
       if (atommap_.angular_number(get<0>(*biter)) != i) continue;
 
       // contraction coefficient matrix
-      const vector<vector<double> > conts = get<2>(*biter);
+      const vector<vector<double>> conts = get<2>(*biter);
 
       // loop over contraction coefficients
       for (int j = 0; j != conts.front().size(); ++j) {
@@ -290,8 +290,8 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
           *diter *= ::pow(2.0 * *eiter / pi__, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
 
-        vector<vector<double> > cont(1, *iter);
-        vector<pair<int, int> > cran(1, *citer);
+        vector<vector<double>> cont(1, *iter);
+        vector<pair<int, int>> cran(1, *citer);
         shared_ptr<const Shell> current(new Shell(spherical_, position_, i, exponents, cont, cran));
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
@@ -397,7 +397,7 @@ double Atom::dihedral_angle(const std::shared_ptr<const Atom> a, const std::shar
 shared_ptr<const Atom> Atom::relativistic() const {
   // basically the same
   // except for shells_
-  vector<shared_ptr<const Shell> > rshells;
+  vector<shared_ptr<const Shell>> rshells;
   for (auto& i : shells_) {
     shared_ptr<Shell> tmp(new Shell(*i));
     tmp->init_relativistic();

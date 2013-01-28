@@ -43,7 +43,7 @@ namespace bagel {
 class PMP2 {
   typedef std::shared_ptr<PMatrix1e> RefMatrix;
   typedef std::shared_ptr<PCoeff> RefCoeff;
-  typedef std::shared_ptr<PMOFile<std::complex<double> > > RefMOFile;
+  typedef std::shared_ptr<PMOFile<std::complex<double>>> RefMOFile;
 
   protected:
     // Shared pointer for geometry.
@@ -66,13 +66,13 @@ class PMP2 {
     const std::vector<double> eig_;
 
     // AO integrals used in several places
-    std::shared_ptr<PCompFile<ERIBatch> > eri_obs_;
-    std::shared_ptr<PCompFile<SlaterBatch> > stg_;
-    std::shared_ptr<PCompFile<SlaterBatch> > stg2_;
-    std::shared_ptr<PCompFile<SlaterBatch> > yp_;
-    std::shared_ptr<PCompCABSFile<ERIBatch> > eri_cabs_;
-    std::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs_;
-    std::shared_ptr<PCompCABSFile<SlaterBatch> > stg_cabs2_;
+    std::shared_ptr<PCompFile<ERIBatch>> eri_obs_;
+    std::shared_ptr<PCompFile<SlaterBatch>> stg_;
+    std::shared_ptr<PCompFile<SlaterBatch>> stg2_;
+    std::shared_ptr<PCompFile<SlaterBatch>> yp_;
+    std::shared_ptr<PCompCABSFile<ERIBatch>> eri_cabs_;
+    std::shared_ptr<PCompCABSFile<SlaterBatch>> stg_cabs_;
+    std::shared_ptr<PCompCABSFile<SlaterBatch>> stg_cabs2_;
     RefMOFile eri_ii_pp_;
     RefMOFile eri_ii_Ai_;
     RefMOFile stg_ii_pp_;
@@ -128,7 +128,7 @@ class PMP2 {
 
   public:
     PMP2(const std::shared_ptr<PGeometry>, const std::shared_ptr<PCoeff>,
-         const std::vector<double>, std::shared_ptr<PCompFile<ERIBatch> >, const bool);
+         const std::vector<double>, std::shared_ptr<PCompFile<ERIBatch>>, const bool);
     ~PMP2();
 
     void compute();

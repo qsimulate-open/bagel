@@ -160,7 +160,7 @@ shared_ptr<const Coeff> RegionLocalization::localize(const int iter, const doubl
 void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
   S_ = shared_ptr<Matrix>(new Overlap(geom));
 
-  vector<vector<int> > offsets = geom->offsets();
+  vector<vector<int>> offsets = geom->offsets();
   for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
     const int start = ioffset->front();
     int end;

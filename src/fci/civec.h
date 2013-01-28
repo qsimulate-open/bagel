@@ -120,7 +120,7 @@ class Civec {
     // assumes that Civec's in c are already orthogonal with each other.
     // returns scaling factor (see implementation)
 
-    double orthog(std::list<std::shared_ptr<const Civec> > c);
+    double orthog(std::list<std::shared_ptr<const Civec>> c);
     double orthog(std::shared_ptr<const Civec> o);
     void project_out(std::shared_ptr<const Civec> o) { daxpy(-ddot(*o), *o); }
 
@@ -209,7 +209,7 @@ class DistCivec {
     void daxpy(const double a, const DistCivec& o);
 
     void project_out(std::shared_ptr<const DistCivec> o) { daxpy(-ddot(*o), *o); }
-    double orthog(std::list<std::shared_ptr<const DistCivec> > c);
+    double orthog(std::list<std::shared_ptr<const DistCivec>> c);
     double orthog(std::shared_ptr<const DistCivec> o);
 
     // mutex

@@ -135,7 +135,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void purify_idempotent(const Matrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
-    double orthog(const std::list<std::shared_ptr<const Matrix> > o);
+    double orthog(const std::list<std::shared_ptr<const Matrix>> o);
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 

@@ -39,7 +39,6 @@ class Hcore : public Matrix1e {
 
   public:
     Hcore(const std::shared_ptr<const Geometry>);
-    ~Hcore();
 
 };
 

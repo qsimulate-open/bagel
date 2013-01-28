@@ -38,7 +38,7 @@ Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
 }
 
 
-Coeff::Coeff(vector<shared_ptr<const Coeff> > coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
+Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
   double* cdata = data();
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
@@ -71,8 +71,8 @@ Coeff::~Coeff() {
 }
 
 #if 0
-shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coeff_vec) {
-  vector<shared_ptr<const Geometry> > geovec;
+shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff>> coeff_vec) {
+  vector<shared_ptr<const Geometry>> geovec;
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
     geovec.push_back((*icoeff)->geom());
   }
@@ -84,7 +84,7 @@ shared_ptr<const Geometry> Coeff::supergeom(vector<shared_ptr<const Coeff> > coe
 #endif
 
 
-int Coeff::num_basis(vector<shared_ptr<const Coeff> > coeff_vec) const {
+int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
   return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff>& b) { return a+b->ndim(); });
 }
 
@@ -110,7 +110,7 @@ shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<do
 }
 
 
-pair<shared_ptr<Matrix>, shared_ptr<Matrix> > Coeff::split(const int nrow1, const int nrow2) const {
+pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const int nrow2) const {
   shared_ptr<Matrix> out1(new Matrix(nrow1, mdim_));
   shared_ptr<Matrix> out2(new Matrix(nrow2, mdim_));
 

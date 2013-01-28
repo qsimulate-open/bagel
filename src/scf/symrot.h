@@ -33,7 +33,7 @@ namespace bagel {
 
 class SymRotAbel {
   protected:
-    std::vector<std::vector<double> > primrot_;
+    std::vector<std::vector<double>> primrot_;
 
   public:
     std::vector<double> primrot(const int i) const { return primrot_[i]; };

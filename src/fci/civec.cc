@@ -100,7 +100,7 @@ double Civec::variance() const {
 }
 
 
-double Civec::orthog(list<shared_ptr<const Civec> > c) {
+double Civec::orthog(list<shared_ptr<const Civec>> c) {
   for (auto& iter : c)
     project_out(iter);
   const double norm = this->norm();
@@ -110,7 +110,7 @@ double Civec::orthog(list<shared_ptr<const Civec> > c) {
 }
 
 double Civec::orthog(shared_ptr<const Civec> o) {
-  list<shared_ptr<const Civec> > v = {o};
+  list<shared_ptr<const Civec>> v = {o};
   return orthog(v);
 }
 

@@ -60,8 +60,8 @@ class SendRequest : public ServerFlush {
     std::mutex mutex_;
 
     // tuple contains: size, if ready, target rank, and buffer 
-    std::map<int, std::shared_ptr<Probe> > inactive_;
-    std::map<int, std::shared_ptr<Probe> > requests_;
+    std::map<int, std::shared_ptr<Probe>> inactive_;
+    std::map<int, std::shared_ptr<Probe>> requests_;
 
     void flush_() override;
 
@@ -100,9 +100,9 @@ class AccRequest : public ServerFlush {
     std::mutex mutex_;
 
     // speculative calls to receive probes
-    std::map<int, std::shared_ptr<Call> > calls_;
+    std::map<int, std::shared_ptr<Call>> calls_;
     // requests to receive data from send_
-    std::map<int, std::shared_ptr<Prep> > requests_;
+    std::map<int, std::shared_ptr<Prep>> requests_;
 
     // one speculative call
     void init();

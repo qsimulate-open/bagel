@@ -43,8 +43,8 @@ void MoldenIn::compute_transforms() {
 
   vector<double> factorial = data.factorial;
 
-  vector<pair<int, double> > s0(1, make_pair(0, one));
-  vector<vector<pair<int, double> > > s1(1, s0);
+  vector<pair<int, double>> s0(1, make_pair(0, one));
+  vector<vector<pair<int, double>>> s1(1, s0);
   lmtuv_.push_back(s1);
 
   for (int l = 1; l != LEND; ++l) {
@@ -61,14 +61,14 @@ void MoldenIn::compute_transforms() {
       }
     }
   
-    vector<vector<pair<int, double> > > mtuv;
+    vector<vector<pair<int, double>>> mtuv;
     for (int n = 0; n != 2 * l + 1; ++n) {
       int m = l - (n / 2); 
       if (n % 2 == 1) m *= -1;
 
       const int vm2 = m < 0 ? 1 : 0;
       const int absm = m > 0 ? m : -m;
-      vector<pair<int, double> > tuv;
+      vector<pair<int, double>> tuv;
   
       const double Nlms = one / pow(two, absm) / factorial[l] * sqrt((m == 0 ? one : two) * factorial[l + absm] * factorial[l - absm]);
       const int tmax = floor((l - absm) / 2.0);
@@ -110,7 +110,7 @@ void MoldenIn::compute_transforms() {
 }
 
 vector<double> MoldenIn::transform_cart(vector<double> carts, int ang_l) {
-   vector<vector<pair<int,double> > > mtuv = lmtuv_.at(ang_l);
+   vector<vector<pair<int,double>>> mtuv = lmtuv_.at(ang_l);
 
    vector<double> out;
    for(auto& im : mtuv) {

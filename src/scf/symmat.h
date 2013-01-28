@@ -41,7 +41,6 @@ class SymMat : public Matrix {
 
   public:
     SymMat(const std::shared_ptr<const Geometry>, const int);
-    ~SymMat();
 
 };
 

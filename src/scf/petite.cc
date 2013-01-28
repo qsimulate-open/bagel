@@ -35,11 +35,6 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<Petite> RefPetite;
-typedef shared_ptr<const Atom> RefAtom;
-typedef shared_ptr<const Shell> RefShell;
-typedef shared_ptr<Symmetry> RefSymmetry;
-
 static inline array<double,3> matmul33(const vector<double>& a, const array<double,3>& b) {
   assert(a.size() == 9 && b.size() == 3);
   // note that the array is writen in C style (not in fortran style)!!!
@@ -50,7 +45,7 @@ static inline array<double,3> matmul33(const vector<double>& a, const array<doub
   return out;
 };
 
-Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
+Petite::Petite(const vector<shared_ptr<const Atom>>& atoms, const string sym) : sym_(sym) {
   const string c1("c1");
   const string cs("cs");
   const string ci("ci");
@@ -62,11 +57,11 @@ Petite::Petite(const vector<RefAtom>& atoms, const string sym) : sym_(sym) {
 
   natom_ = atoms.size();
 
-  vector<RefShell> vbb;
+  vector<shared_ptr<const Shell>> vbb;
   vector<int> offset;
   int cnt = 0;
   for (auto& a : atoms) {
-    vector<RefShell> tmp = a->shells();
+    vector<shared_ptr<const Shell>> tmp = a->shells();
     vbb.insert(vbb.end(), tmp.begin(), tmp.end());
     offset.push_back(cnt);
     cnt += tmp.size();

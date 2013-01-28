@@ -90,10 +90,10 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : Rys
   }
 
   // get contracted basis functions from each basisinfo_
-  array<vector<pair<vector<double>, vector<double> > >,4> ce;
+  array<vector<pair<vector<double>, vector<double>>>,4> ce;
   for (int s = 0; s != 4; ++s) {
     auto range = basisinfo_[s]->contraction_ranges().begin();
-    vector<pair<vector<double>, vector<double> > > seg;
+    vector<pair<vector<double>, vector<double>>> seg;
     for (auto i = basisinfo_[s]->contractions().begin(); i != basisinfo_[s]->contractions().end(); ++i, ++range) {
       const int start = range->first;
       const int end   = range->second;

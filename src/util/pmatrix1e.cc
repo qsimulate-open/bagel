@@ -226,7 +226,7 @@ void PMatrix1e::init() {
 
   const std::vector<RefAtom> atoms = geom_->atoms();
 
-  const std::vector<std::vector<int> > offsets = geom_->offsets();
+  const std::vector<std::vector<int>> offsets = geom_->offsets();
   const int natom = geom_->natom();
   //#pragma omp parallel for
   for (int iatom0 = 0; iatom0 < natom; ++iatom0) {
@@ -584,7 +584,7 @@ double PMatrix1e::trace() const {
 }
 
 
-pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e> > PMatrix1e::split(const int nrow1, const int nrow2) const {
+pair<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e>> PMatrix1e::split(const int nrow1, const int nrow2) const {
   shared_ptr<PMatrix1e> out1(new PMatrix1e(geom_, nrow1, mdim_));
   shared_ptr<PMatrix1e> out2(new PMatrix1e(geom_, nrow2, mdim_));
 

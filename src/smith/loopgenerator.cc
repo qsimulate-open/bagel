@@ -31,7 +31,7 @@ using namespace bagel::SMITH;
 using namespace std;
 
 
-vector<vector<Index> > LoopGenerator::block_loop() const {
+vector<vector<Index>> LoopGenerator::block_loop() const {
   // first, make a status vector
   std::vector<int> stat(loop_.size());
   std::vector<int> max(loop_.size());
@@ -40,7 +40,7 @@ vector<vector<Index> > LoopGenerator::block_loop() const {
     for (auto i = max.begin(); i != max.end(); ++i, ++j) *i = j->nblock();
   }
 
-  vector<vector<Index> > out;
+  vector<vector<Index>> out;
 
   do {
     vector<Index> tmp;

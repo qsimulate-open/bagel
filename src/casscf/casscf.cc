@@ -44,8 +44,8 @@ static string tostring(const T i) {
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : idata_(idat), geom_(geom), hcore_(new Hcore(geom)) {
 
-  std::shared_ptr<SCF<1> > scf_;
-  scf_ = std::shared_ptr<SCF<1> >(new SCF<1>(idat, geom, re));
+  std::shared_ptr<SCF<1>> scf_;
+  scf_ = std::shared_ptr<SCF<1>>(new SCF<1>(idat, geom, re));
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 
@@ -161,7 +161,7 @@ void CASSCF::resume_stdcout() {
 }
 
 
-shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1> > rdm1, const bool inactive_only) const {
+shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
   shared_ptr<Matrix> mo_rdm1(new Matrix(geom_->nbasis(), geom_->nbasis()));
   for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 2.0;
@@ -195,11 +195,11 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
       shared_ptr<Matrix> denact(new Matrix(*denall-*deninact));
-      shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
+      shared_ptr<Fock<1>> fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
       f = shared_ptr<Matrix>(new Matrix(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_));
     } else {
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Fock<1> > f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
+      shared_ptr<Fock<1>> f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
       f = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_ao * *coeff_));
 
       finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *hcore_ * *coeff_));
@@ -282,7 +282,7 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold,
 shared_ptr<Matrix> CASSCF::form_natural_orbs() {
     // here make a natural orbitals and update the coefficients
     // this effectively updates 1,2RDM and integrals
-    const pair<shared_ptr<Matrix>, vector<double> > natorb = fci_->natorb_convert();
+    const pair<shared_ptr<Matrix>, vector<double>> natorb = fci_->natorb_convert();
     // new coefficients
     shared_ptr<const Coeff> new_coeff = update_coeff(coeff_, natorb.first);
     coeff_ = new_coeff;

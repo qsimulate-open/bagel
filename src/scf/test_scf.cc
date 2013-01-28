@@ -39,11 +39,11 @@ double scf_energy(std::string filename) {
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "df-hf") {
-      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
@@ -64,7 +64,7 @@ double scf_energy(std::string filename) {
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (iter->first == "hf") {
-      std::shared_ptr<SCF<0> > scf(new SCF<0>(iter->second, geom));
+      std::shared_ptr<SCF<0>> scf(new SCF<0>(iter->second, geom));
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

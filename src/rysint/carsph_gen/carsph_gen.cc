@@ -48,9 +48,9 @@ int main() {
   struct Data data;
   vector<mpreal> factorial = data.factorial;
 
-  vector<pair<int, mpreal> > s0(1, make_pair(0, one));
-  vector<vector<pair<int, mpreal> > > s1(1, s0);
-  vector<vector<vector<pair<int, mpreal> > > > lmtuv(1, s1);
+  vector<pair<int, mpreal>> s0(1, make_pair(0, one));
+  vector<vector<pair<int, mpreal>>> s1(1, s0);
+  vector<vector<vector<pair<int, mpreal>>>> lmtuv(1, s1);
 
   for (int l = 1; l != LEND; ++l) {
 
@@ -66,14 +66,14 @@ int main() {
       }
     }
 
-    vector<vector<pair<int, mpreal> > > mtuv;
+    vector<vector<pair<int, mpreal>>> mtuv;
     for (int n = 0; n != 2 * l + 1; ++n) {
       int m = l - (n / 2);
       if (n % 2 == 1) m *= -1;
 
       const int vm2 = m < 0 ? 1 : 0;
       const int absm = m > 0 ? m : -m;
-      vector<pair<int, mpreal> > tuv;
+      vector<pair<int, mpreal>> tuv;
 
       const mpreal Nlms = one / pow(two, absm) / factorial[l] * sqrt((m == 0 ? one : two) * factorial[l + absm] * factorial[l - absm]);
       const int tmax = floor((l - absm) / 2.0);
@@ -117,7 +117,7 @@ int main() {
                                  23, 25, 27, 29, 31, 33, 35, 37, 39};
 
   for (int l0 = 0; l0 != LEND; ++l0) {
-    const vector<vector<pair<int, mpreal> > > l0mtuv = lmtuv.at(l0);
+    const vector<vector<pair<int, mpreal>>> l0mtuv = lmtuv.at(l0);
     assert(l0mtuv.size() == spherical_xyz[l0]);
     const string l0str = lexical_cast<string>(l0);
     for (int l1 = l0; l1 != LEND; ++l1) {
@@ -156,21 +156,21 @@ int main() {
 using namespace bagel;\n\
 \n";
   code += "\n";
-      const vector<vector<pair<int, mpreal> > > l1mtuv = lmtuv.at(l1);
+      const vector<vector<pair<int, mpreal>>> l1mtuv = lmtuv.at(l1);
       assert(l1mtuv.size() == spherical_xyz[l1]);
       const int lcartsize = cartesian_xyz[l1];
 
       code += "\
 void CarSphList::carsph_" + l1str + l0str + "(const int nloop, const double* source, double* target) {\n";
       if (l1 > 1) {
-        vector<vector<pair<int, mpreal> > >::const_iterator m0;
-        vector<vector<pair<int, mpreal> > >::const_iterator m1;
+        vector<vector<pair<int, mpreal>>>::const_iterator m0;
+        vector<vector<pair<int, mpreal>>>::const_iterator m1;
         map<double, string> coeff_map;
         int index = 0;
         for (m1 = l1mtuv.begin(); m1 != l1mtuv.end(); ++m1) {
           for (m0 = l0mtuv.begin(); m0 != l0mtuv.end(); ++m0) {
-            for (vector<pair<int, mpreal> >::const_iterator p1 = m1->begin(); p1 != m1->end(); ++p1) {
-              for (vector<pair<int, mpreal> >::const_iterator p0 = m0->begin(); p0 != m0->end(); ++p0) {
+            for (vector<pair<int, mpreal>>::const_iterator p1 = m1->begin(); p1 != m1->end(); ++p1) {
+              for (vector<pair<int, mpreal>>::const_iterator p0 = m0->begin(); p0 != m0->end(); ++p0) {
                 const double current = abs(p0->second * p1->second).toDouble();
                 if (coeff_map.end() == coeff_map.find(current) && current != 1.0) {
                   const string name = "c" + lexical_cast<string>(index);
@@ -196,8 +196,8 @@ void CarSphList::carsph_" + l1str + l0str + "(const int nloop, const double* sou
     target[" + lexical_cast<string>(cnt) + "] = ";
             bool first = true;
             int iformat = 0;
-            for (vector<pair<int, mpreal> >::const_iterator p1 = m1->begin(); p1 != m1->end(); ++p1) {
-              for (vector<pair<int, mpreal> >::const_iterator p0 = m0->begin(); p0 != m0->end(); ++p0, ++iformat) {
+            for (vector<pair<int, mpreal>>::const_iterator p1 = m1->begin(); p1 != m1->end(); ++p1) {
+              for (vector<pair<int, mpreal>>::const_iterator p0 = m0->begin(); p0 != m0->end(); ++p0, ++iformat) {
                 const int position = cartesian_xyz[l0] * p1->first + p0->first;
                 const string posstr = lexical_cast<string>(position);
                 const mpreal coeffmp = p0->second * p1->second;

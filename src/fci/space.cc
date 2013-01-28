@@ -53,7 +53,7 @@ void Space::common_init() {
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
       shared_ptr<Determinants> tmpdet(new Determinants(norb_, nelea_ + i, neleb_ + j, compress));
-      detmap_.insert(pair<int,shared_ptr<Determinants> >(key_(i,j), tmpdet));
+      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i,j), tmpdet));
     }
   }
   if (!mute) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;

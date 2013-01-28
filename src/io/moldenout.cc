@@ -88,7 +88,7 @@ void MoldenOut::write_geom() {
 }
 
 void MoldenOut::write_mos() {
-  vector<shared_ptr<const Atom> > atoms = geom_->atoms();
+  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   const bool is_spherical = geom_->spherical();
 
   const int num_atoms = geom_->natom();
@@ -104,7 +104,7 @@ void MoldenOut::write_mos() {
 
     AtomMap am; 
 
-    vector<shared_ptr<const Shell> > shells = (*iatom)->shells();
+    vector<shared_ptr<const Shell>> shells = (*iatom)->shells();
     for(auto& ishell : shells) {
       string ang_l = am.angular_string(ishell->angular_number());
       vector<double> exponents = ishell->exponents();

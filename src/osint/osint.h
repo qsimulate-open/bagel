@@ -68,8 +68,8 @@ class OSInt : public Integral {
 
     virtual void perform_VRR(double*) {};
     void perform_contraction(const int, const double*, const int, const int, double*,
-                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int,
-                             const std::vector<std::vector<double> >&, const std::vector<std::pair<int, int> >&, const int);
+                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
+                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;

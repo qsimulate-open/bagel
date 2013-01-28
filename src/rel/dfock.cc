@@ -38,10 +38,10 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
   complex<double> imag (0.0,1.0);
   shared_ptr<const DFDist> df = geom_->df();
-  shared_ptr<const DFDist> dfs_total = geom_->form_fit<DFDist_ints<SmallERIBatch> >(1.0e-8, false); // TODO thresh should be controlled from the input deck
+  shared_ptr<const DFDist> dfs_total = geom_->form_fit<DFDist_ints<SmallERIBatch>>(1.0e-8, false); // TODO thresh should be controlled from the input deck
 
   // get individual df dist objects for each block
-  vector<shared_ptr<DFDist> > dfs = dfs_total->split_blocks();
+  vector<shared_ptr<DFDist>> dfs = dfs_total->split_blocks();
 
   // Separate Coefficients into real and imaginary
   array<shared_ptr<const Matrix>, 4> rocoeff;

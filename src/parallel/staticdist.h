@@ -56,8 +56,8 @@ class StaticDist {
     }
 
     // vector of pairs of astart and asize
-    std::vector<std::pair<size_t, size_t> > atable() const {
-      std::vector<std::pair<size_t, size_t> > out;
+    std::vector<std::pair<size_t, size_t>> atable() const {
+      std::vector<std::pair<size_t, size_t>> out;
       for (size_t i = 0; i != nproc_; ++i)
         out.push_back(std::make_pair(start_[i], start_[i+1]-start_[i]));
       return out;

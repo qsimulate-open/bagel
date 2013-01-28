@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<const Reference> ref;
     std::shared_ptr<Dimer> dimer;
 
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
     // timer for each method
     Timer timer(-1);
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 
       if (method == "hf") {
 
-        scf = std::shared_ptr<SCF<0> >(new SCF<0>(iter->second, geom, ref));
+        scf = std::shared_ptr<SCF<0>>(new SCF<0>(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-hf") {
 
-        scf = std::shared_ptr<SCF<1> >(new SCF<1>(iter->second, geom, ref));
+        scf = std::shared_ptr<SCF<1>>(new SCF<1>(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
@@ -167,19 +167,19 @@ int main(int argc, char** argv) {
 
       } else if (method == "df-uhf-opt" || method == "uhf-opt") {
 
-        std::shared_ptr<Opt<UHF> > opt(new Opt<UHF>(idata, iter->second, geom));
+        std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "df-rohf-opt" || method == "rohf-opt") {
 
-        std::shared_ptr<Opt<ROHF> > opt(new Opt<ROHF>(idata, iter->second, geom));
+        std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "df-hf-opt") {
 
-        std::shared_ptr<Opt<SCF<1> > > opt(new Opt<SCF<1> >(idata, iter->second, geom));
+        std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
@@ -202,11 +202,11 @@ int main(int argc, char** argv) {
         // in case of SS-CASSCF
         if (read_input<int>(iter->second, "nstate", 1) == 1) {
           if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCI> > opt(new Opt<SuperCI>(idata, iter->second, geom));
+            std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else if (algorithm == "werner" || algorithm == "knowles") {
-            std::shared_ptr<Opt<WernerKnowles> > opt(new Opt<WernerKnowles>(idata, iter->second, geom));
+            std::shared_ptr<Opt<WernerKnowles>> opt(new Opt<WernerKnowles>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else {
@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
         // in case of SA-CASSCF
         } else {
           if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCIGrad> > opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
+            std::shared_ptr<Opt<SuperCIGrad>> opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else {
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "mp2-opt") {
 
-        std::shared_ptr<Opt<MP2Grad> > opt(new Opt<MP2Grad>(idata, iter->second, geom));
+        std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
@@ -245,13 +245,13 @@ int main(int argc, char** argv) {
         std::string method = read_input<std::string>(iter->second, "method", "mp2");
         if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
         if (method == "mp2") {
-          std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore> > mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
+          std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore>> mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
           mp2->solve();
         } else if (method == "caspt2") {
-          std::shared_ptr<SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore> > cas(new SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>(ref));
+          std::shared_ptr<SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>> cas(new SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>(ref));
           cas->solve();
         } else if (method == "caspt2-test") {
-          std::shared_ptr<SMITH::CAS_test::CAS_test<SMITH::Storage_Incore> > cas(new SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>(ref));
+          std::shared_ptr<SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>> cas(new SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>(ref));
           cas->solve();
         } else {
           std::stringstream ss; ss << method << " method is not implemented in SMITH";

@@ -43,7 +43,7 @@ class MP2 {
     const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
-    std::shared_ptr<SCF<1> > scf_;
+    std::shared_ptr<SCF<1>> scf_;
     int ncore_;
 
     double energy_;

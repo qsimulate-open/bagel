@@ -38,8 +38,8 @@ class PairCompFile {
   protected:
     const double gamma_;
     const std::string jobname_;
-    std::pair<std::shared_ptr<PCompFile<T> >,
-              std::shared_ptr<PCompFile<T> > > files_;
+    std::pair<std::shared_ptr<PCompFile<T>>,
+              std::shared_ptr<PCompFile<T>>> files_;
 
     void init_schwarz();
     void calculate_num_int_each();
@@ -51,8 +51,8 @@ class PairCompFile {
     void store_integrals();
     void reopen_with_inout();
 
-    std::shared_ptr<PCompFile<T> > first() { return files_.first; };
-    std::shared_ptr<PCompFile<T> > second() { return files_.second; };
+    std::shared_ptr<PCompFile<T>> first() { return files_.first; };
+    std::shared_ptr<PCompFile<T>> second() { return files_.second; };
 
 };
 
@@ -61,8 +61,8 @@ template<class T>
 PairCompFile<T>::PairCompFile(std::shared_ptr<PGeometry> gm, const double gam, const std::string jobname)
  : gamma_(gam), jobname_(jobname) {
   // late_init = "true"
-  std::shared_ptr<PCompFile<T> > first(new PCompFile<T>(gm, gamma_, true));
-  std::shared_ptr<PCompFile<T> > second(new PCompFile<T>(gm, gamma_, true));
+  std::shared_ptr<PCompFile<T>> first(new PCompFile<T>(gm, gamma_, true));
+  std::shared_ptr<PCompFile<T>> second(new PCompFile<T>(gm, gamma_, true));
   files_ = std::make_pair(first, second);
 
   // set schwarz for both pcompfiles.
@@ -144,8 +144,8 @@ void PairCompFile<T>::calculate_num_int_each() {
 
   const int size = files_.first->basissize(); // number of shells
 
-  std::shared_ptr<PCompFile<T> > first = files_.first;
-  std::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T>> first = files_.first;
+  std::shared_ptr<PCompFile<T>> second = files_.second;
 
 //#pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
@@ -234,8 +234,8 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 
   typedef std::shared_ptr<const Shell> RefShell;
 
-  std::shared_ptr<PCompFile<T> > first = files_.first;
-  std::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T>> first = files_.first;
+  std::shared_ptr<PCompFile<T>> second = files_.second;
 
   const int K = first->K();
   const double A = first->A();
@@ -330,8 +330,8 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 
 template<class T>
 void PairCompFile<T>::store_integrals() {
-  std::shared_ptr<PCompFile<T> > first = files_.first;
-  std::shared_ptr<PCompFile<T> > second = files_.second;
+  std::shared_ptr<PCompFile<T>> first = files_.first;
+  std::shared_ptr<PCompFile<T>> second = files_.second;
   double* dcache1 = new double[first->max_num_int()];
   double* dcache2 = new double[second->max_num_int()];
   const int S = first->S();

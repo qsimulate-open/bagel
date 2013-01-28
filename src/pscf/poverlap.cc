@@ -59,7 +59,7 @@ void POverlap::computebatch(const array<shared_ptr<const Shell>,2>& input,
   int cnt = 0;
   for (int j = offsetb0; j != dimb0 + offsetb0; ++j) { // atoms in unit cell 0
     for (int i = offsetb1; i != dimb1 + offsetb1; ++i, ++cnt) { // atoms in unit cell m
-      (*data_)[blockoffset + j * nbasis + i] = static_cast<complex<double> >(odata[cnt]);
+      (*data_)[blockoffset + j * nbasis + i] = static_cast<complex<double>>(odata[cnt]);
     }
   }
 

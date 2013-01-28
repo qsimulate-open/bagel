@@ -44,8 +44,8 @@ class Shell {
     std::array<double,3> position_;
     int angular_number_;
     std::vector<double> exponents_;     // length of primitive basis function
-    std::vector<std::vector<double> > contractions_;  // length of contracted basis function
-    std::vector<std::pair<int, int> > contraction_ranges_;
+    std::vector<std::vector<double>> contractions_;  // length of contracted basis function
+    std::vector<std::pair<int, int>> contraction_ranges_;
 
     const bool dummy_;
     std::vector<int> contraction_upper_;
@@ -65,7 +65,7 @@ class Shell {
 
   public:
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
-          const std::vector<std::vector<double> >& contraction, const std::vector<std::pair<int, int> >& cont_range);
+          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
     // default constructor for adding null basis
     Shell(const bool sph);
 
@@ -83,9 +83,9 @@ class Shell {
     const std::vector<double>& exponents() const { return exponents_; };
     const double* exponents_pointer() const { return &(exponents_[0]); };
     const std::vector<double> contractions(const int i) const { return contractions_[i]; };
-    const std::vector<std::vector<double> >& contractions() const { return contractions_; };
+    const std::vector<std::vector<double>>& contractions() const { return contractions_; };
     const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; };
-    const std::vector<std::pair<int, int> >& contraction_ranges() const { return contraction_ranges_; };
+    const std::vector<std::pair<int, int>>& contraction_ranges() const { return contraction_ranges_; };
 
     const std::vector<int>& contraction_upper() const { return contraction_upper_; };
     const std::vector<int>& contraction_lower() const { return contraction_lower_; };

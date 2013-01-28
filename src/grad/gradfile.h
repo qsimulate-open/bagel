@@ -40,7 +40,7 @@
 
 class GradFile {
   protected:
-    // TODO is vector<array<double,3> > guaranteed to be contiguous by the C++ standard?
+    // TODO is vector<array<double,3>> guaranteed to be contiguous by the C++ standard?
     std::vector<double> data_;
 
   public:

@@ -36,7 +36,7 @@ namespace bagel {
 
 class CPHF {
   protected:
-    const std::shared_ptr<LinearRM<Matrix> > solver_;
+    const std::shared_ptr<LinearRM<Matrix>> solver_;
     const std::shared_ptr<const Matrix> grad_;
     const std::vector<double> eig_;
     const std::shared_ptr<const DFHalfDist> halfjj_;

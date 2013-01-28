@@ -56,7 +56,7 @@ class MOFile {
     size_t sizeij_;
     long filesize_;
     std::string filename_;
-    std::vector<std::shared_ptr<Shell> > basis_;
+    std::vector<std::shared_ptr<Shell>> basis_;
     std::vector<int> offset_;
 
     std::shared_ptr<Matrix> core_fock_;

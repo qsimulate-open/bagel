@@ -116,7 +116,7 @@ void UHF::print_S2(const string tag) const {
 }
 
 
-tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbitals() const {
+tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals() const {
   shared_ptr<Matrix> cinv(new Matrix(*coeff_ % *overlap_));
   shared_ptr<Matrix> intermediate(new Matrix(*cinv * *aodensity_ ^ *cinv));
   *intermediate *= -1.0;
@@ -132,9 +132,9 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
   for (int i = 0; i != geom_->nbasis(); ++i)
     if (occup[i] < -tiny) ++nocc;
 
-  shared_ptr<RDM<1> > r(new RDM<1>(nocc));
-  shared_ptr<RDM<1> > ra(new RDM<1>(nocc));
-  shared_ptr<RDM<1> > rb(new RDM<1>(nocc));
+  shared_ptr<RDM<1>> r(new RDM<1>(nocc));
+  shared_ptr<RDM<1>> ra(new RDM<1>(nocc));
+  shared_ptr<RDM<1>> rb(new RDM<1>(nocc));
   r->zero();
   for (int i = 0; i != nocc; ++i) r->element(i,i) = occup[i] * (-1.0);
 
@@ -145,7 +145,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
     }
   }
 
-  vector<shared_ptr<RDM<1> > > rdm = {r, ra, rb};
+  vector<shared_ptr<RDM<1>>> rdm = {r, ra, rb};
   shared_ptr<Coeff> natorb(new Coeff(*coeff_ * *intermediate));
 
   return make_tuple(natorb, nocc, rdm);
@@ -155,7 +155,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1> > > > UHF::natural_orbita
 shared_ptr<Reference> UHF::conv_to_ref() const {
   shared_ptr<Coeff> natorb;
   int nocc;
-  vector<shared_ptr<RDM<1> > > rdm1;
+  vector<shared_ptr<RDM<1>>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
   shared_ptr<Reference> out(new Reference(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1));
 
@@ -177,7 +177,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
 }
 
 
-tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix> > UHF::form_density_uhf() const {
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>> UHF::form_density_uhf() const {
   shared_ptr<Matrix> outA = coeff_->form_density_rhf(nocc_);
   shared_ptr<Matrix> outB = coeffB_->form_density_rhf(noccB_);
   shared_ptr<Matrix> out(new Matrix(*outA+*outB));

@@ -61,7 +61,7 @@ extern "C" { void start_up_slater_(); };
 //#define ONLY_P2
 //#define ONLY_P3
 
-PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch> > fl, const bool hy2)
+PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const shared_ptr<PCompFile<ERIBatch>> fl, const bool hy2)
  : geom_(g), coeff_(co), eig_(eg.begin(), eg.end()), eri_obs_(fl), use_hy2_(hy2) {
 
   cout << "  === Periodic MP2 calculation ===" << endl << endl;
@@ -109,14 +109,14 @@ void PMP2::compute() {
   // CABS integrals
   //////////////////
 
-  shared_ptr<PCompCABSFile<ERIBatch> >
+  shared_ptr<PCompCABSFile<ERIBatch>>
     eri_cabs(new PCompCABSFile<ERIBatch>(geom_, gamma, false, false, true, false, false, "ERI CABS"));
   eri_cabs_ = eri_cabs;
-  shared_ptr<PCompCABSFile<SlaterBatch> >
+  shared_ptr<PCompCABSFile<SlaterBatch>>
     stg_cabs(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, false, false, "Slater CABS"));
   stg_cabs_ = stg_cabs;
   if (!use_hy2_) {
-    shared_ptr<PCompCABSFile<SlaterBatch> >
+    shared_ptr<PCompCABSFile<SlaterBatch>>
       stg_cabs2(new PCompCABSFile<SlaterBatch>(geom_, gamma, false, false, true, true, false, "Slater CABS"));
     stg_cabs2_ = stg_cabs2;
   }
@@ -150,11 +150,11 @@ void PMP2::compute() {
   // Slater & Yukawa potential integrals
   ///////////////////////////////////////
   {
-    shared_ptr<PairCompFile<SlaterBatch> > stg_yp(new PairCompFile<SlaterBatch>(geom_, gamma, "Slater and Yukawa ints"));
+    shared_ptr<PairCompFile<SlaterBatch>> stg_yp(new PairCompFile<SlaterBatch>(geom_, gamma, "Slater and Yukawa ints"));
     stg_yp->store_integrals();
     stg_yp->reopen_with_inout();
-    shared_ptr<PCompFile<SlaterBatch> > stg = stg_yp->first();
-    shared_ptr<PCompFile<SlaterBatch> > yp  = stg_yp->second();
+    shared_ptr<PCompFile<SlaterBatch>> stg = stg_yp->first();
+    shared_ptr<PCompFile<SlaterBatch>> yp  = stg_yp->second();
     stg_ = stg;
 #ifndef ONLY_B
 #ifndef ONLY_P
@@ -233,12 +233,12 @@ void PMP2::compute() {
 #ifndef ONLY_X
   {
     RefMOFile vF = stg_ii_pp_->contract(eri_ii_pp_, "F * v (ii/ii) OBS");
-    RefMOFile V_obs(new PMOFile<complex<double> >(*yp_ii_ii_ - *vF));
+    RefMOFile V_obs(new PMOFile<complex<double>>(*yp_ii_ii_ - *vF));
 
     RefMOFile V_cabs = stg_ii_Ai_->contract(eri_ii_Ai_, "F * v (ii/ii) CABS");
 
     V_cabs->flip_symmetry();
-    RefMOFile V_pre(new PMOFile<complex<double> >(*V_obs - *V_cabs));
+    RefMOFile V_pre(new PMOFile<complex<double>>(*V_obs - *V_cabs));
 
     V_ = V_pre;
   }
@@ -252,12 +252,12 @@ void PMP2::compute() {
   ///////////////////////////////////
 #ifndef ONLY_P
   {
-    shared_ptr<PairCompFile<SlaterBatch> >
+    shared_ptr<PairCompFile<SlaterBatch>>
       stg_yp2(new PairCompFile<SlaterBatch>(geom_, 2.0 * gamma, "Slater and Yukawa ints (2gamma)"));
     stg_yp2->store_integrals();
     stg_yp2->reopen_with_inout();
-    shared_ptr<PCompFile<SlaterBatch> > stg2 = stg_yp2->first();
-    shared_ptr<PCompFile<SlaterBatch> > yp2  = stg_yp2->second();  // TODO delete YP from here.
+    shared_ptr<PCompFile<SlaterBatch>> stg2 = stg_yp2->first();
+    shared_ptr<PCompFile<SlaterBatch>> yp2  = stg_yp2->second();  // TODO delete YP from here.
     stg2_ = stg2;
   }
 #endif
@@ -279,7 +279,7 @@ void PMP2::compute() {
     }
 #endif
     RefMOFile FF = stg_ii_pp_->contract(stg_ii_pp_, "F * F (ii/ii) OBS");
-    RefMOFile X_obs(new PMOFile<complex<double> >(*stg2_ii_ii - *FF));
+    RefMOFile X_obs(new PMOFile<complex<double>>(*stg2_ii_ii - *FF));
 #ifdef ONLY_X
     {
       const complex<double> en_xtt = X_obs->get_energy_two_amp_X(eig_);
@@ -296,7 +296,7 @@ void PMP2::compute() {
       cout << "**** debug ****  X(cabs) contrib. " << setprecision(10) << en_xtt << endl;
     }
 #endif
-    RefMOFile X_pre(new PMOFile<complex<double> >(*X_obs - *X_cabs));
+    RefMOFile X_pre(new PMOFile<complex<double>>(*X_obs - *X_cabs));
 
     X_ = X_pre;
     cout << "**** debug ****  X contrib. for debug" << setprecision(10) << X_->get_energy_two_amp_B().real() << endl;
@@ -326,7 +326,7 @@ void PMP2::compute() {
   {
 #ifndef ONLY_P
     // T intermediate (direct)
-    RefMOFile T(new PMOFile<complex<double> >(*stg2_ii_ii_ * (gamma*gamma)));
+    RefMOFile T(new PMOFile<complex<double>>(*stg2_ii_ii_ * (gamma*gamma)));
 
 #ifdef DEBUG_PRINT
     cout << "**** debug ****  T contrib. " << setprecision(10) << T->get_energy_two_amp_B().real() << endl;
@@ -360,7 +360,7 @@ void PMP2::compute() {
       // integral evaluation...
       RefMOFile X_ii_hi_cabs;
       {
-        shared_ptr<PCompCABSFile<SlaterBatch> >
+        shared_ptr<PCompCABSFile<SlaterBatch>>
           stg2_cabs(new PCompCABSFile<SlaterBatch>(geom_, 2.0 * gamma, false, false, true, false,
                                                    false, "Slater CABS (2gamma)"));
         // Use integral-direct mo transform.
@@ -374,7 +374,7 @@ void PMP2::compute() {
 #endif
 
       X_ii_hi->flip_symmetry();
-      RefMOFile Qtmp(new PMOFile<complex<double> >(*X_ii_hi));
+      RefMOFile Qtmp(new PMOFile<complex<double>>(*X_ii_hi));
       Q = Qtmp;
       Q->scale(2.0);
     } // end of Q intermediate construction.
@@ -790,7 +790,7 @@ void PMP2::compute() {
     }
 
 #ifndef ONLY_P
-    RefMOFile btmp(new PMOFile<complex<double> >(*T + *Q - *P));
+    RefMOFile btmp(new PMOFile<complex<double>>(*T + *Q - *P));
     B_ = btmp;
 #endif
 

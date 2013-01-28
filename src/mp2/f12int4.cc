@@ -295,7 +295,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::g
 
   shared_ptr<Matrix> coeff_entire = ri_reshaped->merge(coeff_cabs);
 
-  pair<shared_ptr<Matrix>, shared_ptr<Matrix> > t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
+  pair<shared_ptr<Matrix>, shared_ptr<Matrix>> t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
 
   // TODO check
   int ncabs = ri_coeff->mdim();

@@ -66,7 +66,7 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
   const vector<double> exp1 = basisinfo_[1]->exponents();
 
   int index = 0;
-  vector<shared_ptr<const Atom> > atoms = geom_->atoms();
+  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
 
   const double onepi2 = 1.0 / (pi__ * pi__);
   const double sqrtpi = ::sqrt(pi__);

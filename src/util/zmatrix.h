@@ -44,7 +44,7 @@ class ZMatrix;
 typedef ZMatrix DistZMatrix;
 #endif
 
-class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_shared_from_this<ZMatrix> {
+class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_shared_from_this<ZMatrix> {
   public:
 #ifdef HAVE_SCALAPACK
     ZMatrix(const int n, const int m, const bool localized = false);
@@ -66,8 +66,8 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     void inverse_half(const double thresh = 1.0e-8);
 
-    using Matrix_base<std::complex<double> >::copy_block;
-    using Matrix_base<std::complex<double> >::get_block;
+    using Matrix_base<std::complex<double>>::copy_block;
+    using Matrix_base<std::complex<double>>::get_block;
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
     // copy a block from a Matrix object to ZMatrix object and mutliply by coefficient coeff. If type = 0, coeff is purely real, else purely imaginary
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
@@ -137,7 +137,7 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
     void purify_idempotent(const ZMatrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
-    std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix> > o);
+    std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix>> o);
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
@@ -159,7 +159,7 @@ class ZMatrix : public Matrix_base<std::complex<double> >, public std::enable_sh
 
 #ifdef HAVE_SCALAPACK
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
-class DistZMatrix : public DistMatrix_base<std::complex<double> > {
+class DistZMatrix : public DistMatrix_base<std::complex<double>> {
   public:
     DistZMatrix(const int n, const int m);
     DistZMatrix(const DistZMatrix&);

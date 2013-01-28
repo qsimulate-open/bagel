@@ -54,7 +54,7 @@ PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, 
 
 }
 
-PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, const vector<double>& shw, const int th, const bool dir, shared_ptr<PCompFile<ERIBatch> > fl)
+PFock::PFock(const RefPGeometry g, const RefPFock prev, const RefPMatrix1e den, const vector<double>& shw, const int th, const bool dir, shared_ptr<PCompFile<ERIBatch>> fl)
  : PMatrix1e(g), previous_(prev), density_(den), schwarz_(shw), S2_(th), direct_(dir) {
   assert(!direct());
 

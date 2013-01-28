@@ -44,7 +44,7 @@ class PutRequest : public ServerFlush {
       std::unique_ptr<size_t[]> buf;
       Call() : buf(new size_t[4]) { }
     };
-    std::map<int, std::shared_ptr<Call> > calls_;
+    std::map<int, std::shared_ptr<Call>> calls_;
 
     void init();
     const double* const data_;
@@ -77,7 +77,7 @@ class RecvRequest {
     size_t counter_;
 
     // tuple contains: size, if ready, target rank, and buffer 
-    std::map<int, std::shared_ptr<Probe> > request_;
+    std::map<int, std::shared_ptr<Probe>> request_;
     std::vector<int> probe_;
 
     std::mutex block_;

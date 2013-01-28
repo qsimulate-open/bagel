@@ -67,7 +67,7 @@ void Determinants::const_string_lists_() {
   fill(stringa_.begin(), stringa_.end(),bitset<nbit__>(0));
   fill(stringb_.begin(), stringb_.end(),bitset<nbit__>(0));
 
-  vector<bitset<nbit__> >::iterator sa = stringa_.begin();
+  vector<bitset<nbit__>>::iterator sa = stringa_.begin();
   do {
     for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
     ++sa;
@@ -117,7 +117,7 @@ void Determinants::const_lexical_mapping_() {
 void Determinants::print(const double* const civec, const double thr) const {
   const double* i = civec;
   // multimap sorts elements so that they will be shown in the descending order in magnitude
-  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__> > > tmp;
+  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
   for (auto& ia : stringa_) {
     for (auto& ib : stringb_) {
       if (abs(*i) > thr) {
@@ -132,8 +132,8 @@ void Determinants::print(const double* const civec, const double thr) const {
   }
 }
 
-pair<vector<tuple<int, int, int> >, double> Determinants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
-  vector<tuple<int, int, int> > out;
+pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
+  vector<tuple<int, int, int>> out;
 
   // bit pattern for doubly occupied orbitals
   bitset<nbit__> common = (alpha & beta);

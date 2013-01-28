@@ -38,8 +38,8 @@ using namespace bagel;
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
                      const double en,
-                     const vector<shared_ptr<RDM<1> > >& _rdm1, const vector<shared_ptr<RDM<2> > >& _rdm2,
-                     shared_ptr<const RDM<1> > _rdm1_av, shared_ptr<const RDM<2> > _rdm2_av)
+                     const vector<shared_ptr<RDM<1>>>& _rdm1, const vector<shared_ptr<RDM<2>>>& _rdm2,
+                     shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av)
  : geom_(g), coeff_(c), energy_(en), hcore_(new Hcore(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
@@ -60,7 +60,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1> > active) const {
+shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
     return active->rdm1_mat(geom_, nclosed_);
   else {
@@ -80,7 +80,7 @@ shared_ptr<Dvec> Reference::civectors() const {
 
 
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
-tuple<shared_ptr<RDM<3> >,std::shared_ptr<RDM<4> > > Reference::compute_rdm34(const int i) const {
+tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method
   shared_ptr<FCI> fci(new KnowlesHandy(multimap<string, string>(), shared_from_this(), nclosed_, nact_, nstate_));
   fci->compute();

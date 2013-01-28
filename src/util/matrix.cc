@@ -489,7 +489,7 @@ void Matrix::purify_idempotent(const Matrix& s) {
 }
 
 
-double Matrix::orthog(const list<shared_ptr<const Matrix> > o) {
+double Matrix::orthog(const list<shared_ptr<const Matrix>> o) {
   for (auto& it : o) {
     const double m = this->ddot(it);
     this->daxpy(-m, it);

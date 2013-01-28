@@ -40,9 +40,9 @@ namespace bagel {
 template<typename T>
 class BFGS {
   protected:
-    std::vector<std::shared_ptr<const T> > delta;
-    std::vector<std::shared_ptr<const T> > y;
-    std::vector<std::shared_ptr<const T> > D;
+    std::vector<std::shared_ptr<const T>> delta;
+    std::vector<std::shared_ptr<const T>> y;
+    std::vector<std::shared_ptr<const T>> D;
 
     std::shared_ptr<const T> prev_grad;
     std::shared_ptr<const T> prev_value;

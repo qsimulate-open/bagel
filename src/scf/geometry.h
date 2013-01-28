@@ -47,8 +47,8 @@ class Geometry {
     std::string input_;
 
     // Atoms, which contains basis-set info also.
-    std::vector<std::shared_ptr<const Atom> > atoms_;
-    std::vector<std::shared_ptr<const Atom> > aux_atoms_;
+    std::vector<std::shared_ptr<const Atom>> atoms_;
+    std::vector<std::shared_ptr<const Atom>> aux_atoms_;
     bool aux_merged_;
 
     // Nuclear repulsion energy.
@@ -65,8 +65,8 @@ class Geometry {
     int aux_lmax_;
 
     // these two offsets are in principle redundant information (can be derived from Shells);
-    std::vector<std::vector<int> > offsets_;
-    std::vector<std::vector<int> > aux_offsets_;
+    std::vector<std::vector<int>> offsets_;
+    std::vector<std::vector<int>> aux_offsets_;
 
     std::string basisfile_;
     std::string auxfile_;
@@ -90,21 +90,21 @@ class Geometry {
     double gamma_;
 
     // Constructor helpers
-    void construct_from_atoms(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string,std::string> o);
+    void construct_from_atoms(const std::vector<std::shared_ptr<const Atom>> atoms, const std::multimap<std::string,std::string> o);
     void common_init1();
     void common_init2(const bool print, const double thresh, const bool nodf = false);
 
   public:
     Geometry(const std::string) {}
     Geometry(const std::multimap<std::string, std::string>);
-    Geometry(const std::vector<std::shared_ptr<const Atom> > atoms, const std::multimap<std::string, std::string> o);
+    Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, const std::multimap<std::string, std::string> o);
     Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
-    Geometry(std::vector<std::shared_ptr<const Geometry> >);
+    Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
-    const std::vector<std::shared_ptr<const Atom> >& atoms() const { return atoms_; }
-    const std::vector<std::shared_ptr<const Atom> >& aux_atoms() const { return aux_atoms_; }
+    const std::vector<std::shared_ptr<const Atom>>& atoms() const { return atoms_; }
+    const std::vector<std::shared_ptr<const Atom>>& aux_atoms() const { return aux_atoms_; }
     std::shared_ptr<const Atom> atoms(const unsigned int i) const { return atoms_[i]; }
 
     // Returns a constant
@@ -132,8 +132,8 @@ class Geometry {
     int num_count_full_valence_nocc() const;
 
     // The position of the specific funciton in the basis set.
-    const std::vector<std::vector<int> >& offsets() const { return offsets_; }
-    const std::vector<std::vector<int> >& aux_offsets() const { return aux_offsets_; }
+    const std::vector<std::vector<int>>& offsets() const { return offsets_; }
+    const std::vector<std::vector<int>>& aux_offsets() const { return aux_offsets_; }
     const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
     const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
 

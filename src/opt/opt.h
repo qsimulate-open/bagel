@@ -47,7 +47,7 @@ class Opt {
     // options for T
     std::multimap<std::string, std::string> input_;
     std::shared_ptr<Geometry> current_;
-    std::shared_ptr<BFGS<GradFile> > bfgs_;
+    std::shared_ptr<BFGS<GradFile>> bfgs_;
 
     int iter_;
 
@@ -74,7 +74,7 @@ class Opt {
     Opt(std::shared_ptr<const InputData> idat, std::multimap<std::string, std::string>& inp, const std::shared_ptr<Geometry> geom)
       : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(new GradFile(geom->xyz())) {
       std::shared_ptr<const GradFile> denom(new GradFile(geom->natom(), 1.0));
-      bfgs_ = std::shared_ptr<BFGS<GradFile> >(new BFGS<GradFile>(denom));
+      bfgs_ = std::shared_ptr<BFGS<GradFile>>(new BFGS<GradFile>(denom));
       bmat_ = current_->compute_internal_coordinate();
 
       internal_ = read_input<bool>(inp, "internal", true);

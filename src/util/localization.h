@@ -64,7 +64,7 @@ class OrbitalLocalization {
 
 class RegionLocalization : public OrbitalLocalization {
   protected:
-    std::vector<std::pair<int, int> > bounds_;
+    std::vector<std::pair<int, int>> bounds_;
     std::vector<int> sizes_;
     std::shared_ptr<Matrix> sqrt_S_;
     std::shared_ptr<Matrix> S_inverse_half_;
@@ -87,7 +87,7 @@ class RegionLocalization : public OrbitalLocalization {
 // Pipek-Mezey
 class PMLocalization : public OrbitalLocalization {
   protected:
-    std::vector<std::pair<int, int> > atom_bounds_;
+    std::vector<std::pair<int, int>> atom_bounds_;
 
     std::shared_ptr<Matrix> S_;
 

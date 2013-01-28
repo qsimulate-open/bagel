@@ -37,11 +37,11 @@ std::array<double,3> dipole(std::string filename) {
   std::stringstream ss; ss << "../../test/" << filename << ".in";
   std::shared_ptr<InputData> idata(new InputData(ss.str()));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "df-hf") {
-      std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 
@@ -59,7 +59,7 @@ static std::array<double,3> hf_svp_dfhf_dipole_ref() {
   return std::array<double,3>{{0.0, 0.0, 1.055510}};
 }
 
-typedef std::array<double,3> ARRAY;
+using ARRAY = std::array<double,3>;
 
 BOOST_AUTO_TEST_SUITE(TEST_PROP)
 

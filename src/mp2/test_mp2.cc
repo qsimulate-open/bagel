@@ -35,7 +35,7 @@ double mp2_energy() {
   // a bit ugly to hardwire an input file, but anyway...
   std::shared_ptr<InputData> idata(new InputData("../../test/benzene_svp_mp2.in"));
   std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     if (iter->first == "mp2") {

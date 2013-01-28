@@ -49,7 +49,7 @@ template<typename T>
 class TaskQueue {
   protected:
     std::vector<T> task_;
-    std::list<std::shared_ptr<std::atomic_flag> > flag_;
+    std::list<std::shared_ptr<std::atomic_flag>> flag_;
     static const int chunck_ = 12;
 
   public:
@@ -63,7 +63,7 @@ class TaskQueue {
 #ifndef _OPENMP
       for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-      std::list<std::shared_ptr<std::thread> > threads;
+      std::list<std::shared_ptr<std::thread>> threads;
       for (int i = 0; i != num_threads; ++i)
         threads.push_back(std::shared_ptr<std::thread>(new std::thread(&TaskQueue<T>::compute_one_thread, this)));
       for (auto& i : threads)

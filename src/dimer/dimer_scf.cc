@@ -83,7 +83,7 @@ void DimerSCF::compute() {
 
     // Note: the energy has to be computed this way since, by construction, the Fock matrix is NOT diagonal
     energy_ = 0.5*(*aodensity_ * (*fock + *hcore_)).trace() + geom_->nuclear_repulsion();
-    //shared_ptr<Fock<1> > tmp_fock(new Fock<1>(geom_, hcore_fock, new_density, schwarz_));
+    //shared_ptr<Fock<1>> tmp_fock(new Fock<1>(geom_, hcore_fock, new_density, schwarz_));
     //energy_ = 0.5*(*new_density * (*tmp_fock + *hcore_)).trace() + geom_->nuclear_repulsion();
 
     auto tp2 = chrono::high_resolution_clock::now();

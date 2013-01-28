@@ -78,7 +78,7 @@ class Tensor {
       // make blocl list
       if (!in.empty()) {
         LoopGenerator lg(in);
-        std::vector<std::vector<Index> > index = lg.block_loop();
+        std::vector<std::vector<Index>> index = lg.block_loop();
 
         // first compute hashtags and length
         std::map<size_t, size_t> hashmap;
@@ -115,23 +115,23 @@ class Tensor {
       return *this;
     }
 
-    std::shared_ptr<Tensor<T> > clone() const {
-      std::shared_ptr<Tensor<T> > out(new Tensor<T>(range_));
+    std::shared_ptr<Tensor<T>> clone() const {
+      std::shared_ptr<Tensor<T>> out(new Tensor<T>(range_));
       return out;
     }
-    std::shared_ptr<Tensor<T> > copy() const {
-      std::shared_ptr<Tensor<T> > out = clone();
+    std::shared_ptr<Tensor<T>> copy() const {
+      std::shared_ptr<Tensor<T>> out = clone();
       *out = *this;
       return out;
     }
 
     void daxpy(const double a, const Tensor<T>& o) { data_->daxpy(a, o.data_); }
-    void daxpy(const double a, const std::shared_ptr<Tensor<T> > o) { data_->daxpy(a, o->data_); }
+    void daxpy(const double a, const std::shared_ptr<Tensor<T>> o) { data_->daxpy(a, o->data_); }
 
     void scale(const double a) { data_->scale(a); }
 
     double ddot(const Tensor<T>& o) { return data_->ddot(*o.data_); }
-    double ddot(const std::shared_ptr<Tensor<T> >& o) { return data_->ddot(*o->data_); }
+    double ddot(const std::shared_ptr<Tensor<T>>& o) { return data_->ddot(*o->data_); }
 
     size_t size() const { return data_->length(); }
     size_t length() const { return data_->length(); }
@@ -229,8 +229,8 @@ class Tensor {
     }
 
 
-    std::shared_ptr<Tensor<T> > add_dagger() {
-      std::shared_ptr<Tensor<T> > out = clone();
+    std::shared_ptr<Tensor<T>> add_dagger() {
+      std::shared_ptr<Tensor<T>> out = clone();
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 4);
       for (auto& i3 : o[3].range()) {

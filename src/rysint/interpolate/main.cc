@@ -41,7 +41,7 @@ vector<mpreal> chebft(int n) {
   return out;
 }
 
-vector<vector<double> > get_C(const mpreal tbase, const mpreal stride, int rank) {
+vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   const int n = NGRID;
 
@@ -58,7 +58,7 @@ vector<vector<double> > get_C(const mpreal tbase, const mpreal stride, int rank)
     Tpoints[i] = stride*half*cheb[i] + Tp; 
   }
 
-  vector<map<mpreal, mpreal> > table_reserve(n);
+  vector<map<mpreal, mpreal>> table_reserve(n);
   for (int i = 0; i < n; ++i) {
     vector<mpreal> ttt(1); ttt[0] = Tpoints[i];
     vector<mpreal> dx(rank);
@@ -69,7 +69,7 @@ vector<vector<double> > get_C(const mpreal tbase, const mpreal stride, int rank)
       table_reserve[i].insert(make_pair(dx[j], dw[j])); 
   }
 
-  vector<vector<double> > c;
+  vector<vector<double>> c;
   for (int ii = 0; ii != rank; ++ii) {
     vector<double> tc(n);
     vector<double> tc2(n);
@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
     int index = 0;
     double tiny = 1.0e-100;
     for (int j=0; j!= jend; ++j) {
-      vector<vector<double> > c_all = get_C(j*mstride,mstride,nroot);
+      vector<vector<double>> c_all = get_C(j*mstride,mstride,nroot);
 
       for (int i = 0; i != nroot; ++i, ++index) {
         const int ii = 2 * i;

@@ -42,8 +42,8 @@ class DFock : public ZMatrix {
   protected:
     std::array<std::shared_ptr<Matrix>, 2> rdata_;
     std::array<std::shared_ptr<Matrix>, 2> idata_;
-    //std::vector<std::shared_ptr<Matrix> > rsmall_data_;
-    //std::vector<std::shared_ptr<Matrix> > ismall_data_;
+    //std::vector<std::shared_ptr<Matrix>> rsmall_data_;
+    //std::vector<std::shared_ptr<Matrix>> ismall_data_;
     std::shared_ptr<const Geometry> geom_;
     void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
 

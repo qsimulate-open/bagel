@@ -69,8 +69,8 @@ class StackMem {
 class Resources {
   private:
     std::shared_ptr<const Process> proc_;
-    std::vector<std::shared_ptr<StackMem> > stackmem_;
-    std::vector<std::shared_ptr<std::atomic_flag> > flag_;
+    std::vector<std::shared_ptr<StackMem>> stackmem_;
+    std::vector<std::shared_ptr<std::atomic_flag>> flag_;
     size_t max_num_threads_;
 
   public:

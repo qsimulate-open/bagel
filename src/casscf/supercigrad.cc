@@ -68,7 +68,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
     shared_ptr<Matrix> denall = task_->ao_rdm1(task_->fci()->rdm1(target));
     shared_ptr<Matrix> denact (new Matrix(*denall-*deninact));
-    shared_ptr<Fock<1> > fact_ao(new Fock<1>(geom_, task_->hcore(), denact, ref_->schwarz()));
+    shared_ptr<Fock<1>> fact_ao(new Fock<1>(geom_, task_->hcore(), denact, ref_->schwarz()));
     shared_ptr<Matrix> f      (new Matrix(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff));
 
     shared_ptr<Qvec> fact(new Qvec(nbasis, nact, ref_->geom()->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target)));
@@ -119,11 +119,11 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // CI derivative is zero
   shared_ptr<Dvec> g1(new Dvec(task_->fci()->det(), ref_->nstate()));
   // combine gradient file
-  shared_ptr<PairFile<Matrix, Dvec> > grad(new PairFile<Matrix, Dvec>(g0, g1));
+  shared_ptr<PairFile<Matrix, Dvec>> grad(new PairFile<Matrix, Dvec>(g0, g1));
 
   // solve CP-CASSCF
   shared_ptr<CPCASSCF> cp(new CPCASSCF(grad, civ, eig, half, halfjj, ref_, task_->fci()));
-  shared_ptr<PairFile<Matrix, Dvec> > zvec = cp->solve();
+  shared_ptr<PairFile<Matrix, Dvec>> zvec = cp->solve();
 
   // form Zd + dZ^+
   shared_ptr<Matrix> dsa = ref_->rdm1_mat()->resize(nbasis, nbasis);
@@ -136,8 +136,8 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // form zdensity
   shared_ptr<Determinants> detex(new Determinants(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false));
-  shared_ptr<const RDM<1> > zrdm1;
-  shared_ptr<const RDM<2> > zrdm2;
+  shared_ptr<const RDM<1>> zrdm1;
+  shared_ptr<const RDM<2>> zrdm2;
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->resize(nbasis, nbasis);

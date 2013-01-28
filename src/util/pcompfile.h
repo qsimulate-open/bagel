@@ -63,7 +63,7 @@ class PCompFile {
 
     std::vector<size_t> num_int_each_;
 
-    std::vector<std::shared_ptr<const Shell> > basis_;
+    std::vector<std::shared_ptr<const Shell>> basis_;
     std::vector<int> offset_;
     size_t max_num_int_;
 
@@ -91,7 +91,7 @@ class PCompFile {
     double schwarz(int i) const { return schwarz_[i]; };
     std::vector<int> offset() const { return offset_; };
     int offset(size_t i) const { return offset_[i]; };
-    std::vector<std::shared_ptr<const Shell> > basis() const { return basis_; };
+    std::vector<std::shared_ptr<const Shell>> basis() const { return basis_; };
     std::shared_ptr<const Shell> basis(size_t i) const { return basis_[i]; };
     size_t nbasis(size_t i) const { return basis_[i]->nbasis(); };
     int basissize() const { return basis_.size(); };
@@ -118,7 +118,7 @@ class PCompFile {
     double A() const { return A_; };
 
     // AO-to-MO integral transformation...
-    std::shared_ptr<PMOFile<std::complex<double> > >
+    std::shared_ptr<PMOFile<std::complex<double>>>
                 mo_transform(std::shared_ptr<PCoeff>,
                              std::shared_ptr<PCoeff>,
                              std::shared_ptr<PCoeff>,
@@ -447,7 +447,7 @@ void PCompFile<T>::init_schwarz() {
 
 
 template<class T>
-std::shared_ptr<PMOFile<std::complex<double> > >
+std::shared_ptr<PMOFile<std::complex<double>>>
   PCompFile<T>::mo_transform(std::shared_ptr<PCoeff> coeff_i,
                              std::shared_ptr<PCoeff> coeff_j,
                              std::shared_ptr<PCoeff> coeff_a,
@@ -490,8 +490,8 @@ std::shared_ptr<PMOFile<std::complex<double> > >
   } else {
     std::cout << std::setprecision(1) << filesize_byte / 1.0e3 << " KB" << std::endl;
   }
-  std::shared_ptr<PMOFile<std::complex<double> > >
-    mo_int(new PMOFile<std::complex<double> >(geom_, filesize, K_,
+  std::shared_ptr<PMOFile<std::complex<double>>>
+    mo_int(new PMOFile<std::complex<double>>(geom_, filesize, K_,
                                               istart, ifence, jstart, jfence,
                                               astart, afence, bstart, bfence, true));
 
@@ -523,10 +523,10 @@ std::shared_ptr<PMOFile<std::complex<double> > >
 
   size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end());
 
-  PFile<std::complex<double> > intermediate_mmK(nv * std::max(KK, 1), K_, false);
+  PFile<std::complex<double>> intermediate_mmK(nv * std::max(KK, 1), K_, false);
   std::complex<double>* intermediate_novv = new std::complex<double>[novv];
-  PFile<std::complex<double> > intermediate_mKK(std::max(nov * KK * KK, nov), K_, false);
-  PFile<std::complex<double> > intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_, true);
+  PFile<std::complex<double>> intermediate_mKK(std::max(nov * KK * KK, nov), K_, false);
+  PFile<std::complex<double>> intermediate_KKK(std::max(novv * KK * KK * KK, novv), K_, true);
 
   for (int q1 = -S_; q1 <= S_; ++q1) {
     const bool q1_front = (q1 == -S_);
@@ -609,7 +609,7 @@ std::shared_ptr<PMOFile<std::complex<double> > >
                     for (int j1 = 0; j1 != b1size; ++j1, label += nbasis2) {
                       for (int j2 = 0; j2 != b2size; ++j2, label += nbasis1) {
                         for (int j3 = 0; j3 != b3size; ++j3, ++label, ++ndata) {
-                          *label = static_cast<std::complex<double> >(*ndata);
+                          *label = static_cast<std::complex<double>>(*ndata);
                         }
                         label -= b3size;
                       }

@@ -114,7 +114,7 @@ shared_ptr<Matrix> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const do
 }
 
 
-double RotFile::orthog(list<shared_ptr<const RotFile> > c) {
+double RotFile::orthog(list<shared_ptr<const RotFile>> c) {
   for (auto iter = c.begin(); iter != c.end(); ++iter)
     this->daxpy(- this->ddot(**iter), **iter);
   const double scal = 1.0/this->norm();

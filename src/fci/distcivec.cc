@@ -180,7 +180,7 @@ void DistCivec::scale(const double a) {
 }
 
 
-double DistCivec::orthog(list<shared_ptr<const DistCivec> > c) {
+double DistCivec::orthog(list<shared_ptr<const DistCivec>> c) {
   for (auto& iter : c)
     project_out(iter);
   const double norm = this->norm();
@@ -191,7 +191,7 @@ double DistCivec::orthog(list<shared_ptr<const DistCivec> > c) {
 
 
 double DistCivec::orthog(shared_ptr<const DistCivec> o) {
-  list<shared_ptr<const DistCivec> > v = {o};
+  list<shared_ptr<const DistCivec>> v = {o};
   return orthog(v);
 }
 

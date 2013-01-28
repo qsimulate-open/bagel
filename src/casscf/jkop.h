@@ -61,8 +61,8 @@ class JKop {
       jdata_ = std::move(full->form_4index(df, 1.0));
 
       // contruct 2RDM
-      std::shared_ptr<RDM<1> > rdm1_av = fci->rdm1_av();
-      std::shared_ptr<RDM<2> > rdm = fci->rdm2_av();
+      std::shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
+      std::shared_ptr<RDM<2>> rdm = fci->rdm2_av();
       std::unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]);
       std::unique_ptr<double[]> rdm2allk(new double[nocc*nocc*nocc*nocc]);
       std::fill(rdm2all.get(), rdm2all.get()+nocc*nocc*nocc*nocc, 0.0);

@@ -41,8 +41,8 @@ class PairFile {
   public:
     // constructors by assignment
     PairFile(std::shared_ptr<T> a, std::shared_ptr<U> b) : file0_(a), file1_(b) {};
-    PairFile(std::pair<std::shared_ptr<T>, std::shared_ptr<U> > o) : file0_(o.first), file1_(o.second) {};
-    PairFile(std::tuple<std::shared_ptr<T>, std::shared_ptr<U> > o) : file0_(std::get<0>(o)), file1_(std::get<1>(o)) {};
+    PairFile(std::pair<std::shared_ptr<T>, std::shared_ptr<U>> o) : file0_(o.first), file1_(o.second) {};
+    PairFile(std::tuple<std::shared_ptr<T>, std::shared_ptr<U>> o) : file0_(std::get<0>(o)), file1_(std::get<1>(o)) {};
     // copy constructor (that requires T and U to have a copy constructor)
     PairFile(const PairFile<T, U>& o) : file0_(new T(*o.file0_)), file1_(new U(*o.file1_)) {};
     ~PairFile() {};
@@ -75,22 +75,22 @@ class PairFile {
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; };
 
     // lapack functions
-    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U> > o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
+    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
 #ifndef DEBUG_ORBITAL
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
 #else
     double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()); };
 #endif
-    double ddot(const std::shared_ptr<const PairFile<T, U> > o) const { return ddot(*o); };
+    double ddot(const std::shared_ptr<const PairFile<T, U>> o) const { return ddot(*o); };
     double norm() const { return std::sqrt(ddot(*this)); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
 
     void zero() { first()->zero(); second()->zero(); };
 
-    std::shared_ptr<PairFile<T, U> > clone() const { return std::shared_ptr<PairFile<T, U> >(new PairFile<T, U>(file0_->clone(), file1_->clone())); };
+    std::shared_ptr<PairFile<T, U>> clone() const { return std::shared_ptr<PairFile<T, U>>(new PairFile<T, U>(file0_->clone(), file1_->clone())); };
 
     // assumes that c is already orthogonal with each other.
-    double orthog(std::list<std::shared_ptr<const PairFile<T, U> > > c) {
+    double orthog(std::list<std::shared_ptr<const PairFile<T, U>>> c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
         const double scal = - this->ddot(**iter);
         daxpy(scal, *iter);

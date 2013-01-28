@@ -37,35 +37,35 @@ namespace SMITH {
 // base class for Task objects
 // assumes that the operation table is static (not adjustable at runtime).
 template <typename T>
-class Task : public std::enable_shared_from_this<Task<T> > {
+class Task : public std::enable_shared_from_this<Task<T>> {
   protected:
-    std::list<std::shared_ptr<Task<T> > > depend_;
-    std::list<std::weak_ptr<Task<T> > > target_;
+    std::list<std::shared_ptr<Task<T>>> depend_;
+    std::list<std::weak_ptr<Task<T>>> target_;
     bool done_;
     virtual void compute_() = 0;
 
   public:
     Task() : done_(false) {}
-    Task(std::list<std::shared_ptr<Task<T> > >& d) : depend_(d), done_(false) {}
+    Task(std::list<std::shared_ptr<Task<T>>>& d) : depend_(d), done_(false) {}
     ~Task() { }
     void compute() {
       compute_();
       done_ = true;
     }
 
-    void add_dep(std::shared_ptr<Task<T> > a) {
+    void add_dep(std::shared_ptr<Task<T>> a) {
       depend_.push_back(a);
       a->set_target(this->shared_from_this());
     }
 
-    void delete_dep(std::shared_ptr<Task<T> > a) {
+    void delete_dep(std::shared_ptr<Task<T>> a) {
       auto iter = std::find(depend_.begin(), depend_.end(), a);
       if (iter != depend_.end()) depend_.erase(iter);
       // depend_ should not have duplicated records.
       assert(std::find(depend_.begin(), depend_.end(), a) == depend_.end());
     }
 
-    void set_target(std::shared_ptr<Task<T> > b) { target_.push_back(b); }
+    void set_target(std::shared_ptr<Task<T>> b) { target_.push_back(b); }
 
     void initialize() { done_ = false; }
 

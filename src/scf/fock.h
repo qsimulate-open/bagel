@@ -80,12 +80,12 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
   if (den_ex != density_) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
   if (den_ex == nullptr) den_ex = density_;
 
-  const std::vector<std::shared_ptr<const Atom> > atoms = geom_->atoms();
-  std::vector<std::shared_ptr<const Shell> > basis;
+  const std::vector<std::shared_ptr<const Atom>> atoms = geom_->atoms();
+  std::vector<std::shared_ptr<const Shell>> basis;
   std::vector<int> offset;
   int cnt = 0;
   for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
-    const std::vector<std::shared_ptr<const Shell> > tmp = (*aiter)->shells();
+    const std::vector<std::shared_ptr<const Shell>> tmp = (*aiter)->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());
     const std::vector<int> tmpoff = geom_->offset(cnt);
     offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());

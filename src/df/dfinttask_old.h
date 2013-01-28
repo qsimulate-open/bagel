@@ -47,7 +47,7 @@ class DFIntTask_OLD {
     DFIntTask_OLD(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,2>&& b, T* df) : shell_(a), offset_(b), rank_(b.size()), df_(df) { }
 
     void compute() {
-      std::pair<const double*, std::shared_ptr<RysInt> > p = df_->compute_batch(shell_);
+      std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);
       const double* ppt = p.first;
 
       const size_t naux = df_->naux();

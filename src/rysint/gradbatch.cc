@@ -36,10 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-typedef std::shared_ptr<const Shell> RefShell;
-
-
-GradBatch::GradBatch(const array<RefShell,4>& shells, const double max_density, const double dummy, const bool dum)
+GradBatch::GradBatch(const array<shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy, const bool dum)
  : ERIBatch_base(shells, max_density, 1) {
 
   centers_ = 4;

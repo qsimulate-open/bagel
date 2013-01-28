@@ -96,7 +96,7 @@ shared_ptr<Dvec> Dimer::form_sigma_2e(shared_ptr<const Dvec> ccvec, double* mo2e
     shared_ptr<const Civec> cc = ccvec->data(istate);  
     shared_ptr<Civec> sigma = sigmavec->data(istate);  
 
-    vector<pair<string, double> > timing;
+    vector<pair<string, double>> timing;
     int start = ::clock();
 
     // (2aa) alpha-alpha contributions

@@ -37,8 +37,6 @@
 using namespace std;
 using namespace bagel;
 
-typedef std::shared_ptr<Atom> RefAtom;
-
 static const HRRList hrr;
 static const double PITWOHALF = 17.493418327624862;
 

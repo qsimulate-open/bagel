@@ -32,19 +32,13 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<const Geometry> RefGeometry;
-typedef shared_ptr<const Atom> RefAtom;
-typedef shared_ptr<const Shell> RefShell;
-typedef shared_ptr<Petite> RefPetite;
-typedef shared_ptr<SymRotAbel> RefSymRotAbel;
+SymMat::SymMat(const shared_ptr<const Geometry> gm, const int iop) : Matrix(gm->nbasis(), gm->nbasis()), petite_(gm->plist()) {
 
-SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix(gm->nbasis(), gm->nbasis()), petite_(gm->plist()) {
+  symrot_ = shared_ptr<SymRotAbel>(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
 
-  symrot_ = RefSymRotAbel(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
-
-  const vector<RefAtom> atoms = gm->atoms();
+  const vector<shared_ptr<const Atom>> atoms = gm->atoms();
   const int natom = atoms.size();
-  vector<RefAtom>::const_iterator aiter, biter;
+  vector<shared_ptr<const Atom>>::const_iterator aiter, biter;
 
   vector<int> offsets(natom, 0);
   for (int i = 1; i != natom; ++i) offsets[i] = offsets[i - 1] + atoms[i - 1]->nbasis();
@@ -53,10 +47,10 @@ SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix(gm->nbasis(), gm->n
 
   for (int i = 0; i != natom; ++i) {
     const int tatom_num = petite_->sym_atommap(i)[iop];
-    const RefAtom catom = atoms[i];
-    const RefAtom tatom = atoms[tatom_num];
+    const shared_ptr<const Atom> catom = atoms[i];
+    const shared_ptr<const Atom> tatom = atoms[tatom_num];
 
-    const vector<RefShell> shells = catom->shells();
+    const vector<shared_ptr<const Shell>> shells = catom->shells();
     const int nshell = shells.size();
 
     int coffset = offsets[i];
@@ -75,10 +69,5 @@ SymMat::SymMat(const RefGeometry gm, const int iop) : Matrix(gm->nbasis(), gm->n
       }
     }
   }
-
-}
-
-
-SymMat::~SymMat() {
 
 }

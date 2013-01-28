@@ -35,8 +35,8 @@ void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0].
   if (rdm1_av_ == nullptr && nstate_ > 1) {
-    rdm1_av_ = shared_ptr<RDM<1> >(new RDM<1>(norb_));
-    rdm2_av_ = shared_ptr<RDM<2> >(new RDM<2>(norb_));
+    rdm1_av_ = shared_ptr<RDM<1>>(new RDM<1>(norb_));
+    rdm2_av_ = shared_ptr<RDM<2>>(new RDM<2>(norb_));
   }
   if (nstate_ > 1) {
     rdm1_av_->zero();
@@ -52,7 +52,7 @@ void FCI::compute_rdm12() {
 }
 
 
-tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 
   const int nri = dbra->lena()*dbra->lenb();
@@ -63,11 +63,11 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 
   // 1RDM
   // c^dagger <I|\hat{E}|0>
-  shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
+  shared_ptr<RDM<1>> rdm1(new RDM<1>(norb_));
   dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
   // 2RDM
   // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
-  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
+  shared_ptr<RDM<2>> rdm2(new RDM<2>(norb_));
   dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
   // sorting... a bit stupid but cheap anyway
@@ -91,7 +91,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 }
 
 
-tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
   // since we consider here number conserving operators...
@@ -115,7 +115,7 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 }
 
 
-tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
 
   if (o != nullptr) {
@@ -123,16 +123,16 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
     dket->set_det(o);
   }
 
-  shared_ptr<RDM<1> > rdm1(new RDM<1>(norb_));
-  shared_ptr<RDM<2> > rdm2(new RDM<2>(norb_));
+  shared_ptr<RDM<1>> rdm1(new RDM<1>(norb_));
+  shared_ptr<RDM<2>> rdm2(new RDM<2>(norb_));
   rdm1->zero();
   rdm2->zero();
 
   assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
 
   for (int i = 0; i != dbra->ij(); ++i) {
-    shared_ptr<RDM<1> > r1;
-    shared_ptr<RDM<2> > r2;
+    shared_ptr<RDM<1>> r1;
+    shared_ptr<RDM<2>> r2;
     tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
     rdm1->daxpy(weight_[i], r1);
     rdm2->daxpy(weight_[i], r2);
@@ -150,8 +150,8 @@ tuple<shared_ptr<RDM<1> >, shared_ptr<RDM<2> > >
 void FCI::compute_rdm12(const int ist) {
   shared_ptr<Civec> cc = cc_->data(ist);
 
-  shared_ptr<RDM<1> > rdm1;
-  shared_ptr<RDM<2> > rdm2;
+  shared_ptr<RDM<1>> rdm1;
+  shared_ptr<RDM<2>> rdm2;
   tie(rdm1, rdm2) = compute_rdm12_from_civec(cc, cc);
 
   // setting to private members.
@@ -168,9 +168,9 @@ void FCI::compute_rdm12(const int ist) {
 }
 
 // computes 3 and 4RDM
-tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int ist) const {
-  shared_ptr<RDM<3> > rdm3(new RDM<3>(norb_));
-  shared_ptr<RDM<4> > rdm4(new RDM<4>(norb_));
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) const {
+  shared_ptr<RDM<3>> rdm3(new RDM<3>(norb_));
+  shared_ptr<RDM<4>> rdm4(new RDM<4>(norb_));
 
   shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
   cc_->set_det(detex);
@@ -209,7 +209,7 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
 
   // first form <0|E_ij,kl|I><I|E_mn|0>
   {
-    shared_ptr<RDM<3> > tmp3(new RDM<3>(norb_));
+    shared_ptr<RDM<3>> tmp3(new RDM<3>(norb_));
     dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(), nri, ebra->data(), nri, 0.0, tmp3->data(), dbra->ij());
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
@@ -235,7 +235,7 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
   {
     {
-      shared_ptr<RDM<4> > tmp4(new RDM<4>(norb_));
+      shared_ptr<RDM<4>> tmp4(new RDM<4>(norb_));
       dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
       SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
       for (int l = 0; l != norb_; ++l)
@@ -257,7 +257,7 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
   }
 #if 0
   // Checking 4RDM by comparing with 3RDM
-  shared_ptr<RDM<3> > debug(new RDM<3>(*rdm3));
+  shared_ptr<RDM<3>> debug(new RDM<3>(*rdm3));
   cout << "printing out rdm" << endl;
   for (int l = 0; l != norb_; ++l)
     for (int d = 0; d != norb_; ++d)
@@ -281,9 +281,9 @@ tuple<shared_ptr<RDM<3> >, shared_ptr<RDM<4> > > FCI::compute_rdm34(const int is
 }
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<shared_ptr<Matrix>, vector<double> > FCI::natorb_convert() {
+pair<shared_ptr<Matrix>, vector<double>> FCI::natorb_convert() {
   assert(rdm1_av_ != nullptr);
-  pair<shared_ptr<Matrix>, vector<double> > natorb = rdm1_av_->generate_natural_orbitals();
+  pair<shared_ptr<Matrix>, vector<double>> natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   return natorb;

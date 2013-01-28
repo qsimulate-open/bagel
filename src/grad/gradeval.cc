@@ -32,7 +32,7 @@ using namespace std::chrono;
 using namespace bagel;
 
 template<>
-shared_ptr<GradFile> GradEval<SCF<1> >::compute() {
+shared_ptr<GradFile> GradEval<SCF<1>>::compute() {
   auto tp0 = high_resolution_clock::now();
 
   //- One ELECTRON PART -//

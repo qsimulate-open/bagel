@@ -44,16 +44,16 @@ class Petite {
     int nsymop_;
     const std::string sym_;
 
-    std::vector<std::vector<double> > symop_;
+    std::vector<std::vector<double>> symop_;
 
-    std::vector<std::vector<int> > sym_atommap_;
-    std::vector<std::vector<int> > sym_shellmap_;
+    std::vector<std::vector<int>> sym_atommap_;
+    std::vector<std::vector<int>> sym_shellmap_;
     std::vector<int> p1_;
     std::vector<int> lambda_;
 
 
   public:
-    Petite(const std::vector<std::shared_ptr<const Atom> >&, const std::string);
+    Petite(const std::vector<std::shared_ptr<const Atom>>&, const std::string);
     ~Petite();
 
     std::vector<double> symop(const int i) const { return symop_[i]; };
@@ -92,13 +92,13 @@ class Petite {
 class Symmetry {
   protected:
     // vector of 9 doubles (xyz * xyz)
-    std::vector<std::vector<double> > symop_;
+    std::vector<std::vector<double>> symop_;
   public:
     Symmetry() {};
     ~Symmetry() {};
 
     virtual int nirrep() const = 0;
-    std::vector<std::vector<double> > symop() const { return symop_; };
+    std::vector<std::vector<double>> symop() const { return symop_; };
 
 };
 

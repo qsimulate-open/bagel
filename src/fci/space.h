@@ -63,7 +63,7 @@ class Space {
 
     const bool compress_;
 
-    std::map<int, std::shared_ptr<Determinants> > detmap_; // For now, all access should be through Determinants objects
+    std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
     template <int spin>
     void form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ); // links two Determinants objects
@@ -111,8 +111,8 @@ void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Dete
     assert((ndet->neleb()+1 == nplusdet->neleb()) && (ndet->nelea() == nplusdet->nelea()));
   }
 
-  std::vector<std::vector<DetMap> > phiup;
-  std::vector<std::vector<DetMap> > phidown;
+  std::vector<std::vector<DetMap>> phiup;
+  std::vector<std::vector<DetMap>> phidown;
 
   /* If space is an issue for these functions, I might be able to reduce the amount used... */
   phiup.resize(norb_);
@@ -127,8 +127,8 @@ void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Dete
     iter->reserve(downsize);
   }
 
-  std::vector<std::bitset<nbit__> > stringplus = ( (spin==Alpha) ? nplusdet->stringa() : nplusdet->stringb() );
-  std::vector<std::bitset<nbit__> > string = ( (spin==Alpha) ? ndet->stringa() : ndet->stringb() );
+  std::vector<std::bitset<nbit__>> stringplus = ( (spin==Alpha) ? nplusdet->stringa() : nplusdet->stringb() );
+  std::vector<std::bitset<nbit__>> string = ( (spin==Alpha) ? ndet->stringa() : ndet->stringb() );
 
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
     for (unsigned int i = 0; i != norb_; ++i) { 

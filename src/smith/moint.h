@@ -49,15 +49,15 @@ class K2ext {
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<const Coeff> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor<T> > data_;
+    std::shared_ptr<Tensor<T>> data_;
 
     // some handwritten drivers
-    std::map<size_t, std::shared_ptr<DFFullDist> > generate_list() {
+    std::map<size_t, std::shared_ptr<DFFullDist>> generate_list() {
       std::shared_ptr<const DFDist> df = ref_->geom()->df();
 
       // It is the easiest to do integral transformation for each blocks.
       assert(blocks_.size() == 4);
-      std::map<size_t, std::shared_ptr<DFFullDist> > dflist;
+      std::map<size_t, std::shared_ptr<DFFullDist>> dflist;
       // AO dimension
       const size_t nbasis = df->nbasis0();
       assert(df->nbasis0() == df->nbasis1());
@@ -74,7 +74,7 @@ class K2ext {
       return dflist;
     }
 
-    void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist> >& dflist) {
+    void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist>>& dflist) {
       // form four-index integrals
       // TODO this part should be heavily parallelized
       // TODO i01 < i23 symmetry should be used.
@@ -120,14 +120,14 @@ class K2ext {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
-      data_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      data_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
       form_4index(generate_list());
     }
 
     ~K2ext() {}
 
-    std::shared_ptr<Tensor<T> > data() { return data_; }
-    std::shared_ptr<Tensor<T> > tensor() { return data_; }
+    std::shared_ptr<Tensor<T>> data() { return data_; }
+    std::shared_ptr<Tensor<T>> tensor() { return data_; }
 
 };
 
@@ -138,16 +138,16 @@ class MOFock {
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor<T> > data_;
-    std::shared_ptr<Tensor<T> > hcore_;
+    std::shared_ptr<Tensor<T>> data_;
+    std::shared_ptr<Tensor<T>> hcore_;
 
   public:
     MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
-      data_  = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
-      hcore_ = std::shared_ptr<Tensor<T> >(new Tensor<T>(blocks_, false));
+      data_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+      hcore_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
 
       std::shared_ptr<const Matrix> hcore = ref_->hcore();
 
@@ -199,9 +199,9 @@ class MOFock {
     }
     ~MOFock() {}
 
-    std::shared_ptr<Tensor<T> > data() { return data_; }
-    std::shared_ptr<Tensor<T> > tensor() { return data_; }
-    std::shared_ptr<Tensor<T> > hcore() { return hcore_; }
+    std::shared_ptr<Tensor<T>> data() { return data_; }
+    std::shared_ptr<Tensor<T>> tensor() { return data_; }
+    std::shared_ptr<Tensor<T>> hcore() { return hcore_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 

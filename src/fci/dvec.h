@@ -49,9 +49,9 @@ class Dvec {
 
     size_t lena_;
     size_t lenb_;
-    // the size of the vector<shared_ptr<Civec> >
+    // the size of the vector<shared_ptr<Civec>>
     size_t ij_;
-    std::vector<std::shared_ptr<Civec> > dvec_;
+    std::vector<std::shared_ptr<Civec>> dvec_;
     std::unique_ptr<double[]> data_;
 
   public:
@@ -64,7 +64,7 @@ class Dvec {
     // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted.
     Dvec(std::shared_ptr<const Dvec> o);
 
-    Dvec(std::vector<std::shared_ptr<Civec> > o);
+    Dvec(std::vector<std::shared_ptr<Civec>> o);
 
     ~Dvec() { };
 
@@ -77,10 +77,10 @@ class Dvec {
     std::shared_ptr<const Civec> data(const size_t i) const { return dvec_[i]; };
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); };
 
-    std::vector<std::shared_ptr<Civec> >& dvec() { return dvec_; };
-    const std::vector<std::shared_ptr<Civec> >& dvec() const { return dvec_; };
-    std::vector<std::shared_ptr<Civec> > dvec(const std::vector<int>& conv);
-    std::vector<std::shared_ptr<const Civec> > dvec(const std::vector<int>& conv) const;
+    std::vector<std::shared_ptr<Civec>>& dvec() { return dvec_; };
+    const std::vector<std::shared_ptr<Civec>>& dvec() const { return dvec_; };
+    std::vector<std::shared_ptr<Civec>> dvec(const std::vector<int>& conv);
+    std::vector<std::shared_ptr<const Civec>> dvec(const std::vector<int>& conv) const;
 
     size_t lena() const { return lena_; };
     size_t lenb() const { return lenb_; };

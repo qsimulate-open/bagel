@@ -90,7 +90,7 @@ class RDM : public RDM_base {
     RDM(const RDM& o) : RDM_base(o) {};
     ~RDM() {  };
 
-    std::shared_ptr<RDM<rank> > clone() const { return std::shared_ptr<RDM<rank> >(new RDM<rank>(norb_)); };
+    std::shared_ptr<RDM<rank>> clone() const { return std::shared_ptr<RDM<rank>>(new RDM<rank>(norb_)); };
 
     template<typename ...args>
     double& element(const args&... index) { return data_[address_<0>(index...)]; }
@@ -119,7 +119,7 @@ class RDM : public RDM_base {
       return out;
     }
 
-    std::pair<std::shared_ptr<Matrix>, std::vector<double> > generate_natural_orbitals() const {
+    std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {
       static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
       std::shared_ptr<Matrix> buf(new Matrix(dim_,dim_,true));
       buf->add_diag(2.0);

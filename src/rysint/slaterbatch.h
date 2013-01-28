@@ -43,7 +43,7 @@ class SlaterBatch : public RysInt {
 
     /// buffer and intermediate storage
     double *bkup2_;
-    std::vector<std::tuple<int, double, double> > indexpair23_;
+    std::vector<std::tuple<int, double, double>> indexpair23_;
 
     void perform_SVRR1();
     void perform_SVRR2();

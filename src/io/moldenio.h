@@ -41,11 +41,11 @@ namespace bagel {
         std::shared_ptr<const Geometry> geom_;
         std::shared_ptr<const Reference> ref_;
 
-        std::vector<std::vector<int> > m2b_cart_;
-        std::vector<std::vector<int> > m2b_sph_;
-        std::vector<std::vector<int> > b2m_cart_;
-        std::vector<std::vector<int> > b2m_sph_;
-        std::vector<std::vector<double> > scaling_;
+        std::vector<std::vector<int>> m2b_cart_;
+        std::vector<std::vector<int>> m2b_sph_;
+        std::vector<std::vector<int>> b2m_cart_;
+        std::vector<std::vector<int>> b2m_sph_;
+        std::vector<std::vector<double>> scaling_;
 
         void const_scales();
         void const_maps();

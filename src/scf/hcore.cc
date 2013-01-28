@@ -36,10 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-typedef shared_ptr<const Geometry> RefGeometry;
-typedef shared_ptr<const Shell> RefShell;
-
-Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
+Hcore::Hcore(const shared_ptr<const Geometry> geom) : Matrix1e(geom) {
 
   init();
   fill_upper();
@@ -47,12 +44,7 @@ Hcore::Hcore(const RefGeometry geom) : Matrix1e(geom) {
 }
 
 
-Hcore::~Hcore() {
-
-}
-
-
-void Hcore::computebatch(const array<RefShell,2>& input, const int offsetb0, const int offsetb1) {
+void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);

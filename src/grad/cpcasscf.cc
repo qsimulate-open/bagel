@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec> > grad, const shared_ptr<const Dvec> civ,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ,
                    const shared_ptr<const Matrix> eig, const shared_ptr<const DFHalfDist> h,
                    const shared_ptr<const DFHalfDist> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
 : grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
@@ -48,7 +48,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec> > grad, const s
 }
 
 
-shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
+shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   // RI determinant space
   shared_ptr<Determinants> detex(new Determinants(fci_->norb(), fci_->nelea(), fci_->neleb(), false));
@@ -73,7 +73,7 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
   shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff, nocca);
 
   // making denominator...
-  shared_ptr<PairFile<Matrix, Dvec> > denom;
+  shared_ptr<PairFile<Matrix, Dvec>> denom;
   const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
   {
     shared_ptr<Matrix> d0(new Matrix(*eig_));
@@ -87,19 +87,19 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
     // TODO understand this factor of 2
     *d1 *= 2;
 #endif
-    denom = shared_ptr<PairFile<Matrix, Dvec> >(new PairFile<Matrix, Dvec>(d0, d1));
+    denom = shared_ptr<PairFile<Matrix, Dvec>>(new PairFile<Matrix, Dvec>(d0, d1));
   }
 
   // BFGS update of the denominator above
 #if 0
-  shared_ptr<BFGS<PairFile<Matrix, Dvec> > > bfgs(new BFGS<PairFile<Matrix, Dvec> >(denom, false));
+  shared_ptr<BFGS<PairFile<Matrix, Dvec>>> bfgs(new BFGS<PairFile<Matrix, Dvec>>(denom, false));
 #else
-  shared_ptr<BFGS<PairFile<Matrix, Dvec> > > bfgs(new BFGS<PairFile<Matrix, Dvec> >(denom));
+  shared_ptr<BFGS<PairFile<Matrix, Dvec>>> bfgs(new BFGS<PairFile<Matrix, Dvec>>(denom));
 #endif
 
 
   // CI vector
-  shared_ptr<PairFile<Matrix, Dvec> > source(new PairFile<Matrix, Dvec>(*grad_));
+  shared_ptr<PairFile<Matrix, Dvec>> source(new PairFile<Matrix, Dvec>(*grad_));
   // antisymmetrize
   source->first()->antisymmetrize();
 
@@ -109,10 +109,10 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
-  shared_ptr<LinearRM<PairFile<Matrix, Dvec> > > solver(new LinearRM<PairFile<Matrix, Dvec> >(CPHF_MAX_ITER, source));
+  shared_ptr<LinearRM<PairFile<Matrix, Dvec>>> solver(new LinearRM<PairFile<Matrix, Dvec>>(CPHF_MAX_ITER, source));
 
   // initial guess
-  shared_ptr<PairFile<Matrix, Dvec> > z = source->clone();
+  shared_ptr<PairFile<Matrix, Dvec>> z = source->clone();
   z->zero();
 
   z = bfgs->extrapolate(source, z);
@@ -229,7 +229,7 @@ shared_ptr<PairFile<Matrix, Dvec> > CPCASSCF::solve() const {
 
     sigmaci->project_out(civector_);
 
-    shared_ptr<PairFile<Matrix, Dvec> > sigma(new PairFile<Matrix, Dvec>(sigmaorb, sigmaci));
+    shared_ptr<PairFile<Matrix, Dvec>> sigma(new PairFile<Matrix, Dvec>(sigmaorb, sigmaci));
 
     z = solver->compute_residual(z, sigma);
 
@@ -258,13 +258,13 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   const double* const acoeff = coeff + nclosed*nbasis;
 
   // compute RDMs
-  shared_ptr<const RDM<1> > rdm1t;
-  shared_ptr<const RDM<2> > rdm2t;
+  shared_ptr<const RDM<1>> rdm1t;
+  shared_ptr<const RDM<2>> rdm2t;
   tie(rdm1t, rdm2t) = fci_->compute_rdm12_av_from_dvec(zvec, dvec, o);
 
   // symmetrize
-  shared_ptr<RDM<1> > rdm1 = rdm1t->clone();
-  shared_ptr<RDM<2> > rdm2 = rdm2t->clone();
+  shared_ptr<RDM<1>> rdm1 = rdm1t->clone();
+  shared_ptr<RDM<2>> rdm2 = rdm2t->clone();
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
       rdm1->element(j,i) = 0.5*(rdm1t->element(j,i)+rdm1t->element(i,j));

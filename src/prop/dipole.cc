@@ -47,7 +47,7 @@ array<double,3> Dipole::compute() const {
   array<double,3> out{{0.0, 0.0, 0.0}};
   array<double,3> center = geom_->charge_center();
 
-  const vector<vector<int> > offsets = geom_->offsets();
+  const vector<vector<int>> offsets = geom_->offsets();
 
   // TODO perhaps we could reduce operation by a factor of 2
   auto o0 = geom_->offsets().begin();

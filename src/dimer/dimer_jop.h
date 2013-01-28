@@ -40,8 +40,8 @@ namespace bagel {
 
 class DimerJop : public Jop {
   protected:
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]> > monomer_mo1es_; 
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]> > monomer_mo2es_; 
+    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_; 
+    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_; 
 
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB, 

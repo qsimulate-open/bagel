@@ -122,7 +122,7 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
 }
 
 void Dimer::construct_geometry() {
-   vector<shared_ptr<const Geometry> > geo_vec;
+   vector<shared_ptr<const Geometry>> geo_vec;
    geo_vec.push_back(geoms_.first);
    geo_vec.push_back(geoms_.second);
 
@@ -396,7 +396,7 @@ void Dimer::set_active(multimap<string, string> idata) {
   if(Biter != idata.end()) Blist = Biter->second;
 
   // Make new References
-  pair<shared_ptr<const Reference>, shared_ptr<const Reference> > active_refs = 
+  pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs = 
         make_pair(refs_.first->set_active(Alist), refs_.second->set_active(Blist));
 
   // Update Dimer info

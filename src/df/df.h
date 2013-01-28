@@ -50,10 +50,10 @@ class DFFullDist;
 class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
   protected:
     // blocks that this process has
-    std::vector<std::shared_ptr<DFBlock> > block_;
+    std::vector<std::shared_ptr<DFBlock>> block_;
     // hash key and process number
     std::map<int, int> global_table_;
-    std::vector<std::pair<size_t, size_t> > atable_;
+    std::vector<std::pair<size_t, size_t>> atable_;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -74,8 +74,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     size_t nindex2() const { return nindex2_; }
     size_t size() const { return naux_*nindex1_*nindex2_; }
 
-    std::vector<std::shared_ptr<DFBlock> >& block() { return block_; }
-    const std::vector<std::shared_ptr<DFBlock> >& block() const { return block_; }
+    std::vector<std::shared_ptr<DFBlock>>& block() { return block_; }
+    const std::vector<std::shared_ptr<DFBlock>>& block() const { return block_; }
     std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }
     std::shared_ptr<const DFBlock> block(const size_t i) const { return block_[i]; }
 
@@ -91,7 +91,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::pair<size_t, size_t> atable(const int i) const { return atable_[i]; }
-    const std::vector<std::pair<size_t, size_t> >& atable() const { return atable_; }
+    const std::vector<std::pair<size_t, size_t>>& atable() const { return atable_; }
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
@@ -113,14 +113,14 @@ class DFDist : public ParallelDF {
   friend class DFFullDist;
   friend class DFHalfDist;
   protected:
-    std::pair<const double*, std::shared_ptr<RysInt> > compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
+    std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
-    virtual void common_init1(const std::vector<std::shared_ptr<const Atom> >&,
-                              const std::vector<std::shared_ptr<const Atom> >&,
-                              const std::vector<std::shared_ptr<const Shell> >&, const double thresh, const bool compute_inv) { assert(false); }
-    void common_init2(const std::vector<std::shared_ptr<const Shell> >&, const double thresh, const bool compute_inv);
+    virtual void common_init1(const std::vector<std::shared_ptr<const Atom>>&,
+                              const std::vector<std::shared_ptr<const Atom>>&,
+                              const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv) { assert(false); }
+    void common_init2(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
     void make_table(const int nmax);
-    std::tuple<int, std::vector<std::shared_ptr<const Shell> > > get_ashell(const std::vector<std::shared_ptr<const Shell> >& all) const;
+    std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all) const;
 
   public:
     DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>()) : ParallelDF(naux, nbas, nbas) {
@@ -146,8 +146,8 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const { return compute_half_transform_swap(c->data(), c->mdim()); }
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<DFDist> > split_blocks() const {
-      std::vector<std::shared_ptr<DFDist> > out;
+    std::vector<std::shared_ptr<DFDist>> split_blocks() const {
+      std::vector<std::shared_ptr<DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
         out.push_back(std::shared_ptr<DFDist>(new DFDist(nindex1_, naux_, i)));
@@ -161,13 +161,13 @@ class DFDist : public ParallelDF {
 template<class TBatch>
 class DFDist_ints : public DFDist {
   protected:
-    void common_init1(const std::vector<std::shared_ptr<const Atom> >& atoms0,
-                      const std::vector<std::shared_ptr<const Atom> >& atoms1,
-                      const std::vector<std::shared_ptr<const Shell> >& ashell, const double thresh, const bool compute_inv) override {
+    void common_init1(const std::vector<std::shared_ptr<const Atom>>& atoms0,
+                      const std::vector<std::shared_ptr<const Atom>>& atoms1,
+                      const std::vector<std::shared_ptr<const Shell>>& ashell, const double thresh, const bool compute_inv) override {
       Timer time;
 
       // 3index Integral is now made in DFBlock.
-      std::vector<std::shared_ptr<const Shell> > b1shell, b2shell;
+      std::vector<std::shared_ptr<const Shell>> b1shell, b2shell;
       for (auto& i : atoms1) b1shell.insert(b1shell.end(), i->shells().begin(), i->shells().end());
       for (auto& i : atoms0) b2shell.insert(b2shell.end(), i->shells().begin(), i->shells().end());
 
@@ -176,7 +176,7 @@ class DFDist_ints : public DFDist {
       block_.resize(nblocks);
 
       int astart;
-      std::vector<std::shared_ptr<const Shell> > myashell;
+      std::vector<std::shared_ptr<const Shell>> myashell;
       std::tie(astart, myashell) = get_ashell(ashell);
 
       // make empty dfblocks
@@ -187,7 +187,7 @@ class DFDist_ints : public DFDist {
         block_[i] = std::shared_ptr<DFBlock>(new DFBlock(naux_, asize, b1size, b2size, astart, 0, 0));
 
       // making a task list
-      std::vector<DFIntTask<TBatch,TBatch::nblocks()> > tasks;
+      std::vector<DFIntTask<TBatch,TBatch::nblocks()>> tasks;
       tasks.reserve(b1shell.size()*b2shell.size()*myashell.size());
 
       // TODO this is not general, but for the time being I plan to have full basis functions (and limited aux basis functions); 
@@ -216,7 +216,7 @@ class DFDist_ints : public DFDist {
         j2 += i2->nbasis();
       }
       time.tick_print("3-index ints prep");
-      TaskQueue<DFIntTask<TBatch,nblocks> > tq(tasks);
+      TaskQueue<DFIntTask<TBatch,nblocks>> tq(tasks);
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
@@ -226,9 +226,9 @@ class DFDist_ints : public DFDist {
     }
 
   public:
-    DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom> >& atoms, const std::vector<std::shared_ptr<const Atom> >& aux_atoms,
+    DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
                 const double thr, const bool inverse, const double dum) : DFDist(nbas, naux) {
-      std::vector<std::shared_ptr<const Shell> > ashell;
+      std::vector<std::shared_ptr<const Shell>> ashell;
       for (auto& i : aux_atoms) ashell.insert(ashell.end(), i->shells().begin(), i->shells().end());
       common_init1(atoms, atoms, ashell, thr, inverse);
       common_init2(ashell, thr, inverse);

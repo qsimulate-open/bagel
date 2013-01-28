@@ -27,7 +27,7 @@
 //  - double ddot(const T&)
 //  - void daxpy(double, const T&) // added to self
 //  - copy constructor (values are not used, though).
-//  - void orthog(list<shared_ptr<T> >)
+//  - void orthog(list<shared_ptr<T>>)
 //
 
 #ifndef __NEWINT_UTIL_DAVIDSON
@@ -46,8 +46,8 @@ class DavidsonDiag {
     const int nstate_;
     const int max_;
     int size_;
-    std::list<std::shared_ptr<const T> > c_;
-    std::list<std::shared_ptr<const T> > sigma_;
+    std::list<std::shared_ptr<const T>> c_;
+    std::list<std::shared_ptr<const T>> sigma_;
 
     // contains
     std::shared_ptr<Matrix> mat_;
@@ -68,11 +68,11 @@ class DavidsonDiag {
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
       assert(nstate_ == 1);
-      return compute(std::vector<std::shared_ptr<const T> >{cc},
-                     std::vector<std::shared_ptr<const T> >{cs}).front();
+      return compute(std::vector<std::shared_ptr<const T>>{cc},
+                     std::vector<std::shared_ptr<const T>>{cs}).front();
     }
 
-    std::vector<double> compute(std::vector<std::shared_ptr<const T> > cc, std::vector<std::shared_ptr<const T> > cs) {
+    std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
       if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
       // add entry
       for (auto& it : cc) c_.push_back(it);
@@ -94,8 +94,8 @@ class DavidsonDiag {
     }
 
     // perhaps can be cleaner.
-    std::vector<std::shared_ptr<T> > residual() {
-      std::vector<std::shared_ptr<T> > out;
+    std::vector<std::shared_ptr<T>> residual() {
+      std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
         std::shared_ptr<T> tmp(new T(*c_.front()));
         tmp->zero(); // <- waste of time
@@ -113,8 +113,8 @@ class DavidsonDiag {
     }
 
     // returns ci vector
-    std::vector<std::shared_ptr<T> > civec() {
-      std::vector<std::shared_ptr<T> > out;
+    std::vector<std::shared_ptr<T>> civec() {
+      std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
         std::shared_ptr<T> tmp(new T(*c_.front()));
         tmp->zero(); // <- waste of time

@@ -54,7 +54,7 @@ MoldenIn::MoldenIn(const string filename, const bool is_spherical) : MoldenIO(fi
 
 }
 
-MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom> >& atoms) {
+MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
   atoms = atoms_;
 
   return *this;
@@ -124,11 +124,11 @@ void MoldenIn::read() {
   int num_atoms = 0;
 
   /* Atom positions */
-  vector< array<double,3> > positions;
+  vector< array<double,3>> positions;
   /* Atom names */
   vector< string > names;
   /* Map atom number to basis info */
-  map<int, vector<tuple<string, vector<double>, vector<double> > > > basis_info;
+  map<int, vector<tuple<string, vector<double>, vector<double>>>> basis_info;
 
   /************************************************************
   *  Set up "global" regular expressions                      *
@@ -238,7 +238,7 @@ void MoldenIn::read() {
         if(!boost::regex_search(line.c_str(), matches, atom_line)) {
            getline(ifs_,line); continue;
         }
-        vector<tuple<string,vector<double>,vector<double> > > atom_basis_info;
+        vector<tuple<string,vector<double>,vector<double>>> atom_basis_info;
 
         const string atom_no_str(matches[1].first, matches[1].second);
         const int atom_no = lexical_cast<int>(atom_no_str.c_str());
@@ -289,7 +289,7 @@ void MoldenIn::read() {
         }
         //atom_basis_info to basis_info
         shell_orders_.push_back(atomic_shell_order);
-        basis_info.insert(pair<int,vector<tuple<string,vector<double>,vector<double> > > >(atom_no, atom_basis_info));
+        basis_info.insert(pair<int,vector<tuple<string,vector<double>,vector<double>>>>(atom_no, atom_basis_info));
       }
 
       found_gto = true;
@@ -345,13 +345,13 @@ void MoldenIn::read() {
      throw runtime_error(message);
   }
   
-  vector<shared_ptr<const Atom> > all_atoms;
+  vector<shared_ptr<const Atom>> all_atoms;
   
   /* Assuming the names and positions vectors are in the right order */
   vector<string>::iterator iname = names.begin();
-  vector<array<double,3> >::iterator piter = positions.begin();
+  vector<array<double,3>>::iterator piter = positions.begin();
   for(int i = 0; i < num_atoms; ++i, ++iname, ++piter){
-     vector<tuple<string, vector<double>, vector<double> > > binfo = basis_info.find(i+1)->second;
+     vector<tuple<string, vector<double>, vector<double>>> binfo = basis_info.find(i+1)->second;
      if (i == num_atoms) {
         throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
      }

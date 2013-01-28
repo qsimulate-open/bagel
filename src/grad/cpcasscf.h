@@ -41,7 +41,7 @@ namespace bagel {
 
 class CPCASSCF {
   protected:
-    const std::shared_ptr<const PairFile<Matrix, Dvec> > grad_;
+    const std::shared_ptr<const PairFile<Matrix, Dvec>> grad_;
     const std::shared_ptr<const Dvec> civector_;
     const std::shared_ptr<const Matrix> eig_;
     const std::shared_ptr<const DFHalfDist> half_;
@@ -54,12 +54,12 @@ class CPCASSCF {
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
 
   public:
-    CPCASSCF(const std::shared_ptr<const PairFile<Matrix, Dvec> > grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix> eig,
+    CPCASSCF(const std::shared_ptr<const PairFile<Matrix, Dvec>> grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix> eig,
              const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const DFHalfDist> halfjj,
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
     ~CPCASSCF() {};
 
-    std::shared_ptr<PairFile<Matrix, Dvec> > solve() const;
+    std::shared_ptr<PairFile<Matrix, Dvec>> solve() const;
 
 };
 

@@ -40,7 +40,7 @@ namespace bagel {
 
 class DFDistT {
   protected:
-    std::vector<std::shared_ptr<Matrix> > data_;
+    std::vector<std::shared_ptr<Matrix>> data_;
 
     // first dimension is naux_ (global)
     const size_t naux_;

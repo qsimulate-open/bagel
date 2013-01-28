@@ -35,7 +35,7 @@ using namespace std;
 using namespace bagel;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                       const vector<vector<double> >& _contr,  const vector<pair<int, int> >& _range)
+                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
  : spherical_(sph), position_(_position), angular_number_(_ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false) {
 
@@ -125,8 +125,8 @@ bool Shell::operator==(const Shell& o) const {
 shared_ptr<const Shell> Shell::kinetic_balance_uncont(int inc) const {
   assert(abs(inc)==1);
   int i = 0;
-  vector<vector<double> > conts;
-  vector<pair<int, int> > ranges;
+  vector<vector<double>> conts;
+  vector<pair<int, int>> ranges;
   for (auto e = exponents_.begin(); e != exponents_.end(); ++e, ++i) {
     vector<double> cont(exponents_.size(), 0);
     cont[i] = 1.0;

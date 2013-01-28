@@ -38,8 +38,8 @@ template<typename T>
 class Linear {
 
   protected:
-    std::list<std::shared_ptr<const T> > c_;
-    std::list<std::shared_ptr<const T> > sigma_;
+    std::list<std::shared_ptr<const T>> c_;
+    std::list<std::shared_ptr<const T>> sigma_;
 
     const int max_;
     int size_;

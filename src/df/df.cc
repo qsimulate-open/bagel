@@ -140,7 +140,7 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 }
 
 
-tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<shared_ptr<const Shell> >& all) const {
+tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shared_ptr<const Shell>>& all) const {
   int start, end;
   {
     StaticDist d(naux_, mpi__->size());
@@ -148,7 +148,7 @@ tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<sh
   }
 
   int out1;
-  vector<shared_ptr<const Shell> > out2;
+  vector<shared_ptr<const Shell>> out2;
 
   int num = 0;
   for (auto iter = all.begin(); iter != all.end(); ++iter) {
@@ -163,14 +163,14 @@ tuple<int, vector<shared_ptr<const Shell> > > DFDist::get_ashell(const vector<sh
 }
 
 
-void DFDist::common_init2(const vector<shared_ptr<const Shell> >& ashell, const double throverlap, const bool compute_inverse) {
+void DFDist::common_init2(const vector<shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse) {
   Timer time;
 
   // make a global hash table
   make_table(mpi__->size());
 
   // generates a task of integral evaluations
-  vector<DFIntTask_OLD<DFDist> > tasks;
+  vector<DFIntTask_OLD<DFDist>> tasks;
   tasks.reserve(ashell.size()*ashell.size());
 
   data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
@@ -190,7 +190,7 @@ void DFDist::common_init2(const vector<shared_ptr<const Shell> >& ashell, const 
   }
 
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask_OLD<DFDist> > tq(tasks);
+  TaskQueue<DFIntTask_OLD<DFDist>> tq(tasks);
   tq.compute(resources__->max_num_threads());
   data2_->allreduce();
 
@@ -222,7 +222,7 @@ void DFDist::make_table(const int nblock) {
 }
 
 
-pair<const double*, shared_ptr<RysInt> > DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
+pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
   shared_ptr<Libint> eribatch(new Libint(input));
 #else

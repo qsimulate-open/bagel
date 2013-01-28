@@ -36,13 +36,13 @@ double molden_out_energy(std::string inp1, std::string inp2) {
   {
     std::shared_ptr<InputData> idata(new InputData("../../test/" + inp1 + ".in"));
     std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
     std::shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       if (iter->first == "df-hf") {
-        std::shared_ptr<SCF<1> > scf(new SCF<1>(iter->second, geom));
+        std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
         scf->compute();
         ref = scf->conv_to_ref();
       }
@@ -64,7 +64,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
   {
     std::shared_ptr<InputData> idata(new InputData("../../test/" + inp2 + ".in"));
     std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-    std::list<std::pair<std::string, std::multimap<std::string, std::string> > > keys = idata->data();
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
 
     std::shared_ptr<const Coeff> coeff(new Coeff(geom));
 
@@ -75,7 +75,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
     std::shared_ptr<Matrix> ao_density = coeff->form_density_rhf(geom->nele()/2);
     std::shared_ptr<const Matrix> hcore(new Hcore(geom));
-    std::shared_ptr<Fock<1> > fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
+    std::shared_ptr<Fock<1>> fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
 
     std::shared_ptr<Matrix> hcore_fock(new Matrix(*hcore + *fock));
     energy = ((*ao_density)*(*hcore_fock)).trace();

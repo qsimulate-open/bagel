@@ -40,9 +40,9 @@ namespace SMITH {
 template <typename T>
 class Task0 : public Task<T> {
   protected:
-    std::shared_ptr<Tensor<T> > r2_;
-    std::shared_ptr<Tensor<T> > f1_;
-    std::shared_ptr<Tensor<T> > t2_;
+    std::shared_ptr<Tensor<T>> r2_;
+    std::shared_ptr<Tensor<T>> f1_;
+    std::shared_ptr<Tensor<T>> t2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -82,7 +82,7 @@ class Task0 : public Task<T> {
     };
 
   public:
-    Task0(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task0(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task0 error");
       r2_ =  t[0];
       f1_ =  t[1];
@@ -98,9 +98,9 @@ class Task0 : public Task<T> {
 template <typename T>
 class Task1 : public Task<T> {
   protected:
-    std::shared_ptr<Tensor<T> > r2_;
-    std::shared_ptr<Tensor<T> > f1_;
-    std::shared_ptr<Tensor<T> > t2_;
+    std::shared_ptr<Tensor<T>> r2_;
+    std::shared_ptr<Tensor<T>> f1_;
+    std::shared_ptr<Tensor<T>> t2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -141,7 +141,7 @@ class Task1 : public Task<T> {
     };
 
   public:
-    Task1(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task1(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 3 || i.size() != 2) throw std::logic_error("Task1 error");
       r2_ =  t[0];
       f1_ =  t[1];
@@ -157,8 +157,8 @@ class Task1 : public Task<T> {
 template <typename T>
 class Task2 : public Task<T> {
   protected:
-    std::shared_ptr<Tensor<T> > r2_;
-    std::shared_ptr<Tensor<T> > v2_;
+    std::shared_ptr<Tensor<T>> r2_;
+    std::shared_ptr<Tensor<T>> v2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -182,7 +182,7 @@ class Task2 : public Task<T> {
     };
 
   public:
-    Task2(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task2(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 2 || i.size() != 2) throw std::logic_error("Task2 error");
       r2_ =  t[0];
       v2_ =  t[1];
@@ -197,7 +197,7 @@ class Task2 : public Task<T> {
 template <typename T>
 class Task3 : public Task<T> {
   protected:
-    std::shared_ptr<Tensor<T> > r2_;
+    std::shared_ptr<Tensor<T>> r2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -206,7 +206,7 @@ class Task3 : public Task<T> {
     };
 
   public:
-    Task3(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task3(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 1 || i.size() != 2) throw std::logic_error("Task3 error");
       r2_ =  t[0];
       closed_ = i[0];
@@ -220,7 +220,7 @@ class Task3 : public Task<T> {
 template <typename T>
 class Task4 : public Task<T> {
   protected:
-    std::shared_ptr<Tensor<T> > r2_;
+    std::shared_ptr<Tensor<T>> r2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -229,7 +229,7 @@ class Task4 : public Task<T> {
     };
 
   public:
-    Task4(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : Task<T>() {
+    Task4(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
       if (t.size() != 1 || i.size() != 2) throw std::logic_error("Task4 error");
       r2_ =  t[0];
       closed_ = i[0];
@@ -243,8 +243,8 @@ class Task4 : public Task<T> {
 template <typename T>
 class Task5 : public EnergyTask<T> {
   protected:
-    std::shared_ptr<Tensor<T> > t2_;
-    std::shared_ptr<Tensor<T> > v2_;
+    std::shared_ptr<Tensor<T>> t2_;
+    std::shared_ptr<Tensor<T>> v2_;
     IndexRange closed_;
     IndexRange virt_;
 
@@ -270,7 +270,7 @@ class Task5 : public EnergyTask<T> {
     };
 
   public:
-    Task5(std::vector<std::shared_ptr<Tensor<T> > > t, std::vector<IndexRange> i) : EnergyTask<T>() {
+    Task5(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : EnergyTask<T>() {
       if (t.size() != 2 || i.size() != 2) throw std::logic_error("Task5 error");
       t2_ =  t[0];
       v2_ =  t[1];

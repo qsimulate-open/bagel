@@ -37,16 +37,16 @@
 using namespace std;
 using namespace bagel;
 
-ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex<double> >(n, m, loc) {
+ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex<double>>(n, m, loc) {
 }
 
 
-ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double> >(o) {
+ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
 }
 
 
 #ifdef HAVE_SCALAPACK
-ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double> >(o.ndim(), o.mdim()) {
+ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), o.mdim()) {
   setlocal_(o.local());
 }
 #endif
@@ -488,7 +488,7 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 }
 
 
-complex<double> ZMatrix::orthog(const list<shared_ptr<const ZMatrix> > o) {
+complex<double> ZMatrix::orthog(const list<shared_ptr<const ZMatrix>> o) {
   for (auto& it : o) {
     const complex<double> m = this->zdotc(it);
     this->zaxpy(-m, it);

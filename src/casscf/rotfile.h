@@ -89,7 +89,7 @@ class RotFile {
     void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); };
     void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy_(size_, a, o->data(), 1, data(), 1); };
     // orthogonalize to the liset of RotFile's
-    double orthog(std::list<std::shared_ptr<const RotFile> > c);
+    double orthog(std::list<std::shared_ptr<const RotFile>> c);
 
     // return data_
     double* data() { return data_.get(); };
