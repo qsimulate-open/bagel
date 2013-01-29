@@ -27,7 +27,6 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/util/matrix.h>
-#include <src/rel/smalleribatch.h>
 
 using namespace std;
 using namespace bagel;

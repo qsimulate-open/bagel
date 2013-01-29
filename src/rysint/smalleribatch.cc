@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <src/rel/smalleribatch.h>
+#include <src/rysint/smalleribatch.h>
 
 using namespace std;
 using namespace bagel;

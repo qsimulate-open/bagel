@@ -26,8 +26,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <src/rel/smallnaibatch.h>
 #include <src/rysint/naibatch.h>
+#include <src/rysint/smallnaibatch.h>
 
 using namespace std;
 using namespace bagel;
