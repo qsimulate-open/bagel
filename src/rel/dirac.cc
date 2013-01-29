@@ -26,6 +26,7 @@
 
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
+#include <src/rel/dfock.h>
 #include <src/rel/relcoeff.h>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
@@ -69,7 +70,7 @@ void Dirac::compute() {
   const int nneg = 2 * geom_->nbasis(); 
   
   // coefficient matrix
-  shared_ptr<RelCoeff> coeff(new RelCoeff(*s12 * interm));
+  shared_ptr<const DistZMatrix> coeff(new DistZMatrix(*s12 * interm));
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -85,10 +86,8 @@ void Dirac::compute() {
     Timer ptime(1);
 
     // TODO fock construction here. Fock construction requires a local copy of coeff
-    //shared_ptr<ZMatrix> mcoeff = coeff->matrix()->slice(nneg, nele+nneg);
-    array<shared_ptr<const ZMatrix>, 4> mcoeff = coeff->split(nrows, column, nele);
-#if 0
-    shared_ptr<const ZMatrix> fock(new DFock(geom_, hcore_, mcoeff));
+#if 1
+    shared_ptr<const ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg, nele+nneg)));
 #else
     shared_ptr<const ZMatrix> fock = hcore->matrix();
 #endif
