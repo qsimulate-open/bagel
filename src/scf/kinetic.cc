@@ -45,11 +45,6 @@ Kinetic::Kinetic(const shared_ptr<const Geometry> geom) : Matrix1e(geom) {
 }
 
 
-Kinetic::~Kinetic() {
-
-}
-
-
 void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]

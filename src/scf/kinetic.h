@@ -39,7 +39,6 @@ class Kinetic : public Matrix1e {
 
   public:
     Kinetic(const std::shared_ptr<const Geometry>);
-    ~Kinetic();
 
 };
 
