@@ -28,8 +28,8 @@
 #define __SRC_REL_SMALLERIBATCH_H
 
 #include <stddef.h>
-#include <src/scf/shell.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/shell.h>
+#include <src/wfn/geometry.h>
 #include <memory>
 #include <src/rysint/eribatch.h>
 #include <src/util/matrix.h>

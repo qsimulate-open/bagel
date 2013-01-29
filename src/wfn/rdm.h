@@ -34,7 +34,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <type_traits>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/f77.h>
 #include <src/util/matrix.h>
 

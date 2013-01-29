@@ -34,7 +34,7 @@
 
 #include <src/scf/coeff.h>
 #include <src/scf/hcore.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/fci/dvec.h>
 #include <src/wfn/rdm.h>
 

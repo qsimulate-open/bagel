@@ -27,7 +27,7 @@
 #include <src/osint/overlapbatch.h>
 #include <src/osint/momentbatch.h>
 #include <src/rysint/carsphlist.h>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <iostream>
 #include <sstream>
 

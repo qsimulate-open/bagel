@@ -35,7 +35,7 @@
 #include <boost/regex.hpp>
 #include <src/rysint/eribatch.h>
 #include <src/rel/smalleribatch.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>

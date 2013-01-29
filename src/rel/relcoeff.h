@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_RELCOEFF_H
 #define __SRC_REL_RELCOEFF_H
 
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/zmatrix.h>
 
 namespace bagel {

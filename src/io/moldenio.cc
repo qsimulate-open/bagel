@@ -35,8 +35,8 @@
 #include <vector>
 
 #include <src/io/moldenio.h>
-#include <src/scf/atom.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/atom.h>
+#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/util/constants.h>
 #include <src/util/atommap.h>

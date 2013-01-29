@@ -28,7 +28,7 @@
 #define __SRC_PROP_DIPOLE_H
 
 #include <memory>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/matrix.h>
 
 namespace bagel {

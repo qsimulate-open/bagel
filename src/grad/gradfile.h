@@ -35,7 +35,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/f77.h>
 
 class GradFile {

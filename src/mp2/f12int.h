@@ -30,7 +30,7 @@
 #include <memory>
 #include <map>
 #include <src/mp2/f12mat.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {

@@ -34,7 +34,7 @@
 #include <src/rysint/rysint.h>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/slaterbatch.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/smith/prim_op.h>
 #include <src/mp2/f12mat.h>

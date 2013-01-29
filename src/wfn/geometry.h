@@ -30,8 +30,8 @@
 #include <stddef.h>
 #include <string>
 #include <vector>
-#include <src/scf/atom.h>
-#include <src/scf/petite.h>
+#include <src/wfn/atom.h>
+#include <src/wfn/petite.h>
 #include <memory>
 #include <src/df/df.h>
 #include <src/util/input.h>

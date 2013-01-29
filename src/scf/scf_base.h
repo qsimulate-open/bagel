@@ -29,7 +29,7 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/overlap.h>
 #include <src/scf/hcore.h>
 #include <src/scf/tildex.h>

@@ -31,7 +31,7 @@
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/zmatrix.h>
 #include <src/df/df.h>
 #include <src/rel/dfhalfcomplex.h>

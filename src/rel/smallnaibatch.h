@@ -28,8 +28,8 @@
 #define __SRC_REL_SMALLNAIBATCH_H
 
 #include <stddef.h>
-#include <src/scf/shell.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/shell.h>
+#include <src/wfn/geometry.h>
 #include <memory>
 #include <src/rysint/naibatch.h>
 #include <src/util/matrix.h>

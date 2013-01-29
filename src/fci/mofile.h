@@ -36,7 +36,7 @@
 #include <src/wfn/reference.h>
 #include <src/util/filename.h>
 #include <src/scf/scf.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

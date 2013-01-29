@@ -33,11 +33,11 @@
 #include <stdexcept>
 #include <stddef.h>
 #include <src/df/dfblock.h>
-#include <src/scf/atom.h>
+#include <src/wfn/atom.h>
 #include <src/util/matrix.h>
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
 #include <src/rysint/rysint.h>

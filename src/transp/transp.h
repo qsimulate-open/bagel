@@ -29,7 +29,7 @@
 
 #include <string>
 #include <map>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <memory>
 #include <src/wfn/reference.h>
 

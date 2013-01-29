@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/petite.h>
+#include <src/wfn/petite.h>
 #include <array>
 #include <memory>
 #include <iostream>

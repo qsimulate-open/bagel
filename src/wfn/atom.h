@@ -30,7 +30,7 @@
 #include <array>
 #include <vector>
 #include <string>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <memory>
 
 namespace bagel {

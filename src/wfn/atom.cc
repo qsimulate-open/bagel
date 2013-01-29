@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/atom.h>
+#include <src/wfn/atom.h>
 #include <fstream>
 #include <numeric>
 #include <iostream>

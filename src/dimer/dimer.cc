@@ -25,7 +25,7 @@
 
 #include <tuple>
 
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/scf/overlap.h>
 #include <src/scf/fock.h>

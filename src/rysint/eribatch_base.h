@@ -27,7 +27,7 @@
 #ifndef __SRC_RYSINT_ERIBATCH_BASE_H
 #define __SRC_RYSINT_ERIBATCH_BASE_H
 
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <src/rysint/rysint.h>
 #include <tuple>
 

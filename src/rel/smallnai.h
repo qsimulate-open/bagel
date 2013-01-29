@@ -31,7 +31,7 @@
 #include <array>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

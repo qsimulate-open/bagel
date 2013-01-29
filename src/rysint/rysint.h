@@ -30,7 +30,7 @@
 #define __SRC_RYSINT_RYSINT_H
 
 #include <stddef.h>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <src/rysint/intparam.h>
 #include <src/parallel/resources.h>
 #include <tuple>

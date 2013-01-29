@@ -32,7 +32,7 @@
 #include <memory>
 #include <tuple>
 #include <algorithm>
-#include <src/scf/atom.h>
+#include <src/wfn/atom.h>
 
 namespace bagel {
 

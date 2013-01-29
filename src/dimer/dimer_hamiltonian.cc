@@ -31,7 +31,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/scf/fock.h>
 #include <src/scf/scf.h>

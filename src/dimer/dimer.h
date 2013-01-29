@@ -27,7 +27,7 @@
 #define __dimer_dimer_h
 
 #include <array>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>

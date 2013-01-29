@@ -28,7 +28,7 @@
 #define __src_pscf_pgeometry_h
 
 #include <string>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

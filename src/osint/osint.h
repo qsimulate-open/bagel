@@ -30,7 +30,7 @@
 #include <stddef.h>
 #include <array>
 #include <vector>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <src/rysint/sortlist.h>
 #include <array>
 #include <memory>

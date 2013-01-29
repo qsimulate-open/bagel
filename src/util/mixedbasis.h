@@ -34,7 +34,7 @@
 #include <cassert>
 #include <string>
 #include <src/util/matrix.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

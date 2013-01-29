@@ -28,7 +28,7 @@
 
 #include <array>
 #include <memory>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <vector>
 #include <src/rysint/rysint.h>
 

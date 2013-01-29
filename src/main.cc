@@ -33,7 +33,7 @@
 
 #include <src/scf/overlap.h>
 #include <src/scf/coeff.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_scf.h>
 #include <src/scf/rohf.h>

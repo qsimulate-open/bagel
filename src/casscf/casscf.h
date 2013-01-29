@@ -34,7 +34,7 @@
 #include <cassert>
 #include <vector>
 #include <memory>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
 #include <src/wfn/rdm.h>

@@ -31,7 +31,7 @@
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/kinetic.h>
 #include <src/util/matrix.h>
 #include <src/rel/smallnai.h>

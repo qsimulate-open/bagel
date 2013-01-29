@@ -33,7 +33,7 @@
 #include <fstream>
 #include <src/util/bfgs.h>
 #include <src/util/timer.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/grad/gradfile.h>
 #include <src/grad/gradeval.h>
 

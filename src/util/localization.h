@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <memory>
 #include <list>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 #include <src/util/matrix.h>

@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_RELHCORE_H
 #define __SRC_REL_RELHCORE_H
 
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/scf/hcore.h>
 #include <src/scf/kinetic.h>
 #include <src/util/matrix.h>

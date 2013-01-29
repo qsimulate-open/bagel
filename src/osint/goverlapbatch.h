@@ -28,7 +28,7 @@
 #define __SRC_OSINT_GOVERLAPBATCH_H
 
 #include <src/osint/osint.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

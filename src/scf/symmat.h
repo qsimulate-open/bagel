@@ -27,9 +27,9 @@
 #ifndef __src_scf_symmat_h
 #define __src_scf_symmat_h
 
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/matrix.h>
-#include <src/scf/petite.h>
+#include <src/wfn/petite.h>
 #include <src/scf/symrot.h>
 
 namespace bagel {

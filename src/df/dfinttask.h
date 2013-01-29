@@ -27,7 +27,7 @@
 #define __SRC_DF_DFINTTASK_H
 
 #include <src/df/dfblock.h>
-#include <src/scf/shell.h>
+#include <src/wfn/shell.h>
 #include <src/rysint/integral.h>
 
 namespace bagel {

@@ -29,7 +29,7 @@
 
 #include <memory>
 #include <array>
-#include <src/scf/geometry.h>
+#include <src/wfn/geometry.h>
 #include <src/util/matrix.h>
 
 namespace bagel {

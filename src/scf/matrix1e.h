@@ -28,8 +28,8 @@
 #define __src_scf_matrix1e_h
 
 #include <cassert>
-#include <src/scf/shell.h>
-#include <src/scf/geometry.h>
+#include <src/wfn/shell.h>
+#include <src/wfn/geometry.h>
 #include <src/util/matrix.h>
 #include <string>
 #include <algorithm>
