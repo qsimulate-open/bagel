@@ -50,7 +50,7 @@ class DFock : public ZMatrix {
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : ZMatrix(a->nbasis(), a->nbasis()), geom_(a) {
+     : ZMatrix(a->nbasis()*4, a->nbasis()*4), geom_(a) {
        two_electron_part(ocoeff, rhf, scale_ex);
     }
 

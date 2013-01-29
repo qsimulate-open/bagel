@@ -84,6 +84,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 #endif
 
   // Small Half Transforms; swapped only needs xy, xz, and yz
+#if 0
 
   array<shared_ptr<DFHalfComplex>, 18> small_half;
   const int a_basis = 2;
@@ -168,4 +169,5 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     }
   }
 
+#endif
 }

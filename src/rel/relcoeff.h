@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.h
+// Filename: relcoeff.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,45 +24,24 @@
 //
 
 
-#ifndef __SRC_REL_DIRAC_H
-#define __SRC_REL_DIRAC_H
+#ifndef __SRC_REL_RELCOEFF_H
+#define __SRC_REL_RELCOEFF_H
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/wfn/reference.h>
 #include <src/scf/geometry.h>
-#include <src/scf/kinetic.h>
-#include <src/util/matrix.h>
-#include <src/rel/smallnai.h>
-#include <src/rel/relhcore.h>
-#include <src/rel/reloverlap.h>
-#include <src/util/input.h>
+#include <src/util/zmatrix.h>
 
 namespace bagel {
 
-class Dirac {
+class RelCoeff : public ZMatrix {
   protected:
     const std::shared_ptr<const Geometry> geom_;
 
-    int max_iter_;
-    int diis_start_;
-    double thresh_scf_;
-    double energy_;
-
-    std::shared_ptr<const RelHcore> hcore_;
-    std::shared_ptr<const RelOverlap> overlap_;
-    std::shared_ptr<const RelOverlap> s12_;
-
   public:
-    Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+    RelCoeff(const ZMatrix&);
 
-    void compute();
+    ~RelCoeff() {};
 
-    std::shared_ptr<Reference> conv_to_ref() const;
-
-    void print_eig(const std::unique_ptr<double[]>&);
+    std::array<std::shared_ptr<const ZMatrix>, 4> split(const int, const int, const int);
 
 };
 
