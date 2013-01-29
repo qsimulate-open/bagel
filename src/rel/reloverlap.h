@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dirac.h
+// Filename: reloverlap.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,46 +24,37 @@
 //
 
 
-#ifndef __SRC_REL_DIRAC_H
-#define __SRC_REL_DIRAC_H
+#ifndef __SRC_REL_RELOVERLAP_H
+#define __SRC_REL_RELOVERLAP_H
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/wfn/reference.h>
 #include <src/scf/geometry.h>
+#include <src/scf/overlap.h>
 #include <src/scf/kinetic.h>
 #include <src/util/matrix.h>
-#include <src/rel/smallnai.h>
-#include <src/rel/relhcore.h>
-#include <src/rel/reloverlap.h>
-#include <src/util/input.h>
+#include <src/util/zmatrix.h>
 
 namespace bagel {
 
-class Dirac {
+class RelOverlap : public ZMatrix {
   protected:
     const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Matrix> kinetic_;
+    const std::shared_ptr<const Overlap> overlap_;
 
-    int max_iter_;
-    int diis_start_;
-    double thresh_scf_;
-    double energy_;
+    void compute_();
 
-    std::shared_ptr<const RelHcore> hcore_;
-    std::shared_ptr<const RelOverlap> overlap_;
-    std::shared_ptr<const RelOverlap> s12_;
+    bool half_inverse_;
 
   public:
-    Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+    RelOverlap(const std::shared_ptr<const Geometry> geom, bool half_inverse) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4),
+            geom_(geom), kinetic_(new Kinetic(geom)), overlap_(new Overlap(geom)), half_inverse_(half_inverse) {
 
-    void compute();
+//      overlap_ = std::shared_ptr<const Overlap>(new Overlap(geom_));
+      compute_();
 
-    std::shared_ptr<Reference> conv_to_ref() const;
+    }
 
-    void print_eig(const std::unique_ptr<double[]>&);
-
+    ~RelOverlap() {};
 };
 
 }

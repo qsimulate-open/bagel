@@ -143,9 +143,9 @@ int main(int argc, char** argv) {
 
       } else if (method == "dhf") {
 
-        scf = std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
-        scf->compute();
-//      ref = scf->conv_to_ref();
+        std::shared_ptr<Dirac> dirac(new Dirac(iter->second, geom, ref));
+        dirac->compute();
+//      ref = dirac->conv_to_ref();
 
       } else if (method == "df-hf") {
 

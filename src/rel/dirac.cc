@@ -26,6 +26,7 @@
 
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
+#include <src/rel/relcoeff.h>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/util/diis.h>
@@ -33,27 +34,29 @@
 using namespace std;
 using namespace bagel;
 
+Dirac::Dirac(const multimap<string, string>& idata_, const shared_ptr<const Geometry> geom,
+             const shared_ptr<const Reference> re) : geom_(geom->relativistic()) {
+  hcore_ = shared_ptr<const RelHcore>(new RelHcore(geom_));
+  overlap_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, false));
+  s12_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, true));
+  // reading input keywords
+  max_iter_ = read_input<int>(idata_, "maxiter", 100);
+  max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
+  diis_start_ = read_input<int>(idata_, "diis_start", 1);
+  thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
+  thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
+}
+
 void Dirac::compute() {
   Timer scftime;
   string indent = "  ";
   const int n = geom_->nbasis();
 
-  shared_ptr<const DistZMatrix> hcore = hcore_construct()->distmatrix();
-  shared_ptr<const DistZMatrix> s12 = s12_construct()->distmatrix();
-  shared_ptr<ZMatrix> overlap(new ZMatrix(4*n, 4*n));
-  {
-    // Maybe you would want to make a DOverlap class.
-    shared_ptr<Matrix> ovl(new Overlap(*overlap_));
-    shared_ptr<Matrix> k12(new Matrix(*kinetic_ * (0.5/(c__*c__))));
-    complex<double> one(1.0);
-    overlap->copy_real_block(one, 0, 0, n, n, ovl);
-    overlap->copy_real_block(one, n, n, n, n, ovl);
-    overlap->copy_real_block(one, 2*n, 2*n, n, n, k12); 
-    overlap->copy_real_block(one, 3*n, 3*n, n, n, k12); 
-  }
-  // distributed hcore and overlap
-  shared_ptr<const DistZMatrix> distovl  = overlap->distmatrix();
+  shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
+  shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
+  shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();
 
+  // distributed hcore and overlap
   DistZMatrix interm = *s12 % *hcore * *s12;
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
   interm.diagonalize(eig.get()); 
@@ -66,7 +69,7 @@ void Dirac::compute() {
   const int nneg = 2 * geom_->nbasis(); 
   
   // coefficient matrix
-  shared_ptr<const DistZMatrix> coeff(new DistZMatrix(*s12 * interm));
+  shared_ptr<RelCoeff> coeff(new RelCoeff(*s12 * interm));
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -82,9 +85,10 @@ void Dirac::compute() {
     Timer ptime(1);
 
     // TODO fock construction here. Fock construction requires a local copy of coeff
-    shared_ptr<ZMatrix> mcoeff = coeff->matrix()->slice(nneg, nele+nneg);
+    //shared_ptr<ZMatrix> mcoeff = coeff->matrix()->slice(nneg, nele+nneg);
+    array<shared_ptr<const ZMatrix>, 4> mcoeff = coeff->split(nrows, column, nele);
 #if 0
-    shared_ptr<const ZMatrix> fock(new DFock(..., mcoeff,...));
+    shared_ptr<const ZMatrix> fock(new DFock(geom_, hcore_, mcoeff));
 #else
     shared_ptr<const ZMatrix> fock = hcore->matrix();
 #endif
@@ -121,7 +125,7 @@ void Dirac::compute() {
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
     intermediate.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*coeff * intermediate));
+    coeff = shared_ptr<RelCoeff>(new RelCoeff(*coeff * intermediate));
 
     aodensity = coeff->form_density_rhf(nele, nneg); 
 
@@ -143,63 +147,3 @@ shared_ptr<Reference> Dirac::conv_to_ref() const {
   return shared_ptr<Reference>();
 }
 
-
-shared_ptr<ZMatrix> Dirac::hcore_construct() {
-  const int n = geom_->nbasis();
-
-  shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
-  shared_ptr<ZMatrix> znai(new ZMatrix(2*n, 2*n));
-  shared_ptr<ZMatrix> zkinetic(new ZMatrix(2*n, 2*n));
-
-  array<shared_ptr<ZMatrix>,4> zsmallnai;
-  for (auto& i : zsmallnai)
-    i = znai->clone(); 
-
-  const complex<double> coeff1 (1.0, 0.0);
-  const complex<double> coeffi (0.0, 1.0);
-
-  znai->copy_real_block(coeff1, 0, 0, n, n, nai_);
-  znai->copy_real_block(coeff1, n, n, n, n, nai_);
-  zkinetic->copy_real_block(coeff1, 0, 0, n, n, kinetic_);
-  zkinetic->copy_real_block(coeff1, n, n, n, n, kinetic_);
-
-  zsmallnai[0]->copy_real_block(coeff1, 0, 0, n, n, (*smallnai_)[0]);
-  zsmallnai[0]->copy_real_block(coeff1, n, n, n, n, (*smallnai_)[0]);
-  zsmallnai[1]->copy_real_block(coeffi, 0, 0, n, n, (*smallnai_)[1]);
-  zsmallnai[1]->copy_real_block(-coeffi, n, n, n, n, (*smallnai_)[1]);
-  zsmallnai[2]->copy_real_block(coeffi, 0, n, n, n, (*smallnai_)[2]);
-  zsmallnai[2]->copy_real_block(coeffi, n, 0, n, n, (*smallnai_)[2]);
-  zsmallnai[3]->copy_real_block(coeff1, 0, n, n, n, (*smallnai_)[3]);
-  zsmallnai[3]->copy_real_block(-coeff1, n, 0, n, n, (*smallnai_)[3]);
-
-  shared_ptr<ZMatrix> smallnai(new ZMatrix(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]));
-
-  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
-  const complex<double> w(0.25/(c__*c__), 0.0);
-  out->zero();
-  out->copy_block(0, 0, 2*n, 2*n, znai);
-  out->copy_block(0, 2*n, 2*n, 2*n, zkinetic);
-  out->copy_block(2*n, 0, 2*n, 2*n, zkinetic);
-  out->copy_block(2*n, 2*n, 2*n, 2*n, shared_ptr<ZMatrix>(new ZMatrix(*smallnai * w - *zkinetic)));
-
-  return out;
-}
-
-
-shared_ptr<ZMatrix> Dirac::s12_construct() {
-  const int n = geom_->nbasis();
-  const complex<double> coeff1 (1.0, 0.0);
-
-  shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
-  shared_ptr<Matrix> ovl(new Overlap(*overlap_));
-  shared_ptr<Matrix> k12(new Matrix(*kinetic_ * (0.5/(c__*c__))));
-  ovl->inverse_half();
-  k12->inverse_half();
-
-  out->copy_real_block(coeff1, 0, 0, n, n, ovl);
-  out->copy_real_block(coeff1, n, n, n, n, ovl);
-  out->copy_real_block(coeff1, 2*n, 2*n, n, n, k12); 
-  out->copy_real_block(coeff1, 3*n, 3*n, n, n, k12); 
-
-  return out;
-}
