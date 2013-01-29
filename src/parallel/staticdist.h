@@ -56,7 +56,9 @@ class StaticDist {
     }
 
     // a vector of start and size
-    StaticDist(const std::vector<size_t>& o) : nele_(o.back()), nproc_(o.size()-1), start_(o) { }
+    StaticDist(const std::vector<size_t>& o) : nele_(o.back()), nproc_(o.size()-1), start_(o) { assert(o.size() > 1); }
+
+    StaticDist() = delete;
 
     // vector of pairs of astart and asize
     std::vector<std::pair<size_t, size_t>> atable() const {

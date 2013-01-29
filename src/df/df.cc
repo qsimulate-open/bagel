@@ -107,11 +107,11 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   // first thing is to find the node
-  const int inode = get_node(i); 
+  tuple<size_t, size_t> info = adist()->locate(i);
 
   // ask for the data to inode
-  if (inode == mpi__->rank()) {
-    return block_[0]->get_block(i, id, j, jd, k, kd);
+  if (get<0>(info) == mpi__->rank()) {
+    return block_[0]->get_block(get<1>(info), id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
@@ -192,15 +192,14 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
 }
 
 
-void DFDist::make_table(const size_t astart) {
+shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
   vector<size_t> rec(mpi__->size());
   fill(rec.begin(), rec.end(), 0);
 
   mpi__->allgather(&astart, 1, &rec[0], 1); 
-
   rec.push_back(naux_);
-  adist_shell_ = shared_ptr<const StaticDist>(new StaticDist(rec));
-  adist_ = adist_shell_;
+
+  return shared_ptr<const StaticDist>(new StaticDist(rec));
 }
 
 

@@ -142,7 +142,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int n
       dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
   }
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, nocc, b2size_, astart_, 0, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, nocc, b2size_, astart_, 0, b2start_));
 }
 
 
@@ -156,20 +156,20 @@ shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int no
   else  // trans -> back transform
     dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, nocc, astart_, b1start_, 0));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, nocc, astart_, b1start_, 0));
 }
 
 
 shared_ptr<DFBlock> DFBlock::clone() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
-  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
 }
 
 
 shared_ptr<DFBlock> DFBlock::copy() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
   copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
-  return shared_ptr<DFBlock>(new DFBlock(tmp, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
 }
 
 
@@ -209,7 +209,7 @@ shared_ptr<DFBlock> DFBlock::swap() const {
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
       copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
 
-  shared_ptr<DFBlock> out(new DFBlock(dat, asize_, b2size_, b1size_, astart_, b2start_, b1start_));
+  shared_ptr<DFBlock> out(new DFBlock(dat, adist_, adist_shell_, asize_, b2size_, b1size_, astart_, b2start_, b1start_));
   return out;
 }
 

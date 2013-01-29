@@ -42,7 +42,6 @@ shared_ptr<GradFile> GradEval<SCF<1>>::compute() {
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(coeff_occ);
-half->form_aux_2index(half, 1.0)->print();
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
   shared_ptr<const DFFullDist> qijd = qij->apply_closed_2RDM();
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);

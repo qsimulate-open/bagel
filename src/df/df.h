@@ -51,10 +51,6 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
   protected:
     // blocks that this process has
     std::vector<std::shared_ptr<DFBlock>> block_;
-    // hash key and process number
-    std::map<int, int> global_table_;
-    std::shared_ptr<const StaticDist> adist_shell_;
-    std::shared_ptr<const StaticDist> adist_;
 
     // naux runs fastest, nindex2 runs slowest
     const size_t naux_;
@@ -80,8 +76,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }
     std::shared_ptr<const DFBlock> block(const size_t i) const { return block_[i]; }
 
-    std::shared_ptr<const StaticDist> adist_shell() const { return adist_shell_; }
-    std::shared_ptr<const StaticDist> adist() const { return adist_; }
+    std::shared_ptr<const StaticDist> adist_shell() const { return block_[0]->adist_shell(); }
+    std::shared_ptr<const StaticDist> adist() const { return block_[0]->adist(); }
 
     void add_block(std::shared_ptr<DFBlock> o);
 
@@ -96,8 +92,6 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
-
-    int get_node(const int shelloffset) const { return 0; }
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
@@ -114,7 +108,7 @@ class DFDist : public ParallelDF {
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
-    void make_table(const size_t nmax);
+    std::shared_ptr<const StaticDist> make_table(const size_t nmax);
     // compute 2-index integrals ERI
     void compute_2index(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
 
@@ -218,14 +212,14 @@ class DFDist_ints : public DFDist {
       std::vector<std::shared_ptr<const Shell>> myashell;
       std::tie(astart, myashell) = get_ashell(ashell);
 
-      make_table(astart);
+      std::shared_ptr<const StaticDist> adist = make_table(astart);
 
       // make empty dfblocks
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       for (int i = 0; i != TBatch::nblocks(); ++i)
-        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist_, adist_shell_, asize, b1size, b2size, astart, 0, 0)));
+        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist, adist, asize, b1size, b2size, astart, 0, 0)));
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
