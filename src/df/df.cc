@@ -76,13 +76,9 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
 #ifdef HAVE_MPI_H
-  shared_ptr<Matrix> out(new Matrix(naux_, naux_));
   shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
-  shared_ptr<DFDistT> work2 = this == o.get() ? work : shared_ptr<DFDistT>(new DFDistT(o));
-  assert(work->size() == work2->size());
-  dgemm_("T", "N", naux_, naux_, work->size(), a, work->data(), work->size(), work2->data(), work2->size(), 0.0, out->data(), naux_); 
-  out->allreduce();
-  return out;
+  shared_ptr<DFDistT> work2(new DFDistT(o));
+  return work->form_aux_2index(work2, a).front();
 #else
   return block_[0]->form_aux_2index(o->block_[0], a);
 #endif

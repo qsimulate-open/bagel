@@ -67,6 +67,7 @@ class DFDistT {
     std::shared_ptr<DFDistT> clone() const;
     std::shared_ptr<DFDistT> apply_J(std::shared_ptr<const Matrix> d) const;
     std::shared_ptr<DFDistT> apply_J() const { return apply_J(df_->data2()); }
+    std::vector<std::shared_ptr<Matrix>> form_aux_2index(std::shared_ptr<const DFDistT> o, const double a) const;
 
     void get_paralleldf(std::shared_ptr<ParallelDF>) const;
 

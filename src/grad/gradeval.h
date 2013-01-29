@@ -63,8 +63,8 @@ class GradEval : public GradEval_base {
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy();
-    };
-    ~GradEval() {};
+    }
+    ~GradEval() {}
 
     // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); };
