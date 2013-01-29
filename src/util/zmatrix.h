@@ -54,6 +54,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(const ZMatrix&);
 
     void antisymmetrize();
+    void hermite();
     std::shared_ptr<ZMatrix> cut(const int) const;
     std::shared_ptr<ZMatrix> resize(const int, const int) const;
     std::shared_ptr<ZMatrix> slice(const int, const int) const;
@@ -112,6 +113,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> log(const int deg = 6) const;
     // returns transpose(*this)
     std::shared_ptr<ZMatrix> transpose() const;
+    // returns hermite-conjugate(*this)
+    std::shared_ptr<ZMatrix> transpose_conjg() const;
 
     void zaxpy(const std::complex<double>, const ZMatrix&);
     void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);

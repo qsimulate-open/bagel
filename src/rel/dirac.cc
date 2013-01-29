@@ -85,11 +85,11 @@ void Dirac::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    // TODO fock construction here. Fock construction requires a local copy of coeff
-#if 1
-    shared_ptr<const ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg, nele+nneg)));
-#else
-    shared_ptr<const ZMatrix> fock = hcore->matrix();
+    // fock construction
+    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg, nele+nneg)));
+// TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
+#if 0
+    fock->hermite();
 #endif
     // distribute
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();

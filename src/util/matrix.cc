@@ -56,7 +56,7 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 
 shared_ptr<Matrix> Matrix::cut(const int n) const {
   assert(n <= ndim_);
-  shared_ptr<Matrix> out(new Matrix(n, mdim_));
+  shared_ptr<Matrix> out(new Matrix(n, mdim_, localized_));
   for (int i = 0; i != mdim_; ++i)
     for (int j = 0; j != n; ++j)
       out->data_[j+i*n] = data_[j+i*ndim_];
@@ -67,7 +67,7 @@ shared_ptr<Matrix> Matrix::cut(const int n) const {
 
 shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
   assert(n >= ndim_ && m >= mdim_);
-  shared_ptr<Matrix> out(new Matrix(n, m));
+  shared_ptr<Matrix> out(new Matrix(n, m, localized_));
   for (int i = 0; i != mdim_; ++i) {
     for (int j = 0; j != ndim_; ++j) {
       out->data_[j+i*n] = data_[j+i*ndim_];
@@ -78,7 +78,7 @@ shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
 
 
 shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
-  shared_ptr<Matrix> out(new Matrix(ndim_, fence - start));
+  shared_ptr<Matrix> out(new Matrix(ndim_, fence - start, localized_));
   assert(fence <= ndim_);
 
   copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
@@ -87,9 +87,9 @@ shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
 
 
 shared_ptr<Matrix> Matrix::merge(const shared_ptr<const Matrix> o) const {
-  assert(ndim_ == o->ndim_);
+  assert(ndim_ == o->ndim_ && localized_ == o->localized_);
 
-  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_ + o->mdim_));
+  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_ + o->mdim_, localized_));
 
   copy(data_.get(), data_.get() + ndim_*mdim_, out->data_.get());
   copy(o->data_.get(), o->data_.get()+o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);

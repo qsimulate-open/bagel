@@ -39,7 +39,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   const int n = geom_->nbasis();
   const int nele = geom_->nele();
   shared_ptr<const DFDist> df = geom_->df();
-  shared_ptr<const DFDist> dfs_total = geom_->form_fit<DFDist_ints<SmallERIBatch>>(1.0e-8, false); // TODO thresh should be controlled from the input deck
+  shared_ptr<const DFDist> dfs_total = geom_->dfs();
 
   // get individual df dist objects for each block
   vector<shared_ptr<DFDist>> dfs = dfs_total->split_blocks();
@@ -70,21 +70,17 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   complex<double> coeffi(0.0, 1.0);
   complex<double> coeff1(1.0, 0.0);
 
-  cout << "printing norm..." << endl << setprecision(20);
-  cout << rocoeff[0]->norm() << " " << iocoeff[0]->norm() << endl;
-  cout << rocoeff[1]->norm() << " " << iocoeff[1]->norm() << endl;
-  cout << "end.." << endl;
-
   for (int i = 0; i != 2; ++i) {
-    array<shared_ptr<Matrix>, 2> large_data;
-    array<shared_ptr<Matrix>, 2> large_data2;
     large_half[i] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[i], iocoeff[i], false, l_coord, make_pair(i,i)));
-    large_data = large_half[i]->compute_large_Jop(df, trocoeff[i], tiocoeff[i]);
-    add_real_block(coeff1, n*large_half[i]->basis().second, n*large_half[i]->basis().second, n, n, large_data[0]);
-    add_real_block(coeffi, n*large_half[i]->basis().second, n*large_half[i]->basis().second, n, n, large_data[1]);
+    array<shared_ptr<Matrix>, 2> large_data = large_half[i]->compute_large_Jop(df, trocoeff[i], tiocoeff[i]);
+    // J should be added to both blocks
+    add_real_block(coeff1, 0, 0, n, n, large_data[0]);
+    add_real_block(coeffi, 0, 0, n, n, large_data[1]);
+    add_real_block(coeff1, n, n, n, n, large_data[0]);
+    add_real_block(coeffi, n, n, n, n, large_data[1]);
 
     for(int j = i; j != 2; ++j) {
-      large_data2 = large_half[i]->form_2index_large_large(large_half[j]);
+      array<shared_ptr<Matrix>, 2> large_data2 = large_half[i]->form_2index_large_large(large_half[j]);
       add_real_block(coeff1, n*large_half[i]->basis().second, n*large_half[j]->basis().second, n, n, large_data2[0]);
       add_real_block(coeffi, n*large_half[i]->basis().second, n*large_half[j]->basis().second, n, n, large_data2[1]);
       if (j != i) {

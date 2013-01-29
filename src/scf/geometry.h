@@ -82,6 +82,8 @@ class Geometry {
 
     // for DF calculations
     std::shared_ptr<DFDist> df_;
+    // small component
+    std::shared_ptr<DFDist> dfs_;
 
     // external field
     std::vector<double> external_;
@@ -148,7 +150,8 @@ class Geometry {
 
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
-    void discard_df() { df_ = std::shared_ptr<DFDist>(); }
+    const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
+    void discard_df() { df_ = dfs_ = std::shared_ptr<DFDist>(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

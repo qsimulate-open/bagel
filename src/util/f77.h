@@ -36,6 +36,7 @@ extern "C" {
  // transposition
  void mytranspose_(const double*, const int*, const int*, double*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
+ void mytranspose_complex_conjg_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
 
  void daxpy_(const int*, const double*, const double*, const int*, double*, const int*);
  void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*);
@@ -83,6 +84,7 @@ extern "C" {
 
 static void mytranspose_(const double* a, const int b, const int c, double* d) { mytranspose_(a,&b,&c,d); }
 static void mytranspose_complex_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d) { mytranspose_complex_(a,&b,&c,d); }
+static void mytranspose_complex_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d) { mytranspose_complex_conjg_(a,&b,&c,d); }
 
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
                    const double alpha, const double* a, const int lda, const double* b, const int ldb,

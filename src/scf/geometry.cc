@@ -34,6 +34,7 @@
 #include <chrono>
 #include <boost/regex.hpp>
 #include <src/rysint/eribatch.h>
+#include <src/rel/smalleribatch.h>
 #include <src/scf/geometry.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
@@ -842,6 +843,7 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
+  geom->dfs_ = geom->form_fit<DFDist_ints<SmallERIBatch>>(1.0e-8, false); // TODO thresh should be controlled from the input deck
 
   return geom;
 }

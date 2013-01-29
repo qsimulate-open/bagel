@@ -417,11 +417,27 @@ shared_ptr<ZMatrix> ZMatrix::transpose() const {
 }
 
 
+shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
+  shared_ptr<ZMatrix> out(new ZMatrix(mdim_, ndim_));
+  mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data()); 
+  return out;
+}
+
+
 void ZMatrix::antisymmetrize() {
   assert(ndim_ == mdim_);
 
   shared_ptr<ZMatrix> trans = transpose();
   *this -= *trans;
+  *this *= 0.5;
+}
+
+
+void ZMatrix::hermite() {
+  assert(ndim_ == mdim_);
+
+  shared_ptr<ZMatrix> trans = transpose_conjg();
+  *this += *trans;
   *this *= 0.5;
 }
 
