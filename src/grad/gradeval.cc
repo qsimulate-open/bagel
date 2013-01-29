@@ -46,7 +46,6 @@ shared_ptr<GradFile> GradEval<SCF<1>>::compute() {
   shared_ptr<const DFFullDist> qijd = qij->apply_closed_2RDM();
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
-qq->print();
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
