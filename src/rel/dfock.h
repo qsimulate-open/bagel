@@ -35,6 +35,7 @@
 #include <src/util/zmatrix.h>
 #include <src/df/df.h>
 #include <src/rel/dfhalfcomplex.h>
+#include <src/rel/relhcore.h>
 
 namespace bagel {
 
@@ -45,13 +46,21 @@ class DFock : public ZMatrix {
     //std::vector<std::shared_ptr<Matrix>> rsmall_data_;
     //std::vector<std::shared_ptr<Matrix>> ismall_data_;
     std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const RelHcore> hcore_;
     void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
+
+    std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
-          const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : ZMatrix(a->nbasis()*4, a->nbasis()*4), geom_(a) {
-       two_electron_part(ocoeff, rhf, scale_ex);
+          const std::shared_ptr<const RelHcore> h,
+          const std::shared_ptr<const ZMatrix> coeff, const bool rhf = false, const double scale_ex = 1.0)
+     : ZMatrix(a->nbasis()*4, a->nbasis()*4), geom_(a), hcore_(h) {
+       
+       assert(geom_->nbasis()*4 == coeff->ndim());
+       for (int i = 0; i != 4; ++i)
+         ocoeff_[i] = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim()); 
+       two_electron_part(ocoeff_, rhf, scale_ex);
     }
 
 //    std::shared_ptr<Reference> conv_to_ref() const override;
