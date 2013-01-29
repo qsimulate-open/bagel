@@ -54,8 +54,8 @@ class DFock : public ZMatrix {
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,
-          const std::shared_ptr<const ZMatrix> coeff, const bool rhf = false, const double scale_ex = 1.0)
-     : ZMatrix(a->nbasis()*4, a->nbasis()*4), geom_(a), hcore_(h) {
+          const std::shared_ptr<const ZMatrix> coeff, const bool rhf = true, const double scale_ex = 1.0)
+     : ZMatrix(*h), geom_(a), hcore_(h) {
        
        assert(geom_->nbasis()*4 == coeff->ndim());
        for (int i = 0; i != 4; ++i)

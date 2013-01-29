@@ -596,6 +596,32 @@ void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const i
   copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+//if (type == 0) {
+    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+        element(k,i) += a * *(data + j*ndim + l);
+//      element(k,i) = a * (*(data + j*ndim + l), 0);
+      } 
+    } 
+#if 0
+  } else {
+    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+        element(k,i) = (0, coeff * *(data + j*ndim + l));
+      } 
+    } 
+  }
+#endif
+} 
+
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get()); }
+
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
+  assert(ndim == data->ndim() && mdim == data->mdim());
+  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
+}
+
 void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
 //if (type == 0) {
     for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {

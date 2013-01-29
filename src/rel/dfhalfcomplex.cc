@@ -52,10 +52,10 @@ array<shared_ptr<Matrix>, 2> DFHalfComplex::form_2index_large_large(shared_ptr<D
 
   initialize_data_();
 
-  *data_[0] += *dfdata_[0]->form_2index(dfc->get_real(), 1.0);
-  *data_[0] -= *dfdata_[1]->form_2index(dfc->get_imag(), 1.0);
-  *data_[1] += *dfdata_[1]->form_2index(dfc->get_real(), 1.0);
-  *data_[1] += *dfdata_[0]->form_2index(dfc->get_imag(), 1.0);
+  *data_[0] -= *dfdata_[0]->form_2index(dfc->get_real(), 1.0);
+  *data_[0] += *dfdata_[1]->form_2index(dfc->get_imag(), -1.0);
+  *data_[1] -= *dfdata_[1]->form_2index(dfc->get_real(), 1.0);
+  *data_[1] -= *dfdata_[0]->form_2index(dfc->get_imag(), -1.0);
 
   return data_;
 
@@ -66,8 +66,8 @@ array<shared_ptr<Matrix>, 2> DFHalfComplex::compute_large_Jop(shared_ptr<const D
   initialize_data_();
 
   *data_[0] += *df->compute_Jop(dfdata_[0], trcoeff, true);
-  *data_[0] -= *df->compute_Jop(dfdata_[1], ticoeff, true);
-  *data_[1] += *df->compute_Jop(dfdata_[0], ticoeff, true);
+  *data_[0] += *df->compute_Jop(dfdata_[1], ticoeff, true);
+  *data_[1] -= *df->compute_Jop(dfdata_[0], ticoeff, true);
   *data_[1] += *df->compute_Jop(dfdata_[1], trcoeff, true);
 
   return data_;

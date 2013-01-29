@@ -49,9 +49,7 @@ SmallERIBatch::~SmallERIBatch() {
 }
 
 double* SmallERIBatch::data(const int i) {
-  double* out = stack_->get(size_block_);
-  copy_n(data_+i*size_block_, size_block_, out);
-  return out;
+  return data_+i*size_block_;
 }
 
 void SmallERIBatch::compute() {
@@ -87,8 +85,8 @@ void SmallERIBatch::compute() {
     }
   }
 
-stack_->release(s0size*a1*s2size, ints);
-stack_->release(s0size*a1*a2, eri);
+  stack_->release(s0size*a1*s2size, ints);
+  stack_->release(s0size*a1*a2, eri);
 }
 
 
