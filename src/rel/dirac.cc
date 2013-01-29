@@ -124,7 +124,7 @@ void Dirac::compute() {
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
     intermediate.diagonalize(eig.get());
-    coeff = shared_ptr<RelCoeff>(new RelCoeff(*coeff * intermediate));
+    coeff = shared_ptr<DistZMatrix>(new DistZMatrix(*coeff * intermediate));
 
     aodensity = coeff->form_density_rhf(nele, nneg); 
 
