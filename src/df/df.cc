@@ -111,7 +111,7 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
   // ask for the data to inode
   if (get<0>(info) == mpi__->rank()) {
-    return block_[0]->get_block(get<1>(info), id, j, jd, k, kd);
+    return block_[0]->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }

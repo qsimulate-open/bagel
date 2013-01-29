@@ -123,8 +123,11 @@ shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
 vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o, const double a) const {
   vector<shared_ptr<Matrix>> out;
   auto i = data_.begin();
-  for (auto& j : o->data_)
-    out.push_back(shared_ptr<Matrix>(new Matrix(**i++ ^ *j))); 
+  for (auto& j : o->data_) {
+    shared_ptr<Matrix> tmp(new Matrix(**i++ ^ *j)); 
+    tmp->allreduce();
+    out.push_back(tmp);
+  }
   return out;
 }
 
