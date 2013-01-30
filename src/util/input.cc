@@ -104,28 +104,27 @@ InputData::InputData(const string filename) : inputfile_(filename) {
   for (auto& it : blocks) {
     if (it.size() == 0) continue;
     vector<string> pairs = split(it, "{");
-    if (pairs[1].size() > 0) {
-      trim(pairs[0]);
-      string tag = pairs[0];
-      transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
 
-      vector<string> lines = split(pairs[1], ";");
-      multimap<string, string> tmp;
-      for (auto& i : lines) {
-        if (i.size() > 0) {
-          vector<string> ll = split(i, "=");
-          if (ll.size() != 2) {
-            stringstream ss;
-            ss << "There seem " << ll.size()-1 << " '=' in a single directive. Check your input.";
-            throw runtime_error(ss.str());
-          }
-          trim(ll[0]); trim(ll[1]);
-          transform(ll[0].begin(), ll[0].end(), ll[0].begin(), ::tolower);
-          transform(ll[1].begin(), ll[1].end(), ll[1].begin(), ::tolower);
-          tmp.insert(make_pair(ll[0],ll[1]));
+    trim(pairs[0]);
+    string tag = pairs[0];
+    transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
+
+    vector<string> lines = split(pairs[1], ";");
+    multimap<string, string> tmp;
+    for (auto& i : lines) {
+      if (i.size() > 0) {
+        vector<string> ll = split(i, "=");
+        if (ll.size() != 2) {
+          stringstream ss;
+          ss << "There seem " << ll.size()-1 << " '=' in a single directive. Check your input.";
+          throw runtime_error(ss.str());
         }
+        trim(ll[0]); trim(ll[1]);
+        transform(ll[0].begin(), ll[0].end(), ll[0].begin(), ::tolower);
+        transform(ll[1].begin(), ll[1].end(), ll[1].begin(), ::tolower);
+        tmp.insert(make_pair(ll[0],ll[1]));
       }
-      data_.push_back(make_pair(tag, tmp));
     }
+    data_.push_back(make_pair(tag, tmp));
   }
 }
