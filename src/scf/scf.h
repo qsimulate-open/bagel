@@ -59,9 +59,6 @@ class SCF : public SCF_base {
         levelshift_ = std::shared_ptr<LevelShift>(new ShiftVirtual(nocc_, lshift));
       }
 
-      if (DF == 1) {
-        // TODO init schwarz for auxiliary basis
-      }
     }
 
     void compute() override {

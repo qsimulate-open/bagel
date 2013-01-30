@@ -94,7 +94,7 @@ class GradEval_base {
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o);
 
-    // the results will be stored in grad_ and grad2_ (seperate area for multi-threading);
+    // the results will be stored in grad_
     std::shared_ptr<GradFile> grad_;
     std::vector<std::mutex> mutex_;
 

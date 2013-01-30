@@ -46,35 +46,40 @@ std::vector<double> run_opt(std::string filename) {
         if (opt->next()) break;
 
       std::cout.rdbuf(backup_stream);
-      return opt->geometry()->xyz();
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "df-uhf-opt") {
       std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
       std::cout.rdbuf(backup_stream);
-      return opt->geometry()->xyz();
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "df-rohf-opt") {
       std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
       std::cout.rdbuf(backup_stream);
-      return opt->geometry()->xyz();
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "mp2-opt") {
       std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
       std::cout.rdbuf(backup_stream);
-      return opt->geometry()->xyz();
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "casscf-opt") {
       std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
       std::cout.rdbuf(backup_stream);
-      return opt->geometry()->xyz();
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     }
   }
   assert(false);

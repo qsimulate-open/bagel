@@ -231,14 +231,14 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 
 // suitable for geometry updates in optimization
-Geometry::Geometry(const Geometry& o, const vector<double> displ, const multimap<string, string> geominfo, const bool rotate, const bool nodf)
+Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const multimap<string, string> geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
 
   // first construct atoms using displacements
-  auto disp = displ.begin();
-  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, disp += 3) {
-    array<double,3> cdispl = {{*disp, *(disp+1), *(disp+2)}};
+  int iat = 0;
+  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, ++iat) {
+    array<double,3> cdispl = {{displ->element(0,iat), displ->element(1,iat), displ->element(2,iat)}};
     atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
     aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
   }
@@ -470,11 +470,10 @@ int Geometry::num_count_full_valence_nocc() const {
 };
 
 
-const vector<double> Geometry::compute_grad_vnuc() const {
+const shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
-  vector<double> grad(natom()*3);
-  fill(grad.begin(), grad.end(), 0.0);
-  auto giter = grad.begin();
+  shared_ptr<Matrix> grad(new Matrix(3, natom()));
+  int i = 0;
   for (auto& a : atoms_) {
     const double ac = a->atom_charge();
     for (auto& b : atoms_) {
@@ -483,11 +482,11 @@ const vector<double> Geometry::compute_grad_vnuc() const {
       const double c = b->atom_charge() * ac;
       const double dist = a->distance(b);
       const double dist3 = dist*dist*dist;
-      *(giter+0) += c*displ[0]/dist3;
-      *(giter+1) += c*displ[1]/dist3;
-      *(giter+2) += c*displ[2]/dist3;
+      grad->element(0,i) += c*displ[0]/dist3;
+      grad->element(1,i) += c*displ[1]/dist3;
+      grad->element(2,i) += c*displ[2]/dist3;
     }
-    giter += 3;
+    ++i;
   }
   return grad;
 }
@@ -506,16 +505,18 @@ void Geometry::merge_obs_aux() {
 }
 
 
-vector<double> Geometry::xyz() const {
-  vector<double> out;
-  out.reserve(3*natom());
+shared_ptr<const Matrix> Geometry::xyz() const {
+  shared_ptr<Matrix> out(new Matrix(3, natom())); 
+  int iat = 0;
   for (auto& i : atoms_) {
-    out.push_back(i->position(0));
-    out.push_back(i->position(1));
-    out.push_back(i->position(2));
+    out->element(0, iat) = i->position(0);
+    out->element(1, iat) = i->position(1);
+    out->element(2, iat) = i->position(2);
+    ++iat;
   }
   return out;
 }
+
 
 array<double,3> Geometry::charge_center() const {
   array<double,3> out{{0.0, 0.0, 0.0}};

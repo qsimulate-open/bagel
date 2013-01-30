@@ -82,7 +82,6 @@ class DistABTask {
     }
 
     void compute() {
-      // TODO buffer should be nelec size (not norb size)
       const int norb_ = base_det->norb();
       const size_t lbs = base_det->lenb();
       const size_t lbt = int_det->lenb();

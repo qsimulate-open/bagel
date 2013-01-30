@@ -252,7 +252,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     const int naux = df->naux();
     assert(ndim_ == df->nbasis0());
 
-    // TODO for the time being, natural orbitals are made here (THIS IS BAD)...
     Timer pdebug(2);
 
     std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));

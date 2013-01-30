@@ -100,7 +100,8 @@ class Geometry {
     Geometry(const std::string) {}
     Geometry(const std::multimap<std::string, std::string>);
     Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, const std::multimap<std::string, std::string> o);
-    Geometry(const Geometry& o, const std::vector<double> disp, const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
+    Geometry(const Geometry& o, const std::shared_ptr<const Matrix> disp,
+             const std::multimap<std::string, std::string> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
@@ -122,7 +123,7 @@ class Geometry {
     double gamma() const {return gamma_; }
     const std::string symmetry() const { return symmetry_; }
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
-    const std::vector<double> compute_grad_vnuc() const;
+    const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     const std::string basisfile() const { return basisfile_; }
     const std::string auxfile() const { return auxfile_; }
     double schwarz_thresh() const { return schwarz_thresh_; }
@@ -165,7 +166,7 @@ class Geometry {
       return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam));
     }
 
-    std::vector<double> xyz() const;
+    std::shared_ptr<const Matrix> xyz() const;
 
     std::array<double,3> charge_center() const;
 

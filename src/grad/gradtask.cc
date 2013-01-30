@@ -71,8 +71,8 @@ void GradTask::compute() {
           int jatom0 = batch.swap01() ? iatom1 : iatom0;
           int jatom1 = batch.swap01() ? iatom0 : iatom1;
           for (int k = 0; k != 3; ++k) {
-            grad_local->data(3*jatom1+k) += kdata[cnt+s*k    ] * den2_->data(i*nbasis+j);
-            grad_local->data(3*jatom0+k) += kdata[cnt+s*(k+3)] * den2_->data(i*nbasis+j);
+            grad_local->data(k, jatom1) += kdata[cnt+s*k    ] * den2_->data(i*nbasis+j);
+            grad_local->data(k, jatom0) += kdata[cnt+s*(k+3)] * den2_->data(i*nbasis+j);
           }
         }
       }
@@ -87,17 +87,17 @@ void GradTask::compute() {
           int jatom0 = batch.swap01() ? iatom1 : iatom0;
           int jatom1 = batch.swap01() ? iatom0 : iatom1;
           for (int k = 0; k != 3; ++k) {
-            grad_local->data(3*jatom1+k) -= odata[cnt+s*k    ] * eden_->data(i*nbasis+j);
-            grad_local->data(3*jatom0+k) -= odata[cnt+s*(k+3)] * eden_->data(i*nbasis+j);
+            grad_local->data(k, jatom1) -= odata[cnt+s*k    ] * eden_->data(i*nbasis+j);
+            grad_local->data(k, jatom0) -= odata[cnt+s*(k+3)] * eden_->data(i*nbasis+j);
           }
         }
       }
     }
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
-      ge_->grad_->data(3*iatom+0) += grad_local->data(3*iatom+0);
-      ge_->grad_->data(3*iatom+1) += grad_local->data(3*iatom+1);
-      ge_->grad_->data(3*iatom+2) += grad_local->data(3*iatom+2);
+      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
+      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
+      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
     }
 
   } else if (rank_ == 3) {
@@ -132,7 +132,7 @@ void GradTask::compute() {
       }
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
-        ge_->grad_->data(jatom[iatom], icart) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
+        ge_->grad_->data(icart, jatom[iatom]) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
   } else if (rank_ == 2) {
 #ifdef LIBINT_INTERFACE
@@ -164,7 +164,7 @@ void GradTask::compute() {
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
       for (int icart = 0; icart != 3; ++icart)
-        ge_->grad_->data(jatom[iatom],icart) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
+        ge_->grad_->data(icart, jatom[iatom]) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
     }
   } else {
     throw logic_error("calling GradTask::compute() with illegal setups");
