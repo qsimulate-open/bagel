@@ -38,13 +38,10 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
   vector<GradTask> task  = contract_grad2e(o);
 
-  // TODO will be distributed
-  if (mpi__->rank() == 0) {
-    vector<GradTask> task2 = contract_grad1e(d, w);
-    vector<GradTask> task3 = contract_grad2e_2index(o2);
-    task.insert(task.end(), task2.begin(), task2.end());
-    task.insert(task.end(), task3.begin(), task3.end());
-  }
+  vector<GradTask> task2 = contract_grad1e(d, w);
+  vector<GradTask> task3 = contract_grad2e_2index(o2);
+  task.insert(task.end(), task2.begin(), task2.end());
+  task.insert(task.end(), task3.begin(), task3.end());
 
   TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
@@ -63,6 +60,7 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
+  int cnt = 0;
   int iatom0 = 0;
   auto oa0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
@@ -74,6 +72,9 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
         auto o1 = oa1->begin();
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+          // static distribution since this is cheap
+          if (cnt++ % mpi__->size() != mpi__->rank()) continue;
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           vector<int> atom = {iatom0, iatom1};
@@ -146,6 +147,7 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
   shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
 
   // using symmetry (b0 <-> b1)
+  int cnt = 0;
   int iatom0 = 0;
   auto oa0 = geom_->aux_offsets().begin();
   for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0, ++oa0, ++iatom0) {
@@ -161,6 +163,8 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
         auto o1 = a0!=a1 ? oa1->begin() : o0;
         for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
 
+          // static distribution since this is cheap
+          if (cnt++ % mpi__->size() != mpi__->rank()) continue;
 
           array<shared_ptr<const Shell>,4> input = {{*b1, b3, *b0, b3}};
           vector<int> atoms = {iatom0, iatom1};

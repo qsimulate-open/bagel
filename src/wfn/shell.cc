@@ -205,7 +205,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
     coeff1 = shared_ptr<MomentBatch>(new MomentBatch(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}}));
     coeff1->compute();
   } else {
-    // TODO just to run
+    // just to run. coeff1 is not referenced in the code
     coeff1 = coeff0;
   }
 

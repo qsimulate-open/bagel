@@ -192,14 +192,14 @@ void DFBlock::add_direct_product(const double* a, const double* b, const double 
 }
 
 
-// TODO not efficient
 void DFBlock::symmetrize() {
   if (b1size_ != b2size_) throw logic_error("illegal call of DFBlock::symmetrize()");
   const int n = b1size_;
   for (int i = 0; i != n; ++i)
-    for (int j = i; j != n; ++j)
-      for (int k = 0; k != asize_; ++k)
-        data_[k+asize_*(j+n*i)] = data_[k+asize_*(i+n*j)] = (data_[k+asize_*(j+n*i)] + data_[k+asize_*(i+n*j)]);
+    for (int j = i; j != n; ++j) {
+      daxpy_(asize_, 1.0, data_.get()+asize_*(j+n*i), 1, data_.get()+asize_*(i+n*j), 1); 
+      copy_n(data_.get()+asize_*(i+n*j), asize_, data_.get()+asize_*(j+n*i));
+    }
 }
 
 
