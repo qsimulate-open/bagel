@@ -38,7 +38,6 @@
 static const bool tprint = false;
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 shared_ptr<Dvec> Dimer::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdata, const int ij) const {

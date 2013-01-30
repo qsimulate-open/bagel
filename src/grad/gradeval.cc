@@ -28,7 +28,6 @@
 #include <src/util/timer.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 template<>
@@ -100,7 +99,6 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
-  auto tp1 = high_resolution_clock::now();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
   return grad;

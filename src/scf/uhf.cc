@@ -23,12 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <chrono>
 #include <src/scf/uhf.h>
 #include <src/prop/dipole.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 void UHF::compute() {
@@ -68,10 +66,8 @@ void UHF::compute() {
 
     const double error = error_vector->rms();
 
-    auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
-                                      << setw(17) << error << setw(15) << setprecision(2)
-                                      << scftime.tick() << endl;
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

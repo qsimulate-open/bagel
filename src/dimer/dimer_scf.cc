@@ -30,7 +30,6 @@
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
 #include <iostream>
-#include <chrono>
 #include <iomanip>
 
 using namespace bagel;
@@ -63,8 +62,8 @@ void DimerSCF::compute() {
 
   //levelshift_->print_mo_data(coeff_);
 
+  Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto tp1 = chrono::high_resolution_clock::now();
 
     shared_ptr<const Matrix> fock(new Fock<1>(geom_, hcore_, aodensity_, schwarz_));
 
@@ -86,10 +85,8 @@ void DimerSCF::compute() {
     //shared_ptr<Fock<1>> tmp_fock(new Fock<1>(geom_, hcore_fock, new_density, schwarz_));
     //energy_ = 0.5*(*new_density * (*tmp_fock + *hcore_)).trace() + geom_->nuclear_repulsion();
 
-    auto tp2 = chrono::high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
-                                      << setw(17) << error << setw(15) << setprecision(2)
-                                      << chrono::duration_cast<chrono::milliseconds>(tp2-tp1).count()*0.001 << endl;
+                                      << setw(17) << error << setw(15) << setprecision(2) << timer.tick() << endl;
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;

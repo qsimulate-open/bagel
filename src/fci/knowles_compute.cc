@@ -37,7 +37,6 @@
 static const bool tprint = false;
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,

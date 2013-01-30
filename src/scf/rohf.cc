@@ -23,12 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <chrono>
 #include <src/scf/rohf.h>
 #include <src/prop/dipole.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 void ROHF::compute() {
@@ -57,7 +55,6 @@ void ROHF::compute() {
   DIIS<Matrix> diisB(5);
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto tp1 = high_resolution_clock::now();
 
     shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0,nocc_)));
     shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_)));
@@ -85,7 +82,6 @@ void ROHF::compute() {
     for (int i = 0; i != this->nocc(); ++i)  energy_ += eig_[i]  * 0.5;
     for (int i = 0; i != this->noccB(); ++i) energy_ += eigB_[i] * 0.5;
 
-    auto tp2 = high_resolution_clock::now();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 

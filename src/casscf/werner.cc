@@ -34,7 +34,6 @@
 #include <src/util/bfgs.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 static const vector<double> zero(1,0.0);
@@ -48,7 +47,7 @@ void WernerKnowles::compute() {
   // macro iteration
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto start = high_resolution_clock::now();
+    Timer timer;
 
     // performs FCI, which also computes one-index transformed integrals
     fci_->update(coeff_);
@@ -101,14 +100,14 @@ void WernerKnowles::compute() {
       // solving Eq. 30 of Werner and Knowles
       // fixed U, solve for dR.
       for (int mmiter = 0; mmiter != max_mmicro_iter_; ++mmiter, ++tcount) {
-        auto mstart = high_resolution_clock::now();
+        Timer mtimer;
         // first need to orthonomalize
         solver.orthog(dR);
         shared_ptr<Matrix> sigma = compute_sigma_R(jvec, dR, C, U);
         shared_ptr<Matrix> residual = solver.compute_residual(dR, sigma);
 
         const double error_mmicro = ::pow(residual->norm(),2.0) / residual->size();
-        print_iteration(iter, miter, tcount, zero, error_mmicro, duration_cast<milliseconds>(high_resolution_clock::now() - mstart).count()*0.001);
+        print_iteration(iter, miter, tcount, zero, error_mmicro, mtimer.tick());
         if (error_mmicro < thresh_mmicro_ || mmiter+1 == max_mmicro_iter_) { cout << endl; break; }
 
         // update dR;
@@ -129,7 +128,7 @@ void WernerKnowles::compute() {
     coeff_ = newcc;
 
     resume_stdcout();
-    print_iteration(iter, miter, tcount, energy_, error, duration_cast<milliseconds>(high_resolution_clock::now() - start).count()*0.001);
+    print_iteration(iter, miter, tcount, energy_, error, timer.tick());
     mute_stdcout();
 
     if (error < thresh_) break;

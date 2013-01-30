@@ -33,7 +33,6 @@
 #include <iostream>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 //
@@ -94,13 +93,11 @@ void KnowlesHandy::const_denom() {
 void KnowlesHandy::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  auto tp1 = high_resolution_clock::now();
+  Timer timer;
   jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "KH"));
 
   // right now full basis is used. 
-  auto tp2 = high_resolution_clock::now();
-  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) <<
-          duration_cast<milliseconds>(tp2-tp1).count()*0.001 << endl << endl;
+  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();
 }

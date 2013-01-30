@@ -24,7 +24,6 @@
 //
 
 
-#include <chrono>
 #include <src/casscf/superci.h>
 #include <iostream>
 #include <src/fci/fci.h>
@@ -37,7 +36,6 @@
 #include <src/util/hpw_diis.h>
 
 using namespace std;
-using namespace std::chrono;
 using namespace bagel;
 
 #define DF 1
@@ -57,8 +55,8 @@ void SuperCI::compute() {
   // ============================
   double gradient = 1.0e100;
   mute_stdcout();
+  Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto start = high_resolution_clock::now();
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
       shared_ptr<Matrix> tmp(new Matrix(*coeff_));
@@ -71,8 +69,6 @@ void SuperCI::compute() {
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
-
-    auto start0 = high_resolution_clock::now();
 
     // here make a natural orbitals and update the coefficients
     shared_ptr<Matrix> natorb = form_natural_orbs();
@@ -118,7 +114,7 @@ void SuperCI::compute() {
     // then microiteration for diagonalization
     // ---------------------------------------
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
-      auto mstart = high_resolution_clock::now();
+      Timer mtimer;
 
       if (miter != 0) {
         sigma_->zero();
@@ -148,10 +144,9 @@ void SuperCI::compute() {
       shared_ptr<RotFile> residual = davidson.residual().front();
       const double error = residual->ddot(*residual) / residual->size();
 
-      auto mend = high_resolution_clock::now();
       if (miter == 0) cout << endl << "     == micro iteration == " << endl;
       cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-           << setw(10) << scientific << setprecision(2) << error << fixed << " " << duration_cast<milliseconds>(mend - mstart).count()*0.001 << endl;
+           << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
 
       if (error < thresh_micro_) { cout << endl; break; }
       if (miter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
@@ -200,9 +195,8 @@ void SuperCI::compute() {
     mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
 
     // print out...
-    auto end = high_resolution_clock::now();
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, duration_cast<milliseconds>(end - start).count()*0.001);
+    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
     mute_stdcout();
 
     if (iter == max_iter_-1)
