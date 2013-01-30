@@ -41,13 +41,15 @@ namespace bagel {
 
 class DFock : public ZMatrix {
   protected:
-    std::array<std::shared_ptr<Matrix>, 2> rdata_;
-    std::array<std::shared_ptr<Matrix>, 2> idata_;
+    std::array<std::shared_ptr<DFHalfComplex>, 2> large_half_;
+    std::array<std::shared_ptr<DFHalfComplex>, 18> small_half_;
     //std::vector<std::shared_ptr<Matrix>> rsmall_data_;
     //std::vector<std::shared_ptr<Matrix>> ismall_data_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const RelHcore> hcore_;
     void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
+    void compute_half_complex(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
+                              std::shared_ptr<const DFDist>, std::vector<std::shared_ptr<DFDist> >);
 
     std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 

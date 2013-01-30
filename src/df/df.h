@@ -64,7 +64,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
 
   public:
-    ParallelDF(const size_t, const size_t, const size_t);
+    ParallelDF(const size_t, const size_t, const size_t,
+               std::shared_ptr<const ParallelDF> = std::shared_ptr<const ParallelDF>(), std::shared_ptr<Matrix> = std::shared_ptr<Matrix>());
 
     size_t naux() const { return naux_; }
     size_t nindex1() const { return nindex1_; }
@@ -115,12 +116,14 @@ class DFDist : public ParallelDF {
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all) const;
 
   public:
-    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>()) : ParallelDF(naux, nbas, nbas) {
+    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>(),
+           std::shared_ptr<const ParallelDF> df = std::shared_ptr<const ParallelDF>(), std::shared_ptr<Matrix> data2 = std::shared_ptr<Matrix>())
+      : ParallelDF(naux, nbas, nbas, df, data2) {
       if (block)
         block_.push_back(block);
     }
 
-    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2()) { df_ = df; }
+    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }  
 
     bool has_2index() const { return data2_.get() != nullptr; };
     size_t nbasis0() const { return nindex2_; };
@@ -142,7 +145,7 @@ class DFDist : public ParallelDF {
       std::vector<std::shared_ptr<DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
-        out.push_back(std::shared_ptr<DFDist>(new DFDist(nindex1_, naux_, i)));
+        out.push_back(std::shared_ptr<DFDist>(new DFDist(nindex1_, naux_, i, df_, data2_)));
       return out;
     }
 

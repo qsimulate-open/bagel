@@ -58,11 +58,14 @@ class DFHalfComplex {
 
     // form_2index_small can be used with small small quantities and small large quantities
     // it must take a smal dfdist as its argument
-    std::array<std::shared_ptr<Matrix>, 2> form_2index_small(std::shared_ptr<DFHalfComplex>);
-    std::array<std::shared_ptr<Matrix>, 2> form_2index_large_large(std::shared_ptr<DFHalfComplex>);
-    std::array<std::shared_ptr<Matrix>, 2> compute_large_Jop(std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
-    std::array<std::shared_ptr<Matrix>, 2> compute_small_Jop(std::shared_ptr<const DFDist>, std::array<std::shared_ptr<const Matrix>, 4>,
-               std::array<std::shared_ptr<const Matrix>, 4>, std::pair<const int, const int>, std::pair<const int, const int>);
+    std::array<std::shared_ptr<Matrix>, 2> form_2index(std::shared_ptr<DFHalfComplex>);
+    //std::array<std::shared_ptr<Matrix>, 2> form_2index_small(std::shared_ptr<DFHalfComplex>);
+    //std::array<std::shared_ptr<Matrix>, 2> form_2index_large_large(std::shared_ptr<DFHalfComplex>);
+    //std::array<std::shared_ptr<Matrix>, 2> compute_large_Jop(std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    std::array<std::shared_ptr<Matrix>, 2> compute_Jop(std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>,
+               std::shared_ptr<const Matrix>, std::pair<const int, const int>, std::pair<const int, const int>);
+    //std::array<std::shared_ptr<Matrix>, 2> compute_small_Jop(std::shared_ptr<const DFDist>, std::array<std::shared_ptr<const Matrix>, 4>,
+    //           std::array<std::shared_ptr<const Matrix>, 4>, std::pair<const int, const int>, std::pair<const int, const int>);
     std::pair<const int, const double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
 
 //    std::shared_ptr<Reference> conv_to_ref() const override;

@@ -48,8 +48,8 @@ using namespace std;
 using namespace bagel;
 
 
-ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2)
- : naux_(naux), nindex1_(nb1), nindex2_(nb2) {
+ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2, std::shared_ptr<const ParallelDF> df, std::shared_ptr<Matrix> dat)
+ : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat) {
 
 }
 
