@@ -107,6 +107,9 @@ void DistMatrix::diagonalize(double* eig) {
   pdsyevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
   if (info) throw runtime_error("pdsyevd failed in DistMatrix");
 
+  // seems MKL does not broadcast for tiny matrices..
+  if (n <= blocksize__) mpi__->broadcast(eig, n, 0); 
+
   *this = tmp;
 }
 
