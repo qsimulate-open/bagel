@@ -28,7 +28,6 @@
 
 #include <src/df/dfblock.h>
 #include <src/wfn/shell.h>
-#include <src/rysint/integral.h>
 
 namespace bagel {
 
@@ -39,7 +38,7 @@ class DFIntTask {
     const std::array<int,3> offset_; // at most 3 elements
     std::array<std::shared_ptr<DFBlock>,N> dfblocks_;
 
-    std::shared_ptr<Integral> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
+    std::shared_ptr<TBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
       std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
       eribatch->compute();
       return eribatch;
@@ -50,7 +49,7 @@ class DFIntTask {
      : shell_(a), offset_(b), dfblocks_(df) { };
 
     void compute() {
-      std::shared_ptr<Integral> p = compute_batch(shell_);
+      std::shared_ptr<TBatch> p = compute_batch(shell_);
 
       // all slot in
       for (int i = 0; i != N; ++i) {
