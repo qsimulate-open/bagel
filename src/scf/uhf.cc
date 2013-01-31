@@ -155,6 +155,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
+  out->set_nocc(nocc_, noccB_);
 
   // compute an energy weighted 1RDM and store
   vector<double> ea(eig_.get(), eig_.get()+nocc_);

@@ -84,7 +84,12 @@ void Dirac::compute() {
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
       fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
     } else {
-      throw logic_error("Cast from ROHF and UHF not yet implemented");
+      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
+      const int nocca = ref_->noccA();
+      const int noccb = ref_->noccB();
+      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
+      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());

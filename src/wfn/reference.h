@@ -52,6 +52,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // in case of spin-broken wave functions (UHF)
     std::shared_ptr<const Coeff> coeffA_;
     std::shared_ptr<const Coeff> coeffB_;
+    int noccA_, noccB_;
 
     const double energy_;
 
@@ -95,6 +96,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     void set_coeff(std::shared_ptr<const Coeff> coeff) { coeff_ = coeff; }
     void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::shared_ptr<const Coeff>(new const Coeff(*matrix)); }
+    void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
 
     void set_eig(const std::vector<double>& eig);
     const std::vector<double>& eig() const { return eig_; }
@@ -107,6 +109,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nocc() const { return nclosed_ + nact_; }
     int ncore() const { return ncore_; }
     void set_ncore(const int i) { ncore_ = i; }
+
+    int noccA() const { return noccA_; }
+    int noccB() const { return noccB_; }
 
     std::shared_ptr<const Reference> set_active(std::set<int> active_indices) const;
     std::shared_ptr<const Reference> set_active(std::string array_string) const;

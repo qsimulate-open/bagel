@@ -57,7 +57,6 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
   string dd = read_input<string>(idata_, "diis", "gradient");
 
-  // so far assuming that this is RHF
   int nact = read_input<int>(idata_, "nact", 0);
   nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2);
   noccB_ = nocc_ - nact;
