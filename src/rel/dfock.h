@@ -63,7 +63,7 @@ class DFock : public ZMatrix {
        for (int i = 0; i != 4; ++i)
          ocoeff_[i] = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim()); 
        two_electron_part(ocoeff_, rhf, scale_ex);
-    }
+    };
 
 //    std::shared_ptr<Reference> conv_to_ref() const override;
 

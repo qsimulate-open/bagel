@@ -88,7 +88,7 @@ void Dirac::compute() {
     // fock construction
     shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg, nele+nneg)));
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
-#if 0
+#if 1
     fock->hermite();
 #endif
     // distribute
@@ -97,7 +97,7 @@ void Dirac::compute() {
     // compute energy here
     const complex<double> prod = aodensity->zdotc(*hcore+*distfock);
     if (fabs(prod.imag()) > 1.0e-12) {
-      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << prod.imag();
+      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
       throw runtime_error(ss.str());
     }
     energy_ = 0.5*prod.real() + geom_->nuclear_repulsion();

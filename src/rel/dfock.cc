@@ -62,7 +62,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   complex<double> coeff1(1.0, 0.0);
 
   for (int i = 0; i != 2; ++i) {
-    array<shared_ptr<Matrix>, 2> large_data = large_half_[i]->compute_Jop(df, trocoeff[i], tiocoeff[i], large_half_[i]->basis(), large_half_[i]->coord());
+    const int j = large_half_[i]->basis().second;
+    array<shared_ptr<Matrix>, 2> large_data = large_half_[i]->compute_Jop(df, trocoeff[j], tiocoeff[j], large_half_[i]->basis(), large_half_[i]->coord());
     // J should be added to both blocks
     add_real_block(coeff1, 0, 0, n, n, large_data[0]);
     add_real_block(coeffi, 0, 0, n, n, large_data[1]);
@@ -80,37 +81,73 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     }
   }
 
-#if 0
-    *rdata_[i] += *df->compute_Jop(rhalfbj[i], trocoeff[i]);
-    *idata_[i] -= *df->compute_Jop(ihalfbj[i], tiocoeff[i]);
-#endif
-
   // Small Half Transforms; swapped only needs xy, xz, and yz
-#if 0
+  const double tc = 1.0 / (2.0*c__);
+  const complex<double> sscoeff1 = coeff1 * ::pow(tc,4.0);
+  const complex<double> sscoeffi = coeffi * ::pow(tc,4.0);
+
+#if 1
   for (int i = 0; i != small_half_.size(); ++i) {
     for (int j = i; j != small_half_.size(); ++j) {
-      pair<const int, const int> index = make_pair(small_half_[i]->basis().second, small_half_[j]->basis().second);
-      array<shared_ptr<Matrix>, 2> small_data;
-      small_data = small_half_[i]->form_2index_small(small_half_[j]);
-      //TODO
-      //insert into Larger Matrix Here?
-      //figure out duplicate blocks
+      array<shared_ptr<Matrix>, 2> small_data = small_half_[i]->form_2index(small_half_[j]);
+      add_real_block(sscoeff1, n*(2+small_half_[i]->basis().second), n*(2+small_half_[j]->basis().second), n, n, small_data[0]);
+      add_real_block(sscoeffi, n*(2+small_half_[i]->basis().second), n*(2+small_half_[j]->basis().second), n, n, small_data[1]);
+      if (j != i) {
+        add_real_block(sscoeff1, n*(2+small_half_[j]->basis().second), n*(2+small_half_[i]->basis().second), n, n, small_data[0]->transpose());
+        add_real_block(sscoeffi, n*(2+small_half_[j]->basis().second), n*(2+small_half_[i]->basis().second), n, n, (*small_data[1]->transpose() * (-1.0)).data());
+      }
     }
   }
+#endif
   
+#if 1
+  pair<const int, const int> aa = make_pair(0,0);
+  pair<const int, const int> ab = make_pair(0,1);
+  pair<const int, const int> ba = make_pair(1,0);
+  pair<const int, const int> bb = make_pair(1,1);
+  pair<const int, const int> l_coord = make_pair(-1, -1);
+
+  pair<const int, const int> xx = make_pair(0,0);
+  pair<const int, const int> xy = make_pair(0,1);
+  pair<const int, const int> xz = make_pair(0,2);
+  pair<const int, const int> yx = make_pair(1,0);
+  pair<const int, const int> yy = make_pair(1,1);
+  pair<const int, const int> yz = make_pair(1,2);
+  pair<const int, const int> zx = make_pair(2,0);
+  pair<const int, const int> zy = make_pair(2,1);
+  pair<const int, const int> zz = make_pair(2,2);
   pair<const int, const int> eri_coord[6] = {xx, xy, xz, yy, yz, zz};
   pair<const int, const int> eri_basis1[6] = {aa, aa, ab, aa, ab, aa};
   pair<const int, const int> eri_basis2[6] = {bb, bb, ba, bb, ba, bb};
 
+#if 1
   for (int i = 0; i != dfs.size(); ++i) {
-    for (int j = i; j != small_half_.size(); ++j) {
-      array<shared_ptr<Matrix>, 2> small_Jop_data1;
-      array<shared_ptr<Matrix>, 2> small_Jop_data2;
-      small_Jop_data1 = small_half_[j]->compute_small_Jop(dfs[i], trocoeff, tiocoeff, eri_basis1[i], eri_coord[i]); 
-      small_Jop_data2 = small_half_[j]->compute_small_Jop(dfs[i], trocoeff, tiocoeff, eri_basis2[i], eri_coord[i]); 
+    for (int j = 0; j != small_half_.size(); ++j) {
+      const int k = small_half_[j]->basis().second+2;
+      array<shared_ptr<Matrix>, 2> small_data1 = small_half_[j]->compute_Jop(dfs[i], trocoeff[k], tiocoeff[k], eri_basis1[i], eri_coord[i]); 
+      // TODO target1 and target 2 should be obtained by a better way
+      const tuple<int,int> target1 = make_tuple(eri_basis1[i].first+2, eri_basis1[i].second+2);
+      const tuple<int,int> target2 = make_tuple(eri_basis2[i].first+2, eri_basis2[i].second+2);
+
+      const complex<double> sign = (i == 1 || i == 2) ? -coeff1 : coeff1;
+
+      add_real_block(sscoeff1, n*get<0>(target1), n*get<1>(target1), n, n, small_data1[0]);
+      add_real_block(sscoeffi, n*get<0>(target1), n*get<1>(target1), n, n, small_data1[1]);
+      add_real_block(sscoeff1*sign, n*get<0>(target2), n*get<1>(target2), n, n, small_data1[0]);
+      add_real_block(sscoeffi*sign, n*get<0>(target2), n*get<1>(target2), n, n, small_data1[1]);
+
+      if (i == 1 || i == 2 || i == 4) {
+        add_real_block(sscoeff1, n*get<1>(target1), n*get<0>(target1), n, n, (*small_data1[0]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
+        add_real_block(sscoeffi, n*get<1>(target1), n*get<0>(target1), n, n, (*small_data1[1]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
+        add_real_block(sscoeff1*sign, n*get<1>(target2), n*get<0>(target2), n, n, (*small_data1[0]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
+        add_real_block(sscoeffi*sign, n*get<1>(target2), n*get<0>(target2), n, n, (*small_data1[1]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
+      }
     }
   }
+#endif
+#endif
 
+#if 0
   // Small - Large Transforms
   for (int i = 0; i != 2; ++i) {
     for (int j = 0; j != small_half_.size(); ++j) {
@@ -119,8 +156,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
       //TODO figure out what to do with this damn data
     }
   }
-
 #endif
+
 }
 
 void DFock::compute_half_complex(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, shared_ptr<const DFDist> df, 
@@ -146,7 +183,6 @@ void DFock::compute_half_complex(array<shared_ptr<const Matrix>, 4> rocoeff, arr
   large_half_[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[0], iocoeff[0], false, l_coord, aa));
   large_half_[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[1], iocoeff[1], false, l_coord, bb));
 
-#if 1
   // XX
   small_half_[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[a_basis], iocoeff[a_basis], false, xx, aa));
   small_half_[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[b_basis], iocoeff[b_basis], false, xx, bb));
@@ -182,5 +218,5 @@ void DFock::compute_half_complex(array<shared_ptr<const Matrix>, 4> rocoeff, arr
   // ZZ
   small_half_[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[a_basis], iocoeff[a_basis], false, zz, aa));
   small_half_[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[b_basis], iocoeff[b_basis], false, zz, bb));
-#endif
 }
+

@@ -48,32 +48,6 @@ DFHalfComplex::DFHalfComplex(const shared_ptr<const DFDist> df, shared_ptr<const
   dfdata_[1] = ihalfbj->apply_J();
 }
 
-#if 0
-array<shared_ptr<Matrix>, 2> DFHalfComplex::form_2index_large_large(shared_ptr<DFHalfComplex> dfc) {
-
-  initialize_data_();
-
-  *data_[0] -= *dfdata_[0]->form_2index(dfc->get_real(), 1.0);
-  *data_[0] += *dfdata_[1]->form_2index(dfc->get_imag(), -1.0);
-  *data_[1] -= *dfdata_[1]->form_2index(dfc->get_real(), 1.0);
-  *data_[1] -= *dfdata_[0]->form_2index(dfc->get_imag(), -1.0);
-
-  return data_;
-
-}
-array<shared_ptr<Matrix>, 2> DFHalfComplex::compute_large_Jop(shared_ptr<const DFDist> df, shared_ptr<const Matrix> trcoeff, shared_ptr<const Matrix> ticoeff) {
-
-  initialize_data_();
-
-  *data_[0] += *df->compute_Jop(dfdata_[0], trcoeff, true);
-  *data_[0] += *df->compute_Jop(dfdata_[1], ticoeff, true);
-  *data_[1] -= *df->compute_Jop(dfdata_[0], ticoeff, true);
-  *data_[1] += *df->compute_Jop(dfdata_[1], trcoeff, true);
-
-  return data_;
-}
-#endif
-
 array<shared_ptr<Matrix>, 2> DFHalfComplex::form_2index(shared_ptr<DFHalfComplex> dfc) {
 
   initialize_data_();
@@ -102,29 +76,6 @@ array<shared_ptr<Matrix>, 2> DFHalfComplex::compute_Jop(shared_ptr<const DFDist>
 
   return data_;
 }
-
-#if 0
-array<shared_ptr<Matrix>, 2> DFHalfComplex::compute_small_Jop(shared_ptr<const DFDist> dfs, array<shared_ptr<const Matrix>, 4> trocoeff, 
-                 array<shared_ptr<const Matrix>, 4> tiocoeff, pair<const int, const int> basis, pair<const int, const int> coord) {
-
-  if(coord.first == -1)
-    throw logic_error("Can only call compute_small_Jop with small DFDist quantity");
-
-  initialize_data_();
-
-  pair<const int, const double> coeff = compute_coeff(basis, coord);
-
-  // Match trocoeff index to index in dfock
-  const int coeff_basis = basis_.second + 3;
-
-  *data_[coeff.first] += *dfs->compute_Jop(dfdata_[0], trocoeff[coeff_basis], true) * coeff.second;
-  *data_[coeff.first] -= *dfs->compute_Jop(dfdata_[1], tiocoeff[coeff_basis], true) * coeff.second;
-  *data_[1-coeff.first] += *dfs->compute_Jop(dfdata_[0], tiocoeff[coeff_basis], true) * coeff.second * (coeff.first == 1 ? -1.0 : 1.0);
-  *data_[1-coeff.first] += *dfs->compute_Jop(dfdata_[1], trocoeff[coeff_basis], true) * coeff.second * (coeff.first == 1 ? -1.0 : 1.0);
-
-  return data_;
-}
-#endif
 
 pair<const int, const double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) {
   const complex<double> rcoeff (1.0, 0.0);
