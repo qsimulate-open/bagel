@@ -38,12 +38,17 @@ class Process {
     // dummy stream
     std::stringstream ss_;
 
+    int print_level_;
+
   public:
     Process();
     ~Process();
 
     void cout_on()  const;
     void cout_off() const;
+
+    int print_level() const { return print_level_; }
+    void set_print_level(const int i) { print_level_ = i; }
 
 };
 

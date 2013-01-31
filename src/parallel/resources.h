@@ -68,7 +68,7 @@ class StackMem {
 
 class Resources {
   private:
-    std::shared_ptr<const Process> proc_;
+    std::shared_ptr<Process> proc_;
     std::vector<std::shared_ptr<StackMem>> stackmem_;
     std::vector<std::shared_ptr<std::atomic_flag>> flag_;
     size_t max_num_threads_;
@@ -81,7 +81,7 @@ class Resources {
     void release(std::shared_ptr<StackMem> o);
 
     size_t max_num_threads() const { return max_num_threads_; };
-    std::shared_ptr<const Process> proc() const { return proc_; };
+    std::shared_ptr<Process> proc() { return proc_; };
 };
 
 extern Resources* resources__;

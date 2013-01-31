@@ -842,5 +842,8 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
   geom->atoms_ = atom;
   geom->dfs_ = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true);
 
+  // suppress some of the printing
+  resources__->proc()->set_print_level(2);
+
   return geom;
 }
