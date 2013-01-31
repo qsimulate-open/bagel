@@ -49,6 +49,8 @@ class SCF : public SCF_base {
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re, DF==0) {
 
+      std::cout << indent << "*** RHF ***" << std::endl << std::endl;
+
       // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
       // In the future, this should probably be moved to SCF_base and designed to work properly there
       double lshift = read_input<double>(idata_, "levelshift", 0.0);
@@ -64,7 +66,6 @@ class SCF : public SCF_base {
     void compute() override {
       Timer scftime;
 
-      std::string indent = "  ";
       std::shared_ptr<const Matrix> previous_fock = hcore_;
       std::shared_ptr<const Matrix> aodensity_;
 

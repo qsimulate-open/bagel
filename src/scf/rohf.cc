@@ -31,8 +31,6 @@ using namespace bagel;
 
 void ROHF::compute() {
 
-  string indent = "  ";
-
   if (coeff_ == nullptr || coeffB_ == nullptr) {
     Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());

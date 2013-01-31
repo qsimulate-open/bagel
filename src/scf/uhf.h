@@ -52,13 +52,13 @@ class UHF : public SCF_base {
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re) {
 
+      std::cout << indent << "*** Open-shell HF ***" << std::endl << std::endl;
+
       if (re != nullptr) {
         coeff_  = re->coeffA();
         coeffB_ = re->coeffB();
       }
     }
-
-    ~UHF() {}
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> form_density_uhf() const;
 

@@ -36,7 +36,10 @@ using namespace std;
 using namespace bagel;
 
 Dirac::Dirac(const multimap<string, string>& idata_, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const Reference> re) : geom_(geom->relativistic()) {
+             const shared_ptr<const Reference> re) : geom_(geom->relativistic()), ref_(re) {
+
+  cout << "  *** Dirac HF ***" << endl << endl;
+
   hcore_ = shared_ptr<const RelHcore>(new RelHcore(geom_));
   overlap_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, false));
   s12_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, true));
@@ -53,24 +56,43 @@ void Dirac::compute() {
   string indent = "  ";
   const int n = geom_->nbasis();
 
-  shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
-  shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
-  shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();
-
-  // distributed hcore and overlap
-  DistZMatrix interm = *s12 % *hcore * *s12;
-  unique_ptr<double[]> eig(new double[hcore->ndim()]);
-  interm.diagonalize(eig.get()); 
-
   // make a relativistic version of Coeff class (c.f. coeff.h in src/scf)
   // only implement form_density_rhf..
   const int nele = geom_->nele();
   const int nrows = geom_->nbasis();
   const int column = 2 * geom_->nbasis();
-  const int nneg = 2 * geom_->nbasis(); 
-  
-  // coefficient matrix
-  shared_ptr<const DistZMatrix> coeff(new DistZMatrix(*s12 * interm));
+  const int nneg = 2 * geom_->nbasis();
+
+  shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
+  shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
+  shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();
+  unique_ptr<double[]> eig(new double[hcore->ndim()]);
+
+  // making initial guess
+  shared_ptr<const DistZMatrix> coeff;
+  if (!ref_) {
+    DistZMatrix interm = *s12 % *hcore * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else if (ref_->coeff()->ndim() == n) {
+    // non-relativistic reference.
+    const int nocc = ref_->nocc();
+    shared_ptr<ZMatrix> fock;
+    if (nocc*2 == nele) {
+      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
+      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
+    } else {
+      throw logic_error("Cast from ROHF and UHF not yet implemented");
+    }
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else {
+    assert(ref_->coeff()->nbasis() == n*4);
+    throw logic_error("not yet implemented");
+  }
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -126,11 +148,11 @@ void Dirac::compute() {
     intermediate.diagonalize(eig.get());
     coeff = shared_ptr<DistZMatrix>(new DistZMatrix(*coeff * intermediate));
 
-    aodensity = coeff->form_density_rhf(nele, nneg); 
+    aodensity = coeff->form_density_rhf(nele, nneg);
 
   }
 
-  print_eig(eig);
+//print_eig(eig);
 }
 
 

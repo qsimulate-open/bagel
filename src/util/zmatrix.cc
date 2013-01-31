@@ -108,7 +108,7 @@ ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  zaxpy(complex<double>(-1.0,0.0), o); 
+  zaxpy(complex<double>(-1.0,0.0), o);
   return *this;
 }
 
@@ -252,7 +252,7 @@ ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
 
 
 void ZMatrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)"); 
+  if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
   const int n = ndim_;
   int info;
 #ifdef HAVE_SCALAPACK
@@ -412,14 +412,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   shared_ptr<ZMatrix> out(new ZMatrix(mdim_, ndim_));
-  mytranspose_complex_(data_.get(), ndim_, mdim_, out->data()); 
+  mytranspose_complex_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   shared_ptr<ZMatrix> out(new ZMatrix(mdim_, ndim_));
-  mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data()); 
+  mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
 
@@ -587,83 +587,61 @@ void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, co
 }
 
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-//if (type == 0) {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) = a * *(data + j*ndim + l);
-//      element(k,i) = a * (*(data + j*ndim + l), 0);
-      } 
-    } 
-#if 0
-  } else {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) = (0, coeff * *(data + j*ndim + l));
-      } 
-    } 
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+      element(k,i) = a * *(data + j*ndim + l);
+    }
   }
-#endif
-} 
- 
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get()); }
+}
+
+
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
+  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
+}
+
 
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
   assert(ndim == data->ndim() && mdim == data->mdim());
   copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-//if (type == 0) {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) += a * *(data + j*ndim + l);
-//      element(k,i) = a * (*(data + j*ndim + l), 0);
-      } 
-    } 
-#if 0
-  } else {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) = (0, coeff * *(data + j*ndim + l));
-      } 
-    } 
-  }
-#endif
-} 
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) { add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get()); }
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
+      element(k,i) += a * *(data + j*ndim + l);
+    }
+  }
+}
+
+
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
+  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
+}
+
 
 void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
   assert(ndim == data->ndim() && mdim == data->mdim());
   add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
-void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
-//if (type == 0) {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) +=  *(data + j*ndim + l);
-//      element(k,i) = a * (*(data + j*ndim + l), 0);
-      } 
-    } 
-#if 0
-  } else {
-    for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-      for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-        element(k,i) = (0, coeff * *(data + j*ndim + l));
-      } 
-    } 
-  }
-#endif
-} 
 
-void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) { 
-  add_block(ndim_i, mdim_i, ndim, mdim, data.get()); }
+void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    zaxpy_(ndim, 1.0, data + j*ndim, 1, element_ptr(ndim_i, i), 1);
+}
+
+
+void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) {
+  add_block(ndim_i, mdim_i, ndim, mdim, data.get());
+}
+
 
 void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) {
   assert(ndim == data->ndim() && mdim == data->mdim());
   add_block(ndim_i, mdim_i, ndim, mdim, data->data());
 }
+
 
 shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) {
   shared_ptr<ZMatrix> out(new ZMatrix(in->ndim(), in->mdim()));
@@ -673,6 +651,7 @@ shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) {
   return out;
 }
 
+
 shared_ptr<Matrix> ZMatrix::get_real_part() const {
   shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
   for (int i = 0; i != size(); ++i) {
@@ -681,6 +660,7 @@ shared_ptr<Matrix> ZMatrix::get_real_part() const {
   return out;
 }
 
+
 shared_ptr<Matrix> ZMatrix::get_imag_part() const {
   shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
   for (int i = 0; i != size(); ++i) {
@@ -688,6 +668,7 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
   }
   return out;
 }
+
 
 shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
   shared_ptr<ZMatrix> out(new ZMatrix(nsize, msize));
@@ -712,7 +693,7 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 
 #ifndef HAVE_SCALAPACK
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n); 
+  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
   shared_ptr<const ZMatrix> out(new ZMatrix(*tmp ^ *tmp));
   return out;
 }

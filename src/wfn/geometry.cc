@@ -439,7 +439,7 @@ double Geometry::compute_nuclear_repulsion() {
 
 
 void Geometry::print_atoms() const {
-  cout << "  === Geometry ===" << endl << endl;
+  cout << "  *** Geometry ***" << endl << endl;
   cout << "  Symmetry: " << symmetry() << endl;
   cout << endl;
 
@@ -832,6 +832,8 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
 
 
 shared_ptr<const Geometry> Geometry::relativistic() const {
+  cout << "  *** Geometry (Relativistic) ***" << endl;
+  Timer timer;
   // basically the same
   shared_ptr<Geometry> geom(new Geometry(*this));
 
@@ -844,6 +846,8 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);
-
+  cout << endl;
+  timer.tick_print("Geometry relativistic (total)");
+  cout << endl;
   return geom;
 }

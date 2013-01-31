@@ -62,6 +62,8 @@ class SCF_base {
     int nocc_;
     int noccB_;
 
+    const std::string indent = "  ";
+
   public:
     SCF_base(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
