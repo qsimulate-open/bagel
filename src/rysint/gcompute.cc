@@ -164,7 +164,7 @@ void GradBatch::compute() {
     if (!swap0123_) {
       const int m = c * d * cont2size_ * cont3size_;
       const int n = a * b * cont0size_ * cont1size_;
-      mytranspose_(source_now, &m, &n, target_now);
+      mytranspose_(source_now, m, n, target_now);
     } else {
       swapped = (swapped ^ true);
     }

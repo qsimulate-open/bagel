@@ -412,9 +412,9 @@ unique_ptr<double[]> Matrix::diag() const {
 }
 
 
-shared_ptr<Matrix> Matrix::transpose() const {
+shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
-  mytranspose_(data_.get(), ndim_, mdim_, out->data()); 
+  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor); 
   return out;
 }
 

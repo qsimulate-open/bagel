@@ -34,7 +34,7 @@
 extern "C" {
 
  // transposition
- void mytranspose_(const double*, const int*, const int*, double*);
+ void mytranspose_(const double*, const int*, const int*, double*, const double*);
  void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
  void mytranspose_complex_conjg_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
 
@@ -82,7 +82,7 @@ extern "C" {
  void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*);
 }
 
-static void mytranspose_(const double* a, const int b, const int c, double* d) { mytranspose_(a,&b,&c,d); }
+static void mytranspose_(const double* a, const int b, const int c, double* d, const double fac = 1.0) { mytranspose_(a,&b,&c,d,&fac); }
 static void mytranspose_complex_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d) { mytranspose_complex_(a,&b,&c,d); }
 static void mytranspose_complex_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d) { mytranspose_complex_conjg_(a,&b,&c,d); }
 

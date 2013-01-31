@@ -225,9 +225,9 @@ void SlaterBatch::compute() {
   {
     const int m = c * d * cont2size_ * cont3size_;
     const int n = a * b * cont0size_ * cont1size_;
-    mytranspose_(data_now, &m, &n, bkup_now);
+    mytranspose_(data_now, m, n, bkup_now);
     if (yukawa_)
-      mytranspose_(data_now_2, &m, &n, bkup_now_2);
+      mytranspose_(data_now_2, m, n, bkup_now_2);
   }
 
   // Sort cont01 and xyzab

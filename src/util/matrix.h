@@ -107,7 +107,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     // returns log(*this)
     std::shared_ptr<Matrix> log(const int deg = 6) const;
     // returns transpose(*this)
-    std::shared_ptr<Matrix> transpose() const;
+    std::shared_ptr<Matrix> transpose(const double a = 1.0) const;
 
     void daxpy(const double, const Matrix&);
     void daxpy(const double, const std::shared_ptr<const Matrix>);
