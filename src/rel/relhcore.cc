@@ -66,5 +66,8 @@ void RelHcore::compute_() {
   copy_block(0, 2*n, 2*n, 2*n, zkinetic);
   copy_block(2*n, 0, 2*n, 2*n, zkinetic);
   copy_block(2*n, 2*n, 2*n, 2*n, shared_ptr<ZMatrix>(new ZMatrix(*smallnai * w - *zkinetic)));
+
+  // to eliminate numerical noise (due to diagonal shell pairs)
+  hermite();
 }
 
