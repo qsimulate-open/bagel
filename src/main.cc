@@ -39,6 +39,7 @@
 #include <src/scf/rohf.h>
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
+#include <src/rel/relreference.h>
 #include <src/wfn/ciwfn.h>
 #include <src/fci/distfci.h>
 #include <src/fci/harrison.h>
@@ -113,6 +114,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<Geometry> geom;
     std::shared_ptr<SCF_base> scf;
     std::shared_ptr<const Reference> ref;
+    std::shared_ptr<const RelReference> relref;
     std::shared_ptr<Dimer> dimer;
 
     std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
@@ -143,9 +145,10 @@ int main(int argc, char** argv) {
 
       } else if (method == "dhf") {
 
-        std::shared_ptr<Dirac> dirac(new Dirac(iter->second, geom, ref));
+        std::shared_ptr<Dirac> dirac = relref ? std::shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
+                                              : std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
         dirac->compute();
-//      ref = dirac->conv_to_ref();
+        relref = dirac->conv_to_ref();
 
       } else if (method == "df-hf") {
 

@@ -27,7 +27,6 @@
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dfock.h>
-#include <src/rel/relcoeff.h>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/util/diis.h>
@@ -35,21 +34,32 @@
 using namespace std;
 using namespace bagel;
 
-Dirac::Dirac(const multimap<string, string>& idata_, const shared_ptr<const Geometry> geom,
+Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const Reference> re) : geom_(geom->relativistic()), ref_(re) {
+  common_init(idata);
+}
 
+
+Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
+             const shared_ptr<const RelReference> re) : geom_(geom->relativistic()), relref_(re) {
+  common_init(idata);
+}
+
+
+void Dirac::common_init(const multimap<string, string>& idata) {
   cout << "  *** Dirac HF ***" << endl << endl;
 
   hcore_ = shared_ptr<const RelHcore>(new RelHcore(geom_));
   overlap_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, false));
   s12_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, true));
   // reading input keywords
-  max_iter_ = read_input<int>(idata_, "maxiter", 100);
-  max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
-  diis_start_ = read_input<int>(idata_, "diis_start", 1);
-  thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
-  thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
+  max_iter_ = read_input<int>(idata, "maxiter", 100);
+  max_iter_ = read_input<int>(idata, "maxiter_scf", max_iter_);
+  diis_start_ = read_input<int>(idata, "diis_start", 1);
+  thresh_scf_ = read_input<double>(idata, "thresh", 1.0e-8);
+  thresh_scf_ = read_input<double>(idata, "thresh_scf", thresh_scf_);
 }
+
 
 void Dirac::compute() {
   Timer scftime;
@@ -70,8 +80,13 @@ void Dirac::compute() {
 
   // making initial guess
   shared_ptr<const DistZMatrix> coeff;
-  if (!ref_) {
+  if (!ref_ && !relref_) {
     DistZMatrix interm = *s12 % *hcore * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else if (relref_) {
+    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele)));
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
   } else if (ref_->coeff()->ndim() == n) {
@@ -84,9 +99,10 @@ void Dirac::compute() {
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
       fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
     } else {
-      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
+      assert(nocca+noccb = nele);
+      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
       fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
@@ -157,6 +173,7 @@ void Dirac::compute() {
 
   }
 
+  coeff_ = coeff->matrix();
 //print_eig(eig);
 }
 
@@ -168,8 +185,10 @@ void Dirac::print_eig(const unique_ptr<double[]>& eig) {
 }
 
 
-shared_ptr<Reference> Dirac::conv_to_ref() const {
-  assert(false);
-  return shared_ptr<Reference>();
+shared_ptr<RelReference> Dirac::conv_to_ref() const {
+  // we store only positive state coefficients
+  const int nneg = geom_->nbasis()*2;
+  const int npos = geom_->nbasis()*2;
+  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg, nneg+npos)));
 }
 

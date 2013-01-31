@@ -31,6 +31,7 @@
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
+#include <src/rel/relreference.h>
 #include <src/wfn/geometry.h>
 #include <src/scf/kinetic.h>
 #include <src/util/matrix.h>
@@ -45,6 +46,7 @@ class Dirac {
   protected:
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const Reference> ref_;
+    const std::shared_ptr<const RelReference> relref_;
 
     int max_iter_;
     int diis_start_;
@@ -55,13 +57,19 @@ class Dirac {
     std::shared_ptr<const RelOverlap> overlap_;
     std::shared_ptr<const RelOverlap> s12_;
 
+    std::shared_ptr<const ZMatrix> coeff_;
+
+    void common_init(const std::multimap<std::string, std::string>&);
+
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+    Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+          const std::shared_ptr<const RelReference> re);
 
     void compute();
 
-    std::shared_ptr<Reference> conv_to_ref() const;
+    std::shared_ptr<RelReference> conv_to_ref() const;
 
     void print_eig(const std::unique_ptr<double[]>&);
 
