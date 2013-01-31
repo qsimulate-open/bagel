@@ -349,7 +349,7 @@ complex<double> ZMatrix::zdotc(const shared_ptr<const ZMatrix> o) const {
 double ZMatrix::norm() const {
   complex<double> n = zdotc(*this);
   assert(fabs(n.imag()) < 1.0e-10);
-  return n.real();
+  return std::sqrt(n.real());
 }
 
 
