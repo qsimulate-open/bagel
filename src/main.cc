@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
         if (read_input<bool>(iter->second, "restart", false)) ref = std::shared_ptr<const Reference>();
         if (ref != nullptr) ref = ref->project_coeff(geom);
+        if (relref != nullptr) relref = relref->project_coeff(geom);
       } else {
         if (geom == nullptr) throw std::runtime_error("molecule block is missing");
       }
