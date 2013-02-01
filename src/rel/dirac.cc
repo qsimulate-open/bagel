@@ -101,7 +101,7 @@ void Dirac::compute() {
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
-      assert(nocca+noccb = nele);
+      assert(nocca+noccb == nele);
       shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
@@ -111,7 +111,7 @@ void Dirac::compute() {
     interm.diagonalize(eig.get());
     coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
   } else {
-    assert(ref_->coeff()->nbasis() == n*4);
+    assert(ref_->coeff()->ndim() == n*4);
     throw logic_error("not yet implemented");
   }
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
