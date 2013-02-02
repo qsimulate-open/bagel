@@ -59,7 +59,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   make_arrays(rocoeff, iocoeff, df, dfs, half_complex, dfdists);
 
   for (int i = 0; i != half_complex.size() ; ++i) {
-    for (int j = i; j != half_complex.size(); ++j) {
+    for (int j = 0; j != half_complex.size(); ++j) {
       add_Exop_block(half_complex[i], half_complex[j]); 
     }
   }
@@ -184,22 +184,30 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   const tuple<int, int, int, int> index = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
 
   array<shared_ptr<Matrix>, 4> exop;
-  exop[0] = (dfc1->get_real())->form_2index(dfc2->get_real(), -1.0); 
-  exop[1] = (dfc1->get_imag())->form_2index(dfc2->get_imag(), -1.0);
-  exop[2] = (dfc1->get_real())->form_2index(dfc2->get_imag(), coeff2); 
-  exop[3] = (dfc1->get_imag())->form_2index(dfc2->get_real(), -coeff2);
+  // real part
+  exop[0] = dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
+  exop[1] = dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
+  // imag part
+  complex<double> im(0.0, 1.0);
+  exop[2] = dfc1->get_real()->form_2index(dfc2->get_imag(), coeff2);
+  exop[3] = dfc1->get_imag()->form_2index(dfc2->get_real(), -coeff2);
 
   for (int i = 0; i != 4; ++i) {
     double factor = (i == 2 ? -1.0 : 1.0);
     shared_ptr<Matrix> texop = exop[i]->transpose(factor);
-    add_real_block(coeff1, n * get<0>(index), n * get<1>(index), n, n, exop[i]);
+    const complex<double> fac = i < 2 ? coeff1 : coeff1*im; 
+    add_real_block(fac, n * get<0>(index), n * get<1>(index), n, n, exop[i]);
+#if 0
     if (get<2>(index) != -1)
       add_real_block(coeff1, n * get<2>(index), n * get<3>(index), n, n, texop);
+#endif
     //cross terms
     if (dfc1->basis().second != dfc2->basis().second) {
-      add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, texop);
+//    add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, texop);
+#if 0
       if (get<2>(index) != -1)
         add_real_block(coeff1, n * get<3>(index), n * get<2>(index), n, n, exop[i]);
+#endif
     }
   }
 }

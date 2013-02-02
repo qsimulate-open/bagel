@@ -154,8 +154,7 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Exop(pair<const int
     index4 = -1;
   }
   
-  const tuple<int, int, int, int> out = make_tuple(index1, index2, index3, index4);
-  return out;
+  return make_tuple(index1, index2, index3, index4);
 }
 
 const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int, const int> basis, pair<const int, const int> coord) {
@@ -171,8 +170,7 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int,
   index3 = start + opp1;
   index4 = start + opp2; 
 
-  const tuple<int, int, int, int> out = make_tuple(index1, index2, index3, index4);
-  return out;
+  return make_tuple(index1, index2, index3, index4);
 }
 
 const int DFHalfComplex::coeff_matrix() const {
