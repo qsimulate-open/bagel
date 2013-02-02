@@ -59,7 +59,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   make_arrays(rocoeff, iocoeff, df, dfs, half_complex, dfdists);
 
   for (int i = 0; i != half_complex.size() ; ++i) {
-    for (int j = 0; j != half_complex.size(); ++j) {
+    for (int j = i; j != half_complex.size(); ++j) {
       add_Exop_block(half_complex[i], half_complex[j]); 
     }
   }
@@ -96,12 +96,12 @@ void DFock::make_arrays(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared
   //large
   dfdists[0] = shared_ptr<DFData>(new DFData(df, l_coord, aa));
   //small
-  dfdists[1] = shared_ptr<DFData>(new DFData(dfs[1], xx, aa));
-  dfdists[2] = shared_ptr<DFData>(new DFData(dfs[2], xy, aa));
-  dfdists[3] = shared_ptr<DFData>(new DFData(dfs[3], xz, ab));
-  dfdists[4] = shared_ptr<DFData>(new DFData(dfs[4], yy, aa));
-  dfdists[5] = shared_ptr<DFData>(new DFData(dfs[5], yz, ab));
-  dfdists[6] = shared_ptr<DFData>(new DFData(dfs[6], zz, aa));
+  dfdists[1] = shared_ptr<DFData>(new DFData(dfs[0], xx, aa));
+  dfdists[2] = shared_ptr<DFData>(new DFData(dfs[1], xy, aa));
+  dfdists[3] = shared_ptr<DFData>(new DFData(dfs[2], xz, ab));
+  dfdists[4] = shared_ptr<DFData>(new DFData(dfs[3], yy, aa));
+  dfdists[5] = shared_ptr<DFData>(new DFData(dfs[4], yz, ab));
+  dfdists[6] = shared_ptr<DFData>(new DFData(dfs[5], zz, aa));
 
   //large
   half_complex[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[0], iocoeff[0], false, l_coord, aa));
@@ -180,7 +180,9 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
   const int n = geom_->nbasis();
   complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
+  complex<double> coeff3 = dfc2->compute_coeff(dfc1->basis(), dfc1->coord());
   double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
+  double coeff4 = (coeff3.real() == 0.0 ? -1.0 :1.0);
   const tuple<int, int, int, int> index = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
 
   array<shared_ptr<Matrix>, 4> exop;
@@ -192,23 +194,17 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   exop[2] = dfc1->get_real()->form_2index(dfc2->get_imag(), coeff2);
   exop[3] = dfc1->get_imag()->form_2index(dfc2->get_real(), -coeff2);
 
-  for (int i = 0; i != 4; ++i) {
-    double factor = (i == 2 ? -1.0 : 1.0);
-    shared_ptr<Matrix> texop = exop[i]->transpose(factor);
-    const complex<double> fac = i < 2 ? coeff1 : coeff1*im; 
-    add_real_block(fac, n * get<0>(index), n * get<1>(index), n, n, exop[i]);
-#if 0
-    if (get<2>(index) != -1)
-      add_real_block(coeff1, n * get<2>(index), n * get<3>(index), n, n, texop);
-#endif
-    //cross terms
-    if (dfc1->basis().second != dfc2->basis().second) {
-//    add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, texop);
-#if 0
-      if (get<2>(index) != -1)
-        add_real_block(coeff1, n * get<3>(index), n * get<2>(index), n, n, exop[i]);
-#endif
-    }
+  ZMatrix a(exop[0]->ndim(), exop[0]->mdim());
+  a.add_real_block(coeff1, 0, 0, n, n, exop[0]);
+  a.add_real_block(coeff1, 0, 0, n, n, exop[1]);
+  a.add_real_block(coeff1*im, 0, 0, n, n, exop[2]);
+  a.add_real_block(coeff1*im, 0, 0, n, n, exop[3]);
+
+  add_block(n * get<0>(index), n * get<1>(index), n, n, a.data());
+
+  if (dfc1 != dfc2) {
+    add_block(n * get<1>(index), n * get<0>(index), n, n, a.transpose_conjg());
   }
+
 }
 

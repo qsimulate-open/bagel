@@ -145,10 +145,15 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Exop(pair<const int
   index2 = start2 + basis2.second;
 
   if (start1 != start2) {
+#if 0
     int opp1 = (coord_.first == -1 ? 2 : 0);
     int opp2 = (coord2.first == -1 ? 2 : 0);
     index3 = opp1 + basis_.second;
     index4 = opp2 + basis2.second;
+#else
+    index3 = index2;
+    index4 = index1;
+#endif
   } else {
     index3 = -1;
     index4 = -1;
