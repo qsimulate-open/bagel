@@ -35,8 +35,6 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
 
-  const int n = geom_->nbasis();
-  const int nele = geom_->nele();
   shared_ptr<const DFDist> df = geom_->df();
   shared_ptr<const DFDist> dfs_total = geom_->dfs();
 
@@ -56,112 +54,27 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
-  compute_half_complex(rocoeff, iocoeff, df, dfs);
+  array<shared_ptr<DFHalfComplex>, 20> half_complex;
+  array<shared_ptr<DFData>, 7> dfdists;
+  make_arrays(rocoeff, iocoeff, df, dfs, half_complex, dfdists);
 
-  complex<double> coeffi(0.0, 1.0);
-  complex<double> coeff1(1.0, 0.0);
-
-  for (int i = 0; i != 2; ++i) {
-    const int j = large_half_[i]->basis().second;
-    array<shared_ptr<Matrix>, 2> large_data = large_half_[i]->compute_Jop(df, trocoeff[j], tiocoeff[j], large_half_[i]->basis(), large_half_[i]->coord());
-    // J should be added to both blocks
-    add_real_block(coeff1, 0, 0, n, n, large_data[0]);
-    add_real_block(coeffi, 0, 0, n, n, large_data[1]);
-    add_real_block(coeff1, n, n, n, n, large_data[0]);
-    add_real_block(coeffi, n, n, n, n, large_data[1]);
-
-    for(int j = i; j != 2; ++j) {
-      array<shared_ptr<Matrix>, 2> large_data2 = large_half_[i]->form_2index(large_half_[j]);
-      add_real_block(coeff1, n*large_half_[i]->basis().second, n*large_half_[j]->basis().second, n, n, large_data2[0]);
-      add_real_block(coeffi, n*large_half_[i]->basis().second, n*large_half_[j]->basis().second, n, n, large_data2[1]);
-      if (j != i) {
-        add_real_block(coeff1, n*large_half_[j]->basis().second, n*large_half_[i]->basis().second, n, n, large_data2[0]->transpose());
-        add_real_block(coeffi, n*large_half_[j]->basis().second, n*large_half_[i]->basis().second, n, n, (*large_data2[1]->transpose() * (-1.0)).data());
-      }
+  for (int i = 0; i != half_complex.size() ; ++i) {
+    for (int j = i; j != half_complex.size(); ++j) {
+      add_Exop_block(half_complex[i], half_complex[j]); 
     }
   }
 
-  // Small Half Transforms; swapped only needs xy, xz, and yz
-  const double tc = 1.0 / (2.0*c__);
-  const complex<double> sscoeff1 = coeff1 * ::pow(tc,4.0);
-  const complex<double> sscoeffi = coeffi * ::pow(tc,4.0);
-
-#if 1
-  for (int i = 0; i != small_half_.size(); ++i) {
-    for (int j = i; j != small_half_.size(); ++j) {
-      array<shared_ptr<Matrix>, 2> small_data = small_half_[i]->form_2index(small_half_[j]);
-      add_real_block(sscoeff1, n*(2+small_half_[i]->basis().second), n*(2+small_half_[j]->basis().second), n, n, small_data[0]);
-      add_real_block(sscoeffi, n*(2+small_half_[i]->basis().second), n*(2+small_half_[j]->basis().second), n, n, small_data[1]);
-      if (j != i) {
-        add_real_block(sscoeff1, n*(2+small_half_[j]->basis().second), n*(2+small_half_[i]->basis().second), n, n, small_data[0]->transpose());
-        add_real_block(sscoeffi, n*(2+small_half_[j]->basis().second), n*(2+small_half_[i]->basis().second), n, n, (*small_data[1]->transpose() * (-1.0)).data());
-      }
+  for (int i = 0; i != dfdists.size(); ++i) {
+    for (int j = 0; j != half_complex.size(); ++j) {
+      const int k =  half_complex[j]->coeff_matrix();
+      add_Jop_block(half_complex[j], dfdists[i], trocoeff[k], tiocoeff[k]); 
     }
   }
-#endif
-  
-#if 1
-  pair<const int, const int> aa = make_pair(0,0);
-  pair<const int, const int> ab = make_pair(0,1);
-  pair<const int, const int> ba = make_pair(1,0);
-  pair<const int, const int> bb = make_pair(1,1);
-  pair<const int, const int> l_coord = make_pair(-1, -1);
-
-  pair<const int, const int> xx = make_pair(0,0);
-  pair<const int, const int> xy = make_pair(0,1);
-  pair<const int, const int> xz = make_pair(0,2);
-  pair<const int, const int> yx = make_pair(1,0);
-  pair<const int, const int> yy = make_pair(1,1);
-  pair<const int, const int> yz = make_pair(1,2);
-  pair<const int, const int> zx = make_pair(2,0);
-  pair<const int, const int> zy = make_pair(2,1);
-  pair<const int, const int> zz = make_pair(2,2);
-  pair<const int, const int> eri_coord[6] = {xx, xy, xz, yy, yz, zz};
-  pair<const int, const int> eri_basis1[6] = {aa, aa, ab, aa, ab, aa};
-  pair<const int, const int> eri_basis2[6] = {bb, bb, ba, bb, ba, bb};
-
-#if 1
-  for (int i = 0; i != dfs.size(); ++i) {
-    for (int j = 0; j != small_half_.size(); ++j) {
-      const int k = small_half_[j]->basis().second+2;
-      array<shared_ptr<Matrix>, 2> small_data1 = small_half_[j]->compute_Jop(dfs[i], trocoeff[k], tiocoeff[k], eri_basis1[i], eri_coord[i]); 
-      // TODO target1 and target 2 should be obtained by a better way
-      const tuple<int,int> target1 = make_tuple(eri_basis1[i].first+2, eri_basis1[i].second+2);
-      const tuple<int,int> target2 = make_tuple(eri_basis2[i].first+2, eri_basis2[i].second+2);
-
-      const complex<double> sign = (i == 1 || i == 2) ? -coeff1 : coeff1;
-
-      add_real_block(sscoeff1, n*get<0>(target1), n*get<1>(target1), n, n, small_data1[0]);
-      add_real_block(sscoeffi, n*get<0>(target1), n*get<1>(target1), n, n, small_data1[1]);
-      add_real_block(sscoeff1*sign, n*get<0>(target2), n*get<1>(target2), n, n, small_data1[0]);
-      add_real_block(sscoeffi*sign, n*get<0>(target2), n*get<1>(target2), n, n, small_data1[1]);
-
-      if (i == 1 || i == 2 || i == 4) {
-        add_real_block(sscoeff1, n*get<1>(target1), n*get<0>(target1), n, n, (*small_data1[0]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
-        add_real_block(sscoeffi, n*get<1>(target1), n*get<0>(target1), n, n, (*small_data1[1]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
-        add_real_block(sscoeff1*sign, n*get<1>(target2), n*get<0>(target2), n, n, (*small_data1[0]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
-        add_real_block(sscoeffi*sign, n*get<1>(target2), n*get<0>(target2), n, n, (*small_data1[1]->transpose() * (i == 2 ? 1.0 : -1.0)).data());
-      }
-    }
-  }
-#endif
-#endif
-
-#if 0
-  // Small - Large Transforms
-  for (int i = 0; i != 2; ++i) {
-    for (int j = 0; j != small_half_.size(); ++j) {
-      array<shared_ptr<Matrix>, 2> large_small_data;
-      large_small_data = large_half[i]->form_2index_small(small_half_[j]);
-      //TODO figure out what to do with this damn data
-    }
-  }
-#endif
-
 }
 
-void DFock::compute_half_complex(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, shared_ptr<const DFDist> df, 
-                                 vector<shared_ptr<DFDist> > dfs) {
+void DFock::make_arrays(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, shared_ptr<const DFDist> df, 
+                                 vector<shared_ptr<DFDist> > dfs, array<shared_ptr<DFHalfComplex>, 20>& half_complex, array<shared_ptr<DFData>, 7>& dfdists) {
+
   const int a_basis = 2;
   const int b_basis = 3;
   pair<const int, const int> aa = make_pair(0,0);
@@ -180,43 +93,114 @@ void DFock::compute_half_complex(array<shared_ptr<const Matrix>, 4> rocoeff, arr
   pair<const int, const int> zy = make_pair(2,1);
   pair<const int, const int> zz = make_pair(2,2);
 
-  large_half_[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[0], iocoeff[0], false, l_coord, aa));
-  large_half_[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[1], iocoeff[1], false, l_coord, bb));
+  //large
+  dfdists[0] = shared_ptr<DFData>(new DFData(df, l_coord, aa));
+  //small
+  dfdists[1] = shared_ptr<DFData>(new DFData(dfs[1], xx, aa));
+  dfdists[2] = shared_ptr<DFData>(new DFData(dfs[2], xy, aa));
+  dfdists[3] = shared_ptr<DFData>(new DFData(dfs[3], xz, ab));
+  dfdists[4] = shared_ptr<DFData>(new DFData(dfs[4], yy, aa));
+  dfdists[5] = shared_ptr<DFData>(new DFData(dfs[5], yz, ab));
+  dfdists[6] = shared_ptr<DFData>(new DFData(dfs[6], zz, aa));
+
+  //large
+  half_complex[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[0], iocoeff[0], false, l_coord, aa));
+  half_complex[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[1], iocoeff[1], false, l_coord, bb));
 
   // XX
-  small_half_[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[a_basis], iocoeff[a_basis], false, xx, aa));
-  small_half_[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[b_basis], iocoeff[b_basis], false, xx, bb));
+  half_complex[2] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[2], iocoeff[2], false, xx, aa));
+  half_complex[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[3], iocoeff[3], false, xx, bb));
 
   // XY
-  small_half_[2] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], false, xy, aa));
-  small_half_[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], false, xy, bb));
+  half_complex[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], false, xy, aa));
+  half_complex[5] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], false, xy, bb));
 
   // XZ
-  small_half_[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[a_basis], iocoeff[a_basis], false, xz, ab));
-  small_half_[5] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[b_basis], iocoeff[b_basis], false, xz, ba));
+  half_complex[6] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], false, xz, ab));
+  half_complex[7] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], false, xz, ba));
 
   // YX
-  small_half_[6] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[a_basis], iocoeff[a_basis], true, yx, aa));
-  small_half_[7] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[b_basis], iocoeff[b_basis], true, yx, bb));
+  half_complex[8] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], true, yx, aa));
+  half_complex[9] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], true, yx, bb));
 
   // YY
-  small_half_[8] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[a_basis], iocoeff[a_basis], false, yy, aa));
-  small_half_[9] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[b_basis], iocoeff[b_basis], false, yy, bb));
+  half_complex[10] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[2], iocoeff[2], false, yy, aa));
+  half_complex[11] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[3], iocoeff[3], false, yy, bb));
 
   // YZ
-  small_half_[10] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[a_basis], iocoeff[a_basis], false, yz, ab));
-  small_half_[11] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[b_basis], iocoeff[b_basis], false, yz, ba));
+  half_complex[12] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], false, yz, ab));
+  half_complex[13] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], false, yz, ba));
 
   // ZX
-  small_half_[12] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[a_basis], iocoeff[a_basis], true, zx, ab));
-  small_half_[13] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[b_basis], iocoeff[b_basis], true, zx, ba));
+  half_complex[14] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], true, zx, ab));
+  half_complex[15] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], true, zx, ba));
 
   // ZY
-  small_half_[14] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[a_basis], iocoeff[a_basis], true, zy, ab));
-  small_half_[15] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[b_basis], iocoeff[b_basis], true, zy, ba));
+  half_complex[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], true, zy, ab));
+  half_complex[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], true, zy, ba));
 
   // ZZ
-  small_half_[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[a_basis], iocoeff[a_basis], false, zz, aa));
-  small_half_[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[b_basis], iocoeff[b_basis], false, zz, bb));
+  half_complex[18] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[2], iocoeff[2], false, zz, aa));
+  half_complex[19] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[3], iocoeff[3], false, zz, bb));
+}
+
+void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
+                 shared_ptr<const Matrix> tiocoeff) {
+
+  const int n = geom_->nbasis();
+  shared_ptr<const DFDist> df = dfdata->df();
+  
+  complex<double> coeff1 = dfc->compute_coeff(dfdata->basis(), dfdata->coord());
+  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
+  const tuple<int, int, int, int> index = dfc->compute_index_Jop(dfdata->basis(), dfdata->coord());
+
+  array<shared_ptr<Matrix>, 4> jop;
+  jop[0] = df->compute_Jop(dfc->get_real(), trocoeff, true);
+  jop[1] = df->compute_Jop(dfc->get_imag(), tiocoeff, true);
+  jop[2] = df->compute_Jop(dfc->get_real(), tiocoeff, true);
+  jop[3] = df->compute_Jop(dfc->get_imag(), trocoeff, true);
+  *jop[2] *= -coeff2;
+  *jop[3] *= coeff2;
+
+  for (int i = 0; i != 4; ++i) {
+   //add it twice, once to first basis combo, then once to opposite basis combo
+    add_real_block(coeff1, n * get<0>(index), n * get<1>(index), n, n, jop[i]);
+    add_real_block(coeff1, n * get<2>(index), n * get<3>(index), n, n, jop[i]);
+
+    //if basis1 != basis2, get transpose to fill in opposite corner
+    if (dfdata->cross()) {
+      shared_ptr<Matrix> tjop = jop[i]->transpose();
+      add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, (*tjop * dfdata->cross_coeff()).data());
+      add_real_block(coeff1, n * get<3>(index), n * get<2>(index), n, n, (*tjop * dfdata->cross_coeff()).data());
+    }
+  }
+}
+
+void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2) {
+
+  const int n = geom_->nbasis();
+  complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
+  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
+  const tuple<int, int, int, int> index = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
+
+  array<shared_ptr<Matrix>, 4> exop;
+  exop[0] = (dfc1->get_real())->form_2index(dfc2->get_real(), -1.0); 
+  exop[1] = (dfc1->get_imag())->form_2index(dfc2->get_imag(), -1.0);
+  exop[2] = (dfc1->get_real())->form_2index(dfc2->get_imag(), coeff2); 
+  exop[3] = (dfc1->get_imag())->form_2index(dfc2->get_real(), -coeff2);
+
+  for (int i = 0; i != 4; ++i) {
+    double factor = (i == 2 ? -1.0 : 1.0);
+    shared_ptr<Matrix> texop = exop[i]->transpose(factor);
+    add_real_block(coeff1, n * get<0>(index), n * get<1>(index), n, n, exop[i]);
+    if (get<2>(index) != -1)
+      add_real_block(coeff1, n * get<2>(index), n * get<3>(index), n, n, texop);
+    //cross terms
+    if (dfc1->basis().second != dfc2->basis().second) {
+      add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, texop);
+      if (get<2>(index) != -1)
+        add_real_block(coeff1, n * get<3>(index), n * get<2>(index), n, n, exop[i]);
+    }
+  }
 }
 

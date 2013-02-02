@@ -33,42 +33,36 @@
 #include <src/wfn/reference.h>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
+#include <src/rel/dfdata.h>
 #include <src/df/df.h>
 
 namespace bagel {
 
 class DFHalfComplex {
   protected:
-    std::array<std::shared_ptr<DFHalfDist>, 2> dfdata_;
-    std::array<std::shared_ptr<Matrix>, 2> data_;
+    std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
     std::pair<const int, const int> coord_;
     std::pair<const int, const int> basis_; 
     int dim_;
-    void initialize_data_();
 
   public:
     DFHalfComplex(const std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, 
                   const bool, std::pair<const int, const int>, std::pair<const int, const int>);
 
-    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfdata_; }
-    std::shared_ptr<DFHalfDist> get_real() { return dfdata_[0]; }
-    std::shared_ptr<DFHalfDist> get_imag() { return dfdata_[1]; }
+    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfhalf_; }
+    std::shared_ptr<DFHalfDist> get_real() { return dfhalf_[0]; }
+    std::shared_ptr<DFHalfDist> get_imag() { return dfhalf_[1]; }
     std::pair<const int, const int> coord() { return coord_; }
     std::pair<const int, const int> basis() { return basis_; }
 
-    // form_2index_small can be used with small small quantities and small large quantities
-    // it must take a smal dfdist as its argument
-    std::array<std::shared_ptr<Matrix>, 2> form_2index(std::shared_ptr<DFHalfComplex>);
-    //std::array<std::shared_ptr<Matrix>, 2> form_2index_small(std::shared_ptr<DFHalfComplex>);
-    //std::array<std::shared_ptr<Matrix>, 2> form_2index_large_large(std::shared_ptr<DFHalfComplex>);
-    //std::array<std::shared_ptr<Matrix>, 2> compute_large_Jop(std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
-    std::array<std::shared_ptr<Matrix>, 2> compute_Jop(std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>,
-               std::shared_ptr<const Matrix>, std::pair<const int, const int>, std::pair<const int, const int>);
-    //std::array<std::shared_ptr<Matrix>, 2> compute_small_Jop(std::shared_ptr<const DFDist>, std::array<std::shared_ptr<const Matrix>, 4>,
-    //           std::array<std::shared_ptr<const Matrix>, 4>, std::pair<const int, const int>, std::pair<const int, const int>);
-    std::pair<const int, const double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
-
-//    std::shared_ptr<Reference> conv_to_ref() const override;
+    const std::tuple<int, int, int, int> compute_index_Jop(std::pair<const int, const int>, std::pair<const int, const int>);
+    const std::tuple<int, int, int, int> compute_index_Exop(std::pair<const int, const int>, std::pair<const int, const int>); 
+    std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
+#if 0
+    void add_Jop_block(std::shared_ptr<ZMatrix>, std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    void add_Exop_block(std::shared_ptr<ZMatrix>, std::shared_ptr<DFHalfComplex>);
+#endif
+    const int coeff_matrix() const;
 
 };
 

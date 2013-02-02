@@ -35,21 +35,19 @@
 #include <src/util/zmatrix.h>
 #include <src/df/df.h>
 #include <src/rel/dfhalfcomplex.h>
+#include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>
 
 namespace bagel {
 
 class DFock : public ZMatrix {
   protected:
-    std::array<std::shared_ptr<DFHalfComplex>, 2> large_half_;
-    std::array<std::shared_ptr<DFHalfComplex>, 18> small_half_;
-    //std::vector<std::shared_ptr<Matrix>> rsmall_data_;
-    //std::vector<std::shared_ptr<Matrix>> ismall_data_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const RelHcore> hcore_;
     void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
-    void compute_half_complex(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
-                              std::shared_ptr<const DFDist>, std::vector<std::shared_ptr<DFDist> >);
+    void make_arrays(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
+                              std::shared_ptr<const DFDist>, std::vector<std::shared_ptr<DFDist>>,
+                              std::array<std::shared_ptr<DFHalfComplex>, 20>&, std::array<std::shared_ptr<DFData>, 7>&);
 
     std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 
@@ -63,9 +61,11 @@ class DFock : public ZMatrix {
        for (int i = 0; i != 4; ++i)
          ocoeff_[i] = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim()); 
        two_electron_part(ocoeff_, rhf, scale_ex);
-    };
+    }
+    
+    void add_Jop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>);
 
-//    std::shared_ptr<Reference> conv_to_ref() const override;
 
 };
 

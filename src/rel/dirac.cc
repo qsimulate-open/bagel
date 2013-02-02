@@ -131,7 +131,7 @@ void Dirac::compute() {
     // fock construction
     shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg, nele+nneg)));
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
-#if 1
+#if 0
     fock->hermite();
 #endif
     // distribute
