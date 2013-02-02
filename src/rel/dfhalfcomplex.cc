@@ -46,6 +46,13 @@ DFHalfComplex::DFHalfComplex(const shared_ptr<const DFDist> df, shared_ptr<const
 
   dfhalf_[0] = rhalfbj->apply_J();
   dfhalf_[1] = ihalfbj->apply_J();
+
+#ifdef STORE_SUM_DIFF
+  df2_[0] = dfhalf_[0]->copy();
+  df2_[0]->daxpy(1.0, dfhalf_[1]);
+  df2_[1] = dfhalf_[0]->copy();
+  df2_[1]->daxpy(-1.0, dfhalf_[1]);
+#endif
 }
 
 #if 0

@@ -38,12 +38,19 @@
 
 namespace bagel {
 
+// should be determined by the input (or memory size etc)
+#define STORE_SUM_DIFF
+
 class DFHalfComplex {
   protected:
     std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
     std::pair<const int, const int> coord_;
     std::pair<const int, const int> basis_; 
     int dim_;
+
+#ifdef STORE_SUM_DIFF
+    std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
+#endif
 
   public:
     DFHalfComplex(const std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, 
@@ -58,12 +65,13 @@ class DFHalfComplex {
     const std::tuple<int, int, int, int> compute_index_Jop(std::pair<const int, const int>, std::pair<const int, const int>);
     const std::tuple<int, int, int, int> compute_index_Exop(std::pair<const int, const int>, std::pair<const int, const int>); 
     std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
-#if 0
-    void add_Jop_block(std::shared_ptr<ZMatrix>, std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
-    void add_Exop_block(std::shared_ptr<ZMatrix>, std::shared_ptr<DFHalfComplex>);
-#endif
     const int coeff_matrix() const;
 
+    // for the zgemm3m-like algorithm
+#ifdef STORE_SUM_DIFF
+    std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; } 
+    std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; } 
+#endif
 };
 
 }

@@ -180,30 +180,32 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
   const int n = geom_->nbasis();
   complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
-  complex<double> coeff3 = dfc2->compute_coeff(dfc1->basis(), dfc1->coord());
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  double coeff4 = (coeff3.real() == 0.0 ? -1.0 :1.0);
   const tuple<int, int, int, int> index = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
 
-  array<shared_ptr<Matrix>, 4> exop;
+#ifndef STORE_SUM_DIFF
   // real part
-  exop[0] = dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
-  exop[1] = dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
+  shared_ptr<Matrix> r = dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
+  *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
   // imag part
+  shared_ptr<Matrix> i = dfc1->get_real()->form_2index(dfc2->get_imag(),  1.0);
+  *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), -1.0);
+#else
+  shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), -0.5);
+  shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), -0.5);
+  shared_ptr<Matrix> r(new Matrix(*ss + *dd));
+  shared_ptr<Matrix> i(new Matrix(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0)));
+#endif
+
+  shared_ptr<ZMatrix> a(new ZMatrix(r->ndim(), r->mdim()));
+  a->add_real_block(coeff1, 0, 0, n, n, r);
   complex<double> im(0.0, 1.0);
-  exop[2] = dfc1->get_real()->form_2index(dfc2->get_imag(), coeff2);
-  exop[3] = dfc1->get_imag()->form_2index(dfc2->get_real(), -coeff2);
+  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
+  a->add_real_block(coeff1*im*coeff2, 0, 0, n, n, i);
 
-  ZMatrix a(exop[0]->ndim(), exop[0]->mdim());
-  a.add_real_block(coeff1, 0, 0, n, n, exop[0]);
-  a.add_real_block(coeff1, 0, 0, n, n, exop[1]);
-  a.add_real_block(coeff1*im, 0, 0, n, n, exop[2]);
-  a.add_real_block(coeff1*im, 0, 0, n, n, exop[3]);
-
-  add_block(n * get<0>(index), n * get<1>(index), n, n, a.data());
+  add_block(n * get<0>(index), n * get<1>(index), n, n, a);
 
   if (dfc1 != dfc2) {
-    add_block(n * get<1>(index), n * get<0>(index), n, n, a.transpose_conjg());
+    add_block(n * get<1>(index), n * get<0>(index), n, n, a->transpose_conjg());
   }
 
 }
