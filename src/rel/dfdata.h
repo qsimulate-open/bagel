@@ -34,7 +34,7 @@
 
 namespace bagel {
 
-class DFData : public std::enable_shared_from_this<DFData> {
+class DFData {
   protected:
     std::shared_ptr<const DFDist> dfdata_;
     std::pair<int, int> coord_;
@@ -42,13 +42,10 @@ class DFData : public std::enable_shared_from_this<DFData> {
     bool cross_;
     bool swap_;
 
-    // to make readable
-    enum Comp { x = 0, y = 1, z = 2, l = 3 }; 
-    enum Basis { a = 0, b = 1 }; 
+    DFData(const DFData&, bool , bool);
 
   public:
     DFData(std::shared_ptr<const DFDist>, std::pair<int, int>);
-    DFData(const DFData&, bool , bool);
     DFData(const DFData&) = delete;
     DFData() = delete;
 
@@ -62,6 +59,10 @@ class DFData : public std::enable_shared_from_this<DFData> {
     std::shared_ptr<const DFData> opp_basis();
     std::shared_ptr<const DFData> swap_df();
     std::shared_ptr<const DFData> opp_and_swap();
+
+    // to make readable
+    enum Comp { X = 0, Y = 1, Z = 2, L = 3 }; 
+    enum Basis { a = 0, b = 1 }; 
 
 };
 

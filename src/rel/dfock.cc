@@ -74,6 +74,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
 }
 
+
 void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
                  shared_ptr<const Matrix> tiocoeff) {
 
@@ -111,17 +112,24 @@ void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData
 
 void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2) {
 
+  const double scale_exch = -1.0;
+
   const int n = geom_->nbasis();
   complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
 
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
-    r   =  dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
-    *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
-    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(),  1.0);
-    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), -1.0);
+    // plus
+    r   =  dfc1->get_real()->form_2index(dfc2->get_real(), scale_exch); 
+    // plus = minus * minux. (one from i*i, the other from conjugate)
+    *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), scale_exch);
+    // minus (from conjugate)
+    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(), -scale_exch);
+    // plus
+    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), scale_exch);
   } else {
+    // the same as above
     shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), -0.5);
     shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), -0.5);
     r = shared_ptr<Matrix>(new Matrix(*ss + *dd));

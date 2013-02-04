@@ -74,41 +74,41 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 
 
 complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) {
-  const int large = 3;
   const double tc = 1.0 / (2.0* c__);
-  double power = 0.0;
-  const complex<double> rcoeff (1.0, 0.0);
-  const complex<double> icoeff (0.0, 1.0);
 
   // Xa Xb, Ya Yb, Za Zb respectively
+  const complex<double> rcoeff (1.0, 0.0);
+  const complex<double> icoeff (0.0, 1.0);
+  // TODO check again the y coeff
   complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {icoeff, -icoeff}, {rcoeff, -rcoeff}};
+//complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {-icoeff, icoeff}, {rcoeff, -rcoeff}};
 
-  complex<double> coeff1 = rcoeff, coeff2 = rcoeff, coeff3 = rcoeff, coeff4 = rcoeff;
+  complex<double> prod = 1.0;
+  double power = 0.0;
 
   // |coord_ coord_*)(coord2* coord2)
-  if (coord_.first != large) {
-    power+=2.0;
-    coeff1 = coeff[coord_.first][basis_.first];
-    coeff2 = (coord_.second == 1) ? -coeff[coord_.second][basis_.second] : coeff[coord_.second][basis_.second]; 
+  if (coord_.first != DFData::Comp::L) {
+    power += 2.0;
+    prod *= coeff[coord_.first][basis_.first];
+    // if the bra vector is y, we need -1 for taking the conjugate
+    prod *= (coord_.second == DFData::Comp::Y) ? -coeff[coord_.second][basis_.second] : coeff[coord_.second][basis_.second]; 
   }
-  if (coord2.first != large) {
-    power+=2.0;
-    coeff3 = (coord2.first == 1) ? -coeff[coord2.first][basis2.first] : coeff[coord2.first][basis2.first];
-    coeff4 = coeff[coord2.second][basis2.second];
+  if (coord2.first != DFData::Comp::L) {
+    power += 2.0;
+    // if the bra vector is y, we need -1 for taking the conjugate
+    prod *= (coord2.first == DFData::Comp::Y) ? -coeff[coord2.first][basis2.first] : coeff[coord2.first][basis2.first];
+    prod *= coeff[coord2.second][basis2.second];
   }
 
-  complex<double> out = coeff1 * coeff2 * coeff3 * coeff4 * ::pow(tc, power);
-  return out;
+  return prod * ::pow(tc, power);
 }
 
 
 const tuple<int, int> DFHalfComplex::compute_index_Exop(pair<const int, const int> basis2, pair<const int, const int> coord2) {
 
-  const int large = 3;
-
   // 4x4 ZMatrix starting at 0,0 (large, large) or 0,2n (large, small) or 2n,0 (small, large) or 2n,2n (small)
-  const int start1 = (coord_.first == large ? 0 : 2);
-  const int start2 = (coord2.first == large ? 0 : 2);
+  const int start1 = coord_.first == DFData::Comp::L ? 0 : 2;
+  const int start2 = coord2.first == DFData::Comp::L ? 0 : 2;
   //go from small large to large small or vice versa
   const int index1 = start1 + basis_.second;
   const int index2 = start2 + basis2.second;
@@ -118,9 +118,8 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(pair<const int, const in
 
 
 const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int, const int> basis, pair<const int, const int> coord) {
-  const int large = 3;
   // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
-  int start = (coord.first == large ? 0 : 2);
+  const int start = coord.first == DFData::Comp::L ? 0 : 2;
   // put transposed Matrices in submatrix opposite original
   const int opp1 =  1^basis.first;
   const int opp2 =  1^basis.second;
@@ -128,13 +127,12 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int,
   const int index1 = start + basis.first;
   const int index2 = start + basis.second;
   const int index3 = start + opp1;
-  const int index4 = start + opp2; 
+  const int index4 = start + opp2;
 
   return make_tuple(index1, index2, index3, index4);
 }
 
 
 const int DFHalfComplex::coeff_matrix() const {
-  const int large = 3;
-  return coord_.first == large ? basis_.second : basis_.second + 2;
+  return coord_.first == DFData::Comp::L ? basis_.second : basis_.second + 2;
 }

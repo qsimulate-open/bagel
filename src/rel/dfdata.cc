@@ -33,7 +33,7 @@ DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df),
 
   cross_ = coord_.first != coord_.second;
 
-  if ((coord_.first == Comp::z) ^ (coord_.second == Comp::z))
+  if ((coord_.first == Comp::Z) ^ (coord_.second == Comp::Z))
     basis_ = make_pair(Basis::a, Basis::b);
   else
     basis_ = make_pair(Basis::a, Basis::a);
@@ -54,12 +54,7 @@ DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.
 
 double DFData::cross_coeff() const {
   assert(cross_ == true);
-  if (coord_.first == Comp::y || coord_.second == Comp::y) {
-    return -1.0;
-  } else {
-    return 1.0;
-  }
-
+  return ((coord_.first == Comp::Y) ^ (coord_.second == Comp::Y)) ? -1.0 : 1.0;
 }
 
 
@@ -79,5 +74,5 @@ shared_ptr<const DFData> DFData::opp_and_swap() {
 
 
 const int DFData::coeff_index() const {
-  return coord_.first == Comp::l ? 0 : 2;
+  return coord_.first == Comp::L ? 0 : 2;
 }
