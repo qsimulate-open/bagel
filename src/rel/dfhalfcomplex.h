@@ -38,8 +38,6 @@
 
 namespace bagel {
 
-// should be determined by the input (or memory size etc)
-#define STORE_SUM_DIFF
 
 class DFHalfComplex {
   protected:
@@ -48,9 +46,7 @@ class DFHalfComplex {
     std::pair<const int, const int> basis_; 
     int dim_;
 
-#ifdef STORE_SUM_DIFF
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
-#endif
 
   public:
     DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
@@ -67,11 +63,13 @@ class DFHalfComplex {
     std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
     const int coeff_matrix() const;
 
+    // zaxpy
+    void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);
+
     // for the zgemm3m-like algorithm
-#ifdef STORE_SUM_DIFF
+    void set_sum_diff();
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; } 
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; } 
-#endif
 };
 
 }

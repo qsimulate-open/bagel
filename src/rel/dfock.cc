@@ -59,51 +59,57 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   vector<shared_ptr<DFData>> dfdists;
   make_arrays(rocoeff, iocoeff, dfs, half_complex, dfdists);
 
-  for (int i = 0; i != half_complex.size() ; ++i) {
-    for (int j = i; j != half_complex.size(); ++j) {
-      add_Exop_block(half_complex[i], half_complex[j]); 
+  for (auto& i : dfdists) {
+    for (auto& j : half_complex) {
+      const int k =  j->coeff_matrix();
+      add_Jop_block(j, i, trocoeff[k], tiocoeff[k]); 
     }
   }
 
-  for (int i = 0; i != dfdists.size(); ++i) {
-    for (int j = 0; j != half_complex.size(); ++j) {
-      const int k =  half_complex[j]->coeff_matrix();
-      add_Jop_block(half_complex[j], dfdists[i], trocoeff[k], tiocoeff[k]); 
+  for (auto& i : half_complex)
+    i->set_sum_diff();
+
+  for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
+    for (auto j = i; j != half_complex.end(); ++j) {
+      add_Exop_block(*i, *j); 
     }
   }
+
 }
 
-void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
+void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
                  shared_ptr<const Matrix> tiocoeff) {
 
   const int n = geom_->nbasis();
   shared_ptr<const DFDist> df = dfdata->df();
   
   complex<double> coeff1 = dfc->compute_coeff(dfdata->basis(), dfdata->coord());
+  complex<double> im(0.0, 1.0);
   double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
   const tuple<int, int, int, int> index = dfc->compute_index_Jop(dfdata->basis(), dfdata->coord());
 
-  array<shared_ptr<Matrix>, 4> jop;
-  jop[0] = df->compute_Jop(dfc->get_real(), trocoeff, true);
-  jop[1] = df->compute_Jop(dfc->get_imag(), tiocoeff, true);
-  jop[2] = df->compute_Jop(dfc->get_real(), tiocoeff, true);
-  jop[3] = df->compute_Jop(dfc->get_imag(), trocoeff, true);
-  *jop[2] *= -coeff2;
-  *jop[3] *= coeff2;
+  shared_ptr<Matrix> real, imag;
+  real   =  df->compute_Jop(dfc->get_real(), trocoeff, true);
+  *real += *df->compute_Jop(dfc->get_imag(), tiocoeff, true);
+  imag   =  df->compute_Jop(dfc->get_real(), tiocoeff, true);
+  *imag -= *df->compute_Jop(dfc->get_imag(), trocoeff, true);
+  *imag *= -coeff2;
+  shared_ptr<ZMatrix> dat(new ZMatrix(n, n));
+  dat->add_real_block(coeff1,    0, 0, n, n, real); 
+  dat->add_real_block(coeff1*im, 0, 0, n, n, imag); 
 
-  for (int i = 0; i != 4; ++i) {
-   //add it twice, once to first basis combo, then once to opposite basis combo
-    add_real_block(coeff1, n * get<0>(index), n * get<1>(index), n, n, jop[i]);
-    add_real_block(coeff1, n * get<2>(index), n * get<3>(index), n, n, jop[i]);
+  //add it twice, once to first basis combo, then once to opposite basis combo
+  add_block(n * get<0>(index), n * get<1>(index), n, n, dat);
+  add_block(n * get<2>(index), n * get<3>(index), n, n, dat);
 
-    //if basis1 != basis2, get transpose to fill in opposite corner
-    if (dfdata->cross()) {
-      shared_ptr<Matrix> tjop = jop[i]->transpose();
-      add_real_block(coeff1, n * get<1>(index), n * get<0>(index), n, n, (*tjop * dfdata->cross_coeff()).data());
-      add_real_block(coeff1, n * get<3>(index), n * get<2>(index), n, n, (*tjop * dfdata->cross_coeff()).data());
-    }
+  //if basis1 != basis2, get transpose to fill in opposite corner
+  if (dfdata->cross()) {
+    shared_ptr<ZMatrix> tjop(new ZMatrix(*dat->transpose() * dfdata->cross_coeff()));
+    add_block(n * get<1>(index), n * get<0>(index), n, n, tjop);
+    add_block(n * get<3>(index), n * get<2>(index), n, n, tjop);
   }
 }
+
 
 void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2) {
 
@@ -111,19 +117,19 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
   const tuple<int, int, int, int> index = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
 
-#ifndef STORE_SUM_DIFF
-  // real part
-  shared_ptr<Matrix> r = dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
-  *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
-  // imag part
-  shared_ptr<Matrix> i = dfc1->get_real()->form_2index(dfc2->get_imag(),  1.0);
-  *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), -1.0);
-#else
-  shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), -0.5);
-  shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), -0.5);
-  shared_ptr<Matrix> r(new Matrix(*ss + *dd));
-  shared_ptr<Matrix> i(new Matrix(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0)));
-#endif
+  shared_ptr<Matrix> r, i;
+  if (!dfc1->sum()) {
+    cout << "** warning : using 4 multiplication" << endl;
+    r   =  dfc1->get_real()->form_2index(dfc2->get_real(), -1.0); 
+    *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), -1.0);
+    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(),  1.0);
+    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), -1.0);
+  } else {
+    shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), -0.5);
+    shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), -0.5);
+    r = shared_ptr<Matrix>(new Matrix(*ss + *dd));
+    i = shared_ptr<Matrix>(new Matrix(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0)));
+  }
 
   shared_ptr<ZMatrix> a(new ZMatrix(r->ndim(), r->mdim()));
   a->add_real_block(coeff1, 0, 0, n, n, r);

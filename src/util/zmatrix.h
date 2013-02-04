@@ -155,7 +155,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // first parameter must be "R", "I", or "T" to print real part, imaginary part, or total
     void print(const std::string, const std::string in = "", const size_t size = 10) const;
 
-    std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>);
+    std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>) const;
 
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;
