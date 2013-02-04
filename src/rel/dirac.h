@@ -60,6 +60,7 @@ class Dirac {
     std::shared_ptr<const ZMatrix> coeff_;
 
     void common_init(const std::multimap<std::string, std::string>&);
+    std::shared_ptr<const DistZMatrix> initial_guess(const std::shared_ptr<const DistZMatrix> s12, const std::shared_ptr<const DistZMatrix> hcore) const;
 
   public:
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,

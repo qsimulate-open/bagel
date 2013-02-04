@@ -69,8 +69,6 @@ void Dirac::compute() {
   // make a relativistic version of Coeff class (c.f. coeff.h in src/scf)
   // only implement form_density_rhf..
   const int nele = geom_->nele();
-  const int nrows = geom_->nbasis();
-  const int column = 2 * geom_->nbasis();
   const int nneg = 2 * geom_->nbasis();
 
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
@@ -79,41 +77,7 @@ void Dirac::compute() {
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
 
   // making initial guess
-  shared_ptr<const DistZMatrix> coeff;
-  if (!ref_ && !relref_) {
-    DistZMatrix interm = *s12 % *hcore * *s12;
-    interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
-  } else if (relref_) {
-    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele)));
-    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
-  } else if (ref_->coeff()->ndim() == n) {
-    // non-relativistic reference.
-    const int nocc = ref_->nocc();
-    shared_ptr<ZMatrix> fock;
-    if (nocc*2 == nele) {
-      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
-    } else {
-      const int nocca = ref_->noccA();
-      const int noccb = ref_->noccB();
-      assert(nocca+noccb == nele);
-      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
-    }
-    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
-  } else {
-    assert(ref_->coeff()->ndim() == n*4);
-    throw logic_error("not yet implemented");
-  }
+  shared_ptr<const DistZMatrix> coeff = initial_guess(s12, hcore);
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele, nneg);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -192,3 +156,46 @@ shared_ptr<RelReference> Dirac::conv_to_ref() const {
   return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg, nneg+npos)));
 }
 
+
+shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZMatrix> s12, const shared_ptr<const DistZMatrix> hcore) const {
+  const int n = geom_->nbasis();
+  const int nele = geom_->nele();
+  unique_ptr<double[]> eig(new double[hcore->ndim()]);
+
+  shared_ptr<const DistZMatrix> coeff;
+  if (!ref_ && !relref_) {
+    DistZMatrix interm = *s12 % *hcore * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else if (relref_) {
+    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele)));
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else if (ref_->coeff()->ndim() == n) {
+    // non-relativistic reference.
+    const int nocc = ref_->nocc();
+    shared_ptr<ZMatrix> fock;
+    if (nocc*2 == nele) {
+      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
+      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
+    } else {
+      const int nocca = ref_->noccA();
+      const int noccb = ref_->noccB();
+      assert(nocca+noccb == nele);
+      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
+      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
+      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff));
+    }
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig.get());
+    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+  } else {
+    assert(ref_->coeff()->ndim() == n*4);
+    throw logic_error("not yet implemented");
+  }
+  return coeff;
+}

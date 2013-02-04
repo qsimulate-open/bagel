@@ -31,8 +31,6 @@ using namespace bagel;
 
 DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df), coord_(coord), swap_(false) {
 
-  cross_ = coord_.first != coord_.second;
-
   if ((coord_.first == Comp::Z) ^ (coord_.second == Comp::Z))
     basis_ = make_pair(Basis::a, Basis::b);
   else
@@ -40,7 +38,7 @@ DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df),
 
 }
 
-DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), cross_(o.cross_), swap_(o.swap_) {
+DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), swap_(o.swap_) {
   if (bas) {
     basis_.first ^= 1;
     basis_.second ^= 1;
@@ -53,17 +51,17 @@ DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.
 
 
 double DFData::cross_coeff() const {
-  assert(cross_ == true);
+  assert(cross() == true);
   return ((coord_.first == Comp::Y) ^ (coord_.second == Comp::Y)) ? -1.0 : 1.0;
 }
 
 
-shared_ptr<const DFData> DFData::opp_basis() {
+shared_ptr<const DFData> DFData::opp() {
   return shared_ptr<const DFData>(new DFData(*this, true, false));
 }
 
 
-shared_ptr<const DFData> DFData::swap_df() {
+shared_ptr<const DFData> DFData::swap() {
   return shared_ptr<const DFData>(new DFData(*this, false, true));
 }
 

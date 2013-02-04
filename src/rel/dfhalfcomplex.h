@@ -44,7 +44,6 @@ class DFHalfComplex {
     std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
     std::pair<const int, const int> coord_;
     std::pair<const int, const int> basis_; 
-    int dim_;
 
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 

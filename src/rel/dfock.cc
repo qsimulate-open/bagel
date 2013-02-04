@@ -175,9 +175,9 @@ DFock::make_arrays(array<shared_ptr<const Matrix>,4> rocoeff, array<shared_ptr<c
   for (auto& i : dfdists) {
     const int coeff_index = i->coeff_index();
     half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i,              rocoeff[coeff_index],   iocoeff[coeff_index])));
-    half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->opp_basis(), rocoeff[coeff_index+1], iocoeff[coeff_index+1])));
+    half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->opp(),       rocoeff[coeff_index+1], iocoeff[coeff_index+1])));
     if (i->cross()) {
-      half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->swap_df(),      rocoeff[coeff_index],   iocoeff[coeff_index])));
+      half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->swap(),         rocoeff[coeff_index],   iocoeff[coeff_index])));
       half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->opp_and_swap(), rocoeff[coeff_index+1], iocoeff[coeff_index+1])));
     }
   }

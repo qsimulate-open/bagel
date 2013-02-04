@@ -32,7 +32,6 @@ using namespace bagel;
 DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<const Matrix> rcoeff, shared_ptr<const Matrix> icoeff)
                               : coord_(df->coord()), basis_(df->basis()) {
 
-  dim_ = rcoeff->ndim();
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
 
