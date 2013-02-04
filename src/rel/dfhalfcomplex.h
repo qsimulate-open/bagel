@@ -59,7 +59,7 @@ class DFHalfComplex {
     std::pair<const int, const int> basis() { return basis_; }
 
     const std::tuple<int, int, int, int> compute_index_Jop(std::pair<const int, const int>, std::pair<const int, const int>);
-    const std::tuple<int, int, int, int> compute_index_Exop(std::pair<const int, const int>, std::pair<const int, const int>); 
+    const std::tuple<int, int> compute_index_Exop(std::pair<const int, const int>, std::pair<const int, const int>); 
     std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
     const int coeff_matrix() const;
 

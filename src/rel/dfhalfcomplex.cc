@@ -36,7 +36,7 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<const Matri
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
 
-  if (df->cross()) {
+  if (df->swapped()) {
     rhalfbj = df->df()->compute_half_transform_swap(rcoeff);
     ihalfbj = df->df()->compute_half_transform_swap(icoeff); 
   } else {
@@ -101,57 +101,40 @@ complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, 
   return out;
 }
 
-const tuple<int, int, int, int> DFHalfComplex::compute_index_Exop(pair<const int, const int> basis2, pair<const int, const int> coord2) {
+
+const tuple<int, int> DFHalfComplex::compute_index_Exop(pair<const int, const int> basis2, pair<const int, const int> coord2) {
 
   const int large = 3;
-  int index1, index2, index3, index4;
 
   // 4x4 ZMatrix starting at 0,0 (large, large) or 0,2n (large, small) or 2n,0 (small, large) or 2n,2n (small)
-  int start1 = (coord_.first == large ? 0 : 2);
-  int start2 = (coord2.first == large ? 0 : 2);
+  const int start1 = (coord_.first == large ? 0 : 2);
+  const int start2 = (coord2.first == large ? 0 : 2);
   //go from small large to large small or vice versa
-  index1 = start1 + basis_.second;
-  index2 = start2 + basis2.second;
+  const int index1 = start1 + basis_.second;
+  const int index2 = start2 + basis2.second;
 
-  if (start1 != start2) {
-#if 0
-    int opp1 = (coord_.first == -1 ? 2 : 0);
-    int opp2 = (coord2.first == -1 ? 2 : 0);
-    index3 = opp1 + basis_.second;
-    index4 = opp2 + basis2.second;
-#else
-    index3 = index2;
-    index4 = index1;
-#endif
-  } else {
-    index3 = -1;
-    index4 = -1;
-  }
-  
-  return make_tuple(index1, index2, index3, index4);
+  return make_tuple(index1, index2);
 }
+
 
 const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int, const int> basis, pair<const int, const int> coord) {
   const int large = 3;
-  int index1, index2, index3, index4;
   // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
   int start = (coord.first == large ? 0 : 2);
   // put transposed Matrices in submatrix opposite original
-  int opp1 =  (basis.first  == 0 ? 1 : 0);
-  int opp2 =  (basis.second == 0 ? 1 : 0);
+  const int opp1 =  1^basis.first;
+  const int opp2 =  1^basis.second;
 
-  index1 = start + basis.first;
-  index2 = start + basis.second;
-  index3 = start + opp1;
-  index4 = start + opp2; 
+  const int index1 = start + basis.first;
+  const int index2 = start + basis.second;
+  const int index3 = start + opp1;
+  const int index4 = start + opp2; 
 
   return make_tuple(index1, index2, index3, index4);
 }
 
-const int DFHalfComplex::coeff_matrix() const {
-  
-  const int large = 3;
-  int out = (coord_.first == large ? basis_.second : basis_.second + 2);
 
-  return out;
+const int DFHalfComplex::coeff_matrix() const {
+  const int large = 3;
+  return coord_.first == large ? basis_.second : basis_.second + 2;
 }

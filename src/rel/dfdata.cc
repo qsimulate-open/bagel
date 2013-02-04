@@ -29,28 +29,32 @@
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df), coord_(coord) {
+DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df), coord_(coord), swap_(false) {
 
-  cross_ = true;
-  if (coord_.first == coord_.second) cross_ = false;
+  cross_ = coord_.first != coord_.second;
 
-  if (coord_.first != coord_.second && (coord_.first == 2 || coord_.second == 2))
-    basis_ = make_pair(0,0);
+  if ((coord_.first == Comp::z) ^ (coord_.second == Comp::z))
+    basis_ = make_pair(Basis::a, Basis::b);
   else
-    basis_ = make_pair(0,1);
+    basis_ = make_pair(Basis::a, Basis::a);
 
 }
 
-DFData::DFData(shared_ptr<const DFData> df, bool basis, bool coord) : dfdata_(df->df()), coord_(df->coord()), basis_(df->basis_) {
-  cross_ = true;
-  if (coord_.first == coord_.second) cross_ = false;
-  if (basis) basis_ = df->opp();
-  if (coord) coord_ = df->swap();
+DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), cross_(o.cross_), swap_(o.swap_) {
+  if (bas) {
+    basis_.first ^= 1;
+    basis_.second ^= 1;
+  }
+  if (coo) {
+    std::swap(coord_.first, coord_.second); 
+    swap_ ^= true;
+  }
 }
+
 
 double DFData::cross_coeff() const {
   assert(cross_ == true);
-  if (coord_.first == 1 || coord_.second == 1) {
+  if (coord_.first == Comp::y || coord_.second == Comp::y) {
     return -1.0;
   } else {
     return 1.0;
@@ -58,36 +62,22 @@ double DFData::cross_coeff() const {
 
 }
 
+
 shared_ptr<const DFData> DFData::opp_basis() {
-  return shared_ptr<const DFData>(new DFData(shared_from_this(), true, false));
+  return shared_ptr<const DFData>(new DFData(*this, true, false));
 }
+
 
 shared_ptr<const DFData> DFData::swap_df() {
-  return shared_ptr<const DFData>(new DFData(shared_from_this(), false, true));
+  return shared_ptr<const DFData>(new DFData(*this, false, true));
 }
+
 
 shared_ptr<const DFData> DFData::opp_and_swap() {
-  return shared_ptr<const DFData>(new DFData(shared_from_this(), true, true));
+  return shared_ptr<const DFData>(new DFData(*this, true, true));
 }
 
-pair<int, int> DFData::opp() const {
-  pair<int, int> basis = basis_;
-  basis.first  = 1 - basis.first;
-  basis.second = 1 - basis.second;
-  return basis;
-}
-
-pair<int, int> DFData::swap() const {
-  pair<int, int> coord = coord_;
-  int interm = coord.first;
-  coord.first = coord.second;
-  coord.second = interm;
-  return coord;
-}
 
 const int DFData::coeff_index() const {
-  if (coord_.first == 3)
-    return 0;
-  else
-    return 2;
+  return coord_.first == Comp::l ? 0 : 2;
 }

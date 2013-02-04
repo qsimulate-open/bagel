@@ -40,22 +40,28 @@ class DFData : public std::enable_shared_from_this<DFData> {
     std::pair<int, int> coord_;
     std::pair<int, int> basis_; 
     bool cross_;
+    bool swap_;
+
+    // to make readable
+    enum Comp { x = 0, y = 1, z = 2, l = 3 }; 
+    enum Basis { a = 0, b = 1 }; 
 
   public:
     DFData(std::shared_ptr<const DFDist>, std::pair<int, int>);
-    DFData(std::shared_ptr<const DFData>, bool , bool);
+    DFData(const DFData&, bool , bool);
+    DFData(const DFData&) = delete;
+    DFData() = delete;
 
     std::shared_ptr<const DFDist> df() const { return dfdata_; }
     std::pair<int, int> coord() const { return coord_; }
     std::pair<int, int> basis() const { return basis_; }
     bool cross() const { return cross_; }
+    bool swapped() const { return swap_; }
     double cross_coeff() const;
     const int coeff_index() const;
     std::shared_ptr<const DFData> opp_basis();
     std::shared_ptr<const DFData> swap_df();
     std::shared_ptr<const DFData> opp_and_swap();
-    std::pair<int, int> opp() const;
-    std::pair<int, int> swap() const;
 
 };
 
