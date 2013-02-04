@@ -47,71 +47,31 @@ DFHalfComplex::DFHalfComplex(const shared_ptr<const DFDist> df, shared_ptr<const
   dfhalf_[0] = rhalfbj->apply_J();
   dfhalf_[1] = ihalfbj->apply_J();
 
-#ifdef STORE_SUM_DIFF
+}
+
+
+void DFHalfComplex::set_sum_diff() {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->daxpy(1.0, dfhalf_[1]);
   df2_[1] = dfhalf_[0]->copy();
   df2_[1]->daxpy(-1.0, dfhalf_[1]);
-#endif
 }
 
-#if 0
-void DFHalfComplex::add_Exop_block(shared_ptr<ZMatrix> dfock, shared_ptr<DFHalfComplex> dfc) {
 
-  complex<double> coeff1 = compute_coeff(dfc->basis(), dfc->coord());
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  const tuple<int, int, int, int> index = compute_index_Exop(dfc->basis(), dfc->coord());
-
-  array<shared_ptr<Matrix>, 4> exop;
-  *exop[0] = *dfhalf_[0]->form_2index(dfc->get_real(), -1.0); 
-  *exop[1] = *dfhalf_[1]->form_2index(dfc->get_imag(), -1.0);
-  *exop[2] = *dfhalf_[0]->form_2index(dfc->get_imag(), coeff2); 
-  *exop[3] = *dfhalf_[1]->form_2index(dfc->get_real(), -coeff2);
-
-  for (int i = 0; i != 4; ++i) {
-    double factor = (i == 2 ? -1.0 : 1.0);
-    shared_ptr<Matrix> texop = exop[i]->transpose(factor);
-    dfock->add_real_block(coeff1, dim_ * get<0>(index), dim_ * get<1>(index), dim_, dim_, exop[i]);
-    if (get<2>(index) != -1)
-      dfock->add_real_block(coeff1, dim_ * get<2>(index), dim_ * get<3>(index), dim_, dim_, texop);
-    //cross terms
-    if (dfc->basis().second != basis_.second) {
-      dfock->add_real_block(coeff1, dim_ * get<1>(index), dim_ * get<0>(index), dim_, dim_, texop);
-      if (get<2>(index) != -1)
-        dfock->add_real_block(coeff1, dim_ * get<3>(index), dim_ * get<2>(index), dim_, dim_, exop[i]);
-    }
+void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o) {
+  if (imag(a) == 0.0) {
+    const double fac = real(a);
+    dfhalf_[0]->daxpy(fac, o->dfhalf_[0]);
+    dfhalf_[1]->daxpy(fac, o->dfhalf_[1]);
+  } else if (real(a) == 0.0) {
+    const double fac = imag(a);
+    dfhalf_[0]->daxpy(-fac, o->dfhalf_[1]);
+    dfhalf_[1]->daxpy( fac, o->dfhalf_[0]);
+  } else {
+    throw logic_error("DFHalfComplex::zaxpy can be called by real or imaginary coeff (and not complex)");
   }
 }
 
-void DFHalfComplex::add_Jop_block(shared_ptr<ZMatrix> dfock, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
-                 shared_ptr<const Matrix> tiocoeff) {
-
-  shared_ptr<const DFDist> df = dfdata->df();
-  
-  complex<double> coeff1 = compute_coeff(dfdata->basis(), dfdata->coord());
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  const tuple<int, int, int, int> index = compute_index_Jop(dfdata->basis(), dfdata->coord());
-
-  array<shared_ptr<Matrix>, 4> jop;
-  *jop[0] = *df->compute_Jop(dfhalf_[0], trocoeff, true);
-  *jop[1] = *df->compute_Jop(dfhalf_[1], tiocoeff, true);
-  *jop[2] = *df->compute_Jop(dfhalf_[0], tiocoeff, true) * (-1.0) * coeff2;
-  *jop[3] = *df->compute_Jop(dfhalf_[1], trocoeff, true) * coeff2;
-
-  for (int i = 0; i != 4; ++i) {
-   //add it twice, once to first basis combo, then once to opposite basis combo
-    dfock->add_real_block(coeff1, dim_ * get<0>(index), dim_ * get<1>(index), dim_, dim_, jop[i]);
-    dfock->add_real_block(coeff1, dim_ * get<2>(index), dim_ * get<3>(index), dim_, dim_, jop[i]);
-
-    //if basis1 != basis2, get transpose to fill in opposite corner
-    if (dfdata->cross()) {
-      shared_ptr<Matrix> tjop = jop[i]->transpose();
-      dfock->add_real_block(coeff1, dim_ * get<1>(index), dim_ * get<0>(index), dim_, dim_, (*tjop * dfdata->cross_coeff()).data());
-      dfock->add_real_block(coeff1, dim_ * get<3>(index), dim_ * get<2>(index), dim_, dim_, (*tjop * dfdata->cross_coeff()).data());
-    }
-  }
-}
-#endif
 
 complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) {
   const double tc = 1.0 / (2.0* c__);
