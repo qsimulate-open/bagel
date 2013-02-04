@@ -171,10 +171,10 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 }
 
 
-tuple<vector<shared_ptr<DFHalfComplex>>, vector<shared_ptr<DFData>>>
+tuple<list<shared_ptr<DFHalfComplex>>, list<shared_ptr<DFData>>>
 DFock::make_arrays(array<shared_ptr<const Matrix>,4> rocoeff, array<shared_ptr<const Matrix>,4> iocoeff, vector<shared_ptr<const DFDist>> dfs) {
 
-  vector<shared_ptr<DFData>> dfdists;
+  list<shared_ptr<DFData>> dfdists;
   auto k = dfs.begin();
   for (int i = 0; i != 3; ++i) {
     for (int j = i; j != 3; ++j) {
@@ -185,7 +185,7 @@ DFock::make_arrays(array<shared_ptr<const Matrix>,4> rocoeff, array<shared_ptr<c
   dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(3,3))));
   assert(k == dfs.end());
 
-  vector<shared_ptr<DFHalfComplex>> half_complex; 
+  list<shared_ptr<DFHalfComplex>> half_complex; 
   for (auto& i : dfdists) {
     const int coeff_index = i->coeff_index();
     half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i,              rocoeff[coeff_index],   iocoeff[coeff_index])));
