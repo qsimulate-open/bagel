@@ -78,7 +78,7 @@ shared_ptr<ZMatrix> ZMatrix::slice(const int start, const int fence) const {
   shared_ptr<ZMatrix> out(new ZMatrix(ndim_, fence - start));
   assert(fence <= ndim_);
 
-  copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
+  copy(element_ptr(0, start), element_ptr(0, fence), out->data());
   return out;
 }
 
@@ -643,10 +643,10 @@ void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, cons
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) {
+shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) const {
   shared_ptr<ZMatrix> out(new ZMatrix(in->ndim(), in->mdim()));
   for (int i = 0; i != in->size(); ++i) {
-    out->data_[i] = (in->data(i), 0);
+    out->data_[i] = std::complex<double>(in->data(i), 0);
   }
   return out;
 }
@@ -673,7 +673,7 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
 shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
   shared_ptr<ZMatrix> out(new ZMatrix(nsize, msize));
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-    copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
+    copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));
   return out;
 }
 
