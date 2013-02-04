@@ -68,7 +68,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ++j) {
-      add_Exop_block(*i, *j); 
+      add_Exop_block(*i, *j, scale_exchange); 
     }
   }
 
@@ -76,23 +76,25 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
 
 void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
-                 shared_ptr<const Matrix> tiocoeff) {
+                          shared_ptr<const Matrix> tiocoeff) {
 
   const int n = geom_->nbasis();
-  shared_ptr<const DFDist> df = dfdata->df();
-  
-  complex<double> coeff1 = dfc->compute_coeff(dfdata->basis(), dfdata->coord());
-  complex<double> im(0.0, 1.0);
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  const tuple<int, int, int, int> index = dfc->compute_index_Jop(dfdata->basis(), dfdata->coord());
 
+  const tuple<int, int, int, int> index = dfc->compute_index_Jop(dfdata);
+
+  shared_ptr<const DFDist> df = dfdata->df();
   shared_ptr<Matrix> real, imag;
   real   =  df->compute_Jop(dfc->get_real(), trocoeff, true);
   *real += *df->compute_Jop(dfc->get_imag(), tiocoeff, true);
   imag   =  df->compute_Jop(dfc->get_real(), tiocoeff, true);
   *imag -= *df->compute_Jop(dfc->get_imag(), trocoeff, true);
+
+  complex<double> coeff1 = dfc->compute_coeff(dfdata);
+  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
   *imag *= -coeff2;
+
   shared_ptr<ZMatrix> dat(new ZMatrix(n, n));
+  complex<double> im(0.0, 1.0);
   dat->add_real_block(coeff1,    0, 0, n, n, real); 
   dat->add_real_block(coeff1*im, 0, 0, n, n, imag); 
 
@@ -110,12 +112,11 @@ void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData
 
 
 
-void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2) {
+void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale) {
 
-  const double scale_exch = -1.0;
-
+  // minus from -1 in the definition of exchange
+  const double scale_exch = - scale;
   const int n = geom_->nbasis();
-  complex<double> coeff1 = dfc1->compute_coeff(dfc2->basis(), dfc2->coord());
 
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
@@ -137,13 +138,15 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   }
 
   shared_ptr<ZMatrix> a(new ZMatrix(r->ndim(), r->mdim()));
+
+  complex<double> coeff1 = dfc1->compute_coeff(dfc2);
   a->add_real_block(coeff1, 0, 0, n, n, r);
   complex<double> im(0.0, 1.0);
   double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
   a->add_real_block(coeff1*im*coeff2, 0, 0, n, n, i);
 
   int index0, index1;
-  tie(index0, index1) = dfc1->compute_index_Exop(dfc2->basis(), dfc2->coord());
+  tie(index0, index1) = dfc1->compute_index_Exop(dfc2);
 
   add_block(n*index0, n*index1, n, n, a);
 

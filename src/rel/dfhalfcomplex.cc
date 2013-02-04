@@ -73,7 +73,21 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 }
 
 
-complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) {
+complex<double> DFHalfComplex::compute_coeff(shared_ptr<const DFData> o) const {
+  const pair<const int, const int> basis2 = o->basis();
+  const pair<const int, const int> coord2 = o->coord();
+  return compute_coeff(basis2, coord2);
+}
+
+
+complex<double> DFHalfComplex::compute_coeff(shared_ptr<const DFHalfComplex> o) const {
+  const pair<const int, const int> basis2 = o->basis();
+  const pair<const int, const int> coord2 = o->coord();
+  return compute_coeff(basis2, coord2);
+}
+
+
+complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) const {
   const double tc = 1.0 / (2.0* c__);
 
   // Xa Xb, Ya Yb, Za Zb respectively
@@ -104,7 +118,9 @@ complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, 
 }
 
 
-const tuple<int, int> DFHalfComplex::compute_index_Exop(pair<const int, const int> basis2, pair<const int, const int> coord2) {
+const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfComplex> o) const {
+  const pair<const int, const int> basis2 = o->basis();
+  const pair<const int, const int> coord2 = o->coord();
 
   // 4x4 ZMatrix starting at 0,0 (large, large) or 0,2n (large, small) or 2n,0 (small, large) or 2n,2n (small)
   const int start1 = coord_.first == DFData::Comp::L ? 0 : 2;
@@ -117,7 +133,9 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(pair<const int, const in
 }
 
 
-const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int, const int> basis, pair<const int, const int> coord) {
+const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(shared_ptr<const DFData> o) const {
+  const pair<const int, const int> basis = o->basis();
+  const pair<const int, const int> coord = o->coord();
   // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
   const int start = coord.first == DFData::Comp::L ? 0 : 2;
   // put transposed Matrices in submatrix opposite original

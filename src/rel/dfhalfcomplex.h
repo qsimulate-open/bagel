@@ -48,19 +48,22 @@ class DFHalfComplex {
 
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 
+    std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>) const;
+
   public:
     DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
                   
 
-    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfhalf_; }
-    std::shared_ptr<DFHalfDist> get_real() { return dfhalf_[0]; }
-    std::shared_ptr<DFHalfDist> get_imag() { return dfhalf_[1]; }
-    std::pair<const int, const int> coord() { return coord_; }
-    std::pair<const int, const int> basis() { return basis_; }
+    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
+    std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
+    std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
+    std::pair<const int, const int> coord() const { return coord_; }
+    std::pair<const int, const int> basis() const { return basis_; }
 
-    const std::tuple<int, int, int, int> compute_index_Jop(std::pair<const int, const int>, std::pair<const int, const int>);
-    const std::tuple<int, int> compute_index_Exop(std::pair<const int, const int>, std::pair<const int, const int>); 
-    std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>);
+    const std::tuple<int, int, int, int> compute_index_Jop(std::shared_ptr<const DFData> o) const;
+    const std::tuple<int, int>           compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
+    std::complex<double>                 compute_coeff(std::shared_ptr<const DFData> o) const;
+    std::complex<double>                 compute_coeff(std::shared_ptr<const DFHalfComplex> o) const;
     const int coeff_matrix() const;
 
     // zaxpy

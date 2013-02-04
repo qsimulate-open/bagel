@@ -65,7 +65,7 @@ class DFock : public ZMatrix {
     }
     
     void add_Jop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
-    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>);
+    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
 
 
 };
