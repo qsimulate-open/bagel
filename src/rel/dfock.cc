@@ -52,8 +52,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
-  vector<shared_ptr<DFHalfComplex>> half_complex;
-  vector<shared_ptr<DFData>> dfdists;
+  list<shared_ptr<DFHalfComplex>> half_complex;
+  list<shared_ptr<DFData>> dfdists;
   tie(half_complex, dfdists) = make_arrays(rocoeff, iocoeff, dfs);
 
   for (auto& i : dfdists) {
@@ -65,6 +65,20 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 
   for (auto& i : half_complex)
     i->set_sum_diff();
+
+#if 0
+  for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
+    for (auto j = i; j != half_complex.end(); ) {
+      if (i != j && i->factorizable(j)) {
+        // TODO compute fac
+        i->zaxpy(fac, j); 
+        j = half_complex.erase(j);
+      } else {
+        ++j;
+      } 
+    }
+  }
+#endif
 
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ++j) {
