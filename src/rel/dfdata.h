@@ -34,21 +34,28 @@
 
 namespace bagel {
 
-class DFData {
+class DFData : public std::enable_shared_from_this<DFData> {
   protected:
     std::shared_ptr<const DFDist> dfdata_;
-    std::pair<const int, const int> coord_;
-    std::pair<const int, const int> basis_; 
+    std::pair<int, int> coord_;
+    std::pair<int, int> basis_; 
     bool cross_;
 
   public:
-    DFData(std::shared_ptr<const DFDist>, std::pair<const int, const int>, std::pair<const int, const int>);
+    DFData(std::shared_ptr<const DFDist>, std::pair<int, int>);
+    DFData(std::shared_ptr<const DFData>, bool , bool);
 
     std::shared_ptr<const DFDist> df() const { return dfdata_; }
-    std::pair<const int, const int> coord() const { return coord_; }
-    std::pair<const int, const int> basis() const { return basis_; }
+    std::pair<int, int> coord() const { return coord_; }
+    std::pair<int, int> basis() const { return basis_; }
     bool cross() const { return cross_; }
     double cross_coeff() const;
+    const int coeff_index() const;
+    std::shared_ptr<const DFData> opp_basis();
+    std::shared_ptr<const DFData> swap_df();
+    std::shared_ptr<const DFData> opp_and_swap();
+    std::pair<int, int> opp() const;
+    std::pair<int, int> swap() const;
 
 };
 

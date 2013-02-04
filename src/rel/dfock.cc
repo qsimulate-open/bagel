@@ -38,8 +38,9 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   shared_ptr<const DFDist> df = geom_->df();
   shared_ptr<const DFDist> dfs_total = geom_->dfs();
 
-  // get individual df dist objects for each block
-  vector<shared_ptr<DFDist>> dfs = dfs_total->split_blocks();
+  // get individual df dist objects for each block and add df to dfs
+  vector<shared_ptr<const DFDist>> dfs = dfs_total->split_blocks();
+  dfs.push_back(df);
 
   // Separate Coefficients into real and imaginary
   array<shared_ptr<const Matrix>, 4> rocoeff;
@@ -55,8 +56,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   }
 
   array<shared_ptr<DFHalfComplex>, 20> half_complex;
-  array<shared_ptr<DFData>, 7> dfdists;
-  make_arrays(rocoeff, iocoeff, df, dfs, half_complex, dfdists);
+  vector<shared_ptr<DFData>> dfdists;
+  make_arrays(rocoeff, iocoeff, dfs, half_complex, dfdists);
 
   for (int i = 0; i != half_complex.size() ; ++i) {
     for (int j = i; j != half_complex.size(); ++j) {
@@ -72,79 +73,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   }
 }
 
-void DFock::make_arrays(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, shared_ptr<const DFDist> df, 
-                                 vector<shared_ptr<DFDist> > dfs, array<shared_ptr<DFHalfComplex>, 20>& half_complex, array<shared_ptr<DFData>, 7>& dfdists) {
-
-  const int a_basis = 2;
-  const int b_basis = 3;
-  pair<const int, const int> aa = make_pair(0,0);
-  pair<const int, const int> ab = make_pair(0,1);
-  pair<const int, const int> ba = make_pair(1,0);
-  pair<const int, const int> bb = make_pair(1,1);
-  pair<const int, const int> l_coord = make_pair(-1, -1);
-
-  pair<const int, const int> xx = make_pair(0,0);
-  pair<const int, const int> xy = make_pair(0,1);
-  pair<const int, const int> xz = make_pair(0,2);
-  pair<const int, const int> yx = make_pair(1,0);
-  pair<const int, const int> yy = make_pair(1,1);
-  pair<const int, const int> yz = make_pair(1,2);
-  pair<const int, const int> zx = make_pair(2,0);
-  pair<const int, const int> zy = make_pair(2,1);
-  pair<const int, const int> zz = make_pair(2,2);
-
-  //large
-  dfdists[0] = shared_ptr<DFData>(new DFData(df, l_coord, aa));
-  //small
-  dfdists[1] = shared_ptr<DFData>(new DFData(dfs[0], xx, aa));
-  dfdists[2] = shared_ptr<DFData>(new DFData(dfs[1], xy, aa));
-  dfdists[3] = shared_ptr<DFData>(new DFData(dfs[2], xz, ab));
-  dfdists[4] = shared_ptr<DFData>(new DFData(dfs[3], yy, aa));
-  dfdists[5] = shared_ptr<DFData>(new DFData(dfs[4], yz, ab));
-  dfdists[6] = shared_ptr<DFData>(new DFData(dfs[5], zz, aa));
-
-  //large
-  half_complex[0] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[0], iocoeff[0], false, l_coord, aa));
-  half_complex[1] = shared_ptr<DFHalfComplex>(new DFHalfComplex(df, rocoeff[1], iocoeff[1], false, l_coord, bb));
-
-  // XX
-  half_complex[2] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[2], iocoeff[2], false, xx, aa));
-  half_complex[3] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[0], rocoeff[3], iocoeff[3], false, xx, bb));
-
-  // XY
-  half_complex[4] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], false, xy, aa));
-  half_complex[5] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], false, xy, bb));
-
-  // XZ
-  half_complex[6] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], false, xz, ab));
-  half_complex[7] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], false, xz, ba));
-
-  // YX
-  half_complex[8] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[2], iocoeff[2], true, yx, aa));
-  half_complex[9] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[1], rocoeff[3], iocoeff[3], true, yx, bb));
-
-  // YY
-  half_complex[10] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[2], iocoeff[2], false, yy, aa));
-  half_complex[11] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[3], rocoeff[3], iocoeff[3], false, yy, bb));
-
-  // YZ
-  half_complex[12] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], false, yz, ab));
-  half_complex[13] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], false, yz, ba));
-
-  // ZX
-  half_complex[14] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[2], iocoeff[2], true, zx, ab));
-  half_complex[15] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[2], rocoeff[3], iocoeff[3], true, zx, ba));
-
-  // ZY
-  half_complex[16] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[2], iocoeff[2], true, zy, ab));
-  half_complex[17] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[4], rocoeff[3], iocoeff[3], true, zy, ba));
-
-  // ZZ
-  half_complex[18] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[2], iocoeff[2], false, zz, aa));
-  half_complex[19] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfs[5], rocoeff[3], iocoeff[3], false, zz, bb));
-}
-
-void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
+void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
                  shared_ptr<const Matrix> tiocoeff) {
 
   const int n = geom_->nbasis();
@@ -206,6 +135,31 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
   if (dfc1 != dfc2) {
     add_block(n * get<1>(index), n * get<0>(index), n, n, a->transpose_conjg());
+  }
+
+}
+
+void DFock::make_arrays(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff,
+                                 vector<shared_ptr<const DFDist> > dfs, array<shared_ptr<DFHalfComplex>, 20>& half_complex, vector<shared_ptr<DFData>> dfdists) {
+
+  for (int i = 0, k = 0; i != 4; ++i) {
+    for (int j = i; j != 4; ++j) {
+      if (j == 3 && i != 3) break;
+      pair<const int, const int> coord = make_pair(i,j);
+      shared_ptr<DFData> dfcoord(new DFData(dfs[k], coord));
+      dfdists.push_back(dfcoord);
+      k++;
+    }
+  }
+
+  for (int i = 0, j = 0; i != dfdists.size(); ++i, ++j) {
+    int coeff_index = dfdists[i]->coeff_index();
+    half_complex[j] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfdists[i], rocoeff[coeff_index], iocoeff[coeff_index]));
+    half_complex[++j] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfdists[i]->opp_basis(), rocoeff[coeff_index+1], iocoeff[coeff_index+1]));
+    if (dfdists[i]->cross()) {
+      half_complex[++j] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfdists[i]->swap_df(), rocoeff[coeff_index], iocoeff[coeff_index]));
+      half_complex[++j] = shared_ptr<DFHalfComplex>(new DFHalfComplex(dfdists[i]->opp_and_swap(), rocoeff[coeff_index+1], iocoeff[coeff_index+1]));
+    }
   }
 
 }

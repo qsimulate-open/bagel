@@ -141,11 +141,11 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const { return compute_half_transform_swap(c->data(), c->mdim()); }
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<DFDist>> split_blocks() const {
-      std::vector<std::shared_ptr<DFDist>> out;
+    std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
+      std::vector<std::shared_ptr<const DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
-        out.push_back(std::shared_ptr<DFDist>(new DFDist(nindex1_, naux_, i, df_, data2_)));
+        out.push_back(std::shared_ptr<const DFDist>(new DFDist(nindex1_, naux_, i, df_, data2_)));
       return out;
     }
 

@@ -53,8 +53,8 @@ class DFHalfComplex {
 #endif
 
   public:
-    DFHalfComplex(const std::shared_ptr<const DFDist>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, 
-                  const bool, std::pair<const int, const int>, std::pair<const int, const int>);
+    DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+                  
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() { return dfhalf_[0]; }

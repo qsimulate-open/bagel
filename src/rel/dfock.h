@@ -46,8 +46,8 @@ class DFock : public ZMatrix {
     std::shared_ptr<const RelHcore> hcore_;
     void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
     void make_arrays(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
-                              std::shared_ptr<const DFDist>, std::vector<std::shared_ptr<DFDist>>,
-                              std::array<std::shared_ptr<DFHalfComplex>, 20>&, std::array<std::shared_ptr<DFData>, 7>&);
+                              std::vector<std::shared_ptr<const DFDist>>, 
+                              std::array<std::shared_ptr<DFHalfComplex>, 20>&, std::vector<std::shared_ptr<DFData>>);
 
     std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 
@@ -63,7 +63,7 @@ class DFock : public ZMatrix {
        two_electron_part(ocoeff_, rhf, scale_ex);
     }
     
-    void add_Jop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    void add_Jop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>);
 
 

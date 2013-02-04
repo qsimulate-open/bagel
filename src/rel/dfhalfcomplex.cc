@@ -29,19 +29,19 @@
 using namespace std;
 using namespace bagel;
 
-DFHalfComplex::DFHalfComplex(const shared_ptr<const DFDist> df, shared_ptr<const Matrix> rcoeff, shared_ptr<const Matrix> icoeff, 
-                             const bool swap, pair<const int, const int> coord, pair<const int, const int> basis) : coord_(coord), basis_(basis) {
+DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<const Matrix> rcoeff, shared_ptr<const Matrix> icoeff)
+                              : coord_(df->coord()), basis_(df->basis()) {
 
   dim_ = rcoeff->ndim();
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
 
-  if (swap == true) {
-    rhalfbj = df->compute_half_transform_swap(rcoeff);
-    ihalfbj = df->compute_half_transform_swap(icoeff); 
+  if (df->cross()) {
+    rhalfbj = df->df()->compute_half_transform_swap(rcoeff);
+    ihalfbj = df->df()->compute_half_transform_swap(icoeff); 
   } else {
-    rhalfbj = df->compute_half_transform(rcoeff);
-    ihalfbj = df->compute_half_transform(icoeff); 
+    rhalfbj = df->df()->compute_half_transform(rcoeff);
+    ihalfbj = df->df()->compute_half_transform(icoeff); 
   }
 
   dfhalf_[0] = rhalfbj->apply_J();
@@ -114,6 +114,7 @@ void DFHalfComplex::add_Jop_block(shared_ptr<ZMatrix> dfock, shared_ptr<const DF
 #endif
 
 complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) {
+  const int large = 3;
   const double tc = 1.0 / (2.0* c__);
   double power = 0.0;
   const complex<double> rcoeff (1.0, 0.0);
@@ -125,12 +126,12 @@ complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, 
   complex<double> coeff1 = rcoeff, coeff2 = rcoeff, coeff3 = rcoeff, coeff4 = rcoeff;
 
   // |coord_ coord_*)(coord2* coord2)
-  if (coord_.first != -1) {
+  if (coord_.first != large) {
     power+=2.0;
     coeff1 = coeff[coord_.first][basis_.first];
     coeff2 = (coord_.second == 1) ? -coeff[coord_.second][basis_.second] : coeff[coord_.second][basis_.second]; 
   }
-  if (coord2.first != -1) {
+  if (coord2.first != large) {
     power+=2.0;
     coeff3 = (coord2.first == 1) ? -coeff[coord2.first][basis2.first] : coeff[coord2.first][basis2.first];
     coeff4 = coeff[coord2.second][basis2.second];
@@ -142,11 +143,12 @@ complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, 
 
 const tuple<int, int, int, int> DFHalfComplex::compute_index_Exop(pair<const int, const int> basis2, pair<const int, const int> coord2) {
 
+  const int large = 3;
   int index1, index2, index3, index4;
 
   // 4x4 ZMatrix starting at 0,0 (large, large) or 0,2n (large, small) or 2n,0 (small, large) or 2n,2n (small)
-  int start1 = (coord_.first == -1 ? 0 : 2);
-  int start2 = (coord2.first == -1 ? 0 : 2);
+  int start1 = (coord_.first == large ? 0 : 2);
+  int start2 = (coord2.first == large ? 0 : 2);
   //go from small large to large small or vice versa
   index1 = start1 + basis_.second;
   index2 = start2 + basis2.second;
@@ -170,9 +172,10 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Exop(pair<const int
 }
 
 const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int, const int> basis, pair<const int, const int> coord) {
+  const int large = 3;
   int index1, index2, index3, index4;
   // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
-  int start = (coord.first == -1 ? 0 : 2);
+  int start = (coord.first == large ? 0 : 2);
   // put transposed Matrices in submatrix opposite original
   int opp1 =  (basis.first  == 0 ? 1 : 0);
   int opp2 =  (basis.second == 0 ? 1 : 0);
@@ -187,7 +190,8 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(pair<const int,
 
 const int DFHalfComplex::coeff_matrix() const {
   
-  int out = (coord_.first == -1 ? basis_.second : basis_.second + 2);
+  const int large = 3;
+  int out = (coord_.first == large ? basis_.second : basis_.second + 2);
 
   return out;
 }
