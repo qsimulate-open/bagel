@@ -31,6 +31,7 @@ using namespace bagel;
 
 
 void BreitBatch::perform_VRR() {
+#ifndef LIBINT_INTERFACE
   const int acsize = asize_ * csize_;
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
@@ -5538,5 +5539,5 @@ void BreitBatch::perform_VRR() {
     } break;
   }
   stack_->release(rank_*isize*9, workx);
-
+#endif
 }
