@@ -9,6 +9,6 @@ rysint.cc eribatch_base.cc naibatch_base.cc eribatch.cc breitbatch.cc gradbatch.
 compute.cc bcompute.cc gcompute.cc ncompute.cc gncompute.cc scompute.cc contraction.cc vrr_optim.cc bvrr_optim.cc sort.cc srootlist.cc svrr_optim.cc usvrr_optim.cc \
 rys.f hrrlist.cc sortlist.cc start_up_slater.f90 \
 carsphlist.cc sort_sph.cc \
-smalleribatch.cc smallnaibatch.cc \
+smalleribatch.cc smallnaibatch.cc mixederibatch.cc\
 libint.cc glibint.cc
 AM_CXXFLAGS=-I$(top_srcdir)
