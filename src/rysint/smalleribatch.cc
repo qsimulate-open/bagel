@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <src/rysint/libint.h>
 #include <src/rysint/smalleribatch.h>
 
 using namespace std;
@@ -113,6 +114,7 @@ void SmallERIBatch::eri_compute(double* eri) const {
   const shared_ptr<const Shell> dummy(new Shell(shells_[0]->spherical()));
   Address m(s0size, a1, a2);
 
+#ifndef LIBINT_INTERFACE
   {
     shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_));
     eric->compute();
@@ -137,4 +139,30 @@ void SmallERIBatch::eri_compute(double* eri) const {
     for (int i = 0; i != a2size_dec; i++)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
   }
+#else
+  {
+    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}));
+    eric->compute();
+    for (int i = 0; i != a2size_inc; i++)
+      copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
+  }
+  if (shells_[1]->aux_dec() && shells_[2]->aux_dec()) {
+    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}));
+    eric->compute();
+    for (int i = 0; i != a2size_dec; i++)
+      copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_inc+i));
+  }
+  if (shells_[1]->aux_dec()) {
+    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}));
+    eric->compute();
+    for (int i = 0; i != a2size_inc; i++)
+      copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc, i));
+  }
+  if (shells_[2]->aux_dec()) {
+    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}));
+    eric->compute();
+    for (int i = 0; i != a2size_dec; i++)
+      copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
+  }
+#endif
 }
