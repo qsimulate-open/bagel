@@ -39,7 +39,6 @@ SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, co
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
   size_alloc_ = size_block_ * 6;
   data_ = stack_->get(size_alloc_);
-  fill(data_, data_+size_alloc_, 0.0);
 }
 
 
@@ -73,14 +72,12 @@ void SmallERIBatch::compute() {
   double* ints = stack_->get(s0size*a1*s2size);
 
   array<double* const,6> data = {{data_, data_+size_block_, data_+size_block_*2, data_+size_block_*3, data_+size_block_*4, data_+size_block_*5}};
-  array<int,3> b = {{0,1,2}};
-  array<int,6> f = {{0,0,0,2,2,3}};
 
   for (int i = 0; i != 3; ++i) {
     dgemm_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->small(i)->data(), a2, 0.0, ints, s0size*a1);
-    for (int k = b[i]; k != 3; ++k) {
+    for (int k = 0; k <= i; ++k) {
       for (int j = 0; j != s2size; ++j) {
-        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 1.0, data[k+f[i]]+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, data[k*(5-k)/2+i]+j*s0size*s1size, s0size); 
       }
     }
   }
