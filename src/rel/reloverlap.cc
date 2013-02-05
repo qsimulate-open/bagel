@@ -36,12 +36,16 @@ void RelOverlap::compute_() {
 
   shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
   shared_ptr<Matrix> ovl(new Overlap(*overlap_));
-  shared_ptr<Matrix> k12(new Matrix(*kinetic_ * (0.5/(c__*c__))));
+  shared_ptr<Matrix> k12(new Matrix(*kinetic_));
 
   if (half_inverse_) {
     ovl->inverse_half();
     k12->inverse_half();
+    k12->scale(c__/sqrt(0.5));
+  } else {
+    k12->scale(0.5/(c__*c__));
   }
+
 
   copy_real_block(coeff1, 0, 0, n, n, ovl);
   copy_real_block(coeff1, n, n, n, n, ovl);
