@@ -75,8 +75,8 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
       } 
     }
   }
-#endif
   assert(half_complex.size() == 8);
+#endif
 
   for (auto& i : half_complex)
     i->set_sum_diff();
@@ -157,8 +157,7 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   complex<double> coeff1 = dfc1->compute_coeff(dfc2);
   a->add_real_block(coeff1, 0, 0, n, n, r);
   complex<double> im(0.0, 1.0);
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  a->add_real_block(coeff1*im*coeff2, 0, 0, n, n, i);
+  a->add_real_block(coeff1*im, 0, 0, n, n, i);
 
   int index0, index1;
   tie(index0, index1) = dfc1->compute_index_Exop(dfc2);
