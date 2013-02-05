@@ -38,6 +38,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   // get individual df dist objects for each block and add df to dfs
   vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
   dfs.push_back(geom_->df());
+  vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
 
   // Separate Coefficients into real and imaginary
   array<shared_ptr<const Matrix>, 4> rocoeff;

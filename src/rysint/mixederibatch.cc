@@ -26,10 +26,12 @@
 
 #include <iostream>
 #include <iomanip>
+#include <src/rysint/carsphlist.h>
 #include <src/rysint/mixederibatch.h>
 
 using namespace std;
 using namespace bagel;
+const static CarSphList carsphlist;
 
 MixedERIBatch::MixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
@@ -108,15 +110,42 @@ void MixedERIBatch::eri_compute(double* eri) const {
   Address m(s0size, a1, s2size);
 
   {
-    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]}}, 2.0, 0.0, true, stack_));
+    shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
+    const int s2cart = cart2->nbasis();
+    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0, 0.0, true, stack_));
     eric->compute();
+    // TODO this could be improved
+    double* tmp = stack_->get(s0size * a1size_inc * s2cart);
+    double* tmp2 = stack_->get(s0size * a1size_inc * s2size);
+    mytranspose_(eric->data(), s0size*a1size_inc, s2cart, tmp);
+    const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
+    carsphlist.carsphfunc_call(carsphindex, s0size*a1size_inc, tmp, tmp2);
+    mytranspose_(tmp2, s2size, s0size*a1size_inc, tmp);
+    
     for (int i = 0; i != s2size; i++)
-      copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
+      copy_n(tmp + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
+
+    stack_->release(s0size * a1size_inc * s2size, tmp2);
+    stack_->release(s0size * a1size_inc * s2cart, tmp);
   }
   if (shells_[1]->aux_dec()) {
-    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]}}, 2.0, 0.0, true, stack_));
+    shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
+    const int s2cart = cart2->nbasis();
+    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->cartesian_shell()}},
+                                           2.0, 0.0, true, stack_));
     eric->compute();
+    // TODO this could be improved
+    double* tmp = stack_->get(s0size * a1size_dec * s2cart);
+    double* tmp2 = stack_->get(s0size * a1size_dec * s2size);
+    mytranspose_(eric->data(), s0size*a1size_dec, s2cart, tmp);
+    const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
+    carsphlist.carsphfunc_call(carsphindex, s0size*a1size_dec, tmp, tmp2);
+    mytranspose_(tmp2, s2size, s0size*a1size_dec, tmp);
+
     for (int i = 0; i != s2size; i++)
-      copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0, a1size_inc, i));
+      copy_n(tmp + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0, a1size_inc, i));
+
+    stack_->release(s0size * a1size_dec * s2size, tmp2);
+    stack_->release(s0size * a1size_dec * s2cart, tmp);
   }
 }

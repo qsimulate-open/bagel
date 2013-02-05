@@ -84,6 +84,8 @@ class Geometry {
     std::shared_ptr<DFDist> df_;
     // small component
     std::shared_ptr<DFDist> dfs_;
+    // small-large component
+    std::shared_ptr<DFDist> dfsl_;
 
     // external field
     std::vector<double> external_;
@@ -152,6 +154,7 @@ class Geometry {
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
+    const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
     void discard_df() { df_ = dfs_ = std::shared_ptr<DFDist>(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.

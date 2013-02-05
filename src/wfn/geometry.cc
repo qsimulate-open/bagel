@@ -34,6 +34,7 @@
 #include <boost/regex.hpp>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/smalleribatch.h>
+#include <src/rysint/mixederibatch.h>
 #include <src/wfn/geometry.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
@@ -842,7 +843,8 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
-  geom->dfs_ = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true);
+  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true);
+  geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true);
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);
