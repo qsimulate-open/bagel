@@ -63,15 +63,12 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     }
   }
 
-  for (auto& i : half_complex)
-    i->set_sum_diff();
-
-#if 0
+#if 1
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ) {
-      if (i != j && i->factorizable(j)) {
-        // TODO compute fac
-        i->zaxpy(fac, j); 
+      if (i != j && (*i)->matches((*j))) {
+        complex<double> fac = (*i)->factor(*j);
+        (*i)->zaxpy(fac, (*j)); 
         j = half_complex.erase(j);
       } else {
         ++j;
@@ -79,6 +76,10 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     }
   }
 #endif
+  assert(half_complex.size() == 8);
+
+  for (auto& i : half_complex)
+    i->set_sum_diff();
 
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ++j) {

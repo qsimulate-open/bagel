@@ -62,8 +62,10 @@ class DFHalfComplex {
     const std::tuple<int, int, int, int> compute_index_Jop(std::shared_ptr<const DFData> o) const;
     const std::tuple<int, int>           compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
     std::complex<double>                 compute_coeff(std::shared_ptr<const DFData> o) const;
+    std::complex<double>                 factor(std::shared_ptr<const DFHalfComplex> o) const;
     std::complex<double>                 compute_coeff(std::shared_ptr<const DFHalfComplex> o) const;
     const int coeff_matrix() const;
+    bool matches(std::shared_ptr<DFHalfComplex>) const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);
