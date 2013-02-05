@@ -56,14 +56,19 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   list<shared_ptr<DFData>> dfdists;
   tie(half_complex, dfdists) = make_arrays(rocoeff, iocoeff, dfs);
 
+  // compute J operators
+  list<shared_ptr<const ZMatrix>> cd;
+  for (auto& j : half_complex) {
+    const int k =  j->coeff_matrix();
+    cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
+     *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
+     *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+  }
   for (auto& i : dfdists) {
-    for (auto& j : half_complex) {
-      const int k =  j->coeff_matrix();
-      add_Jop_block(j, i, trocoeff[k], tiocoeff[k]); 
-    }
+    add_Jop_block(half_complex, i, cd); 
   }
 
-#if 1
+  // before computing K operators, we factorize half_complex 
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ) {
       if (i != j && (*i)->matches((*j))) {
@@ -76,11 +81,12 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     }
   }
   assert(half_complex.size() == 8);
-#endif
 
+  // will use the zgemm3m-like algorithm
   for (auto& i : half_complex)
     i->set_sum_diff();
 
+  // computing K operators
   for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
     for (auto j = i; j != half_complex.end(); ++j) {
       add_Exop_block(*i, *j, scale_exchange); 
@@ -90,28 +96,22 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
 }
 
 
-void DFock::add_Jop_block(shared_ptr<DFHalfComplex> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const Matrix> trocoeff, 
-                          shared_ptr<const Matrix> tiocoeff) {
+void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const DFData> dfdata, list<shared_ptr<const ZMatrix>> cd) { 
 
   const int n = geom_->nbasis();
+  const tuple<int, int, int, int> index = dfdata->compute_index_Jop();
 
-  const tuple<int, int, int, int> index = dfc->compute_index_Jop(dfdata);
+  shared_ptr<ZMatrix> sum = cd.front()->clone();
 
-  shared_ptr<const DFDist> df = dfdata->df();
-  shared_ptr<Matrix> real, imag;
-  real   =  df->compute_Jop(dfc->get_real(), trocoeff, true);
-  *real += *df->compute_Jop(dfc->get_imag(), tiocoeff, true);
-  imag   =  df->compute_Jop(dfc->get_real(), tiocoeff, true);
-  *imag -= *df->compute_Jop(dfc->get_imag(), trocoeff, true);
+  auto cditer = cd.begin();
+  for (auto& i : dfc) { 
+    complex<double> coeff1 = i->compute_coeff(dfdata);
+    sum->zaxpy(coeff1, *cditer++);
+  }
 
-  complex<double> coeff1 = dfc->compute_coeff(dfdata);
-  double coeff2 = (coeff1.real() == 0.0 ? -1.0 :1.0);
-  *imag *= -coeff2;
-
-  shared_ptr<ZMatrix> dat(new ZMatrix(n, n));
-  complex<double> im(0.0, 1.0);
-  dat->add_real_block(coeff1,    0, 0, n, n, real); 
-  dat->add_real_block(coeff1*im, 0, 0, n, n, imag); 
+  shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
+  shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
+  shared_ptr<const ZMatrix> dat(new ZMatrix(*rdat, *idat));
 
   //add it twice, once to first basis combo, then once to opposite basis combo
   add_block(n * get<0>(index), n * get<1>(index), n, n, dat);
@@ -152,12 +152,8 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
     i = shared_ptr<Matrix>(new Matrix(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0)));
   }
 
-  shared_ptr<ZMatrix> a(new ZMatrix(r->ndim(), r->mdim()));
-
-  complex<double> coeff1 = dfc1->compute_coeff(dfc2);
-  a->add_real_block(coeff1, 0, 0, n, n, r);
-  complex<double> im(0.0, 1.0);
-  a->add_real_block(coeff1*im, 0, 0, n, n, i);
+  shared_ptr<ZMatrix> a(new ZMatrix(*r, *i));
+  *a *= dfc1->compute_coeff(dfc2);
 
   int index0, index1;
   tie(index0, index1) = dfc1->compute_index_Exop(dfc2);

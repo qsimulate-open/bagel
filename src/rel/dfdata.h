@@ -59,6 +59,8 @@ class DFData {
     std::shared_ptr<const DFData> swap();
     std::shared_ptr<const DFData> opp_and_swap();
 
+    const std::tuple<int, int, int, int> compute_index_Jop() const;
+
     // to make readable
     enum Comp { X = 0, Y = 1, Z = 2, L = 3 }; 
     enum Basis { a = 0, b = 1 }; 

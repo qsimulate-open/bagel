@@ -59,7 +59,6 @@ class DFHalfComplex {
     std::pair<const int, const int> coord() const { return coord_; }
     std::pair<const int, const int> basis() const { return basis_; }
 
-    const std::tuple<int, int, int, int> compute_index_Jop(std::shared_ptr<const DFData> o) const;
     const std::tuple<int, int>           compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
     std::complex<double>                 compute_coeff(std::shared_ptr<const DFData> o) const;
     std::complex<double>                 factor(std::shared_ptr<const DFHalfComplex> o) const;

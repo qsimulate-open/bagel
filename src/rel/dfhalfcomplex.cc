@@ -132,24 +132,6 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfC
 }
 
 
-const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(shared_ptr<const DFData> o) const {
-  const pair<const int, const int> basis = o->basis();
-  const pair<const int, const int> coord = o->coord();
-  // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
-  const int start = coord.first == DFData::Comp::L ? 0 : 2;
-  // put transposed Matrices in submatrix opposite original
-  const int opp1 =  1^basis.first;
-  const int opp2 =  1^basis.second;
-
-  const int index1 = start + basis.first;
-  const int index2 = start + basis.second;
-  const int index3 = start + opp1;
-  const int index4 = start + opp2;
-
-  return make_tuple(index1, index2, index3, index4);
-}
-
-
 const int DFHalfComplex::coeff_matrix() const {
   return coord_.first == DFData::Comp::L ? basis_.second : basis_.second + 2;
 }

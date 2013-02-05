@@ -74,3 +74,21 @@ shared_ptr<const DFData> DFData::opp_and_swap() {
 const int DFData::coeff_index() const {
   return coord_.first == Comp::L ? 0 : 2;
 }
+
+
+const tuple<int, int, int, int> DFData::compute_index_Jop() const {
+  // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
+  const int start = coord_.first == DFData::Comp::L ? 0 : 2;
+  // put transposed Matrices in submatrix opposite original
+  const int opp1 =  1^basis_.first;
+  const int opp2 =  1^basis_.second;
+
+  const int index1 = start + basis_.first;
+  const int index2 = start + basis_.second;
+  const int index3 = start + opp1;
+  const int index4 = start + opp2;
+
+  return make_tuple(index1, index2, index3, index4);
+}
+
+
