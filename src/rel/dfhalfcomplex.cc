@@ -104,12 +104,12 @@ complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, 
     power += 2.0;
     prod *= coeff[coord_.first][basis_.first];
     // if the bra vector is y, we need -1 for taking the conjugate
-    prod *= (coord_.second == DFData::Comp::Y) ? -coeff[coord_.second][basis_.second] : coeff[coord_.second][basis_.second]; 
+    prod *= conj(coeff[coord_.second][basis_.second]);
   }
   if (coord2.first != DFData::Comp::L) {
     power += 2.0;
     // if the bra vector is y, we need -1 for taking the conjugate
-    prod *= (coord2.first == DFData::Comp::Y) ? -coeff[coord2.first][basis2.first] : coeff[coord2.first][basis2.first];
+    prod *= conj(coeff[coord2.first][basis2.first]);
     prod *= coeff[coord2.second][basis2.second];
   }
 
