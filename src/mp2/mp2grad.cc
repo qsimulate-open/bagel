@@ -191,12 +191,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<Matrix> dbarao(new Matrix(*dtotao - *d0ao*0.5));
 
   // size of naux
-  unique_ptr<double[]> cd0 = geom_->df()->compute_cd(d0ao);
-  unique_ptr<double[]> cdbar = geom_->df()->compute_cd(dbarao);
+  shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
+  shared_ptr<const Matrix> cdbar = geom_->df()->compute_cd(dbarao);
 
 
   // three-index derivatives (seperable part)...
-  vector<const double*> cd = {cd0.get(), cdbar.get()};
+  vector<const double*> cd = {cd0->data(), cdbar->data()};
   vector<const double*> dd = {dbarao->data(), d0ao->data()};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
@@ -211,7 +211,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // two-index derivatives (seperable part)..
   shared_ptr<Matrix> sep2(new Matrix(naux, naux));
-  dger_(naux, naux, 2.0, cd0.get(), 1, cdbar.get(), 1, sep2->data(), naux);
+  dger_(naux, naux, 2.0, cd0->data(), 1, cdbar->data(), 1, sep2->data(), naux);
   *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
   *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
 

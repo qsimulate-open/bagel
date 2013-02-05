@@ -221,40 +221,38 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) c
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  unique_ptr<double[]> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const Matrix> tmp0 = o->compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
+  return compute_Jop_from_cd(tmp0);
+}
+
+
+shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const Matrix> tmp0) const {
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0.get()+block_[0]->astart());
+  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0->data()+block_[0]->astart());
   // all reduce
   out->allreduce();
   return out;
 }
 
 
-unique_ptr<double[]> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2_;
 
-  unique_ptr<double[]> tmp0(new double[naux_]);
-  unique_ptr<double[]> tmp1(new double[naux_]);
-  fill_n(tmp0.get(), naux_, 0.0);
+  shared_ptr<Matrix> tmp0(new Matrix(naux_, 1, true));
 
   // D = (D|rs)*d_rs
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
   unique_ptr<double[]> tmp = block_[0]->form_vec(den);
-  copy_n(tmp.get(), block_[0]->asize(), tmp0.get()+block_[0]->astart());
+  copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
   // All reduce
-  mpi__->allreduce(tmp0.get(), naux_);
+  tmp0->allreduce();
 
-  dgemv_("N", naux_, naux_, 1.0, dat2->data(), naux_, tmp0.get(), 1, 0.0, tmp1.get(), 1);
-  if (!onlyonce) {
-    // C = S^-1_CD D 
-    dgemv_("N", naux_, naux_, 1.0, dat2->data(), naux_, tmp1.get(), 1, 0.0, tmp0.get(), 1);
-    return tmp0;
-  } else {
-    // C = S^-1/2_CD D 
-    return tmp1;
-  }
+  tmp0 = shared_ptr<Matrix>(new Matrix(*dat2 * *tmp0));
+  if (!onlyonce)
+    tmp0 = shared_ptr<Matrix>(new Matrix(*dat2 * *tmp0));
+  return tmp0;
 }
 
 

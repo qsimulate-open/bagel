@@ -97,9 +97,10 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den, const bool onlyonce = false) const;
+    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const Matrix> cd) const;
 
-    std::unique_ptr<double[]> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>(),
-                                         const bool onlyonce = false) const;
+    std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>(),
+                                       const bool onlyonce = false) const;
 
 };
 
