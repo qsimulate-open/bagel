@@ -153,3 +153,24 @@ const tuple<int, int, int, int> DFHalfComplex::compute_index_Jop(shared_ptr<cons
 const int DFHalfComplex::coeff_matrix() const {
   return coord_.first == DFData::Comp::L ? basis_.second : basis_.second + 2;
 }
+
+
+bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
+  return coord_.second == o->coord().second && basis_.second == o->basis().second;
+}
+
+
+complex<double> DFHalfComplex::factor(shared_ptr<const DFHalfComplex> o) const {
+  pair<const int, const int> coord2 = o->coord();
+  pair<const int, const int> basis2 = o->basis();
+
+  const complex<double> rcoeff (1.0, 0.0);
+  const complex<double> icoeff (0.0, 1.0);
+
+  complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {icoeff, -icoeff}, {rcoeff, -rcoeff}};
+//complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {-icoeff, icoeff}, {rcoeff, -rcoeff}};
+
+  complex<double> prod = coeff[coord2.first][basis2.first] / coeff[coord_.first][basis_.first];
+
+  return prod;
+}
