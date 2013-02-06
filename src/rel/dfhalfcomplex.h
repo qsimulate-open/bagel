@@ -63,7 +63,7 @@ class DFHalfComplex {
     std::complex<double>                 compute_coeff(std::shared_ptr<const DFData> o) const;
     std::complex<double>                 factor(std::shared_ptr<const DFHalfComplex> o) const;
     std::complex<double>                 compute_coeff(std::shared_ptr<const DFHalfComplex> o) const;
-    const int coeff_matrix() const;
+    int coeff_matrix() const;
     bool matches(std::shared_ptr<DFHalfComplex>) const;
 
     // zaxpy

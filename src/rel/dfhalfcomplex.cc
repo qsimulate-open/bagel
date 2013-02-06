@@ -132,7 +132,7 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfC
 }
 
 
-const int DFHalfComplex::coeff_matrix() const {
+int DFHalfComplex::coeff_matrix() const {
   return coord_.first == DFData::Comp::L ? basis_.second : basis_.second + 2;
 }
 

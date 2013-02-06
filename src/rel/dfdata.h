@@ -54,7 +54,7 @@ class DFData {
     bool cross() const { return coord_.first != coord_.second; }
     bool swapped() const { return swap_; }
     double cross_coeff() const;
-    const int coeff_index() const;
+    int coeff_index() const;
     std::shared_ptr<const DFData> opp();
     std::shared_ptr<const DFData> swap();
     std::shared_ptr<const DFData> opp_and_swap();
