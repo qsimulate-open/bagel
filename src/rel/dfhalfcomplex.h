@@ -47,7 +47,9 @@ class DFHalfComplex {
 
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 
-    std::complex<double> compute_coeff(std::pair<const int, const int>, std::pair<const int, const int>) const;
+    std::pair<std::complex<double>, std::complex<double>> coeff_; 
+
+    std::pair<std::complex<double>, std::complex<double>> calc_coeff(std::pair<const int, const int>, std::pair<const int, const int>); 
 
   public:
     DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
@@ -58,11 +60,11 @@ class DFHalfComplex {
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
     std::pair<const int, const int> coord() const { return coord_; }
     std::pair<const int, const int> basis() const { return basis_; }
+    std::complex<double> coeff1() const { return coeff_.first; }
+    std::complex<double> coeff2() const { return coeff_.second; }
 
     const std::tuple<int, int>           compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
-    std::complex<double>                 compute_coeff(std::shared_ptr<const DFData> o) const;
     std::complex<double>                 factor(std::shared_ptr<const DFHalfComplex> o) const;
-    std::complex<double>                 compute_coeff(std::shared_ptr<const DFHalfComplex> o) const;
     int coeff_matrix() const;
     bool matches(std::shared_ptr<DFHalfComplex>) const;
 
