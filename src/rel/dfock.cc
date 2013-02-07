@@ -230,9 +230,10 @@ list<shared_ptr<DFData>> DFock::make_mixed(vector<shared_ptr<const DFDist>> dfsl
   list<shared_ptr<DFData>> mixed_dfdists;
   auto k = dfsl.begin();
   for (int i = 0; i != 3; ++i) {
-    mixed_dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,DFData::Comp::L))));
+    mixed_dfdists.push_back(shared_ptr<DFData>(new DFData(*k, make_pair(i,DFData::Comp::L))));
     mixed_dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(DFData::Comp::L,i))));
   }
+  assert(k == dfsl.end());
   return mixed_dfdists;
 }
 
