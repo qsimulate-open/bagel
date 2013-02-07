@@ -78,7 +78,7 @@ shared_ptr<const DFData> DFData::opp_and_swap() {
 }
 
 
-const int DFData::coeff_index() const {
+int DFData::coeff_index() const {
   return coord_.first == Comp::L ? 0 : 2;
 }
 

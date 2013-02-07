@@ -60,7 +60,7 @@ class DFData {
     std::complex<double> coeff2() const { return coeff_.second; }
     bool swapped() const { return swap_; }
     double cross_coeff() const;
-    const int coeff_index() const;
+    int coeff_index() const;
     std::shared_ptr<const DFData> opp();
     std::shared_ptr<const DFData> swap();
     std::shared_ptr<const DFData> opp_and_swap();
