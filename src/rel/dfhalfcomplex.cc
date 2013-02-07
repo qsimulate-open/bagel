@@ -32,6 +32,7 @@ using namespace bagel;
 DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<const Matrix> rcoeff, shared_ptr<const Matrix> icoeff)
                               : coord_(df->coord()), basis_(df->basis()) {
 
+  coeff_ = calc_coeff(coord_, basis_);
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
 
@@ -70,52 +71,6 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
     throw logic_error("DFHalfComplex::zaxpy can be called by real or imaginary coeff (and not complex)");
   }
 }
-
-
-complex<double> DFHalfComplex::compute_coeff(shared_ptr<const DFData> o) const {
-  const pair<const int, const int> basis2 = o->basis();
-  const pair<const int, const int> coord2 = o->coord();
-  return compute_coeff(basis2, coord2);
-}
-
-
-complex<double> DFHalfComplex::compute_coeff(shared_ptr<const DFHalfComplex> o) const {
-  const pair<const int, const int> basis2 = o->basis();
-  const pair<const int, const int> coord2 = o->coord();
-  return compute_coeff(basis2, coord2);
-}
-
-
-complex<double> DFHalfComplex::compute_coeff(pair<const int, const int> basis2, pair<const int, const int> coord2) const {
-  const double tc = 1.0 / (2.0* c__);
-
-  // Xa Xb, Ya Yb, Za Zb respectively
-  const complex<double> rcoeff (1.0, 0.0);
-  const complex<double> icoeff (0.0, 1.0);
-  // TODO check again the y coeff
-  complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {icoeff, -icoeff}, {rcoeff, -rcoeff}};
-//complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {-icoeff, icoeff}, {rcoeff, -rcoeff}};
-
-  complex<double> prod = 1.0;
-  double power = 0.0;
-
-  // |coord_ coord_*)(coord2* coord2)
-  if (coord_.first != DFData::Comp::L) {
-    power += 2.0;
-    prod *= coeff[coord_.first][basis_.first];
-    // if the bra vector is y, we need -1 for taking the conjugate
-    prod *= conj(coeff[coord_.second][basis_.second]);
-  }
-  if (coord2.first != DFData::Comp::L) {
-    power += 2.0;
-    // if the bra vector is y, we need -1 for taking the conjugate
-    prod *= conj(coeff[coord2.first][basis2.first]);
-    prod *= coeff[coord2.second][basis2.second];
-  }
-
-  return prod * ::pow(tc, power);
-}
-
 
 const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfComplex> o) const {
   const pair<const int, const int> basis2 = o->basis();
@@ -156,3 +111,34 @@ complex<double> DFHalfComplex::factor(shared_ptr<const DFHalfComplex> o) const {
 
   return prod;
 }
+
+pair<complex<double>, complex<double>> DFHalfComplex::calc_coeff(pair<const int, const int> coord, pair<const int, const int> basis) {
+#if 1
+  // Xa Xb, Ya Yb, Za Zb respectively
+  const double tc = 1.0 / (2.0* c__);
+  const complex<double> rcoeff (1.0, 0.0);
+  const complex<double> icoeff (0.0, 1.0);
+  // TODO check again the y coeff
+  complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {icoeff, -icoeff}, {rcoeff, -rcoeff}};
+  pair<complex<double>, complex<double>> out = make_pair(rcoeff,rcoeff);
+  double power = 0.0;
+
+  if (coord.first != DFData::Comp::L) {
+    power += 1.0;
+    out.first *= coeff[coord.first][basis.first];
+    out.first = out.first * ::pow(tc, power);
+  }
+
+  power = 0.0;
+
+  if (coord.second != DFData::Comp::L) {
+    power += 1.0;
+    out.second *= coeff[coord.second][basis.second];
+    out.second = out.second * ::pow(tc, power);
+  }
+  return out;
+#endif
+
+
+}
+

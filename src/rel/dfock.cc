@@ -106,7 +106,7 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 
   auto cditer = cd.begin();
   for (auto& i : dfc) { 
-    complex<double> coeff1 = i->compute_coeff(dfdata);
+    complex<double> coeff1 = i->coeff1() * conj(i->coeff2()) * conj(dfdata->coeff1()) * dfdata->coeff2();
     sum->zaxpy(coeff1, *cditer++);
   }
 
@@ -126,6 +126,36 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
   }
 }
 
+#if 0
+void DFock::add_mixed_Jop_block(list<shared_ptr<DFHalfComplex>> dfsl, shared_ptr<const DFData> dfdata, list<shared_ptr<const ZMatrix>> cd) { 
+
+  const int n = geom_->nbasis();
+  const tuple<int, int, int, int> index = dfdata->compute_index_mixed_Jop();
+
+  shared_ptr<ZMatrix> sum = cd.front()->clone();
+
+  auto cditer = cd.begin();
+  for (auto& i : dfc) { 
+    complex<double> coeff1 = i->compute_coeff(dfdata);
+    sum->zaxpy(coeff1, *cditer++);
+  }
+
+  shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
+  shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
+  shared_ptr<const ZMatrix> dat(new ZMatrix(*rdat, *idat));
+
+  //add it twice, once to first basis combo, then once to opposite basis combo
+  add_block(n * get<0>(index), n * get<1>(index), n, n, dat);
+  add_block(n * get<2>(index), n * get<3>(index), n, n, dat);
+
+  //if basis1 != basis2, get transpose to fill in opposite corner
+  if (dfdata->cross()) {
+    shared_ptr<ZMatrix> tjop(new ZMatrix(*dat->transpose() * dfdata->cross_coeff()));
+    add_block(n * get<1>(index), n * get<0>(index), n, n, tjop);
+    add_block(n * get<3>(index), n * get<2>(index), n, n, tjop);
+  }
+}
+#endif
 
 
 void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale) {
@@ -154,7 +184,7 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   }
 
   shared_ptr<ZMatrix> a(new ZMatrix(*r, *i));
-  *a *= dfc1->compute_coeff(dfc2);
+  *a *= dfc1->coeff1() * conj(dfc1->coeff2()) * conj(dfc2->coeff1()) * dfc2->coeff2();
 
   int index0, index1;
   tie(index0, index1) = dfc1->compute_index_Exop(dfc2);
@@ -194,5 +224,28 @@ DFock::make_arrays(array<shared_ptr<const Matrix>,4> rocoeff, array<shared_ptr<c
   }
 
   return make_tuple(half_complex, dfdists);
+}
+
+list<shared_ptr<DFData>> DFock::make_mixed(vector<shared_ptr<const DFDist>> dfsl) {
+  list<shared_ptr<DFData>> mixed_dfdists;
+  auto k = dfsl.begin();
+  for (int i = 0; i != 3; ++i) {
+    mixed_dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,DFData::Comp::L))));
+    mixed_dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(DFData::Comp::L,i))));
+  }
+  return mixed_dfdists;
+}
+
+list<shared_ptr<DFHalfComplex>> DFock::mixed_complex(list<shared_ptr<DFData>> mixed_dfdists, array<shared_ptr<const Matrix>,4> rocoeff, 
+                                                     array<shared_ptr<const Matrix>,4> iocoeff) {
+  list <shared_ptr<DFHalfComplex>> mixed_complex;
+  for (auto& i : mixed_dfdists) {
+    //TODO figure out index
+    const int coeff_index = i->coeff_index();
+    mixed_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i,        rocoeff[coeff_index], iocoeff[coeff_index])));
+    mixed_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i->opp(), rocoeff[coeff_index+1], iocoeff[coeff_index+1])));
+  }
+
+  return mixed_complex;
 }
 

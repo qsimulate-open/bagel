@@ -52,6 +52,10 @@ class DFock : public ZMatrix {
 
     std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 
+    std::list<std::shared_ptr<DFData>> make_mixed(std::vector<std::shared_ptr<const DFDist>>);
+    std::list<std::shared_ptr<DFHalfComplex>> mixed_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>, 
+                                                            std::array<std::shared_ptr<const Matrix>,4>);
+
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,

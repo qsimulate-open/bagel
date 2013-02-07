@@ -36,6 +36,8 @@ DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df),
   else
     basis_ = make_pair(Basis::a, Basis::a);
 
+  coeff_ = calc_coeff(coord_, basis_);
+
 }
 
 DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), swap_(o.swap_) {
@@ -47,6 +49,8 @@ DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.
     std::swap(coord_.first, coord_.second); 
     swap_ ^= true;
   }
+
+  coeff_ = calc_coeff(coord_, basis_);
 }
 
 
@@ -56,16 +60,19 @@ double DFData::cross_coeff() const {
 }
 
 
+//swap basis
 shared_ptr<const DFData> DFData::opp() {
   return shared_ptr<const DFData>(new DFData(*this, true, false));
 }
 
 
+//swap coord
 shared_ptr<const DFData> DFData::swap() {
   return shared_ptr<const DFData>(new DFData(*this, false, true));
 }
 
 
+//swap both
 shared_ptr<const DFData> DFData::opp_and_swap() {
   return shared_ptr<const DFData>(new DFData(*this, true, true));
 }
@@ -89,6 +96,53 @@ const tuple<int, int, int, int> DFData::compute_index_Jop() const {
   const int index4 = start + opp2;
 
   return make_tuple(index1, index2, index3, index4);
+}
+
+
+const tuple<int, int, int, int> DFData::compute_index_mixed_Jop() const {
+  // 4x4 ZMatrix either starting at 2n,0 (large,small) or 0,2n (small,large)
+  const int start1 = coord_.first == DFData::Comp::L ? 0 : 2;
+  const int start2 = coord_.second == DFData::Comp::L ? 0 : 2;
+  // put transposed Matrices in submatrix opposite original
+  const int opp1 =  1^basis_.first;
+  const int opp2 =  1^basis_.second;
+
+  const int index1 = start1 + basis_.first;
+  const int index2 = start2 + basis_.second;
+  const int index3 = start1 + opp1;
+  const int index4 = start2 + opp2;
+
+  return make_tuple(index1, index2, index3, index4);
+}
+
+pair<complex<double>, complex<double>> DFData::calc_coeff(pair<const int, const int> coord, pair<const int, const int> basis) {
+#if 1
+  // Xa Xb, Ya Yb, Za Zb respectively
+  const double tc = 1.0 / (2.0 * c__);
+  const complex<double> rcoeff (1.0, 0.0);
+  const complex<double> icoeff (0.0, 1.0);
+  // TODO check again the y coeff
+  complex<double> coeff[3][2] = {{rcoeff, rcoeff}, {icoeff, -icoeff}, {rcoeff, -rcoeff}};
+  pair<complex<double>, complex<double>> out = make_pair(rcoeff,rcoeff);
+  double power = 0.0;
+
+  if (coord.first != DFData::Comp::L) {
+    power += 1.0;
+    out.first *= coeff[coord.first][basis.first];
+    out.first = out.first * ::pow(tc, power);
+  }
+
+  power = 0.0;
+
+  if (coord.second != DFData::Comp::L) {
+    power += 1.0;
+    out.second *= coeff[coord.second][basis.second];
+    out.second = out.second * ::pow(tc, power);
+  }
+  return out;
+#endif
+
+
 }
 
 

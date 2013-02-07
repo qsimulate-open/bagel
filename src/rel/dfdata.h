@@ -31,6 +31,7 @@
 #include <string>
 #include <map>
 #include <src/df/df.h>
+#include <src/wfn/reference.h>
 
 namespace bagel {
 
@@ -40,6 +41,9 @@ class DFData {
     std::pair<int, int> coord_;
     std::pair<int, int> basis_; 
     bool swap_;
+    std::pair<std::complex<double>, std::complex<double>> coeff_; 
+
+    std::pair<std::complex<double>, std::complex<double>> calc_coeff(std::pair<const int, const int>, std::pair<const int, const int>); 
 
     DFData(const DFData&, bool , bool);
 
@@ -52,6 +56,8 @@ class DFData {
     std::pair<int, int> coord() const { return coord_; }
     std::pair<int, int> basis() const { return basis_; }
     bool cross() const { return coord_.first != coord_.second; }
+    std::complex<double> coeff1() const { return coeff_.first; }
+    std::complex<double> coeff2() const { return coeff_.second; }
     bool swapped() const { return swap_; }
     double cross_coeff() const;
     const int coeff_index() const;
@@ -60,6 +66,7 @@ class DFData {
     std::shared_ptr<const DFData> opp_and_swap();
 
     const std::tuple<int, int, int, int> compute_index_Jop() const;
+    const std::tuple<int, int, int, int> compute_index_mixed_Jop() const;
 
     // to make readable
     enum Comp { X = 0, Y = 1, Z = 2, L = 3 }; 
