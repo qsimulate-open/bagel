@@ -34,23 +34,16 @@
 #include <src/wfn/reference.h>
 #include <src/rel/alpha.h>
 #include <src/util/zmatrix.h>
+#include <src/rel/reldfbase.h>
 
 namespace bagel {
 
-class DFData {
+class DFData : public RelDFBase {
   protected:
     std::shared_ptr<const DFDist> dfdata_;
-    std::pair<int, int> coord_;
-    std::pair<int, int> basis_; 
     bool swap_;
-    std::shared_ptr<Alpha> alpha_;
-    std::shared_ptr<Sigma> sigma1_;
-    std::shared_ptr<Sigma> sigma2_;
-    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> spinor_;
-    std::complex<double> fac_;
 
     DFData(const DFData&, bool , bool);
-    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> compute_spinor(std::pair<const int, const int>, std::pair<const int, const int>);
 
   public:
     DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const int);
@@ -58,11 +51,7 @@ class DFData {
     DFData() = delete;
 
     std::shared_ptr<const DFDist> df() const { return dfdata_; }
-    std::pair<int, int> coord() const { return coord_; }
-    std::pair<int, int> basis() const { return basis_; }
     bool cross() const { return coord_.first != coord_.second; }
-    std::shared_ptr<Alpha> alpha() const { return alpha_; }
-    std::complex<double> fac() const { return fac_; }
     bool swapped() const { return swap_; }
     std::shared_ptr<const DFData> opp();
     std::shared_ptr<const DFData> swap();

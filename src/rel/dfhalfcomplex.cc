@@ -30,10 +30,8 @@ using namespace std;
 using namespace bagel;
 
 DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
-                              : coord_(df->coord()), basis_(df->basis()) {
-  alpha_ = df->alpha();
-  sigma1_ = shared_ptr<Sigma>(new Sigma(coord_.first));
-  sigma2_ = shared_ptr<Sigma>(new Sigma(coord_.second));
+                              : RelDFBase(*df) {
+
   const int index = basis_.first + (coord_.first == Comp::L ? 0 : 2);
 
   shared_ptr<DFHalfDist> rhalfbj;
@@ -49,14 +47,6 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const
 
   dfhalf_[0] = rhalfbj->apply_J();
   dfhalf_[1] = ihalfbj->apply_J();
-
-  spinor_ = compute_spinor(coord_, basis_);
-
-  ZMatrix z1(*sigma1_->data()**spinor_.first);
-  ZMatrix z2(*sigma2_->data()**spinor_.second);
-  fac_ = (z1 % *alpha_->data() * z2).element(0,0);
-
-  assert(fac_ != complex<double>(0.0));
 
 }
 
@@ -85,17 +75,12 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 
 
 const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfComplex> o) const {
-  // find the location where 1.0 is set in spinor_
-  complex<double> mask[4] = {0.0, 1.0, 2.0, 3.0};
-  const int index1 = round(real(zdotc_(4, mask, 1, spinor_.second->data(), 1)));
-  const int index2 = round(real(zdotc_(4, mask, 1, o->spinor_.second->data(), 1)));
-  return make_tuple(index1, index2);
+  return make_tuple(basis(1), o->basis(1));
 }
 
 
 int DFHalfComplex::coeff_matrix() const {
-  complex<double> mask[4] = {0.0, 1.0, 2.0, 3.0};
-  return round(real(zdotc_(4, mask, 1, spinor_.second->data(), 1)));
+  return basis(1);
 }
 
 
@@ -103,19 +88,4 @@ bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
   return coord_.second == o->coord().second && basis_.second == o->basis().second;
 }
 
-
-pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> DFHalfComplex::compute_spinor(pair<const int, const int> coord, pair<const int, const int> basis) {
-  pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> spinor;
-  spinor.first = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-  spinor.second = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-  const int start1 = coord.first == Comp::L ? 0 : 2;
-  const int start2 = coord.second == Comp::L ? 0 : 2;
-  const int index1 = start1 + basis.first;
-  const int index2 = start2 + basis.second;
-
-  spinor.first->element(index1,0) = 1.0;
-  spinor.second->element(index2,0) = 1.0;
-
-  return spinor;
-}
 

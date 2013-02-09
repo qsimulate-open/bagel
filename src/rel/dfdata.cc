@@ -29,49 +29,25 @@
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const int alpha) : dfdata_(df), coord_(coord), swap_(false) {
-
-  alpha_ = shared_ptr<Alpha>(new Alpha(alpha));
-  sigma1_ = shared_ptr<Sigma>(new Sigma(coord_.first));
-  sigma2_ = shared_ptr<Sigma>(new Sigma(coord_.second));
-
-  if ((coord_.first == Comp::Z) ^ (coord_.second == Comp::Z))
-    basis_ = make_pair(Basis::a, Basis::b);
-  else
-    basis_ = make_pair(Basis::a, Basis::a);
-
-  spinor_ = compute_spinor(coord_, basis_);
-
-  ZMatrix z1(*sigma1_->data()**spinor_.first);
-  ZMatrix z2(*sigma2_->data()**spinor_.second);
-  fac_ = (z1 % *alpha_->data() * z2).element(0,0);
-
-  assert(fac_ != complex<double>(0.0));
+DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const int alpha) : RelDFBase(coord, alpha), dfdata_(df), swap_(false) {
 
 }
 
-DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), swap_(o.swap_) {
-  alpha_ = o.alpha();
+DFData::DFData(const DFData& o, bool bas, bool coo) : RelDFBase(o), dfdata_(o.df()), swap_(o.swap_) {
 
   if (bas) {
     basis_.first ^= 1;
     basis_.second ^= 1;
   }
+
   if (coo) {
     std::swap(coord_.first, coord_.second); 
     swap_ ^= true;
+    std::swap(sigma1_, sigma2_);
+    std::swap(spinor_[0], spinor_[1]);
+    fac_ = conj(fac_);
   }
 
-  sigma1_ = shared_ptr<Sigma>(new Sigma(coord_.first));
-  sigma2_ = shared_ptr<Sigma>(new Sigma(coord_.second));
-
-  spinor_ = compute_spinor(coord_, basis_);
-
-  ZMatrix z1(*sigma1_->data()**spinor_.first);
-  ZMatrix z2(*sigma2_->data()**spinor_.second);
-  fac_ = (z1 % *alpha_->data() * z2).element(0,0);
-
-  assert(fac_ != complex<double>(0.0));
 }
 
 
@@ -107,24 +83,5 @@ const tuple<int, int, int, int> DFData::compute_index_Jop() const {
   const int index4 = start2 + opp2;
 
   return make_tuple(index1, index2, index3, index4);
-}
-
-
-pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> DFData::compute_spinor(pair<const int, const int> coord, pair<const int, const int> basis) {
-  pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> spinor;
-  spinor.first = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-  spinor.second = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-  const int start1 = coord.first == Comp::L ? 0 : 2;
-  const int start2 = coord.second == Comp::L ? 0 : 2;
-  const int index1 = start1 + basis.first;
-  const int index2 = start2 + basis.second;
-
-  spinor.first->element(index1,0) = 1.0;
-  spinor.second->element(index2,0) = 1.0;
-
-  assert(index1 >= 0 && index1 < 4);
-  assert(index2 >= 0 && index2 < 4);
-
-  return spinor;
 }
 
