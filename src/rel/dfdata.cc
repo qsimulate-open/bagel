@@ -71,17 +71,6 @@ shared_ptr<const DFData> DFData::opp_and_swap() {
 
 const tuple<int, int, int, int> DFData::compute_index_Jop() const {
   // 4x4 ZMatrix either starting at 0,0 (large) 2n,0 (large,small) or 0,2n (small,large) or 2n,2n (small)
-  const int start1 = coord_.first == Comp::L ? 0 : 2;
-  const int start2 = coord_.second == Comp::L ? 0 : 2;
-  // put transposed Matrices in submatrix opposite original
-  const int opp1 =  1^basis_.first;
-  const int opp2 =  1^basis_.second;
-
-  const int index1 = start1 + basis_.first;
-  const int index2 = start2 + basis_.second;
-  const int index3 = start1 + opp1;
-  const int index4 = start2 + opp2;
-
-  return make_tuple(index1, index2, index3, index4);
+  return make_tuple(basis(0), basis(1), basis(0)^1, basis(1)^1);
 }
 

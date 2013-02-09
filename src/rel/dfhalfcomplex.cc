@@ -32,7 +32,7 @@ using namespace bagel;
 DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
                               : RelDFBase(*df) {
 
-  const int index = basis_.first + (coord_.first == Comp::L ? 0 : 2);
+  const int index = basis(0); 
 
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
