@@ -79,11 +79,6 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfC
 }
 
 
-int DFHalfComplex::coeff_matrix() const {
-  return basis(1);
-}
-
-
 bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
   return coord_.second == o->coord().second && basis_.second == o->basis().second;
 }

@@ -54,7 +54,6 @@ class DFHalfComplex : public RelDFBase {
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
 
     const std::tuple<int, int> compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
-    int coeff_matrix() const;
     bool matches(std::shared_ptr<DFHalfComplex>) const;
 
     // zaxpy

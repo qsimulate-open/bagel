@@ -61,7 +61,7 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
     for (auto& j : half_complex) {
-      const int k =  j->coeff_matrix();
+      const int k =  j->basis(1);
       cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
        *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
        *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
