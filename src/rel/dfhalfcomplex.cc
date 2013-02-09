@@ -52,9 +52,10 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const
 
   spinor_ = compute_spinor(coord_, basis_);
 
-  shared_ptr<ZMatrix> z1(new ZMatrix(*sigma1_->data()**spinor_.first));
-  shared_ptr<ZMatrix> z2(new ZMatrix(*sigma2_->data()**spinor_.second));
-  fac_ = (*z1 % *alpha_->data() * *z2).element(0,0);
+  ZMatrix z1(*sigma1_->data()**spinor_.first);
+  ZMatrix z2(*sigma2_->data()**spinor_.second);
+  fac_ = (z1 % *alpha_->data() * z2).element(0,0);
+
   assert(fac_ != complex<double>(0.0));
 
 }
@@ -82,23 +83,19 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
   }
 }
 
+
 const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfComplex> o) const {
-  const pair<const int, const int> basis2 = o->basis();
-  const pair<const int, const int> coord2 = o->coord();
-
-  // 4x4 ZMatrix starting at 0,0 (large, large) or 0,2n (large, small) or 2n,0 (small, large) or 2n,2n (small)
-  const int start1 = coord_.first == Comp::L ? 0 : 2;
-  const int start2 = coord2.first == Comp::L ? 0 : 2;
-  //go from small large to large small or vice versa
-  const int index1 = start1 + basis_.second;
-  const int index2 = start2 + basis2.second;
-
+  // find the location where 1.0 is set in spinor_
+  complex<double> mask[4] = {0.0, 1.0, 2.0, 3.0};
+  const int index1 = round(real(zdotc_(4, mask, 1, spinor_.second->data(), 1)));
+  const int index2 = round(real(zdotc_(4, mask, 1, o->spinor_.second->data(), 1)));
   return make_tuple(index1, index2);
 }
 
 
 int DFHalfComplex::coeff_matrix() const {
-  return coord_.second == Comp::L ? basis_.second : basis_.second + 2;
+  complex<double> mask[4] = {0.0, 1.0, 2.0, 3.0};
+  return round(real(zdotc_(4, mask, 1, spinor_.second->data(), 1)));
 }
 
 

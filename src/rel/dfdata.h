@@ -49,8 +49,6 @@ class DFData {
     std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> spinor_;
     std::complex<double> fac_;
 
-    std::pair<std::complex<double>, std::complex<double>> calc_coeff(std::pair<const int, const int>, std::pair<const int, const int>); 
-
     DFData(const DFData&, bool , bool);
     std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> compute_spinor(std::pair<const int, const int>, std::pair<const int, const int>);
 
@@ -66,7 +64,6 @@ class DFData {
     std::shared_ptr<Alpha> alpha() const { return alpha_; }
     std::complex<double> fac() const { return fac_; }
     bool swapped() const { return swap_; }
-    int coeff_index() const;
     std::shared_ptr<const DFData> opp();
     std::shared_ptr<const DFData> swap();
     std::shared_ptr<const DFData> opp_and_swap();
