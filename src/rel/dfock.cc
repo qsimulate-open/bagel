@@ -31,10 +31,10 @@
 using namespace std;
 using namespace bagel;
 
-void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_exchange) {
+void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_exchange) {
 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
-
+  assert(geom_->nbasis()*4 == coeff->ndim());
 
   // Separate Coefficients into real and imaginary
   array<shared_ptr<const Matrix>, 4> rocoeff;
@@ -43,8 +43,9 @@ void DFock::two_electron_part(const array<shared_ptr<const ZMatrix>, 4> ocoeff, 
   array<shared_ptr<const Matrix>, 4> tiocoeff;
 
   for (int i = 0; i != 4; ++i) {
-    rocoeff[i] = ocoeff[i]->get_real_part();
-    iocoeff[i] = ocoeff[i]->get_imag_part();
+    shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim()); 
+    rocoeff[i] = ocoeff->get_real_part();
+    iocoeff[i] = ocoeff->get_imag_part();
     trocoeff[i] = rocoeff[i]->transpose();
     tiocoeff[i] = iocoeff[i]->transpose();
   }

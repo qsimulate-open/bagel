@@ -44,13 +44,11 @@ class DFock : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const RelHcore> hcore_;
-    void two_electron_part(const std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff, const bool rhf, const double scale_ex);
+    void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
     std::tuple<std::list<std::shared_ptr<DFHalfComplex>>, std::list<std::shared_ptr<DFData>>>
        make_arrays(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
-                              std::vector<std::shared_ptr<const DFDist>>);
-
-    std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
+                   std::vector<std::shared_ptr<const DFDist>>);
 
     std::list<std::shared_ptr<DFData>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
     std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
@@ -62,10 +60,7 @@ class DFock : public ZMatrix {
           const std::shared_ptr<const ZMatrix> coeff, const bool rhf = true, const double scale_ex = 1.0)
      : ZMatrix(*h), geom_(a), hcore_(h) {
        
-       assert(geom_->nbasis()*4 == coeff->ndim());
-       for (int i = 0; i != 4; ++i)
-         ocoeff_[i] = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim()); 
-       two_electron_part(ocoeff_, rhf, scale_ex);
+       two_electron_part(coeff, rhf, scale_ex);
     }
     
     void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
