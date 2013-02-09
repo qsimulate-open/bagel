@@ -43,29 +43,24 @@ namespace bagel {
 class DFock : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const RelHcore> hcore_;
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
-
-    std::tuple<std::list<std::shared_ptr<DFHalfComplex>>, std::list<std::shared_ptr<DFData>>>
-       make_arrays(std::array<std::shared_ptr<const Matrix>, 4>, std::array<std::shared_ptr<const Matrix>, 4>, 
-                   std::vector<std::shared_ptr<const DFDist>>);
 
     std::list<std::shared_ptr<DFData>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
     std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                 std::array<std::shared_ptr<const Matrix>,4>);
 
+    void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
+    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
+
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,
           const std::shared_ptr<const ZMatrix> coeff, const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*h), geom_(a), hcore_(h) {
+     : ZMatrix(*h), geom_(a) {
        
        two_electron_part(coeff, rhf, scale_ex);
     }
     
-    void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
-    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
-
 };
 
 }
