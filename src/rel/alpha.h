@@ -41,15 +41,15 @@ class Sigma2 {
   public:
     Sigma2(const int i) : data_(new ZMatrix(2,2,true)) {
       if (i == Comp::L) {
-        data_->data(0) = data_->data(3) = 1.0;
+        data_->element(0,0) = data_->element(1,1) = 1.0;
       } else if (i == Comp::X) {
-        data_->data(1) = data_->data(2) = 1.0;
+        data_->element(0,1) = data_->element(1,0) = 1.0;
       } else if (i == Comp::Y) {
-        data_->data(1) = std::complex<int>(0,1);
-        data_->data(2) = std::complex<int>(0,-1);
+        data_->element(1,0) = std::complex<double>(0.0, 1.0);
+        data_->element(0,1) = std::complex<double>(0.0,-1.0);
       } else if (i == Comp::Z) {
-        data_->data(0) = 1.0;
-        data_->data(3) = -1.0;
+        data_->element(0,0) = 1.0;
+        data_->element(1,1) = -1.0;
       } else {
         assert(false);
       }
@@ -69,7 +69,6 @@ class Sigma {
         data_->copy_block(0,0,2,2,s.data());
       } else {
         data_->copy_block(2,2,2,2,s.data());
-        // TODO activate after debugging
         data_->scale(std::complex<double>(0.5/c__));
       }
     }
