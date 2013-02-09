@@ -73,6 +73,36 @@ class DistMatrix_base {
     void fill(const DataType a) { std::fill_n(local_.get(), size(), a); }
     void zero() { const DataType zero(0.0); fill(zero); }
 
+    void add_diag(const DataType& a, const size_t start, const size_t fence) {
+      assert(ndim_ == mdim_ && start <= fence);
+      const int localrow = std::get<0>(localsize_);
+      const int localcol = std::get<1>(localsize_);
+
+      const int nblock = localrow/blocksize__;
+      const int mblock = localcol/blocksize__;
+      const size_t nstride = blocksize__*mpi__->nprow();
+      const size_t mstride = blocksize__*mpi__->npcol();
+      const int myprow = mpi__->myprow()*blocksize__;
+      const int mypcol = mpi__->mypcol()*blocksize__;
+
+      for (int i = 0; i != mblock; ++i)
+        for (int j = 0; j != nblock; ++j)
+          for (int id = 0; id != blocksize__; ++id)
+            for (int jd = 0; jd != blocksize__; ++jd) {
+              const size_t m = mypcol+i*mstride+id;
+              const size_t n = myprow+j*nstride+jd;
+              if (m == n && start <= n && n < fence)
+                local_[j*blocksize__+jd+localrow*(i*blocksize__+id)] += a;
+            }
+        for (int id = 0; id != localcol % blocksize__; ++id)
+          for (int jd = 0; jd != localrow % blocksize__; ++jd) {
+            const size_t m = mblock*blocksize__+id;
+            const size_t n = nblock*blocksize__+jd;
+            if (m == n && start <= n && n < fence)
+              local_[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] += a;
+          }
+    }
+
     void scale(const double* vec) {
       const int localrow = std::get<0>(localsize_);
       const int localcol = std::get<1>(localsize_);

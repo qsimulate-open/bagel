@@ -43,6 +43,7 @@
 namespace bagel {
 
 // This is the base class. It literally does nothing.
+template<class Type> 
 class LevelShift {
   protected:
     int nocc_;
@@ -52,17 +53,20 @@ class LevelShift {
     LevelShift() {};
     LevelShift(const int nocc, const double shift_parameter) : nocc_(nocc), shift_parameter_(shift_parameter) {};
 
-    virtual void shift(Matrix& coeff) {};
+    virtual void shift(Type& coeff) { }
 };
 
 // Standard shifting of virtual orbitals
-class ShiftVirtual : public LevelShift {
+template<class Type>
+class ShiftVirtual : public LevelShift<Type> {
   protected:
 
   public:
-    ShiftVirtual(const int nocc, const int shift_parameter);
+    ShiftVirtual(const int nocc, const double shift_parameter) : LevelShift<Type>(nocc, shift_parameter) { }
 
-    void shift(Matrix& coeff) override;
+    void shift(Type& coeff) override {
+      coeff.add_diag(this->shift_parameter_, this->nocc_, coeff.ndim());
+    }
 };
 
 }

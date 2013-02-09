@@ -120,14 +120,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void dscal(const double a) { dscal_(size(), a, data(), 1); }
     void scale(const double a) { dscal(a); }
 
-    void add_diag(const double a, const int i, const int j) {
-      assert(ndim_ == mdim_);
-      for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
-    }
-    void add_diag(const double a) { add_diag(a,0,ndim_); }
-    // returns diagonal elements
-    std::unique_ptr<double[]> diag() const;
-
     void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
 

@@ -44,7 +44,7 @@
 namespace bagel {
 
 // Dimer level shift
-class ShiftDimer : public LevelShift {
+class ShiftDimer : public LevelShift<Matrix> {
   protected:
     std::shared_ptr<const Matrix> subspace_;
     std::shared_ptr<const Matrix> subspace_projector_;

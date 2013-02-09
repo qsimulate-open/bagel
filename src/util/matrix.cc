@@ -402,16 +402,6 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 }
 
 
-unique_ptr<double[]> Matrix::diag() const {
-  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diag()");
-  unique_ptr<double[]> out(new double[ndim_]);
-  for (int i = 0; i != ndim_; ++i) {
-    out[i] = element(i,i);
-  }
-  return move(out);
-}
-
-
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
   mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor); 

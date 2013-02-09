@@ -172,6 +172,25 @@ class Matrix_base {
     void localize() { localized_ = true; }
     bool localized() const { return localized_; }
 
+    void add_diag(const DataType& a, const int i, const int j) {
+      assert(ndim_ == mdim_);
+      for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
+    }
+
+    void add_diag(const DataType& a) { add_diag(a,0,ndim_); }
+
+    // returns diagonal elements
+    std::unique_ptr<DataType[]> diag() const {
+      if (ndim_ != mdim_) throw std::logic_error("illegal call of Matrix::diag()");
+      std::unique_ptr<DataType[]> out(new DataType[ndim_]);
+      for (int i = 0; i != ndim_; ++i) {
+        out[i] = element(i,i);
+      }
+      return move(out);
+    }
+
+
+
 #ifdef HAVE_SCALAPACK
     std::unique_ptr<DataType[]> getlocal() const {
       const int localrow = std::get<0>(localsize_);
