@@ -28,7 +28,7 @@ for l in lines:
     elif l[0] == "*" or l[0] == ".":
         continue
     elif l.strip() == "":
-        continue 
+        continue
 
     if len(l) > 6:
         s = l.strip()
@@ -64,6 +64,10 @@ for l in lines:
 out.append("")
 out.append("//")
 out.append("//")
+
+for l in out:
+    l = l.replace("D-", "E-")
+    l = l.replace("D+", "E+")
 
 fp.close()
 fp = open(sys.argv[1]+".basis", "w")
