@@ -162,16 +162,3 @@ pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> DFData::compute_spinor(pair<const
   return spinor;
 }
 
-complex<double> DFData::alpha_fac(const int coord) const {
-  complex<double> im(0.0,1.0);
-  complex<double> out(1.0,0.0);
-  if (coord == Comp::X)
-    return out;
-  if (coord == Comp::Y)
-    return (((basis_.second == 0) ^ (coord_.second == Comp::L || coord_.second == Comp::Z)) ? -im * out : im * out);
-  if (coord == Comp::Z)
-    return (((basis_.second == 0) ^ (coord_.second == Comp::L || coord_.second == Comp::Z)) ? -out : out);
-
-  return out;
-}
-

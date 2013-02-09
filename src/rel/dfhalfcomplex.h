@@ -53,8 +53,6 @@ class DFHalfComplex {
 
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 
-    std::pair<std::complex<double>, std::complex<double>> coeff_; 
-
     std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> compute_spinor(std::pair<const int, const int>, std::pair<const int, const int>);
 
   public:
@@ -66,8 +64,6 @@ class DFHalfComplex {
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
     std::pair<const int, const int> coord() const { return coord_; }
     std::pair<const int, const int> basis() const { return basis_; }
-    std::complex<double> coeff1() const { return coeff_.first; }
-    std::complex<double> coeff2() const { return coeff_.second; }
     std::complex<double> fac() const { return fac_; }
     std::shared_ptr<Alpha> alpha() const { return alpha_; }
 

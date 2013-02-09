@@ -43,7 +43,6 @@ class DFData {
     std::pair<int, int> coord_;
     std::pair<int, int> basis_; 
     bool swap_;
-    std::pair<std::complex<double>, std::complex<double>> coeff_; 
     std::shared_ptr<Alpha> alpha_;
     std::shared_ptr<Sigma> sigma1_;
     std::shared_ptr<Sigma> sigma2_;
@@ -64,10 +63,7 @@ class DFData {
     std::pair<int, int> coord() const { return coord_; }
     std::pair<int, int> basis() const { return basis_; }
     bool cross() const { return coord_.first != coord_.second; }
-    std::complex<double> coeff1() const { return coeff_.first; }
-    std::complex<double> coeff2() const { return coeff_.second; }
     std::shared_ptr<Alpha> alpha() const { return alpha_; }
-    std::complex<double> alpha_fac(const int) const;
     std::complex<double> fac() const { return fac_; }
     bool swapped() const { return swap_; }
     int coeff_index() const;
