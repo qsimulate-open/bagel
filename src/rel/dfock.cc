@@ -221,13 +221,13 @@ list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> df
   list<shared_ptr<DFData>> dfdists;
   auto k = dfs.begin();
   if (!gaunt) { // Regular DHF
-    for (int i = 0; i != 3; ++i) {
-      for (int j = i; j != 3; ++j) {
+    for (int i = Comp::X; i <= Comp::Z; ++i) {
+      assert(i != Comp::L);
+      for (int j = i; j <= Comp::Z; ++j)
         dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), Comp::L)));
-      }
     }
     // large-large
-    dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(3,3), Comp::L)));
+    dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(Comp::L,Comp::L), Comp::L)));
     assert(k == dfs.end());
   } else { // Gaunt Term
     assert(false);
