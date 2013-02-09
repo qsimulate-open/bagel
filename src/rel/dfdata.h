@@ -32,6 +32,8 @@
 #include <map>
 #include <src/df/df.h>
 #include <src/wfn/reference.h>
+#include <src/rel/alpha.h>
+#include <src/util/zmatrix.h>
 
 namespace bagel {
 
@@ -42,13 +44,19 @@ class DFData {
     std::pair<int, int> basis_; 
     bool swap_;
     std::pair<std::complex<double>, std::complex<double>> coeff_; 
+    std::shared_ptr<Alpha> alpha_;
+    std::shared_ptr<Sigma> sigma1_;
+    std::shared_ptr<Sigma> sigma2_;
+    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> spinor_;
+    std::complex<double> fac_;
 
     std::pair<std::complex<double>, std::complex<double>> calc_coeff(std::pair<const int, const int>, std::pair<const int, const int>); 
 
     DFData(const DFData&, bool , bool);
+    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> compute_spinor(std::pair<const int, const int>, std::pair<const int, const int>);
 
   public:
-    DFData(std::shared_ptr<const DFDist>, std::pair<int, int>);
+    DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const int);
     DFData(const DFData&) = delete;
     DFData() = delete;
 
@@ -58,19 +66,16 @@ class DFData {
     bool cross() const { return coord_.first != coord_.second; }
     std::complex<double> coeff1() const { return coeff_.first; }
     std::complex<double> coeff2() const { return coeff_.second; }
+    std::shared_ptr<Alpha> alpha() const { return alpha_; }
+    std::complex<double> alpha_fac(const int) const;
+    std::complex<double> fac() const { return fac_; }
     bool swapped() const { return swap_; }
-    double cross_coeff() const;
     int coeff_index() const;
     std::shared_ptr<const DFData> opp();
     std::shared_ptr<const DFData> swap();
     std::shared_ptr<const DFData> opp_and_swap();
 
     const std::tuple<int, int, int, int> compute_index_Jop() const;
-    const std::tuple<int, int, int, int> compute_index_mixed_Jop() const;
-
-    // to make readable
-    enum Comp { X = 0, Y = 1, Z = 2, L = 3 }; 
-    enum Basis { a = 0, b = 1 }; 
 
 };
 

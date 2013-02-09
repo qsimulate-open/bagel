@@ -52,9 +52,9 @@ class DFock : public ZMatrix {
 
     std::array<std::shared_ptr<const ZMatrix>, 4> ocoeff_;
 
-    std::list<std::shared_ptr<DFData>> make_mixed(std::vector<std::shared_ptr<const DFDist>>);
-    std::list<std::shared_ptr<DFHalfComplex>> mixed_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>, 
-                                                            std::array<std::shared_ptr<const Matrix>,4>);
+    std::list<std::shared_ptr<DFData>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
+    std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
+                                                                std::array<std::shared_ptr<const Matrix>,4>);
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
@@ -70,7 +70,6 @@ class DFock : public ZMatrix {
     
     void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
-
 
 };
 

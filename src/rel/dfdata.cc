@@ -29,18 +29,30 @@
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord) : dfdata_(df), coord_(coord), swap_(false) {
+DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const int alpha) : dfdata_(df), coord_(coord), swap_(false) {
+
+  alpha_ = shared_ptr<Alpha>(new Alpha(alpha));
+  sigma1_ = shared_ptr<Sigma>(new Sigma(coord_.first));
+  sigma2_ = shared_ptr<Sigma>(new Sigma(coord_.second));
 
   if ((coord_.first == Comp::Z) ^ (coord_.second == Comp::Z))
     basis_ = make_pair(Basis::a, Basis::b);
   else
     basis_ = make_pair(Basis::a, Basis::a);
 
-  coeff_ = calc_coeff(coord_, basis_);
+  spinor_ = compute_spinor(coord_, basis_);
+
+  shared_ptr<ZMatrix> z1(new ZMatrix(*sigma1_->data()**spinor_.first));
+  shared_ptr<ZMatrix> z2(new ZMatrix(*sigma2_->data()**spinor_.second));
+  fac_ = (*z1 % *alpha_->data() * *z2).element(0,0);
+
+  assert(fac_ != complex<double>(0.0));
 
 }
 
 DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.coord()), basis_(o.basis_), swap_(o.swap_) {
+  alpha_ = o.alpha();
+
   if (bas) {
     basis_.first ^= 1;
     basis_.second ^= 1;
@@ -50,13 +62,16 @@ DFData::DFData(const DFData& o, bool bas, bool coo) : dfdata_(o.df()), coord_(o.
     swap_ ^= true;
   }
 
-  coeff_ = calc_coeff(coord_, basis_);
-}
+  sigma1_ = shared_ptr<Sigma>(new Sigma(coord_.first));
+  sigma2_ = shared_ptr<Sigma>(new Sigma(coord_.second));
 
+  spinor_ = compute_spinor(coord_, basis_);
 
-double DFData::cross_coeff() const {
-  assert(cross() == true);
-  return ((coord_.first == Comp::Y) ^ (coord_.second == Comp::Y)) ? -1.0 : 1.0;
+  shared_ptr<ZMatrix> z1(new ZMatrix(*sigma1_->data()**spinor_.first));
+  shared_ptr<ZMatrix> z2(new ZMatrix(*sigma2_->data()**spinor_.second));
+  fac_ = (*z1 % *alpha_->data() * *z2).element(0,0);
+
+  assert(fac_ != complex<double>(0.0));
 }
 
 
@@ -84,25 +99,9 @@ int DFData::coeff_index() const {
 
 
 const tuple<int, int, int, int> DFData::compute_index_Jop() const {
-  // 4x4 ZMatrix either starting at 0,0 (large) or 2n,2n (small)
-  const int start = coord_.first == DFData::Comp::L ? 0 : 2;
-  // put transposed Matrices in submatrix opposite original
-  const int opp1 =  1^basis_.first;
-  const int opp2 =  1^basis_.second;
-
-  const int index1 = start + basis_.first;
-  const int index2 = start + basis_.second;
-  const int index3 = start + opp1;
-  const int index4 = start + opp2;
-
-  return make_tuple(index1, index2, index3, index4);
-}
-
-
-const tuple<int, int, int, int> DFData::compute_index_mixed_Jop() const {
-  // 4x4 ZMatrix either starting at 2n,0 (large,small) or 0,2n (small,large)
-  const int start1 = coord_.first == DFData::Comp::L ? 0 : 2;
-  const int start2 = coord_.second == DFData::Comp::L ? 0 : 2;
+  // 4x4 ZMatrix either starting at 0,0 (large) 2n,0 (large,small) or 0,2n (small,large) or 2n,2n (small)
+  const int start1 = coord_.first == Comp::L ? 0 : 2;
+  const int start2 = coord_.second == Comp::L ? 0 : 2;
   // put transposed Matrices in submatrix opposite original
   const int opp1 =  1^basis_.first;
   const int opp2 =  1^basis_.second;
@@ -126,7 +125,7 @@ pair<complex<double>, complex<double>> DFData::calc_coeff(pair<const int, const 
   pair<complex<double>, complex<double>> out = make_pair(rcoeff,rcoeff);
   double power = 0.0;
 
-  if (coord.first != DFData::Comp::L) {
+  if (coord.first != Comp::L) {
     power += 1.0;
     out.first *= coeff[coord.first][basis.first];
     out.first = out.first * ::pow(tc, power);
@@ -134,7 +133,7 @@ pair<complex<double>, complex<double>> DFData::calc_coeff(pair<const int, const 
 
   power = 0.0;
 
-  if (coord.second != DFData::Comp::L) {
+  if (coord.second != Comp::L) {
     power += 1.0;
     out.second *= coeff[coord.second][basis.second];
     out.second = out.second * ::pow(tc, power);
@@ -145,4 +144,34 @@ pair<complex<double>, complex<double>> DFData::calc_coeff(pair<const int, const 
 
 }
 
+pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> DFData::compute_spinor(pair<const int, const int> coord, pair<const int, const int> basis) {
+  pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> spinor;
+  spinor.first = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
+  spinor.second = shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
+  const int start1 = coord.first == Comp::L ? 0 : 2;
+  const int start2 = coord.second == Comp::L ? 0 : 2;
+  const int index1 = start1 + basis.first;
+  const int index2 = start2 + basis.second;
+
+  spinor.first->element(index1,0) = 1.0;
+  spinor.second->element(index2,0) = 1.0;
+
+  assert(index1 >= 0 && index1 < 4);
+  assert(index2 >= 0 && index2 < 4);
+
+  return spinor;
+}
+
+complex<double> DFData::alpha_fac(const int coord) const {
+  complex<double> im(0.0,1.0);
+  complex<double> out(1.0,0.0);
+  if (coord == Comp::X)
+    return out;
+  if (coord == Comp::Y)
+    return (((basis_.second == 0) ^ (coord_.second == Comp::L || coord_.second == Comp::Z)) ? -im * out : im * out);
+  if (coord == Comp::Z)
+    return (((basis_.second == 0) ^ (coord_.second == Comp::L || coord_.second == Comp::Z)) ? -out : out);
+
+  return out;
+}
 

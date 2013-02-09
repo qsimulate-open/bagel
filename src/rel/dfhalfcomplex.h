@@ -34,6 +34,7 @@
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/rel/dfdata.h>
+#include <src/rel/alpha.h>
 #include <src/df/df.h>
 
 namespace bagel {
@@ -44,15 +45,20 @@ class DFHalfComplex {
     std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
     std::pair<const int, const int> coord_;
     std::pair<const int, const int> basis_; 
+    std::shared_ptr<Alpha> alpha_;
+    std::shared_ptr<Sigma> sigma1_;
+    std::shared_ptr<Sigma> sigma2_;
+    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> spinor_;
+    std::complex<double> fac_;
 
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 
     std::pair<std::complex<double>, std::complex<double>> coeff_; 
 
-    std::pair<std::complex<double>, std::complex<double>> calc_coeff(std::pair<const int, const int>, std::pair<const int, const int>); 
+    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> compute_spinor(std::pair<const int, const int>, std::pair<const int, const int>);
 
   public:
-    DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    DFHalfComplex(std::shared_ptr<const DFData>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
                   
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
@@ -62,9 +68,10 @@ class DFHalfComplex {
     std::pair<const int, const int> basis() const { return basis_; }
     std::complex<double> coeff1() const { return coeff_.first; }
     std::complex<double> coeff2() const { return coeff_.second; }
+    std::complex<double> fac() const { return fac_; }
+    std::shared_ptr<Alpha> alpha() const { return alpha_; }
 
-    const std::tuple<int, int>           compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
-    std::complex<double>                 factor(std::shared_ptr<const DFHalfComplex> o) const;
+    const std::tuple<int, int> compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
     int coeff_matrix() const;
     bool matches(std::shared_ptr<DFHalfComplex>) const;
 
