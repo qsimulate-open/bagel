@@ -167,6 +167,8 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
   //if basis1 != basis2, get transpose to fill in opposite corner
   if (dfdata->cross()) {
     const double dfac = (real(dfdata->fac()) == 0 ? -1.0 : 1.0);
+    assert((real(dfdata->fac()) == 0) ^ (imag(dfdata->fac()) == 0)); 
+
     shared_ptr<ZMatrix> tjop(new ZMatrix(*dat->transpose() * dfac));
     add_block(n * get<1>(index), n * get<0>(index), n, n, tjop);
     add_block(n * get<3>(index), n * get<2>(index), n, n, tjop);
