@@ -52,16 +52,18 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
   diis_start_ = read_input<int>(idata_, "diis_start", 1);
+  diis_size_ = read_input<int>(idata_, "diis_size", 5);
   thresh_overlap_ = read_input<double>(idata_, "thresh_overlap", 1.0e-8);
   thresh_scf_ = read_input<double>(idata_, "thresh", 1.0e-8);
   thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
   string dd = read_input<string>(idata_, "diis", "gradient");
 
-  int nact = read_input<int>(idata_, "nact", 0);
-  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()+nact)/2);
+  const int nact    = read_input<int>(idata_, "nact", 0);
+  const int ncharge = read_input<int>(idata_, "charge", 0); 
+  nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()-ncharge+nact)/2);
   noccB_ = nocc_ - nact;
 
-  if (nocc_+noccB_ != geom_->nele()) throw runtime_error("nocc and nact are not consistently specified");
+  if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
 
   tildex_ = shared_ptr<TildeX>(new TildeX(overlap_, thresh_overlap_));
 

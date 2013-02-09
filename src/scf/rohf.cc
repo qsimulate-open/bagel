@@ -49,8 +49,8 @@ void ROHF::compute() {
   // starting SCF iteration
   eigB_ = unique_ptr<double[]>(new double[coeff_->mdim()]);
 
-  DIIS<Matrix> diis(5);
-  DIIS<Matrix> diisB(5);
+  DIIS<Matrix> diis(diis_size_);
+  DIIS<Matrix> diisB(diis_size_);
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 

@@ -50,6 +50,7 @@ class SCF_base {
 
     int max_iter_;
     int diis_start_;
+    int diis_size_;
     double thresh_overlap_;
     double thresh_scf_;
 

@@ -107,7 +107,7 @@ class SCF : public SCF_base {
 
       // starting SCF iteration
 
-      DIIS<DistMatrix> diis(5);
+      DIIS<DistMatrix> diis(diis_size_);
       std::shared_ptr<const Matrix> densitychange = aodensity_;
 
       for (int iter = 0; iter != max_iter_; ++iter) {
