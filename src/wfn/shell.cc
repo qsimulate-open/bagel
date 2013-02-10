@@ -155,6 +155,7 @@ void Shell::init_relativistic() {
   small_ = moment_compute_(overlap);
 }
 
+
 shared_ptr<const Matrix> Shell::overlap_compute_() const {
 
   const int asize_inc = aux_inc_->nbasis();
@@ -167,26 +168,24 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
     OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_inc_}});
     ovl.compute();
     for (int i = 0; i != aux_inc_->nbasis(); ++i)
-      copy_n(ovl.data() + i*(aux_inc_->nbasis()), aux_inc_->nbasis(), overlap->data() + i*a);
+      copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
   }
   if (aux_dec_) {
     {
       OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_dec_, aux_dec_}});
       ovl.compute();
-      for (int i = aux_inc_->nbasis(), j = 0; i != a; ++i, ++j) 
-        copy_n(ovl.data() + j*(aux_dec_->nbasis()), aux_dec_->nbasis(), overlap->data() + i*a + aux_inc_->nbasis());
+      for (int i = 0; i != asize_dec; ++i) 
+        copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
     }
     {
       OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_dec_}});
       ovl.compute();
-      for (int i = aux_inc_->nbasis(); i != a; ++i)
-        for (int j = 0; j != aux_inc_->nbasis(); ++j)
-          overlap->element(j,i) = overlap->element(i,j) = *(ovl.data()+j+aux_inc_->nbasis()*(i-aux_inc_->nbasis()));
+      for (int i = 0; i != asize_dec; ++i)
+        for (int j = 0; j != asize_inc; ++j)
+          overlap->element(j,i+asize_inc) = overlap->element(i+asize_inc,j) = *(ovl.data()+j+asize_inc*i);
     }
   }
 
-  // Make an inverse
-  overlap->inverse();
   return overlap;
 }
 
@@ -236,7 +235,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
         }
     }
 
-    out[i] = shared_ptr<const Matrix>(new Matrix(*overlap ^ *tmparea));
+    out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
   }
   return out;
 }

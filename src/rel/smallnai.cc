@@ -33,10 +33,8 @@ using namespace bagel;
 
 SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 
-  for (int i = 0; i != 4; ++i) {
-    shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis()));
-    dataarray_[i] = tmp;
-  }
+  for (auto& i : dataarray_)
+    i = shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis()));
 
   init();
 
@@ -69,7 +67,6 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
 }
 
 
-// same function as in Matrix; I simply could not use it (without allocating memory space).
 void SmallNAI::init() {
 
   list<shared_ptr<const Shell>> shells;
