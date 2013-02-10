@@ -47,7 +47,7 @@ class DFData : public RelDFBase {
       std::array<int, 2> ab = {{Basis::a, Basis::b}};
       for (auto& i : ab) {
         for (auto& j : ab) {
-          std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(j,i), coord_, sigma1_, sigma2_, alpha_));
+          std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1_, sigma2_, alpha_));
           if (tmp->nonzero()) basis_.push_back(tmp);
         }
       }
