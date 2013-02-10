@@ -99,6 +99,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
 
 // TODO  activate
+#if 0
   {
     vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
     list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
@@ -147,6 +148,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     }
 #endif
   }
+#endif
 
 }
 
@@ -159,8 +161,7 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 
   auto cditer = cd.begin();
   for (auto& i : dfc) { 
-    complex<double> coeff1 = conj(i->fac());
-    sum->zaxpy(coeff1, *cditer++);
+    sum->zaxpy(i->fac(), *cditer++);
   }
 
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
