@@ -52,6 +52,9 @@ class Dirac {
     int diis_start_;
     double thresh_scf_;
     double energy_;
+    int ncharge_;
+    int nele_;
+    int nneg_;
 
     std::shared_ptr<const RelHcore> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
