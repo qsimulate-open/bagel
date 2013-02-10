@@ -40,7 +40,7 @@ MixedERIBatch::MixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, co
   assert(info[0]->dummy());
 
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
-  size_alloc_ = size_block_ * 3;
+  size_alloc_ = size_block_ * nblocks();
   data_ = stack_->get(size_alloc_);
 }
 
@@ -50,9 +50,6 @@ MixedERIBatch::~MixedERIBatch() {
   resources__->release(stack_);
 }
 
-double* MixedERIBatch::data(const int i) {
-  return data_+i*size_block_;
-}
 
 void MixedERIBatch::compute() {
 
@@ -65,7 +62,7 @@ void MixedERIBatch::compute() {
 
   // first compute uncontracted ERI with auxiliary basis (cartesian)
 
-  double* eri = stack_->get(s0size * a1 * s2size);
+  double* eri = stack_->get(s0size*a1*s2size);
 
   eri_compute(eri);
 
@@ -119,18 +116,25 @@ void MixedERIBatch::eri_compute(double* eri) const {
     shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0));
 #endif
     eric->compute();
-    // TODO this could be improved
-    double* tmp = stack_->get(s0size * a1size_inc * s2cart);
-    double* tmp2 = stack_->get(s0size * a1size_inc * s2size);
-    mytranspose_(eric->data(), s0size*a1size_inc, s2cart, tmp);
-    const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
-    carsphlist.carsphfunc_call(carsphindex, s0size*a1size_inc, tmp, tmp2);
-    mytranspose_(tmp2, s2size, s0size*a1size_inc, tmp);
-    
+
+    double* tmp = stack_->get(s0size*a1size_inc*s2cart);
+    if (shells_[1]->spherical()) {
+      // TODO this could be improved
+      double* tmp2 = stack_->get(s0size*a1size_inc*s2size);
+      mytranspose_(eric->data(), s0size*a1size_inc, s2cart, tmp);
+
+      const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
+      carsphlist.carsphfunc_call(carsphindex, s0size*a1size_inc*cart2->num_contracted(), tmp, tmp2);
+
+      mytranspose_(tmp2, s2size, s0size*a1size_inc, tmp);
+      stack_->release(s0size*a1size_inc*s2size, tmp2);
+    } else {
+      copy_n(eric->data(), s0size*a1size_inc*s2cart, tmp);
+    }
+
     for (int i = 0; i != s2size; i++)
       copy_n(tmp + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
 
-    stack_->release(s0size * a1size_inc * s2size, tmp2);
     stack_->release(s0size * a1size_inc * s2cart, tmp);
   }
   if (shells_[1]->aux_dec()) {
@@ -143,18 +147,25 @@ void MixedERIBatch::eri_compute(double* eri) const {
     shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}}, 2.0));
 #endif
     eric->compute();
-    // TODO this could be improved
-    double* tmp = stack_->get(s0size * a1size_dec * s2cart);
-    double* tmp2 = stack_->get(s0size * a1size_dec * s2size);
-    mytranspose_(eric->data(), s0size*a1size_dec, s2cart, tmp);
-    const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
-    carsphlist.carsphfunc_call(carsphindex, s0size*a1size_dec, tmp, tmp2);
-    mytranspose_(tmp2, s2size, s0size*a1size_dec, tmp);
+
+    double* tmp = stack_->get(s0size*a1size_dec*s2cart);
+    if (shells_[1]->spherical()) {
+      // TODO this could be improved
+      double* tmp2 = stack_->get(s0size*a1size_dec*s2size);
+      mytranspose_(eric->data(), s0size*a1size_dec, s2cart, tmp);
+
+      const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
+      carsphlist.carsphfunc_call(carsphindex, s0size*a1size_dec*cart2->num_contracted(), tmp, tmp2);
+
+      mytranspose_(tmp2, s2size, s0size*a1size_dec, tmp);
+      stack_->release(s0size*a1size_dec*s2size, tmp2);
+    } else {
+      copy_n(eric->data(), s0size*a1size_dec*s2cart, tmp);
+    }
 
     for (int i = 0; i != s2size; i++)
-      copy_n(tmp + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0, a1size_inc, i));
+      copy_n(tmp + i*s0size*a1size_dec, s0size*a1size_dec, eri + m(0,a1size_inc,i));
 
-    stack_->release(s0size * a1size_dec * s2size, tmp2);
     stack_->release(s0size * a1size_dec * s2cart, tmp);
   }
 }

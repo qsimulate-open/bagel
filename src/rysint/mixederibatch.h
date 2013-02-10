@@ -57,8 +57,7 @@ class MixedERIBatch : public Integral {
 
     void compute();
 
-    //double* data(const int i) override { assert(false); return nullptr; }
-    double* data(const int i) override;
+    double* data(const int i) override { assert(i < 3); return data_+i*size_block_; }
 
     void eri_compute(double* eri) const;
 
