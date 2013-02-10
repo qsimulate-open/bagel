@@ -31,61 +31,40 @@
 
 namespace bagel {
 
-class RelDFBase {
+class ABcases {
   protected:
-    std::pair<int, int> coord_;
-    std::pair<int, int> basis_; 
-    std::shared_ptr<const Alpha> alpha_;
-    std::shared_ptr<const Sigma> sigma1_;
-    std::shared_ptr<const Sigma> sigma2_;
     std::array<std::shared_ptr<ZMatrix>, 2> spinor_;
+    std::pair<int, int> basis_; 
     std::complex<double> fac_;
 
-    void compute_spinor() {
-      const int start1 = coord_.first == Comp::L ? 0 : 2;
-      const int start2 = coord_.second == Comp::L ? 0 : 2;
+    void compute_spinor(std::pair<int, int>& coord, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a) {
+      const int start1 = coord.first == Comp::L ? 0 : 2;
+      const int start2 = coord.second == Comp::L ? 0 : 2;
       const int index1 = start1 + basis_.first;
       const int index2 = start2 + basis_.second;
       spinor_[0] = std::shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
       spinor_[1] = std::shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
       spinor_[0]->element(index1,0) = 1.0;
       spinor_[1]->element(index2,0) = 1.0;
+
+      ZMatrix z1(*s1->data()**spinor_[0]);
+      ZMatrix z2(*s2->data()**spinor_[1]);
+      fac_ = (z1 % *a->data() * z2).element(0,0);
     }
-
-    void common_init() {
-      sigma1_ = std::shared_ptr<const Sigma>(new Sigma(coord_.first));
-      sigma2_ = std::shared_ptr<const Sigma>(new Sigma(coord_.second));
-
-      compute_spinor();
-
-      ZMatrix z1(*sigma1_->data()**spinor_[0]);
-      ZMatrix z2(*sigma2_->data()**spinor_[1]);
-      fac_ = (z1 % *alpha_->data() * z2).element(0,0);
-
-      assert(fac_ != std::complex<double>(0.0));
-    }
-
   public:
-    RelDFBase(std::pair<int, int> coord, const int alpha) : coord_(coord) {
-      if ((coord_.first == Comp::Z) ^ (coord_.second == Comp::Z))
-        basis_ = std::make_pair(Basis::a, Basis::b);
-      else
-        basis_ = std::make_pair(Basis::a, Basis::a);
-
-      alpha_ = std::shared_ptr<const Alpha>(new Alpha(alpha));
-      common_init();
+    ABcases(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
+      : basis_(b) {
+      compute_spinor(c, s1, s2, a);
     }
 
-    RelDFBase(const RelDFBase& o) : coord_(o.coord_), basis_(o.basis_), alpha_(o.alpha_) {
-      common_init();
-    }
-
-
-    std::pair<int, int> coord() const { return coord_; }
-    std::pair<int, int> basis() const { return basis_; }
-
-    std::shared_ptr<const Alpha> alpha() const { return alpha_; }
     std::complex<double> fac() const { return fac_; }
+    bool nonzero() const { return fac_ != std::complex<double>(0.0); }
+
+    void swap() {
+      std::swap(basis_.first, basis_.second);
+      fac_ = std::conj(fac_);
+      std::swap(spinor_[0], spinor_[1]);
+    }
 
     int basis(const int i) const {
       assert(i == 0 || i == 1);
@@ -95,6 +74,42 @@ class RelDFBase {
       assert(out != 4);
       return out;
     }
+
+    int basis_first() const { return basis_.first; }
+    int basis_second() const { return basis_.second; }
+};
+
+class RelDFBase {
+  protected:
+    std::pair<int, int> coord_;
+    std::shared_ptr<const Alpha> alpha_;
+    std::shared_ptr<const Sigma> sigma1_;
+    std::shared_ptr<const Sigma> sigma2_;
+
+    std::vector<std::shared_ptr<ABcases>> basis_;
+
+    virtual void set_basis() = 0;
+
+    void common_init() {
+      sigma1_ = std::shared_ptr<const Sigma>(new Sigma(coord_.first));
+      sigma2_ = std::shared_ptr<const Sigma>(new Sigma(coord_.second));
+
+      set_basis();
+    }
+
+  public:
+    RelDFBase(std::pair<int, int> coord, const int alpha) : coord_(coord) {
+      alpha_ = std::shared_ptr<const Alpha>(new Alpha(alpha));
+    }
+
+    RelDFBase(const RelDFBase& o) : coord_(o.coord_), alpha_(o.alpha_) {
+    }
+
+
+    std::pair<int, int> coord() const { return coord_; }
+    const std::vector<std::shared_ptr<ABcases>>& basis() const { return basis_; }
+
+    std::shared_ptr<const Alpha> alpha() const { return alpha_; }
 
 };
 

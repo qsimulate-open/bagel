@@ -30,47 +30,31 @@ using namespace std;
 using namespace bagel;
 
 DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const int alpha) : RelDFBase(coord, alpha), dfdata_(df), swap_(false) {
-
+  common_init();
 }
 
-DFData::DFData(const DFData& o, bool bas, bool coo) : RelDFBase(o), dfdata_(o.df()), swap_(o.swap_) {
-
-  if (bas) {
-    basis_.first ^= 1;
-    basis_.second ^= 1;
-  }
+DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), dfdata_(o.df()), swap_(o.swap_) {
+  common_init();
 
   if (coo) {
-    std::swap(coord_.first, coord_.second); 
     swap_ ^= true;
+    for (auto& i : basis_) i->swap();
+    std::swap(coord_.first, coord_.second); 
     std::swap(sigma1_, sigma2_);
-    std::swap(spinor_[0], spinor_[1]);
-    fac_ = conj(fac_);
   }
 
-}
-
-
-//swap basis
-shared_ptr<const DFData> DFData::opp() {
-  return shared_ptr<const DFData>(new DFData(*this, true, false));
 }
 
 
 //swap coord
-shared_ptr<const DFData> DFData::swap() {
-  return shared_ptr<const DFData>(new DFData(*this, false, true));
+shared_ptr<const DFData> DFData::swap() const {
+  return shared_ptr<const DFData>(new DFData(*this, true));
 }
 
 
-//swap both
-shared_ptr<const DFData> DFData::opp_and_swap() {
-  return shared_ptr<const DFData>(new DFData(*this, true, true));
-}
-
-
+#if 0
 const tuple<int, int, int, int> DFData::compute_index_Jop() const {
   // 4x4 ZMatrix either starting at 0,0 (large) 2n,0 (large,small) or 0,2n (small,large) or 2n,2n (small)
   return make_tuple(basis(0), basis(1), basis(0)^1, basis(1)^1);
 }
-
+#endif
