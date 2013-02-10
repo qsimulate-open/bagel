@@ -43,7 +43,18 @@ class DFData : public RelDFBase {
     std::shared_ptr<const DFDist> dfdata_;
     bool swap_;
 
-    DFData(const DFData&, bool , bool);
+    void set_basis() override {
+      std::array<int, 2> ab = {{Basis::a, Basis::b}};
+      for (auto& i : ab) {
+        for (auto& j : ab) {
+          std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(j,i), coord_, sigma1_, sigma2_, alpha_));
+          if (tmp->nonzero()) basis_.push_back(tmp);
+        }
+      }
+      assert(basis_.size() == 2);
+    }
+
+    DFData(const DFData&, bool);
 
   public:
     DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const int);
@@ -53,11 +64,9 @@ class DFData : public RelDFBase {
     std::shared_ptr<const DFDist> df() const { return dfdata_; }
     bool cross() const { return coord_.first != coord_.second; }
     bool swapped() const { return swap_; }
-    std::shared_ptr<const DFData> opp();
-    std::shared_ptr<const DFData> swap();
-    std::shared_ptr<const DFData> opp_and_swap();
+    std::shared_ptr<const DFData> swap() const;
 
-    const std::tuple<int, int, int, int> compute_index_Jop() const;
+//  const std::tuple<int, int, int, int> compute_index_Jop() const;
 
 };
 

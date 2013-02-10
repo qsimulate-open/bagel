@@ -46,8 +46,11 @@ class DFHalfComplex : public RelDFBase {
     std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
     std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
 
+    void set_basis() override;
+
   public:
-    DFHalfComplex(std::shared_ptr<const DFData>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+    DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<ABcases> bas,
+                  std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
                   
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
@@ -63,6 +66,9 @@ class DFHalfComplex : public RelDFBase {
     void set_sum_diff();
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; } 
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; } 
+
+    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
+    int basis(const int i) const { assert(basis_.size() == 1); return basis_[0]->basis(i); }
 };
 
 }

@@ -29,8 +29,10 @@
 using namespace std;
 using namespace bagel;
 
-DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<ABcases> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
                               : RelDFBase(*df) {
+  common_init();
+  basis_.push_back(bas);
 
   const int index = basis(0); 
 
@@ -48,6 +50,11 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, array<shared_ptr<const
   dfhalf_[0] = rhalfbj->apply_J();
   dfhalf_[1] = ihalfbj->apply_J();
 
+}
+
+
+void DFHalfComplex::set_basis() {
+  // does not have to do anything here
 }
 
 
@@ -80,7 +87,7 @@ const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfC
 
 
 bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
-  return coord_.second == o->coord().second && basis_.second == o->basis().second;
+  return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second();
 }
 
 
