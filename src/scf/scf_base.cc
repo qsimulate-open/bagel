@@ -46,8 +46,7 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   hcore_ = shared_ptr<const Hcore>(new Hcore(geom));
   scfb.tick_print("Hcore matrix");
 
-  unique_ptr<double[]> eig(new double[geom_->nbasis()]);
-  eig_ = move(eig);
+  eig_= unique_ptr<double[]>(new double[geom_->nbasis()]);
 
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
   max_iter_ = read_input<int>(idata_, "maxiter_scf", max_iter_);
