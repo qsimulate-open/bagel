@@ -34,7 +34,7 @@ using namespace bagel;
 SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : geom_(geom) {
 
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis())); 
+    shared_ptr<Matrix> tmp(new Matrix(geom->nbasis(), geom->nbasis()));
     dataarray_[i] = tmp;
   }
 
@@ -72,30 +72,20 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
 // same function as in Matrix; I simply could not use it (without allocating memory space).
 void SmallNAI::init() {
 
-  // only lower half will be stored
-  auto o0 = geom_->offsets().begin();
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
-    // iatom0 = iatom1;
-    auto offset0 = o0->begin();
-    for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-      auto offset1 = o0->begin();
-      for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
-        array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-        computebatch(input, *offset0, *offset1);
-      }
-    }
+  list<shared_ptr<const Shell>> shells;
+  for (auto& i : geom_->atoms())
+    shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
-    auto o1 = o0+1;
-    for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
-      auto offset0 = o0->begin();
-      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-        auto offset1 = o1->begin();
-        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
-          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          computebatch(input, *offset0, *offset1);
-        }
-      }
+  // TODO thread, parallel
+  int o0 = 0;
+  for (auto& a0 : shells) {
+    int o1 = 0;
+    for (auto& a1 : shells) {
+      array<shared_ptr<const Shell>,2> input = {{a1, a0}};
+      computebatch(input, o0, o1);
+      o1 += a1->nbasis();
     }
+    o0 += a0->nbasis();
   }
 
 }

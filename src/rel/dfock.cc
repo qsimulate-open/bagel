@@ -208,7 +208,6 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   }
 
   shared_ptr<ZMatrix> a(new ZMatrix(*r, *i));
-//*a *= dfc1->coeff1() * conj(dfc1->coeff2()) * conj(dfc2->coeff1()) * dfc2->coeff2();
   *a *= conj(dfc1->fac()) * dfc2->fac();
 
   int index0, index1;

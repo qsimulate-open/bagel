@@ -55,6 +55,7 @@ Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), geom_(o.geom_)
 void Matrix1e::init() {
 
   // only lower half will be stored
+  // TODO rewrite. thread. parallel
 
   auto o0 = geom_->offsets().begin();
   int u = 0;
