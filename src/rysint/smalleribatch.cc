@@ -48,9 +48,6 @@ SmallERIBatch::~SmallERIBatch() {
   resources__->release(stack_);
 }
 
-double* SmallERIBatch::data(const int i) {
-  return data_+i*size_block_;
-}
 
 void SmallERIBatch::compute() {
 

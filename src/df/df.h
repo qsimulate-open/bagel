@@ -178,9 +178,8 @@ class DFDist_ints : public DFDist {
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
-          // TODO using symmetry. This assumes that swap(i1, i2) integrals are also located in this block, which might not be the case in general.
-          assert(b1shell == b2shell);
-          if (j1 <= j2) {
+          // TODO careful
+          if (TBatch::nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
               tasks.push_back(DFIntTask<TBatch,TBatch::nblocks()>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk));
