@@ -104,7 +104,7 @@ void Dirac::compute() {
 
     // compute energy here
     const complex<double> prod = aodensity->zdotc(*hcore+*distfock);
-    if (fabs(prod.imag()) > 1.0e-6) {
+    if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
 //    throw runtime_error(ss.str());
       cout << ss.str() << endl;
