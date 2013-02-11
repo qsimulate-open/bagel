@@ -403,7 +403,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
-  shared_ptr<Matrix> out(new Matrix(mdim_, ndim_));
+  shared_ptr<Matrix> out(new Matrix(mdim_, ndim_, localized_));
   mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor); 
   return out;
 }
