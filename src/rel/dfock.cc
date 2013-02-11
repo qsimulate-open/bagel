@@ -116,12 +116,11 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
       add_Jop_block(mixed_complex, i, cd); 
     }
 
-#if 0
     // before computing K operators, we factorize mixed_complex 
     for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
       for (auto j = i; j != mixed_complex.end(); ) {
         if (i != j && (*i)->matches((*j))) {
-          complex<double> fac = conj((*j)->fac()) / (*i)->fac();
+          complex<double> fac = conj((*j)->fac() / (*i)->fac());
           (*i)->zaxpy(fac, (*j)); 
           j = mixed_complex.erase(j);
         } else {
@@ -129,7 +128,6 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
         } 
       }
     }
-#endif
 
     for (auto& i : mixed_complex)
       i->set_sum_diff();
