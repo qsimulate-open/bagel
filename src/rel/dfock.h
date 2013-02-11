@@ -43,6 +43,8 @@ namespace bagel {
 class DFock : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
+    const bool gaunt_;
+
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
     std::list<std::shared_ptr<DFData>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
@@ -55,8 +57,9 @@ class DFock : public ZMatrix {
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,
-          const std::shared_ptr<const ZMatrix> coeff, const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*h), geom_(a) {
+          const std::shared_ptr<const ZMatrix> coeff, const bool gaunt,
+          const bool rhf = true, const double scale_ex = 1.0)
+     : ZMatrix(*h), geom_(a), gaunt_(gaunt) {
        
        two_electron_part(coeff, rhf, scale_ex);
     }

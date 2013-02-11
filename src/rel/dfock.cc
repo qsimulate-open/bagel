@@ -115,7 +115,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
 
   // Gaunt term
-  if (true) {
+  if (gaunt_) {
     vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
     list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
     list<shared_ptr<DFHalfComplex>> mixed_complex = make_half_complex(mixed_dfdists, rocoeff, iocoeff);

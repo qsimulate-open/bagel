@@ -56,6 +56,8 @@ class Dirac {
     int nele_;
     int nneg_;
 
+    bool gaunt_;
+
     std::shared_ptr<const RelHcore> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
     std::shared_ptr<const RelOverlap> s12_;
