@@ -98,13 +98,12 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
   }
 
 
-// TODO  activate
-#if 0
+  // Gaunt term
   {
     vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
     list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
     list<shared_ptr<DFHalfComplex>> mixed_complex = make_half_complex(mixed_dfdists, rocoeff, iocoeff);
-#if 0
+
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
     for (auto& j : mixed_complex) {
@@ -116,14 +115,13 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     for (auto& i : mixed_dfdists) {
       add_Jop_block(mixed_complex, i, cd); 
     }
-#endif
-#if 1
 
+#if 0
     // before computing K operators, we factorize mixed_complex 
     for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
       for (auto j = i; j != mixed_complex.end(); ) {
         if (i != j && (*i)->matches((*j))) {
-          complex<double> fac = (*j)->fac() / (*i)->fac();
+          complex<double> fac = conj((*j)->fac()) / (*i)->fac();
           (*i)->zaxpy(fac, (*j)); 
           j = mixed_complex.erase(j);
         } else {
@@ -133,22 +131,16 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     }
 #endif
 
-  // will use the zgemm3m-like algorithm
-#if 1
     for (auto& i : mixed_complex)
       i->set_sum_diff();
-#endif
 
-#if 1
     // computing K operators
     for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
-      for (auto j = mixed_complex.begin(); j != mixed_complex.end(); ++j) {
+      for (auto j = i; j != mixed_complex.end(); ++j) {
         add_Exop_block(*i, *j, scale_exchange); 
       }
     }
-#endif
   }
-#endif
 
 }
 
@@ -242,7 +234,6 @@ list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> df
       }
       k++;
     }
-//  dfdists.remove_if([](shared_ptr<DFData>& o) { return o->fac() == complex<double>(0.0); });
     assert(k == dfs.end());
   }
   
