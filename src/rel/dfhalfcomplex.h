@@ -44,20 +44,21 @@ class DFData;
 
 class DFHalfComplex : public RelDFBase {
   protected:
-    std::array<std::shared_ptr<DFHalfDist>, 2> dfhalf_;
-    std::array<std::shared_ptr<DFHalfDist>, 2> df2_;
+    std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
+    std::array<std::shared_ptr<DFHalfDist>,2> df2_;
 
     void set_basis() override;
 
   public:
-    DFHalfComplex(std::shared_ptr<const DFData>, std::shared_ptr<ABcases> bas,
+    DFHalfComplex(std::shared_ptr<const DFData>, std::vector<std::shared_ptr<ABcases>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+
+    DFHalfComplex(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<ABcases>> bas);
                   
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
 
-    const std::tuple<int, int> compute_index_Exop(std::shared_ptr<const DFHalfComplex> o) const;
     bool matches(std::shared_ptr<DFHalfComplex>) const;
 
     // zaxpy
@@ -69,7 +70,8 @@ class DFHalfComplex : public RelDFBase {
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; } 
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
-    int basis(const int i) const { assert(basis_.size() == 1); return basis_[0]->basis(i); }
+    std::list<std::shared_ptr<DFHalfComplex>> split();
+
 };
 
 }

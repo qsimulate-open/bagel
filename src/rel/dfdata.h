@@ -43,15 +43,18 @@ class DFHalfComplex;
 
 class DFData : public RelDFBase, public std::enable_shared_from_this<DFData> {
   protected:
+    std::vector<std::shared_ptr<const Alpha>> alpha_;
     std::shared_ptr<const DFDist> dfdata_;
     bool swap_;
 
     void set_basis() override {
+      std::shared_ptr<const Sigma> sigma1(new Sigma(coord_.first));
+      std::shared_ptr<const Sigma> sigma2(new Sigma(coord_.second));
       std::array<int, 2> ab = {{Basis::a, Basis::b}};
       for (auto& i : ab)
         for (auto& j : ab)
           for (auto& a : alpha_) {
-            std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1_, sigma2_, a));
+            std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1, sigma2, a));
             if (tmp->nonzero()) basis_.push_back(tmp);
           }
       assert(basis_.size() == 2);

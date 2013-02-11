@@ -29,18 +29,19 @@
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord, alpha), dfdata_(df), swap_(false) {
+DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord), dfdata_(df), swap_(false) {
+  for (auto& i : alpha)
+    alpha_.push_back(std::shared_ptr<const Alpha>(new Alpha(i)));
   common_init();
 }
 
-DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), dfdata_(o.df()), swap_(o.swap_) {
+DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
   common_init();
 
   if (coo) {
     swap_ ^= true;
     for (auto& i : basis_) i->swap();
     std::swap(coord_.first, coord_.second); 
-    std::swap(sigma1_, sigma2_);
   }
 
 }
@@ -54,7 +55,20 @@ shared_ptr<const DFData> DFData::swap() const {
 
 vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
   vector<shared_ptr<DFHalfComplex>> out;
-  for (auto& i : basis())
+
+  // first make a subset
+  vector<vector<shared_ptr<ABcases>>> subsets;
+  for (int i = 0; i != 4; ++i) {
+    vector<shared_ptr<ABcases>> tmp;
+    for (auto& j : basis())
+      if (j->basis(0) == i)
+        tmp.push_back(j);
+    if (!tmp.empty())
+      subsets.push_back(tmp);
+  }
+
+  // transform
+  for (auto& i : subsets)
     out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(shared_from_this(), i, rc, ic)));
   return out;
 }

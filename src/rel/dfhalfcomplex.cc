@@ -29,12 +29,14 @@
 using namespace std;
 using namespace bagel;
 
-DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<ABcases> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr<ABcases>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
                               : RelDFBase(*df) {
   common_init();
-  basis_.push_back(bas);
+  basis_ = bas;
 
-  const int index = basis(0); 
+  const int index = basis_.front()->basis(0); 
+  for (auto& i : basis_)
+    if (i->basis(0) != index) throw logic_error("basis should have the same first index");
 
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
@@ -50,6 +52,12 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, shared_ptr<ABcases> ba
   dfhalf_[0] = rhalfbj->apply_J();
   dfhalf_[1] = ihalfbj->apply_J();
 
+}
+
+
+DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<ABcases>> bas) : RelDFBase(coord), dfhalf_(data) {
+  common_init();
+  basis_ = bas; 
 }
 
 
@@ -86,13 +94,21 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 }
 
 
-const tuple<int, int> DFHalfComplex::compute_index_Exop(shared_ptr<const DFHalfComplex> o) const {
-  return make_tuple(basis(1), o->basis(1));
-}
-
-
 bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
   return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second();
 }
 
 
+list<shared_ptr<DFHalfComplex>> DFHalfComplex::split() {
+  list<shared_ptr<DFHalfComplex>> out;
+  for (auto i = basis().begin(); i != basis().end(); ++i) {
+    if (i == basis().begin()) {
+      out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(dfhalf_, coord_, {*i})));
+    } else {
+      // TODO Any way to avoid copying?
+      array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
+      out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, {*i})));
+    }
+  }
+  return out;
+}

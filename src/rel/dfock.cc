@@ -67,10 +67,12 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
     for (auto& j : half_complex) {
-      const int k =  j->basis(1);
-      cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
-       *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
-       *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+      for (auto& i : j->basis()) {
+        const int k =  i->basis(1);
+        cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
+         *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
+         *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+      }
     }
     for (auto& i : dfdists) {
       add_Jop_block(half_complex, i, cd); 
@@ -78,27 +80,33 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
     timer.tick_print("Coulomb: J operator");
 
+    // split
+    list<shared_ptr<DFHalfComplex>> half_complex_exch;
+    for (auto& i : half_complex) {
+      list<shared_ptr<DFHalfComplex>> tmp = i->split();
+      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    }
     // before computing K operators, we factorize half_complex 
-    for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
-      for (auto j = i; j != half_complex.end(); ) {
+    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_exch.end(); ) {
         if (i != j && (*i)->matches((*j))) {
           complex<double> fac = conj((*j)->fac() / (*i)->fac());
           (*i)->zaxpy(fac, (*j)); 
-          j = half_complex.erase(j);
+          j = half_complex_exch.erase(j);
         } else {
           ++j;
         } 
       }
     }
-    assert(half_complex.size() == 8);
+    assert(half_complex_exch.size() == 8);
 
     // will use the zgemm3m-like algorithm
-    for (auto& i : half_complex)
+    for (auto& i : half_complex_exch)
       i->set_sum_diff();
 
     // computing K operators
-    for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
-      for (auto j = i; j != half_complex.end(); ++j) {
+    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_exch.end(); ++j) {
         add_Exop_block(*i, *j, scale_exchange); 
       }
     }
@@ -117,10 +125,12 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
     for (auto& j : mixed_complex) {
-      const int k =  j->basis(1);
-      cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
-       *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
-       *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+      for (auto& i : j->basis()) {
+        const int k =  i->basis(1);
+        cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
+         *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
+         *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+      }
     }
     for (auto& i : mixed_dfdists) {
       add_Jop_block(mixed_complex, i, cd); 
@@ -128,25 +138,32 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
     timer.tick_print("Gaunt: J operator");
 
+    // split
+    list<shared_ptr<DFHalfComplex>> half_complex_exch;
+    for (auto& i : mixed_complex) {
+      list<shared_ptr<DFHalfComplex>> tmp = i->split();
+      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    }
     // before computing K operators, we factorize mixed_complex 
-    for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
-      for (auto j = i; j != mixed_complex.end(); ) {
+    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_exch.end(); ) {
         if (i != j && (*i)->matches((*j))) {
           complex<double> fac = conj((*j)->fac() / (*i)->fac());
           (*i)->zaxpy(fac, (*j)); 
-          j = mixed_complex.erase(j);
+          j = half_complex_exch.erase(j);
         } else {
           ++j;
         } 
       }
     }
+    assert(half_complex_exch.size() == 8);
 
-    for (auto& i : mixed_complex)
+    for (auto& i : half_complex_exch)
       i->set_sum_diff();
 
     // computing K operators
-    for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
-      for (auto j = i; j != mixed_complex.end(); ++j) {
+    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_exch.end(); ++j) {
         add_Exop_block(*i, *j, scale_exchange); 
       }
     }
@@ -165,8 +182,10 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 
   auto cditer = cd.begin();
   for (auto& i : dfc) { 
-    sum->zaxpy(i->fac(), *cditer++);
+    for (auto& j : i->basis())
+      sum->zaxpy(j->fac(), *cditer++);
   }
+  assert(cditer == cd.end());
 
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
   shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
@@ -212,15 +231,19 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
   }
 
   shared_ptr<ZMatrix> a(new ZMatrix(*r, *i));
-  *a *= conj(dfc1->fac()) * dfc2->fac();
+  for (auto& i1 : dfc1->basis()) {
+    for (auto& i2 : dfc2->basis()) {
+      shared_ptr<ZMatrix> out(new ZMatrix(*a * (conj(i1->fac())*i2->fac())));
 
-  int index0, index1;
-  tie(index0, index1) = dfc1->compute_index_Exop(dfc2);
+      const int index0 = i1->basis(1);
+      const int index1 = i2->basis(1);
 
-  add_block(n*index0, n*index1, n, n, a);
+      add_block(n*index0, n*index1, n, n, out);
 
-  if (dfc1 != dfc2) {
-    add_block(n*index1, n*index0, n, n, a->transpose_conjg());
+      if (dfc1 != dfc2 || i1 != i2) {
+        add_block(n*index1, n*index0, n, n, out->transpose_conjg());
+      }
+    }
   }
 
 }
