@@ -40,6 +40,7 @@
 
 namespace bagel {
 
+class DFData;
 
 class DFHalfComplex : public RelDFBase {
   protected:

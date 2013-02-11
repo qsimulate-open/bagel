@@ -82,7 +82,7 @@ class ABcases {
 class RelDFBase {
   protected:
     std::pair<int, int> coord_;
-    std::shared_ptr<const Alpha> alpha_;
+    std::vector<std::shared_ptr<const Alpha>> alpha_;
     std::shared_ptr<const Sigma> sigma1_;
     std::shared_ptr<const Sigma> sigma2_;
 
@@ -98,18 +98,16 @@ class RelDFBase {
     }
 
   public:
-    RelDFBase(std::pair<int, int> coord, const int alpha) : coord_(coord) {
-      alpha_ = std::shared_ptr<const Alpha>(new Alpha(alpha));
+    RelDFBase(std::pair<int, int> coord, const std::vector<int> alpha) : coord_(coord) {
+      for (auto& i : alpha)
+        alpha_.push_back(std::shared_ptr<const Alpha>(new Alpha(i)));
     }
 
     RelDFBase(const RelDFBase& o) : coord_(o.coord_), alpha_(o.alpha_) {
     }
 
-
     std::pair<int, int> coord() const { return coord_; }
     const std::vector<std::shared_ptr<ABcases>>& basis() const { return basis_; }
-
-    std::shared_ptr<const Alpha> alpha() const { return alpha_; }
 
 };
 

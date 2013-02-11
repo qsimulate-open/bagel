@@ -35,29 +35,32 @@
 #include <src/rel/alpha.h>
 #include <src/util/zmatrix.h>
 #include <src/rel/reldfbase.h>
+#include <src/rel/dfhalfcomplex.h>
 
 namespace bagel {
 
-class DFData : public RelDFBase {
+class DFHalfComplex;
+
+class DFData : public RelDFBase, public std::enable_shared_from_this<DFData> {
   protected:
     std::shared_ptr<const DFDist> dfdata_;
     bool swap_;
 
     void set_basis() override {
       std::array<int, 2> ab = {{Basis::a, Basis::b}};
-      for (auto& i : ab) {
-        for (auto& j : ab) {
-          std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1_, sigma2_, alpha_));
-          if (tmp->nonzero()) basis_.push_back(tmp);
-        }
-      }
+      for (auto& i : ab)
+        for (auto& j : ab)
+          for (auto& a : alpha_) {
+            std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1_, sigma2_, a));
+            if (tmp->nonzero()) basis_.push_back(tmp);
+          }
       assert(basis_.size() == 2);
     }
 
     DFData(const DFData&, bool);
 
   public:
-    DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const int);
+    DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const std::vector<int>);
     DFData(const DFData&) = delete;
     DFData() = delete;
 
@@ -66,7 +69,9 @@ class DFData : public RelDFBase {
     bool swapped() const { return swap_; }
     std::shared_ptr<const DFData> swap() const;
 
-//  const std::tuple<int, int, int, int> compute_index_Jop() const;
+    std::vector<std::shared_ptr<DFHalfComplex>>
+        compute_half_transform(std::array<std::shared_ptr<const Matrix>,4> r,
+                               std::array<std::shared_ptr<const Matrix>,4> i) const;
 
 };
 

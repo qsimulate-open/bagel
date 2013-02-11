@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const int alpha) : RelDFBase(coord, alpha), dfdata_(df), swap_(false) {
+DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord, alpha), dfdata_(df), swap_(false) {
   common_init();
 }
 
@@ -52,9 +52,9 @@ shared_ptr<const DFData> DFData::swap() const {
 }
 
 
-#if 0
-const tuple<int, int, int, int> DFData::compute_index_Jop() const {
-  // 4x4 ZMatrix either starting at 0,0 (large) 2n,0 (large,small) or 0,2n (small,large) or 2n,2n (small)
-  return make_tuple(basis(0), basis(1), basis(0)^1, basis(1)^1);
+vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
+  vector<shared_ptr<DFHalfComplex>> out;
+  for (auto& i : basis())
+    out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(shared_from_this(), i, rc, ic)));
+  return out;
 }
-#endif

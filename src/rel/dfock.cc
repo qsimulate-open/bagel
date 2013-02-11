@@ -51,7 +51,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
-  Timer timer;
+  Timer timer(0);
 
   {
     // get individual df dist objects for each block and add df to dfs
@@ -231,29 +231,23 @@ list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> df
 
   list<shared_ptr<DFData>> dfdists;
   if (!gaunt) { // Regular DHF
+    const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)
         if (i <= j)
-          dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), Comp::L)));
+          dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), {Comp::L})));
     }
     // large-large
-    dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(Comp::L,Comp::L), Comp::L)));
+    dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(Comp::L,Comp::L), {Comp::L})));
     assert(k == dfs.end());
 
   } else { // Gaunt Term
-    const vector<int> alphas = { Comp::X, Comp::Z };
     auto k = dfs.begin();
-    for (auto& i : xyz) {
-      for (auto& alpha : alphas) {
-        dfdists.push_back(shared_ptr<DFData>(new DFData(*k, make_pair(i,Comp::L), alpha)));
-      }
-      k++;
-    }
+    for (auto& i : xyz)
+      dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,Comp::L), {Comp::X, Comp::Z})));
     assert(k == dfs.end());
   }
-  
-
   return dfdists;
 }
 
@@ -262,13 +256,12 @@ list<shared_ptr<DFHalfComplex>> DFock::make_half_complex(list<shared_ptr<DFData>
                                                      array<shared_ptr<const Matrix>,4> iocoeff) {
   list<shared_ptr<DFHalfComplex>> half_complex; 
   for (auto& i : dfdists) {
-    for (auto& j : i->basis()) {
-      half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(i, j, rocoeff, iocoeff)));
-    }
+    vector<shared_ptr<DFHalfComplex>> dat = i->compute_half_transform(rocoeff, iocoeff);
+    half_complex.insert(half_complex.end(), dat.begin(), dat.end());
+
     if (i->cross()) {
-      shared_ptr<const DFData> swap = i->swap();
-      for (auto& j : swap->basis())
-        half_complex.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(swap, j, rocoeff, iocoeff)));
+      vector<shared_ptr<DFHalfComplex>> dat = i->swap()->compute_half_transform(rocoeff, iocoeff);
+      half_complex.insert(half_complex.end(), dat.begin(), dat.end());
     }
   }
   return half_complex;

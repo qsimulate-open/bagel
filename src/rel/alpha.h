@@ -95,6 +95,8 @@ class Alpha {
         Sigma2 t(Comp::Y);
         data_->add_block(2,0,2,2,t.data());
         data_->add_block(0,2,2,2,t.data());
+      } else {
+        assert(false);
       }
     }
 
