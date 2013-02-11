@@ -85,11 +85,17 @@ class Alpha {
       if (i == Comp::L) {
         data_->copy_block(0,0,2,2,s.data());
         data_->copy_block(2,2,2,2,s.data());
-      } else {
+      } else if (i == Comp::Z) {
         data_->copy_block(2,0,2,2,s.data());
         data_->copy_block(0,2,2,2,s.data());
+      } else if (i == Comp::X) {
+        // alpha_X and alpha_Y are treated simultaneously
+        data_->copy_block(2,0,2,2,s.data());
+        data_->copy_block(0,2,2,2,s.data());
+        Sigma2 t(Comp::Y);
+        data_->add_block(2,0,2,2,t.data());
+        data_->add_block(0,2,2,2,t.data());
       }
-      assert((*data_**data_).trace() == std::complex<double>(4.0));
     }
 
     std::shared_ptr<const ZMatrix> data() const { return data_; }

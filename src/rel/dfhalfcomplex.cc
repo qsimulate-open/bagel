@@ -76,7 +76,12 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
     dfhalf_[0]->daxpy(-fac, o->dfhalf_[1]);
     dfhalf_[1]->daxpy( fac, o->dfhalf_[0]);
   } else {
-    throw logic_error("DFHalfComplex::zaxpy can be called by real or imaginary coeff (and not complex)");
+    const double rfac = real(a);
+    dfhalf_[0]->daxpy(rfac, o->dfhalf_[0]);
+    dfhalf_[1]->daxpy(rfac, o->dfhalf_[1]);
+    const double ifac = imag(a);
+    dfhalf_[0]->daxpy(-ifac, o->dfhalf_[1]);
+    dfhalf_[1]->daxpy( ifac, o->dfhalf_[0]);
   }
 }
 

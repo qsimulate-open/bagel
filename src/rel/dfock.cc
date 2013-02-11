@@ -27,6 +27,7 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/util/matrix.h>
+#include <src/util/timer.h>
 
 using namespace std;
 using namespace bagel;
@@ -50,6 +51,8 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
+  Timer timer;
+
   {
     // get individual df dist objects for each block and add df to dfs
     vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
@@ -58,6 +61,8 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
     list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, gaunt);
     list<shared_ptr<DFHalfComplex>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
+
+    timer.tick_print("Coulomb: half trans");
 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
@@ -70,6 +75,8 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     for (auto& i : dfdists) {
       add_Jop_block(half_complex, i, cd); 
     }
+
+    timer.tick_print("Coulomb: J operator");
 
     // before computing K operators, we factorize half_complex 
     for (auto i = half_complex.begin(); i != half_complex.end(); ++i) {
@@ -95,14 +102,17 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
         add_Exop_block(*i, *j, scale_exchange); 
       }
     }
+    timer.tick_print("Coulomb: K operator");
   }
 
 
   // Gaunt term
-  {
+  if (true) {
     vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
     list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
     list<shared_ptr<DFHalfComplex>> mixed_complex = make_half_complex(mixed_dfdists, rocoeff, iocoeff);
+
+    timer.tick_print("Gaunt: half trans");
 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
@@ -115,6 +125,8 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     for (auto& i : mixed_dfdists) {
       add_Jop_block(mixed_complex, i, cd); 
     }
+
+    timer.tick_print("Gaunt: J operator");
 
     // before computing K operators, we factorize mixed_complex 
     for (auto i = mixed_complex.begin(); i != mixed_complex.end(); ++i) {
@@ -138,6 +150,8 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
         add_Exop_block(*i, *j, scale_exchange); 
       }
     }
+
+    timer.tick_print("Gaunt: K operator");
   }
 
 }
@@ -213,21 +227,25 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
 
 list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool gaunt) {
+  const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
+
   list<shared_ptr<DFData>> dfdists;
   if (!gaunt) { // Regular DHF
     auto k = dfs.begin();
-    for (int i = Comp::X; i <= Comp::Z; ++i) {
-      assert(i != Comp::L);
-      for (int j = i; j <= Comp::Z; ++j)
-        dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), Comp::L)));
+    for (auto& i : xyz) {
+      for (auto& j : xyz)
+        if (i <= j)
+          dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), Comp::L)));
     }
     // large-large
     dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(Comp::L,Comp::L), Comp::L)));
     assert(k == dfs.end());
+
   } else { // Gaunt Term
+    const vector<int> alphas = { Comp::X, Comp::Z };
     auto k = dfs.begin();
-    for (int i = 0; i != 3; ++i) {
-      for (int alpha = 0; alpha != 3; ++alpha) {
+    for (auto& i : xyz) {
+      for (auto& alpha : alphas) {
         dfdists.push_back(shared_ptr<DFData>(new DFData(*k, make_pair(i,Comp::L), alpha)));
       }
       k++;
