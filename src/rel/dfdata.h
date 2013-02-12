@@ -57,7 +57,6 @@ class DFData : public RelDFBase, public std::enable_shared_from_this<DFData> {
             std::shared_ptr<ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1, sigma2, a));
             if (tmp->nonzero()) basis_.push_back(tmp);
           }
-      assert(basis_.size() == 2);
     }
 
     DFData(const DFData&, bool);

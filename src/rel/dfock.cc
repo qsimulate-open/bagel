@@ -268,7 +268,7 @@ list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> df
   } else { // Gaunt Term
     auto k = dfs.begin();
     for (auto& i : xyz)
-      dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,Comp::L), {Comp::X, Comp::Z})));
+      dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,Comp::L), xyz)));
     assert(k == dfs.end());
   }
   return dfdists;
