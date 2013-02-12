@@ -44,6 +44,9 @@ class BreitBatch : public ERIBatch_base {
     /// compute a batch of integrals
     void compute() override;
 
+    double* data(const int i) override { return data_ + i*size_block_; } 
+    constexpr static int nblocks() { return 6; }
+
 };
 
 }

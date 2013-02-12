@@ -46,6 +46,7 @@ class NAIBatch : public NAIBatch_base {
     /// compute a batch of integrals
     void compute() override;
 
+    constexpr static int nblocks() { return 1; }
 };
 
 }

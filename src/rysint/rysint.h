@@ -123,10 +123,9 @@ class RysInt : public Integral {
     ~RysInt();
 
     virtual void compute() = 0;
-    constexpr static int nblocks() { return 1; }
 
     /// retrieve a batch of integrals
-    double* data(const int i) override { assert(i == 0); return data_; }
+    virtual double* data(const int i) override { assert(i == 0); return data_; }
     double* data() { return data_; } // TODO for debug
     const double* data() const { return data_; }
     const double* data2() const { return data2_; }

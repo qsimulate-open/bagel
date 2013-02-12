@@ -66,6 +66,7 @@ class SlaterBatch : public RysInt {
     /// compute a batch of integrals
     void compute() override;
 
+    constexpr static int nblocks() { return 1; }
 };
 
 }
