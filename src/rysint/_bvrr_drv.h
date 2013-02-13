@@ -92,8 +92,8 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
 
   double* const dataxx = out;
   double* const dataxy = dataxx + size_block;
-  double* const datayy = dataxy + size_block;
-  double* const dataxz = datayy + size_block;
+  double* const dataxz = dataxy + size_block;
+  double* const datayy = dataxz + size_block;
   double* const datayz = dataxz + size_block;
   double* const datazz = datayz + size_block;
 
@@ -123,8 +123,8 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
               const int ijposition = jposition + ipos_asize;
               dataxx[ijposition] = std::inner_product(iyiz_nn, iyiz_nn+rank_, worksx+offsetx, 0.0);
               dataxy[ijposition] = std::inner_product(iyiz_tn, iyiz_tn+rank_, worktx+offsetx, 0.0);
-              datayy[ijposition] = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0);
               dataxz[ijposition] = std::inner_product(iyiz_nt, iyiz_nt+rank_, worktx+offsetx, 0.0);
+              datayy[ijposition] = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0);
               datayz[ijposition] = std::inner_product(iyiz_tt, iyiz_tt+rank_, workx +offsetx, 0.0);
               datazz[ijposition] = std::inner_product(iyiz_ns, iyiz_ns+rank_, workx +offsetx, 0.0);
             }
