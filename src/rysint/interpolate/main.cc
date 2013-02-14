@@ -145,6 +145,43 @@ struct B {
   void root(const int rank, double* a, double* b, double* c, const int* d) { breitroot[rank](a,b,c,d); }
 } breit;
 
+extern "C" {
+  void spin2root1_(double*, double*, double*, const int*);
+  void spin2root2_(double*, double*, double*, const int*);
+  void spin2root3_(double*, double*, double*, const int*);
+  void spin2root4_(double*, double*, double*, const int*);
+  void spin2root5_(double*, double*, double*, const int*);
+  void spin2root6_(double*, double*, double*, const int*);
+  void spin2root7_(double*, double*, double*, const int*);
+  void spin2root8_(double*, double*, double*, const int*);
+  void spin2root9_(double*, double*, double*, const int*);
+  void spin2root10_(double*, double*, double*, const int*);
+  void spin2root11_(double*, double*, double*, const int*);
+  void spin2root12_(double*, double*, double*, const int*);
+  void spin2root13_(double*, double*, double*, const int*);
+}
+
+struct S {
+  void (*spin2root[14])(double*, double*, double*, const int*);
+  S() {
+    spin2root[1] = spin2root1_;
+    spin2root[2] = spin2root2_;
+    spin2root[3] = spin2root3_;
+    spin2root[4] = spin2root4_;
+    spin2root[5] = spin2root5_;
+    spin2root[6] = spin2root6_;
+    spin2root[7] = spin2root7_;
+    spin2root[8] = spin2root8_;
+    spin2root[9] = spin2root9_;
+    spin2root[10] = spin2root10_;
+    spin2root[11] = spin2root11_;
+    spin2root[12] = spin2root12_;
+    spin2root[13] = spin2root13_;
+  }
+  void root(const int rank, double* a, double* b, double* c, const int* d) { spin2root[rank](a,b,c,d); }
+} spin2;
+
+
 bool test(const int nrank, const double tin) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   const static int nsize = 1;
@@ -159,7 +196,16 @@ bool test(const int nrank, const double tin) {
   double dt[nsize] = {(double)(tt[0])};
   double dr[nsize*nrank];
   double dw[nsize*nrank];
+#ifndef SPIN2
+#ifdef BREIT
   breit.root(nrank, dt, dr, dw, &nsize);
+#else
+  assert(false);
+#endif
+#else
+  spin2.root(nrank, dt, dr, dw, &nsize);
+#endif
+
   cout << setprecision(10) << scientific << endl;
   auto iter = gmp.begin();
   for (int i = 0; i != nrank*nsize; ++i, ++iter) {
@@ -169,8 +215,8 @@ bool test(const int nrank, const double tin) {
   iter = gmp.begin();
   for (int i = 0; i != nrank; ++i, ++iter) {
     if (!(fabs(dr[i] - (double)(iter->first)))) cout << dt[0] << endl;
-    assert(fabs(dr[i] - (double)(iter->first)) < 1.0e-15);
-    assert(fabs(dw[i] - (double)(iter->second)) < 1.0e-15);
+    assert(fabs(dr[i] - (double)(iter->first)) < 1.0e-14);
+    assert(fabs(dw[i] - (double)(iter->second)) < 1.0e-14);
   }
   cout << "test passed: rank" << setw(3) << nrank << endl;
 }
@@ -192,11 +238,12 @@ int main(int argc, char** argv) {
         for (int n = lexical_cast<int>(low); n <= lexical_cast<int>(high); ++n) test(n, i*0.1+1.0e-10);
       }
 #else
-      test(3,1.1003333333);
-      test(3,1.1113333333);
-      test(3,1.1223333333);
-      test(3,1.1323333333);
-      test(3,1.1433333333);
+      test(3,1.10033333333333);
+      test(3,1.11133333333333);
+      test(3,1.12233333333333);
+      test(3,1.13233333333333);
+      test(3,1.14333333333333);
+      test(3,1.14333333333333e3);
 #endif
       return 0;
     }
@@ -217,6 +264,7 @@ int main(int argc, char** argv) {
     }
     vector<double> aroot;
     vector<double> aweight;
+#ifndef SPIN2
 #ifndef BREIT
     // first obtain asymptotics
     const int n=nroot*2;
@@ -253,6 +301,20 @@ int main(int argc, char** argv) {
       aweight.push_back((double)dw[j]*t*sqrt(t));
     }
 #endif
+#else
+    const mpreal t = 1000;
+    const mpreal s = 2000;
+    vector<mpreal> dx(nroot*2);
+    vector<mpreal> dw(nroot*2);
+    vector<mpreal> tt(1, t); tt.push_back(s);
+    rysroot_gmp(tt, dx, dw, nroot, 2);
+    for (int j = 0; j != nroot; ++j) {
+      assert(fabs(dx[j]*t - dx[j+nroot]*s) < 1.0e-16);
+      assert(fabs(dw[j]*t*t*sqrt(t) - dw[j+nroot]*s*s*sqrt(s)) < 1.0e-16);
+      aroot.push_back((double)dx[j]*t);
+      aweight.push_back((double)dw[j]*t*t*sqrt(t));
+    }
+#endif
 
     const int ndeg = NGRID;
     const int nbox = nbox_[nroot];
@@ -260,10 +322,14 @@ int main(int argc, char** argv) {
     const double stride = static_cast<double>(MAXT)/nbox;
     const mpreal mstride = static_cast<mpreal>(MAXT)/nbox;
     ofstream ofs; 
+#ifndef SPIN2
 #ifndef BREIT
     const string func = "eriroot";
 #else
     const string func = "breitroot";
+#endif
+#else
+    const string func = "spin2root";
 #endif
     string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".f";
     ofs.open(filename.c_str());
@@ -331,10 +397,14 @@ int main(int argc, char** argv) {
         }
       }
     }
+#ifndef SPIN2
 #ifndef BREIT
     string tafactor = "t";
 #else
     string tafactor = "t*t*t";
+#endif
+#else
+    string tafactor = "t*t*t*t*t";
 #endif
     ofs << "\
       data x /\n";

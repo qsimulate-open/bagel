@@ -56,6 +56,11 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       for (int i = 0; i != 39; ++i)
         fm[i] = fm[i+1];
 #endif
+#ifdef SPIN2
+      // in case of Spin-Spin, we shift by two
+      for (int i = 0; i != 38; ++i)
+        fm[i] = fm[i+2];
+#endif
       mone = fm[0];
     }
 
