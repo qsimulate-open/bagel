@@ -39,7 +39,7 @@ using namespace bagel;
 static const CarSphList carsphlist;
 static const HRRList hrr;
 
-void BreitBatch::compute() {
+void BreitBatch_base::compute() {
 
   double* const stack_save = stack_->get(size_block_);
   bkup_ = stack_save;

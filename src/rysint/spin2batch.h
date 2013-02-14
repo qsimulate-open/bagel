@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitbatch.cc
+// Filename: spin2batch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,14 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_RYSINT_SPIN2BATCH_H
+#define __SRC_RYSINT_SPIN2BATCH_H
+
 #include <src/rysint/breitbatch.h>
 
-using namespace std;
-using namespace bagel;
+namespace bagel {
 
+class Spin2Batch : public BreitBatch {
 
-BreitBatch::BreitBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum)
-:  ERIBatch_base(_info, max_density, 0, 1) {
+  protected:
+    void perform_VRR();
+    void perform_VRR1();
+
+  public:
+
+    // dummy will never used.
+    Spin2Batch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true);
+
+    /// compute a batch of integrals
+    void compute() override;
+
+    double* data(const int i) override { return data_ + i*size_block_; } 
+    constexpr static int nblocks() { return 6; }
+
+};
 
 }
+
+#endif
 

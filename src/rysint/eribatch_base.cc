@@ -29,6 +29,7 @@
 #include <src/rysint/naibatch_base.h>
 #include <src/rysint/erirootlist.h>
 #include <src/rysint/breitrootlist.h>
+#include <src/rysint/spin2rootlist.h>
 #include <src/rysint/breitbatch.h>
 #include <src/util/constants.h>
 #include <algorithm>
@@ -40,6 +41,7 @@ using namespace bagel;
 
 const static ERIRootList eri;
 const static BreitRootList br;
+const static Spin2RootList s2;
 
 static const double pitwohalf__ = pow(pi__, 2.5);
 static const double pimhalf__ = 1.0/sqrt(pi__);
@@ -94,16 +96,12 @@ void ERIBatch_base::root_weight(const int ps) {
     } else {
       eri.root(rank_, T_, roots_, weights_, ps);
     }
+  } else if (breit_ == 1) {
+    br.root(rank_, T_, roots_, weights_, ps);
+  } else if (breit_ == 2) {
+    s2.root(rank_, T_, roots_, weights_, ps);
   } else {
-#if 0
-    if (amax_ + cmax_ == 0) {
-      ...
-    } else {
-#endif
-      br.root(rank_, T_, roots_, weights_, ps);
-#if 0
-    }
-#endif
+    assert(false);
   }
 }
 

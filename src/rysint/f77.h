@@ -55,6 +55,19 @@ extern "C" {
  void breitroot11_(const double*, double*, double*, const int*);
  void breitroot12_(const double*, double*, double*, const int*);
  void breitroot13_(const double*, double*, double*, const int*);
+ void spin2root1_(const double*, double*, double*, const int*);
+ void spin2root2_(const double*, double*, double*, const int*);
+ void spin2root3_(const double*, double*, double*, const int*);
+ void spin2root4_(const double*, double*, double*, const int*);
+ void spin2root5_(const double*, double*, double*, const int*);
+ void spin2root6_(const double*, double*, double*, const int*);
+ void spin2root7_(const double*, double*, double*, const int*);
+ void spin2root8_(const double*, double*, double*, const int*);
+ void spin2root9_(const double*, double*, double*, const int*);
+ void spin2root10_(const double*, double*, double*, const int*);
+ void spin2root11_(const double*, double*, double*, const int*);
+ void spin2root12_(const double*, double*, double*, const int*);
+ void spin2root13_(const double*, double*, double*, const int*);
 };
 
 #endif

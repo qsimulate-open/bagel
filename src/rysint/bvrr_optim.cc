@@ -63,3 +63,35 @@ void BreitBatch::perform_VRR1() {
 }
 
 
+// hand written code
+void Spin2Batch::perform_VRR1() {
+  // VRR1 means that angular numbers are both zero  
+  double t[3]; // tilde
+  double s[3]; // tilde,tilde
+
+  for (int j = 0; j != screening_size_; ++j) {
+    const int ii = screening_[j];
+    const int ii3 = ii*3;
+    const double oxpq2 = 0.5 * (xp_[ii]+xq_[ii]) / (xp_[ii]*xq_[ii]);
+    const double rho2 = 1.0 / oxpq2 *coeff_[ii]*weights_[ii];
+    const double root = 1.0 - roots_[ii];
+
+    for (int i = 0; i != 3; ++i) {
+      const double PQ = p_[ii3+i] - q_[ii3+i];
+      t[i] = PQ;
+      s[i] = (root*PQ*PQ + oxpq2)*rho2;
+    }
+
+    const double fac = 1.0/root*rho2;
+
+    data_[ii+0*size_block_] = s[0]*fac;
+    data_[ii+1*size_block_] = t[0]*t[1];
+    data_[ii+2*size_block_] = s[1]*fac;
+    data_[ii+3*size_block_] = t[0]*t[2];
+    data_[ii+4*size_block_] = t[1]*t[2];
+    data_[ii+5*size_block_] = s[2]*fac;
+
+  }
+}
+
+
