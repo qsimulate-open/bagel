@@ -63,8 +63,10 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
   const double oxq2 = 0.5 / xq;
   const double opq = 1.0 / (xp + xq);
 
+  const double rho = xp*xq*opq;
+
   int2d<amax1_,cmax1_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
-  scaledata<rank_, worksize>(workx, weights, coeff*xp*xq*2.0*opq, workx);
+  scaledata<rank_, worksize>(workx, weights, coeff*rho*rho*4.0/3.0, workx);
 
   int2d<amax1_,cmax1_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
   int2d<amax1_,cmax1_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
