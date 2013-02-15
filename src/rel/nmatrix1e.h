@@ -1,14 +1,14 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: smallnai.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: nmatrix1e.h
+// Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,32 +24,37 @@
 //
 
 
-#ifndef __SRC_REL_SMALLNAI_H
-#define __SRC_REL_SMALLNAI_H
+#ifndef __src_rel_nmatrix1e_h
+#define __src_rel_nmatrix1e_h
 
-#include <memory>
-#include <array>
-#include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
+#include <cassert>
+#include <src/wfn/shell.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/nmatrix1e.h>
+#include <src/util/matrix.h>
+#include <string>
+#include <algorithm>
+#include <memory>
 
 namespace bagel {
 
-class SmallNAI : public NMatrix1e {
+// specialized matrix for 1e integrals
+class NMatrix1e {
   protected:
-    void init() override;
+    std::shared_ptr<const Geometry> geom_;
+
+    virtual void init() = 0;
+
+    std::vector<std::shared_ptr<Matrix>> matrix_data_;
 
   public:
-    SmallNAI(const std::shared_ptr<const Geometry>);
-    ~SmallNAI() {};
-  
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
+    const std::shared_ptr<Matrix>& operator[](const int i) const { return matrix_data_[i]; };
 
-    void print() const;
+    NMatrix1e(const std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
-    // 4 blocks for smallnai
-    constexpr static int nblocks() { return 4; }
+    virtual void print() const = 0;
+
+    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+
 };
 
 }

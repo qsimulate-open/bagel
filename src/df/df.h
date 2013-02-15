@@ -235,7 +235,6 @@ class DFDist_ints : public DFDist {
 
 class DFHalfDist : public ParallelDF {
   protected:
-    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
   public:
     DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2()) { df_ = df; }
@@ -260,6 +259,7 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2()**d->data2()))); }
+    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
 };
 

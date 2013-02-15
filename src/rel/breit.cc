@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: smallnai.cc
+// Filename: breit.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -25,59 +25,62 @@
 
 
 #include <stddef.h>
-#include <src/rel/smallnai.h>
-#include <src/rysint/smallnaibatch.h>
+#include <src/rel/breit.h>
+#include <src/rysint/breitbatch.h>
 
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
+Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
 
   for (int i = 0; i != nblocks(); ++i)
-    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis())));
+    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->naux(), geom->naux())));
 
   init();
 
 }
 
 
-void SmallNAI::print() const {
+void Breit::print() const {
   int j = 0;
   for (auto i = matrix_data_.begin(); i != matrix_data_.end(); ++i, ++j) {
     stringstream ss;
-    ss << "SmallNAI " << j;
+    ss << "Breit " << j;
     (*i)->print(ss.str());
   }
 }
 
 
-void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void Breit::computebatch(const array<shared_ptr<const Shell>,4>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
-  const int dimb0 = input[1]->nbasis();
-  SmallNAIBatch batch(input, geom_);
+  const int dimb0 = input[2]->nbasis();
+  assert(input[1]->dummy() && input[3]->dummy());
+  BreitBatch batch(input, 1.0);
   batch.compute();
 
   for (int i = 0; i != nblocks(); ++i)
-    matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
 
 }
 
 
-void SmallNAI::init() {
+void Breit::init() {
 
   list<shared_ptr<const Shell>> shells;
-  for (auto& i : geom_->atoms())
+  for (auto& i : geom_->aux_atoms())
     shells.insert(shells.end(), i->shells().begin(), i->shells().end());
+
+  const shared_ptr<const Shell> dum(new Shell(shells.front()->spherical()));
 
   // TODO thread, parallel
   int o0 = 0;
   for (auto& a0 : shells) {
     int o1 = 0;
     for (auto& a1 : shells) {
-      array<shared_ptr<const Shell>,2> input = {{a1, a0}};
+      array<shared_ptr<const Shell>,4> input = {{a1, dum, a0, dum}};
       computebatch(input, o0, o1);
       o1 += a1->nbasis();
     }
@@ -85,4 +88,3 @@ void SmallNAI::init() {
   }
 
 }
-
