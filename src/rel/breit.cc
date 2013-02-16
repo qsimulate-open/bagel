@@ -43,10 +43,10 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
 
 void Breit::print() const {
   int j = 0;
-  for (auto i = matrix_data_.begin(); i != matrix_data_.end(); ++i, ++j) {
+  for (auto& i : matrix_data_) {
     stringstream ss;
-    ss << "Breit " << j;
-    (*i)->print(ss.str());
+    ss << "Breit " << j++;
+    i->print(ss.str());
   }
 }
 
