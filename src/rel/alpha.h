@@ -79,8 +79,9 @@ class Sigma {
 class Alpha {
   protected:
     std::shared_ptr<ZMatrix> data_;
+    const int alpha_comp_;
   public:
-    Alpha(const int i) : data_(new ZMatrix(4,4,true)) {
+    Alpha(const int i) : data_(new ZMatrix(4,4,true)), alpha_comp_(i) {
       Sigma2 s(i);
       if (i == Comp::L) {
         data_->copy_block(0,0,2,2,s.data());
@@ -100,6 +101,7 @@ class Alpha {
     }
 
     std::shared_ptr<const ZMatrix> data() const { return data_; }
+    const int comp() const { return alpha_comp_; }
 
 };
 

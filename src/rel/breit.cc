@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <src/rel/breit.h>
+#include <src/rel/alpha.h>
 #include <src/rysint/breitbatch.h>
 
 using namespace std;
@@ -38,7 +39,20 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
 
   init();
 
+  const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
+  //const vector<int> alphaL = { Comp::L };
+  for (auto& i : xyz) {
+    for (auto& j : xyz)
+      if (i <= j)
+        index_.push_back(make_pair(i,j));
+  }
 }
+
+
+#if 0
+Breit::Breit(shared_ptr<const Breit> breit) : NMatrix1e(breit->geom()), matrix_data_(breit->data()), index_(breit->index()) {
+}
+#endif
 
 
 void Breit::print() const {
@@ -54,7 +68,7 @@ void Breit::print() const {
 void Breit::computebatch(const array<shared_ptr<const Shell>,4>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
-  assert(input.size() == 2);
+  assert(input.size() == 4);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[2]->nbasis();
   assert(input[1]->dummy() && input[3]->dummy());
@@ -63,6 +77,7 @@ void Breit::computebatch(const array<shared_ptr<const Shell>,4>& input, const in
 
   for (int i = 0; i != nblocks(); ++i)
     matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
+
 
 }
 

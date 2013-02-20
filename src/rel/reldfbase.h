@@ -36,6 +36,7 @@ class ABcases {
     std::array<std::shared_ptr<ZMatrix>, 2> spinor_;
     std::pair<int, int> basis_; 
     std::complex<double> fac_;
+    const int alpha_comp_;
 
     void compute_spinor(std::pair<int, int>& coord, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a) {
       const int start1 = coord.first == Comp::L ? 0 : 2;
@@ -53,7 +54,7 @@ class ABcases {
     }
   public:
     ABcases(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
-      : basis_(b) {
+      : basis_(b), alpha_comp_(a->comp()) {
       compute_spinor(c, s1, s2, a);
     }
 
@@ -77,6 +78,7 @@ class ABcases {
 
     int basis_first() const { return basis_.first; }
     int basis_second() const { return basis_.second; }
+    const int comp() const { return alpha_comp_; }
 };
 
 

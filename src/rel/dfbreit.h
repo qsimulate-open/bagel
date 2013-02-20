@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit.h
+// Filename: dfbreit.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,42 +24,39 @@
 //
 
 
-#ifndef __SRC_REL_BREIT_H
-#define __SRC_REL_BREIT_H
+#ifndef __SRC_REL_DFBREIT_H
+#define __SRC_REL_DFBREIT_H
 
 #include <memory>
-#include <array>
+#include <string>
+#include <map>
+#include <src/df/df.h>
+#include <src/wfn/reference.h>
+#include <src/rel/alpha.h>
 #include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
-#include <src/wfn/geometry.h>
-#include <src/rel/nmatrix1e.h>
+#include <src/rel/reldfbase.h>
+#include <src/rel/dfhalfcomplex.h>
 
 namespace bagel {
 
-class Breit : public NMatrix1e {
+class DFBreit {
   protected:
-    void init() override;
-    std::vector<std::pair<const int, const int>> index_;
+    std::vector<std::shared_ptr<const Alpha>> alpha1_;
+    std::vector<std::shared_ptr<const Alpha>> alpha2_;
+    std::shared_ptr<const DFDist> dfbreit_;
+    bool swap_;
+
+    DFBreit(const DFBreit&, bool);
 
   public:
-    Breit(const std::shared_ptr<const Geometry>);
-    //Breit(std::shared_ptr<const Breit>);
+    DFBreit(std::shared_ptr<const DFDist>, const int, const int);
+    DFBreit(const DFBreit&) = delete;
+    DFBreit() = delete;
 
-    ~Breit() {};
-  
-    void computebatch(const std::array<std::shared_ptr<const Shell>,4>&, const int, const int);
-
-    void print() const;
-
-    // 6 blocks for breit
-    constexpr static int nblocks() { return 6; }
-
-    std::pair<const int, const int> index(const int i) const { return index_[i]; }
-    std::vector<std::pair<const int, const int>> index() const { return index_; }
+    std::shared_ptr<const DFDist> df() const { return dfbreit_; }
 
 };
 
 }
 
 #endif
-

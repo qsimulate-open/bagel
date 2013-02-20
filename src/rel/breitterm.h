@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit.h
+// Filename: breitterm.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,38 +24,33 @@
 //
 
 
-#ifndef __SRC_REL_BREIT_H
-#define __SRC_REL_BREIT_H
+#ifndef __SRC_REL_BREITTERM_H
+#define __SRC_REL_BREITTERM_H
 
 #include <memory>
 #include <array>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/nmatrix1e.h>
+#include <src/rel/dfdata.h>
+#include <src/rel/breit.h>
 
 namespace bagel {
 
-class Breit : public NMatrix1e {
+class BreitTerm {
   protected:
-    void init() override;
+    std::shared_ptr<const Breit> breit_;
+    std::vector<std::shared_ptr<ZMatrix>> bt_;
     std::vector<std::pair<const int, const int>> index_;
+    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data_;
 
   public:
-    Breit(const std::shared_ptr<const Geometry>);
-    //Breit(std::shared_ptr<const Breit>);
+    BreitTerm(std::shared_ptr<const Breit>, std::list<std::shared_ptr<DFData>>, std::list<std::shared_ptr<const ZMatrix>>, std::vector<int>);
 
-    ~Breit() {};
-  
-    void computebatch(const std::array<std::shared_ptr<const Shell>,4>&, const int, const int);
+    ~BreitTerm() {};
 
-    void print() const;
-
-    // 6 blocks for breit
-    constexpr static int nblocks() { return 6; }
-
-    std::pair<const int, const int> index(const int i) const { return index_[i]; }
-    std::vector<std::pair<const int, const int>> index() const { return index_; }
+    std::list<std::shared_ptr<ZMatrix>> data(const int i) { return data_[i]; }
+    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data() { return data_; }
 
 };
 

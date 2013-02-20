@@ -113,28 +113,45 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     timer.tick_print("Coulomb: K operator");
   }
 
+//----------------------------------------------------------------------------------------------------------
 
-  // Gaunt term
+  // Gaunt term (and Breit?)
   if (gaunt_) {
     vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
     list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
     list<shared_ptr<DFHalfComplex>> mixed_complex = make_half_complex(mixed_dfdists, rocoeff, iocoeff);
+    shared_ptr<Breit> breit(new Breit(geom_));
 
     timer.tick_print("Gaunt: half trans");
 
     // compute J operators
     list<shared_ptr<const ZMatrix>> cd;
+    vector<int> cd_comp;
     for (auto& j : mixed_complex) {
       for (auto& i : j->basis()) {
         const int k =  i->basis(1);
         cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
          *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
          *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+        cd_comp.push_back(i->comp());
       }
     }
+
     for (auto& i : mixed_dfdists) {
       add_Jop_block(mixed_complex, i, cd); 
     }
+
+#if 0
+  {
+    shared_ptr<const BreitTerm> bt(new BreitTerm(breit, mixed_dfdists, cd, cd_comp));
+    int j = 0
+    for (auto& i : mixed_dfdists) {
+      add_breit_Jop_block(mixed_complex, i, bt, j); 
+      j++
+    }
+  }
+
+#endif
 
     timer.tick_print("Gaunt: J operator");
 
@@ -204,6 +221,28 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
   }
 }
 
+
+#if 0
+void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const BreitTerm> bt, const int index) { 
+  const int n = geom_->nbasis();
+  list<shared_ptr<ZMatrix>> btdata = bt->data(index);
+
+  shared_ptr<ZMatrix> sum = btdata.front()->clone();
+  auto btiter = btdata.begin();
+  for (auto& i : dfc) { 
+    for (auto& j : i->basis())
+      sum->zaxpy(j->fac(), *btiter++);
+  }
+  assert(btiter == btdata.end());
+
+  shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
+  shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
+  shared_ptr<const ZMatrix> dat(new ZMatrix(*rdat, *idat));
+
+  for (auto& i : dfdata->basis())
+    add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat*i->fac()).data());
+}
+#endif
 
 void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale) {
 

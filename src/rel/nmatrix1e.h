@@ -48,12 +48,15 @@ class NMatrix1e {
 
   public:
     const std::shared_ptr<Matrix>& operator[](const int i) const { return matrix_data_[i]; }
+    const std::shared_ptr<Matrix> data(const int i) const { return matrix_data_[i]; }
 
     NMatrix1e(const std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
     virtual void print() const = 0;
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
+
+    std::vector<std::shared_ptr<Matrix>> data() const { return matrix_data_; }
 
 };
 

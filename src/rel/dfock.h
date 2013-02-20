@@ -37,6 +37,7 @@
 #include <src/rel/dfhalfcomplex.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>
+#include <src/rel/breit.h>
 
 namespace bagel {
 

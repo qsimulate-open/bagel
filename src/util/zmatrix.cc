@@ -51,6 +51,12 @@ ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>
   add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim_, mdim_, i.data());
 }
 
+
+ZMatrix::ZMatrix(const Matrix& r) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) { 
+  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim_, mdim_, r.data());
+}
+
+
 #ifdef HAVE_SCALAPACK
 ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), o.mdim()) {
   setlocal_(o.local());
