@@ -49,6 +49,15 @@ BreitTerm::BreitTerm(shared_ptr<const Breit> breit, list<shared_ptr<DFData>> dfd
     }
     dat++;
   }
+#if 0
+  shared_ptr<ZMatrix> sum = btdata.front()->clone();
+  auto btiter = btdata.begin();
+  for (auto& i : dfc) { 
+    for (auto& j : i->basis())
+      sum->zaxpy(j->fac(), *btiter++);
+  }
+  assert(btiter == btdata.end());
+#endif
 
 }
 

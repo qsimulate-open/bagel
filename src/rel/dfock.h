@@ -38,6 +38,7 @@
 #include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/breit.h>
+#include <src/rel/breitterm.h>
 
 namespace bagel {
 
@@ -54,6 +55,8 @@ class DFock : public ZMatrix {
 
     void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
+
+    void add_breit_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::shared_ptr<const BreitTerm>, const int);
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 

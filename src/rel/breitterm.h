@@ -49,8 +49,8 @@ class BreitTerm {
 
     ~BreitTerm() {};
 
-    std::list<std::shared_ptr<ZMatrix>> data(const int i) { return data_[i]; }
-    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data() { return data_; }
+    std::list<std::shared_ptr<ZMatrix>> data(const int i) const { return data_[i]; }
+    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data() const { return data_; }
 
 };
 

@@ -69,9 +69,10 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     for (auto& j : half_complex) {
       for (auto& i : j->basis()) {
         const int k =  i->basis(1);
-        cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
+        shared_ptr<ZMatrix> tmp(new ZMatrix(
          *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
-         *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
+         *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true)));
+        cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(*tmp * i->fac()))); 
       }
     }
     for (auto& i : dfdists) {
@@ -130,10 +131,18 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     for (auto& j : mixed_complex) {
       for (auto& i : j->basis()) {
         const int k =  i->basis(1);
+#if 0
         cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(
          *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
          *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true))));
         cd_comp.push_back(i->comp());
+#else
+        shared_ptr<ZMatrix> tmp(new ZMatrix(
+         *j->get_real()->compute_cd(trocoeff[k], geom_->df()->data2(), true)+*j->get_imag()->compute_cd(tiocoeff[k], geom_->df()->data2(), true),
+         *j->get_real()->compute_cd(tiocoeff[k], geom_->df()->data2(), true)-*j->get_imag()->compute_cd(trocoeff[k], geom_->df()->data2(), true)));
+        cd.push_back(shared_ptr<ZMatrix>(new ZMatrix(*tmp * i->fac()))); 
+        cd_comp.push_back(i->comp());
+#endif
       }
     }
 
@@ -141,13 +150,13 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
       add_Jop_block(mixed_complex, i, cd); 
     }
 
-#if 0
+#if 1
   {
     shared_ptr<const BreitTerm> bt(new BreitTerm(breit, mixed_dfdists, cd, cd_comp));
-    int j = 0
+    int j = 0;
     for (auto& i : mixed_dfdists) {
       add_breit_Jop_block(mixed_complex, i, bt, j); 
-      j++
+      j++;
     }
   }
 
@@ -197,11 +206,19 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 
   shared_ptr<ZMatrix> sum = cd.front()->clone();
 
+#if 0
   auto cditer = cd.begin();
   for (auto& i : dfc) { 
     for (auto& j : i->basis())
       sum->zaxpy(j->fac(), *cditer++);
   }
+#else
+  auto cditer = cd.begin();
+  for (auto& i : dfc) { 
+    for (auto& j : i->basis())
+      sum->zaxpy(1.0, *cditer++);
+  }
+#endif
   assert(cditer == cd.end());
 
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
@@ -222,16 +239,15 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 }
 
 
-#if 0
-void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const BreitTerm> bt, const int index) { 
+#if 1
+void DFock::add_breit_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const DFData> dfdata, shared_ptr<const BreitTerm> bt, const int index) { 
   const int n = geom_->nbasis();
   list<shared_ptr<ZMatrix>> btdata = bt->data(index);
 
   shared_ptr<ZMatrix> sum = btdata.front()->clone();
   auto btiter = btdata.begin();
-  for (auto& i : dfc) { 
-    for (auto& j : i->basis())
-      sum->zaxpy(j->fac(), *btiter++);
+  for (auto& i : btdata) { 
+    sum->zaxpy(1.0, *btiter++);
   }
   assert(btiter == btdata.end());
 
@@ -241,6 +257,13 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 
   for (auto& i : dfdata->basis())
     add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat*i->fac()).data());
+
+  if (dfdata->cross()) {
+    shared_ptr<const DFData> swap = dfdata->swap();
+    shared_ptr<ZMatrix> tdat = dat->transpose();
+    for (auto& i : swap->basis())
+      add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat*i->fac()).data());
+  }
 }
 #endif
 
