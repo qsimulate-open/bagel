@@ -51,8 +51,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     double* modata = mo1eA.get();
     for (int i = 0; i < norbA; ++i) {
       for (int j = 0; j < norbA; ++j, ++modata) {
-        if (i > j) *modata = mo1e(j,i);
-        else *modata = mo1e(i,j);
+        *modata = ( i < j ? mo1e(i,j) : mo1e(j,i) );
       }   
     }
   }
@@ -61,8 +60,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     double* modata = mo1eB.get();
     for (int i = 0; i < norbB; ++i) {
       for (int j = 0; j < norbB; ++j, ++modata) {
-        if (i > j) *modata = mo1e(j+norbA,i+norbA);
-        else *modata = mo1e(i+norbA, j+norbA);
+        *modata = ( i < j ? mo1e(i+norbA,j+norbA) : mo1e(j+norbA,i+norbA) );
       }   
     }
   }

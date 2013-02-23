@@ -112,8 +112,10 @@ int main(int argc, char** argv) {
     bool scf_done = false;
     bool casscf_done = false;
     std::shared_ptr<Geometry> geom;
+    std::multimap<std::string, std::shared_ptr<Geometry>> saved_geos;
     std::shared_ptr<SCF_base> scf;
     std::shared_ptr<const Reference> ref;
+    std::multimap<std::string, std::shared_ptr<const Reference>> saved_refs;
     std::shared_ptr<const RelReference> relref;
     std::shared_ptr<Dimer> dimer;
 
@@ -291,21 +293,57 @@ int main(int argc, char** argv) {
         fci->compute();
 
       } else if (method == "dimerize") {
-
         std::multimap<std::string,std::string> dimdata = iter->second;
 
-        double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
+        std::string form = read_input<std::string>(dimdata, "form", "displace");
+        if (form == "d" || form == "disp" || form == "displace") {
+          double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
-        double dx = read_input<double>(dimdata,"dx",0.0) * scale;
-        double dy = read_input<double>(dimdata,"dy",0.0) * scale;
-        double dz = read_input<double>(dimdata,"dz",0.0) * scale;
-        std::array<double,3> disp = {{dx,dy,dz}};
+          double dx = read_input<double>(dimdata,"dx",0.0) * scale;
+          double dy = read_input<double>(dimdata,"dy",0.0) * scale;
+          double dz = read_input<double>(dimdata,"dz",0.0) * scale;
+          std::array<double,3> disp = {{dx,dy,dz}};
 
-        if (static_cast<bool>(ref)) {
-          dimer = std::shared_ptr<Dimer>(new Dimer(ref,disp));
+          if (static_cast<bool>(ref)) {
+            dimer = std::shared_ptr<Dimer>(new Dimer(ref,disp));
+          }
+          else {
+            throw std::runtime_error("dimerize needs a reference calculation (for now)");
+          }
         }
-        else {
-          dimer = std::shared_ptr<Dimer>(new Dimer(geom,disp));
+        else if (form == "r" || form == "refs") {
+          std::shared_ptr<const Reference> refA;
+          std::shared_ptr<const Reference> refB;
+
+          auto iterA = dimdata.find("unita");
+          if ( iterA != dimdata.end() ) {
+            auto irefA = saved_refs.find(iterA->second);
+            if ( irefA != saved_refs.end() ) {
+              refA = irefA->second;
+            }
+            else {
+              throw std::runtime_error("Saved reference \"" + iterA->second + "\" not found");
+            }
+          }
+          else {
+            throw std::runtime_error("No input provided for unit A");
+          }
+
+          auto iterB = dimdata.find("unitb");
+          if ( iterB != dimdata.end() ) {
+            auto irefB = saved_refs.find(iterB->second);
+            if ( irefB != saved_refs.end() ) {
+              refB = irefB->second;
+            }
+            else {
+              throw std::runtime_error("Saved reference \"" + iterB->second + "\" not found");
+            }
+          }
+          else {
+            throw std::runtime_error("No input provided for unit B");
+          }
+
+          dimer = std::shared_ptr<Dimer>(new Dimer(refA, refB));
         }
 
         dimer->driver(iter->second);
@@ -358,26 +396,35 @@ int main(int argc, char** argv) {
         if(orbitals) mfs << ref;
         mfs.close();
 
+      } else if (method == "save") {
+        auto sdata = iter->second;
+
+        auto igeom = sdata.find("geom");
+          if ( igeom != sdata.end() ) saved_geos.insert(make_pair(igeom->second, geom));
+
+        auto iref = sdata.find("ref");
+          if ( iref != sdata.end() ) saved_refs.insert(make_pair(iref->second, ref));
       }
-      #if 0 // <---- Testing environment
+      #if 1 // <---- Testing environment
       else if (method == "testing") {
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
+        std::multimap<std::string,std::string> dimdata = iter->second;
 
-        dimer->set_sref(ref);
+        std::shared_ptr<FCI> fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+        fci->compute();
 
-        //auto aiter = iter->second.find("active");
-        //if (aiter != iter->second.end()) {
-        //  auto tmp_ref = ref->set_active(aiter->second);
-        //  ref = tmp_ref;
-        //}
+        auto ciwfn = fci->conv_to_ciwfn();
 
-        dimer->set_active(iter->second);
-        
-        dimer->localize(iter->second);
-        ref = dimer->sref();
+        double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
-        //dimer->fci(testdata);
-        //dimer->hamiltonian();
+        double dx = read_input<double>(dimdata,"dx",0.0) * scale;
+        double dy = read_input<double>(dimdata,"dy",0.0) * scale;
+        double dz = read_input<double>(dimdata,"dz",0.0) * scale;
+        std::array<double,3> disp = {{dx,dy,dz}};
+
+        dimer = std::shared_ptr<Dimer>(new Dimer(ciwfn, disp));
+        dimer->hamiltonian();
+
       }
       #endif
 

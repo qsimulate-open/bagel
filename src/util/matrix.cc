@@ -301,6 +301,7 @@ shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
 
   int location = 0;
   for(auto& block_size : blocks) {
+    if (block_size == 0) continue;
     shared_ptr<Matrix> submat = this->get_submatrix(location, location, block_size, block_size);
     submat->diagonalize(eig + location);
     out->copy_block(location,location,submat);

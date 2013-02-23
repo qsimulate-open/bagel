@@ -86,6 +86,7 @@ class Dimer {
       Dimer(RefGeometry a, RefGeometry b);
       Dimer(RefGeometry a, std::array<double,3> displacement);
       Dimer(RefReference a, std::array<double,3> displacement);
+      Dimer(RefReference A, RefReference B);
       Dimer(RefCIWfn a, std::array<double,3> displacement);
 
       // Return functions
@@ -114,6 +115,8 @@ class Dimer {
       std::pair<const int, const int> nbasis() const {return nbasis_; };
       std::pair<const int, const int> ncore() const { return ncore_; };
       int dimerbasis() const { return dimerbasis_; };
+
+      int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
 
       template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
       template <int unit> int act(int a) const { return (a + unit*nact_.first); };

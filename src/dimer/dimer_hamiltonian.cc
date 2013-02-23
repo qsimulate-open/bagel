@@ -62,6 +62,7 @@ void Dimer::hamiltonian() {
 
   cout << " ===== Starting construction of dimer Hamiltonian ===== " << endl;
 
+  // TODO not compatible with having different active spaces
   space_ = shared_ptr<Space>(new Space(ccvecs_.first->det(), 1));
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
@@ -119,8 +120,6 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
 
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
-  double *outdata = out->data();
-
   const int ijA = nactA*nactA;
   const int ijB = nactB*nactB;
 
@@ -131,13 +130,13 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
 
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = stateA + stateB*nstatesA;
+      const int stateAB = dimerstate(stateA, stateB);
       const double *sdataA = sigmavecA->data(stateA)->data();
       for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-        const int stateABp = stateAp + stateB*nstatesA;
+        const int stateABp = dimerstate(stateAp, stateB);
         const double *cdataAp = ccvecs_.first->data(stateAp)->data();
         double element = ddot_(lenab, sdataA, 1, cdataAp, 1); 
-        outdata[stateAB + dimerstates_*stateABp] += element;
+        out->element(stateAB, stateABp) += element;
       }
     }
   }
@@ -146,14 +145,13 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
 
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = stateA + stateB*nstatesA;
+      const int stateAB = dimerstate(stateA, stateB);
       const double *sdataB = sigmavecB->data(stateB)->data();
       for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-        const int stateABp = stateA + stateBp*nstatesA;
+        const int stateABp = dimerstate(stateA, stateBp);
         const double *cdataBp = ccvecs_.second->data(stateBp)->data();
         double element = ddot_(lenab, sdataB, 1, cdataBp, 1);
-
-        outdata[stateAB + dimerstates_*stateABp] += element;
+        out->element(stateAB, stateABp) += element;
       }
     }
   }
@@ -170,21 +168,20 @@ shared_ptr<Matrix> Dimer::compute_intra_activeactive() {
   const int nstatesB = nstates_.second;
 
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
-  double *odata = out->data();
 
   // first do H^{AA}_{AA} case
   shared_ptr<Dvec> sigmavecAA = form_sigma_2e(ccvecs_.first, jop_->mo2e_first(), nact_.first);
 
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = stateA + stateB*nstatesA;
+      const int stateAB = dimerstate(stateA, stateB);
       const double *sdataA = sigmavecAA->data(stateA)->data();
       for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-        const int stateABp = stateAp + stateB*nstatesA;
+        const int stateABp = dimerstate(stateAp, stateB);
         const double *cdataAp = ccvecs_.first->data(stateAp)->data();
         double element = ddot_(lenab, sdataA, 1, cdataAp, 1);
         
-        odata[stateAB + dimerstates_*stateABp] += element;
+        out->element(stateAB, stateABp) += element;
       }
     }
   }
@@ -194,14 +191,14 @@ shared_ptr<Matrix> Dimer::compute_intra_activeactive() {
 
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = stateA + stateB*nstatesA;
+      const int stateAB = dimerstate(stateA, stateB);
       const double *sdataB = sigmavecBB->data(stateB)->data();
       for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-        const int stateABp = stateA + stateBp*nstatesA;
+        const int stateABp = dimerstate(stateA, stateBp);
         const double *cdataBp = ccvecs_.second->data(stateBp)->data();
         double element = ddot_(lenab, sdataB, 1, cdataBp, 1);
         
-        odata[stateAB + dimerstates_*stateABp] += element;
+        out->element(stateAB, stateABp) += element;
       }
     }
   }
@@ -221,10 +218,6 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   const int ijB = nactB*nactB;
   const int nstatesB = nstates_.second;
 
-  // build JK and J matrices
-  shared_ptr<Matrix> JK_abcd = form_JKmatrix(ijA, ijB);
-  shared_ptr<Matrix> J_abcd = form_Jmatrix(ijA, ijB);
-
   // alpha-alpha
   shared_ptr<Matrix> E_ac_alpha = form_EFmatrices_alpha(ccvecs_.first, nstatesA, ijA);
   shared_ptr<Matrix> F_bd_alpha = form_EFmatrices_alpha(ccvecs_.second, nstatesB, ijB);
@@ -232,6 +225,12 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   // beta-beta
   shared_ptr<Matrix> E_ac_beta = form_EFmatrices_beta(ccvecs_.first, nstatesA, ijA);
   shared_ptr<Matrix> F_bd_beta = form_EFmatrices_beta(ccvecs_.second, nstatesB, ijB);
+
+  // build JK and J matrices
+  #define SPLITJK
+  #ifndef SPLITJK
+  shared_ptr<Matrix> JK_abcd = form_JKmatrix(ijA, ijB);
+  shared_ptr<Matrix> J_abcd = form_Jmatrix(ijA, ijB);
 
   shared_ptr<Matrix> tmp(new Matrix(nstatesA*nstatesA, nstatesB*nstatesB));
 
@@ -246,17 +245,58 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
 
   for(int B = 0; B < nstatesB; ++B) {
     for(int A = 0; A < nstatesA; ++A) {
-      const int AB = A + B*nstatesA;
+      const int AB = dimerstate(A,B);
       for(int Bp = 0; Bp < nstatesB; ++Bp) {
         const int BBp = Bp + B*nstatesB;
         for(int Ap = 0; Ap < nstatesA; ++Ap) {
-          const int ABp = Ap + Bp*nstatesA;
+          const int ABp = dimerstate(Ap,Bp);
           const int AAp = Ap + A*nstatesA;
           out->element(AB,ABp) = tmp->element(AAp,BBp);
         }
       }
     }
   }
+  #else
+  shared_ptr<Matrix> J_abcd = form_Jmatrix(ijA, ijB);
+  shared_ptr<Matrix> K_abcd = form_JKmatrix(ijA, ijB);
+
+  shared_ptr<Matrix> Jtmp(new Matrix(nstatesA*nstatesA, nstatesB*nstatesB));
+  
+  *Jtmp += (*E_ac_alpha) * (*J_abcd) ^ (*F_bd_alpha);
+  *Jtmp += (*E_ac_beta) * (*J_abcd) ^ (*F_bd_beta);
+
+  *Jtmp += (*E_ac_alpha) * (*J_abcd) ^ (*F_bd_beta);
+  *Jtmp += (*E_ac_beta) * (*J_abcd) ^ (*F_bd_alpha);
+
+  shared_ptr<Matrix> Ktmp(new Matrix(nstatesA*nstatesA, nstatesB*nstatesB));
+
+  *Ktmp += (*E_ac_alpha) * (*K_abcd) ^ (*F_bd_alpha);
+  *Ktmp += (*E_ac_beta) * (*K_abcd) ^ (*F_bd_beta);
+
+  *Ktmp *= -1.0;
+  
+  shared_ptr<Matrix> Jout(new Matrix(dimerstates_, dimerstates_));
+  shared_ptr<Matrix> Kout(new Matrix(dimerstates_, dimerstates_));
+  for(int B = 0; B < nstatesB; ++B) {
+    for(int A = 0; A < nstatesA; ++A) {
+      const int AB = dimerstate(A,B);
+      for(int Bp = 0; Bp < nstatesB; ++Bp) {
+        const int BBp = Bp + B*nstatesB;
+        for(int Ap = 0; Ap < nstatesA; ++Ap) {
+          const int ABp = dimerstate(Ap, Bp);
+          const int AAp = Ap + A*nstatesA;
+          Jout->element(AB,ABp) = Jtmp->element(AAp,BBp);
+          Kout->element(AB,ABp) = Ktmp->element(AAp,BBp);
+        }
+      }
+    }
+  }
+
+  Jout->print( " J ", dimerstates_);
+  Kout->print( " K ", dimerstates_);
+
+  shared_ptr<Matrix> out(new Matrix(*Jout + *Kout));
+  #endif
 
   return out;
 }
@@ -357,7 +397,11 @@ shared_ptr<Matrix> Dimer::form_JKmatrix(const int ijA, const int ijB) const {
     for(int d = 0; d < nactB; ++d) {
       for(int a = 0; a < nactA; ++a) {
         for(int c = 0; c < nactA; ++c, ++odata) {
-          *odata = jop_->mo2e_hz(act<0>(a), act<1>(b), act<0>(c), act<1>(d)) - jop_->mo2e_hz(act<1>(b), act<0>(a), act<0>(c), act<1>(d));
+          #ifndef SPLITJK
+          *odata = jop_->mo2e_hz(act<0>(a), act<1>(b), act<0>(c), act<1>(d)) - jop_->mo2e_hz(act<0>(a), act<1>(b), act<1>(d), act<0>(c));
+          #else
+          *odata = jop_->mo2e_hz(act<0>(a), act<1>(b), act<1>(d), act<0>(c));
+          #endif
         }
       }
     }

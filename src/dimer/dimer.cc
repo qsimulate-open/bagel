@@ -30,8 +30,10 @@
 #include <src/scf/overlap.h>
 #include <src/scf/fock.h>
 #include <src/fci/harrison.h>
+#include <src/fci/knowles.h>
 #include <src/dimer/dimer.h>
 #include <src/wfn/reference.h>
+#include <src/io/MoldenOut.h>
 
 using namespace std;
 using namespace bagel;
@@ -82,6 +84,36 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis()), symmetric_(true)
    shared_ptr<const Reference> tmpref(new Reference(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
             A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() ) );
    refs_ = make_pair(A, tmpref);
+
+   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+}
+
+Dimer::Dimer(shared_ptr<const Reference> A, shared_ptr<const Reference> B) : dimerbasis_(A->geom()->nbasis() + B->geom()->nbasis()),
+nbasis_(A->geom()->nbasis(), B->geom()->nbasis()), symmetric_(false)
+{
+   /************************************************************
+   *  Set up variables that will contain the organized info    *
+   ************************************************************/
+   coeffs_ = make_pair(A->coeff(), B->coeff());
+
+   shared_ptr<const Geometry> geomA = A->geom();
+   shared_ptr<const Geometry> geomB = B->geom();
+
+   geoms_ = make_pair(geomA, geomB);
+   nele_ = make_pair(geomA->nele(), geomB->nele());
+
+   cout << " ===== Constructing Dimer geometry ===== " << endl;
+   construct_geometry();
+
+   cout << " ===== Constructing Dimer reference ===== " << endl;
+   construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+   orthonormalize();  // Orthogonalizes projected coefficients and stores them in scoeff_;
+
+   int nclo = A->nclosed() + B->nclosed();
+   int nact = A->nact() + B->nact();
+   int nvirt = A->nvirt() + B->nact();
+
+   refs_ = make_pair(A, B);
 
    sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
 }
@@ -245,6 +277,7 @@ void Dimer::orthonormalize() {
    scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
 }
 
+//#define PHASETEST
 void Dimer::fci(multimap<string,string> idata) {
   const int noccA = nele_.first/2;
   const int noccB = nele_.second/2;
@@ -254,46 +287,85 @@ void Dimer::fci(multimap<string,string> idata) {
   const int nclosedB = ncore_.second;
   const int nclosed = nclosedA + nclosedB;
 
+  // filled_active is the number of orbitals in the active space that should be filled
+  const int filled_activeA = noccA - nclosedA;
+  const int filled_activeB = noccB - nclosedB;
+
   const int nactA = nact_.first;
   const int nactB = nact_.second;
   const int nact = nactA + nactB;
 
+  const int nbasisA = nbasis_.first;
+  const int nbasisB = nbasis_.second;
+
   { // Start FCI on unit A
     // Move occupied orbitals of unit B to form the core orbitals
     shared_ptr<Matrix> Amatrix(new Matrix(dimerbasis_, dimerbasis_));
-    Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0));
-    Amatrix->copy_block(0, nclosed, dimerbasis_, noccB - nclosedB, scoeff_->element_ptr(0,nclosed + nactA));
-    Amatrix->copy_block(0, nclosedA + noccB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed));
+    #ifndef PHASETEST
+    Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
+    Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff_->element_ptr(0,nclosed + nactA)); // FilledActive B
+    Amatrix->copy_block(0, nclosed + filled_activeB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed)); // Active A
     shared_ptr<Coeff> Acoeff(new Coeff(*Amatrix));
 
     // Set up variables for this fci
-    const int ncore = nclosedA + noccB;
+    const int ncore = nclosed + filled_activeB;
     const int norb  = nactA;
+
+    #else
+    Amatrix->copy_block(0, 0, dimerbasis_, nclosedA, scoeff_->element_ptr(0,0));
+    Amatrix->copy_block(0, nclosedA, dimerbasis_, nactA, scoeff_->element_ptr(0, nclosed));
+    shared_ptr<Coeff> Acoeff(new Coeff(*Amatrix));
+
+    const int ncore = nclosedA;
+    const int norb = nactA;
+    #endif
 
     shared_ptr<Reference> Aref(new Reference(sgeom_, Acoeff, ncore, norb, 0));
 
+    MoldenOut molden("fciA.molden");
+    molden << sgeom_ << Aref;
+    molden.close();
+
     // for now let's just hardcode in HZ. This can maybe be changed later
-    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Aref, ncore, norb));
+    shared_ptr<FCI> fci(new KnowlesHandy(idata, Aref, ncore, norb));
 
     fci->compute();
     ccvecs_.first = fci->civectors();
+    #if 0
+    shared_ptr<Dvec> tmpcivec(new Dvec(ccvecs_.first));
+    *tmpcivec *= -1.0;
+    ccvecs_.first = tmpcivec;
+    #endif
   }
 
   { // Start FCI on unit B
     shared_ptr<Matrix> Bmatrix(new Matrix(dimerbasis_, dimerbasis_));
-    Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0));
-    Bmatrix->copy_block(0, nclosed, dimerbasis_, noccA - nclosedA, scoeff_->element_ptr(0,nclosed));
-    Bmatrix->copy_block(0, noccA + nclosedB, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA));
+    #ifndef PHASETEST
+    Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
+    Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff_->element_ptr(0,nclosed)); // FilledActive A
+    Bmatrix->copy_block(0, nclosed + filled_activeA, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA)); // Active B
     shared_ptr<Coeff> Bcoeff(new Coeff(*Bmatrix));
 
     // Set up variables for this fci
-    const int ncore = nclosedB + noccA;
+    const int ncore = nclosed + filled_activeA;
     const int norb  = nactB;
+    #else
+    Bmatrix->copy_block(0, 0, dimerbasis_, nclosedB, scoeff_->element_ptr(0,nclosedA));
+    Bmatrix->copy_block(0, nclosedB, dimerbasis_, nactB, scoeff_->element_ptr(0, nclosed + nactA));
+    shared_ptr<Coeff> Bcoeff(new Coeff(*Bmatrix));
+
+    const int ncore = nclosedB;
+    const int norb = nactB;
+    #endif
 
     shared_ptr<Reference> Bref(new Reference(sgeom_, Bcoeff, ncore, norb, 0));
 
+    MoldenOut molden("fciB.molden");
+    molden << sgeom_ << Bref;
+    molden.close();
+
     // HZ fci
-    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Bref, ncore, norb));
+    shared_ptr<FCI> fci(new KnowlesHandy(idata, Bref, ncore, norb));
 
     fci->compute();
     ccvecs_.second = fci->civectors();

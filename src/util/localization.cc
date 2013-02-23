@@ -178,8 +178,13 @@ shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double th
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
 
   // Localize occupied space
-  cout << "  Localizing occupied space" << endl;
-  localize_space(new_coeff, 0, nclosed_);
+  if (nclosed_ != 0) {
+    cout << "  Localizing occupied space" << endl;
+    localize_space(new_coeff, 0, nclosed_);
+  }
+  else {
+    cout << "  No closed space to localize" << endl << endl;
+  }
 
   // If there is an active space, localize it
   if (nact_ != 0) {
