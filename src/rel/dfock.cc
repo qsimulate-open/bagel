@@ -246,10 +246,15 @@ void DFock::add_breit_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<
 
   shared_ptr<ZMatrix> sum = btdata.front()->clone();
   auto btiter = btdata.begin();
-  for (auto& i : btdata) { 
-    sum->zaxpy(1.0, *btiter++);
+#if 0
+  for (auto& i : dfc) { 
+    for (auto& j : i->basis())
+#endif
+  for (auto& i : btdata) {
+    //sum->zaxpy(1.0, *btiter++);
+    sum->zaxpy(1.0, *i);
   }
-  assert(btiter == btdata.end());
+  //assert(btiter == btdata.end());
 
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
   shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
@@ -263,6 +268,23 @@ void DFock::add_breit_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<
     shared_ptr<ZMatrix> tdat = dat->transpose();
     for (auto& i : swap->basis())
       add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat*i->fac()).data());
+  }
+
+  if (bt->cross(index)) {
+    shared_ptr<ZMatrix> tsum = sum->transpose();
+    shared_ptr<Matrix> rdat2 = dfdata->df()->compute_Jop_from_cd(tsum->get_real_part());
+    shared_ptr<Matrix> idat2 = dfdata->df()->compute_Jop_from_cd(tsum->get_imag_part());
+    shared_ptr<const ZMatrix> dat2(new ZMatrix(*rdat2, *idat2));
+
+    for (auto& i : dfdata->basis())
+      add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat2*i->fac()).data());
+
+    if (dfdata->cross()) {
+      shared_ptr<const DFData> swap = dfdata->swap();
+      shared_ptr<ZMatrix> tdat = dat2->transpose();
+      for (auto& i : swap->basis())
+        add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat*i->fac()).data());
+    }
   }
 }
 #endif

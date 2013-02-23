@@ -52,6 +52,8 @@ class BreitTerm {
     std::list<std::shared_ptr<ZMatrix>> data(const int i) const { return data_[i]; }
     std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data() const { return data_; }
 
+    bool cross(const int k) const { return index_[k].first != index_[k].second; }
+
 };
 
 }

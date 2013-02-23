@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-BreitTerm::BreitTerm(shared_ptr<const Breit> breit, list<shared_ptr<DFData>> dfdata, list<shared_ptr<const ZMatrix>> cd, vector<int> cd_comp) : breit_(breit) {
+BreitTerm::BreitTerm(shared_ptr<const Breit> breit, list<shared_ptr<DFData>> dfdata, list<shared_ptr<const ZMatrix>> cd, vector<int> cd_comp) : breit_(breit), index_(breit->index()) {
 
   int dat = 0;
   for (auto& i : dfdata) {
