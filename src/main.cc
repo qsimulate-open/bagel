@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <tuple>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -46,6 +47,7 @@
 #include <src/fci/knowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
+#include <src/casscf/casbfgs.h>
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
 #include <src/parallel/resources.h>
@@ -200,8 +202,11 @@ int main(int argc, char** argv) {
           casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom));
         } else if (algorithm == "werner" || algorithm == "knowles") {
           casscf = std::shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
+        } else if (algorithm == "bfgs") {
+          casscf = std::shared_ptr<CASSCF>(new CASBFGS(iter->second, geom));
         } else {
-          throw std::runtime_error("unknown CASSCF algorithm specified.");
+          std::stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
+          throw std::runtime_error(ss.str());
         }
         casscf->compute();
         ref = casscf->conv_to_ref();

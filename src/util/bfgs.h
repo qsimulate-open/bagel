@@ -47,13 +47,13 @@ class BFGS {
     std::shared_ptr<const T> prev_grad;
     std::shared_ptr<const T> prev_value;
 
+    // initial guess for hessian in a diagonal form
     const std::shared_ptr<const T> denom_;
 
     const bool debug_;
 
   public:
-    BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {};
-    ~BFGS() {};
+    BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
 
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       // to make sure, inputs are copied.
@@ -114,7 +114,7 @@ class BFGS {
       prev_grad = grad;
       prev_value = value;
       return out;
-    };
+    }
 
 };
 
