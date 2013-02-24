@@ -66,7 +66,7 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
   const double rho = xp*xq*opq;
 
   int2d<amax1_,cmax1_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
-  scaledata<rank_, worksize>(workx, weights, coeff*rho*rho*4.0/3.0, workx);
+  scaledata<rank_, worksize>(workx, weights, coeff*rho*rho*4.0, workx);
 
   int2d<amax1_,cmax1_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
   int2d<amax1_,cmax1_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
@@ -109,7 +109,7 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
           const int iyz = cmax1_ * (iy + cmax1_ * iz);
           const int jyz = amax1_ * (jy + amax1_ * jz);
           for (int i = 0; i != rank_; ++i) {
-            const double fac = 1.0 / (1.0-roots[i]);
+            const double fac = 1.0 / 3.0 / (1.0-roots[i]);
             iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i] * fac; 
             iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i];
             iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i];
