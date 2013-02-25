@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: superci.h
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -31,8 +31,9 @@
 #include <string>
 #include <map>
 #include <src/scf/scf.h>
-#include <src/casscf/casscf.h>
 #include <src/wfn/rdm.h>
+#include <src/casscf/casscf.h>
+#include <src/casscf/rotfile.h>
 
 namespace bagel {
 
@@ -43,9 +44,14 @@ class CASBFGS : public CASSCF {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl;
     }
 
+    // compute orbital gradients
     void grad_vc(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RotFile> sigma) const;
     void grad_va(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<RotFile> sigma) const;
     void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<RotFile> sigma) const;
+
+    // compute diagonal denominators
+    std::shared_ptr<const RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
+
 #if 0
     void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
                       const std::shared_ptr<Matrix> gaa, const std::shared_ptr<Matrix> f);

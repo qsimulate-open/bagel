@@ -55,6 +55,7 @@ class BFGS {
   public:
     BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
 
+    // returns a displacement
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       // to make sure, inputs are copied.
       std::shared_ptr<const T> grad(new T(*_grad));
@@ -76,8 +77,6 @@ class BFGS {
           std::shared_ptr<T> vv(new T(*value - *prev_value));
           delta.push_back(vv);
 
-          prev_grad = grad;
-          prev_value = value;
         }
         const int n = delta.size()-1;
         assert(delta.size() == y.size()+1 && y.size()+1 == D.size());

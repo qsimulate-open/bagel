@@ -62,7 +62,7 @@ shared_ptr<Matrix> RotFile::unpack(shared_ptr<const Geometry> geom, const double
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_;
   shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
-  fill(out->data(), out->data()+out->size(), a);
+  fill_n(out->data(), out->size(), a);
 
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
@@ -91,7 +91,7 @@ shared_ptr<Matrix> RotFile::unpack_sym(shared_ptr<const Geometry> geom, const do
   const int nocc_ = nclosed_ + nact_;
   const int nbasis_ = nclosed_ + nact_ + nvirt_;
   shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
-  fill(out->data(), out->data()+out->size(), a);
+  fill_n(out->data(), out->size(), a);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
       out->element(j+nocc_, i+nclosed_) = ele_va(j, i);
