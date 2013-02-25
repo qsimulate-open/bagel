@@ -74,11 +74,17 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> cfockao(new Fock<1>(geom_, hcore_, cden, ccoeff));
     shared_ptr<const Matrix> cfock(new Matrix(*coeff_ % *cfockao * *coeff_));
     // * active Fock operator
-    shared_ptr<const Matrix> aden(new Matrix(*ocoeff * *fci_->rdm1_av()->rdm1_mat(geom_, nclosed_, false) ^ *ocoeff));
-    shared_ptr<const Matrix> afockao(new Fock<1>(geom_, hcore_, aden, vector<double>())); // TODO to be replaced
+    // first make a weighted coefficient
+    shared_ptr<Matrix> acoeff = coeff_->slice(nclosed_, nocc_);
+    for (int i = 0; i != nact_; ++i)
+      dscal_(acoeff->ndim(), sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), 1); 
+    // then make a AO density matrix
+    shared_ptr<const Matrix> aden(new Matrix((*acoeff ^ *acoeff)*2.0));
+    shared_ptr<const Matrix> afockao(new Fock<1>(geom_, hcore_, aden, acoeff));
     shared_ptr<const Matrix> afock(new Matrix(*coeff_ % (*afockao - *hcore_) * *coeff_));
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
+    // TODO I think RDM2_av is not transformed with form_natural_orbs()
     shared_ptr<const Matrix> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
