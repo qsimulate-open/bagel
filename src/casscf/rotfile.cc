@@ -42,21 +42,6 @@ shared_ptr<RotFile> RotFile::copy() const {
 }
 
 
-RotFile RotFile::operator+(const RotFile& o) const {
-  RotFile out(*this);
-  out.daxpy(1.0, o);
-  return out;
-}
-
-RotFile RotFile::operator-(const RotFile& o) const {
-  RotFile out(*this);
-  out.daxpy(-1.0, o);
-  return out;
-}
-
-RotFile& RotFile::operator+=(const RotFile& o) { daxpy(1.0, o); return *this; }
-RotFile& RotFile::operator-=(const RotFile& o) { daxpy(-1.0, o); return *this; }
-
 shared_ptr<Matrix> RotFile::unpack(shared_ptr<const Geometry> geom, const double a) const {
 
   const int nocc_ = nclosed_ + nact_;

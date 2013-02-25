@@ -59,7 +59,7 @@ class BFGS {
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       // to make sure, inputs are copied.
       std::shared_ptr<const T> grad(new T(*_grad));
-      std::shared_ptr<T> value(new T(*_value));
+      std::shared_ptr<const T> value(new T(*_value));
 
       std::shared_ptr<T> out(new T(*grad));
       // (1)

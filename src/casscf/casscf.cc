@@ -44,10 +44,13 @@ static string tostring(const T i) {
 CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : idata_(idat), geom_(geom), hcore_(new Hcore(geom)) {
 
-  std::shared_ptr<SCF<1>> scf_;
-  scf_ = std::shared_ptr<SCF<1>>(new SCF<1>(idat, geom, re));
-  scf_->compute();
-  ref_ = scf_->conv_to_ref();
+  if (!re) {
+    std::shared_ptr<SCF<1>> scf(new SCF<1>(idat, geom));
+    scf->compute();
+    ref_ = scf->conv_to_ref();
+  } else {
+    ref_ = re;
+  }
 
   common_init();
 
@@ -61,6 +64,8 @@ void CASSCF::common_init() {
 
   // first set coefficient
   coeff_ = ref_->coeff();
+  if (coeff_->mdim() != geom_->nbasis())
+    throw runtime_error("CASSCF requires a Reference object with the same number of basis functions so far"); // TODO
 
   // get maxiter from the input
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
@@ -89,11 +94,7 @@ void CASSCF::common_init() {
   }
   nocc_ = nclosed_ + nact_;
 
-#if 0
-  nbasis_ = geom_->nbasis();
-#else
   nbasis_ = coeff_->mdim();
-#endif
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 

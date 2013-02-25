@@ -84,7 +84,6 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> afock(new Matrix(*coeff_ % (*afockao - *hcore_) * *coeff_));
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    // TODO I think RDM2_av is not transformed with form_natural_orbs()
     shared_ptr<const Matrix> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
@@ -95,12 +94,10 @@ void CASBFGS::compute() {
     grad_ca(cfock, afock, qxr, sigma_);
 
     // if this is the first time, set up the BFGS solver
-    if (iter < 4) {
-      shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
-      bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom, true));
-    } else {
+    if (iter < 10) {
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
+      x->zero();
     }
     // extrapolation using BFGS
     shared_ptr<RotFile> a = bfgs->extrapolate(sigma_, x);
@@ -142,7 +139,7 @@ void CASBFGS::compute() {
 
 shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr) const {
   shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, false));
-  out->fill(1.0e100);
+  out->fill(1.0);
   const double tiny = 1.0e-15;
 
   // ia part (4.7a)

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: superci.h
+// Filename: casbfgs.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -53,8 +53,8 @@ class CASBFGS : public CASSCF {
     std::shared_ptr<const RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
 
   public:
-    CASBFGS(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom)
-      : CASSCF(idat, geom) { common_init(); }
+    CASBFGS(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
+      : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute();
 

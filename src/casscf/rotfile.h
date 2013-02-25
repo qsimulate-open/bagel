@@ -49,32 +49,29 @@ class RotFile {
 
   public:
     RotFile(const int iclos, const int iact, const int ivirt, const bool superci = true)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)) {
-        std::unique_ptr<double[]> tmp(new double[size_]);
-        data_ = std::move(tmp);
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new double[size_]) {
+      zero();
     }
     RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new double[o.size_]) {
-      std::copy(o.data(), o.data()+size_, data());
+      *this = o;
     }
     RotFile(const std::shared_ptr<RotFile> o)
       : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new double[o->size_]) {
-      std::copy(o->data(), o->data()+size_, data());
+      *this = *o;
     }
-
-    ~RotFile() {  }
 
     std::shared_ptr<RotFile> clone() const;
     std::shared_ptr<RotFile> copy() const;
 
     // overloaded operators
-    RotFile operator+(const RotFile& o) const;
-    RotFile& operator+=(const RotFile& o);
-    RotFile operator-(const RotFile& o) const;
-    RotFile& operator-=(const RotFile& o);
+    RotFile operator+(const RotFile& o) const { RotFile out(*this); out.daxpy(1.0, o); return out; }
+    RotFile operator-(const RotFile& o) const { RotFile out(*this); out.daxpy(-1.0, o); return out; }
+    RotFile& operator+=(const RotFile& o) { daxpy(1.0, o); return *this; }
+    RotFile& operator-=(const RotFile& o) { daxpy(-1.0, o); return *this; }
     RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; }
     RotFile& operator/=(const RotFile& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
     RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; }
-    RotFile operator=(const RotFile& o) { std::copy(o.data(), o.data()+size(), data());  return *this; }
+    RotFile& operator=(const RotFile& o) { std::copy_n(o.data(), size(), data());  return *this; }
 
     // size of the file
     int size() const { return size_; }

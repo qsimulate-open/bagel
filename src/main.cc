@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
         } else if (algorithm == "werner" || algorithm == "knowles") {
           casscf = std::shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
         } else if (algorithm == "bfgs") {
-          casscf = std::shared_ptr<CASSCF>(new CASBFGS(iter->second, geom));
+          casscf = std::shared_ptr<CASSCF>(new CASBFGS(iter->second, geom, ref));
         } else {
           std::stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
           throw std::runtime_error(ss.str());

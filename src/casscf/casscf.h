@@ -48,7 +48,7 @@ class CASSCF {
     // input
     std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Reference> ref_;
+    std::shared_ptr<const Reference> ref_;
 
     // some internal information
     int nocc_; // sum of nact_ + nclosed_
@@ -92,7 +92,7 @@ class CASSCF {
 
     virtual void compute() = 0;
 
-    std::shared_ptr<Reference> ref() { return ref_; };
+    std::shared_ptr<const Reference> ref() { return ref_; };
     std::shared_ptr<const Reference> ref() const { return ref_; };
     virtual std::shared_ptr<const Reference> conv_to_ref() const;
 
