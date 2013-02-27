@@ -51,9 +51,9 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
   }
 
   //TODO think of a respectable name
-  drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
+  driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
   if (gaunt_) {
-    drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
+    driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
   }
 }
 
@@ -172,7 +172,7 @@ list<shared_ptr<DFHalfComplex>> DFock::make_half_complex(list<shared_ptr<DFData>
   
 }
 
-void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, 
+void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, 
                               array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit, 
                               const double scale_exchange)  {
 
@@ -212,7 +212,7 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
   // split
   list<shared_ptr<DFHalfComplex>> half_complex_exch;
   for (auto& i : half_complex) {
-    list<shared_ptr<DFHalfComplex>> tmp = i->split();
+    list<shared_ptr<DFHalfComplex>> tmp = i->split(!breit);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
   }
 
@@ -244,16 +244,17 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
   timer.tick_print(printtag + ": K operator");
 
   if (breit) {
-    shared_ptr<Breit> breit(new Breit(geom_));
+    shared_ptr<Breit> breit_matrix(new Breit(geom_));
     list<shared_ptr<Breit2Index>> breit_2index;
-    for (int i = 0; i != breit->nblocks(); ++i) {
-      breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit->index(i), breit->data(i), geom_->df()->data2())));
+    for (int i = 0; i != breit_matrix->nblocks(); ++i) {
+      breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2())));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-      if (breit->cross(i))
+      if (breit_matrix->cross(i))
         breit_2index.push_back(breit_2index.back()->cross());
     }
 
+#if 1
     list<shared_ptr<const CDMatrix>> tmp_cd;
     for (auto& i : cd) {
       list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
@@ -266,12 +267,13 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
         for (auto& k : i->basis()) {
           if (k->comp() == j->comp())
             jop_cd.push_back(j);
-          }
+        }
       }
       add_Jop_block(i, jop_cd);
     }
 
     timer.tick_print("Breit: J operator");
+#endif
 
 #if 1
     list<shared_ptr<DFHalfComplex>> tmp_exch;
@@ -290,7 +292,7 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
 
     for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
       for (auto j = i; j != half_complex_breit_exch.end(); ) {
-        if (i != j && (*i)->matches((*j))) {
+        if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))){
           complex<double> fac = conj((*j)->fac() / (*i)->fac());
           (*i)->zaxpy(fac, (*j)); 
           j = half_complex_breit_exch.erase(j);
@@ -300,13 +302,28 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
       }
     }
 
+    for (auto i = tmp_exch.begin(); i != tmp_exch.end(); ++i) {
+      for (auto j = i; j != tmp_exch.end(); ) {
+        if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))){
+          complex<double> fac = conj((*j)->fac() / (*i)->fac());
+          (*i)->zaxpy(fac, (*j)); 
+          j = tmp_exch.erase(j);
+        } else {
+          ++j;
+        } 
+      }
+    }
+
     for (auto& i : half_complex_breit_exch)
+      i->set_sum_diff();
+    for (auto& i : tmp_exch)
       i->set_sum_diff();
 
     // computing K operators
-    for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
-      for (auto j = i; j != half_complex_breit_exch.end(); ++j) {
-        add_Exop_block(*i, *j, scale_exchange); 
+    for (auto& i : tmp_exch) {
+      for (auto& j : half_complex_breit_exch) {
+        if (i->alpha_matches(j))
+          add_Exop_block(i, j, scale_exchange);
       }
     }
 

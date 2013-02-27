@@ -94,7 +94,7 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
   double* const dataxy = dataxx + size_block;
   double* const dataxz = dataxy + size_block;
   double* const datayy = dataxz + size_block;
-  double* const datayz = dataxz + size_block;
+  double* const datayz = datayy + size_block;
   double* const datazz = datayz + size_block;
 
   // assemble up to amax_, cmax_
