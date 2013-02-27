@@ -56,15 +56,14 @@ class DFHalfComplex : public RelDFBase {
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
     DFHalfComplex(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<ABcases>> bas);
-                  
+
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
 
     bool matches(std::shared_ptr<DFHalfComplex>) const;
-    bool alpha_matches(std::shared_ptr<DFHalfComplex>) const;
     bool alpha_matches(std::shared_ptr<Breit2Index>) const;
-    std::shared_ptr<DFHalfComplex> multiply_breit(std::shared_ptr<Breit2Index>) const;
+    std::shared_ptr<DFHalfComplex> multiply_breit2index(std::shared_ptr<Breit2Index> b2i) const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);

@@ -99,27 +99,14 @@ bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
 }
 
 
-bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
-#if 0
-  return basis_[0]->comp() == o->basis_[0]->comp();
-#else
-  throw logic_error("not yet implemented");
-  return true;
-#endif
-}
-
-
+// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
 bool DFHalfComplex::alpha_matches(shared_ptr<Breit2Index> o) const {
-#if 0
-  return basis_[0]->comp() == o->comp().second;
-#else
-  throw logic_error("not yet implemented");
-  return true;
-#endif
+  return basis_[0]->comp() == o->index().second;
 }
 
 
-shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit(shared_ptr<Breit2Index> bt) const {
+// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
+shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
   return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, basis()));
 }
