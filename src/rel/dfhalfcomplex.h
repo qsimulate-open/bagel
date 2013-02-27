@@ -35,6 +35,7 @@
 #include <src/util/matrix.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/alpha.h>
+#include <src/rel/breitterm.h>
 #include <src/rel/reldfbase.h>
 #include <src/df/df.h>
 
@@ -46,6 +47,7 @@ class DFHalfComplex : public RelDFBase {
   protected:
     std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
     std::array<std::shared_ptr<DFHalfDist>,2> df2_;
+    bool split_;
 
     void set_basis() override;
 
@@ -60,6 +62,9 @@ class DFHalfComplex : public RelDFBase {
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
 
     bool matches(std::shared_ptr<DFHalfComplex>) const;
+    bool alpha_matches(std::shared_ptr<DFHalfComplex>) const;
+    bool alpha_matches(std::shared_ptr<BreitTerm>) const;
+    std::shared_ptr<DFHalfComplex> multiply_breit(std::shared_ptr<BreitTerm>) const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);
@@ -71,6 +76,7 @@ class DFHalfComplex : public RelDFBase {
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
     std::list<std::shared_ptr<DFHalfComplex>> split();
+    bool split_status() const { return split_; }
 
 };
 

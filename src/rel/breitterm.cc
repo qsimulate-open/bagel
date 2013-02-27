@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: breitterm.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -30,34 +30,20 @@
 using namespace std;
 using namespace bagel;
 
-BreitTerm::BreitTerm(shared_ptr<const Breit> breit, list<shared_ptr<DFData>> dfdata, list<shared_ptr<const ZMatrix>> cd, vector<int> cd_comp) : breit_(breit), index_(breit->index()) {
-
-  int dat = 0;
-  for (auto& i : dfdata) {
-    for (auto& j : i->basis()) {
-      for (int k = 0; k != breit_->data().size(); ++k) {
-        int m = 0;
-        for (auto& l : cd) {
-          if (breit_->index(k).first == j->comp() && breit_->index(k).second == cd_comp[m]) {
-            shared_ptr<ZMatrix> s12a(new ZMatrix(*(i->df()->data2())));
-            shared_ptr<ZMatrix> breit_cd(new ZMatrix(*(breit_->data(k))));
-            data_[dat].push_back(shared_ptr<ZMatrix> (new ZMatrix(*s12a * *breit_cd * *(l))));
-          }
-          m++;
-        }
-      }
-    }
-    dat++;
-  }
-#if 0
-  shared_ptr<ZMatrix> sum = btdata.front()->clone();
-  auto btiter = btdata.begin();
-  for (auto& i : dfc) { 
-    for (auto& j : i->basis())
-      sum->zaxpy(j->fac(), *btiter++);
-  }
-  assert(btiter == btdata.end());
-#endif
-
+BreitTerm::BreitTerm(pair<const int, const int> index, shared_ptr<const Matrix> breit, shared_ptr<const Matrix> dat2)
+ : index_(index), j_term_(new ZMatrix(*dat2 * *breit)), k_term_(new Matrix(*dat2 * *breit * *dat2)) {
 }
+
+
+BreitTerm::BreitTerm(pair<const int, const int> index, shared_ptr<const ZMatrix> j, shared_ptr<const Matrix> k) : index_(index), j_term_(j), k_term_(k) {
+}
+
+
+shared_ptr<BreitTerm> BreitTerm::cross() const {
+  int i = index_.first;
+  int j = index_.second;
+  return shared_ptr<BreitTerm>(new BreitTerm(make_pair(j,i), j_term_, k_term_));
+}
+
+
 

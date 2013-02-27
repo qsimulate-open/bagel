@@ -99,6 +99,32 @@ bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
 }
 
 
+bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
+#if 0
+  return basis_[0]->comp() == o->basis_[0]->comp();
+#else
+  throw logic_error("not yet implemented");
+  return true;
+#endif
+}
+
+
+bool DFHalfComplex::alpha_matches(shared_ptr<BreitTerm> o) const {
+#if 0
+  return basis_[0]->comp() == o->comp().second;
+#else
+  throw logic_error("not yet implemented");
+  return true;
+#endif
+}
+
+
+shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit(shared_ptr<BreitTerm> bt) const {
+  array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
+  return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, basis()));
+}
+
+
 list<shared_ptr<DFHalfComplex>> DFHalfComplex::split() {
   list<shared_ptr<DFHalfComplex>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {

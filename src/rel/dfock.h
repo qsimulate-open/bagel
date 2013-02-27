@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: dfock.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -39,6 +39,8 @@
 #include <src/rel/relhcore.h>
 #include <src/rel/breit.h>
 #include <src/rel/breitterm.h>
+#include <src/rel/breitj.h>
+#include <src/rel/cdmatrix.h>
 
 namespace bagel {
 
@@ -53,10 +55,11 @@ class DFock : public ZMatrix {
     std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                 std::array<std::shared_ptr<const Matrix>,4>);
 
-    void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
+    void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const CDMatrix>>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
 
-    void add_breit_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::shared_ptr<const BreitTerm>, const int);
+    void add_breit_Jop_block(std::list<std::shared_ptr<const CDMatrix>>, std::shared_ptr<const DFData>);
+    void add_breit_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double);
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
