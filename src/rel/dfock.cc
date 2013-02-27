@@ -72,7 +72,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
       }
     }
     for (auto& i : dfdists) {
-      add_Jop_block(half_complex, i, cd); 
+      add_Jop_block(i, cd); 
     }
 
     timer.tick_print("Coulomb: J operator");
@@ -129,7 +129,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     }
 
     for (auto& i : mixed_dfdists) {
-      add_Jop_block(mixed_complex, i, cd); 
+      add_Jop_block(i, cd); 
     }
 
     timer.tick_print("Gaunt: J operator");
@@ -139,21 +139,31 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
     if (breit_) {
       shared_ptr<Breit> breit(new Breit(geom_));
-      list<shared_ptr<BreitTerm>> bt;
+      list<shared_ptr<Breit2Index>> breit_2index;
       for (int i = 0; i != breit->nblocks(); ++i) {
-        bt.push_back(shared_ptr<BreitTerm>(new BreitTerm(breit->index(i), breit->data(i), geom_->df()->data2())));
+        breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit->index(i), breit->data(i), geom_->df()->data2())));
+
+        // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
         if (breit->cross(i))
-          bt.push_back(bt.back()->cross());
+          breit_2index.push_back(breit_2index.back()->cross());
       }
 
-      list<shared_ptr<const CDMatrix>> bjop;
+      list<shared_ptr<const CDMatrix>> tmp_cd;
       for (auto& i : cd) {
-        list<shared_ptr<const CDMatrix>> tmp = i->compute_Jop_term(bt);
-        bjop.insert(bjop.end(), tmp.begin(), tmp.end());
+        list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
+        tmp_cd.insert(tmp_cd.end(), tmp.begin(), tmp.end());
       }
 
-      for (auto& i : mixed_dfdists) 
-        add_breit_Jop_block(bjop, i);
+      for (auto& i : mixed_dfdists) {
+        list<shared_ptr<const CDMatrix>> jop_cd;
+        for (auto& j : tmp_cd) {
+          for (auto& k : i->basis()) {
+            if (k->comp() == j->comp())
+              jop_cd.push_back(j);
+            }
+        }
+        add_Jop_block(i, jop_cd);
+      }
 
       timer.tick_print("Breit: J operator");
     }
@@ -225,18 +235,15 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 
 
 // TODO get rid of dfc
-void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd) { 
+void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd) { 
 
   const int n = geom_->nbasis();
 
   shared_ptr<ZMatrix> sum = cd.front()->clone();
 
-  auto cditer = cd.begin();
-  for (auto& i : dfc) { 
-    for (auto& j : i->basis())
-      sum->zaxpy(1.0, *cditer++);
+  for (auto& i : cd) {
+    sum->zaxpy(1.0, *i);
   }
-  assert(cditer == cd.end());
 
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
   shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
@@ -256,15 +263,9 @@ void DFock::add_Jop_block(list<shared_ptr<DFHalfComplex>> dfc, shared_ptr<const 
 }
 
 
-#if 1
+#if 0
 void DFock::add_breit_Jop_block(list<shared_ptr<const CDMatrix>> bjop, shared_ptr<const DFData> dfdata) {
   list<shared_ptr<const CDMatrix>> bjdata;
-  for (auto& i : bjop) {
-    for (auto& j : dfdata->basis()) {
-      if (i->comp() == j->comp())
-        bjdata.push_back(i);
-    }
-  }
 
   shared_ptr<ZMatrix> sum = bjdata.front()->clone();
   for (auto& i : bjdata) {
@@ -333,6 +334,7 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 }
 
 
+#if 0
 void DFock::add_breit_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale) {
 
   // minus from -1 in the definition of exchange
@@ -363,6 +365,7 @@ void DFock::add_breit_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHa
 
 
 }
+#endif
 
 
 list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool gaunt) {

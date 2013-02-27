@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitterm.cc
+// Filename: breit2index.h
 // Copyright (C) 2013 Matthew Kelley
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
@@ -24,26 +24,37 @@
 //
 
 
-#include <stddef.h>
-#include <src/rel/breitterm.h>
+#ifndef __SRC_REL_BREIT2INDEX_H
+#define __SRC_REL_BREIT2INDEX_H
 
-using namespace std;
-using namespace bagel;
+#include <memory>
+#include <array>
+#include <src/util/zmatrix.h>
+#include <src/util/matrix.h>
+#include <src/wfn/geometry.h>
+#include <src/rel/breit.h>
 
-BreitTerm::BreitTerm(pair<const int, const int> index, shared_ptr<const Matrix> breit, shared_ptr<const Matrix> dat2)
- : index_(index), j_term_(new ZMatrix(*dat2 * *breit)), k_term_(new Matrix(*dat2 * *breit * *dat2)) {
+namespace bagel {
+
+class Breit2Index {
+  protected:
+    std::pair<const int, const int> index_;
+    std::shared_ptr<const ZMatrix> j_term_;
+    std::shared_ptr<const Matrix> k_term_;
+    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const ZMatrix> j, std::shared_ptr<const Matrix> k);
+
+  public:
+    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> breit, std::shared_ptr<const Matrix> data2);
+
+    std::shared_ptr<const ZMatrix> j_term() const { return j_term_; }
+    std::shared_ptr<const Matrix> k_term() const { return k_term_; }
+    const std::pair<const int, const int>& index() const { return index_; }
+
+    std::shared_ptr<Breit2Index> cross() const;
+
+};
+
 }
 
-
-BreitTerm::BreitTerm(pair<const int, const int> index, shared_ptr<const ZMatrix> j, shared_ptr<const Matrix> k) : index_(index), j_term_(j), k_term_(k) {
-}
-
-
-shared_ptr<BreitTerm> BreitTerm::cross() const {
-  int i = index_.first;
-  int j = index_.second;
-  return shared_ptr<BreitTerm>(new BreitTerm(make_pair(j,i), j_term_, k_term_));
-}
-
-
+#endif
 

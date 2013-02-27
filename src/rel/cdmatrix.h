@@ -50,7 +50,8 @@ class CDMatrix : public ZMatrix {
 
     CDMatrix(const ZMatrix& o, const int comp) : ZMatrix(o), comp_(comp) { }
 
-    std::list<std::shared_ptr<const CDMatrix>> compute_Jop_term(std::list<std::shared_ptr<BreitTerm>>& b) const {
+    // multiply cd and breit2index for use in Jop in dfock.cc
+    std::list<std::shared_ptr<const CDMatrix>> compute_breit_cd(std::list<std::shared_ptr<Breit2Index>>& b) const {
       std::list<std::shared_ptr<const CDMatrix>> out;
       for (auto i : b) {
         if (i->index().second == comp_)

@@ -52,8 +52,8 @@ ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) { 
-  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim_, mdim_, r.data());
+ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) { 
+  add_real_block(factor, 0, 0, ndim_, mdim_, r.data());
 }
 
 

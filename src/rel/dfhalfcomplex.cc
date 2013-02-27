@@ -109,7 +109,7 @@ bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
 }
 
 
-bool DFHalfComplex::alpha_matches(shared_ptr<BreitTerm> o) const {
+bool DFHalfComplex::alpha_matches(shared_ptr<Breit2Index> o) const {
 #if 0
   return basis_[0]->comp() == o->comp().second;
 #else
@@ -119,7 +119,7 @@ bool DFHalfComplex::alpha_matches(shared_ptr<BreitTerm> o) const {
 }
 
 
-shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit(shared_ptr<BreitTerm> bt) const {
+shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit(shared_ptr<Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
   return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, basis()));
 }

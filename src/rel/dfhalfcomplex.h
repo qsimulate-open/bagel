@@ -35,7 +35,7 @@
 #include <src/util/matrix.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/alpha.h>
-#include <src/rel/breitterm.h>
+#include <src/rel/breit2index.h>
 #include <src/rel/reldfbase.h>
 #include <src/df/df.h>
 
@@ -63,8 +63,8 @@ class DFHalfComplex : public RelDFBase {
 
     bool matches(std::shared_ptr<DFHalfComplex>) const;
     bool alpha_matches(std::shared_ptr<DFHalfComplex>) const;
-    bool alpha_matches(std::shared_ptr<BreitTerm>) const;
-    std::shared_ptr<DFHalfComplex> multiply_breit(std::shared_ptr<BreitTerm>) const;
+    bool alpha_matches(std::shared_ptr<Breit2Index>) const;
+    std::shared_ptr<DFHalfComplex> multiply_breit(std::shared_ptr<Breit2Index>) const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);
