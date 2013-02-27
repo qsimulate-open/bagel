@@ -40,6 +40,7 @@
 #include <src/rel/breit.h>
 #include <src/rel/breit2index.h>
 #include <src/rel/cdmatrix.h>
+#include <src/util/timer.h>
 
 namespace bagel {
 
@@ -47,6 +48,7 @@ class DFock : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
     const bool gaunt_;
+    const bool breit_;
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
@@ -56,6 +58,9 @@ class DFock : public ZMatrix {
 
     void add_Jop_block(std::shared_ptr<const DFData>, std::list<std::shared_ptr<const CDMatrix>>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
+    void drive_this_sucker(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
+                           std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
+                           const double scale_exchange, Timer timer);
 
 #if 0
     void add_breit_Jop_block(std::list<std::shared_ptr<const CDMatrix>>, std::shared_ptr<const DFData>);
@@ -65,9 +70,9 @@ class DFock : public ZMatrix {
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,
-          const std::shared_ptr<const ZMatrix> coeff, const bool gaunt,
+          const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
           const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*h), geom_(a), gaunt_(gaunt) {
+     : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit) {
        
        two_electron_part(coeff, rhf, scale_ex);
     }

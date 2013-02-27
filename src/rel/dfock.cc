@@ -27,7 +27,6 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/util/matrix.h>
-#include <src/util/timer.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,204 +51,14 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
   }
 
   Timer timer(0);
-
-  {
-    // get individual df dist objects for each block and add df to dfs
-    vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
-    dfs.push_back(geom_->df());
-    bool gaunt = false;
-
-    list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, gaunt);
-    list<shared_ptr<DFHalfComplex>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
-
-    timer.tick_print("Coulomb: half trans");
-
-    // compute J operators
-    list<shared_ptr<const CDMatrix>> cd;
-    for (auto& j : half_complex) {
-      for (auto& i : j->basis()) {
-        cd.push_back(shared_ptr<CDMatrix>(new CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
-      }
-    }
-    for (auto& i : dfdists) {
-      add_Jop_block(i, cd); 
-    }
-
-    timer.tick_print("Coulomb: J operator");
-
-    // split
-    list<shared_ptr<DFHalfComplex>> half_complex_exch;
-    for (auto& i : half_complex) {
-      list<shared_ptr<DFHalfComplex>> tmp = i->split();
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    }
-    // before computing K operators, we factorize half_complex 
-    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-      for (auto j = i; j != half_complex_exch.end(); ) {
-        if (i != j && (*i)->matches((*j))) {
-          complex<double> fac = conj((*j)->fac() / (*i)->fac());
-          (*i)->zaxpy(fac, (*j)); 
-          j = half_complex_exch.erase(j);
-        } else {
-          ++j;
-        } 
-      }
-    }
-    assert(half_complex_exch.size() == 8);
-
-    // will use the zgemm3m-like algorithm
-    for (auto& i : half_complex_exch)
-      i->set_sum_diff();
-
-    // computing K operators
-    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-      for (auto j = i; j != half_complex_exch.end(); ++j) {
-        add_Exop_block(*i, *j, scale_exchange); 
-      }
-    }
-    timer.tick_print("Coulomb: K operator");
-  }
-
-//----------------------------------------------------------------------------------------------------------
-
-  // Gaunt term (and Breit?)
+  //TODO think of a respectable name
+  drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange, timer);
   if (gaunt_) {
-    vector<shared_ptr<const DFDist>> dfsl = geom_->dfsl()->split_blocks();
-    list<shared_ptr<DFData>> mixed_dfdists = make_dfdists(dfsl, true);
-    list<shared_ptr<DFHalfComplex>> mixed_complex = make_half_complex(mixed_dfdists, rocoeff, iocoeff);
-
-    timer.tick_print("Gaunt: half trans");
-
-    // compute J operators
-    list<shared_ptr<const CDMatrix>> cd;
-    for (auto& j : mixed_complex) {
-      for (auto& i : j->basis()) {
-        cd.push_back(shared_ptr<CDMatrix>(new CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
-      }
-    }
-
-    for (auto& i : mixed_dfdists) {
-      add_Jop_block(i, cd); 
-    }
-
-    timer.tick_print("Gaunt: J operator");
-
-
-    // split
-    list<shared_ptr<DFHalfComplex>> half_complex_exch;
-    for (auto& i : mixed_complex) {
-      list<shared_ptr<DFHalfComplex>> tmp = i->split();
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    }
-
-    // before computing K operators, we factorize mixed_complex 
-    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-      for (auto j = i; j != half_complex_exch.end(); ) {
-        if (i != j && (*i)->matches((*j))) {
-          complex<double> fac = conj((*j)->fac() / (*i)->fac());
-          (*i)->zaxpy(fac, (*j)); 
-          j = half_complex_exch.erase(j);
-        } else {
-          ++j;
-        } 
-      }
-    }
-    assert(half_complex_exch.size() == 8);
-
-    for (auto& i : half_complex_exch)
-      i->set_sum_diff();
-
-    // computing K operators
-    for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-      for (auto j = i; j != half_complex_exch.end(); ++j) {
-        add_Exop_block(*i, *j, scale_exchange); 
-      }
-    }
-
-    timer.tick_print("Gaunt: K operator");
-    
-    //-----------------------------------------------------------------------------
-
-    // TODO input interface to breit_
-    const bool breit_ = true;
-
-    if (breit_) {
-      shared_ptr<Breit> breit(new Breit(geom_));
-      list<shared_ptr<Breit2Index>> breit_2index;
-      for (int i = 0; i != breit->nblocks(); ++i) {
-        breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit->index(i), breit->data(i), geom_->df()->data2())));
-
-        // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-        if (breit->cross(i))
-          breit_2index.push_back(breit_2index.back()->cross());
-      }
-
-      list<shared_ptr<const CDMatrix>> tmp_cd;
-      for (auto& i : cd) {
-        list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
-        tmp_cd.insert(tmp_cd.end(), tmp.begin(), tmp.end());
-      }
-
-      for (auto& i : mixed_dfdists) {
-        list<shared_ptr<const CDMatrix>> jop_cd;
-        for (auto& j : tmp_cd) {
-          for (auto& k : i->basis()) {
-            if (k->comp() == j->comp())
-              jop_cd.push_back(j);
-            }
-        }
-        add_Jop_block(i, jop_cd);
-      }
-
-      timer.tick_print("Breit: J operator");
-
-#if 1
-      list<shared_ptr<DFHalfComplex>> tmp_exch;
-      for (auto& i : mixed_complex) {
-        list<shared_ptr<DFHalfComplex>> tmp = i->split();
-        tmp_exch.insert(tmp_exch.end(), tmp.begin(), tmp.end());
-      }
-
-      list<shared_ptr<DFHalfComplex>> half_complex_breit_exch;
-      for (auto& i : tmp_exch) {
-        for (auto& j : breit_2index) {
-          if (i->alpha_matches(j))
-            half_complex_breit_exch.push_back(i->multiply_breit2index(j));
-        }
-      }
-
-      for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
-        for (auto j = i; j != half_complex_breit_exch.end(); ) {
-          if (i != j && (*i)->matches((*j))) {
-            complex<double> fac = conj((*j)->fac() / (*i)->fac());
-            (*i)->zaxpy(fac, (*j)); 
-            j = half_complex_breit_exch.erase(j);
-          } else {
-            ++j;
-          } 
-        }
-      }
-  
-      for (auto& i : half_complex_breit_exch)
-        i->set_sum_diff();
-  
-      // computing K operators
-      for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
-        for (auto j = i; j != half_complex_breit_exch.end(); ++j) {
-          add_Exop_block(*i, *j, scale_exchange); 
-        }
-      }
-
-
-    }
-
-#endif
+    drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange, timer);
   }
-
 }
 
 
-// TODO get rid of dfc
 void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd) { 
 
   const int n = geom_->nbasis();
@@ -322,11 +131,11 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 }
 
 
-list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool gaunt) {
+list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool mixed) {
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
 
   list<shared_ptr<DFData>> dfdists;
-  if (!gaunt) { // Regular DHF
+  if (!mixed) { // Regular DHF
     const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
@@ -362,4 +171,158 @@ list<shared_ptr<DFHalfComplex>> DFock::make_half_complex(list<shared_ptr<DFData>
   }
   return half_complex;
   
+}
+
+void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, 
+                              array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit, 
+                              const double scale_exchange, Timer timer)  {
+
+  if (breit && !gaunt) throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
+  bool mixed;
+  vector<shared_ptr<const DFDist>> dfs;
+  if (!gaunt) {
+    // get individual df dist objects for each block and add df to dfs
+    dfs = geom_->dfs()->split_blocks();
+    dfs.push_back(geom_->df());
+    mixed = false;
+  } else if (gaunt) {
+    dfs = geom_->dfsl()->split_blocks();
+    mixed = true;
+  }
+
+  list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, mixed);
+  list<shared_ptr<DFHalfComplex>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
+
+  if (!gaunt) {
+    timer.tick_print("Coulomb: half trans");
+  } else if (gaunt) {
+    timer.tick_print("Gaunt: half trans");
+  }
+
+  // compute J operators
+  list<shared_ptr<const CDMatrix>> cd;
+  for (auto& j : half_complex) {
+    for (auto& i : j->basis()) {
+      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
+    }
+  }
+  for (auto& i : dfdists) {
+    add_Jop_block(i, cd); 
+  }
+
+  if (!gaunt) {
+    timer.tick_print("Coulomb: J operator");
+  } else if (gaunt) {
+    timer.tick_print("Gaunt: J operator");
+  }
+
+  // split
+  list<shared_ptr<DFHalfComplex>> half_complex_exch;
+  for (auto& i : half_complex) {
+    list<shared_ptr<DFHalfComplex>> tmp = i->split();
+    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  }
+
+  // before computing K operators, we factorize half_complex 
+  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+    for (auto j = i; j != half_complex_exch.end(); ) {
+      if (i != j && (*i)->matches((*j))) {
+        complex<double> fac = conj((*j)->fac() / (*i)->fac());
+        (*i)->zaxpy(fac, (*j)); 
+        j = half_complex_exch.erase(j);
+      } else {
+        ++j;
+      } 
+    }
+  }
+  assert(half_complex_exch.size() == 8);
+
+  // will use the zgemm3m-like algorithm
+  for (auto& i : half_complex_exch)
+    i->set_sum_diff();
+
+  // computing K operators
+  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
+    for (auto j = i; j != half_complex_exch.end(); ++j) {
+      add_Exop_block(*i, *j, scale_exchange); 
+    }
+  }
+
+  if (!gaunt) {
+    timer.tick_print("Coulomb: K operator");
+  } else if (gaunt) {
+    timer.tick_print("Gaunt: K operator");
+  }
+
+  if (breit) {
+    shared_ptr<Breit> breit(new Breit(geom_));
+    list<shared_ptr<Breit2Index>> breit_2index;
+    for (int i = 0; i != breit->nblocks(); ++i) {
+      breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit->index(i), breit->data(i), geom_->df()->data2())));
+
+      // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
+      if (breit->cross(i))
+        breit_2index.push_back(breit_2index.back()->cross());
+    }
+
+    list<shared_ptr<const CDMatrix>> tmp_cd;
+    for (auto& i : cd) {
+      list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
+      tmp_cd.insert(tmp_cd.end(), tmp.begin(), tmp.end());
+    }
+
+    for (auto& i : dfdists) {
+      list<shared_ptr<const CDMatrix>> jop_cd;
+      for (auto& j : tmp_cd) {
+        for (auto& k : i->basis()) {
+          if (k->comp() == j->comp())
+            jop_cd.push_back(j);
+          }
+      }
+      add_Jop_block(i, jop_cd);
+    }
+
+    timer.tick_print("Breit: J operator");
+
+#if 1
+    list<shared_ptr<DFHalfComplex>> tmp_exch;
+    for (auto& i : half_complex) {
+      list<shared_ptr<DFHalfComplex>> tmp = i->split();
+      tmp_exch.insert(tmp_exch.end(), tmp.begin(), tmp.end());
+    }
+
+    list<shared_ptr<DFHalfComplex>> half_complex_breit_exch;
+    for (auto& i : tmp_exch) {
+      for (auto& j : breit_2index) {
+        if (i->alpha_matches(j))
+          half_complex_breit_exch.push_back(i->multiply_breit2index(j));
+      }
+    }
+
+    for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_breit_exch.end(); ) {
+        if (i != j && (*i)->matches((*j))) {
+          complex<double> fac = conj((*j)->fac() / (*i)->fac());
+          (*i)->zaxpy(fac, (*j)); 
+          j = half_complex_breit_exch.erase(j);
+        } else {
+          ++j;
+        } 
+      }
+    }
+
+    for (auto& i : half_complex_breit_exch)
+      i->set_sum_diff();
+
+    // computing K operators
+    for (auto i = half_complex_breit_exch.begin(); i != half_complex_breit_exch.end(); ++i) {
+      for (auto j = i; j != half_complex_breit_exch.end(); ++j) {
+        add_Exop_block(*i, *j, scale_exchange); 
+      }
+    }
+
+    timer.tick_print("Breit: K operator");
+#endif
+  }
+
 }

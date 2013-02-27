@@ -63,6 +63,7 @@ void Dirac::common_init(const multimap<string, string>& idata) {
   nneg_ = geom_->nbasis()*2;
 
   gaunt_ = read_input<bool>(idata, "gaunt", true);
+  breit_ = read_input<bool>(idata, "breit", true);
 }
 
 
@@ -96,7 +97,7 @@ void Dirac::compute() {
     Timer ptime(1);
 
     // fock construction
-    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_));
+    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_));
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
     fock->hermite();
@@ -170,7 +171,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     interm.diagonalize(eig.get());
     coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
   } else if (relref_) {
-    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele_), gaunt_));
+    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele_), gaunt_, breit_));
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
@@ -182,7 +183,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_));
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_, breit_));
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
@@ -190,7 +191,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_));
+      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_, breit_));
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
