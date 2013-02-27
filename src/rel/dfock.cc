@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: dfock.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -177,27 +177,23 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
                               array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit, 
                               const double scale_exchange, Timer timer)  {
 
-  if (breit && !gaunt) throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
-  bool mixed;
+  if (breit && !gaunt)
+    throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
+
   vector<shared_ptr<const DFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
     dfs = geom_->dfs()->split_blocks();
     dfs.push_back(geom_->df());
-    mixed = false;
   } else if (gaunt) {
     dfs = geom_->dfsl()->split_blocks();
-    mixed = true;
   }
 
-  list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, mixed);
+  list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, gaunt);
   list<shared_ptr<DFHalfComplex>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
 
-  if (!gaunt) {
-    timer.tick_print("Coulomb: half trans");
-  } else if (gaunt) {
-    timer.tick_print("Gaunt: half trans");
-  }
+  const string printtag = !gaunt ? "Coulomb" : "Gaunt";
+  timer.tick_print(printtag + ": half trans");
 
   // compute J operators
   list<shared_ptr<const CDMatrix>> cd;
@@ -210,11 +206,7 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
     add_Jop_block(i, cd); 
   }
 
-  if (!gaunt) {
-    timer.tick_print("Coulomb: J operator");
-  } else if (gaunt) {
-    timer.tick_print("Gaunt: J operator");
-  }
+  timer.tick_print(printtag + ": J operator");
 
   // split
   list<shared_ptr<DFHalfComplex>> half_complex_exch;
@@ -248,11 +240,7 @@ void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<
     }
   }
 
-  if (!gaunt) {
-    timer.tick_print("Coulomb: K operator");
-  } else if (gaunt) {
-    timer.tick_print("Gaunt: K operator");
-  }
+  timer.tick_print(printtag + ": K operator");
 
   if (breit) {
     shared_ptr<Breit> breit(new Breit(geom_));
