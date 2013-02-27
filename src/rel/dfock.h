@@ -60,7 +60,7 @@ class DFock : public ZMatrix {
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
     void drive_this_sucker(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
-                           const double scale_exchange, Timer timer);
+                           const double scale_exchange);
 
 #if 0
     void add_breit_Jop_block(std::list<std::shared_ptr<const CDMatrix>>, std::shared_ptr<const DFData>);

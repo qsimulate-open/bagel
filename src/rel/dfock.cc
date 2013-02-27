@@ -50,11 +50,10 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
-  Timer timer(0);
   //TODO think of a respectable name
-  drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange, timer);
+  drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
   if (gaunt_) {
-    drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange, timer);
+    drive_this_sucker(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
   }
 }
 
@@ -175,7 +174,9 @@ list<shared_ptr<DFHalfComplex>> DFock::make_half_complex(list<shared_ptr<DFData>
 
 void DFock::drive_this_sucker(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff, 
                               array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit, 
-                              const double scale_exchange, Timer timer)  {
+                              const double scale_exchange)  {
+
+  Timer timer(0);
 
   if (breit && !gaunt)
     throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
