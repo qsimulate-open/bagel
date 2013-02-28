@@ -35,6 +35,7 @@
 #include <src/rel/alpha.h>
 #include <src/util/zmatrix.h>
 #include <src/rel/reldfbase.h>
+#include <src/rel/cdmatrix.h>
 #include <src/rel/dfhalfcomplex.h>
 
 namespace bagel {
@@ -75,6 +76,7 @@ class DFData : public RelDFBase, public std::enable_shared_from_this<DFData> {
         compute_half_transform(std::array<std::shared_ptr<const Matrix>,4> r,
                                std::array<std::shared_ptr<const Matrix>,4> i) const;
 
+    std::shared_ptr<ZMatrix> compute_Jop(std::list<std::shared_ptr<const CDMatrix>>& cd) const;
 };
 
 }

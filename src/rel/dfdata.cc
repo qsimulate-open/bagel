@@ -72,3 +72,16 @@ vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_pt
     out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(shared_from_this(), i, rc, ic)));
   return out;
 }
+
+
+shared_ptr<ZMatrix> DFData::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
+  shared_ptr<ZMatrix> sum = cd.front()->clone();
+
+  for (auto& i : cd) {
+    sum->zaxpy(1.0, *i);
+  }
+
+  shared_ptr<const Matrix> rdat = dfdata_->compute_Jop_from_cd(sum->get_real_part());
+  shared_ptr<const Matrix> idat = dfdata_->compute_Jop_from_cd(sum->get_imag_part());
+  return shared_ptr<ZMatrix>(new ZMatrix(*rdat, *idat));
+}

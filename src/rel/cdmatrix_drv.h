@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: cdmatrix.h
+// Filename: cdmatrix_drv.h
 // Copyright (C) 2013 Matthew Kelley
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
@@ -24,35 +24,27 @@
 //
 
 
-#ifndef __SRC_REL_CDMATRIX_H
-#define __SRC_REL_CDMATRIX_H
+#ifndef __SRC_REL_CDMATRIX_DRV_H
+#define __SRC_REL_CDMATRIX_DRV_H
 
 #include <cassert>
-#include <list>
-#include <memory>
-#include <src/util/zmatrix.h>
-#include <src/rel/breit2index.h>
+#include <src/rel/dfhalfcomplex.h>
+#include <src/rel/cdmatrix.h>
 
 namespace bagel {
 
-class CDMatrix : public ZMatrix {
+class CDMatrix_drv : public CDMatrix {
   protected:
-    const int comp_;
 
   public:
-    CDMatrix(const ZMatrix& o, const int comp) : ZMatrix(o), comp_(comp) { }
+    CDMatrix_drv(std::shared_ptr<DFHalfComplex> dfhc, std::shared_ptr<ABcases> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+                 std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2)
+    : CDMatrix(ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, true)+*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, true),
+                       *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, true)-*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, true)),
+               abc->comp()) {
 
-    // multiply cd and breit2index for use in Jop in dfock.cc
-    std::list<std::shared_ptr<const CDMatrix>> compute_breit_cd(std::list<std::shared_ptr<Breit2Index>>& b) const {
-      std::list<std::shared_ptr<const CDMatrix>> out;
-      for (auto i : b) {
-        if (i->index().second == comp_)
-          out.push_back(std::shared_ptr<CDMatrix>(new CDMatrix(*i->j_term() * *this, i->index().first)));
-      }
-      return out;
+      *this *= abc->fac();
     }
-
-    const int comp() const { return comp_; }
 
 };
 

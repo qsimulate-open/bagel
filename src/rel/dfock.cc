@@ -27,6 +27,7 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/util/matrix.h>
+#include <src/rel/cdmatrix_drv.h>
 
 using namespace std;
 using namespace bagel;
@@ -62,6 +63,7 @@ void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const
 
   const int n = geom_->nbasis();
 
+#if 0
   shared_ptr<ZMatrix> sum = cd.front()->clone();
 
   for (auto& i : cd) {
@@ -71,17 +73,24 @@ void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const
   shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
   shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
   shared_ptr<const ZMatrix> dat(new ZMatrix(*rdat, *idat));
+#else
+  shared_ptr<const ZMatrix> dat = dfdata->compute_Jop(cd);
+#endif
 
   //add it twice, once to first basis combo, then once to opposite basis combo
-  for (auto& i : dfdata->basis())
+  for (auto& i : dfdata->basis()) {
+    cout << i->comp() << " NORMAL " << endl;
     add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat*i->fac()).data());
+  }
 
   //if basis1 != basis2, get transpose to fill in opposite corner
   if (dfdata->cross()) {
     shared_ptr<const DFData> swap = dfdata->swap();
     shared_ptr<ZMatrix> tdat = dat->transpose();
-    for (auto& i : swap->basis())
+    for (auto& i : swap->basis()) {
+      cout << i->comp() << " SWAP " << endl;
       add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat*i->fac()).data());
+    }
   }
 }
 
@@ -200,7 +209,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   list<shared_ptr<const CDMatrix>> cd;
   for (auto& j : half_complex) {
     for (auto& i : j->basis()) {
-      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
+      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix_drv(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
     }
   }
   for (auto& i : dfdists) {
@@ -275,7 +284,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     timer.tick_print("Breit: J operator");
 #endif
 
-#if 1
+#if 0
     list<shared_ptr<DFHalfComplex>> tmp_exch;
     for (auto& i : half_complex) {
       list<shared_ptr<DFHalfComplex>> tmp = i->split();
