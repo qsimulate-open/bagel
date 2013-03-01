@@ -33,10 +33,10 @@ using namespace bagel;
 RotFile::RotFile(std::shared_ptr<const Matrix> o, const int iclos, const int iact, const int ivirt, const bool superci)
  : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new double[size_]) {
 
-  const int nocc_ = nclosed_ + nact_;
+  const int nocc = nclosed_ + nact_;
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      ele_va(j, i) = o->element(j+nocc_, i+nclosed_);
+      ele_va(j, i) = o->element(j+nocc, i+nclosed_);
     }
     for (int j = 0; j != nclosed_; ++j) {
       ele_ca(j, i) = o->element(i+nclosed_, j);
@@ -44,7 +44,7 @@ RotFile::RotFile(std::shared_ptr<const Matrix> o, const int iclos, const int iac
   }
   for (int i = 0; i != nclosed_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      ele_vc(j, i) = o->element(j+nocc_, i);
+      ele_vc(j, i) = o->element(j+nocc, i);
     }
   }
 
@@ -65,14 +65,14 @@ shared_ptr<RotFile> RotFile::copy() const {
 
 shared_ptr<Matrix> RotFile::unpack(const double a) const {
 
-  const int nocc_ = nclosed_ + nact_;
-  const int nbasis_ = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
+  const int nocc = nclosed_ + nact_;
+  const int nbasis = nclosed_ + nact_ + nvirt_;
+  shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
   fill_n(out->data(), out->size(), a);
 
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      out->element(j+nocc_, i+nclosed_) = ele_va(j, i);
+      out->element(j+nocc, i+nclosed_) = ele_va(j, i);
     }
     for (int j = 0; j != nclosed_; ++j) {
       out->element(i+nclosed_, j) = ele_ca(j, i);
@@ -80,10 +80,10 @@ shared_ptr<Matrix> RotFile::unpack(const double a) const {
   }
   for (int i = 0; i != nclosed_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      out->element(j+nocc_, i) = ele_vc(j, i);
+      out->element(j+nocc, i) = ele_vc(j, i);
     }
   }
-  for (int i = 0; i != nbasis_; ++i) {
+  for (int i = 0; i != nbasis; ++i) {
     for (int j = 0; j <= i; ++j) {
       out->element(j, i) = -out->element(i, j);
     }
@@ -94,13 +94,13 @@ shared_ptr<Matrix> RotFile::unpack(const double a) const {
 
 shared_ptr<Matrix> RotFile::unpack_sym(const double a) const {
 
-  const int nocc_ = nclosed_ + nact_;
-  const int nbasis_ = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
+  const int nocc = nclosed_ + nact_;
+  const int nbasis = nclosed_ + nact_ + nvirt_;
+  shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
   fill_n(out->data(), out->size(), a);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      out->element(j+nocc_, i+nclosed_) = ele_va(j, i);
+      out->element(j+nocc, i+nclosed_) = ele_va(j, i);
     }
     for (int j = 0; j != nclosed_; ++j) {
       out->element(i+nclosed_, j) = ele_ca(j, i);
@@ -108,10 +108,10 @@ shared_ptr<Matrix> RotFile::unpack_sym(const double a) const {
   }
   for (int i = 0; i != nclosed_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {
-      out->element(j+nocc_, i) = ele_vc(j, i);
+      out->element(j+nocc, i) = ele_vc(j, i);
     }
   }
-  for (int i = 0; i != nbasis_; ++i) {
+  for (int i = 0; i != nbasis; ++i) {
     for (int j = 0; j <= i; ++j) {
       out->element(j, i) = out->element(i, j);
     }
