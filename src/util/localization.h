@@ -58,7 +58,7 @@ class OrbitalLocalization {
     OrbitalLocalization(std::shared_ptr<const Reference> ref) : 
       OrbitalLocalization( ref->geom(), ref->coeff(), ref->nclosed(), ref->nact() ) { ref_ = ref; }
 
-    virtual std::shared_ptr<const Coeff> localize(const int iter = 50, const double thresh = 1.0e-8) = 0;
+    virtual std::shared_ptr<const Coeff> localize(const int iter = 50, const double thresh = 1.0e-12) = 0;
     virtual double metric() const = 0;
 };
 
@@ -75,7 +75,7 @@ class RegionLocalization : public OrbitalLocalization {
     RegionLocalization(std::shared_ptr<const Reference> ref, std::vector<int> region_sizes) : 
       OrbitalLocalization(ref) {common_init(region_sizes);}
 
-    std::shared_ptr<const Coeff> localize(const int iter = 0, const double thresh = 1.0e-8) override;
+    std::shared_ptr<const Coeff> localize(const int iter = 0, const double thresh = 1.0e-12) override;
 
     double metric() const override {return 0.0;}
   
@@ -96,7 +96,7 @@ class PMLocalization : public OrbitalLocalization {
       OrbitalLocalization(geom, coeff, nclosed, nact, nvirt) {common_init(geom);}
     PMLocalization(std::shared_ptr<const Reference> ref) : OrbitalLocalization(ref) {common_init(ref->geom());}
 
-    std::shared_ptr<const Coeff> localize(const int iter = 50, const double thresh = 1.0e-8) override;
+    std::shared_ptr<const Coeff> localize(const int iter = 50, const double thresh = 1.0e-12) override;
 
     double metric() const override;
 
