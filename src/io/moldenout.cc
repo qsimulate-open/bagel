@@ -98,11 +98,10 @@ void MoldenOut::write_mos() {
   ************************************************************/
   ofs_ << "[GTO]" << endl;
       
+  AtomMap am; 
   auto iatom = atoms.begin();
   for(int ii = 0; ii != num_atoms; ++iatom, ++ii) {
     ofs_ << ii+1 << endl;
-
-    AtomMap am; 
 
     vector<shared_ptr<const Shell>> shells = (*iatom)->shells();
     for(auto& ishell : shells) {
