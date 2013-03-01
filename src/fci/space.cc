@@ -65,7 +65,7 @@ void Space::common_init() {
     auto jdet = detmap_.find(key_(na-nelea_+1,nb-neleb_));
     if(jdet==detmap_.end()) continue;
     else {
-      form_link_<0>(idet->second, jdet->second);
+      idet->second->link<0>(jdet->second);
       ++nlinks;
     }
   }
@@ -79,7 +79,7 @@ void Space::common_init() {
     auto jdet = detmap_.find(key_(na-nelea_,nb-neleb_+1));
     if(jdet==detmap_.end()) continue;
     else {
-      form_link_<1>(idet->second, jdet->second);
+      idet->second->link<1>(jdet->second);
       ++nlinks;
     }
   }

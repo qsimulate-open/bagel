@@ -65,17 +65,8 @@ class Space {
 
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
-    template <int spin>
-    void form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ); // links two Determinants objects
-
     int key_(const int a, const int b) { return ( a*large__ + b ); }
     int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
-
-    int sign(std::bitset<nbit__> bit, int i) {
-      const std::bitset<nbit__> ii( (1 << (i)) - 1 );
-      bit = bit & ii;
-      return (1 - ((bit.count() & 1 ) << 1));
-    }
 
   public:
     Space(std::shared_ptr<const Determinants>, const int M);
@@ -94,80 +85,6 @@ class Space {
 
   private:
     void common_init();
-};
-
-
-/************************************************************************************
-*  Template function that forms links between two Determinants objects              *
-*     - builds the phiup and phidown lists that connect the given Dets              *
-*     - assigns the proper detadd/rem links in the Det objects                      *
-************************************************************************************/
-template <int spin>
-void Space::form_link_( std::shared_ptr<Determinants> ndet, std::shared_ptr<Determinants> nplusdet ) {
-  if (spin == Alpha) {
-    assert((ndet->nelea()+1 == nplusdet->nelea()) && (ndet->neleb() == nplusdet->neleb()));
-  }
-  else {
-    assert((ndet->neleb()+1 == nplusdet->neleb()) && (ndet->nelea() == nplusdet->nelea()));
-  }
-
-  std::vector<std::vector<DetMap>> phiup;
-  std::vector<std::vector<DetMap>> phidown;
-
-  /* If space is an issue for these functions, I might be able to reduce the amount used... */
-  phiup.resize(norb_);
-  int upsize = ( (spin==Alpha) ? nplusdet->lena() : nplusdet->lenb() );
-  for (auto iter = phiup.begin(); iter != phiup.end(); ++iter) {
-    iter->reserve(upsize);
-  }
-
-  phidown.resize(norb_);
-  int downsize = ( (spin==Alpha) ? ndet->lena() : ndet->lenb() );
-  for (auto iter = phidown.begin(); iter != phidown.end(); ++iter) {
-    iter->reserve(downsize);
-  }
-
-  std::vector<std::bitset<nbit__>> stringplus = ( (spin==Alpha) ? nplusdet->stringa() : nplusdet->stringb() );
-  std::vector<std::bitset<nbit__>> string = ( (spin==Alpha) ? ndet->stringa() : ndet->stringb() );
-
-  for (auto iter = string.begin(); iter != string.end(); ++iter) {
-    for (unsigned int i = 0; i != norb_; ++i) { 
-      if (!(*iter)[i]) { // creation
-        const unsigned int source = ndet->lexical<spin>(*iter); 
-        std::bitset<nbit__> nbit = *iter; nbit.set(i); // created.
-        const unsigned int target = nplusdet->lexical<spin>(nbit);
-        phiup[i].push_back(DetMap(target, sign(nbit, i), source));
-      }
-    }
-  }
-
-  for (auto iter = stringplus.begin(); iter != stringplus.end(); ++iter) {
-    for (unsigned int i = 0; i!= norb_; ++i) {
-      if ((*iter)[i]) { // annihilation
-        const unsigned int source = nplusdet->lexical<spin>(*iter);
-        std::bitset<nbit__> nbit = *iter; nbit.reset(i); //annihilated.
-        const unsigned int target = ndet->lexical<spin>(nbit);
-        phidown[i].push_back(DetMap(target, sign(nbit, i), source));
-      }
-    }
-  }
-
-
-  // finally link
-  if (spin == Alpha) {
-    nplusdet->detremalpha_ = ndet;
-    nplusdet->phidowna_ = phidown;
-
-    ndet->detaddalpha_ = nplusdet;
-    ndet->phiupa_ = phiup;
-  }
-  else {
-    nplusdet->detrembeta_ = ndet;
-    nplusdet->phidownb_ = phidown;
-
-    ndet->detaddbeta_ = nplusdet;
-    ndet->phiupb_ = phiup;
-  }
 };
 
 }
