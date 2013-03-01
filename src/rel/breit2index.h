@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitterm.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: breit2index.h
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,35 +24,33 @@
 //
 
 
-#ifndef __SRC_REL_BREITTERM_H
-#define __SRC_REL_BREITTERM_H
+#ifndef __SRC_REL_BREIT2INDEX_H
+#define __SRC_REL_BREIT2INDEX_H
 
 #include <memory>
 #include <array>
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/dfdata.h>
 #include <src/rel/breit.h>
 
 namespace bagel {
 
-class BreitTerm {
+class Breit2Index {
   protected:
-    std::shared_ptr<const Breit> breit_;
-    std::vector<std::shared_ptr<ZMatrix>> bt_;
-    std::vector<std::pair<const int, const int>> index_;
-    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data_;
+    std::pair<const int, const int> index_;
+    std::shared_ptr<const ZMatrix> j_term_;
+    std::shared_ptr<const Matrix> k_term_;
+    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const ZMatrix> j, std::shared_ptr<const Matrix> k);
 
   public:
-    BreitTerm(std::shared_ptr<const Breit>, std::list<std::shared_ptr<DFData>>, std::list<std::shared_ptr<const ZMatrix>>, std::vector<int>);
+    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> breit, std::shared_ptr<const Matrix> data2);
 
-    ~BreitTerm() {};
+    std::shared_ptr<const ZMatrix> j_term() const { return j_term_; }
+    std::shared_ptr<const Matrix> k_term() const { return k_term_; }
+    const std::pair<const int, const int>& index() const { return index_; }
 
-    std::list<std::shared_ptr<ZMatrix>> data(const int i) const { return data_[i]; }
-    std::array<std::list<std::shared_ptr<ZMatrix>>, 6> data() const { return data_; }
-
-    bool cross(const int k) const { return index_[k].first != index_[k].second; }
+    std::shared_ptr<Breit2Index> cross() const;
 
 };
 

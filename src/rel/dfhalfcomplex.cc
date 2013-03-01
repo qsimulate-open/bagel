@@ -99,10 +99,28 @@ bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
 }
 
 
-list<shared_ptr<DFHalfComplex>> DFHalfComplex::split() {
+// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
+bool DFHalfComplex::alpha_matches(shared_ptr<Breit2Index> o) const {
+  return basis_[0]->comp() == o->index().second;
+}
+
+// WARNING: This Function assumes you have used the split function to make your DFHalfComplex objects. TODO
+bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
+  return basis_[0]->comp() == o->basis()[0]->comp();
+}
+
+
+// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
+shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2Index> bt) const {
+  array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
+  return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, basis()));
+}
+
+
+list<shared_ptr<DFHalfComplex>> DFHalfComplex::split(const bool docopy) {
   list<shared_ptr<DFHalfComplex>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
-    if (i == basis().begin()) {
+    if (i == basis().begin() && docopy) {
       out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(dfhalf_, coord_, {*i})));
     } else {
       // TODO Any way to avoid copying?

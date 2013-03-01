@@ -63,12 +63,12 @@ void test_solvers(shared_ptr<Geometry> geom_) {
 
   const double tiny = 1.0e-20;
 
-#if 0
+#if 1
   // testing Davidson -- checked.
   {
     cout << "  testing Davidson class" << endl;
     DavidsonDiag<Matrix> davidson(1,n*n);
-    shared_ptr<Matrix> prev(new Matrix(geom_));
+    shared_ptr<Matrix> prev(new Matrix(n, n));
     prev->element(0,0) = 1.0;
 
     for (int i = 0; i != n*n; ++i) {
@@ -173,7 +173,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 #endif
 
-#if 0
+#if 1
   // checked.
   // testing straight-line quasi-newton.
   {
@@ -181,7 +181,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     shared_ptr<Matrix> tmp(new Matrix(*target));
 
     // start with target/denom
-    shared_ptr<Matrix> prev(new Matrix(geom_));
+    shared_ptr<Matrix> prev(new Matrix(n, n));
     prev->element(0,0) = 1.0;
 
     for (int i = 0; i != n; ++i) {
@@ -198,14 +198,14 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 #endif
 
-#if 0
+#if 1
   // testing BFGS update
   {
     cout << "  testing BFGS class" << endl;
     shared_ptr<Matrix> tmp(new Matrix(*target));
 
     // start with target/denom
-    shared_ptr<Matrix> prev(new Matrix(geom_));
+    shared_ptr<Matrix> prev(new Matrix(n, n));
     prev->element(0,0) = 1.0;
 
     BFGS<Matrix> bfgs(diag);
@@ -232,7 +232,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     Linear<Matrix> linear(n*n, tmp);
 
     // start with target/denom
-    shared_ptr<Matrix> prev(new Matrix(geom_));
+    shared_ptr<Matrix> prev(new Matrix(n, n));
     prev->element(0,0) = 1.0;
 
     BFGS<Matrix> bfgs(diag);

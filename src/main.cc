@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
         std::shared_ptr<CASSCF> casscf;
         std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
-          casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom));
+          casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom, ref));
         } else if (algorithm == "werner" || algorithm == "knowles") {
           casscf = std::shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
         } else if (algorithm == "bfgs") {

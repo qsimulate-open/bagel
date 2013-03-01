@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: dfock.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -38,7 +38,9 @@
 #include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/breit.h>
-#include <src/rel/breitterm.h>
+#include <src/rel/breit2index.h>
+#include <src/rel/cdmatrix.h>
+#include <src/util/timer.h>
 
 namespace bagel {
 
@@ -46,6 +48,7 @@ class DFock : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
     const bool gaunt_;
+    const bool breit_;
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
@@ -53,17 +56,23 @@ class DFock : public ZMatrix {
     std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                 std::array<std::shared_ptr<const Matrix>,4>);
 
-    void add_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::list<std::shared_ptr<const ZMatrix>>);
+    void add_Jop_block(std::shared_ptr<const DFData>, std::list<std::shared_ptr<const CDMatrix>>);
     void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double ecale_exch);
+    void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
+                           std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
+                           const double scale_exchange);
 
-    void add_breit_Jop_block(std::list<std::shared_ptr<DFHalfComplex>>, std::shared_ptr<const DFData>, std::shared_ptr<const BreitTerm>, const int);
+#if 0
+    void add_breit_Jop_block(std::list<std::shared_ptr<const CDMatrix>>, std::shared_ptr<const DFData>);
+    void add_breit_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double);
+#endif
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
           const std::shared_ptr<const RelHcore> h,
-          const std::shared_ptr<const ZMatrix> coeff, const bool gaunt,
+          const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
           const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*h), geom_(a), gaunt_(gaunt) {
+     : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit) {
        
        two_electron_part(coeff, rhf, scale_ex);
     }

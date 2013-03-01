@@ -56,6 +56,7 @@ class Breit : public NMatrix1e {
 
     std::pair<const int, const int> index(const int i) const { return index_[i]; }
     std::vector<std::pair<const int, const int>> index() const { return index_; }
+    bool cross(const int k) const { assert(k >= 0); assert(k <= index_.size()); return index_[k].first != index_[k].second; }
 
 };
 

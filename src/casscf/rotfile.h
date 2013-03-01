@@ -55,10 +55,11 @@ class RotFile {
     RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new double[o.size_]) {
       *this = o;
     }
-    RotFile(const std::shared_ptr<RotFile> o)
+    RotFile(std::shared_ptr<const RotFile> o)
       : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new double[o->size_]) {
       *this = *o;
     }
+    RotFile(std::shared_ptr<const Matrix> o, const int iclos, const int iact, const int ivirt, const bool superci = true);
 
     std::shared_ptr<RotFile> clone() const;
     std::shared_ptr<RotFile> copy() const;
@@ -117,8 +118,8 @@ class RotFile {
     const double& ele_ref() const { assert(superci_); return data_[size_-1]; }
 
     // unpack to Matrix
-    std::shared_ptr<Matrix> unpack(std::shared_ptr<const Geometry> geom, const double a = 0.0) const;
-    std::shared_ptr<Matrix> unpack_sym(std::shared_ptr<const Geometry> geom, const double a = 0.0) const;
+    std::shared_ptr<Matrix> unpack(const double a = 0.0) const;
+    std::shared_ptr<Matrix> unpack_sym(const double a = 0.0) const;
 
     // print matrix
     void print() const;

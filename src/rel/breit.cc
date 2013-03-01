@@ -40,19 +40,13 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
   init();
 
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
-  //const vector<int> alphaL = { Comp::L };
   for (auto& i : xyz) {
     for (auto& j : xyz)
       if (i <= j)
         index_.push_back(make_pair(i,j));
   }
+  assert (matrix_data_.size() == index_.size());
 }
-
-
-#if 0
-Breit::Breit(shared_ptr<const Breit> breit) : NMatrix1e(breit->geom()), matrix_data_(breit->data()), index_(breit->index()) {
-}
-#endif
 
 
 void Breit::print() const {
