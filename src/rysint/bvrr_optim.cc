@@ -54,8 +54,8 @@ void BreitBatch::perform_VRR1() {
 
     data_[ii+0*size_block_] = s[0];
     data_[ii+1*size_block_] = t[0]*t[1]*fac;
-    data_[ii+2*size_block_] = s[1];
-    data_[ii+3*size_block_] = t[0]*t[2]*fac;
+    data_[ii+2*size_block_] = t[0]*t[2]*fac;
+    data_[ii+3*size_block_] = s[1];
     data_[ii+4*size_block_] = t[1]*t[2]*fac;
     data_[ii+5*size_block_] = s[2];
 
@@ -86,8 +86,8 @@ void Spin2Batch::perform_VRR1() {
 
     data_[ii+0*size_block_] = s[0]*fac;
     data_[ii+1*size_block_] = t[0]*t[1];
-    data_[ii+2*size_block_] = s[1]*fac;
-    data_[ii+3*size_block_] = t[0]*t[2];
+    data_[ii+2*size_block_] = t[0]*t[2];
+    data_[ii+3*size_block_] = s[1]*fac;
     data_[ii+4*size_block_] = t[1]*t[2];
     data_[ii+5*size_block_] = s[2]*fac;
 
