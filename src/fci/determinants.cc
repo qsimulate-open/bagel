@@ -36,10 +36,9 @@ using namespace bagel;
 
 const static Comb comb;
 
-Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, bool mute)
+Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute)
   : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress) {
 
-  mute |= !compress_;
   if (!mute) cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
   if (!mute) cout << "  o lexical mappings" << endl;
   const_lexical_mapping_();

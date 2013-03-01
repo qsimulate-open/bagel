@@ -43,7 +43,7 @@ void FCI::compute_rdm12() {
     rdm2_av_->zero();
   }
   // we need expanded lists
-  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
+  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false, /*mute=*/true));
   cc_->set_det(detex);
 
   for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
@@ -172,7 +172,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
   shared_ptr<RDM<3>> rdm3(new RDM<3>(norb_));
   shared_ptr<RDM<4>> rdm4(new RDM<4>(norb_));
 
-  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false));
+  shared_ptr<Determinants> detex(new Determinants(norb_, nelea_, neleb_, false, /*mute=*/true));
   cc_->set_det(detex);
 
   shared_ptr<Civec> cbra = cc_->data(ist);

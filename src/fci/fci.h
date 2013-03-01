@@ -54,6 +54,7 @@ class FCI {
     int max_iter_;
     // threshold for variants
     double thresh_;
+    double print_thresh_;
 
     // numbers of electrons
     int nelea_;

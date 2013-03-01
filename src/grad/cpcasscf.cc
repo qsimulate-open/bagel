@@ -51,7 +51,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const sh
 shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   // RI determinant space
-  shared_ptr<Determinants> detex(new Determinants(fci_->norb(), fci_->nelea(), fci_->neleb(), false));
+  shared_ptr<Determinants> detex(new Determinants(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true));
   assert(fci_->norb() == ref_->nact());
 
   const size_t naux = geom_->naux();

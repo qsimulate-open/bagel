@@ -50,7 +50,7 @@ struct DetMap {
 };
 
 // implements a determinant space
-class Determinants {
+class Determinants : public std::enable_shared_from_this<Determinants> {
   friend class Space;
 
   protected:
@@ -113,7 +113,9 @@ class Determinants {
     std::vector<std::vector<DetMap>> phidownb_;
 
   public:
-    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, bool mute = false);
+    Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
+    Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
+      Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
 
     // static constants
     static const int Alpha = 0;
@@ -142,6 +144,12 @@ class Determinants {
         else { out += "."; }
       }
       return out;
+    }
+
+    int sign(std::bitset<nbit__> bit, int i) {
+      const std::bitset<nbit__> ii( (1 << (i)) - 1 );
+      bit = bit & ii; 
+      return (1 - ((bit.count() & 1 ) << 1));
     }
 
     int sign(std::bitset<nbit__> bit, int i, int j) const {
@@ -189,6 +197,8 @@ class Determinants {
     std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();}
     std::shared_ptr<Determinants> addbeta() { return detaddbeta_.lock();}
     std::shared_ptr<Determinants> rembeta() { return detrembeta_.lock();}
+
+    template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
 
 
@@ -237,6 +247,80 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
     std::sort(iter->begin(), iter->end());
   }
 #endif
+}
+
+template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
+  std::shared_ptr<Determinants> plusdet;
+  std::shared_ptr<Determinants> det;
+  if (spin==Alpha) {
+    int de = this->nelea() - odet->nelea();
+    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
+    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
+    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+  }
+  else {
+    int de = this->neleb() - odet->neleb();
+    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
+    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
+    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+  }
+
+  std::vector<std::vector<DetMap>> phiup;
+  std::vector<std::vector<DetMap>> phidown;
+
+  /* If space is an issue for these functions, I might be able to reduce the amount used... */
+  phiup.resize(norb_);
+  int upsize = ( (spin==Alpha) ? plusdet->lena() : plusdet->lenb() );
+  for (auto& iter : phiup) {
+    iter.reserve(upsize);
+  }
+
+  phidown.resize(norb_);
+  int downsize = ( (spin==Alpha) ? det->lena() : det->lenb() );
+  for (auto& iter : phidown) {
+    iter.reserve(downsize);
+  }
+
+  std::vector<std::bitset<nbit__>> stringplus = ( (spin==Alpha) ? plusdet->stringa() : plusdet->stringb() );
+  std::vector<std::bitset<nbit__>> string = ( (spin==Alpha) ? det->stringa() : det->stringb() );
+
+  for (auto& istring : string) {
+    for (unsigned int i = 0; i != norb_; ++i) {
+      if (!(istring)[i]) { // creation
+        const unsigned int source = det->lexical<spin>(istring);
+        std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
+        const unsigned int target = plusdet->lexical<spin>(nbit);
+        phiup[i].push_back(DetMap(target, sign(nbit, i), source));
+      }
+    }
+  }
+
+  for (auto& istring : stringplus) {
+    for (unsigned int i = 0; i!= norb_; ++i) {
+      if (istring[i]) { // annihilation
+        const unsigned int source = plusdet->lexical<spin>(istring);
+        std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
+        const unsigned int target = det->lexical<spin>(nbit);
+        phidown[i].push_back(DetMap(target, sign(nbit, i), source));
+      }
+    }
+  }
+
+  // finally link
+  if (spin == Alpha) {
+    plusdet->detremalpha_ = det;
+    plusdet->phidowna_ = phidown;
+
+    det->detaddalpha_ = plusdet;
+    det->phiupa_ = phiup;
+  }
+  else {
+    plusdet->detrembeta_ = det;
+    plusdet->phidownb_ = phidown;
+
+    det->detaddbeta_ = plusdet;
+    det->phiupb_ = phiup;
+  }
 }
 
 }

@@ -53,6 +53,7 @@ void FCI::common_init() {
   max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
   thresh_ = read_input<double>(idata_, "thresh", 1.0e-20);
   thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
+  print_thresh_ = read_input<double>(idata_, "print_thresh", 0.05);
 
   if (nstate_ < 0) nstate_ = read_input<int>(idata_, "nstate", 1);
 
@@ -255,6 +256,6 @@ void FCI::compute() {
   // main iteration ends here
 
   shared_ptr<Dvec> s(new Dvec(davidson.civec()));
-  s->print();
+  s->print(print_thresh_);
   cc_ = shared_ptr<Dvec>(new Dvec(s));
 }
