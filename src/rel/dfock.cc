@@ -51,7 +51,6 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
     tiocoeff[i] = iocoeff[i]->transpose();
   }
 
-  //TODO think of a respectable name
   driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
   if (gaunt_) {
     driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
@@ -62,34 +61,23 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd) { 
 
   const int n = geom_->nbasis();
-
-#if 0
-  shared_ptr<ZMatrix> sum = cd.front()->clone();
-
-  for (auto& i : cd) {
-    sum->zaxpy(1.0, *i);
-  }
-
-  shared_ptr<Matrix> rdat = dfdata->df()->compute_Jop_from_cd(sum->get_real_part());
-  shared_ptr<Matrix> idat = dfdata->df()->compute_Jop_from_cd(sum->get_imag_part());
-  shared_ptr<const ZMatrix> dat(new ZMatrix(*rdat, *idat));
-#else
-  shared_ptr<const ZMatrix> dat = dfdata->compute_Jop(cd);
-#endif
+  vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
 
   //add it twice, once to first basis combo, then once to opposite basis combo
+  int j = 0;
   for (auto& i : dfdata->basis()) {
-    cout << i->comp() << " NORMAL " << endl;
-    add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat*i->fac()).data());
+      add_block(n * i->basis(0), n * i->basis(1), n, n, (*dat[j] * i->fac()).data());
+      j++;
   }
 
   //if basis1 != basis2, get transpose to fill in opposite corner
   if (dfdata->cross()) {
     shared_ptr<const DFData> swap = dfdata->swap();
-    shared_ptr<ZMatrix> tdat = dat->transpose();
+    int j = 0;
     for (auto& i : swap->basis()) {
-      cout << i->comp() << " SWAP " << endl;
-      add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat*i->fac()).data());
+      shared_ptr<ZMatrix> tdat = dat[j]->transpose();
+      add_block(n * i->basis(0), n * i->basis(1), n, n, (*tdat* i->fac()).data());
+      j++;
     }
   }
 }
@@ -263,7 +251,6 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
         breit_2index.push_back(breit_2index.back()->cross());
     }
 
-#if 1
     list<shared_ptr<const CDMatrix>> tmp_cd;
     for (auto& i : cd) {
       list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
@@ -271,20 +258,11 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     }
 
     for (auto& i : dfdists) {
-      list<shared_ptr<const CDMatrix>> jop_cd;
-      for (auto& j : tmp_cd) {
-        for (auto& k : i->basis()) {
-          if (k->comp() == j->comp())
-            jop_cd.push_back(j);
-        }
-      }
-      add_Jop_block(i, jop_cd);
+      add_Jop_block(i, tmp_cd);
     }
 
     timer.tick_print("Breit: J operator");
-#endif
 
-#if 0
     list<shared_ptr<DFHalfComplex>> tmp_exch;
     for (auto& i : half_complex) {
       list<shared_ptr<DFHalfComplex>> tmp = i->split();
