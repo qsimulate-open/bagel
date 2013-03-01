@@ -106,8 +106,9 @@ void CASBFGS::compute() {
     *x += *a;
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack(geom_);
-    shared_ptr<const Matrix> expa = amat->exp();
+    shared_ptr<const Matrix> amat = a->unpack();
+    shared_ptr<Matrix> expa = amat->exp(2);
+    expa->purify_unitary();
     coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
 
     // setting error of macro iteration
