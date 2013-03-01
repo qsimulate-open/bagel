@@ -420,24 +420,6 @@ void Matrix::antisymmetrize() {
 
 void Matrix::purify_unitary() {
   assert(ndim_ == mdim_);
-#if 0
-  Matrix buf(*this ^ *this);
-  const int lwork = 5*ndim_;
-  unique_ptr<double[]> work(new double[lwork]);
-  unique_ptr<double[]> vec(new double[ndim_]);
-  int info;
-  dsyev_("V", "U", ndim_, buf.data(), ndim_, vec.get(), work.get(), lwork, info);
-  if (info) throw runtime_error("dsyev failed in Matrix::purify_unitary");
-  if (vec[0] < 0.95)        cout << "   --- smallest eigenvalue in purify_unitary() " << vec[0] << endl;
-  if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
-  for (int i = 0; i != ndim_; ++i) {
-    for (int j = 0; j != ndim_; ++j) {
-      buf.element(j,i) /= sqrt(sqrt(vec[i]));
-    }
-  }
-  *this = ((buf ^ buf) * *this);
-#else
-  // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
       const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
@@ -446,8 +428,6 @@ void Matrix::purify_unitary() {
     const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     dscal_(ndim_, b, &data_[i*ndim_], 1);
   }
-#endif
-
 }
 
 

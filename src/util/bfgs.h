@@ -109,6 +109,7 @@ class BFGS {
           out->daxpy(-t2, std::shared_ptr<const T>(yy));
         }
         y.push_back(yy);
+        assert(y.size() == n+1);
       }
       prev_grad = grad;
       prev_value = value;

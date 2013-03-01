@@ -47,7 +47,10 @@ void CASBFGS::compute() {
   // macro iteration from here
   // ============================
   Timer timer;
-  shared_ptr<RotFile> x(new RotFile(nclosed_, nact_, nvirt_, false));
+
+  shared_ptr<Matrix> x(new Matrix(nbasis_, nbasis_));
+  x->unit();
+
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
@@ -70,8 +73,8 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> ccoeff = coeff_->slice(0, nclosed_);
     shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc_);
     // * core Fock operator
-    shared_ptr<const Matrix> cden = coeff_->form_density_rhf(nclosed_, 0); 
-    shared_ptr<const Matrix> cfockao(new Fock<1>(geom_, hcore_, cden, ccoeff));
+    shared_ptr<const Matrix> cden = nclosed_ ? coeff_->form_density_rhf(nclosed_, 0) : shared_ptr<const Matrix>(new Matrix(nbasis_, nbasis_));
+    shared_ptr<const Matrix> cfockao = nclosed_ ? shared_ptr<const Matrix>(new Fock<1>(geom_, hcore_, cden, ccoeff)) : hcore_;
     shared_ptr<const Matrix> cfock(new Matrix(*coeff_ % *cfockao * *coeff_));
     // * active Fock operator
     // first make a weighted coefficient
@@ -94,21 +97,23 @@ void CASBFGS::compute() {
     grad_ca(cfock, afock, qxr, sigma_);
 
     // if this is the first time, set up the BFGS solver
-    if (iter < 10) {
+    if (iter == 0) {
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
-      x->zero();
     }
     // extrapolation using BFGS
-    shared_ptr<RotFile> a = bfgs->extrapolate(sigma_, x);
+    shared_ptr<RotFile> xrot(new RotFile(x->log(), nclosed_, nact_, nvirt_, false));
+    shared_ptr<RotFile> a = bfgs->extrapolate(sigma_, xrot);
     *a *= -1.0;
-    // for next BFGS extrapolation
-    *x += *a;
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack(geom_);
-    shared_ptr<const Matrix> expa = amat->exp();
+    shared_ptr<const Matrix> amat = a->unpack();
+    shared_ptr<Matrix> expa = amat->exp(2);
+    expa->purify_unitary();
     coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
+
+    // for next BFGS extrapolation
+    *x *= *expa;
 
     // setting error of macro iteration
     const double gradient = sigma_->ddot(*sigma_) / sigma_->size();
@@ -172,7 +177,12 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
                   + 2.0*occup_[i]*(cfock->element(j,j)+afock->element(j,j)) - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
       }
     }
-  } 
+  }
+
+  const double thresh = 1.0e-8;
+  for (int i = 0; i != out->size(); ++i)
+    if (fabs(out->data(i)) < thresh)
+      out->data(i) = 1.0e10;
   return out;
 }
 
