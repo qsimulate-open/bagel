@@ -84,7 +84,6 @@ class MultiExcitonHamiltonian {
         return make_pair(iA,jB);
       }
 
-      template <int unit> int closed(int i) const { return (i + unit*nclosed_.first); }
       template <int unit> int active(int a) const { return (a + unit*nact_.first); }
 
       MatrixPtr compute_closeclose();
@@ -109,7 +108,7 @@ class MultiExcitonHamiltonian {
 };
 
 template<int A, int B, int C, int D>
-std::pair<MatrixPtr, MatrixPtr> Dimer::form_Jmatrices() const {
+std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const {
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 

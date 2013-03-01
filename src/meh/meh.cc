@@ -97,7 +97,7 @@ void MultiExcitonHamiltonian::compute() {
   }
 }
 
-shared_ptr<Matrix> Dimer::compute_closeclose() {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeclose() {
   double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
 
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
@@ -106,7 +106,7 @@ shared_ptr<Matrix> Dimer::compute_closeclose() {
   return out;
 }
 
-shared_ptr<Matrix> Dimer::compute_closeactive() {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   const int nclosed = dimerclosed_;
   const int nact = dimeractive_;
 
@@ -165,7 +165,7 @@ shared_ptr<Matrix> Dimer::compute_closeactive() {
   return out;
 }
 
-shared_ptr<Matrix> Dimer::compute_intra_activeactive() {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
   const int nstatesA = nstates_.first;
@@ -224,7 +224,7 @@ shared_ptr<Matrix> Dimer::compute_intra_activeactive() {
   return out;
 }
 
-shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
   shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>();
   shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>();
 
@@ -275,7 +275,7 @@ shared_ptr<Matrix> Dimer::compute_inter_activeactive() {
   return out;
 }
 
-shared_ptr<Matrix> Dimer::form_gamma_alpha(shared_ptr<const Dvec> ccvec) const {
+shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma_alpha(shared_ptr<const Dvec> ccvec) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -323,7 +323,7 @@ shared_ptr<Matrix> Dimer::form_gamma_alpha(shared_ptr<const Dvec> ccvec) const {
   return tmp.transpose();
 }
 
-shared_ptr<Matrix> Dimer::form_gamma_beta(shared_ptr<const Dvec> ccvec) const{
+shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma_beta(shared_ptr<const Dvec> ccvec) const{
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -368,38 +368,4 @@ shared_ptr<Matrix> Dimer::form_gamma_beta(shared_ptr<const Dvec> ccvec) const{
   }
 
   return tmp.transpose();
-}
-
-template<int A, int B, int C, int D>
-pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Dimer::form_Jmatrices() const {
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  int ijA = 1;
-  int unitA = 4 - (A + B + C + D);
-  for ( int i = 0; i < unitA; ++i ) ijA *= nactA;
-
-  int ijB = 1;
-  unitB = A + B + C + D;
-  for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
-
-  shared_ptr<Matrix> Jout(new Matrix(ijA, ijB));
-  shared_ptr<Matrix> Kout(new Matrix(ijA, ijB));
-
-  // Because of the templating, all of the index mess SHOULD be done at compile time
-  for(int d = 0; d < (D == 0 ? nactA : nactB); ++d) {
-    for(int c = 0; c < (C == 0 ? nactA : nactB); ++c) {
-      for(int b = 0; b < (B == 0 ? nactA : nactB); ++b) {
-        for(int a = 0; a < (A == 0 ? nactA : nactB); ++a) {
-          int iA, jB;
-          std::tie(iA, jB) = index<A,B,C,D>(a,b,c,d);
-
-          Jout->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<C>(c), active<D>(d));
-          Kout->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<D>(d), active<C>(c));
-        }
-      }
-    }
-  }
-
-  return std::make_pair(Jout,Kout);
 }
