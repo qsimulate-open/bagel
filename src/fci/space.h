@@ -62,6 +62,7 @@ class Space {
     const int M_; // number of electrons added or removed from a reference
 
     const bool compress_;
+    const bool mute_;
 
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
@@ -69,8 +70,8 @@ class Space {
     int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
   public:
-    Space(std::shared_ptr<const Determinants>, const int M);
-    Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = true);
+    Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = true);
+    Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = false, const bool mute = true);
     ~Space() {};
 
     // static constants

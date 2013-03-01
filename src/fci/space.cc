@@ -32,32 +32,30 @@
 using namespace std;
 using namespace bagel;
 
-Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress)
-  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), M_(_M), compress_(_compress) {
+Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress, const bool _mute)
+  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), M_(_M), compress_(_compress), mute_(_mute) {
 
   common_init();
 }
 
-Space::Space(shared_ptr<const Determinants> det, int _M) : norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(det->compress_) {
+Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) : 
+  norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(_compress), mute_(_mute) {
 
   common_init();
 }
 
 void Space::common_init() {
-  const bool compress = false;
-  const bool mute = true;
-
-  if (!mute) cout << " Constructing space of all determinants that can formed by removing " 
+  if (!mute_) cout << " Constructing space of all determinants that can formed by removing " 
                   << M_ << " electrons from " << nelea_ 
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
-      shared_ptr<Determinants> tmpdet(new Determinants(norb_, nelea_ + i, neleb_ + j, compress, /*mute=*/true));
+      shared_ptr<Determinants> tmpdet(new Determinants(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true));
       detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i,j), tmpdet));
     }
   }
-  if (!mute) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
-  if (!mute) cout << "  o forming alpha links" << endl;
+  if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
+  if (!mute_) cout << "  o forming alpha links" << endl;
 
   int nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
@@ -69,9 +67,9 @@ void Space::common_init() {
       ++nlinks;
     }
   }
-  if (!mute) cout << "    - " << nlinks << " links formed" << endl;
+  if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
 
-  if (!mute) cout << "  o forming beta links" << endl;
+  if (!mute_) cout << "  o forming beta links" << endl;
 
   nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
@@ -83,6 +81,5 @@ void Space::common_init() {
       ++nlinks;
     }
   }
-  if (!mute) cout << "    - " << nlinks << " links formed" << endl;
-
+  if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
 }
