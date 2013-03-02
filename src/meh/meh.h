@@ -31,6 +31,7 @@
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 #include <src/dimer/dimer.h>
+#include <src/dimer/dimer_cispace.h>
 #include <src/fci/dvec.h>
 #include <src/util/matrix.h>
 
@@ -72,6 +73,7 @@ class MultiExcitonHamiltonian {
       int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
 
       void compute();
+      void print(std::string title = "MultiExciton Hamiltonian") { hamiltonian_->print(title, dimerbasis_); }
 
    private:
       void common_init();

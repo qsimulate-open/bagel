@@ -58,6 +58,7 @@ class DimerCISpace {
   public:
     // This constructor will build the infrastructure; civecs need to be added later
     DimerCISpace(const std::shared_ptr<Dimer> dimer);
+    DimerCISpace(std::pair<int, int> nelea, std::pair<int, int> neleb) : nelea_(nelea), neleb_(neleb) {}
 
     template<int unit> int nelea() { return (unit == 0 ? nelea_.first : nelea_.second); }
     template<int unit> int neleb() { return (unit == 0 ? neleb_.first : neleb_.second); }
@@ -81,7 +82,7 @@ class DimerCISpace {
 };
 
 template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) {
-  std::shared_ptr<Dvec> new_civec = civec->copy();
+  std::shared_ptr<Dvec> new_civec(new Dvec(civec));
 
   // Reform Determinants object (to make sure it's the format I want)
   std::shared_ptr<Determinants> det(new Determinants(civec->det(), /*compress=*/false, /*mute=*/true));
