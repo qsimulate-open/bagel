@@ -109,6 +109,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/parallel/Makefile
                  src/dimer/Makefile
+                 src/meh/Makefile
                  src/opt/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile

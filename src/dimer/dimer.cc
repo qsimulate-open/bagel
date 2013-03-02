@@ -288,8 +288,8 @@ void Dimer::fci(multimap<string,string> idata) {
   const int nclosed = nclosedA + nclosedB;
 
   // filled_active is the number of orbitals in the active space that should be filled
-  const int filled_activeA = noccA - nclosedA;
-  const int filled_activeB = noccB - nclosedB;
+  const int filled_activeA = nfilledactive_.first;
+  const int filled_activeB = nfilledactive_.second;
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
@@ -508,7 +508,16 @@ void Dimer::set_active(multimap<string, string> idata) {
   set<int> active_list;
   for(int i = 0; i < nact; ++i, ++norm_iter) active_list.insert(norm_iter->second);
 
-  set_sref(sref_->set_active(active_list));
+  auto out = sref_->set_active(active_list);
+  MoldenOut mfsactive("active.molden");
+  mfsactive << out->geom() << out;
+  mfsactive.close();
+
+  const int nfilledA = geoms_.first->nele()/2 - ncore_.first;
+  const int nfilledB = geoms_.second->nele()/2 - ncore_.second;
+  nfilledactive_ = make_pair( nfilledA, nfilledB );
+
+  set_sref(out);
 }
 
 void Dimer::driver(multimap<string, string> idata) {
