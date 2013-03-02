@@ -26,13 +26,12 @@
 #ifndef __meh_meh_h
 #define __meh_meh_h
 
-#include <array>
-#include <src/wfn/geometry.h>
+#include <utility>
+
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
-#include <src/dimer/dimer_jop.h>
+#include <src/dimer/dimer.h>
 #include <src/fci/dvec.h>
-#include <src/fci/space.h>
 #include <src/util/matrix.h>
 
 namespace bagel {
@@ -68,20 +67,22 @@ class MultiExcitonHamiltonian {
       std::pair<const int, const int> nstates_;
 
    public:
-      MultiExcitonHamiltonian(std::shared_ptr<DimerCISpace> cispace);
+      MultiExcitonHamiltonian(std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
 
       int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
 
       void compute();
 
    private:
-      template <int A, int B, int C, int D> std::pair<int, int> index(a,b,c,d) const {
+      void common_init();
+
+      template <int A, int B, int C, int D> std::pair<int, int> index(int a, int b, int c, int d) const {
         int iA = 0, jB = 0;
         if (A == 0) iA += a; else jB += a;
         if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
         if (C == 0) iA = c + iA*nact_.first; else jB = c + jB*nact_.second;
         if (D == 0) iA = d + iA*nact_.first; else jB = d + jB*nact_.second;
-        return make_pair(iA,jB);
+        return std::make_pair(iA,jB);
       }
 
       template <int unit> int active(int a) const { return (a + unit*nact_.first); }
@@ -117,7 +118,7 @@ std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const
   for ( int i = 0; i < unitA; ++i ) ijA *= nactA;
 
   int ijB = 1;
-  unitB = A + B + C + D;
+  int unitB = A + B + C + D;
   for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
 
   MatrixPtr Jout(new Matrix(ijA, ijB));

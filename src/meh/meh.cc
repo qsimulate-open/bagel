@@ -33,12 +33,10 @@
 
 #include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
-#include <src/scf/fock.h>
-#include <src/scf/scf.h>
-#include <src/fci/harrison.h>
-#include <src/fci/space.h>
+#include <src/dimer/dimer_cispace.h>
 #include <src/dimer/dimer.h>
 #include <src/util/matrix.h>
+#include <src/meh/meh.h>
 
 using namespace std;
 using namespace bagel;
@@ -48,10 +46,10 @@ using namespace bagel;
 * debug, using as much code as possible from other functions already written. This  *
 * will eventually be fixed.                                                         *
 ************************************************************************************/
-MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<DimerCISpace> cispace) :
-  ref_(cispace->ref()), coeff_(cispace->ref()), cispace_(cispace), 
-  dimerbasis_(cispace->dimerbasis()), dimerclosed_(cispace->dimerclosed()), dimeractive_(cispace->dimeractive()),
-  nact_(cispace->nact()), nbasis_(cispace->nbasis()), nstates_(cispace->nstates())
+MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
+  ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace), 
+  dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
+  nact_(dimer->nact()), nbasis_(dimer->nbasis()), nstates_(cispace->nstates())
 {
   common_init();
 }
@@ -59,7 +57,7 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<DimerCISpace> cispac
 void MultiExcitonHamiltonian::common_init() {
   dimerstates_ = nstates_.first * nstates_.second;
 
-  jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + nact, coeff_));
+  jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
 }
 
 void MultiExcitonHamiltonian::compute() {
@@ -119,8 +117,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
   {
-    shared_ptr<const Determinants> detA = cispace_->finddet<0>(0,0);
-    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>();
+    shared_ptr<const Determinants> detA = cispace_->det<0>(0,0);
+    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
 
     const int lenab = detA->lena() * detA->lenb();
 
@@ -141,8 +139,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   }
 
   {
-    shared_ptr<const Determinants> detB = cispace_->finddet<1>(0,0);
-    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>();
+    shared_ptr<const Determinants> detB = cispace_->det<1>(0,0);
+    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
 
     const int lenab = detB->lena() * detB->lenb();
 
@@ -176,8 +174,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 
   // first H^{AA}_{AA}
   {
-    shared_ptr<const Determinants> detA = cispace_->finddet<0>(0,0);
-    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>();
+    shared_ptr<const Determinants> detA = cispace_->det<0>(0,0);
+    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
 
     const int lenab = detA->lena() * detA->lenb();
 
@@ -190,9 +188,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
         for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
           const int stateABp = dimerstate(stateAp, stateB);
           const double *cdataAp = ccvecA->data(stateAp)->data();
-          double value; = ddot_(lenab, sdataA, 1, cdataAp, 1);
+          double value = ddot_(lenab, sdataA, 1, cdataAp, 1);
           
-          out->element(stateAB, stateABp) += value;;
+          out->element(stateAB, stateABp) += value;
         }
       }
     }
@@ -200,8 +198,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
   
   // now do H^{BB}_{BB} case
   {
-    shared_ptr<const Determinants> detB = cispace_->finddet<1>(0,0);
-    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>();
+    shared_ptr<const Determinants> detB = cispace_->det<1>(0,0);
+    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
 
     const int lenab = detB->lena() * detB->lenb();
     shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second(), nactB);
@@ -213,9 +211,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
         for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
           const int stateABp = dimerstate(stateA, stateBp);
           const double *cdataBp = ccvecB->data(stateBp)->data();
-          double value; = ddot_(lenab, sdataB, 1, cdataBp, 1);
+          double value = ddot_(lenab, sdataB, 1, cdataBp, 1);
           
-          out->element(stateAB, stateABp) += value;;
+          out->element(stateAB, stateABp) += value;
         }
       }
     }
@@ -225,8 +223,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
-  shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>();
-  shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>();
+  shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
+  shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
 
   const int nactA = nact_.first;
   const int ijA = nactA*nactA;
@@ -237,8 +235,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
   const int nstatesB = nstates_.second;
 
   // alpha-alpha
-  shared_ptr<Matrix> gamma_AA_alpha = form_gamma_alpha(ccvecA);
-  shared_ptr<Matrix> gamma_BB_alpha = form_gamma_alpha(ccvecB);
+  Matrix gamma_AA_alpha = *form_gamma_alpha(ccvecA);
+  Matrix gamma_BB_alpha = *form_gamma_alpha(ccvecB);
 
   // beta-beta
   Matrix gamma_AA_beta = *form_gamma_beta(ccvecA);
@@ -246,7 +244,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix, Kmatrix;
-  tie(Jmatrix, Kmatrix) = form_JKmatrices();
+  tie(Jmatrix, Kmatrix) = form_JKmatrices<1,0,1,0>();
 
   Matrix tmp(nstatesA*nstatesA, nstatesB*nstatesB);
 

@@ -75,6 +75,7 @@ class Dimer {
 
       std::pair<int, int> ncore_;
       std::pair<int, int> nact_;
+      std::pair<int, int> nfilledactive_;
       std::pair<int, int> nvirt_;
       std::pair<int, int> nstates_;
       std::pair<int, int> nbasis_;
@@ -112,9 +113,11 @@ class Dimer {
         sref_->set_coeff(std::shared_ptr<const Coeff>(new const Coeff(*mat)));
       };
 
-      std::pair<const int, const int> nbasis() const {return nbasis_; };
-      std::pair<const int, const int> ncore() const { return ncore_; };
-      int dimerbasis() const { return dimerbasis_; };
+      std::pair<const int, const int> nbasis() const { return nbasis_; }
+      std::pair<const int, const int> ncore() const { return ncore_; }
+      std::pair<const int, const int> nact() const { return nact_; }
+      std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
+      int dimerbasis() const { return dimerbasis_; }
 
       int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
 

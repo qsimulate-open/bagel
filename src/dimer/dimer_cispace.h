@@ -28,15 +28,17 @@
 #ifndef __BAGEL_DIMER_CISPACE_H
 #define __BAGEL_DIMER_CISPACE_H
 
-#include <fstream>
-#include <string>
+#include <utility>
 #include <memory>
-#include <cassert>
-#include <tuple>
-#include <src/wfn/reference.h>
-#include <src/fci/mofile.h>
+
+#include <src/dimer/dimer.h>
+#include <src/fci/dvec.h>
+#include <src/fci/determinants.h>
 
 namespace bagel {
+
+typedef std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>> MapCIs;
+typedef std::multimap<std::pair<int,int>, std::shared_ptr<Determinants>> MapDets;
 
 class DimerCISpace {
   protected:
@@ -45,9 +47,13 @@ class DimerCISpace {
     // These are stored values of the neutral species
     std::pair<int, int> nelea_;
     std::pair<int, int> neleb_;
+    std::pair<int, int> nstates_;
 
-    std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>> cispaceA_;
-    std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>> cispaceB_;
+    MapCIs cispaceA_;
+    MapCIs cispaceB_;
+
+    MapDets detspaceA_;
+    MapDets detspaceB_;
 
   public:
     // This constructor will build the infrastructure; civecs need to be added later
@@ -55,11 +61,26 @@ class DimerCISpace {
 
     template<int unit> int nelea() { return (unit == 0 ? nelea_.first : nelea_.second); }
     template<int unit> int neleb() { return (unit == 0 ? neleb_.first : neleb_.second); }
+    template<int unit> int nstates() { return (unit == 0 ? nstates_.first : nstates_.second); }
+
+    std::pair<int, int> nelea() { return nelea_; }
+    std::pair<int, int> neleb() { return neleb_; }
+    std::pair<int, int> nstates() { return nstates_; }
+
+    template<int unit> std::shared_ptr<Dvec> ccvec(int qa = 0, int qb = 0) {
+      MapCIs& space = (unit == 0 ? cispaceA_ : cispaceB_);
+      return space.find(std::make_pair(qa,qb))->second;
+    }
+
+    template<int unit> std::shared_ptr<Determinants> det(int qa = 0, int qb = 0) { 
+      MapDets& dets = (unit == 0 ? detspaceA_ : detspaceB_);
+      return dets.find(std::make_pair(qa,qb))->second; 
+    }
 
     template<int unit> void insert(std::shared_ptr<const Dvec> civec);
 };
 
-template<int unit> void insert(std::shared_ptr<const Dvec> civec) {
+template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) {
   std::shared_ptr<Dvec> new_civec = civec->copy();
 
   // Reform Determinants object (to make sure it's the format I want)
@@ -69,21 +90,28 @@ template<int unit> void insert(std::shared_ptr<const Dvec> civec) {
   const int qa = det->nelea() - nelea<unit>();
   const int qb = det->neleb() - neleb<unit>();
 
-  auto& space = (unit == 0 ? cispaceA_ : cispaceB_);
+  MapCIs& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
+  cispace.insert(std::make_pair(std::make_pair(qa,qb), new_civec));
 
-  auto icivec = space.find(make_pair(qa+1,qb));
-  if (icivec != space.end()) det->link<0>((*icivec)->det());
+  MapDets& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
 
-  auto icivec = space.find(make_pair(qa-1,qb));
-  if (icivec != space.end()) det->link<0>((*icivec)->det());
+  auto idet = detspace.find(std::make_pair(qa+1,qb));
+  if (idet != detspace.end()) det->link<0>(idet->second);
 
-  auto icivec = space.find(make_pair(qa,qb+1));
-  if (icivec != space.end()) det->link<1>((*icivec)->det());
+  idet = detspace.find(std::make_pair(qa-1,qb));
+  if (idet != detspace.end()) det->link<0>(idet->second);
 
-  auto icivec = space.find(make_pair(qa,qb-1));
-  if (icivec != space.end()) det->link<1>((*icivec)->det());
+  idet = detspace.find(std::make_pair(qa,qb+1));
+  if (idet != detspace.end()) det->link<1>(idet->second);
 
-  space.insert(make_pair(qa,qb), new_civec);
+  idet = detspace.find(std::make_pair(qa,qb-1));
+  if (idet != detspace.end()) det->link<1>(idet->second);
+
+  detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
+
+  const int ij = new_civec->ij();
+  if (unit == 0) nstates_ = std::make_pair(nstates_.first + ij, nstates_.second);
+  else nstates_ = std::make_pair(nstates_.first, nstates_.second + ij);
 }
 
 }
