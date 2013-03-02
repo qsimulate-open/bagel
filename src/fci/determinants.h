@@ -51,8 +51,6 @@ struct DetMap {
 
 // implements a determinant space
 class Determinants : public std::enable_shared_from_this<Determinants> {
-  friend class Space;
-
   protected:
     // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
