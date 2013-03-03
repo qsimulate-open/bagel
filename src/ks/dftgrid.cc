@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <numeric>
 #include <src/ks/dftgrid.h>
 #include <src/ks/lebedevlist.h>
 #include <src/util/constants.h>
@@ -32,6 +33,7 @@ using namespace std;
 using namespace bagel;
 
 const static LebedevList lebedev;
+
 
 // grid without 'pruning'. Becke's original mapping
 BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) {
@@ -59,16 +61,51 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
 
   auto iter = grid_.begin(); 
 
-  for (auto& i : geom->atoms()) {
+  for (auto& a : geom->atoms()) {
     // TODO the value of R_BS is atom-specific
     const double rbs = 1.0;
     for (int i = 0; i != nrad; ++i) {
       for (int j = 0; j != nang; ++j) {
-        const double xg = x[j] * r_ch[i] * rbs;
-        const double yg = y[j] * r_ch[i] * rbs;
-        const double zg = z[j] * r_ch[i] * rbs;
-        const double weight = w[j] * w_ch[i] * pow(rbs,3.0);
-        // TODO multiply fuzzy cell factors
+        const double xg = x[j] * r_ch[i] * rbs + a->position(0);
+        const double yg = y[j] * r_ch[i] * rbs + a->position(1);
+        const double zg = z[j] * r_ch[i] * rbs + a->position(2);
+        double weight = w[j] * w_ch[i] * pow(rbs,3.0) * 4.0*pi__;
+
+        array<double,3> xyz{{xg, yg, zg}};
+
+        // compute fuzzy cell factors
+        vector<double> pm(geom->natom(), 1.0);
+        auto ipm = pm.begin();
+        double fuzzy = -1.0;
+
+        for (auto& b : geom->atoms()) {
+          for (auto& c : geom->atoms()) {
+            if (b != c) {
+              // TODO the value of R_BS is atom-specific
+              const double rbs2 = 1.0;
+              const double xi = sqrt(rbs2/rbs);
+              const double uij = (xi-1.0)/(xi+1.0);
+              const double aij = uij / (uij*uij-1.0);
+
+              const double distbc = b->distance(c); 
+              const double distbg = b->distance(xyz);
+              const double distcg = c->distance(xyz);
+              const double muij = (distbg - distcg) / distbc;
+
+              // see Becke's appendix
+              double nuij = muij + aij*(1.0-muij*muij);
+              for (int i = 0; i != 3; ++i)
+                nuij = (1.5-0.5*nuij*nuij)*nuij;
+
+              *ipm *= nuij;
+            }
+          }
+          if (b == a) fuzzy = *ipm; 
+          ++ipm;
+        }
+        assert(fuzzy != -1.0);
+
+        weight *= fuzzy / accumulate(pm.begin(), pm.end(), 0.0); // Eq. 22
 
         // set to data 
         *iter++ = array<double,4>{{xg, yg, zg, weight}};

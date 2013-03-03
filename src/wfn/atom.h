@@ -67,7 +67,7 @@ class Atom {
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}
     double atom_charge() const { return atom_charge_;}
-    const std::array<double,3> position() const { return position_; }
+    const std::array<double,3>& position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
@@ -84,7 +84,8 @@ class Atom {
     bool operator==(const Atom&) const;
 
     // distance between this and other
-    double distance(const std::shared_ptr<const Atom> o) const;
+    double distance(const std::array<double,3>& o) const;
+    double distance(const std::shared_ptr<const Atom> o) const { return distance(o->position()); }
     // displacement vector from this to other
     std::array<double,3> displ(const std::shared_ptr<const Atom> o) const;
     // angle between two atoms (A,B)  and this (O) deg(A-O-B)
