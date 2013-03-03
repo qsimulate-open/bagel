@@ -81,9 +81,9 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
 
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
+    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
+    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
+    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
 
     std::shared_ptr<Matrix> get_real_part() const;
     std::shared_ptr<Matrix> get_imag_part() const;

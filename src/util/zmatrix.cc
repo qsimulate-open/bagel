@@ -638,20 +638,20 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 }
 
 
-void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
+void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    zaxpy_(ndim, 1.0, data + j*ndim, 1, element_ptr(ndim_i, i), 1);
+    zaxpy_(ndim, a, data + j*ndim, 1, element_ptr(ndim_i, i), 1);
 }
 
 
-void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) {
-  add_block(ndim_i, mdim_i, ndim, mdim, data.get());
+void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) {
+  add_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
 }
 
 
-void ZMatrix::add_block(const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) {
+void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) {
   assert(ndim == data->ndim() && mdim == data->mdim());
-  add_block(ndim_i, mdim_i, ndim, mdim, data->data());
+  add_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
 
