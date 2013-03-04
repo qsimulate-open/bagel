@@ -117,8 +117,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
 
   {
-    shared_ptr<const Determinants> detA = cispace_->det<0>(0,0);
     shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
+    shared_ptr<const Determinants> detA = ccvecA->det();
 
     const int lenab = detA->lena() * detA->lenb();
 

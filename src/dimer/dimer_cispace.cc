@@ -31,8 +31,40 @@
 using namespace std;
 using namespace bagel;
 
-DimerCISpace::DimerCISpace(const shared_ptr<Dimer> dimer) : dimer_(dimer) {
+DimerCISpace::DimerCISpace(const shared_ptr<Dimer> dimer) : dimer_(dimer), norb_(dimer->nact()) {
   // This will probably need to be changed
   nelea_ = make_pair(dimer->nfilledactive().first/2, dimer->nfilledactive().second/2);
   neleb_ = make_pair(dimer->nfilledactive().first/2, dimer->nfilledactive().second/2);
+}
+
+// Adds extra Determinants into the mapping that will be needed for Hamiltonian computation
+void DimerCISpace::complete() {
+
+  for (auto& imap : cispaceA_) {
+    int qa, qb;
+    tie(qa, qb) = imap.first;
+
+    auto idet = detspaceA_.find(make_pair(qa-1, qb));
+    if (idet == detspaceA_.end()) add_det<0>(qa-1, qb);
+
+    idet = detspaceA_.find(make_pair(qa, qb-1));
+    if (idet == detspaceA_.end()) add_det<0>(qa, qb-1);
+
+    idet = detspaceA_.find(make_pair(qa-1, qb-1));
+    if (idet == detspaceA_.end()) add_det<0>(qa-1, qb-1);
+  }
+
+  for (auto& imap : cispaceB_) {
+    int qa, qb;
+    tie(qa, qb) = imap.first;
+
+    auto idet = detspaceA_.find(make_pair(qa-1, qb));
+    if (idet == detspaceA_.end()) add_det<1>(qa-1, qb);
+
+    idet = detspaceA_.find(make_pair(qa, qb-1));
+    if (idet == detspaceA_.end()) add_det<1>(qa, qb-1);
+
+    idet = detspaceA_.find(make_pair(qa-1, qb-1));
+    if (idet == detspaceA_.end()) add_det<1>(qa-1, qb-1);
+  }
 }
