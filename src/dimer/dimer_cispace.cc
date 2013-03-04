@@ -58,13 +58,13 @@ void DimerCISpace::complete() {
     int qa, qb;
     tie(qa, qb) = imap.first;
 
-    auto idet = detspaceA_.find(make_pair(qa-1, qb));
-    if (idet == detspaceA_.end()) add_det<1>(qa-1, qb);
+    auto idet = detspaceB_.find(make_pair(qa-1, qb));
+    if (idet == detspaceB_.end()) add_det<1>(qa-1, qb);
 
-    idet = detspaceA_.find(make_pair(qa, qb-1));
-    if (idet == detspaceA_.end()) add_det<1>(qa, qb-1);
+    idet = detspaceB_.find(make_pair(qa, qb-1));
+    if (idet == detspaceB_.end()) add_det<1>(qa, qb-1);
 
-    idet = detspaceA_.find(make_pair(qa-1, qb-1));
-    if (idet == detspaceA_.end()) add_det<1>(qa-1, qb-1);
+    idet = detspaceB_.find(make_pair(qa-1, qb-1));
+    if (idet == detspaceB_.end()) add_det<1>(qa-1, qb-1);
   }
 }

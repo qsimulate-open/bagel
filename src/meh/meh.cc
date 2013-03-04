@@ -61,7 +61,7 @@ void MultiExcitonHamiltonian::common_init() {
 }
 
 void MultiExcitonHamiltonian::compute() {
-  cout << " ===== Starting construction of dimer Hamiltonian ===== " << endl;
+  cout << endl << " ===== Starting construction of dimer Hamiltonian ===== " << endl;
 
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
@@ -78,21 +78,13 @@ void MultiExcitonHamiltonian::compute() {
   *hamiltonian_ += *compute_intra_activeactive();
 
   // intermolecular active-active interactions
-  cout << "  o Computing intermolecular active-active interactions" << endl;
+  cout << "  o Computing intermolecular active-active interactions" << endl << endl;
   *hamiltonian_ += *compute_inter_activeactive();
 
-  hamiltonian_->print("Dimer Hamiltonian", dimerstates_);
+  adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
 
-  vector<double> eigvec(dimerstates_, 0.0);
-  hamiltonian_->diagonalize(eigvec.data());
-
-  cout << endl << " ===== Adiabatic state energies ===== " << endl;
-
-  int istate = 0;
-  for( auto& ieig : eigvec ) {
-    cout << "   state " << setw(3) << istate << ": " << setprecision(12) << setw(16) << ieig << endl;
-     ++istate;
-  }
+  energies_ = vector<double>(dimerstates_, 0.0);
+  adiabats_->diagonalize(energies_.data());
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeclose() {
@@ -174,8 +166,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 
   // first H^{AA}_{AA}
   {
-    shared_ptr<const Determinants> detA = cispace_->det<0>(0,0);
     shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
+    shared_ptr<const Determinants> detA = ccvecA->det();
 
     const int lenab = detA->lena() * detA->lenb();
 
@@ -198,8 +190,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
   
   // now do H^{BB}_{BB} case
   {
-    shared_ptr<const Determinants> detB = cispace_->det<1>(0,0);
     shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
+    shared_ptr<const Determinants> detB = ccvecB->det();
 
     const int lenab = detB->lena() * detB->lenb();
     shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second());
@@ -248,10 +240,10 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
 
   Matrix tmp(nstatesA*nstatesA, nstatesB*nstatesB);
 
-  tmp += gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
-  tmp += gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
-
   tmp += (gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta);
+
+  tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
+  tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
   // reorder, currently (AA',BB'), want (AB, A'B')
   shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
@@ -366,4 +358,27 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma_beta(shared_ptr<const Dve
   }
 
   return tmp.transpose();
+}
+
+void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) {
+  hamiltonian_->print(title, nstates);
+}
+
+void MultiExcitonHamiltonian::print_energies(const string title, const int nstates) {
+  const int end = std::min(nstates, dimerstates_);
+  cout << endl << " ===== " << title << " =====" << endl;
+  for (int istate = 0; istate < end; ++istate)
+    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << endl;
+}
+
+void MultiExcitonHamiltonian::print_adiabats(const string title, const int nstates) {
+  adiabats_->print(title, nstates);
+}
+
+void MultiExcitonHamiltonian::print(const int nstates) {
+  print_hamiltonian("ME Hamiltonian", nstates);
+  cout << endl;
+  print_energies("Adiabatic Energies", nstates);
+  cout << endl;
+  print_adiabats("Adiabatic States", nstates);
 }

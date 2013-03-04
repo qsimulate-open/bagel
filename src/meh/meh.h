@@ -54,13 +54,15 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<DimerCISpace> cispace_;
 
       MatrixPtr hamiltonian_;
+      MatrixPtr adiabats_; // Eigenvectors of adiabatic states
+
+      std::vector<double> energies_; // Adiabatic energies
 
       // Total system quantities
       const int dimerbasis_;
       const int dimerclosed_;
       const int dimeractive_;
       int dimerstates_;
-      
 
       // Localized quantities
       std::pair<const int, const int> nact_;
@@ -73,7 +75,11 @@ class MultiExcitonHamiltonian {
       int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
 
       void compute();
-      void print(std::string title = "MultiExciton Hamiltonian") { hamiltonian_->print(title, dimerbasis_); }
+
+      void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10);
+      void print_energies(const std::string title = "Adiabatic state energies", const int nstates = 10);
+      void print_adiabats(const std::string title = "Adiabats", const int nstates = 10);
+      void print(const int nstates = 10);
 
    private:
       void common_init();
