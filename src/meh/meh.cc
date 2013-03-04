@@ -122,7 +122,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
 
     const int lenab = detA->lena() * detA->lenb();
 
-    shared_ptr<Dvec> sigmavecA = form_sigma_1e(ccvecA, jop_->mo1e_first(), nactA*nactA);
+    shared_ptr<Dvec> sigmavecA = form_sigma_1e(ccvecA, jop_->mo1e_first());
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
@@ -144,7 +144,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
 
     const int lenab = detB->lena() * detB->lenb();
 
-    shared_ptr<Dvec> sigmavecB = form_sigma_1e(ccvecB, jop_->mo1e_second(), nstatesB*nstatesB);
+    shared_ptr<Dvec> sigmavecB = form_sigma_1e(ccvecB, jop_->mo1e_second());
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
@@ -179,7 +179,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 
     const int lenab = detA->lena() * detA->lenb();
 
-    shared_ptr<Dvec> sigmavecAA = form_sigma_2e(ccvecA, jop_->mo2e_first(), nactA);
+    shared_ptr<Dvec> sigmavecAA = form_sigma_2e(ccvecA, jop_->mo2e_first());
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
@@ -202,7 +202,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
     shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
 
     const int lenab = detB->lena() * detB->lenb();
-    shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second(), nactB);
+    shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second());
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {

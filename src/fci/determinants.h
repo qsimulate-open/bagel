@@ -191,6 +191,11 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     const std::vector<DetMap>& phidowna(const int i) const { return phidowna_[i]; }
     const std::vector<DetMap>& phidownb(const int i) const { return phidownb_[i]; }
 
+    std::shared_ptr<const Determinants> addalpha() const { return detaddalpha_.lock();}
+    std::shared_ptr<const Determinants> remalpha() const { return detremalpha_.lock();}
+    std::shared_ptr<const Determinants> addbeta() const { return detaddbeta_.lock();}
+    std::shared_ptr<const Determinants> rembeta() const { return detrembeta_.lock();}
+
     std::shared_ptr<Determinants> addalpha() { return detaddalpha_.lock();}
     std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();}
     std::shared_ptr<Determinants> addbeta() { return detaddbeta_.lock();}
