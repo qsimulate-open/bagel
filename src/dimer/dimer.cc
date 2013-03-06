@@ -33,7 +33,7 @@
 #include <src/fci/knowles.h>
 #include <src/dimer/dimer.h>
 #include <src/wfn/reference.h>
-#include <src/io/MoldenOut.h>
+#include <src/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
