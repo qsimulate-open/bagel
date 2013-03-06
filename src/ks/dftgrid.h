@@ -34,23 +34,27 @@ namespace bagel {
 
 class DFTGridPoint {
   protected:
-    std::array<double,4> data; // x,y,z,weight
+    const std::shared_ptr<const Geometry> geom_;
+    std::array<double,4> data_; // x,y,z,weight
+
+    // basis functions and derivaties on this grid
+    std::unique_ptr<double[]> basis_;
+    std::unique_ptr<double[]> gradx_;
+    std::unique_ptr<double[]> grady_;
+    std::unique_ptr<double[]> gradz_;
+
+    void init();
 
   public:
-    DFTGridPoint() { }
-    DFTGridPoint(const std::array<double,4>& o) : data(o) { }
-    DFTGridPoint(const DFTGridPoint& o) : data(o.data) { }
+    DFTGridPoint(std::shared_ptr<const Geometry> g, const std::array<double,4>& o) : geom_(g), data_(o) { init(); }
 
-    DFTGridPoint& operator=(const std::array<double,4>& o) { data = o; return *this; }
-    DFTGridPoint& operator=(const DFTGridPoint& o) { data = o.data; return *this; }
-
-    double* pointer(const int i = 0) { return &data[i]; }
+    double* pointer(const int i = 0) { return &data_[i]; }
 };
 
 
 class DFTGrid_base {
   protected:
-    std::vector<DFTGridPoint> grid_;
+    std::vector<std::shared_ptr<const DFTGridPoint> > grid_;
 
   public:
     DFTGrid_base() { }
@@ -60,6 +64,7 @@ class DFTGrid_base {
 // Becke-Chebyshev-Lebedev
 class BLGrid : public DFTGrid_base {
   protected:
+    const std::shared_ptr<const Geometry> geom_;
 
   public:
     BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);

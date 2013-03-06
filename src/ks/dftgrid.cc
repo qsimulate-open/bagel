@@ -35,11 +35,33 @@ using namespace bagel;
 const static LebedevList lebedev;
 
 
+void DFTGridPoint::init() {
+  basis_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  gradx_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  grady_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  gradz_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+
+  const double weight = data_[3]; 
+
+  int pos = 0;
+  for (auto& i : geom_->atoms()) {
+    // xyz coordinate relative to the atom i
+    const double x = data_[0] - i->position(0);
+    const double y = data_[1] - i->position(1);
+    const double z = data_[2] - i->position(2);
+    for (auto& j : i->shells()) {
+      // angular number
+      j->compute_grid_value(basis_.get()+pos, gradx_.get()+pos, grady_.get()+pos, gradz_.get()+pos, x, y, z, weight);
+    }
+  }
+}
+
+
 // grid without 'pruning'. Becke's original mapping
-BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) {
+BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : geom_(geom) {
   // first allocate Grids
   const size_t gridsize = nrad*nang*geom->natom();
-  grid_ = vector<DFTGridPoint>(gridsize);
+  grid_.reserve(gridsize);
 
   // construct Lebedev grid
   unique_ptr<double[]> x(new double[nang]);
@@ -58,8 +80,6 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
             * pi__/(nrad+1)*sin(i*pi__/(nrad+1)) // Gauss-Chebyshev weight
             * r_ch[i]*r_ch[i];                   // due to r^2 in the spherical coordinate integration
   }
-
-  auto iter = grid_.begin(); 
 
   for (auto& a : geom->atoms()) {
     // TODO the value of R_BS is atom-specific
@@ -108,13 +128,9 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
         weight *= fuzzy / accumulate(pm.begin(), pm.end(), 0.0); // Eq. 22
 
         // set to data 
-        *iter++ = array<double,4>{{xg, yg, zg, weight}};
+        grid_.push_back(shared_ptr<const DFTGridPoint>(new DFTGridPoint(geom_, array<double,4>{{xg, yg, zg, weight}})));
       }
     }
   }
-  assert(iter == grid_.end());
 
-  // to make sure about alignment
-  static_assert(sizeof(DFTGridPoint) == 4*sizeof(double), "something is wrong with the alignment of the DFTGrid class");
-  mpi__->allreduce(grid_[0].pointer(), grid_.size()*4); 
 }
