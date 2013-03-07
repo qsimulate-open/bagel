@@ -268,9 +268,9 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     double expz = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
       exp0 += exp(-exponents_[j]*rr)*w;
-      expx += -2.0*exponents_[j]*x*exp0;
-      expy += -2.0*exponents_[j]*y*exp0;
-      expz += -2.0*exponents_[j]*z*exp0;
+      expx += -2.0*exponents_[j]*x;
+      expy += -2.0*exponents_[j]*y;
+      expz += -2.0*exponents_[j]*z;
     }
     for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
       for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
