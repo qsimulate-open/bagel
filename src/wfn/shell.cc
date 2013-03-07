@@ -246,10 +246,8 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
 
 
 // In DFT we want to compute values of basis functions on grid
-void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, const double& x, const double& y, const double& z, const double weight) const {
+void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, const double& x, const double& y, const double& z) const {
   const double rr = x*x+y*y+z*z;
-  assert(weight > 0.0);
-  const double w = sqrt(weight); 
   auto range = contraction_ranges_.begin();
   double tmp0[50];
   double tmpx[50];
@@ -267,7 +265,7 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     double expy = 0.0;
     double expz = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
-      exp0 += exp(-exponents_[j]*rr)*w;
+      exp0 += exp(-exponents_[j]*rr);
       expx += -2.0*exponents_[j]*x;
       expy += -2.0*exponents_[j]*y;
       expz += -2.0*exponents_[j]*z;

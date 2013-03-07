@@ -51,9 +51,11 @@ void DFTGridPoint::init() {
     const double z = data_[2] - i->position(2);
     for (auto& j : i->shells()) {
       // angular number
-      j->compute_grid_value(basis_.get()+pos, gradx_.get()+pos, grady_.get()+pos, gradz_.get()+pos, x, y, z, weight);
+      j->compute_grid_value(basis_.get()+pos, gradx_.get()+pos, grady_.get()+pos, gradz_.get()+pos, x, y, z);
+      pos += j->nbasis();
     }
   }
+  assert(pos == geom_->nbasis());
 }
 
 
@@ -61,7 +63,8 @@ double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int powe
   double sum = 0.0;
   for (int m = 0; m != mat->mdim(); ++m) {
     for (auto& i : grid_) {
-      sum += ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
+      const double rho = ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
+      sum += rho * i->weight();
     }
   }
   return sum;
