@@ -60,6 +60,7 @@ void DFTGridPoint::init() {
 
 
 double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int power) {
+  assert(power == 2);
   double sum = 0.0;
   for (int m = 0; m != mat->mdim(); ++m) {
     for (auto& i : grid_) {
@@ -88,11 +89,11 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
   unique_ptr<double[]> r_ch(new double[nrad]);
   unique_ptr<double[]> w_ch(new double[nrad]);
   for (int i = 0; i != nrad; ++i) {
-    const double t = cos(i*pi__/(nrad+1)); 
+    const double t = cos((i+1)*pi__/(nrad+1)); 
     r_ch[i] = (1.0+t)/(1.0-t); 
-    w_ch[i] = 2.0 / pow(1.0-t, 2.0)              // due to mapping from [0,infty) to [-1, 1]
-            * pi__/(nrad+1)*sin(i*pi__/(nrad+1)) // Gauss-Chebyshev weight
-            * r_ch[i]*r_ch[i];                   // due to r^2 in the spherical coordinate integration
+    w_ch[i] = 2.0 / pow(1.0-t, 2.0)                  // due to mapping from [0,infty) to [-1, 1]
+            * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
+            * r_ch[i]*r_ch[i];                       // due to r^2 in the spherical coordinate integration
   }
 
   for (auto& a : geom->atoms()) {
@@ -110,7 +111,7 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
         // compute fuzzy cell factors
         vector<double> pm(geom->natom(), 1.0);
         auto ipm = pm.begin();
-        double fuzzy = -1.0;
+        double fuzzy = -1.0e10;
 
         for (auto& b : geom->atoms()) {
           for (auto& c : geom->atoms()) {
@@ -127,19 +128,20 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
               const double muij = (distbg - distcg) / distbc;
 
               // see Becke's appendix
-              double nuij = muij + aij*(1.0-muij*muij);
+              double nuij = muij + aij*(1.0-muij*muij); // eq. a2
               for (int i = 0; i != 3; ++i)
-                nuij = (1.5-0.5*nuij*nuij)*nuij;
+                nuij = (1.5-0.5*nuij*nuij)*nuij; // eq. 19
 
-              *ipm *= nuij;
+              *ipm *= 0.5*(1.0-nuij); // eq. 21
             }
           }
           if (b == a) fuzzy = *ipm; 
           ++ipm;
         }
-        assert(fuzzy != -1.0);
+        assert(fuzzy >= 0);
 
         weight *= fuzzy / accumulate(pm.begin(), pm.end(), 0.0); // Eq. 22
+        assert(weight >= 0);
 
         // set to data 
         grid_.push_back(shared_ptr<const DFTGridPoint>(new DFTGridPoint(geom_, array<double,4>{{xg, yg, zg, weight}})));

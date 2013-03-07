@@ -356,8 +356,8 @@ bool Atom::operator==(const Atom& o) const {
 double Atom::distance(const array<double,3>& o) const {
   double out = 0.0;
   for (int i = 0; i != 3; ++i)
-    out += ::pow(position_[i] - o[i], 2.0);
-  return ::sqrt(out);
+    out += pow(position_[i] - o[i], 2);
+  return sqrt(out);
 }
 
 
