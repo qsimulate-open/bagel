@@ -111,7 +111,7 @@ class Shell {
     const std::shared_ptr<const Shell> aux_dec() const { assert(relativistic_); return aux_dec_; }
 
     // DFT grid
-    void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z, const double weight = 1.0) const;
+    void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
 };
 
 }
