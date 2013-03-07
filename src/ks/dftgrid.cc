@@ -57,8 +57,19 @@ void DFTGridPoint::init() {
 }
 
 
+double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int power) {
+  double sum = 0.0;
+  for (int m = 0; m != mat->mdim(); ++m) {
+    for (auto& i : grid_) {
+      sum += ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
+    }
+  }
+  return sum;
+}
+
+
 // grid without 'pruning'. Becke's original mapping
-BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : geom_(geom) {
+BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // first allocate Grids
   const size_t gridsize = nrad*nang*geom->natom();
   grid_.reserve(gridsize);

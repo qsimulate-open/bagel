@@ -49,22 +49,25 @@ class DFTGridPoint {
     DFTGridPoint(std::shared_ptr<const Geometry> g, const std::array<double,4>& o) : geom_(g), data_(o) { init(); }
 
     double* pointer(const int i = 0) { return &data_[i]; }
+    const double* const basis() const { return basis_.get(); } 
 };
 
 
 class DFTGrid_base {
   protected:
-    std::vector<std::shared_ptr<const DFTGridPoint> > grid_;
+    const std::shared_ptr<const Geometry> geom_;
+    std::vector<std::shared_ptr<const DFTGridPoint>> grid_;
 
   public:
-    DFTGrid_base() { }
+    DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
+
+    double integrate(std::shared_ptr<const Matrix> mat, const int power = 2);
 };
 
 
 // Becke-Chebyshev-Lebedev
 class BLGrid : public DFTGrid_base {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
 
   public:
     BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
