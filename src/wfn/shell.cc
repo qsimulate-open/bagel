@@ -265,18 +265,19 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     double expy = 0.0;
     double expz = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
-      exp0 += exp(-exponents_[j]*rr);
-      expx += -2.0*exponents_[j]*x;
-      expy += -2.0*exponents_[j]*y;
-      expz += -2.0*exponents_[j]*z;
+      exp0 += i[j]*exp(-exponents_[j]*rr);
+      expx += -2.0*exponents_[j]*x*exp0;
+      expy += -2.0*exponents_[j]*y*exp0;
+      expz += -2.0*exponents_[j]*z*exp0;
     }
     for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
       for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
         const int ix = nang - iy - iz;
-        tmp0[ixyz] = pow(x,ix)*pow(y,iy)*pow(z,iz)*exp0;
-        tmpx[ixyz] = ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 + tmp0[ixyz]*expx;
-        tmpy[ixyz] = iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 + tmp0[ixyz]*expy;
-        tmpz[ixyz] = iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 + tmp0[ixyz]*expz;
+        const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
+        tmp0[ixyz] = cart*exp0;
+        tmpx[ixyz] = ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 + cart*expx;
+        tmpy[ixyz] = iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 + cart*expy;
+        tmpz[ixyz] = iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 + cart*expz;
       }
     }
     if (spherical_) {
@@ -294,5 +295,6 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     dx += nxyz;
     dy += nxyz;
     dz += nxyz;
+    ++range;
   }
 }

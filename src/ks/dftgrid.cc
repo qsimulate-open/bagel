@@ -65,7 +65,7 @@ double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int powe
   for (int m = 0; m != mat->mdim(); ++m) {
     for (auto& i : grid_) {
       const double rho = ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
-      sum += rho * i->weight();
+      sum += rho * rho * i->weight();
     }
   }
   return sum;
