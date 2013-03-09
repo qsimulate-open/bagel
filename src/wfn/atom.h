@@ -67,6 +67,7 @@ class Atom {
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}
     double atom_charge() const { return atom_charge_;}
+    double radius() const;
     const std::array<double,3>& position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }

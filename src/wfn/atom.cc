@@ -407,3 +407,8 @@ shared_ptr<const Atom> Atom::relativistic() const {
   atom->shells_ = rshells;
   return atom;
 }
+
+
+double Atom::radius() const {
+  return atommap_.radius(name_);
+}

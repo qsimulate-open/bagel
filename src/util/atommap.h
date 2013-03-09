@@ -35,15 +35,16 @@ namespace bagel {
 struct AtomMap {
   public:
     AtomMap();
-    ~AtomMap();
 
     std::map<std::string, int> atommap;
+    std::map<std::string, double> bsradii; 
     std::map<std::string, int> angmap;
 
     int angular_number(const std::string) const;
     int max_angular_number() const { return angmap.size()-1; };
 
     int atom_number(const std::string) const;
+    double radius(const std::string) const;
 
     const std::string angular_string(const int);
 };
