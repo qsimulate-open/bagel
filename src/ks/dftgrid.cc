@@ -73,13 +73,11 @@ double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int powe
 
 
 double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3>&& xyz) const {
-  unique_ptr<double[]> pm(new double[geom_->natom()]);
-  fill_n(pm.get(), geom_->natom(), 1.0);
-  auto ipm = pm.get();
-
   double fuzzy = -1.0;
+  double total;
   for (auto& b : geom_->atoms()) {
     const double rbs1 = b->radius();
+    double tmp = 1.0;
     for (auto& c : geom_->atoms()) {
       if (b != c) {
         const double rbs2 = c->radius();
@@ -97,14 +95,14 @@ double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3
         for (int i = 0; i != 3; ++i)
           nuij = (1.5-0.5*nuij*nuij)*nuij; // eq. 19
 
-        *ipm *= 0.5*(1.0-nuij); // eq. 21
+        tmp *= 0.5*(1.0-nuij); // eq. 21
       }
     }
-    if (b == atom) fuzzy = *ipm; 
-    ++ipm;
+    if (b == atom) fuzzy = tmp; 
+    total += tmp;
   }
   assert(fuzzy >= 0);
-  return fuzzy / accumulate(pm.get(), pm.get()+geom_->natom(), 0.0); // Eq. 22
+  return fuzzy / total; // Eq. 22
 }
 
 
