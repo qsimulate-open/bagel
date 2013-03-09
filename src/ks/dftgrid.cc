@@ -74,7 +74,7 @@ double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int powe
 
 double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3>&& xyz) const {
   double fuzzy = -1.0;
-  double total;
+  double total = 0.0;
   for (auto& b : geom_->atoms()) {
     const double rbs1 = b->radius();
     double tmp = 1.0;
