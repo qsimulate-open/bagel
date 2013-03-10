@@ -63,7 +63,7 @@ class DFTGrid_base {
     std::vector<std::shared_ptr<const DFTGridPoint>> grid_;
 
     // TODO to be controlled by the input deck
-    constexpr static double grid_thresh_ = 0.0;
+    constexpr static double grid_thresh_ = 1.0e-8;
 
     double fuzzy_cell(std::shared_ptr<const Atom> a, std::array<double,3>&& x) const;
     void add_grid(const int nrad, const int nang, const std::unique_ptr<double[]>& r_ch, const std::unique_ptr<double[]>& w_ch,

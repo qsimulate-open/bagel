@@ -124,7 +124,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
         double weight = w[j] * w_ch[i] * pow(rbs,3) * 4.0*pi__ * fuzzy_cell(a, array<double,3>{{xg, yg, zg}});
 
         // set to data 
-        if (weight > grid_thresh_)
+        if (weight > grid_thresh_/(nang*nrad))
           grid_.push_back(shared_ptr<const DFTGridPoint>(new DFTGridPoint(geom_, array<double,4>{{xg, yg, zg, weight}})));
       }
     }
