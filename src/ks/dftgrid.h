@@ -50,6 +50,9 @@ class DFTGridPoint {
 
     double* pointer(const int i = 0) { return &data_[i]; }
     const double* const basis() const { return basis_.get(); } 
+    const double* const gradx() const { return gradx_.get(); } 
+    const double* const grady() const { return grady_.get(); } 
+    const double* const gradz() const { return gradz_.get(); } 
     const double& weight() const { return data_[3]; }
 };
 

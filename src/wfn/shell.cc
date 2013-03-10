@@ -275,9 +275,9 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
         const int ix = nang - iy - iz;
         const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
         tmp0[ixyz] = cart*exp0;
-        tmpx[ixyz] = ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 + cart*expx;
-        tmpy[ixyz] = iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 + cart*expy;
-        tmpz[ixyz] = iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 + cart*expz;
+        tmpx[ixyz] = (ix != 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 : 0.0) + cart*expx;
+        tmpy[ixyz] = (iy != 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 : 0.0) + cart*expy;
+        tmpz[ixyz] = (iz != 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 : 0.0) + cart*expz;
       }
     }
     if (spherical_) {
