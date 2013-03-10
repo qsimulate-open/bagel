@@ -38,10 +38,10 @@ class DFTGridPoint {
     std::array<double,4> data_; // x,y,z,weight
 
     // basis functions and derivaties on this grid
-    std::unique_ptr<double[]> basis_;
-    std::unique_ptr<double[]> gradx_;
-    std::unique_ptr<double[]> grady_;
-    std::unique_ptr<double[]> gradz_;
+    std::shared_ptr<Matrix> basis_;
+    std::shared_ptr<Matrix> gradx_;
+    std::shared_ptr<Matrix> grady_;
+    std::shared_ptr<Matrix> gradz_;
 
     void init();
 
@@ -49,10 +49,10 @@ class DFTGridPoint {
     DFTGridPoint(std::shared_ptr<const Geometry> g, const std::array<double,4>& o) : geom_(g), data_(o) { init(); }
 
     double* pointer(const int i = 0) { return &data_[i]; }
-    const double* const basis() const { return basis_.get(); } 
-    const double* const gradx() const { return gradx_.get(); } 
-    const double* const grady() const { return grady_.get(); } 
-    const double* const gradz() const { return gradz_.get(); } 
+    std::shared_ptr<const Matrix> basis() const { return basis_; } 
+    std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
+    std::shared_ptr<const Matrix> grady() const { return grady_; } 
+    std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
     const double& weight() const { return data_[3]; }
 };
 
@@ -72,7 +72,7 @@ class DFTGrid_base {
   public:
     DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
-    double integrate(std::shared_ptr<const Matrix> mat, const int power = 2);
+    std::shared_ptr<const Matrix> compute_xcmat(const std::string name, std::shared_ptr<const Matrix> mat) const;
 };
 
 

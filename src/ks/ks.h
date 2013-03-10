@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: rohf.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: ks.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,23 +24,32 @@
 //
 
 
-#ifndef __BAGEL_SRC_SCF_ROHF_H
-#define __BAGEL_SRC_SCF_ROHF_H
+#ifndef __BAGEL_SRC_KS_KS_H
+#define __BAGEL_SRC_KS_KS_H
 
-#include <src/scf/uhf.h>
+#include <src/scf/scf_base.h>
 
-// implements UHF as in Tsuchimochi and Scuseria, J. Chem. Phys. 133, 141102 (2010)
+// I only implement a DF version
+
 namespace bagel {
 
-class ROHF : public UHF {
+class KS : public SCF_base {
   protected:
-    void symmetrize_cv(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
+    const std::string name_;
 
   public:
-    ROHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata_, geom, re) { };
+    KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+      : SCF_base(idata_, geom, re) {
 
-    void compute() override;
+      std::cout << indent << "*** Kohn-Sham DFT ***" << std::endl << std::endl;
+
+      if (re) throw std::runtime_error("we have not implemented DFT with a reference");
+    }
+
+    virtual void compute() override;
+
+    std::shared_ptr<Reference> conv_to_ref() const;
 };
 
 }

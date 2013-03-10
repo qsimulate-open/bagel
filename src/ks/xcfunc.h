@@ -68,6 +68,16 @@ class XCFunc {
     }
     ~XCFunc() { xc_func_end(&func_); }
 
+    std::unique_ptr<double[]> compute_exc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
+      std::unique_ptr<double[]> out(new double[np]);
+      if (func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA) { 
+        xc_gga_exc(&func_, np, rho.get(), sigma.get(), out.get());
+      } else {
+        throw std::runtime_error("So far only GGA and Hybrid GGA is supported.");
+      }
+      return std::move(out);
+    }
+
 };
 
 #else

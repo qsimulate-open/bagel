@@ -28,6 +28,7 @@
 #include <src/ks/lebedevlist.h>
 #include <src/util/constants.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/ks/xcfunc.h>
 
 using namespace std;
 using namespace bagel;
@@ -36,10 +37,10 @@ const static LebedevList lebedev;
 
 
 void DFTGridPoint::init() {
-  basis_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
-  gradx_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
-  grady_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
-  gradz_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
+  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
+  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
+  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
 
   const double weight = data_[3]; 
 
@@ -51,7 +52,7 @@ void DFTGridPoint::init() {
     const double z = data_[2] - i->position(2);
     for (auto& j : i->shells()) {
       // angular number
-      j->compute_grid_value(basis_.get()+pos, gradx_.get()+pos, grady_.get()+pos, gradz_.get()+pos, x, y, z);
+      j->compute_grid_value(basis_->data()+pos, gradx_->data()+pos, grady_->data()+pos, gradz_->data()+pos, x, y, z);
       pos += j->nbasis();
     }
   }
@@ -59,22 +60,35 @@ void DFTGridPoint::init() {
 }
 
 
-double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int power) {
-  assert(power == 2);
-  double sum = 0.0;
-  for (int m = 0; m != mat->mdim(); ++m) {
-    for (auto& i : grid_) {
-      const double rho = ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
-      const double gx  = ddot_(geom_->nbasis(), i->gradx(), 1, mat->element_ptr(0,m), 1);
-      const double gy  = ddot_(geom_->nbasis(), i->grady(), 1, mat->element_ptr(0,m), 1);
-      const double gz  = ddot_(geom_->nbasis(), i->gradz(), 1, mat->element_ptr(0,m), 1);
-      // this should give the number of electrons
-//    sum += rho * rho * i->weight();
-      // this should give the kinetic energy
-      sum += (gx*gx + gy*gy + gz*gz) * i->weight();
+shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std::shared_ptr<const Matrix> mat) const {
+  unique_ptr<double[]> rho(new double[grid_.size()]);
+  unique_ptr<double[]> sigma(new double[grid_.size()]);
+  size_t j = 0;
+  for (auto& i : grid_) {
+    double tmp[4] = {0.0};
+    for (int m = 0; m != mat->mdim(); ++m) {
+      tmp[0] += ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1);
+      tmp[1] += ddot_(geom_->nbasis(), i->gradx()->data(), 1, mat->element_ptr(0,m), 1);
+      tmp[2] += ddot_(geom_->nbasis(), i->grady()->data(), 1, mat->element_ptr(0,m), 1);
+      tmp[3] += ddot_(geom_->nbasis(), i->gradz()->data(), 1, mat->element_ptr(0,m), 1);
     }
+    rho[j] = tmp[0]*tmp[0];
+    sigma[j] = tmp[1]*tmp[1]+tmp[2]*tmp[2]+tmp[3]*tmp[3]; 
+    ++j;
   }
-  return sum;
+
+  XCFunc func(name);
+  unique_ptr<double[]> exc = func.compute_exc(grid_.size(), rho, sigma); 
+
+  shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  j = 0;
+  for (auto& i : grid_) {
+    Matrix scal = *i->basis(); 
+    scal *= exc[j++];
+    *out += *i->basis() ^ scal; 
+  }
+
+  return out;
 }
 
 

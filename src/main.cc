@@ -38,6 +38,7 @@
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_scf.h>
 #include <src/scf/rohf.h>
+#include <src/ks/ks.h>
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
 #include <src/rel/relreference.h>
@@ -161,6 +162,12 @@ int main(int argc, char** argv) {
       } else if (method == "df-hf") {
 
         scf = std::shared_ptr<SCF<1>>(new SCF<1>(iter->second, geom, ref));
+        scf->compute();
+        ref = scf->conv_to_ref();
+
+      } else if (method == "df-ks" || method == "ks") {
+
+        scf = std::shared_ptr<KS>(new KS(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
