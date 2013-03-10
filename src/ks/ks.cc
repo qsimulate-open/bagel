@@ -39,17 +39,33 @@ void KS::compute() {
   coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
   shared_ptr<Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
 
+  Timer preptime;
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
-  cout << endl;
-  cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
+
+  shared_ptr<DFTGrid_base> becke(new BLGrid(100, 770, geom_));
+  preptime.tick_print("DFT grid generation");
+
+  cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
   cout << indent << "=== KS iteration (" << name_ << " / " << geom_->basisfile() << ") ===" << endl << indent << endl;
 
   DIIS<Matrix> diis(diis_size_);
+
+
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    shared_ptr<const Matrix> fock(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_)));
+    // fock operator without DFT xc 
+    shared_ptr<Matrix> fock;
+    if (scale_ex_ != 0.0) {
+      fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, scale_ex_));
+    } else {
+      throw logic_error("pure DFT not yet implemented");
+    }
+
+    // add xc 
+    *fock += *becke->compute_xcmat(name_, coeff_->slice(0, nocc_));
+    
 
     energy_ = 0.5*(*aodensity_ * *hcore_+ *fock * *aodensity_).trace() + geom_->nuclear_repulsion();
 

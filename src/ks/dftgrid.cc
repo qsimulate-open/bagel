@@ -84,7 +84,7 @@ shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std
   j = 0;
   for (auto& i : grid_) {
     Matrix scal = *i->basis(); 
-    scal *= exc[j++];
+    scal *= exc[j++] * i->weight();
     *out += *i->basis() ^ scal; 
   }
 
