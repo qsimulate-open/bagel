@@ -65,13 +65,13 @@ double DFTGrid_base::integrate(std::shared_ptr<const Matrix> mat, const int powe
   for (int m = 0; m != mat->mdim(); ++m) {
     for (auto& i : grid_) {
       const double rho = ddot_(geom_->nbasis(), i->basis(), 1, mat->element_ptr(0,m), 1);
-      const double gx = ddot_(geom_->nbasis(), i->gradx(), 1, mat->element_ptr(0,m), 1);
-      const double gy = ddot_(geom_->nbasis(), i->grady(), 1, mat->element_ptr(0,m), 1);
-      const double gz = ddot_(geom_->nbasis(), i->gradz(), 1, mat->element_ptr(0,m), 1);
+      const double gx  = ddot_(geom_->nbasis(), i->gradx(), 1, mat->element_ptr(0,m), 1);
+      const double gy  = ddot_(geom_->nbasis(), i->grady(), 1, mat->element_ptr(0,m), 1);
+      const double gz  = ddot_(geom_->nbasis(), i->gradz(), 1, mat->element_ptr(0,m), 1);
       // this should give the number of electrons
 //    sum += rho * rho * i->weight();
-      // this should give the kinetic energy * 2
-      sum += (gx*gx + gy*gy + gz*gz) * i->weight() * (-0.5);
+      // this should give the kinetic energy
+      sum += (gx*gx + gy*gy + gz*gz) * i->weight();
     }
   }
   return sum;

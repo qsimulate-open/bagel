@@ -265,10 +265,11 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     double expy = 0.0;
     double expz = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
-      exp0 += i[j]*exp(-exponents_[j]*rr);
-      expx += -2.0*exponents_[j]*x*exp0;
-      expy += -2.0*exponents_[j]*y*exp0;
-      expz += -2.0*exponents_[j]*z*exp0;
+      const double tmp = i[j]*exp(-exponents_[j]*rr);
+      exp0 += tmp; 
+      expx += -2.0*exponents_[j]*x*tmp;
+      expy += -2.0*exponents_[j]*y*tmp;
+      expz += -2.0*exponents_[j]*z*tmp;
     }
     for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
       for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
