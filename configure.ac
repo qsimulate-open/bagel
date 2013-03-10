@@ -47,6 +47,8 @@ if test "x${with_include}" != xno; then
     FCFLAGS="${with_include} ${FCFLAGS}"
 fi
 
+AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
+
 AC_F77_LIBRARY_LDFLAGS
 
 
@@ -80,6 +82,10 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     ])
 ])
 
+if test x${libxc} = xyes; then
+  AC_CHECK_HEADERS([xc.h], [], [AC_MSG_ERROR([xc.h not found or not working])], [])
+  AC_CHECK_LIB(xc, main, , AC_MSG_ERROR([libxc not found]))
+fi
 
 if test x${use_mkl} = xyes; then
     AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])
