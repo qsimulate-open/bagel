@@ -28,6 +28,8 @@
 
 #include <map>
 #include <string>
+#include <stdexcept>
+#include <iostream>
 #include <config.h>
 #ifdef HAVE_XC_H
 #include <xc.h> // header provided by libxc
@@ -62,6 +64,7 @@ class XCFunc {
     XCFunc(const std::string name) : name_(name) {
       if (xc_func_init(&func_, flist.num(name_), XC_UNPOLARIZED))
         throw std::runtime_error("unknown functional..");
+      std::cout << "      * DFT functional " << name_ << " using libxc" << std::endl << std::endl;
     }
     ~XCFunc() { xc_func_end(&func_); }
 
