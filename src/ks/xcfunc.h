@@ -88,7 +88,11 @@ class XCFunc {
 };
 
 #else
-class XCFunc { XCFunc(const std::string) { assert(false); } }; // dummy
+class XCFunc { 
+public:
+  XCFunc(const std::string) { assert(false); }
+  std::unique_ptr<double[]> compute_exc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const { assert(false); return std::unique_ptr<double[]>(); }
+}; // dummy
 #endif
 
 }
