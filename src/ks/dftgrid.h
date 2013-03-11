@@ -72,7 +72,7 @@ class DFTGrid_base {
   public:
     DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
-    std::shared_ptr<const Matrix> compute_xcmat(const std::string name, std::shared_ptr<const Matrix> mat) const;
+    std::tuple<std::shared_ptr<const Matrix>,double> compute_xc(const std::string name, std::shared_ptr<const Matrix> mat) const;
 };
 
 

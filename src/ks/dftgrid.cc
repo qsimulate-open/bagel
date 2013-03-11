@@ -60,7 +60,7 @@ void DFTGridPoint::init() {
 }
 
 
-shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std::shared_ptr<const Matrix> mat) const {
+tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::string name, std::shared_ptr<const Matrix> mat) const {
   Timer time;
   XCFunc func(name);
 
@@ -76,6 +76,7 @@ shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std
       }
       rho[j] = 2.0*den;
     } else {
+#if 0
       double den = 0.0;
       double sig = 0.0;
       for (int m = 0; m != mat->mdim(); ++m) {
@@ -88,25 +89,39 @@ shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std
       }
       rho[j] = 2.0*den;
       sigma[j] = 4.0*sig;
+#else
+      assert(false);
+#endif
     }
     ++j;
   }
   time.tick_print("rho, sigma");
 
+  // TODO
+  unique_ptr<double[]> vxc = func.compute_vxc(grid_.size(), rho, sigma); 
   unique_ptr<double[]> exc = func.compute_exc(grid_.size(), rho, sigma); 
   time.tick_print("exc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  double en = 0.0;
+  double en2 = 0.0; // TODO
   j = 0;
   for (auto& i : grid_) {
     Matrix scal = *i->basis(); 
-    scal *= exc[j] * i->weight();
+
+    scal *= vxc[j] * i->weight();
     *out += *i->basis() ^ scal; 
+
+    en += exc[j] * i->weight();
+    en2 += vxc[j] * rho[j] * i->weight(); // TODO
     ++j;
   }
+
+  // TODO debug
+  cout << setprecision(10) << en << " " << en2 << endl;
   time.tick_print("contraction");
 
-  return out;
+  return make_tuple(out, en);
 }
 
 

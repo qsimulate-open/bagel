@@ -44,7 +44,7 @@ void KS::compute() {
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
 
   // TODO control from the input deck
-  shared_ptr<DFTGrid_base> becke(new BLGrid(40, 194, geom_));
+  shared_ptr<DFTGrid_base> becke(new BLGrid(100, 770, geom_));
   preptime.tick_print("DFT grid generation");
 
   cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
@@ -52,12 +52,12 @@ void KS::compute() {
 
   DIIS<Matrix> diis(diis_size_);
 
+  shared_ptr<Matrix> fock;
 
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // fock operator without DFT xc 
-    shared_ptr<Matrix> fock;
     if (scale_ex_ != 0.0) {
       fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, scale_ex_));
     } else {
@@ -65,9 +65,13 @@ void KS::compute() {
     }
 
     // add xc 
-    *fock += *becke->compute_xcmat(name_, coeff_->slice(0, nocc_));
+    shared_ptr<const Matrix> xc;
+    double exc;
+    tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
 
-    energy_ = 0.5*(*aodensity_ * *hcore_+ *fock * *aodensity_).trace() + geom_->nuclear_repulsion();
+    energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
+
+    *fock += *xc;
 
     shared_ptr<const Matrix> error_vector(new Matrix(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock));
 
@@ -95,6 +99,13 @@ void KS::compute() {
     aodensity_ = coeff_->form_density_rhf(nocc_);
 
   }
+coeff_->print();
+
+  shared_ptr<const Matrix> xc;
+  double exc;
+  tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
+  energy_ = 0.5*((*hcore_+ *fock + *xc) * *aodensity_).trace() + geom_->nuclear_repulsion();
+  cout << "  * Kohn-Sham energy: " << setprecision(8) << energy_ << endl;
 
   // by default we compute dipoles
   if (!geom_->external()) {
