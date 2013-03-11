@@ -110,6 +110,7 @@ class XCFunc {
 public:
   XCFunc(const std::string) { assert(false); }
   std::unique_ptr<double[]> compute_exc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const { assert(false); return std::unique_ptr<double[]>(); }
+  std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const { assert(false); return std::unique_ptr<double[]>(); }
   bool lda() const { return true; }
 }; // dummy
 #endif
