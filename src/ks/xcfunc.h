@@ -46,8 +46,8 @@ class FuncList {
       map_.insert(std::make_pair("slater",    XC_LDA_X));
       map_.insert(std::make_pair("xalpha",    XC_LDA_C_XALPHA));
       map_.insert(std::make_pair("pw92c",     XC_LDA_C_PW));
-      map_.insert(std::make_pair("teter93",   XC_LDA_XC_TETER93));
-      map_.insert(std::make_pair("pbe",       XC_GGA_X_PBE));
+      map_.insert(std::make_pair("pbex",      XC_GGA_X_PBE));
+      map_.insert(std::make_pair("pbec",      XC_GGA_C_PBE));
       map_.insert(std::make_pair("b3lyp",     XC_HYB_GGA_XC_B3LYP));
     }
     int num(const std::string& name) const {
@@ -89,12 +89,8 @@ class XCFunc {
       if (func_.info->family == XC_FAMILY_LDA) { 
         xc_lda_vxc(&func_, np, rho.get(), out.get());
       } else if (func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA) { 
-#if 0
         std::unique_ptr<double[]> tmp(new double[np]);
         xc_gga_vxc(&func_, np, rho.get(), sigma.get(), out.get(), tmp.get());
-#else
-        assert(false);
-#endif
       } else {
         throw std::runtime_error("So far only GGA and Hybrid GGA is supported (LDA is there, but slow).");
       }

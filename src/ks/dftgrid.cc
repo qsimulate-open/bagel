@@ -73,24 +73,24 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
       for (int m = 0; m != mat->mdim(); ++m) {
         den += pow(ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1), 2);
       }
-      rho[j] = den;
+      rho[j] = den*2.0;
     } else {
-#if 0
       double den = 0.0;
-      double sig = 0.0;
+      double sigx = 0.0;
+      double sigy = 0.0;
+      double sigz = 0.0;
       for (int m = 0; m != mat->mdim(); ++m) {
         const double orb  = ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1);
         const double orbx = ddot_(geom_->nbasis(), i->gradx()->data(), 1, mat->element_ptr(0,m), 1);
         const double orby = ddot_(geom_->nbasis(), i->grady()->data(), 1, mat->element_ptr(0,m), 1);
         const double orbz = ddot_(geom_->nbasis(), i->gradz()->data(), 1, mat->element_ptr(0,m), 1);
         den += pow(orb, 2);
-        sig += pow(2*orb*orbx,2)+pow(2*orb*orby,2)+pow(2*orb*orbz,2);
+        sigx += 2*orb*orbx;
+        sigy += 2*orb*orby;
+        sigz += 2*orb*orbz;
       }
-      rho[j] = 2.0*den;
-      sigma[j] = 4.0*sig;
-#else
-      assert(false);
-#endif
+      rho[j] = den*2.0;
+      sigma[j] = (sigx*sigx + sigy*sigy + sigz*sigz)*4.0;
     }
     ++j;
   }
@@ -110,8 +110,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
     scal *= vxc[j] * i->weight();
     *out += *i->basis() ^ scal; 
 #endif
-
-    en += exc[j] * i->weight();
+    en += exc[j] * rho[j] * i->weight();
     ++j;
   }
 
