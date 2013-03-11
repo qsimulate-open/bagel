@@ -68,13 +68,12 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
   unique_ptr<double[]> sigma(new double[grid_.size()]);
   size_t j = 0;
   for (auto& i : grid_) {
-
     if (func.lda()) { 
       double den = 0.0;
       for (int m = 0; m != mat->mdim(); ++m) {
         den += pow(ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1), 2);
       }
-      rho[j] = 2.0*den;
+      rho[j] = den;
     } else {
 #if 0
       double den = 0.0;
@@ -104,23 +103,19 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
   double en = 0.0;
-  double en2 = 0.0; // TODO
   j = 0;
   for (auto& i : grid_) {
+#if 0
     Matrix scal = *i->basis(); 
-
     scal *= vxc[j] * i->weight();
     *out += *i->basis() ^ scal; 
+#endif
 
     en += exc[j] * i->weight();
-    en2 += vxc[j] * rho[j] * i->weight(); // TODO
     ++j;
   }
 
-  // TODO debug
-  cout << setprecision(10) << en << " " << en2 << endl;
   time.tick_print("contraction");
-
   return make_tuple(out, en);
 }
 

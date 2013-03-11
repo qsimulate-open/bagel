@@ -58,11 +58,7 @@ void KS::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // fock operator without DFT xc 
-    if (scale_ex_ != 0.0) {
-      fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, scale_ex_));
-    } else {
-      throw logic_error("pure DFT not yet implemented");
-    }
+    fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, scale_ex_));
 
     // add xc 
     shared_ptr<const Matrix> xc;
@@ -70,6 +66,7 @@ void KS::compute() {
     tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
+cout << setprecision(10) << energy_ - exc << " " << exc << endl;
 
     *fock += *xc;
 
@@ -100,12 +97,6 @@ void KS::compute() {
 
   }
 coeff_->print();
-
-  shared_ptr<const Matrix> xc;
-  double exc;
-  tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
-  energy_ = 0.5*((*hcore_+ *fock + *xc) * *aodensity_).trace() + geom_->nuclear_repulsion();
-  cout << "  * Kohn-Sham energy: " << setprecision(8) << energy_ << endl;
 
   // by default we compute dipoles
   if (!geom_->external()) {
