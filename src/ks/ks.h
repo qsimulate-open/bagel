@@ -49,6 +49,8 @@ class KS : public SCF_base {
       name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
       if (name_ == "b3lyp") {
         scale_ex_ = 0.2;
+      } else {
+        scale_ex_ = 1.0e-50;
       }
 
       if (re) throw std::runtime_error("we have not implemented DFT with a reference");

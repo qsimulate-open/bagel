@@ -61,32 +61,50 @@ void DFTGridPoint::init() {
 
 
 shared_ptr<const Matrix> DFTGrid_base::compute_xcmat(const std::string name, std::shared_ptr<const Matrix> mat) const {
+  Timer time;
+  XCFunc func(name);
+
   unique_ptr<double[]> rho(new double[grid_.size()]);
   unique_ptr<double[]> sigma(new double[grid_.size()]);
   size_t j = 0;
   for (auto& i : grid_) {
-    double tmp[4] = {0.0};
-    for (int m = 0; m != mat->mdim(); ++m) {
-      tmp[0] += ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1);
-      tmp[1] += ddot_(geom_->nbasis(), i->gradx()->data(), 1, mat->element_ptr(0,m), 1);
-      tmp[2] += ddot_(geom_->nbasis(), i->grady()->data(), 1, mat->element_ptr(0,m), 1);
-      tmp[3] += ddot_(geom_->nbasis(), i->gradz()->data(), 1, mat->element_ptr(0,m), 1);
+
+    if (func.lda()) { 
+      double den = 0.0;
+      for (int m = 0; m != mat->mdim(); ++m) {
+        den += pow(ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1), 2);
+      }
+      rho[j] = 2.0*den;
+    } else {
+      double den = 0.0;
+      double sig = 0.0;
+      for (int m = 0; m != mat->mdim(); ++m) {
+        const double orb  = ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1);
+        const double orbx = ddot_(geom_->nbasis(), i->gradx()->data(), 1, mat->element_ptr(0,m), 1);
+        const double orby = ddot_(geom_->nbasis(), i->grady()->data(), 1, mat->element_ptr(0,m), 1);
+        const double orbz = ddot_(geom_->nbasis(), i->gradz()->data(), 1, mat->element_ptr(0,m), 1);
+        den += pow(orb, 2);
+        sig += pow(2*orb*orbx,2)+pow(2*orb*orby,2)+pow(2*orb*orbz,2);
+      }
+      rho[j] = 2.0*den;
+      sigma[j] = 4.0*sig;
     }
-    rho[j] = tmp[0]*tmp[0];
-    sigma[j] = tmp[1]*tmp[1]+tmp[2]*tmp[2]+tmp[3]*tmp[3]; 
     ++j;
   }
+  time.tick_print("rho, sigma");
 
-  XCFunc func(name);
   unique_ptr<double[]> exc = func.compute_exc(grid_.size(), rho, sigma); 
+  time.tick_print("exc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
   j = 0;
   for (auto& i : grid_) {
     Matrix scal = *i->basis(); 
-    scal *= exc[j++] * i->weight();
+    scal *= exc[j] * i->weight();
     *out += *i->basis() ^ scal; 
+    ++j;
   }
+  time.tick_print("contraction");
 
   return out;
 }
