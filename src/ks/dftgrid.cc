@@ -207,9 +207,6 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
 
 // grid without 'pruning'. Becke's original mapping
 BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
-  // first allocate Grids
-  const size_t gridsize = nrad*nang*geom->natom();
-
   // construct Lebedev grid
   unique_ptr<double[]> x(new double[nang]);
   unique_ptr<double[]> y(new double[nang]);
@@ -224,6 +221,29 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
     const double t = cos((i+1)*pi__/(nrad+1)); 
     r_ch[i] = (1.0+t)/(1.0-t); 
     w_ch[i] = 2.0 / pow(1.0-t, 2.0)                  // due to mapping from [0,infty) to [-1, 1]
+            * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
+            * r_ch[i]*r_ch[i];                       // due to r^2 in the spherical coordinate integration
+  }
+
+  add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
+}
+
+
+TALGrid::TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
+  // construct Lebedev grid
+  unique_ptr<double[]> x(new double[nang]);
+  unique_ptr<double[]> y(new double[nang]);
+  unique_ptr<double[]> z(new double[nang]);
+  unique_ptr<double[]> w(new double[nang]);
+  lebedev.root(nang, x.get(), y.get(), z.get(), w.get());
+
+  // construct Chebyshev grid 
+  unique_ptr<double[]> r_ch(new double[nrad]);
+  unique_ptr<double[]> w_ch(new double[nrad]);
+  for (int i = 0; i != nrad; ++i) {
+    const double t = cos((i+1)*pi__/(nrad+1)); 
+    r_ch[i] = 1.0/log(2.0)*pow(1.0+t, 0.6)*log(2.0/(1.0-t));
+    w_ch[i] = (0.6*r_ch[i]/(1.0+t) + 1.0/log(2.0)*pow(1.0+t,0.6)/(1-t)) // due to mapping from [0,infty) to [-1, 1]
             * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
             * r_ch[i]*r_ch[i];                       // due to r^2 in the spherical coordinate integration
   }

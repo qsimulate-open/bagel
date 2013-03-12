@@ -44,7 +44,9 @@ void KS::compute() {
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
 
   // TODO control from the input deck
-  shared_ptr<DFTGrid_base> becke(new BLGrid(40, 194, geom_));
+//shared_ptr<DFTGrid_base> grid(new BLGrid(40, 194, geom_));
+  shared_ptr<DFTGrid_base> grid(new TALGrid(40, 194, geom_));
+//shared_ptr<DFTGrid_base> grid(new TALGrid(100, 770, geom_));
   preptime.tick_print("DFT grid generation");
 
   cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
@@ -63,7 +65,7 @@ void KS::compute() {
     // add xc 
     shared_ptr<const Matrix> xc;
     double exc;
-    tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
+    tie(xc, exc) = grid->compute_xc(name_, coeff_->slice(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
 

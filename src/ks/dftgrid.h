@@ -81,11 +81,14 @@ class DFTGrid_base {
 
 // Becke-Chebyshev-Lebedev
 class BLGrid : public DFTGrid_base {
-  protected:
-
   public:
     BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
+};
 
+// Treutler-Ahlrichs-Chebyshev-Lebedev 
+class TALGrid : public DFTGrid_base {
+  public:
+    TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
 };
 
 }
