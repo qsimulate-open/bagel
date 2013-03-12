@@ -59,20 +59,19 @@ void DFTGridPoint::init() {
 }
 
 
-tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::string name, std::shared_ptr<const Matrix> mat) const {
+tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<XCFunc> func, std::shared_ptr<const Matrix> mat) const {
   Timer time;
-  XCFunc func(name);
 
   unique_ptr<double[]> rho(new double[grid_->size()]);
   unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
-  if (!func.lda()) {
+  if (!func->lda()) {
     sigma = unique_ptr<double[]>(new double[grid_->size()]);
     rhox  = unique_ptr<double[]>(new double[grid_->size()]);
     rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
     rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
   }
 
-  if (func.lda()) { 
+  if (func->lda()) { 
     shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
     assert(orb->mdim() == grid_->size());
     for (size_t i = 0; i != orb->mdim(); ++i) {
@@ -98,7 +97,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
 
   unique_ptr<double[]> exc;
   unique_ptr<double[]> vxc;
-  tie(exc, vxc) = func.compute_exc_vxc(grid_->size(), rho, sigma); 
+  tie(exc, vxc) = func->compute_exc_vxc(grid_->size(), rho, sigma); 
   time.tick_print("exc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
@@ -111,7 +110,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
     }
     *out += *grid_->basis() ^ *scal;
   }
-  if (!func.lda()) {
+  if (!func->lda()) {
     {
       shared_ptr<Matrix> scal(new Matrix(*grid_->basis()));
       for (size_t i = 0; i != scal->mdim(); ++i)

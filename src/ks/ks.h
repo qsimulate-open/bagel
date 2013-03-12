@@ -36,7 +36,6 @@ namespace bagel {
 class KS : public SCF_base {
   protected:
     std::string name_;
-    double scale_ex_;
 
   public:
     KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
@@ -47,11 +46,6 @@ class KS : public SCF_base {
 
       // default is now B3LYP
       name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
-      if (name_ == "b3lyp") {
-        scale_ex_ = 0.2;
-      } else {
-        scale_ex_ = 0.0;
-      }
 
       if (re) throw std::runtime_error("we have not implemented DFT with a reference");
     }

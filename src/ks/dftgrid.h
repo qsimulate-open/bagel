@@ -29,6 +29,7 @@
 #include <array>
 #include <memory>
 #include <src/wfn/geometry.h>
+#include <src/ks/xcfunc.h>
 
 namespace bagel {
 
@@ -76,7 +77,7 @@ class DFTGrid_base {
   public:
     DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
-    std::tuple<std::shared_ptr<const Matrix>,double> compute_xc(const std::string name, std::shared_ptr<const Matrix> mat) const;
+    std::tuple<std::shared_ptr<const Matrix>,double> compute_xc(std::shared_ptr<XCFunc> func, std::shared_ptr<const Matrix> mat) const;
 };
 
 

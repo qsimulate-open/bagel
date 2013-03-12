@@ -49,6 +49,7 @@ class FuncList {
       map_.insert(std::make_pair("pbex",      XC_GGA_X_PBE));
       map_.insert(std::make_pair("pbec",      XC_GGA_C_PBE));
       map_.insert(std::make_pair("b3lyp",     XC_HYB_GGA_XC_B3LYP));
+      map_.insert(std::make_pair("pbe0",      XC_HYB_GGA_XC_PBEH));
     }
     int num(const std::string& name) const {
       auto iter = map_.find(name);
@@ -88,6 +89,7 @@ class XCFunc {
     bool lda() const { return func_.info->family == XC_FAMILY_LDA; }
     bool gga() const { return func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA; }
 
+    double scale_ex() const { return (func_.info->family == XC_FAMILY_HYB_GGA) ? xc_hyb_exx_coef(&func_) : 0.0; }
 };
 
 #else
@@ -97,6 +99,7 @@ public:
   std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>> compute_exc_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma)
     const { return std::make_tuple(std::unique_ptr<double[]>(), std::unique_ptr<double[]>()); }
   bool lda() const { return true; }
+  double scale_ex() const { return 0.0; }
 }; // dummy
 #endif
 
