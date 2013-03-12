@@ -44,7 +44,7 @@ void KS::compute() {
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
 
   // TODO control from the input deck
-  shared_ptr<DFTGrid_base> becke(new BLGrid(100, 770, geom_));
+  shared_ptr<DFTGrid_base> becke(new BLGrid(40, 194, geom_));
   preptime.tick_print("DFT grid generation");
 
   cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
@@ -105,31 +105,9 @@ void KS::compute() {
 
 
 shared_ptr<Reference> KS::conv_to_ref() const {
-#if 0
-  shared_ptr<Coeff> natorb;
-  int nocc;
-  vector<shared_ptr<RDM<1>>> rdm1;
-  tie(natorb, nocc, rdm1) = natural_orbitals();
-  shared_ptr<Reference> out(new Reference(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1));
-
-  // set alpha and beta coeffs
-  out->set_coeff_AB(coeff_, coeffB_);
-  out->set_nocc(nocc_, noccB_);
-
-  // compute an energy weighted 1RDM and store
-  vector<double> ea(eig_.get(), eig_.get()+nocc_);
-  vector<double> eb(eigB_.get(), eigB_.get()+nocc_);
-  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
-  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
-  *erdm *= 0.5;
-  out->set_erdm1(erdm);
-
-  // this is just dummy...
+  shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);
   return out;
-#else
-  return shared_ptr<Reference>();
-#endif
 }
 

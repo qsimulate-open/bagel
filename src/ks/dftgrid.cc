@@ -176,7 +176,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
                             const unique_ptr<double[]>& x, const unique_ptr<double[]>& y, const unique_ptr<double[]>& z, const unique_ptr<double[]>& w) {
 
   const int ngrid = nrad*nang;
-  shared_ptr<Matrix> data(new Matrix(4,ngrid));
+  shared_ptr<Matrix> data(new Matrix(4,ngrid*geom_->natom()));
 
   int cnt = 0;
   for (auto& a : geom_->atoms()) {
