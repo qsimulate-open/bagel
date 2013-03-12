@@ -57,6 +57,7 @@ class DFTGridPoint {
     std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
     const double& weight(const size_t i) const { return data_->element(3,i); }
     size_t size() const { return ngrid_; }
+    std::shared_ptr<const Matrix> data() const { return data_; }
 };
 
 
@@ -89,6 +90,12 @@ class BLGrid : public DFTGrid_base {
 class TALGrid : public DFTGrid_base {
   public:
     TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
+};
+
+// Pruned Grid
+class DefaultGrid : public DFTGrid_base {
+  public:
+    DefaultGrid(std::shared_ptr<const Geometry> geom);
 };
 
 }

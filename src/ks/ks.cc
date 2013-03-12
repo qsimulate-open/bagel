@@ -45,7 +45,8 @@ void KS::compute() {
 
   // TODO control from the input deck
 //shared_ptr<DFTGrid_base> grid(new BLGrid(40, 194, geom_));
-  shared_ptr<DFTGrid_base> grid(new TALGrid(40, 194, geom_));
+  shared_ptr<DFTGrid_base> grid(new DefaultGrid(geom_));
+//shared_ptr<DFTGrid_base> grid(new TALGrid(75, 302, geom_));
 //shared_ptr<DFTGrid_base> grid(new TALGrid(100, 770, geom_));
   preptime.tick_print("DFT grid generation");
 

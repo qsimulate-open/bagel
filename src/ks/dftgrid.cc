@@ -176,9 +176,12 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
                             const unique_ptr<double[]>& x, const unique_ptr<double[]>& y, const unique_ptr<double[]>& z, const unique_ptr<double[]>& w) {
 
   const int ngrid = nrad*nang;
-  shared_ptr<Matrix> data(new Matrix(4,ngrid*geom_->natom()));
+  const int nprev = grid_ ? grid_->size() : 0;
+  shared_ptr<Matrix> data(new Matrix(4, nprev+ngrid*geom_->natom()));
+  if (nprev)
+    copy_n(grid_->data()->data(), 4*nprev, data->data());
 
-  int cnt = 0;
+  int cnt = nprev;
   for (auto& a : geom_->atoms()) {
     const double rbs = a->radius();
     for (int i = 0; i != nrad; ++i) {
@@ -249,4 +252,39 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geo
   }
 
   add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
+}
+
+
+DefaultGrid::DefaultGrid(std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
+  // the default radial grid has 75 points
+  const int nrad = 75;
+  // construct Chebyshev grid 
+  unique_ptr<double[]> r_ch(new double[nrad]);
+  unique_ptr<double[]> w_ch(new double[nrad]);
+  for (int i = 0; i != nrad; ++i) {
+    const double t = cos((i+1)*pi__/(nrad+1)); 
+    r_ch[i] = 1.0/log(2.0)*pow(1.0+t, 0.6)*log(2.0/(1.0-t));
+    w_ch[i] = (0.6*r_ch[i]/(1.0+t) + 1.0/log(2.0)*pow(1.0+t,0.6)/(1-t)) // due to mapping from [0,infty) to [-1, 1]
+            * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
+            * r_ch[i]*r_ch[i];                       // due to r^2 in the spherical coordinate integration
+  }
+
+  // start, fence, nang
+  vector<tuple<int, int, int>> map; 
+  map.push_back(make_tuple(0,  10, 302));
+  map.push_back(make_tuple(10, nrad, 302));
+  for (auto& i : map) {
+    const int nang = get<2>(i);
+    unique_ptr<double[]> rr(new double[get<1>(i)-get<0>(i)]); 
+    unique_ptr<double[]> ww(new double[get<1>(i)-get<0>(i)]); 
+    copy(r_ch.get()+get<0>(i), r_ch.get()+get<1>(i), rr.get());
+    copy(w_ch.get()+get<0>(i), w_ch.get()+get<1>(i), ww.get());
+    // construct Lebedev grid
+    unique_ptr<double[]> x(new double[nang]);
+    unique_ptr<double[]> y(new double[nang]);
+    unique_ptr<double[]> z(new double[nang]);
+    unique_ptr<double[]> w(new double[nang]);
+    lebedev.root(nang, x.get(), y.get(), z.get(), w.get());
+    add_grid(get<1>(i)-get<0>(i), nang, rr, ww, x, y, z, w);
+  }
 }
