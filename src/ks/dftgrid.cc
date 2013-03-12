@@ -96,9 +96,9 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
   }
   time.tick_print("rho, sigma");
 
-  // TODO
-  unique_ptr<double[]> vxc = func.compute_vxc(grid_->size(), rho, sigma); 
-  unique_ptr<double[]> exc = func.compute_exc(grid_->size(), rho, sigma); 
+  unique_ptr<double[]> exc;
+  unique_ptr<double[]> vxc;
+  tie(exc, vxc) = func.compute_exc_vxc(grid_->size(), rho, sigma); 
   time.tick_print("exc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
@@ -271,6 +271,7 @@ DefaultGrid::DefaultGrid(std::shared_ptr<const Geometry> geom) : DFTGrid_base(ge
 
   // start, fence, nang
   vector<tuple<int, int, int>> map; 
+  // TODO Decide how to partition
   map.push_back(make_tuple(0,  10, 302));
   map.push_back(make_tuple(10, nrad, 302));
   for (auto& i : map) {
