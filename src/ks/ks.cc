@@ -66,7 +66,6 @@ void KS::compute() {
     tie(xc, exc) = becke->compute_xc(name_, coeff_->slice(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
-cout << setprecision(10) << energy_ - exc << " " << exc << endl;
 
     *fock += *xc;
 
@@ -96,7 +95,6 @@ cout << setprecision(10) << energy_ - exc << " " << exc << endl;
     aodensity_ = coeff_->form_density_rhf(nocc_);
 
   }
-coeff_->print();
 
   // by default we compute dipoles
   if (!geom_->external()) {

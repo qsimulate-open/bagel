@@ -74,9 +74,9 @@ class XCFunc {
 
     std::unique_ptr<double[]> compute_exc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
       std::unique_ptr<double[]> out(new double[np]);
-      if (func_.info->family == XC_FAMILY_LDA) { 
+      if (lda()) { 
         xc_lda_exc(&func_, np, rho.get(), out.get());
-      } else if (func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA) { 
+      } else if (gga()) { 
         xc_gga_exc(&func_, np, rho.get(), sigma.get(), out.get());
       } else {
         throw std::runtime_error("So far only GGA and Hybrid GGA is supported (LDA is there, but slow).");
@@ -85,12 +85,11 @@ class XCFunc {
     }
 
     std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
-      std::unique_ptr<double[]> out(new double[np]);
-      if (func_.info->family == XC_FAMILY_LDA) { 
+      std::unique_ptr<double[]> out(new double[np*(gga()?2:1)]);
+      if (lda()) { 
         xc_lda_vxc(&func_, np, rho.get(), out.get());
-      } else if (func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA) { 
-        std::unique_ptr<double[]> tmp(new double[np]);
-        xc_gga_vxc(&func_, np, rho.get(), sigma.get(), out.get(), tmp.get());
+      } else if (gga()) { 
+        xc_gga_vxc(&func_, np, rho.get(), sigma.get(), out.get(), out.get()+np);
       } else {
         throw std::runtime_error("So far only GGA and Hybrid GGA is supported (LDA is there, but slow).");
       }
@@ -98,6 +97,7 @@ class XCFunc {
     }
 
     bool lda() const { return func_.info->family == XC_FAMILY_LDA; }
+    bool gga() const { return func_.info->family == XC_FAMILY_HYB_GGA || func_.info->family == XC_FAMILY_GGA; }
 
 };
 

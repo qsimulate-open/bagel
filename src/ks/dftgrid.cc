@@ -66,6 +66,12 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
 
   unique_ptr<double[]> rho(new double[grid_.size()]);
   unique_ptr<double[]> sigma(new double[grid_.size()]);
+  unique_ptr<double[]> rhox, rhoy, rhoz;
+  if (!func.lda()) {
+    rhox = unique_ptr<double[]>(new double[grid_.size()]);
+    rhoy = unique_ptr<double[]>(new double[grid_.size()]);
+    rhoz = unique_ptr<double[]>(new double[grid_.size()]);
+  }
   size_t j = 0;
   for (auto& i : grid_) {
     if (func.lda()) { 
@@ -91,6 +97,11 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
       }
       rho[j] = den*2.0;
       sigma[j] = (sigx*sigx + sigy*sigy + sigz*sigz)*4.0;
+      if (!func.lda()) {
+        rhox[j] = sigx*2.0;
+        rhoy[j] = sigy*2.0;
+        rhoz[j] = sigz*2.0;
+      }
     }
     ++j;
   }
@@ -105,14 +116,21 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
   double en = 0.0;
   j = 0;
   for (auto& i : grid_) {
-#if 0
     Matrix scal = *i->basis(); 
+    // first term
     scal *= vxc[j] * i->weight();
-    *out += *i->basis() ^ scal; 
-#endif
+    *out += *i->basis() ^ scal;
+    if (!func.lda()) {
+      Matrix scal2 = *i->basis(); 
+      scal2 *= vxc[j+grid_.size()] * i->weight() * 4.0; // 2 from formula, 2 from symmetrization later
+      *out += (*i->gradx() ^ scal2)*rhox[j];
+      *out += (*i->grady() ^ scal2)*rhoy[j];
+      *out += (*i->gradz() ^ scal2)*rhoz[j];
+    }
     en += exc[j] * rho[j] * i->weight();
     ++j;
   }
+  out->symmetrize();
 
   time.tick_print("contraction");
   return make_tuple(out, en);
