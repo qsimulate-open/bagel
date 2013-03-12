@@ -37,26 +37,25 @@ const static LebedevList lebedev;
 
 
 void DFTGridPoint::init() {
-  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
-  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
-  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
-  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), 1, true));
+  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
+  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
+  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
+  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
 
-  const double weight = data_[3]; 
-
-  int pos = 0;
-  for (auto& i : geom_->atoms()) {
-    // xyz coordinate relative to the atom i
-    const double x = data_[0] - i->position(0);
-    const double y = data_[1] - i->position(1);
-    const double z = data_[2] - i->position(2);
-    for (auto& j : i->shells()) {
-      // angular number
-      j->compute_grid_value(basis_->data()+pos, gradx_->data()+pos, grady_->data()+pos, gradz_->data()+pos, x, y, z);
-      pos += j->nbasis();
+  for (size_t g = 0; g != ngrid_; ++g) {
+    int pos = 0;
+    for (auto& i : geom_->atoms()) {
+      // xyz coordinate relative to the atom i
+      const double x = data_->element(0,g) - i->position(0);
+      const double y = data_->element(1,g) - i->position(1);
+      const double z = data_->element(2,g) - i->position(2);
+      for (auto& j : i->shells()) {
+        // angular number
+        j->compute_grid_value(basis_->element_ptr(pos, g), gradx_->element_ptr(pos, g), grady_->element_ptr(pos, g), gradz_->element_ptr(pos, g), x, y, z);
+        pos += j->nbasis();
+      }
     }
   }
-  assert(pos == geom_->nbasis());
 }
 
 
@@ -64,71 +63,73 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(const std::strin
   Timer time;
   XCFunc func(name);
 
-  unique_ptr<double[]> rho(new double[grid_.size()]);
-  unique_ptr<double[]> sigma(new double[grid_.size()]);
-  unique_ptr<double[]> rhox, rhoy, rhoz;
+  unique_ptr<double[]> rho(new double[grid_->size()]);
+  unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
   if (!func.lda()) {
-    rhox = unique_ptr<double[]>(new double[grid_.size()]);
-    rhoy = unique_ptr<double[]>(new double[grid_.size()]);
-    rhoz = unique_ptr<double[]>(new double[grid_.size()]);
+    sigma = unique_ptr<double[]>(new double[grid_->size()]);
+    rhox  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
   }
-  size_t j = 0;
-  for (auto& i : grid_) {
-    if (func.lda()) { 
-      double den = 0.0;
-      for (int m = 0; m != mat->mdim(); ++m) {
-        den += pow(ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1), 2);
-      }
-      rho[j] = den*2.0;
-    } else {
-      double den = 0.0;
-      double sigx = 0.0;
-      double sigy = 0.0;
-      double sigz = 0.0;
-      for (int m = 0; m != mat->mdim(); ++m) {
-        const double orb  = ddot_(geom_->nbasis(), i->basis()->data(), 1, mat->element_ptr(0,m), 1);
-        const double orbx = ddot_(geom_->nbasis(), i->gradx()->data(), 1, mat->element_ptr(0,m), 1);
-        const double orby = ddot_(geom_->nbasis(), i->grady()->data(), 1, mat->element_ptr(0,m), 1);
-        const double orbz = ddot_(geom_->nbasis(), i->gradz()->data(), 1, mat->element_ptr(0,m), 1);
-        den += pow(orb, 2);
-        sigx += 2*orb*orbx;
-        sigy += 2*orb*orby;
-        sigz += 2*orb*orbz;
-      }
-      rho[j] = den*2.0;
-      sigma[j] = (sigx*sigx + sigy*sigy + sigz*sigz)*4.0;
-      if (!func.lda()) {
-        rhox[j] = sigx*2.0;
-        rhoy[j] = sigy*2.0;
-        rhoz[j] = sigz*2.0;
-      }
+
+  if (func.lda()) { 
+    shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
+    assert(orb->mdim() == grid_->size());
+    for (size_t i = 0; i != orb->mdim(); ++i) {
+      rho[i] = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orb->element_ptr(0, i), 1);
     }
-    ++j;
+  } else {
+    shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
+    shared_ptr<Matrix> orbx(new Matrix(*mat % *grid_->gradx()));
+    shared_ptr<Matrix> orby(new Matrix(*mat % *grid_->grady()));
+    shared_ptr<Matrix> orbz(new Matrix(*mat % *grid_->gradz()));
+    for (size_t i = 0; i != orb->mdim(); ++i) {
+      rho[i] = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orb->element_ptr(0, i), 1);
+      const double sigx = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orbx->element_ptr(0, i), 1);
+      const double sigy = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orby->element_ptr(0, i), 1);
+      const double sigz = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orbz->element_ptr(0, i), 1);
+      sigma[i] = 4*(sigx*sigx + sigy*sigy + sigz*sigz);
+      rhox[i] = 2*sigx;
+      rhoy[i] = 2*sigy;
+      rhoz[i] = 2*sigz;
+    }
   }
   time.tick_print("rho, sigma");
 
   // TODO
-  unique_ptr<double[]> vxc = func.compute_vxc(grid_.size(), rho, sigma); 
-  unique_ptr<double[]> exc = func.compute_exc(grid_.size(), rho, sigma); 
+  unique_ptr<double[]> vxc = func.compute_vxc(grid_->size(), rho, sigma); 
+  unique_ptr<double[]> exc = func.compute_exc(grid_->size(), rho, sigma); 
   time.tick_print("exc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
   double en = 0.0;
-  j = 0;
-  for (auto& i : grid_) {
-    Matrix scal = *i->basis(); 
-    // first term
-    scal *= vxc[j] * i->weight();
-    *out += *i->basis() ^ scal;
-    if (!func.lda()) {
-      Matrix scal2 = *i->basis(); 
-      scal2 *= vxc[j+grid_.size()] * i->weight() * 4.0; // 2 from formula, 2 from symmetrization later
-      *out += (*i->gradx() ^ scal2)*rhox[j];
-      *out += (*i->grady() ^ scal2)*rhoy[j];
-      *out += (*i->gradz() ^ scal2)*rhoz[j];
+  {
+    shared_ptr<Matrix> scal(new Matrix(*grid_->basis()));
+    for (size_t i = 0; i != scal->mdim(); ++i) {
+      dscal_(scal->ndim(), vxc[i]*grid_->weight(i), scal->element_ptr(0, i), 1);
+      en += exc[i] * rho[i] * grid_->weight(i);
     }
-    en += exc[j] * rho[j] * i->weight();
-    ++j;
+    *out += *grid_->basis() ^ *scal;
+  }
+  if (!func.lda()) {
+    {
+      shared_ptr<Matrix> scal(new Matrix(*grid_->basis()));
+      for (size_t i = 0; i != scal->mdim(); ++i)
+        dscal_(scal->ndim(), 4*vxc[i+grid_->size()]*grid_->weight(i)*rhox[i], scal->element_ptr(0, i), 1);
+      *out += *grid_->gradx() ^ *scal;
+    }
+    {
+      shared_ptr<Matrix> scal(new Matrix(*grid_->basis()));
+      for (size_t i = 0; i != scal->mdim(); ++i)
+        dscal_(scal->ndim(), 4*vxc[i+grid_->size()]*grid_->weight(i)*rhoy[i], scal->element_ptr(0, i), 1);
+      *out += *grid_->grady() ^ *scal;
+    }
+    {
+      shared_ptr<Matrix> scal(new Matrix(*grid_->basis()));
+      for (size_t i = 0; i != scal->mdim(); ++i)
+        dscal_(scal->ndim(), 4*vxc[i+grid_->size()]*grid_->weight(i)*rhoz[i], scal->element_ptr(0, i), 1);
+      *out += *grid_->gradz() ^ *scal;
+    }
   }
   out->symmetrize();
 
@@ -173,6 +174,11 @@ double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3
 
 void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<double[]>& r_ch, const unique_ptr<double[]>& w_ch,
                             const unique_ptr<double[]>& x, const unique_ptr<double[]>& y, const unique_ptr<double[]>& z, const unique_ptr<double[]>& w) {
+
+  const int ngrid = nrad*nang;
+  shared_ptr<Matrix> data(new Matrix(4,ngrid));
+
+  int cnt = 0;
   for (auto& a : geom_->atoms()) {
     const double rbs = a->radius();
     for (int i = 0; i != nrad; ++i) {
@@ -183,11 +189,19 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
         double weight = w[j] * w_ch[i] * pow(rbs,3) * 4.0*pi__ * fuzzy_cell(a, array<double,3>{{xg, yg, zg}});
 
         // set to data 
-        if (weight > grid_thresh_/(nang*nrad))
-          grid_.push_back(shared_ptr<const DFTGridPoint>(new DFTGridPoint(geom_, array<double,4>{{xg, yg, zg, weight}})));
+        if (weight > grid_thresh_/(nang*nrad)) {
+          data->element(0, cnt) = xg;
+          data->element(1, cnt) = yg;
+          data->element(2, cnt) = zg;
+          data->element(3, cnt) = weight;
+          ++cnt;
+        }
       }
     }
   }
+  shared_ptr<const Matrix> o = data->slice(0,cnt);
+  grid_ = shared_ptr<const DFTGridPoint>(new DFTGridPoint(geom_, o));
+
 }
 
 
@@ -195,7 +209,6 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
 BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // first allocate Grids
   const size_t gridsize = nrad*nang*geom->natom();
-  grid_.reserve(gridsize);
 
   // construct Lebedev grid
   unique_ptr<double[]> x(new double[nang]);
