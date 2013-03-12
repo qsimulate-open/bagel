@@ -95,7 +95,7 @@ class XCFunc {
 public:
   XCFunc(const std::string) { assert(false); }
   std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>> compute_exc_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma)
-    const { std::make_tuple(std::unique_ptr<double[]>(), std::unique_ptr<double[]>()); }
+    const { return std::make_tuple(std::unique_ptr<double[]>(), std::unique_ptr<double[]>()); }
   bool lda() const { return true; }
 }; // dummy
 #endif
