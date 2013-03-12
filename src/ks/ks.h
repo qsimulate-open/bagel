@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: atommap.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: ks.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,29 +24,41 @@
 //
 
 
-#ifndef __SRC_UTIL_ATOMMAP_H
-#define __SRC_UTIL_ATOMMAP_H
+#ifndef __BAGEL_SRC_KS_KS_H
+#define __BAGEL_SRC_KS_KS_H
 
-#include <map>
-#include <string>
+#include <src/scf/scf_base.h>
+
+// I only implement a DF version
 
 namespace bagel {
 
-struct AtomMap {
+class KS : public SCF_base {
+  protected:
+    std::string name_;
+    double scale_ex_;
+
   public:
-    AtomMap();
+    KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+      : SCF_base(idata_, geom, re) {
 
-    std::map<std::string, int> atommap;
-    std::map<std::string, double> bsradii; 
-    std::map<std::string, int> angmap;
+      std::cout << indent << "*** Kohn-Sham DFT ***" << std::endl << std::endl;
 
-    int angular_number(const std::string) const;
-    int max_angular_number() const { return angmap.size()-1; };
+      // default is now B3LYP
+      name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
+      if (name_ == "b3lyp") {
+        scale_ex_ = 0.2;
+      } else {
+        scale_ex_ = 0.0;
+      }
 
-    int atom_number(const std::string) const;
-    double radius(const std::string) const;
+      if (re) throw std::runtime_error("we have not implemented DFT with a reference");
+    }
 
-    const std::string angular_string(const int);
+    virtual void compute() override;
+
+    std::shared_ptr<Reference> conv_to_ref() const;
 };
 
 }

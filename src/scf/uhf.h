@@ -24,11 +24,10 @@
 //
 
 
-#ifndef __NEWINT_SRC_SCF_UHF_H
-#define __NEWINT_SRC_SCF_UHF_H
+#ifndef __BAGEL_SRC_SCF_UHF_H
+#define __BAGEL_SRC_SCF_UHF_H
 
 #include <src/scf/scf_base.h>
-#include <src/util/diis.h>
 
 // I only implement a DF version
 //template<int DF>

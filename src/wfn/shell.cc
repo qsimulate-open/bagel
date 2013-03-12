@@ -28,11 +28,15 @@
 #include <src/osint/momentbatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/wfn/shell.h>
+#include <src/rysint/intparam.h> // for Cartesian to spherical transformation
+#include <src/rysint/carsphlist.h>
 #include <iostream>
 #include <sstream>
 
 using namespace std;
 using namespace bagel;
+
+static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
@@ -238,4 +242,60 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
     out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
   }
   return out;
+}
+
+
+// In DFT we want to compute values of basis functions on grid
+void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, const double& x, const double& y, const double& z) const {
+  const double rr = x*x+y*y+z*z;
+  auto range = contraction_ranges_.begin();
+  double tmp0[50];
+  double tmpx[50];
+  double tmpy[50];
+  double tmpz[50];
+  assert(50 > ANG_HRR_END*ANG_HRR_END);
+
+  const int nxyz = nbasis() / num_contracted();
+  const int nang = angular_number();
+  const int index = nang * ANG_HRR_END;
+
+  for (auto& i : contractions_) {
+    double exp0 = 0.0;
+    double expx = 0.0;
+    double expy = 0.0;
+    double expz = 0.0;
+    for (int j = range->first; j != range->second; ++j) { 
+      const double tmp = i[j]*exp(-exponents_[j]*rr);
+      exp0 += tmp; 
+      expx += -2.0*exponents_[j]*x*tmp;
+      expy += -2.0*exponents_[j]*y*tmp;
+      expz += -2.0*exponents_[j]*z*tmp;
+    }
+    for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
+      for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
+        const int ix = nang - iy - iz;
+        const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
+        tmp0[ixyz] = cart*exp0;
+        tmpx[ixyz] = (ix != 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 : 0.0) + cart*expx;
+        tmpy[ixyz] = (iy != 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 : 0.0) + cart*expy;
+        tmpz[ixyz] = (iz != 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 : 0.0) + cart*expz;
+      }
+    }
+    if (spherical_) {
+      carsphlist.carsphfunc_call(index, 1, tmp0, b);
+      carsphlist.carsphfunc_call(index, 1, tmpx, dx);
+      carsphlist.carsphfunc_call(index, 1, tmpy, dy);
+      carsphlist.carsphfunc_call(index, 1, tmpz, dz);
+    } else {
+      copy_n(tmp0, nxyz, b);
+      copy_n(tmpx, nxyz, dx);
+      copy_n(tmpy, nxyz, dy);
+      copy_n(tmpz, nxyz, dz);
+    }
+    b  += nxyz;
+    dx += nxyz;
+    dy += nxyz;
+    dz += nxyz;
+    ++range;
+  }
 }

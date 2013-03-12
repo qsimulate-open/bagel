@@ -34,36 +34,61 @@ namespace bagel {
 
 class DFTGridPoint {
   protected:
-    std::array<double,4> data; // x,y,z,weight
+    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Matrix> data_; // x,y,z,weight
+
+    const size_t ngrid_;
+
+    // basis functions and derivaties on this grid
+    std::shared_ptr<Matrix> basis_;
+    std::shared_ptr<Matrix> gradx_;
+    std::shared_ptr<Matrix> grady_;
+    std::shared_ptr<Matrix> gradz_;
+
+    void init();
 
   public:
-    DFTGridPoint() { }
-    DFTGridPoint(const std::array<double,4>& o) : data(o) { }
-    DFTGridPoint(const DFTGridPoint& o) : data(o.data) { }
+    DFTGridPoint(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
+      : geom_(g), data_(o), ngrid_(o->mdim()) { assert(data_->ndim() == 4); init(); }
 
-    DFTGridPoint& operator=(const std::array<double,4>& o) { data = o; return *this; }
-    DFTGridPoint& operator=(const DFTGridPoint& o) { data = o.data; return *this; }
-
-    double* pointer(const int i = 0) { return &data[i]; }
+    std::shared_ptr<const Matrix> basis() const { return basis_; } 
+    std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
+    std::shared_ptr<const Matrix> grady() const { return grady_; } 
+    std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
+    const double& weight(const size_t i) const { return data_->element(3,i); }
+    size_t size() const { return ngrid_; }
 };
 
 
 class DFTGrid_base {
   protected:
-    std::vector<DFTGridPoint> grid_;
+    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const DFTGridPoint> grid_;
+
+    // TODO to be controlled by the input deck
+    constexpr static double grid_thresh_ = 1.0e-8;
+
+    double fuzzy_cell(std::shared_ptr<const Atom> a, std::array<double,3>&& x) const;
+    void add_grid(const int nrad, const int nang, const std::unique_ptr<double[]>& r_ch, const std::unique_ptr<double[]>& w_ch,
+                  const std::unique_ptr<double[]>& x, const std::unique_ptr<double[]>& y, const std::unique_ptr<double[]>& z, const std::unique_ptr<double[]>& w);
 
   public:
-    DFTGrid_base() { }
+    DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
+
+    std::tuple<std::shared_ptr<const Matrix>,double> compute_xc(const std::string name, std::shared_ptr<const Matrix> mat) const;
 };
 
 
 // Becke-Chebyshev-Lebedev
 class BLGrid : public DFTGrid_base {
-  protected:
-
   public:
     BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
+};
 
+// Treutler-Ahlrichs-Chebyshev-Lebedev 
+class TALGrid : public DFTGrid_base {
+  public:
+    TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
 };
 
 }

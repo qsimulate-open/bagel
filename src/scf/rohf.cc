@@ -25,6 +25,7 @@
 
 #include <src/scf/rohf.h>
 #include <src/prop/dipole.h>
+#include <src/util/diis.h>
 
 using namespace std;
 using namespace bagel;

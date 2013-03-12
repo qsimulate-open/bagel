@@ -292,18 +292,23 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
   Timer pdebug(2);
 
   std::shared_ptr<const DFDist> df = geom_->df();
-  std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
-  pdebug.tick_print("First index transform");
 
-  std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
-  pdebug.tick_print("Metric multiply");
+  if (scale_exchange != 0.0) {
+    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
+    pdebug.tick_print("First index transform");
 
-  *this += *half->form_2index(half, -1.0*scale_exchange);
-  pdebug.tick_print("Exchange build");
+    std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
+    pdebug.tick_print("Metric multiply");
 
-  if (rhf) {
-    std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
-    *this += *df->compute_Jop(half, coeff, true);
+    *this += *half->form_2index(half, -1.0*scale_exchange);
+    pdebug.tick_print("Exchange build");
+
+    if (rhf) {
+      std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
+      *this += *df->compute_Jop(half, coeff, true);
+    } else {
+      *this += *df->compute_Jop(density_);
+    }
   } else {
     *this += *df->compute_Jop(density_);
   }
