@@ -33,6 +33,7 @@
 #include <memory>
 
 #include <src/scf/coeff.h>
+#include <src/scf/levelshift.h>
 #include <src/dimer/dimer.h>
 
 /************************************************************************************

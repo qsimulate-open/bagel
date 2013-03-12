@@ -29,7 +29,9 @@
 #include <set>
 #include <string>
 #include <memory>
+
 #include <src/dimer/dimer_levelshift.h>
+#include <src/scf/overlap.h>
 #include <src/scf/coeff.h>
 
 using namespace bagel;

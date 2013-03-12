@@ -428,7 +428,6 @@ int main(int argc, char** argv) {
         std::array<double,3> disp = {{dx,dy,dz}};
 
         dimer = std::shared_ptr<Dimer>(new Dimer(ciwfn, disp));
-        dimer->hamiltonian();
 
       }
       #endif

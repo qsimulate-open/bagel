@@ -27,15 +27,13 @@
 #define __dimer_dimer_h
 
 #include <array>
+
 #include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
-#include <src/dimer/dimer_jop.h>
 #include <src/fci/dvec.h>
-#include <src/fci/space.h>
 #include <src/util/matrix.h>
-#include <src/util/localization.h>
 
 namespace bagel {
 
@@ -49,7 +47,7 @@ typedef std::shared_ptr<const CIWfn> RefCIWfn;
 *  This class describes a homodimer.                                                *
 ************************************************************************************/
 
-class Dimer {
+class Dimer : public std::enable_shared_from_this<Dimer> {
    protected:
       std::pair<RefGeometry,RefGeometry> geoms_;
       std::pair<RefReference, RefReference> refs_;
@@ -63,13 +61,6 @@ class Dimer {
       std::shared_ptr<Coeff>      scoeff_;
       std::shared_ptr<Coeff>      proj_coeff_; // Basically the same thing as scoeff_, except purposefully non-orthogonal
 
-      std::shared_ptr<DimerJop> jop_;
-
-      std::shared_ptr<Space>      space_;
-
-      double energy_;      
-      std::shared_ptr<Matrix> hamiltonian_;
-
       int dimerbasis_; // Basis size of both together
       int dimerstates_;
 
@@ -80,8 +71,7 @@ class Dimer {
       std::pair<int, int> nstates_;
       std::pair<int, int> nbasis_;
       std::pair<int, int> nele_;
-      
-      bool symmetric_;
+
    public:
       // Constructors
       Dimer(RefGeometry a, RefGeometry b);
@@ -119,11 +109,6 @@ class Dimer {
       std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
       int dimerbasis() const { return dimerbasis_; }
 
-      int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
-
-      template <int unit> int core(int i) const { return (i + unit*ncore_.first); };
-      template <int unit> int act(int a) const { return (a + unit*nact_.first); };
-
       // Utility functions
       std::shared_ptr<Coeff> overlap() const; 
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const;
@@ -131,7 +116,6 @@ class Dimer {
       void set_active(std::multimap<std::string, std::string> idata);
 
       // Calculations
-      void hamiltonian();
       void scf(std::multimap<std::string, std::string> idata); // SCF on dimer
       void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
       void localize(std::multimap<std::string, std::string> idata);
@@ -142,26 +126,6 @@ class Dimer {
       void construct_geometry();
       void construct_coeff();
       void orthonormalize();
-
-      std::shared_ptr<Matrix> compute_closeclose();
-      std::shared_ptr<Matrix> compute_closeactive();
-      std::shared_ptr<Matrix> compute_intra_activeactive();
-      std::shared_ptr<Matrix> compute_inter_activeactive();
-
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata, const int ij) const;
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr, const int nact) const;
-
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, double* mo2e_ptr) const;
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
-      
-      std::shared_ptr<Matrix> form_EFmatrices_alpha(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
-      std::shared_ptr<Matrix> form_EFmatrices_beta(std::shared_ptr<const Dvec> ccvec, const int ij, const int nstates) const;
-
-      std::shared_ptr<Matrix> form_JKmatrix(const int ijA, const int ijB) const;
-      std::shared_ptr<Matrix> form_Jmatrix(const int ijA, const int ijB) const;
 };
 
 }
