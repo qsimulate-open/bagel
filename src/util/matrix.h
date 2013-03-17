@@ -56,7 +56,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix(const Matrix&);
 
     void antisymmetrize();
-    std::shared_ptr<Matrix> cut(const int) const;
+    std::shared_ptr<Matrix> cut(const int, const int) const;
     std::shared_ptr<Matrix> resize(const int, const int) const;
     std::shared_ptr<Matrix> slice(const int, const int) const;
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;

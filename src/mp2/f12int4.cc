@@ -278,7 +278,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::g
 
   shared_ptr<Overlap> union_overlap(new Overlap(newgeom));
   shared_ptr<TildeX> ri_coeff(new TildeX(union_overlap, thresh));
-  shared_ptr<Matrix> ri_reshaped = ref_->coeff()->cut(ri_coeff->ndim());
+  shared_ptr<Matrix> ri_reshaped = ref_->coeff()->cut(0,ri_coeff->ndim());
 
   // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
   shared_ptr<Matrix> tmp(new Matrix(*ri_coeff % *union_overlap * *ri_reshaped));

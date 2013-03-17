@@ -56,6 +56,8 @@ class KS : public SCF_base {
       grid_ = std::shared_ptr<DFTGrid_base>(new DefaultGrid(geom));
       preptime.tick_print("DFT grid generation");
 
+      std::cout << std::endl;
+
       if (re) throw std::runtime_error("we have not implemented DFT with a reference");
     }
 

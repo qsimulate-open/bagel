@@ -60,20 +60,11 @@ void DFTGridPoint::init() {
 }
 
 
-tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<const XCFunc> func, std::shared_ptr<const Matrix> mat) const {
-  Timer time;
-
-  unique_ptr<double[]> rho(new double[grid_->size()]);
-  unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
-  if (!func->lda()) {
-    sigma = unique_ptr<double[]>(new double[grid_->size()]);
-    rhox  = unique_ptr<double[]>(new double[grid_->size()]);
-    rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
-    rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
-  }
-
+shared_ptr<const Matrix> DFTGrid_base::compute_rho_sigma(shared_ptr<const XCFunc> func, shared_ptr<const Matrix> mat,
+                                                         unique_ptr<double[]>& rho, unique_ptr<double[]>& sigma,
+                                                         unique_ptr<double[]>& rhox, unique_ptr<double[]>& rhoy, unique_ptr<double[]>& rhoz) const {
+  shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
   if (func->lda()) { 
-    shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
     assert(orb->mdim() == grid_->size());
     for (size_t i = 0; i != orb->mdim(); ++i) {
       rho[i] = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orb->element_ptr(0, i), 1);
@@ -94,6 +85,24 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<
       rhoz[i] = 2*sigz;
     }
   }
+  return orb;
+}
+
+
+tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const XCFunc> func, shared_ptr<const Matrix> mat) const {
+  Timer time;
+
+  unique_ptr<double[]> rho(new double[grid_->size()]);
+  unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
+  if (!func->lda()) {
+    sigma = unique_ptr<double[]>(new double[grid_->size()]);
+    rhox  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
+  }
+
+  compute_rho_sigma(func, mat, rho, sigma, rhox, rhoy, rhoz);
+
   time.tick_print("rho, sigma");
 
   unique_ptr<double[]> exc;
@@ -139,12 +148,51 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<
 
 
 shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc> func, shared_ptr<const Matrix> mat) const {
+  shared_ptr<GradFile> out(new GradFile(geom_->natom()));
 
-  return shared_ptr<const GradFile>();
+  unique_ptr<double[]> rho(new double[grid_->size()]);
+  unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
+  if (!func->lda()) {
+    sigma = unique_ptr<double[]>(new double[grid_->size()]);
+    rhox  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
+    rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
+  }
+
+  shared_ptr<const Matrix> orb = compute_rho_sigma(func, mat, rho, sigma, rhox, rhoy, rhoz);
+
+  unique_ptr<double[]> vxc = func->compute_vxc(grid_->size(), rho, sigma);
+
+  // loop over target atom
+  size_t offset = 0;
+  int n = 0;
+  for (auto& b : geom_->atoms()) {
+    shared_ptr<const Matrix> bmat = mat->cut(offset, offset+b->nbasis());
+    shared_ptr<const Matrix> xmat(new Matrix(*bmat % *grid_->gradx()->cut(offset, offset+b->nbasis())));
+    shared_ptr<const Matrix> ymat(new Matrix(*bmat % *grid_->grady()->cut(offset, offset+b->nbasis())));
+    shared_ptr<const Matrix> zmat(new Matrix(*bmat % *grid_->gradz()->cut(offset, offset+b->nbasis())));
+
+    double sum[3] = {0.0};
+    for (size_t i = 0; i != grid_->size(); ++i) {
+      for (size_t j = 0; j != mat->mdim(); ++j) {
+        sum[0] += xmat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
+        sum[1] += ymat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
+        sum[2] += zmat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
+      }
+    }
+    out->data(0, n) += -2.0*sum[0];
+    out->data(1, n) += -2.0*sum[1];
+    out->data(2, n) += -2.0*sum[2];
+
+    offset += b->nbasis();
+    ++n;
+  }
+
+  return out; 
 }
 
 
-double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3>&& xyz) const {
+double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& xyz) const {
   double fuzzy = -1.0;
   double total = 0.0;
   for (auto& b : geom_->atoms()) {
@@ -219,7 +267,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
 
 
 // grid without 'pruning'. Becke's original mapping
-BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
+BLGrid::BLGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // construct Lebedev grid
   unique_ptr<double[]> x(new double[nang]);
   unique_ptr<double[]> y(new double[nang]);
@@ -242,7 +290,7 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geome
 }
 
 
-TALGrid::TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
+TALGrid::TALGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // construct Lebedev grid
   unique_ptr<double[]> x(new double[nang]);
   unique_ptr<double[]> y(new double[nang]);
@@ -265,7 +313,7 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geo
 }
 
 
-DefaultGrid::DefaultGrid(std::shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
+DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // the default radial grid has 75 points
   const int nrad = 75;
   // construct Chebyshev grid 

@@ -54,12 +54,13 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 #endif
 
 
-shared_ptr<Matrix> Matrix::cut(const int n) const {
-  assert(n <= ndim_);
+shared_ptr<Matrix> Matrix::cut(const int start, const int fence) const {
+  const int n = fence - start;
+  assert(fence <= ndim_ && n > 0);
   shared_ptr<Matrix> out(new Matrix(n, mdim_, localized_));
   for (int i = 0; i != mdim_; ++i)
     for (int j = 0; j != n; ++j)
-      out->data_[j+i*n] = data_[j+i*ndim_];
+      out->data_[j+i*n] = data_[(j+start)+i*ndim_];
   return out;
 }
 
