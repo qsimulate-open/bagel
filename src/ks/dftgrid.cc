@@ -37,12 +37,13 @@ const static LebedevList lebedev;
 
 
 void DFTGridPoint::init() {
-  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
-  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
-  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
-  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid_));
+  const int ngrid = size();
+  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
+  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
+  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
+  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
 
-  for (size_t g = 0; g != ngrid_; ++g) {
+  for (size_t g = 0; g != ngrid; ++g) {
     int pos = 0;
     for (auto& i : geom_->atoms()) {
       // xyz coordinate relative to the atom i
@@ -163,10 +164,14 @@ double DFTGrid_base::fuzzy_cell(std::shared_ptr<const Atom> atom, array<double,3
         tmp *= 0.5*(1.0-nuij); // eq. 21
       }
     }
-    if (b == atom) fuzzy = tmp; 
+    // TODO threshold is still hardwired (not a good practice)
+    if (b->distance(atom) < 1.0e-3) fuzzy = tmp; 
     total += tmp;
   }
-  assert(fuzzy >= 0);
+
+  if (fuzzy == -1.0)
+    throw runtime_error("grid and atoms do not match with each other");
+
   return fuzzy / total; // Eq. 22
 }
 

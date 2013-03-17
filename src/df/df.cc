@@ -361,10 +361,10 @@ shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
 
 
 // 2RDM contractions
-shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM() const {
+shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM(const double scale_exch) const {
   shared_ptr<DFFullDist> out(new DFFullDist(df_, nindex1_, nindex2_));
   for (auto& i : block_) 
-    out->add_block(i->apply_rhf_2RDM());
+    out->add_block(i->apply_rhf_2RDM(scale_exch));
   return out;
 }
 

@@ -28,6 +28,7 @@
 #define __BAGEL_SRC_KS_KS_H
 
 #include <src/scf/scf_base.h>
+#include <src/ks/xcfunc.h>
 
 // I only implement a DF version
 
@@ -36,6 +37,7 @@ namespace bagel {
 class KS : public SCF_base {
   protected:
     std::string name_;
+    std::shared_ptr<XCFunc> func_;
 
   public:
     KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
@@ -46,6 +48,7 @@ class KS : public SCF_base {
 
       // default is now B3LYP
       name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
+      func_ = std::shared_ptr<XCFunc>(new XCFunc(name_));
 
       if (re) throw std::runtime_error("we have not implemented DFT with a reference");
     }
@@ -53,6 +56,8 @@ class KS : public SCF_base {
     virtual void compute() override;
 
     std::shared_ptr<Reference> conv_to_ref() const;
+
+    std::shared_ptr<const XCFunc> func() const { return func_; }
 };
 
 }

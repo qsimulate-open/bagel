@@ -34,6 +34,7 @@
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
 #include <src/scf/rohf.h>
+#include <src/ks/ks.h>
 #include <src/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/werner.h>
@@ -76,6 +77,7 @@ class GradEval : public GradEval_base {
 template<> std::shared_ptr<GradFile> GradEval<SCF<1>>::compute();
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<KS>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();

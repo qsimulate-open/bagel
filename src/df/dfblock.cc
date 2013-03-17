@@ -214,13 +214,13 @@ shared_ptr<DFBlock> DFBlock::swap() const {
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM() const {
+shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   assert(b1size_ == b2size_);
   const int nocc = b1size_;
   shared_ptr<DFBlock> out = clone();
   out->zero();
   // exchange contributions
-  out->daxpy(-2.0, *this); 
+  out->daxpy(-2.0*scale_exch, *this); 
   // coulomb contributions (diagonal to diagonal)
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);

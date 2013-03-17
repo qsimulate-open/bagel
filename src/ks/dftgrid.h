@@ -36,9 +36,7 @@ namespace bagel {
 class DFTGridPoint {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Matrix> data_; // x,y,z,weight
-
-    const size_t ngrid_;
+    const std::shared_ptr<const Matrix> data_; // x,y,z,weight
 
     // basis functions and derivaties on this grid
     std::shared_ptr<Matrix> basis_;
@@ -50,14 +48,14 @@ class DFTGridPoint {
 
   public:
     DFTGridPoint(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
-      : geom_(g), data_(o), ngrid_(o->mdim()) { assert(data_->ndim() == 4); init(); }
+      : geom_(g), data_(o) { assert(data_->ndim() == 4); init(); }
 
     std::shared_ptr<const Matrix> basis() const { return basis_; } 
     std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
     std::shared_ptr<const Matrix> grady() const { return grady_; } 
     std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
     const double& weight(const size_t i) const { return data_->element(3,i); }
-    size_t size() const { return ngrid_; }
+    size_t size() const { return data_->mdim(); }
     std::shared_ptr<const Matrix> data() const { return data_; }
 };
 

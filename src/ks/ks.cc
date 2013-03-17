@@ -26,7 +26,6 @@
 #include <src/ks/ks.h>
 #include <src/prop/dipole.h>
 #include <src/ks/dftgrid.h>
-#include <src/ks/xcfunc.h>
 #include <src/util/diis.h>
 
 using namespace std;
@@ -50,8 +49,6 @@ void KS::compute() {
 //shared_ptr<DFTGrid_base> grid(new TALGrid(100, 770, geom_));
   preptime.tick_print("DFT grid generation");
 
-  shared_ptr<XCFunc> func(new XCFunc(name_));
-
   cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
   cout << indent << "=== KS iteration (" << name_ << " / " << geom_->basisfile() << ") ===" << endl << indent << endl;
 
@@ -63,12 +60,12 @@ void KS::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // fock operator without DFT xc 
-    fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, func->scale_ex()));
+    fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, func_->scale_ex()));
 
     // add xc 
     shared_ptr<const Matrix> xc;
     double exc;
-    tie(xc, exc) = grid->compute_xc(func, coeff_->slice(0, nocc_));
+    tie(xc, exc) = grid->compute_xc(func_, coeff_->slice(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
 

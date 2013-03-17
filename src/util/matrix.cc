@@ -79,7 +79,7 @@ shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
 
 shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
   shared_ptr<Matrix> out(new Matrix(ndim_, fence - start, localized_));
-  assert(fence <= ndim_);
+  assert(fence <= mdim_);
 
   copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
   return out;
