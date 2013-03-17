@@ -180,9 +180,9 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
         sum[2] += zmat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
       }
     }
-    out->data(0, n) += -2.0*sum[0];
-    out->data(1, n) += -2.0*sum[1];
-    out->data(2, n) += -2.0*sum[2];
+    out->data(0, n) += -4.0*sum[0];
+    out->data(1, n) += -4.0*sum[1];
+    out->data(2, n) += -4.0*sum[2];
 
     offset += b->nbasis();
     ++n;

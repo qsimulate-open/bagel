@@ -201,6 +201,12 @@ int main(int argc, char** argv) {
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
+      } else if (method == "df-ks-opt") {
+
+        std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
+        for (int i = 0; i != 100; ++i)
+          if (opt->next()) break;
+
       } else if (method == "casscf") {
 
         std::shared_ptr<CASSCF> casscf;
