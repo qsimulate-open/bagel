@@ -60,7 +60,7 @@ void DFTGridPoint::init() {
 }
 
 
-tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<XCFunc> func, std::shared_ptr<const Matrix> mat) const {
+tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<const XCFunc> func, std::shared_ptr<const Matrix> mat) const {
   Timer time;
 
   unique_ptr<double[]> rho(new double[grid_->size()]);
@@ -135,6 +135,12 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(std::shared_ptr<
 
   time.tick_print("contraction");
   return make_tuple(out, en);
+}
+
+
+shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc> func, shared_ptr<const Matrix> mat) const {
+
+  return shared_ptr<const GradFile>();
 }
 
 

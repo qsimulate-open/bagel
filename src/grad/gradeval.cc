@@ -117,11 +117,17 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
+  // ... exchange needs to be scaled.
   shared_ptr<const DFFullDist> qijd = qij->apply_closed_2RDM(task_->func()->scale_ex());
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+
+  //- Exchange-correlation part -//
+  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), coeff_occ); 
+  *grad += *ggrad;
+
   grad->print();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;

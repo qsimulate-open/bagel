@@ -29,6 +29,7 @@
 
 #include <src/scf/scf_base.h>
 #include <src/ks/xcfunc.h>
+#include <src/ks/dftgrid.h>
 
 // I only implement a DF version
 
@@ -38,6 +39,7 @@ class KS : public SCF_base {
   protected:
     std::string name_;
     std::shared_ptr<XCFunc> func_;
+    std::shared_ptr<DFTGrid_base> grid_;
 
   public:
     KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
@@ -50,6 +52,10 @@ class KS : public SCF_base {
       name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
       func_ = std::shared_ptr<XCFunc>(new XCFunc(name_));
 
+      Timer preptime; 
+      grid_ = std::shared_ptr<DFTGrid_base>(new DefaultGrid(geom));
+      preptime.tick_print("DFT grid generation");
+
       if (re) throw std::runtime_error("we have not implemented DFT with a reference");
     }
 
@@ -58,6 +64,7 @@ class KS : public SCF_base {
     std::shared_ptr<Reference> conv_to_ref() const;
 
     std::shared_ptr<const XCFunc> func() const { return func_; }
+    std::shared_ptr<const DFTGrid_base> grid() const { return grid_; }
 };
 
 }

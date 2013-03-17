@@ -25,7 +25,6 @@
 
 #include <src/ks/ks.h>
 #include <src/prop/dipole.h>
-#include <src/ks/dftgrid.h>
 #include <src/util/diis.h>
 
 using namespace std;
@@ -38,16 +37,8 @@ void KS::compute() {
   coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
   shared_ptr<Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
 
-  Timer preptime;
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
-
-  // TODO control from the input deck
-//shared_ptr<DFTGrid_base> grid(new BLGrid(40, 194, geom_));
-  shared_ptr<DFTGrid_base> grid(new DefaultGrid(geom_));
-//shared_ptr<DFTGrid_base> grid(new TALGrid(75, 302, geom_));
-//shared_ptr<DFTGrid_base> grid(new TALGrid(100, 770, geom_));
-  preptime.tick_print("DFT grid generation");
 
   cout << indent << "     - DIIS with orbital gradients will be used." << endl << endl;
   cout << indent << "=== KS iteration (" << name_ << " / " << geom_->basisfile() << ") ===" << endl << indent << endl;
@@ -65,7 +56,7 @@ void KS::compute() {
     // add xc 
     shared_ptr<const Matrix> xc;
     double exc;
-    tie(xc, exc) = grid->compute_xc(func_, coeff_->slice(0, nocc_));
+    tie(xc, exc) = grid_->compute_xc(func_, coeff_->slice(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
 
