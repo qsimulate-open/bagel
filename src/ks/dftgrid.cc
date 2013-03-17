@@ -24,6 +24,7 @@
 //
 
 #include <numeric>
+#include <src/util/f77.h>
 #include <src/ks/dftgrid.h>
 #include <src/ks/lebedevlist.h>
 #include <src/util/constants.h>
@@ -174,11 +175,9 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
 
     double sum[3] = {0.0};
     for (size_t i = 0; i != grid_->size(); ++i) {
-      for (size_t j = 0; j != mat->mdim(); ++j) {
-        sum[0] += xmat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
-        sum[1] += ymat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
-        sum[2] += zmat->element(j,i) * orb->element(j,i) * grid_->weight(i) * vxc[i];
-      }
+      sum[0] += ddot_(mat->mdim(), xmat->element_ptr(0,i), 1, orb->element_ptr(0,i), 1) * grid_->weight(i) * vxc[i];
+      sum[1] += ddot_(mat->mdim(), ymat->element_ptr(0,i), 1, orb->element_ptr(0,i), 1) * grid_->weight(i) * vxc[i];
+      sum[2] += ddot_(mat->mdim(), zmat->element_ptr(0,i), 1, orb->element_ptr(0,i), 1) * grid_->weight(i) * vxc[i];
     }
     out->data(0, n) += -4.0*sum[0];
     out->data(1, n) += -4.0*sum[1];
