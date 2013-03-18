@@ -73,17 +73,14 @@ class XCFunc {
     }
     ~XCFunc() { xc_func_end(&func_); }
 
-    std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>> compute_exc_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
-      std::unique_ptr<double[]> exc(new double[np]);
-      std::unique_ptr<double[]> vxc(new double[np*(gga()?2:1)]);
+    void compute_exc_vxc(int np, const double* rho, const double* sigma, double* exc, double* vxc, double* vxc2) const {
       if (lda()) { 
-        xc_lda_exc_vxc(&func_, np, rho.get(), exc.get(), vxc.get());
+        xc_lda_exc_vxc(&func_, np, rho, exc, vxc);
       } else if (gga()) { 
-        xc_gga_exc_vxc(&func_, np, rho.get(), sigma.get(), exc.get(), vxc.get(), vxc.get()+np);
+        xc_gga_exc_vxc(&func_, np, rho, sigma, exc, vxc, vxc2);
       } else {
         throw std::runtime_error("Meta GGA not supported yet");
       }
-      return std::make_tuple(std::move(exc), std::move(vxc));
     }
 
     std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
@@ -108,8 +105,7 @@ class XCFunc {
 class XCFunc { 
 public:
   XCFunc(const std::string) { assert(false); }
-  std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>> compute_exc_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma)
-    const { return std::make_tuple(std::unique_ptr<double[]>(), std::unique_ptr<double[]>()); }
+  void compute_exc_vxc(int np, const double* rho, const double* sigma, double* exc, double* vxc, double* vxc2) const {}
   std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const { return std::unique_ptr<double[]>(); }
   bool lda() const { return true; }
   double scale_ex() const { return 0.0; }

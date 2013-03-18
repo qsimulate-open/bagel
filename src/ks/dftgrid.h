@@ -30,41 +30,15 @@
 #include <memory>
 #include <src/wfn/geometry.h>
 #include <src/ks/xcfunc.h>
+#include <src/ks/grid.h>
 #include <src/grad/gradfile.h>
 
 namespace bagel {
 
-class DFTGridPoint {
-  protected:
-    const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Matrix> data_; // x,y,z,weight
-
-    // basis functions and derivaties on this grid
-    std::shared_ptr<Matrix> basis_;
-    std::shared_ptr<Matrix> gradx_;
-    std::shared_ptr<Matrix> grady_;
-    std::shared_ptr<Matrix> gradz_;
-
-    void init();
-
-  public:
-    DFTGridPoint(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
-      : geom_(g), data_(o) { assert(data_->ndim() == 4); init(); }
-
-    std::shared_ptr<const Matrix> basis() const { return basis_; } 
-    std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
-    std::shared_ptr<const Matrix> grady() const { return grady_; } 
-    std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
-    const double& weight(const size_t i) const { return data_->element(3,i); }
-    size_t size() const { return data_->mdim(); }
-    std::shared_ptr<const Matrix> data() const { return data_; }
-};
-
-
 class DFTGrid_base {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const DFTGridPoint> grid_;
+    std::shared_ptr<const Grid> grid_;
 
     // TODO to be controlled by the input deck
     constexpr static double grid_thresh_ = 1.0e-8;
