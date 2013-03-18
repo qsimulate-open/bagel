@@ -64,6 +64,14 @@ std::vector<double> run_opt(std::string filename) {
       std::cout.rdbuf(backup_stream);
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
+    } else if (iter->first == "df-ks-opt") {
+      std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
+      for (int i = 0; i != 20; ++i)
+        if (opt->next()) break;
+
+      std::cout.rdbuf(backup_stream);
+      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
+      return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "mp2-opt") {
       std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
       for (int i = 0; i != 20; ++i)
@@ -109,6 +117,12 @@ std::vector<double> reference_rohf_opt() {
   out[5] =-0.084976;
   return out;
 }
+std::vector<double> reference_ks_opt() {
+  std::vector<double> out(6);
+  out[2] = 1.749755;
+  out[5] = 0.002208;
+  return out;
+}
 std::vector<double> reference_cas_act_opt() {
   std::vector<double> out(6);
   out[2] = 1.734489;
@@ -130,6 +144,11 @@ BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
     BOOST_CHECK(compare(run_opt("oh_svp_uhf_opt"),        reference_uhf_opt(),      1.0e-4));
     BOOST_CHECK(compare(run_opt("hc_svp_rohf_opt"),       reference_rohf_opt(),     1.0e-4));
 }
+#ifdef HAVE_XC_H
+BOOST_AUTO_TEST_CASE(DF_KS_Opt) {
+    BOOST_CHECK(compare(run_opt("hf_svp_b3lyp_opt"),      reference_ks_opt(),       1.0e-4));
+}
+#endif
 BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_opt"),        reference_mp2_opt(),      1.0e-4));
 }

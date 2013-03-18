@@ -1,0 +1,13 @@
+molecule {
+  symmetry = C1;
+  basis = svp;
+  df_basis = svp-jkfit;
+  schwarz_thresh = 1.0e-12;
+  angstrom = false;
+  atom = ( F,     -0.000000,     -0.000000,      1.750000);
+  atom = ( H,      0.000000,      0.000000,      0.000000);
+}
+
+df-ks-opt {
+  xc_func = b3lyp;
+}

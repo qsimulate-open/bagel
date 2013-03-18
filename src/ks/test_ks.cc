@@ -58,7 +58,7 @@ double ks_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_KS)
 
 BOOST_AUTO_TEST_CASE(DF_KS) {
-    BOOST_CHECK(compare(ks_energy("hf_svp_b3lyp"),         -100.28958914));
+    BOOST_CHECK(compare(ks_energy("hf_svp_b3lyp"),         -100.28959804));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
