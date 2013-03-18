@@ -85,6 +85,21 @@ class ExcVxcTask {
       func->compute_exc_vxc(size, rho, sigma, exc, vxc, vxc2);
     }
 };
+class VxcTask {
+  protected:
+    const size_t size;
+    const double* rho;
+    const double* sigma;
+    double* vxc;
+    double* vxc2;
+    shared_ptr<const XCFunc> func;
+  public:
+    VxcTask(const size_t n, const double* r, const double* s, double* v, double* v2, shared_ptr<const XCFunc> f)
+     : size(n), rho(r), sigma(s), vxc(v), vxc2(v2), func(f) { }
+    void compute() {
+      func->compute_vxc(size, rho, sigma, vxc, vxc2);
+    }
+};
 }
 
 
@@ -107,7 +122,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   unique_ptr<double[]> exc(new double[grid_->size()]);
   unique_ptr<double[]> vxc(new double[grid_->size()*(func->lda()?1:2)]);
 
-  StaticDist dist(grid_->size(), resources__->max_num_threads());
+  StaticDist dist(grid_->size(), resources__->max_num_threads()*100);
   vector<pair<size_t, size_t>> table = dist.atable();
 
   vector<ExcVxcTask> tasks;
@@ -118,7 +133,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   }
   TaskQueue<ExcVxcTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
-  time.tick_print("exc");
+  time.tick_print("exc+vxc");
 
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
   double en = 0.0;
@@ -159,10 +174,21 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
     rhoy  = unique_ptr<double[]>(new double[grid_->size()]);
     rhoz  = unique_ptr<double[]>(new double[grid_->size()]);
   }
+  unique_ptr<double[]> vxc(new double[grid_->size()*(func->lda()?1:2)]);
 
   vector<shared_ptr<const Matrix>> orb = compute_rho_sigma(func, mat, rho, sigma, rhox, rhoy, rhoz);
 
-  unique_ptr<double[]> vxc = func->compute_vxc(grid_->size(), rho, sigma);
+  StaticDist dist(grid_->size(), resources__->max_num_threads()*100);
+  vector<pair<size_t, size_t>> table = dist.atable();
+
+  vector<VxcTask> tasks;
+  for (auto& i : table) {
+    const size_t n = i.first;
+    tasks.push_back(VxcTask(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
+                            vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func));
+  }
+  TaskQueue<VxcTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
 
   // in GGA, we need nabla^2 basis // TODO I guess this should be more efficient..
   array<shared_ptr<Matrix>,6> grad2;

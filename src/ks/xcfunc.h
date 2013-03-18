@@ -83,16 +83,14 @@ class XCFunc {
       }
     }
 
-    std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const {
-      std::unique_ptr<double[]> vxc(new double[np*(gga()?2:1)]);
+    void compute_vxc(int np, const double* rho, const double* sigma, double* vxc, double* vxc2) const {
       if (lda()) { 
-        xc_lda_vxc(&func_, np, rho.get(), vxc.get());
+        xc_lda_vxc(&func_, np, rho, vxc);
       } else if (gga()) { 
-        xc_gga_vxc(&func_, np, rho.get(), sigma.get(), vxc.get(), vxc.get()+np);
+        xc_gga_vxc(&func_, np, rho, sigma, vxc, vxc2);
       } else {
         throw std::runtime_error("Meta GGA not supported yet");
       }
-      return vxc; 
     }
 
     bool lda() const { return func_.info->family == XC_FAMILY_LDA; }
@@ -106,7 +104,7 @@ class XCFunc {
 public:
   XCFunc(const std::string) { assert(false); }
   void compute_exc_vxc(int np, const double* rho, const double* sigma, double* exc, double* vxc, double* vxc2) const {}
-  std::unique_ptr<double[]> compute_vxc(int np, const std::unique_ptr<double[]>& rho, const std::unique_ptr<double[]>& sigma) const { return std::unique_ptr<double[]>(); }
+  void compute_vxc(int np, const double* rho, const double* sigma, double* vxc, double* vxc2) const {}
   bool lda() const { return true; }
   double scale_ex() const { return 0.0; }
 }; // dummy
