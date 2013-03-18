@@ -138,15 +138,13 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
   double en = 0.0;
 
+  shared_ptr<Matrix> scal(new Matrix(geom_->nbasis(), grid_->size()));
   if (func->lda()) {
-    shared_ptr<Matrix> scal(new Matrix(geom_->nbasis(), grid_->size()));
     for (size_t i = 0; i != scal->mdim(); ++i) {
       daxpy_(scal->ndim(), vxc[i]*grid_->weight(i), grid_->basis()->element_ptr(0, i), 1, scal->element_ptr(0, i), 1);
       en += exc[i] * rho[i] * grid_->weight(i);
     }
-    *out += *scal ^ *grid_->basis();
   } else {
-    shared_ptr<Matrix> scal(new Matrix(geom_->nbasis(), grid_->size()));
     for (size_t i = 0; i != scal->mdim(); ++i) {
       daxpy_(scal->ndim(), vxc[i]*grid_->weight(i), grid_->basis()->element_ptr(0, i), 1, scal->element_ptr(0, i), 1);
       daxpy_(scal->ndim(), 4*vxc[i+grid_->size()]*grid_->weight(i)*rhox[i], grid_->gradx()->element_ptr(0, i), 1, scal->element_ptr(0, i), 1);
@@ -154,8 +152,8 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
       daxpy_(scal->ndim(), 4*vxc[i+grid_->size()]*grid_->weight(i)*rhoz[i], grid_->gradz()->element_ptr(0, i), 1, scal->element_ptr(0, i), 1);
       en += exc[i] * rho[i] * grid_->weight(i);
     }
-    *out += *scal ^ *grid_->basis();
   }
+  *out += *scal ^ *grid_->basis();
   out->symmetrize();
 
   time.tick_print("contraction");
@@ -216,8 +214,8 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
       for (int i = 0; i != 6; ++i)
         d2mat[i] = shared_ptr<const Matrix>(new Matrix(*bmat % *grad2[i]->cut(offset, offset+b->nbasis())));
 
+      unique_ptr<double[]> tmp2(new double[mat->mdim()]);
       for (size_t i = 0; i != grid_->size(); ++i) {
-        unique_ptr<double[]> tmp2(new double[mat->mdim()]);
         // first term
         fill_n(tmp2.get(), mat->mdim(), 0.0);
         daxpy_(mat->mdim(), rhox[i], d2mat[0]->element_ptr(0,i), 1, tmp2.get(), 1);
@@ -294,16 +292,44 @@ double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& x
 }
 
 
+namespace bagel {
+class FuzzyTask {
+  protected:
+    std::shared_ptr<Matrix> data;
+    std::shared_ptr<const Atom> atom;
+    double xg;
+    double yg;
+    double zg;
+    double coeff;
+    DFTGrid_base* parent;
+    const int n;
+  public:
+    FuzzyTask(std::shared_ptr<Matrix> d, std::shared_ptr<const Atom> a, double x, double y, double z, double c, DFTGrid_base* ptr, const int i)
+     : data(d), atom(a), xg(x), yg(y), zg(z), coeff(c), parent(ptr), n(i) { }
+
+    void compute() {
+      const double weight = coeff * parent->fuzzy_cell(atom, array<double,3>{{xg, yg, zg}}); 
+      data->element(0, n) = xg;
+      data->element(1, n) = yg;
+      data->element(2, n) = zg;
+      data->element(3, n) = weight;
+    }
+
+};
+}
+
+
 void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<double[]>& r_ch, const unique_ptr<double[]>& w_ch,
                             const unique_ptr<double[]>& x, const unique_ptr<double[]>& y, const unique_ptr<double[]>& z, const unique_ptr<double[]>& w) {
 
   const int ngrid = nrad*nang;
   const int nprev = grid_ ? grid_->size() : 0;
-  shared_ptr<Matrix> data(new Matrix(4, nprev+ngrid*geom_->natom()));
-  if (nprev)
-    copy_n(grid_->data()->data(), 4*nprev, data->data());
 
-  int cnt = nprev;
+  vector<FuzzyTask> tasks;
+  tasks.reserve(geom_->natom()*nrad*nang);
+
+  shared_ptr<Matrix> data(new Matrix(4, ngrid*geom_->natom()));
+  int cnt = 0;
   for (auto& a : geom_->atoms()) {
     const double rbs = a->radius();
     for (int i = 0; i != nrad; ++i) {
@@ -311,20 +337,31 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
         const double xg = x[j] * r_ch[i] * rbs + a->position(0);
         const double yg = y[j] * r_ch[i] * rbs + a->position(1);
         const double zg = z[j] * r_ch[i] * rbs + a->position(2);
-        double weight = w[j] * w_ch[i] * pow(rbs,3) * 4.0*pi__ * fuzzy_cell(a, array<double,3>{{xg, yg, zg}});
-
-        // set to data 
-        if (weight > grid_thresh_/(nang*nrad)) {
-          data->element(0, cnt) = xg;
-          data->element(1, cnt) = yg;
-          data->element(2, cnt) = zg;
-          data->element(3, cnt) = weight;
-          ++cnt;
-        }
+        tasks.push_back(FuzzyTask(data, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3) * 4.0*pi__, this, cnt++)); 
       }
     }
   }
-  shared_ptr<const Matrix> o = data->slice(0,cnt);
+  TaskQueue<FuzzyTask> tq(tasks);
+  tq.compute(resources__->max_num_threads());
+
+
+  // remove grid points whose weight is smaller than the threshold below
+  const double thresh = grid_thresh_/(nang*nrad);
+  int size = 0;
+  for (int i = 0; i != cnt; ++i)
+    if (data->element(3, i) > thresh)
+      ++size; 
+
+  shared_ptr<Matrix> combined(new Matrix(4, nprev+size));
+  if (nprev)
+    copy_n(grid_->data()->data(), 4*nprev, combined->data());
+
+  size = 0;
+  for (int i = 0; i != cnt; ++i)
+    if (data->element(3, i) > thresh)
+      copy_n(data->element_ptr(0, i), 4, combined->element_ptr(0,nprev+size++)); 
+
+  shared_ptr<const Matrix> o = combined;
   grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
 
 }
