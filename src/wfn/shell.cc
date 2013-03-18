@@ -302,10 +302,11 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
 
 
 // In DFT we want to compute values of basis functions on grid
-void Shell::compute_grid_value_deriv2(double* b, const double& x, const double& y, const double& z) const {
+void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, double* bxz, double* byz, double* bzz,
+                                      const double& x, const double& y, const double& z) const {
   const double rr = x*x+y*y+z*z;
   auto range = contraction_ranges_.begin();
-  double tmp0[50];
+  double tmp[6][50];
   assert(50 > ANG_HRR_END*ANG_HRR_END);
 
   const int nxyz = nbasis() / num_contracted();
@@ -318,7 +319,10 @@ void Shell::compute_grid_value_deriv2(double* b, const double& x, const double& 
     double expy = 0.0;
     double expz = 0.0;
     double expxx = 0.0;
+    double expxy = 0.0;
     double expyy = 0.0;
+    double expxz = 0.0;
+    double expyz = 0.0;
     double expzz = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
       const double tmp = i[j]*exp(-exponents_[j]*rr);
@@ -326,31 +330,61 @@ void Shell::compute_grid_value_deriv2(double* b, const double& x, const double& 
       expx += -2.0*exponents_[j]*x*tmp;
       expy += -2.0*exponents_[j]*y*tmp;
       expz += -2.0*exponents_[j]*z*tmp;
-      expxx += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*x,2)*tmp;
-      expyy += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*y,2)*tmp;
-      expzz += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*z,2)*tmp;
+      expxx += -2.0*exponents_[j]*tmp + pow(2.0*exponents_[j]*x,2)*tmp;
+      expxy += 4.0*pow(exponents_[j],2)*x*y*tmp;
+      expyy += -2.0*exponents_[j]*tmp + pow(2.0*exponents_[j]*y,2)*tmp;
+      expxz += 4.0*pow(exponents_[j],2)*x*z*tmp;
+      expyz += 4.0*pow(exponents_[j],2)*y*z*tmp;
+      expzz += -2.0*exponents_[j]*tmp + pow(2.0*exponents_[j]*z,2)*tmp;
     }
     for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
       for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
         const int ix = nang - iy - iz;
         const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
-        tmp0[ixyz]  = (ix > 1 ? ix*(ix-1)*pow(x,ix-2)*pow(y,iy)*pow(z,iz)*exp0 : 0)
-                    + (ix > 0 ? 2.0*ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expx : 0)
-                    + cart*expxx;
-        tmp0[ixyz] += (iy > 1 ? iy*(iy-1)*pow(x,ix)*pow(y,iy-2)*pow(z,iz)*exp0 : 0)
-                    + (iy > 0 ? 2.0*iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expy : 0)
-                    + cart*expyy;
-        tmp0[ixyz] += (iz > 1 ? iz*(iz-1)*pow(x,ix)*pow(y,iy)*pow(z,iz-2)*exp0 : 0)
-                    + (iz > 0 ? 2.0*iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expz : 0)
-                    + cart*expzz;
+        tmp[0][ixyz] = (ix > 1 ? ix*(ix-1)*pow(x,ix-2)*pow(y,iy)*pow(z,iz)*exp0 : 0)
+                     + (ix > 0 ? 2.0*ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expx : 0)
+                     + cart*expxx;
+        tmp[1][ixyz] = (ix > 0 && iy > 0 ? ix*iy*pow(x,ix-1)*pow(y,iy-1)*pow(z,iz)*exp0 : 0)
+                     + (ix > 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expy : 0)
+                     + (iy > 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expx : 0) 
+                     + cart*expxy;
+        tmp[2][ixyz] = (iy > 1 ? iy*(iy-1)*pow(x,ix)*pow(y,iy-2)*pow(z,iz)*exp0 : 0)
+                     + (iy > 0 ? 2.0*iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expy : 0)
+                     + cart*expyy;
+        tmp[3][ixyz] = (ix > 0 && iz > 0 ? ix*iz*pow(x,ix-1)*pow(y,iy)*pow(z,iz-1)*exp0 : 0)
+                     + (ix > 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expz : 0)
+                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expx : 0) 
+                     + cart*expxz;
+        tmp[4][ixyz] = (iy > 0 && iz > 0 ? iy*iz*pow(x,ix)*pow(y,iy-1)*pow(z,iz-1)*exp0 : 0)
+                     + (iy > 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expz : 0)
+                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expy : 0) 
+                     + cart*expyz;
+        tmp[5][ixyz] = (iz > 1 ? iz*(iz-1)*pow(x,ix)*pow(y,iy)*pow(z,iz-2)*exp0 : 0)
+                     + (iz > 0 ? 2.0*iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expz : 0)
+                     + cart*expzz;
       }
     }
     if (spherical_) {
-      carsphlist.carsphfunc_call(index, 1, tmp0, b);
+      carsphlist.carsphfunc_call(index, 1, tmp[0], bxx);
+      carsphlist.carsphfunc_call(index, 1, tmp[1], bxy);
+      carsphlist.carsphfunc_call(index, 1, tmp[2], byy);
+      carsphlist.carsphfunc_call(index, 1, tmp[3], bxz);
+      carsphlist.carsphfunc_call(index, 1, tmp[4], byz);
+      carsphlist.carsphfunc_call(index, 1, tmp[5], bzz);
     } else {
-      copy_n(tmp0, nxyz, b);
+      copy_n(tmp[0], nxyz, bxx);
+      copy_n(tmp[1], nxyz, bxy);
+      copy_n(tmp[2], nxyz, byy);
+      copy_n(tmp[3], nxyz, bxz);
+      copy_n(tmp[4], nxyz, byz);
+      copy_n(tmp[5], nxyz, bzz);
     }
-    b  += nxyz;
+    bxx += nxyz;
+    bxy += nxyz;
+    byy += nxyz;
+    bxz += nxyz;
+    byz += nxyz;
+    bzz += nxyz;
     ++range;
   }
 }

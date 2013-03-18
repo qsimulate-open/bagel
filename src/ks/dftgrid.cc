@@ -167,9 +167,14 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
   unique_ptr<double[]> vxc = func->compute_vxc(grid_->size(), rho, sigma);
 
   // in GGA, we need nabla^2 basis // TODO I guess this should be more efficient..
-  shared_ptr<Matrix> grad2;
+  shared_ptr<Matrix> grad2xx, grad2xy, grad2yy, grad2xz, grad2yz, grad2zz;
   if (!func->lda()) {
-    grad2 = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2xx = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2xy = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2yy = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2xz = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2yz = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
+    grad2zz = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), grid_->size()));
     for (size_t g = 0; g != grid_->size(); ++g) {
       int pos = 0;
       for (auto& i : geom_->atoms()) {
@@ -178,7 +183,8 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
         const double y = grid_->data()->element(1,g) - i->position(1);
         const double z = grid_->data()->element(2,g) - i->position(2);
         for (auto& j : i->shells()) {
-          j->compute_grid_value_deriv2(grad2->element_ptr(pos, g), x, y, z);
+          j->compute_grid_value_deriv2(grad2xx->element_ptr(pos, g), grad2xy->element_ptr(pos, g), grad2yy->element_ptr(pos, g),
+                                       grad2xz->element_ptr(pos, g), grad2yz->element_ptr(pos, g), grad2zz->element_ptr(pos, g), x, y, z);
           pos += j->nbasis();
         }
       }
@@ -202,15 +208,38 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
     }
 
     if (!func->lda()) {
-      shared_ptr<const Matrix> nmat(new Matrix(*bmat % *grad2->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> xxmat(new Matrix(*bmat % *grad2xx->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> xymat(new Matrix(*bmat % *grad2xy->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> yymat(new Matrix(*bmat % *grad2yy->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> xzmat(new Matrix(*bmat % *grad2xz->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> yzmat(new Matrix(*bmat % *grad2yz->cut(offset, offset+b->nbasis())));
+      shared_ptr<const Matrix> zzmat(new Matrix(*bmat % *grad2zz->cut(offset, offset+b->nbasis())));
+      unique_ptr<double[]> tmp2(new double[mat->mdim()]);
       for (size_t i = 0; i != grid_->size(); ++i) {
-        const double xmn = ddot_(mat->mdim(), nmat->element_ptr(0,i), 1, orb[0]->element_ptr(0,i), 1)
-                         + ddot_(mat->mdim(), xmat->element_ptr(0,i), 1, orb[1]->element_ptr(0,i), 1)
-                         + ddot_(mat->mdim(), ymat->element_ptr(0,i), 1, orb[2]->element_ptr(0,i), 1)
-                         + ddot_(mat->mdim(), zmat->element_ptr(0,i), 1, orb[3]->element_ptr(0,i), 1);
-        sum[0] += 2* xmn * grid_->weight(i) * vxc[i+grid_->size()] * rhox[i];
-        sum[1] += 2* xmn * grid_->weight(i) * vxc[i+grid_->size()] * rhoy[i];
-        sum[2] += 2* xmn * grid_->weight(i) * vxc[i+grid_->size()] * rhoz[i];
+        // first term
+        fill_n(tmp2.get(), mat->mdim(), 0.0);
+        daxpy_(mat->mdim(), rhox[i], xxmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoy[i], xymat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoz[i], xzmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        sum[0] += ddot_(mat->mdim(), tmp2.get(), 1, orb[0]->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
+        fill_n(tmp2.get(), mat->mdim(), 0.0);
+        daxpy_(mat->mdim(), rhox[i], xymat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoy[i], yymat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoz[i], yzmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        sum[1] += ddot_(mat->mdim(), tmp2.get(), 1, orb[0]->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
+        fill_n(tmp2.get(), mat->mdim(), 0.0);
+        daxpy_(mat->mdim(), rhox[i], xzmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoy[i], yzmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoz[i], zzmat->element_ptr(0,i), 1, tmp2.get(), 1);
+        sum[2] += ddot_(mat->mdim(), tmp2.get(), 1, orb[0]->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
+        // second term
+        fill_n(tmp2.get(), mat->mdim(), 0.0);
+        daxpy_(mat->mdim(), rhox[i], orb[1]->element_ptr(0,i), 1, tmp2.get(), 1); 
+        daxpy_(mat->mdim(), rhoy[i], orb[2]->element_ptr(0,i), 1, tmp2.get(), 1); 
+        daxpy_(mat->mdim(), rhoz[i], orb[3]->element_ptr(0,i), 1, tmp2.get(), 1); 
+        sum[0] += ddot_(mat->mdim(), tmp2.get(), 1, xmat->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
+        sum[1] += ddot_(mat->mdim(), tmp2.get(), 1, ymat->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
+        sum[2] += ddot_(mat->mdim(), tmp2.get(), 1, zmat->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
       }
     }
 
