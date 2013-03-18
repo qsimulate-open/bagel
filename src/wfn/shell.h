@@ -112,6 +112,7 @@ class Shell {
 
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
+    void compute_grid_value_deriv2(double*, const double& x, const double& y, const double& z) const;
 };
 
 }

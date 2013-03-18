@@ -299,3 +299,58 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     ++range;
   }
 }
+
+
+// In DFT we want to compute values of basis functions on grid
+void Shell::compute_grid_value_deriv2(double* b, const double& x, const double& y, const double& z) const {
+  const double rr = x*x+y*y+z*z;
+  auto range = contraction_ranges_.begin();
+  double tmp0[50];
+  assert(50 > ANG_HRR_END*ANG_HRR_END);
+
+  const int nxyz = nbasis() / num_contracted();
+  const int nang = angular_number();
+  const int index = nang * ANG_HRR_END;
+
+  for (auto& i : contractions_) {
+    double exp0 = 0.0;
+    double expx = 0.0;
+    double expy = 0.0;
+    double expz = 0.0;
+    double expxx = 0.0;
+    double expyy = 0.0;
+    double expzz = 0.0;
+    for (int j = range->first; j != range->second; ++j) { 
+      const double tmp = i[j]*exp(-exponents_[j]*rr);
+      exp0 += tmp; 
+      expx += -2.0*exponents_[j]*x*tmp;
+      expy += -2.0*exponents_[j]*y*tmp;
+      expz += -2.0*exponents_[j]*z*tmp;
+      expxx += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*x,2)*tmp;
+      expyy += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*y,2)*tmp;
+      expzz += -2.0*exponents_[j]*tmp + pow(-2.0*exponents_[j]*z,2)*tmp;
+    }
+    for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
+      for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
+        const int ix = nang - iy - iz;
+        const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
+        tmp0[ixyz]  = (ix > 1 ? ix*(ix-1)*pow(x,ix-2)*pow(y,iy)*pow(z,iz)*exp0 : 0)
+                    + (ix > 0 ? 2.0*ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expx : 0)
+                    + cart*expxx;
+        tmp0[ixyz] += (iy > 1 ? iy*(iy-1)*pow(x,ix)*pow(y,iy-2)*pow(z,iz)*exp0 : 0)
+                    + (iy > 0 ? 2.0*iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expy : 0)
+                    + cart*expyy;
+        tmp0[ixyz] += (iz > 1 ? iz*(iz-1)*pow(x,ix)*pow(y,iy)*pow(z,iz-2)*exp0 : 0)
+                    + (iz > 0 ? 2.0*iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expz : 0)
+                    + cart*expzz;
+      }
+    }
+    if (spherical_) {
+      carsphlist.carsphfunc_call(index, 1, tmp0, b);
+    } else {
+      copy_n(tmp0, nxyz, b);
+    }
+    b  += nxyz;
+    ++range;
+  }
+}
