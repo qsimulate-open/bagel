@@ -254,41 +254,39 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
 }
 
 
+constexpr double a_stratmann__ = 0.64;
+
 double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& xyz) const {
-  double fuzzy = -1.0;
-  double total = 0.0;
-  for (auto& b : geom_->atoms()) {
-    const double rbs1 = b->radius();
-    double tmp = 1.0;
-    for (auto& c : geom_->atoms()) {
-      if (b != c) {
-        const double rbs2 = c->radius();
-        const double xi = sqrt(rbs1/rbs2); // sqrt. see JCP 102, 346 (1995)
-        const double uij = (xi-1.0)/(xi+1.0);
-        const double aij = uij / (uij*uij-1.0);
+  int fuzzy = -1;
+  shared_ptr<StackMem> stack = resources__->get();
+  double* const total = stack->get(geom_->natom());
+  fill_n(total, geom_->natom(), 1.0);
 
-        const double distbc = b->distance(c); 
-        const double distbg = b->distance(xyz);
-        const double distcg = c->distance(xyz);
-        const double muij = (distbg - distcg) / distbc;
-
-        // see Becke's appendix
-        double nuij = muij + aij*(1.0-muij*muij); // eq. a2
-        for (int i = 0; i != 3; ++i)
-          nuij = (1.5-0.5*nuij*nuij)*nuij; // eq. 19
-
-        tmp *= 0.5*(1.0-nuij); // eq. 21
-      }
+  int i = 0;
+  for (auto b = geom_->atoms().begin(); b != geom_->atoms().end(); ++b, ++i) {
+    const double distbg = (*b)->distance(xyz);
+    int j = i+1;
+    for (auto c = b+1; c != geom_->atoms().end(); ++c, ++j) {
+      const double distbc = (*b)->distance(*c); 
+      const double distcg = (*c)->distance(xyz);
+      // Stratmann CPL 1996
+      double nuij = (distbg - distcg) / distbc / a_stratmann__;
+      const double nuij2 = pow(nuij,2);
+      const double fac = (nuij >= -1 ? (nuij < 1 ?  0.5-0.5*(35.0/16.0*nuij*(1.0-nuij2*(1.0-21.0/35.0*nuij2*(1.0-5.0/21.0*nuij2)))) : 0.0) : 1.0);
+      total[i] *= fac;
+      total[j] *= 1.0-fac;
     }
     // TODO threshold is still hardwired (not a good practice)
-    if (b->distance(atom) < 1.0e-3) fuzzy = tmp; 
-    total += tmp;
+    if ((*b)->distance(atom) < 1.0e-3) fuzzy = i;
   }
 
-  if (fuzzy == -1.0)
+  if (fuzzy == -1)
     throw runtime_error("grid and atoms do not match with each other");
 
-  return fuzzy / total; // Eq. 22
+  const double out = total[fuzzy] / accumulate(total, total+geom_->natom(), 0.0); // Eq. 22
+  stack->release(geom_->natom(), total);
+  resources__->release(stack);
+  return out;
 }
 
 
@@ -335,17 +333,39 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   int cnt = nprev;
   for (auto& a : geom_->atoms()) {
     const double rbs = a->radius();
+
+    double rib = 1.0e+10;
+    for (auto& b : geom_->atoms())
+      if (a != b)
+        rib = min(rib, a->distance(b)); 
+
     for (int i = 0; i != nrad; ++i) {
-      for (int j = 0; j != nang; ++j) {
-        const double xg = x[j] * r_ch[i] * rbs + a->position(0);
-        const double yg = y[j] * r_ch[i] * rbs + a->position(1);
-        const double zg = z[j] * r_ch[i] * rbs + a->position(2);
-        tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3) * 4.0*pi__, this, cnt++)); 
+      const double rr = r_ch[i] * rbs;
+      if (rr < (0.5-0.5*a_stratmann__)*rib) {
+        for (int j = 0; j != nang; ++j) {
+          const double xg = x[j] * rr + a->position(0);
+          const double yg = y[j] * rr + a->position(1);
+          const double zg = z[j] * rr + a->position(2);
+          combined->element(0, cnt) = xg; 
+          combined->element(1, cnt) = yg; 
+          combined->element(2, cnt) = zg; 
+          combined->element(3, cnt) = w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__;
+          ++cnt;
+        }
+      } else {
+        for (int j = 0; j != nang; ++j) {
+          const double xg = x[j] * rr + a->position(0);
+          const double yg = y[j] * rr + a->position(1);
+          const double zg = z[j] * rr + a->position(2);
+          tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__, this, cnt++)); 
+        }
       }
     }
   }
-  TaskQueue<FuzzyTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  if (tasks.size()) {
+    TaskQueue<FuzzyTask> tq(tasks);
+    tq.compute(resources__->max_num_threads());
+  }
 
   shared_ptr<const Matrix> o = combined;
   grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
