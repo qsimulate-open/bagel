@@ -44,11 +44,9 @@ class Grid {
     std::shared_ptr<Matrix> grady_;
     std::shared_ptr<Matrix> gradz_;
 
-    void init();
-
   public:
     Grid(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
-      : geom_(g), data_(o) { assert(data_->ndim() == 4); init(); }
+      : geom_(g), data_(o) { assert(data_->ndim() == 4); }
 
     std::shared_ptr<const Matrix> basis() const { return basis_; } 
     std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
@@ -59,6 +57,9 @@ class Grid {
     std::shared_ptr<const Matrix> data() const { return data_; }
 
     std::array<std::shared_ptr<Matrix>,6> compute_grad2() const;
+
+    void init();
+
 };
 
 }

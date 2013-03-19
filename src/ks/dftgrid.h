@@ -38,10 +38,10 @@ namespace bagel {
 class DFTGrid_base {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Grid> grid_;
+    std::shared_ptr<Grid> grid_;
 
     // TODO to be controlled by the input deck
-    constexpr static double grid_thresh_ = 1.0e-8;
+    constexpr static double grid_thresh_ = 1.0e-10;
 
     void add_grid(const int nrad, const int nang, const std::unique_ptr<double[]>& r_ch, const std::unique_ptr<double[]>& w_ch,
                   const std::unique_ptr<double[]>& x, const std::unique_ptr<double[]>& y, const std::unique_ptr<double[]>& z, const std::unique_ptr<double[]>& w);

@@ -368,7 +368,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   }
 
   shared_ptr<const Matrix> o = combined;
-  grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
+  grid_ = shared_ptr<Grid>(new Grid(geom_, o));
 
 }
 
@@ -389,7 +389,7 @@ void DFTGrid_base::remove_redgrid() {
       copy_n(grid_->data()->element_ptr(0, i), 4, out->element_ptr(0,size++)); 
 
   shared_ptr<const Matrix> o = out;
-  grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
+  grid_ = shared_ptr<Grid>(new Grid(geom_, o));
 
   cout <<  "    * Grid points: " << size << endl << endl;
 }
@@ -417,6 +417,7 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry> 
 
   add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
   remove_redgrid();
+  grid_->init();
 }
 
 
@@ -441,6 +442,7 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry
 
   add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
   remove_redgrid();
+  grid_->init();
 }
 
 
@@ -484,4 +486,5 @@ DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   }
 
   remove_redgrid();
+  grid_->init();
 }
