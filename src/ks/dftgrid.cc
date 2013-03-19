@@ -122,7 +122,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   unique_ptr<double[]> exc(new double[grid_->size()]);
   unique_ptr<double[]> vxc(new double[grid_->size()*(func->lda()?1:2)]);
 
-  StaticDist dist(grid_->size(), resources__->max_num_threads()*100);
+  StaticDist dist(grid_->size(), min(resources__->max_num_threads()*100, grid_->size()));
   vector<pair<size_t, size_t>> table = dist.atable();
 
   vector<ExcVxcTask> tasks;
@@ -176,7 +176,7 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
 
   vector<shared_ptr<const Matrix>> orb = compute_rho_sigma(func, mat, rho, sigma, rhox, rhoy, rhoz);
 
-  StaticDist dist(grid_->size(), resources__->max_num_threads()*100);
+  StaticDist dist(grid_->size(), min(resources__->max_num_threads()*100, grid_->size()));
   vector<pair<size_t, size_t>> table = dist.atable();
 
   vector<VxcTask> tasks;
@@ -325,11 +325,14 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   const int ngrid = nrad*nang;
   const int nprev = grid_ ? grid_->size() : 0;
 
+  shared_ptr<Matrix> combined(new Matrix(4, nprev+ngrid*geom_->natom()));
+  if (nprev)
+    copy_n(grid_->data()->data(), 4*nprev, combined->data());
+
   vector<FuzzyTask> tasks;
   tasks.reserve(geom_->natom()*nrad*nang);
 
-  shared_ptr<Matrix> data(new Matrix(4, ngrid*geom_->natom()));
-  int cnt = 0;
+  int cnt = nprev;
   for (auto& a : geom_->atoms()) {
     const double rbs = a->radius();
     for (int i = 0; i != nrad; ++i) {
@@ -337,33 +340,39 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
         const double xg = x[j] * r_ch[i] * rbs + a->position(0);
         const double yg = y[j] * r_ch[i] * rbs + a->position(1);
         const double zg = z[j] * r_ch[i] * rbs + a->position(2);
-        tasks.push_back(FuzzyTask(data, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3) * 4.0*pi__, this, cnt++)); 
+        tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3) * 4.0*pi__, this, cnt++)); 
       }
     }
   }
   TaskQueue<FuzzyTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
 
-
-  // remove grid points whose weight is smaller than the threshold below
-  const double thresh = grid_thresh_/(nang*nrad);
-  int size = 0;
-  for (int i = 0; i != cnt; ++i)
-    if (data->element(3, i) > thresh)
-      ++size; 
-
-  shared_ptr<Matrix> combined(new Matrix(4, nprev+size));
-  if (nprev)
-    copy_n(grid_->data()->data(), 4*nprev, combined->data());
-
-  size = 0;
-  for (int i = 0; i != cnt; ++i)
-    if (data->element(3, i) > thresh)
-      copy_n(data->element_ptr(0, i), 4, combined->element_ptr(0,nprev+size++)); 
-
   shared_ptr<const Matrix> o = combined;
   grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
 
+}
+
+
+void DFTGrid_base::remove_redgrid() {
+  const double thresh = grid_thresh_/ grid_->size();
+  int size = 0;
+  for (int i = 0; i != grid_->size(); ++i)
+    if (grid_->data()->element(3, i) > thresh)
+      ++size; 
+  shared_ptr<Matrix> out(new Matrix(4, size));
+
+  if (size < grid_->size())
+    cout << "    * Removing " << grid_->size()-size << " points whose weight is below " << scientific << setprecision(2) << thresh << endl << fixed;
+
+  size = 0;
+  for (int i = 0; i != grid_->size(); ++i)
+    if (grid_->data()->element(3, i) > thresh)
+      copy_n(grid_->data()->element_ptr(0, i), 4, out->element_ptr(0,size++)); 
+
+  shared_ptr<const Matrix> o = out;
+  grid_ = shared_ptr<const Grid>(new Grid(geom_, o));
+
+  cout <<  "    * Grid points: " << size << endl << endl;
 }
 
 
@@ -388,6 +397,7 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry> 
   }
 
   add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
+  remove_redgrid();
 }
 
 
@@ -411,6 +421,7 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry
   }
 
   add_grid(nrad, nang, r_ch, w_ch, x, y, z, w);
+  remove_redgrid();
 }
 
 
@@ -431,8 +442,13 @@ DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // start, fence, nang
   vector<tuple<int, int, int>> map; 
   // TODO Decide how to partition
-  map.push_back(make_tuple(0,  10, 302));
-  map.push_back(make_tuple(10, nrad, 302));
+  map.push_back(make_tuple(0, 8, 194));
+  map.push_back(make_tuple(8, 45, 302));
+  map.push_back(make_tuple(45, 50, 194));
+  map.push_back(make_tuple(50, 55, 110));
+  map.push_back(make_tuple(55, 60, 50));
+  map.push_back(make_tuple(60, 70, 38));
+  map.push_back(make_tuple(70, 75, 6));
   for (auto& i : map) {
     const int nang = get<2>(i);
     unique_ptr<double[]> rr(new double[get<1>(i)-get<0>(i)]); 
@@ -447,4 +463,6 @@ DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
     lebedev.root(nang, x.get(), y.get(), z.get(), w.get());
     add_grid(get<1>(i)-get<0>(i), nang, rr, ww, x, y, z, w);
   }
+
+  remove_redgrid();
 }

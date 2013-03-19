@@ -41,15 +41,15 @@ class DFTGrid_base {
     std::shared_ptr<const Grid> grid_;
 
     // TODO to be controlled by the input deck
-    constexpr static double grid_thresh_ = 1.0e-8;
+    constexpr static double grid_thresh_ = 1.0e-6;
 
     void add_grid(const int nrad, const int nang, const std::unique_ptr<double[]>& r_ch, const std::unique_ptr<double[]>& w_ch,
                   const std::unique_ptr<double[]>& x, const std::unique_ptr<double[]>& y, const std::unique_ptr<double[]>& z, const std::unique_ptr<double[]>& w);
+    void remove_redgrid();
 
     std::vector<std::shared_ptr<const Matrix>> compute_rho_sigma(std::shared_ptr<const XCFunc> func, std::shared_ptr<const Matrix> mat,
                                                     std::unique_ptr<double[]>& rho, std::unique_ptr<double[]>& sigma,
                                                     std::unique_ptr<double[]>& rhox, std::unique_ptr<double[]>& rhoy, std::unique_ptr<double[]>& rhoz) const;
-
   public:
     DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
 
