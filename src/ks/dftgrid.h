@@ -41,7 +41,7 @@ class DFTGrid_base {
     std::shared_ptr<const Grid> grid_;
 
     // TODO to be controlled by the input deck
-    constexpr static double grid_thresh_ = 1.0e-6;
+    constexpr static double grid_thresh_ = 1.0e-8;
 
     void add_grid(const int nrad, const int nang, const std::unique_ptr<double[]>& r_ch, const std::unique_ptr<double[]>& w_ch,
                   const std::unique_ptr<double[]>& x, const std::unique_ptr<double[]>& y, const std::unique_ptr<double[]>& z, const std::unique_ptr<double[]>& w);

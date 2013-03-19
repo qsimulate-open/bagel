@@ -374,19 +374,18 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
 
 
 void DFTGrid_base::remove_redgrid() {
-  const double thresh = grid_thresh_/ grid_->size();
   int size = 0;
   for (int i = 0; i != grid_->size(); ++i)
-    if (grid_->data()->element(3, i) > thresh)
+    if (grid_->data()->element(3, i) > grid_thresh_)
       ++size; 
   shared_ptr<Matrix> out(new Matrix(4, size));
 
   if (size < grid_->size())
-    cout << "    * Removing " << grid_->size()-size << " points whose weight is below " << scientific << setprecision(2) << thresh << endl << fixed;
+    cout << "    * Removing " << grid_->size()-size << " points whose weight is below " << scientific << setprecision(2) << grid_thresh_ << endl << fixed;
 
   size = 0;
   for (int i = 0; i != grid_->size(); ++i)
-    if (grid_->data()->element(3, i) > thresh)
+    if (grid_->data()->element(3, i) > grid_thresh_)
       copy_n(grid_->data()->element_ptr(0, i), 4, out->element_ptr(0,size++)); 
 
   shared_ptr<const Matrix> o = out;
