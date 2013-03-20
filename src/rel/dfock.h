@@ -57,7 +57,7 @@ class DFock : public ZMatrix {
                                                                 std::array<std::shared_ptr<const Matrix>,4>);
 
     void add_Jop_block(std::shared_ptr<const DFData>, std::list<std::shared_ptr<const CDMatrix>>, const double scale, bool gaunt, bool breit);
-    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double scale);
+    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double scale, const bool diag = false, const bool notranpose = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);

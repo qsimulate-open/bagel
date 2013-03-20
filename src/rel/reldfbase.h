@@ -36,13 +36,17 @@ class ABcases {
     std::array<std::shared_ptr<ZMatrix>, 2> spinor_;
     std::pair<int, int> basis_; 
     std::complex<double> fac_;
+#if 0
     std::complex<double> small_moment_fac1_;
     std::complex<double> small_moment_fac2_;
+#endif
     int alpha_comp_;
 
     void compute_spinor(std::pair<int, int>& coord, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a) {
+#if 0
       small_moment_fac1_ = coord.first  == Comp::L ? std::complex<double>(1.0, 0.0) : std::complex<double>(0.0,  1.0);
       small_moment_fac2_ = coord.second == Comp::L ? std::complex<double>(1.0, 0.0) : std::complex<double>(0.0, -1.0);
+#endif
       const int start1 = coord.first == Comp::L ? 0 : 2;
       const int start2 = coord.second == Comp::L ? 0 : 2;
       const int index1 = start1 + basis_.first;
@@ -54,7 +58,7 @@ class ABcases {
 
       ZMatrix z1(*s1->data()**spinor_[0]);
       ZMatrix z2(*s2->data()**spinor_[1]);
-      fac_ = (z1 % *a->data() * z2).element(0,0) * small_moment_fac1_ * small_moment_fac2_;
+      fac_ = (*(z1.transpose_conjg()) * *a->data() * z2).element(0,0); //* small_moment_fac1_ * small_moment_fac2_;
     }
   public:
     ABcases(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
@@ -63,7 +67,8 @@ class ABcases {
     }
 
     ABcases(std::shared_ptr<ABcases> ab, const int alpha)
-      : spinor_(ab->spinors()), basis_(ab->basis()), fac_(ab->fac()), small_moment_fac1_(ab->fac1()), small_moment_fac2_(ab->fac2()), alpha_comp_(alpha) {
+      : spinor_(ab->spinors()), basis_(ab->basis()), fac_(ab->fac()),// small_moment_fac1_(ab->fac1()), small_moment_fac2_(ab->fac2()), 
+      alpha_comp_(alpha) {
     }
 
     std::complex<double> fac() const { return fac_; }
@@ -89,8 +94,10 @@ class ABcases {
     int basis_second() const { return basis_.second; }
     const int comp() const { return alpha_comp_; }
     std::array<std::shared_ptr<ZMatrix>, 2> spinors() const {return spinor_; }
+#if 0
     std::complex<double> fac1() const {return small_moment_fac1_; }
     std::complex<double> fac2() const {return small_moment_fac2_; }
+#endif
 };
 
 

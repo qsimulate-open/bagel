@@ -66,6 +66,8 @@ class DFHalfComplex : public RelDFBase {
     bool alpha_matches(std::shared_ptr<DFHalfComplex>) const;
     std::shared_ptr<DFHalfComplex> multiply_breit2index(std::shared_ptr<Breit2Index> b2i) const;
 
+    std::shared_ptr<DFHalfComplex> copy() const { return std::shared_ptr<DFHalfComplex>(new DFHalfComplex(dfhalf_, coord_, basis_)); }
+
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o);
 
