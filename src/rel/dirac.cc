@@ -72,9 +72,6 @@ void Dirac::compute() {
   string indent = "  ";
   const int n = geom_->nbasis();
 
-  // make a relativistic version of Coeff class (c.f. coeff.h in src/scf)
-  // only implement form_density_rhf..
-
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
   shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
   shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();

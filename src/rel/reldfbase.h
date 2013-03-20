@@ -38,7 +38,7 @@ class ABcases {
     std::complex<double> fac_;
     std::complex<double> small_moment_fac1_;
     std::complex<double> small_moment_fac2_;
-    const int alpha_comp_;
+    int alpha_comp_;
 
     void compute_spinor(std::pair<int, int>& coord, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a) {
       small_moment_fac1_ = coord.first  == Comp::L ? std::complex<double>(1.0, 0.0) : std::complex<double>(0.0,  1.0);
@@ -62,6 +62,10 @@ class ABcases {
       compute_spinor(c, s1, s2, a);
     }
 
+    ABcases(std::shared_ptr<ABcases> ab, const int alpha)
+      : spinor_(ab->spinors()), basis_(ab->basis()), fac_(ab->fac()), small_moment_fac1_(ab->fac1()), small_moment_fac2_(ab->fac2()), alpha_comp_(alpha) {
+    }
+
     std::complex<double> fac() const { return fac_; }
     bool nonzero() const { return fac_ != std::complex<double>(0.0); }
 
@@ -80,9 +84,13 @@ class ABcases {
       return out;
     }
 
+    std::pair<int, int> basis() const {return basis_; } 
     int basis_first() const { return basis_.first; }
     int basis_second() const { return basis_.second; }
     const int comp() const { return alpha_comp_; }
+    std::array<std::shared_ptr<ZMatrix>, 2> spinors() const {return spinor_; }
+    std::complex<double> fac1() const {return small_moment_fac1_; }
+    std::complex<double> fac2() const {return small_moment_fac2_; }
 };
 
 

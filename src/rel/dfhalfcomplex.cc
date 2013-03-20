@@ -111,9 +111,18 @@ bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
 
 
 // WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
+// Another WARNING: basis(bt) assumes you are multiplying breit2index by 2nd integral, not first
 shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
-  return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, basis()));
+  //TODO there is a bug. We need to change alpha_comp_ value to first index of breit2index
+  return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, new_basis(bt)));
+}
+
+const vector<shared_ptr<ABcases>> DFHalfComplex::new_basis(shared_ptr<Breit2Index> bt) const {
+  vector<shared_ptr<ABcases>> out;
+  for (auto i = basis().begin(); i != basis().end(); ++i)
+    out.push_back(shared_ptr<ABcases>(new ABcases((*i), bt->index().first)));
+  return out;
 }
 
 
