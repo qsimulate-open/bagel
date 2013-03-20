@@ -174,7 +174,7 @@ void Dvec::print(const double thresh) const {
   int j = 0;
   for (auto& iter : dvec_) {
     cout << endl;
-    cout << "     * ci vector, state " << setw(3) << j++ << endl;
+    cout << "     * ci vector, state " << setw(3) << j++ << ", <S^2> = " << setw(6) << setprecision(4) << iter->spin_expectation() << endl;
     iter->print(thresh);
   }
 }

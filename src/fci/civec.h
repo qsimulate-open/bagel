@@ -106,6 +106,8 @@ class Civec {
     double norm() const;
     double variance() const;
     void scale(const double a);
+    std::shared_ptr<Civec> spin() const; // returns S^2 | civec >
+    double spin_expectation() const; // returns < S^2 >
 
     Civec& operator*=(const double& a) { scale(a); return *this; }
     Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }

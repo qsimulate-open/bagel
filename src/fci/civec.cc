@@ -134,3 +134,65 @@ shared_ptr<DistCivec> Civec::distcivec() const {
   copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
   return dist;
 }
+
+// S^2 = S_z^2 + S_z + S_-S_+
+shared_ptr<Civec> Civec::spin() const {
+  shared_ptr<Civec> out(new Civec(det_));
+
+  // First the easy part, S_z^2 + S_z
+  const double sz = 0.5*static_cast<double>(det_->nspin());
+  *out = *this;
+  *out *= sz*sz + sz;
+
+  const int norb = det_->norb();
+  const int lena = det_->lena();
+  const int lenb = det_->lenb();
+
+  double* source = cc_ptr_;
+  // This is a safe but probably slow implementation
+  for (int aiter = 0; aiter < lena; ++aiter) {
+    auto alphastring = det_->stringa(aiter);
+    for (int biter = 0; biter < lena; ++biter, ++source) {
+      auto betastring = det_->stringb(biter);
+      for (int i = 0; i < norb; ++i) {
+        for (int j = 0; j < norb; ++j) {
+          bitset<nbit__> abit = alphastring;
+          bitset<nbit__> bbit = betastring;
+          if (abit[i]) {
+            abit.reset(i);
+            if (!abit[j]) {
+              abit.set(j);
+              if (bbit[j]) {
+                bbit.reset(j);
+                if (!bbit[i]) {
+                  bbit.set(i);
+
+                  // Now the computation begins
+                  const int atarget = det_->lexical<0>(abit);
+                  const int btarget = det_->lexical<1>(bbit);
+                  const int aphase = det_->sign(alphastring, j, i);
+                  const int bphase = det_->sign(betastring, i, j);
+
+                  out->element(btarget, atarget) -= static_cast<double>(aphase*bphase) * (*source);
+                }
+              }
+            }
+          }
+        }
+
+        if (betastring[i]) {
+          out->element(biter,aiter) += *source;
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+double Civec::spin_expectation() const {
+  shared_ptr<Civec> S2 = spin();
+  double out = ddot(*S2);
+
+  return out;
+}
