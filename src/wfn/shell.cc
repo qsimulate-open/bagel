@@ -249,48 +249,58 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
 void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, const double& x, const double& y, const double& z) const {
   const double rr = x*x+y*y+z*z;
   auto range = contraction_ranges_.begin();
+  const int nang = angular_number();
+
   double tmp0[50];
   double tmpx[50];
   double tmpy[50];
   double tmpz[50];
-  assert(50 > ANG_HRR_END*ANG_HRR_END);
+  assert(50 > (ANG_HRR_END+1)*(ANG_HRR_END+1));
+  double powx[11], powy[11], powz[11];
+  powx[0] =  powy[0] = powz[0] = 0.0;
+  for (int i = 0; i != angular_number()+1; ++i) {
+    powx[i+1] = pow(x, i);
+    powy[i+1] = pow(y, i);
+    powz[i+1] = pow(z, i);
+  }
 
   const int nxyz = nbasis() / num_contracted();
-  const int nang = angular_number();
   const int index = nang * ANG_HRR_END;
 
   for (auto& i : contractions_) {
     double exp0 = 0.0;
-    double expx = 0.0;
-    double expy = 0.0;
-    double expz = 0.0;
+    double exp1 = 0.0;
     for (int j = range->first; j != range->second; ++j) { 
       const double tmp = i[j]*exp(-exponents_[j]*rr);
-      exp0 += tmp; 
-      expx += -2.0*exponents_[j]*x*tmp;
-      expy += -2.0*exponents_[j]*y*tmp;
-      expz += -2.0*exponents_[j]*z*tmp;
+      exp0 += tmp;
+      exp1 -= 2.0*exponents_[j]*tmp;
     }
-    for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
-      for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
-        const int ix = nang - iy - iz;
-        const double cart = pow(x,ix)*pow(y,iy)*pow(z,iz);
-        tmp0[ixyz] = cart*exp0;
-        tmpx[ixyz] = (ix != 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*exp0 : 0.0) + cart*expx;
-        tmpy[ixyz] = (iy != 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*exp0 : 0.0) + cart*expy;
-        tmpz[ixyz] = (iz != 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*exp0 : 0.0) + cart*expz;
+    const double expx = exp1*x;
+    const double expy = exp1*y;
+    const double expz = exp1*z;
+    // TODO threshold hardwired
+    if (fabs(exp0) >= 1.0e-14) {
+      for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
+        for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
+          const int ix = nang - iy - iz;
+          const double cart = powx[ix+1]*powy[iy+1]*powz[iz+1];
+          tmp0[ixyz] = cart*exp0;
+          tmpx[ixyz] = ix*powx[ix]*powy[iy+1]*powz[iz+1]*exp0 + cart*expx;
+          tmpy[ixyz] = iy*powx[ix+1]*powy[iy]*powz[iz+1]*exp0 + cart*expy;
+          tmpz[ixyz] = iz*powx[ix+1]*powy[iy+1]*powz[iz]*exp0 + cart*expz;
+        }
       }
-    }
-    if (spherical_) {
-      carsphlist.carsphfunc_call(index, 1, tmp0, b);
-      carsphlist.carsphfunc_call(index, 1, tmpx, dx);
-      carsphlist.carsphfunc_call(index, 1, tmpy, dy);
-      carsphlist.carsphfunc_call(index, 1, tmpz, dz);
-    } else {
-      copy_n(tmp0, nxyz, b);
-      copy_n(tmpx, nxyz, dx);
-      copy_n(tmpy, nxyz, dy);
-      copy_n(tmpz, nxyz, dz);
+      if (spherical_ && index) {
+        carsphlist.carsphfunc_call(index, 1, tmp0, b);
+        carsphlist.carsphfunc_call(index, 1, tmpx, dx);
+        carsphlist.carsphfunc_call(index, 1, tmpy, dy);
+        carsphlist.carsphfunc_call(index, 1, tmpz, dz);
+      } else {
+        copy_n(tmp0, nxyz, b);
+        copy_n(tmpx, nxyz, dx);
+        copy_n(tmpy, nxyz, dy);
+        copy_n(tmpz, nxyz, dz);
+      }
     }
     b  += nxyz;
     dx += nxyz;
@@ -298,6 +308,7 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     dz += nxyz;
     ++range;
   }
+
 }
 
 
