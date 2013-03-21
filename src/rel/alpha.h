@@ -69,7 +69,7 @@ class Sigma {
         data_->copy_block(0,0,2,2,s.data());
       } else {
         data_->copy_block(2,2,2,2,s.data());
-        data_->scale(std::complex<double>(0.5/c__));
+        data_->scale(std::complex<double>(0.0, -0.5/c__));
       }
     }
 
