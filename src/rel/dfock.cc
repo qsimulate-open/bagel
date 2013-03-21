@@ -262,15 +262,6 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   // computing K operators
-#if 0
-  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-    for (auto j = half_complex_exch2.begin(); j != half_complex_exch2.end(); ++j) {
-      if ((*i)->alpha_matches((*j))) {
-        add_Exop_block(*i, *j, gscale*scale_exchange, true, true);
-      }
-    }
-  }
-#else
   int icnt = 0;
   for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i, ++icnt) {
     int jcnt = 0;
@@ -280,35 +271,15 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
       }
     }
   }
-#endif
+
   timer.tick_print(printtag + ": K operator");
 
   list<shared_ptr<const CDMatrix>> cd;
   // compute J operators
-  for (auto& j : half_complex_exch) {
+  for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
       cd.push_back(shared_ptr<CDMatrix>(new CDMatrix_drv(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
     }
-  }
-
-  if (breit) {
-    shared_ptr<Breit> breit_matrix(new Breit(geom_));
-    list<shared_ptr<Breit2Index>> breit_2index;
-    for (int i = 0; i != breit_matrix->nblocks(); ++i) {
-      breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2())));
-
-      // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-      if (breit_matrix->cross(i))
-        breit_2index.push_back(breit_2index.back()->cross());
-    }
-
-    list<shared_ptr<const CDMatrix>> tmp_cd;
-    for (auto& i : cd) {
-      list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
-      tmp_cd.insert(tmp_cd.end(), tmp.begin(), tmp.end());
-    }
-    for (auto& i : tmp_cd)
-      cd.push_back(i);
   }
 
   for (auto& i : dfdists) {
