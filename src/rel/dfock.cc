@@ -194,19 +194,6 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
   timer.tick_print(printtag + ": half trans");
 
-  // compute J operators
-  list<shared_ptr<const CDMatrix>> cd;
-  for (auto& j : half_complex) {
-    for (auto& i : j->basis()) {
-      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix_drv(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
-    }
-  }
-  for (auto& i : dfdists) {
-    add_Jop_block(i, cd, gscale, gaunt, breit);
-  }
-
-  timer.tick_print(printtag + ": J operator");
-
   // split
   list<shared_ptr<DFHalfComplex>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
@@ -294,10 +281,16 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     }
   }
 #endif
-
   timer.tick_print(printtag + ": K operator");
 
-#if 1
+  list<shared_ptr<const CDMatrix>> cd;
+  // compute J operators
+  for (auto& j : half_complex_exch) {
+    for (auto& i : j->basis()) {
+      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix_drv(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
+    }
+  }
+
   if (breit) {
     shared_ptr<Breit> breit_matrix(new Breit(geom_));
     list<shared_ptr<Breit2Index>> breit_2index;
@@ -314,14 +307,13 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
       list<shared_ptr<const CDMatrix>> tmp = i->compute_breit_cd(breit_2index);
       tmp_cd.insert(tmp_cd.end(), tmp.begin(), tmp.end());
     }
-
-    for (auto& i : dfdists) {
-      add_Jop_block(i, tmp_cd, -0.5, gaunt, breit);
-    }
-
-    timer.tick_print("Breit: J operator");
-
+    for (auto& i : tmp_cd)
+      cd.push_back(i);
   }
-#endif
 
+  for (auto& i : dfdists) {
+    add_Jop_block(i, cd, gscale, gaunt, breit);
+  }
+
+  timer.tick_print(printtag + ": J operator");
 }
