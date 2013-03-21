@@ -67,8 +67,9 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 }
 
 
-shared_ptr<Civec> Civec::transpose() const {
-  shared_ptr<Civec> ct(new Civec(det_));
+shared_ptr<Civec> Civec::transpose(shared_ptr<Determinants> det) const {
+  if (det == nullptr) det = det_->transpose();
+  shared_ptr<Civec> ct(new Civec(det));
   double* cct = ct->data();
   mytranspose_(cc(), lenb_, lena_, cct);
   return ct;

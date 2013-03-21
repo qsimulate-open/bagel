@@ -95,7 +95,7 @@ class Civec {
 
     size_t size() const { return lena_*lenb_; }
 
-    std::shared_ptr<Civec> transpose() const;
+    std::shared_ptr<Civec> transpose(std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
