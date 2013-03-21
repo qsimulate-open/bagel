@@ -31,7 +31,6 @@
 
 #include <src/io/moldenio.h>
 #include <src/wfn/atom.h>
-#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
