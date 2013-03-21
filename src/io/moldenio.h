@@ -30,7 +30,6 @@
 #include <vector>
 
 #include <src/io/fileio.h>
-#include <src/wfn/atom.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 

@@ -169,6 +169,17 @@ void Dvec::project_out(shared_ptr<const Dvec> o) {
 #endif
 }
 
+shared_ptr<Dvec> Dvec::spinflip(shared_ptr<Determinants> det) const {
+  if(det == nullptr) det = det_->transpose();
+
+  vector<shared_ptr<Civec>> ccvec;
+  for (auto& cc : dvec_) {
+    ccvec.push_back(cc->transpose(det));
+  }
+
+  shared_ptr<Dvec> out(new Dvec(ccvec));
+  return out;
+}
 
 void Dvec::print(const double thresh) const {
   int j = 0;
