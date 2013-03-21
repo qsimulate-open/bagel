@@ -152,7 +152,7 @@ shared_ptr<Civec> Civec::spin() const {
   // This is a safe but probably slow implementation
   for (int aiter = 0; aiter < lena; ++aiter) {
     auto alphastring = det_->stringa(aiter);
-    for (int biter = 0; biter < lena; ++biter, ++source) {
+    for (int biter = 0; biter < lenb; ++biter, ++source) {
       auto betastring = det_->stringb(biter);
       for (int i = 0; i < norb; ++i) {
         for (int j = 0; j < norb; ++j) {
