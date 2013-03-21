@@ -58,6 +58,34 @@ void MultiExcitonHamiltonian::common_init() {
   dimerstates_ = nstates_.first * nstates_.second;
 
   jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
+
+  // Process DimerCISpace to form and organize needed Civecs
+  vector<shared_ptr<Civec>> vec_m0_q0_A;
+  vector<shared_ptr<Civec>> vec_m0_q0_B;
+
+  vector<shared_ptr<Civec>> vec_m1_qC_A;
+  vector<shared_ptr<Civec>> vec_m_1_qC_A;
+
+  vector<shared_ptr<Civec>> vec_m1_qC_B;
+  vector<shared_ptr<Civec>> vec_m_1_qC_B;
+
+  // Start by processing the singlet states
+  {
+    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,0);
+    vec_m0_q0_A.insert(vec_m0_q0_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+  }
+
+  {
+    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(0,0);
+    vec_m0_q0_B.insert(vec_m0_q0_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+  }
+
+  // Now add in cation states
+  {
+    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,-1);
+    vec_m1_qC_A.insert(vec_m1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    tmpvec = tmpvec->spinflip();
+  }
 }
 
 void MultiExcitonHamiltonian::compute() {

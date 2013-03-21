@@ -38,7 +38,7 @@
 namespace bagel {
 
 typedef std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>> MapCIs;
-typedef std::multimap<std::pair<int,int>, std::shared_ptr<Determinants>> MapDets;
+typedef std::map<std::pair<int,int>, std::shared_ptr<Determinants>> MapDets;
 
 class DimerCISpace {
   protected:
@@ -103,6 +103,7 @@ template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) 
   int qa, qb;
   std::tie(qa,qb) = key<unit>(civec->det()->nelea(), civec->det()->neleb());
 
+  int Q = qa + qb;
   // Reform Determinants object (to make sure it's the format I want)
   std::shared_ptr<Determinants> det = add_det<unit>(qa,qb);
   new_civec->set_det(det);
