@@ -324,12 +324,6 @@ void Dimer::fci(multimap<string,string> idata) {
   }
 }
 
-void Dimer::scf(multimap<string, string> idata) {
-  shared_ptr<SCF_base> this_scf(new SCF<1>(idata, sgeom_, sref_));
-  this_scf->compute();
-  set_sref(this_scf->conv_to_ref());
-}
-
 void Dimer::localize(multimap<string, string> idata) {
   string localizemethod = read_input<string>(idata,"localization", "pm");
 
@@ -465,9 +459,13 @@ void Dimer::set_active(multimap<string, string> idata) {
   set_sref(out);
 }
 
-void Dimer::driver(multimap<string, string> idata) {
+// RHF and then localize
+void Dimer::scf(multimap<string, string> idata) {
   // SCF
-  scf(idata);
+  shared_ptr<SCF_base> rhf(new SCF<1>(idata, sgeom_, sref_));
+  rhf->compute();
+  set_sref(rhf->conv_to_ref());
+
   shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(ncore_.first + ncore_.second);
   shared_ptr<Matrix> dimercoeff = scoeff_;
 
@@ -496,6 +494,30 @@ void Dimer::driver(multimap<string, string> idata) {
   shared_ptr<Matrix> ncoeff(new Matrix(*scoeff_ * transform));
   set_coeff(ncoeff);
   sref_->set_eig(subeigs);
+}
 
-  //fci(idata);
+shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) {
+  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+
+  shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
+
+  // Neutrals are always calculated
+  fci(idata); // A really really ugly way to do this for now. fci() needs to be removed and replaced
+  out->insert(ccvecs_);
+  
+  if (read_input<bool>(idata, "anions", false)) {
+    out->set_anions();
+
+  }
+  if (read_input<bool>(idata, "cations", false)) {
+    out->set_cations();
+
+  }
+  if (read_input<bool>(idata, "triplets", false)) {
+    out->set_triplets();
+
+  }
+
+  return out;
 }

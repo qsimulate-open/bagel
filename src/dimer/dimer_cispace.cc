@@ -25,17 +25,10 @@
 
 #include <utility>
 
-#include <src/dimer/dimer.h>
 #include <src/dimer/dimer_cispace.h>
 
 using namespace std;
 using namespace bagel;
-
-DimerCISpace::DimerCISpace(const shared_ptr<Dimer> dimer) : dimer_(dimer), norb_(dimer->nact()) {
-  // This will probably need to be changed
-  nelea_ = make_pair(dimer->nfilledactive().first/2, dimer->nfilledactive().second/2);
-  neleb_ = make_pair(dimer->nfilledactive().first/2, dimer->nfilledactive().second/2);
-}
 
 // Adds extra Determinants into the mapping that will be needed for Hamiltonian computation
 void DimerCISpace::complete() {

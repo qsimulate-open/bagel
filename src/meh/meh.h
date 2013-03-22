@@ -45,6 +45,42 @@ namespace bagel {
 
 typedef std::shared_ptr<Matrix> MatrixPtr;
 
+enum class ChargeSpin {
+  SS = 0,
+  T0T0 = 0,
+  AaCb = 1,
+  AbCa = 2,
+  CaAb = 3,
+  CbAa = 4,
+  TaTb = 5,
+  TbTa = 6
+};
+
+// What started off as a simple structure is now becoming a bonafide helper class
+class DimerSubspace {
+  protected:
+    const ChargeSpin chargespin_;
+
+    const int offset_;
+    const int nstatesA_;
+    const int nstatesB_;
+
+    std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> ci_;
+
+  public:
+    DimerSubspace(const ChargeSpin _cs, const int _offset, std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> _ci) : 
+      chargespin_(_cs), offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), ci_(_ci) {}
+
+    const ChargeSpin chargespin() const { return chargespin_; }
+    const int offset() const { return offset_; }
+    const int dimerstates() const { return nstatesA_ * nstatesB_; }
+    const int dimerindex(const int iA, const int iB) { return (iA + iB*nstatesA_); }
+
+    template <int unit> const int nstates() { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
+    template <int unit> std::shared_ptr<const Dvec> ci() { return ( unit == 0 ? ci_.first : ci_.second ); }
+    
+};
+
 class MultiExcitonHamiltonian {
    protected:
       std::shared_ptr<const Dimer> dimer_;
@@ -53,6 +89,8 @@ class MultiExcitonHamiltonian {
 
       std::shared_ptr<DimerJop> jop_;
       std::shared_ptr<DimerCISpace> cispace_;
+
+      std::vector<DimerSubspace> subspaces_;
 
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
@@ -96,10 +134,12 @@ class MultiExcitonHamiltonian {
 
       template <int unit> int active(int a) const { return (a + unit*nact_.first); }
 
-      MatrixPtr compute_closeclose();
-      MatrixPtr compute_closeactive();
-      MatrixPtr compute_intra_activeactive();
-      MatrixPtr compute_inter_activeactive();
+      MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
+
+      MatrixPtr compute_closeclose(DimerSubspace& subspace);
+      MatrixPtr compute_closeactive(DimerSubspace& subspace);
+      MatrixPtr compute_intra_activeactive(DimerSubspace& subspace);
+      MatrixPtr compute_inter_activeactive(DimerSubspace& subspace);
 
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata) const;
       std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr) const;

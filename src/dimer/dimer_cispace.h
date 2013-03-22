@@ -31,7 +31,6 @@
 #include <utility>
 #include <memory>
 
-#include <src/dimer/dimer.h>
 #include <src/fci/dvec.h>
 #include <src/fci/determinants.h>
 
@@ -42,8 +41,6 @@ typedef std::map<std::pair<int,int>, std::shared_ptr<Determinants>> MapDets;
 
 class DimerCISpace {
   protected:
-    std::shared_ptr<Dimer> dimer_;
-
     // These are stored values of the neutral species
     std::pair<int, int> norb_;
     std::pair<int, int> nelea_;
@@ -56,10 +53,14 @@ class DimerCISpace {
     MapDets detspaceA_;
     MapDets detspaceB_;
 
+    bool anions_;
+    bool cations_;
+    bool triplets_;
+
   public:
     // This constructor will build the infrastructure; civecs need to be added later
-    DimerCISpace(const std::shared_ptr<Dimer> dimer);
-    DimerCISpace(std::pair<int, int> nelea, std::pair<int, int> neleb, std::pair<int, int> norb) : norb_(norb), nelea_(nelea), neleb_(neleb) {}
+    DimerCISpace(std::pair<int, int> nelea, std::pair<int, int> neleb, std::pair<int, int> norb) : norb_(norb), nelea_(nelea), neleb_(neleb),
+      anions_(false), cations_(false), triplets_(false) {}
 
     template<int unit> int norb() const { return (unit == 0 ? norb_.first : norb_.second); }
     template<int unit> int nelea() const { return (unit == 0 ? nelea_.first : nelea_.second); }
@@ -70,6 +71,18 @@ class DimerCISpace {
     std::pair<int, int> nelea() const { return nelea_; }
     std::pair<int, int> neleb() const { return neleb_; }
     std::pair<int, int> nstates() const { return nstates_; }
+
+    bool anions() { return anions_; }
+    void set_anions() { anions_ = true; }
+    void reset_anions() { anions_ = false; }
+
+    bool cations() { return cations_; }
+    void set_cations() { cations_ = true; }
+    void reset_cations() { cations_ = false; }
+
+    bool triplets() { return triplets_; }
+    void set_triplets() { triplets_ = true; }
+    void reset_triplets() { triplets_ = false; }
 
     template<int unit> std::shared_ptr<Dvec> ccvec(int qa = 0, int qb = 0) {
       MapCIs& space = (unit == 0 ? cispaceA_ : cispaceB_);
@@ -82,6 +95,9 @@ class DimerCISpace {
     }
 
     template<int unit> void insert(std::shared_ptr<const Dvec> civec);
+    template<int unit> std::shared_ptr<Determinants> add_det(const int qa, const int qb);
+
+    void insert(std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> cipair) { insert<0>(cipair.first); insert<1>(cipair.second); }
 
     void complete();
 
@@ -93,8 +109,6 @@ class DimerCISpace {
     template<int unit> std::pair<int, int> unkey(const int qa, const int qb) const {
       return std::make_pair(qa + nelea<unit>(), qb + neleb<unit>());
     };
-
-    template<int unit> std::shared_ptr<Determinants> add_det(const int qa, const int qb);
 };
 
 template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) {
@@ -122,25 +136,31 @@ std::shared_ptr<Determinants> DimerCISpace::add_det(const int qa, const int qb) 
 
   MapDets& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
 
-  int nelea, neleb;
-  std::tie(nelea, neleb) = unkey<unit>(qa,qb);
-  std::shared_ptr<Determinants> det(new Determinants(nact, nelea, neleb, /*compress=*/false, /*mute=*/true));
+  auto idet = detspace.find(std::make_pair(qa,qb));
+  if ( idet != detspace.end()) {
+    return idet->second;
+  }
+  else {
+    int nelea, neleb;
+    std::tie(nelea, neleb) = unkey<unit>(qa,qb);
+    std::shared_ptr<Determinants> det(new Determinants(nact, nelea, neleb, /*compress=*/false, /*mute=*/true));
 
-  detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
+    detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
 
-  auto idet = detspace.find(std::make_pair(qa+1,qb));
-  if (idet != detspace.end()) det->link<0>(idet->second);
+    idet = detspace.find(std::make_pair(qa+1,qb));
+    if (idet != detspace.end()) det->link<0>(idet->second);
 
-  idet = detspace.find(std::make_pair(qa-1,qb));
-  if (idet != detspace.end()) det->link<0>(idet->second);
+    idet = detspace.find(std::make_pair(qa-1,qb));
+    if (idet != detspace.end()) det->link<0>(idet->second);
 
-  idet = detspace.find(std::make_pair(qa,qb+1));
-  if (idet != detspace.end()) det->link<1>(idet->second);
+    idet = detspace.find(std::make_pair(qa,qb+1));
+    if (idet != detspace.end()) det->link<1>(idet->second);
 
-  idet = detspace.find(std::make_pair(qa,qb-1));
-  if (idet != detspace.end()) det->link<1>(idet->second);
+    idet = detspace.find(std::make_pair(qa,qb-1));
+    if (idet != detspace.end()) det->link<1>(idet->second);
 
-  return det;
+    return det;
+  }
 }
 
 }

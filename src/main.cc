@@ -36,7 +36,7 @@
 #include <src/scf/coeff.h>
 #include <src/wfn/geometry.h>
 #include <src/dimer/dimer.h>
-#include <src/dimer/dimer_scf.h>
+#include <src/dimer/dimer_cispace.h>
 #include <src/scf/rohf.h>
 #include <src/ks/ks.h>
 #include <src/io/moldenout.h>
@@ -64,6 +64,7 @@
 #include <src/smith/MP2.h>
 #include <src/smith/CAS_all_active.h>
 #include <src/smith/CAS_test.h>
+#include <src/meh/meh.h>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -310,7 +311,7 @@ int main(int argc, char** argv) {
 
         fci->compute();
 
-      } else if (method == "dimerize") {
+      } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         std::multimap<std::string,std::string> dimdata = iter->second;
 
         std::string form = read_input<std::string>(dimdata, "form", "displace");
@@ -364,23 +365,16 @@ int main(int argc, char** argv) {
           dimer = std::shared_ptr<Dimer>(new Dimer(refA, refB));
         }
 
-        dimer->driver(iter->second);
+        dimer->scf(iter->second);
 
         geom = dimer->sgeom();
         ref = dimer->sref();
-
-      #if 0
-      } else if (method == "dimer-scf") {
-
-        scf = std::shared_ptr<DimerSCF>(new DimerSCF(iter->second, dimer));
-        scf->compute();
-        ref = scf->conv_to_ref();
-        dimer->set_sref(ref);
-
-        geom = dimer->sgeom();
-        ref = dimer->sref();
-        
-      #endif
+      } else if (method == "meh") {
+          std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
+    
+          std::shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(dimer, cispace));
+          meh->compute();
+          meh->print();
       } else if (method == "localize") {
         if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
 
@@ -423,7 +417,7 @@ int main(int argc, char** argv) {
         auto iref = sdata.find("ref");
           if ( iref != sdata.end() ) saved_refs.insert(make_pair(iref->second, ref));
       }
-      #if 1 // <---- Testing environment
+      #if 0 // <---- Testing environment
       else if (method == "testing") {
         std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
         std::multimap<std::string,std::string> dimdata = iter->second;

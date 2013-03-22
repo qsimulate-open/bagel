@@ -29,11 +29,12 @@
 #include <array>
 
 #include <src/wfn/geometry.h>
-#include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
+#include <src/scf/coeff.h>
 #include <src/fci/dvec.h>
 #include <src/util/matrix.h>
+#include <src/dimer/dimer_cispace.h>
 
 namespace bagel {
 
@@ -114,13 +115,13 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const;
 
       void set_active(std::multimap<std::string, std::string> idata);
-
-      // Calculations
-      void scf(std::multimap<std::string, std::string> idata); // SCF on dimer
-      void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
       void localize(std::multimap<std::string, std::string> idata);
 
-      void driver(std::multimap<std::string, std::string> idata);
+
+      // Calculations
+      void scf(std::multimap<std::string, std::string> idata); // SCF on dimer and then localize
+      void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
+      std::shared_ptr<DimerCISpace> compute_cispace(std::multimap<std::string, std::string> idata);
 
    private:
       void construct_geometry();

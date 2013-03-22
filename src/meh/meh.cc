@@ -58,6 +58,7 @@ void MultiExcitonHamiltonian::common_init() {
   dimerstates_ = nstates_.first * nstates_.second;
 
   jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
+  cispace_->complete();
 
   // Process DimerCISpace to form and organize needed Civecs
   vector<shared_ptr<Civec>> vec_m0_q0_A;
@@ -68,6 +69,12 @@ void MultiExcitonHamiltonian::common_init() {
 
   vector<shared_ptr<Civec>> vec_m1_qC_B;
   vector<shared_ptr<Civec>> vec_m_1_qC_B;
+
+  vector<shared_ptr<Civec>> vec_m1_qA_A;
+  vector<shared_ptr<Civec>> vec_m_1_qA_A;
+
+  vector<shared_ptr<Civec>> vec_m1_qA_B;
+  vector<shared_ptr<Civec>> vec_m_1_qA_B;
 
   // Start by processing the singlet states
   {
@@ -81,10 +88,80 @@ void MultiExcitonHamiltonian::common_init() {
   }
 
   // Now add in cation states
-  {
-    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,-1);
-    vec_m1_qC_A.insert(vec_m1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-    tmpvec = tmpvec->spinflip();
+  if (cispace_->cations()) {
+    {
+      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,-1);
+      vec_m1_qC_A.insert(vec_m1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+
+      shared_ptr<Determinants> det = cispace_->add_det<0>(-1,0);
+      tmpvec = tmpvec->spinflip(det);
+      vec_m_1_qC_A.insert(vec_m_1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    }
+
+    {
+      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(0,-1);
+      vec_m1_qC_B.insert(vec_m1_qC_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+
+      shared_ptr<Determinants> det = cispace_->add_det<1>(-1,0);
+      tmpvec = tmpvec->spinflip(det);
+      vec_m_1_qC_B.insert(vec_m_1_qC_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    }
+  }
+
+  // Now for the anion states
+  if(cispace_->anions()) {
+    {
+      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(1,0);
+      vec_m1_qA_A.insert(vec_m1_qA_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+
+      shared_ptr<Determinants> det = cispace_->add_det<0>(0,1);
+      tmpvec = tmpvec->spinflip(det);
+      vec_m_1_qA_A.insert(vec_m_1_qA_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    }
+
+    {
+      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(1,0);
+      vec_m1_qA_B.insert(vec_m1_qA_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+
+      shared_ptr<Determinants> det = cispace_->add_det<1>(0,1);
+      tmpvec = tmpvec->spinflip(det);
+      vec_m_1_qA_B.insert(vec_m_1_qA_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    }
+  }
+
+  // Package like civecs into Dvecs
+  dimerstates_ = 0;
+
+  // First, singlets
+  shared_ptr<Dvec> S_A(new Dvec(vec_m0_q0_A));
+  shared_ptr<Dvec> S_B(new Dvec(vec_m0_q0_B));
+
+  subspaces_.push_back(DimerSubspace(ChargeSpin::SS, dimerstates_, make_pair(S_A,S_B)));
+  dimerstates_ += subspaces_.back().dimerstates();
+
+  // Now, AC, if we've got em
+  if (cispace_->anions() && cispace_->cations()) {
+    shared_ptr<Dvec> Aalpha_A(new Dvec(vec_m1_qA_A));
+    shared_ptr<Dvec> Abeta_A(new Dvec(vec_m_1_qA_A));
+    shared_ptr<Dvec> Aalpha_B(new Dvec(vec_m1_qA_B));
+    shared_ptr<Dvec> Abeta_B(new Dvec(vec_m_1_qA_B));
+
+    shared_ptr<Dvec> Calpha_A(new Dvec(vec_m1_qC_A));
+    shared_ptr<Dvec> Cbeta_A(new Dvec(vec_m_1_qC_A));
+    shared_ptr<Dvec> Calpha_B(new Dvec(vec_m1_qC_B));
+    shared_ptr<Dvec> Cbeta_B(new Dvec(vec_m_1_qC_B));
+
+    subspaces_.push_back(DimerSubspace(ChargeSpin::AaCb, dimerstates_, make_pair(Aalpha_A,Cbeta_B)));
+    dimerstates_ += subspaces_.back().dimerstates();
+
+    subspaces_.push_back(DimerSubspace(ChargeSpin::AbCa, dimerstates_, make_pair(Abeta_A,Calpha_B)));
+    dimerstates_ += subspaces_.back().dimerstates();
+    
+    subspaces_.push_back(DimerSubspace(ChargeSpin::CaAb, dimerstates_, make_pair(Calpha_A,Abeta_B)));
+    dimerstates_ += subspaces_.back().dimerstates();
+
+    subspaces_.push_back(DimerSubspace(ChargeSpin::CbAa, dimerstates_, make_pair(Cbeta_A,Aalpha_B)));
+    dimerstates_ += subspaces_.back().dimerstates();
   }
 }
 
@@ -93,21 +170,10 @@ void MultiExcitonHamiltonian::compute() {
 
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
-  // compute close-close
-  cout << "  o Computing closed-closed interactions" << endl;
-  *hamiltonian_ += *compute_closeclose();
-
-  // closed-active interactions
-  cout << "  o Computing closed-active interactions" << endl;
-  *hamiltonian_ += *compute_closeactive();
-
-  // intramolecular active-active interactions
-  cout << "  o Computing intramolecular active-active interactions" << endl;
-  *hamiltonian_ += *compute_intra_activeactive();
-
-  // intermolecular active-active interactions
-  cout << "  o Computing intermolecular active-active interactions" << endl << endl;
-  *hamiltonian_ += *compute_inter_activeactive();
+  cout << "  o Computing diagonal blocks" << endl; 
+  for (auto& subspace : subspaces_) {
+    hamiltonian_->add_block(subspace.offset(), subspace.offset(), compute_diagonal_block(subspace));
+  }
 
   adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
 
@@ -115,29 +181,45 @@ void MultiExcitonHamiltonian::compute() {
   adiabats_->diagonalize(energies_.data());
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeclose() {
-  double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace& subspace) {
+  const int nstates = subspace.dimerstates();
 
-  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
+
+  *out += *compute_closeclose(subspace);
+  *out += *compute_closeactive(subspace);
+  *out += *compute_intra_activeactive(subspace);
+  *out += *compute_inter_activeactive(subspace);
+
+  return out;
+}
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeclose(DimerSubspace& subspace) {
+  const int nstates = subspace.dimerstates();
+
+  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
+
+  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
   out->add_diag(core);
 
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive(DimerSubspace& subspace) {
   const int nclosed = dimerclosed_;
   const int nact = dimeractive_;
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
-  const int nstatesA = nstates_.first;
-  const int nstatesB = nstates_.second;
+  const int nstatesA = subspace.nstates<0>();
+  const int nstatesB = subspace.nstates<1>();
+  const int nstates = subspace.dimerstates();
 
-  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
 
   {
-    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
+    shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
     shared_ptr<const Determinants> detA = ccvecA->det();
 
     const int lenab = detA->lena() * detA->lenb();
@@ -146,10 +228,10 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = dimerstate(stateA, stateB);
+        const int stateAB = subspace.dimerindex(stateA, stateB);
         const double *sdataA = sigmavecA->data(stateA)->data();
         for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-          const int stateABp = dimerstate(stateAp, stateB);
+          const int stateABp = subspace.dimerindex(stateAp, stateB);
           const double *cdataAp = ccvecA->data(stateAp)->data();
           double value = ddot_(lenab, sdataA, 1, cdataAp, 1); 
           out->element(stateAB, stateABp) += value;
@@ -159,8 +241,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   }
 
   {
-    shared_ptr<const Determinants> detB = cispace_->det<1>(0,0);
-    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
+    shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
+    shared_ptr<const Determinants> detB = ccvecB->det();
 
     const int lenab = detB->lena() * detB->lenb();
 
@@ -168,10 +250,10 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = dimerstate(stateA, stateB);
+        const int stateAB = subspace.dimerindex(stateA, stateB);
         const double *sdataB = sigmavecB->data(stateB)->data();
         for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-          const int stateABp = dimerstate(stateA, stateBp);
+          const int stateABp = subspace.dimerindex(stateA, stateBp);
           const double *cdataBp = ccvecB->data(stateBp)->data();
           double value = ddot_(lenab, sdataB, 1, cdataBp, 1);
           out->element(stateAB, stateABp) += value;
@@ -183,18 +265,21 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive() {
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
-  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive(DimerSubspace& subspace) {
 
-  const int nstatesA = nstates_.first;
-  const int nstatesB = nstates_.second;
+  const int nstatesA = subspace.nstates<0>();
+  const int nstatesB = subspace.nstates<1>();
+
+  const int nstates = subspace.dimerstates();
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
+  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
+
   // first H^{AA}_{AA}
   {
-    shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
+    shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
     shared_ptr<const Determinants> detA = ccvecA->det();
 
     const int lenab = detA->lena() * detA->lenb();
@@ -203,10 +288,10 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = dimerstate(stateA, stateB);
+        const int stateAB = subspace.dimerindex(stateA, stateB);
         const double *sdataA = sigmavecAA->data(stateA)->data();
         for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-          const int stateABp = dimerstate(stateAp, stateB);
+          const int stateABp = subspace.dimerindex(stateAp, stateB);
           const double *cdataAp = ccvecA->data(stateAp)->data();
           double value = ddot_(lenab, sdataA, 1, cdataAp, 1);
           
@@ -218,7 +303,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
   
   // now do H^{BB}_{BB} case
   {
-    shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
+    shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
     shared_ptr<const Determinants> detB = ccvecB->det();
 
     const int lenab = detB->lena() * detB->lenb();
@@ -226,10 +311,10 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = dimerstate(stateA, stateB);
+        const int stateAB = subspace.dimerindex(stateA, stateB);
         const double *sdataB = sigmavecBB->data(stateB)->data();
         for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-          const int stateABp = dimerstate(stateA, stateBp);
+          const int stateABp = subspace.dimerindex(stateA, stateBp);
           const double *cdataBp = ccvecB->data(stateBp)->data();
           double value = ddot_(lenab, sdataB, 1, cdataBp, 1);
           
@@ -242,17 +327,19 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive() {
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
-  shared_ptr<const Dvec> ccvecA = cispace_->ccvec<0>(0,0);
-  shared_ptr<const Dvec> ccvecB = cispace_->ccvec<1>(0,0);
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubspace& subspace) {
+  shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
+  shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
 
   const int nactA = nact_.first;
   const int ijA = nactA*nactA;
-  const int nstatesA = nstates_.first;
+  const int nstatesA = subspace.nstates<0>();
 
   const int nactB = nact_.second;
   const int ijB = nactB*nactB;
-  const int nstatesB = nstates_.second;
+  const int nstatesB = subspace.nstates<1>();
+
+  const int nstates = nstatesA * nstatesB;
 
   // alpha-alpha
   Matrix gamma_AA_alpha = *form_gamma_alpha(ccvecA);
@@ -274,15 +361,15 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive() {
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
   // reorder, currently (AA',BB'), want (AB, A'B')
-  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
 
   for(int B = 0; B < nstatesB; ++B) {
     for(int A = 0; A < nstatesA; ++A) {
-      const int AB = dimerstate(A,B);
+      const int AB = subspace.dimerindex(A,B);
       for(int Bp = 0; Bp < nstatesB; ++Bp) {
         const int BBp = Bp + B*nstatesB;
         for(int Ap = 0; Ap < nstatesA; ++Ap) {
-          const int ABp = dimerstate(Ap,Bp);
+          const int ABp = subspace.dimerindex(Ap,Bp);
           const int AAp = Ap + A*nstatesA;
           out->element(AB,ABp) = tmp(AAp,BBp);
         }
