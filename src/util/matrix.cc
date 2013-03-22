@@ -620,6 +620,9 @@ void Matrix::add_block(const int nstart, const int mstart, const int nsize, cons
   add_block(nstart, mstart, nsize, msize, o.data());
 }
 
+void Matrix::add_block(const int nstart, const int mstart, const Matrix& o) {
+  add_block(nstart, mstart, o.ndim(), o.mdim(), o.data());
+}
 
 
 #ifdef HAVE_SCALAPACK

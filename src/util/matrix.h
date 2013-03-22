@@ -82,6 +82,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
     void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o) { add_block(nstart, mstart, ndim, mdim, *o); };
     void add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* o);
+    void add_block(const int nstart, const int mstart, const Matrix& o);
+    void add_block(const int nstart, const int mstart, const std::shared_ptr<const Matrix> o) { add_block(nstart, mstart, *o); }
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);
