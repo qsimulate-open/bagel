@@ -90,7 +90,7 @@ shared_ptr<ZMatrix> ZMatrix::slice(const int start, const int fence) const {
   shared_ptr<ZMatrix> out(new ZMatrix(ndim_, fence - start));
   assert(fence <= ndim_);
 
-  copy(element_ptr(0, start), element_ptr(0, fence), out->data());
+  std::copy(element_ptr(0, start), element_ptr(0, fence), out->data());
   return out;
 }
 

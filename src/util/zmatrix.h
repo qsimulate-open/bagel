@@ -108,6 +108,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix operator/(const ZMatrix&) const;
 
     std::shared_ptr<ZMatrix> clone() const { return std::shared_ptr<ZMatrix>(new ZMatrix(ndim_, mdim_)); }
+    std::shared_ptr<ZMatrix> copy() const { return std::shared_ptr<ZMatrix>(new ZMatrix(*this)); }
 
     // returns exp(*this)
     std::shared_ptr<ZMatrix> exp(const int deg = 6) const;
