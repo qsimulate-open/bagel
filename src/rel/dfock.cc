@@ -54,12 +54,11 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
   driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
   if (gaunt_) {
     driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
- // driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, false, scale_exchange);
   }
 }
 
 
-void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale, bool gaunt, bool breit) {
+void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
 
   const int n = geom_->nbasis();
   vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
@@ -81,7 +80,7 @@ void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const
 }
 
 
-void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale, const bool diag, const bool notranspose) {
+void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale, const bool diag) {
 
   // minus from -1 in the definition of exchange
   const int n = geom_->nbasis();
@@ -117,7 +116,7 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
       add_block(-scale, n*index0, n*index1, n, n, out);
 
-      if ((!diagonal || i1 != i2) && !notranspose) {
+      if (!diagonal || i1 != i2) {
         add_block(-scale, n*index1, n*index0, n, n, out->transpose_conjg());
       }
     }
@@ -240,7 +239,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
     for (auto i = half_complex_exch2.begin(); i != half_complex_exch2.end(); ++i) {
       for (auto j = i; j != half_complex_exch2.end(); ) {
-          if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))) {
+        if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))) {
           complex<double> fac = conj((*j)->fac() / (*i)->fac());
           (*i)->zaxpy(fac, (*j));
           j = half_complex_exch2.erase(j);
@@ -283,7 +282,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   for (auto& i : dfdists) {
-    add_Jop_block(i, cd, gscale, gaunt, breit);
+    add_Jop_block(i, cd, gscale);
   }
 
   timer.tick_print(printtag + ": J operator");
