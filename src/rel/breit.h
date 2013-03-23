@@ -43,10 +43,7 @@ class Breit : public NMatrix1e {
 
   public:
     Breit(const std::shared_ptr<const Geometry>);
-    //Breit(std::shared_ptr<const Breit>);
 
-    ~Breit() {};
-  
     void computebatch(const std::array<std::shared_ptr<const Shell>,4>&, const int, const int);
 
     void print() const;
