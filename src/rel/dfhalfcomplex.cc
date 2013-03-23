@@ -61,6 +61,14 @@ DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int
 }
 
 
+DFHalfComplex::DFHalfComplex(const DFHalfComplex& o) : RelDFBase(o.coord_) {
+  common_init();
+  basis_ = o.basis_; 
+  dfhalf_[0] = o.dfhalf_[0]->copy();
+  dfhalf_[1] = o.dfhalf_[1]->copy();
+}
+
+
 void DFHalfComplex::set_basis() {
   // does not have to do anything here
 }
@@ -94,30 +102,30 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 }
 
 
-bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
+bool DFHalfComplex::matches(shared_ptr<const DFHalfComplex> o) const {
   return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
 }
 
 
 // WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
-bool DFHalfComplex::alpha_matches(shared_ptr<Breit2Index> o) const {
+bool DFHalfComplex::alpha_matches(shared_ptr<const Breit2Index> o) const {
   return basis_[0]->comp() == o->index().second;
 }
 
 // WARNING: This Function assumes you have used the split function to make your DFHalfComplex objects. TODO
-bool DFHalfComplex::alpha_matches(shared_ptr<DFHalfComplex> o) const {
+bool DFHalfComplex::alpha_matches(shared_ptr<const DFHalfComplex> o) const {
   return basis_[0]->comp() == o->basis()[0]->comp();
 }
 
 
 // WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
 // Another WARNING: basis(bt) assumes you are multiplying breit2index by 2nd integral, not first
-shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2Index> bt) const {
+shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
   return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, new_basis(bt)));
 }
 
-const vector<shared_ptr<const ABcases>> DFHalfComplex::new_basis(shared_ptr<Breit2Index> bt) const {
+const vector<shared_ptr<const ABcases>> DFHalfComplex::new_basis(shared_ptr<const Breit2Index> bt) const {
   vector<shared_ptr<const ABcases>> out;
   for (auto& i : basis_)
     out.push_back(shared_ptr<const ABcases>(new ABcases(*i, bt->index().first)));
