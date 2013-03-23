@@ -95,7 +95,7 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 
 
 bool DFHalfComplex::matches(shared_ptr<DFHalfComplex> o) const {
-  return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second();
+  return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
 }
 
 

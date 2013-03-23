@@ -173,9 +173,6 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
   Timer timer(0);
 
-  if (breit && !gaunt)
-    throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
-
   vector<shared_ptr<const DFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
@@ -199,18 +196,9 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   // before computing K operators, we factorize half_complex
-  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i) {
-    for (auto j = i; j != half_complex_exch.end(); ) {
-        if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))) {
-        complex<double> fac = conj((*j)->fac() / (*i)->fac());
-        (*i)->zaxpy(fac, (*j));
-        j = half_complex_exch.erase(j);
-      } else {
-        ++j;
-      }
-    }
-  }
-  //assert(half_complex_exch.size() == 8);
+  factorize(half_complex_exch);
+  assert(gaunt  || half_complex_exch.size() == 8);
+  assert(!gaunt || half_complex_exch.size() == 24);
 
   if (breit) {
     // first make a copy of half_complex_exch
@@ -235,17 +223,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     }
     timer.tick_print("Breit: 2-index mulitplied");
 
-    for (auto i = half_complex_exch2.begin(); i != half_complex_exch2.end(); ++i) {
-      for (auto j = i; j != half_complex_exch2.end(); ) {
-        if (i != j && (*i)->matches((*j)) && (*i)->alpha_matches((*j))) {
-          complex<double> fac = conj((*j)->fac() / (*i)->fac());
-          (*i)->zaxpy(fac, (*j));
-          j = half_complex_exch2.erase(j);
-        } else {
-          ++j;
-        }
-      }
-    }
+    factorize(half_complex_exch2);
   } else {
     half_complex_exch2 = half_complex_exch;
   }

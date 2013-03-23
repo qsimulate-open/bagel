@@ -63,7 +63,9 @@ void Dirac::common_init(const multimap<string, string>& idata) {
   nneg_ = geom_->nbasis()*2;
 
   gaunt_ = read_input<bool>(idata, "gaunt", true);
-  breit_ = read_input<bool>(idata, "breit", true);
+  breit_ = read_input<bool>(idata, "breit", gaunt_);
+
+  if (breit_ && !gaunt_) throw runtime_error("Breit cannot be turned on if Gaunt is off");
 }
 
 

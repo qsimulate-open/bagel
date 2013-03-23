@@ -62,10 +62,17 @@ class DFock : public ZMatrix {
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);
 
-#if 0
-    void add_breit_Jop_block(std::list<std::shared_ptr<const CDMatrix>>, std::shared_ptr<const DFData>);
-    void add_breit_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double);
-#endif
+    // utility functions
+    template<class T> void factorize(T& m) const {
+      for (auto i = m.begin(); i != m.end(); ++i)
+        for (auto j = i; j != m.end(); ) {
+          if (i != j && (*i)->matches(*j)) {
+            (*i)->zaxpy(std::conj((*j)->fac() / (*i)->fac()), *j);
+            j = m.erase(j);
+          } else
+            ++j;
+        }
+    }
 
   public:
     DFock(const std::shared_ptr<const Geometry> a, 
@@ -74,6 +81,7 @@ class DFock : public ZMatrix {
           const bool rhf = true, const double scale_ex = 1.0)
      : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit) {
        
+       assert(breit ? gaunt : true);
        two_electron_part(coeff, rhf, scale_ex);
     }
     
