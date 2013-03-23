@@ -50,6 +50,8 @@ class Breit2Index {
 
     std::shared_ptr<Breit2Index> cross() const;
 
+    void print() const;
+
 };
 
 }

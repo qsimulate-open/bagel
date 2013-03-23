@@ -47,4 +47,7 @@ shared_ptr<Breit2Index> Breit2Index::cross() const {
 }
 
 
-
+void Breit2Index::print() const {
+  cout << " Breit2Index::k_term_" << endl;
+  k_term_->print();
+}
