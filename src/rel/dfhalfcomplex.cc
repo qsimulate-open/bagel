@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr<ABcases>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr<const ABcases>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
                               : RelDFBase(*df) {
   common_init();
   basis_ = bas;
@@ -55,7 +55,7 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr
 }
 
 
-DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<ABcases>> bas) : RelDFBase(coord), dfhalf_(data) {
+DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<const ABcases>> bas) : RelDFBase(coord), dfhalf_(data) {
   common_init();
   basis_ = bas; 
 }
@@ -117,10 +117,10 @@ shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2I
   return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, new_basis(bt)));
 }
 
-const vector<shared_ptr<ABcases>> DFHalfComplex::new_basis(shared_ptr<Breit2Index> bt) const {
-  vector<shared_ptr<ABcases>> out;
+const vector<shared_ptr<const ABcases>> DFHalfComplex::new_basis(shared_ptr<Breit2Index> bt) const {
+  vector<shared_ptr<const ABcases>> out;
   for (auto& i : basis_)
-    out.push_back(shared_ptr<ABcases>(new ABcases(i, bt->index().first)));
+    out.push_back(shared_ptr<const ABcases>(new ABcases(*i, bt->index().first)));
   return out;
 }
 

@@ -37,7 +37,7 @@ class CDMatrix_drv : public CDMatrix {
   protected:
 
   public:
-    CDMatrix_drv(std::shared_ptr<DFHalfComplex> dfhc, std::shared_ptr<ABcases> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+    CDMatrix_drv(std::shared_ptr<const DFHalfComplex> dfhc, std::shared_ptr<const ABcases> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
                  std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2)
     : CDMatrix(ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, true)+*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, true),
                        *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, true)-*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, true)),

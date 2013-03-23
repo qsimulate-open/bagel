@@ -52,10 +52,10 @@ class DFHalfComplex : public RelDFBase {
     void set_basis() override;
 
   public:
-    DFHalfComplex(std::shared_ptr<const DFData>, std::vector<std::shared_ptr<ABcases>> bas,
+    DFHalfComplex(std::shared_ptr<const DFData>, std::vector<std::shared_ptr<const ABcases>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
-    DFHalfComplex(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<ABcases>> bas);
+    DFHalfComplex(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<const ABcases>> bas);
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
@@ -79,7 +79,7 @@ class DFHalfComplex : public RelDFBase {
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
     std::list<std::shared_ptr<DFHalfComplex>> split(const bool docopy = false);
     bool split_status() const { return split_; }
-    const std::vector<std::shared_ptr<ABcases>> new_basis(std::shared_ptr<Breit2Index>) const; 
+    const std::vector<std::shared_ptr<const ABcases>> new_basis(std::shared_ptr<Breit2Index>) const; 
 
 };
 

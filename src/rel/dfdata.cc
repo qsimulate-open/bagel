@@ -40,7 +40,10 @@ DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfda
 
   if (coo) {
     swap_ ^= true;
-    for (auto& i : basis_) i->swap();
+    vector<std::shared_ptr<const ABcases>> newbas;
+    for (auto& i : basis_)
+      newbas.push_back(i->swap());
+    basis_ = newbas;
     std::swap(coord_.first, coord_.second); 
   }
 
@@ -57,9 +60,9 @@ vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_pt
   vector<shared_ptr<DFHalfComplex>> out;
 
   // first make a subset
-  vector<vector<shared_ptr<ABcases>>> subsets;
+  vector<vector<shared_ptr<const ABcases>>> subsets;
   for (int i = 0; i != 4; ++i) {
-    vector<shared_ptr<ABcases>> tmp;
+    vector<shared_ptr<const ABcases>> tmp;
     for (auto& j : basis())
       if (j->basis(0) == i)
         tmp.push_back(j);

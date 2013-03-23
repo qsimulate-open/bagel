@@ -33,7 +33,7 @@ namespace bagel {
 
 class ABcases {
   protected:
-    std::array<std::shared_ptr<ZMatrix>, 2> spinor_;
+    std::array<std::shared_ptr<const ZMatrix>, 2> spinor_;
     std::pair<int, int> basis_; 
     std::complex<double> fac_;
     int alpha_comp_;
@@ -43,10 +43,12 @@ class ABcases {
       const int start2 = coord.second == Comp::L ? 0 : 2;
       const int index1 = start1 + basis_.first;
       const int index2 = start2 + basis_.second;
-      spinor_[0] = std::shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-      spinor_[1] = std::shared_ptr<ZMatrix>(new ZMatrix(4,1,true));
-      spinor_[0]->element(index1,0) = 1.0;
-      spinor_[1]->element(index2,0) = 1.0;
+      std::shared_ptr<ZMatrix> tmp0(new ZMatrix(4,1,true));
+      std::shared_ptr<ZMatrix> tmp1(new ZMatrix(4,1,true));
+      tmp0->element(index1,0) = 1.0;
+      tmp1->element(index2,0) = 1.0;
+      spinor_[0] = tmp0;
+      spinor_[1] = tmp1;
 
       ZMatrix z1(*s1->data()**spinor_[0]);
       ZMatrix z2(*s2->data()**spinor_[1]);
@@ -58,8 +60,8 @@ class ABcases {
       compute_spinor(c, s1, s2, a);
     }
 
-    ABcases(std::shared_ptr<ABcases> ab, const int alpha)
-      : spinor_(ab->spinors()), basis_(ab->basis()), fac_(ab->fac()), alpha_comp_(alpha) {
+    ABcases(const ABcases& ab, const int alpha = -1)
+      : spinor_(ab.spinor_), basis_(ab.basis_), fac_(ab.fac_), alpha_comp_(alpha == -1 ? ab.alpha_comp_ : alpha) {
     }
 
     std::complex<double> fac() const { return fac_; }
@@ -68,10 +70,12 @@ class ABcases {
     bool operator==(const ABcases& o) const { return basis_.first == o.basis_.first && basis_.second == o.basis_.second && fac_ == o.fac_ && alpha_comp_ == o.alpha_comp_; } 
     bool operator!=(const ABcases& o) const { return !(*this == o); }
 
-    void swap() {
-      std::swap(basis_.first, basis_.second);
-      fac_ = std::conj(fac_);
-      std::swap(spinor_[0], spinor_[1]);
+    std::shared_ptr<const ABcases> swap() const {
+      std::shared_ptr<ABcases> out(new ABcases(*this));
+      std::swap(out->basis_.first, out->basis_.second);
+      out->fac_ = std::conj(out->fac_);
+      std::swap(out->spinor_[0], out->spinor_[1]);
+      return out;
     }
 
     int basis(const int i) const {
@@ -86,15 +90,15 @@ class ABcases {
     std::pair<int, int> basis() const {return basis_; } 
     int basis_first() const { return basis_.first; }
     int basis_second() const { return basis_.second; }
-    const int comp() const { return alpha_comp_; }
-    std::array<std::shared_ptr<ZMatrix>, 2> spinors() const {return spinor_; }
+    int comp() const { return alpha_comp_; }
+    std::array<std::shared_ptr<const ZMatrix>, 2> spinors() const { return spinor_; }
 };
 
 
 class RelDFBase {
   protected:
     std::pair<int, int> coord_;
-    std::vector<std::shared_ptr<ABcases>> basis_;
+    std::vector<std::shared_ptr<const ABcases>> basis_;
 
     virtual void set_basis() = 0;
 
@@ -108,7 +112,7 @@ class RelDFBase {
     }
 
     std::pair<int, int> coord() const { return coord_; }
-    const std::vector<std::shared_ptr<ABcases>>& basis() const { return basis_; }
+    const std::vector<std::shared_ptr<const ABcases>>& basis() const { return basis_; }
 
 };
 
