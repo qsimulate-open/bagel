@@ -173,8 +173,6 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
   Timer timer(0);
 
-  const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
-
   if (breit && !gaunt)
     throw logic_error("What are you smoking, son?! Don't call breit without gaunt!");
 
@@ -259,6 +257,8 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     for (auto& i : half_complex_exch2)
       i->set_sum_diff();
   }
+
+  const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
 
   // computing K operators
   int icnt = 0;
