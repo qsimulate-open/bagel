@@ -228,6 +228,8 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     half_complex_exch2 = half_complex_exch;
   }
 
+  assert(half_complex_exch.size() == half_complex_exch2.size());
+
   // will use the zgemm3m-like algorithm
   for (auto& i : half_complex_exch)
     i->set_sum_diff();
