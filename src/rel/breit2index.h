@@ -39,14 +39,12 @@ namespace bagel {
 class Breit2Index {
   protected:
     std::pair<const int, const int> index_;
-    std::shared_ptr<const ZMatrix> j_term_;
     std::shared_ptr<const Matrix> k_term_;
-    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const ZMatrix> j, std::shared_ptr<const Matrix> k);
+    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> k);
 
   public:
     Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> breit, std::shared_ptr<const Matrix> data2);
 
-    std::shared_ptr<const ZMatrix> j_term() const { return j_term_; }
     std::shared_ptr<const Matrix> k_term() const { return k_term_; }
     const std::pair<const int, const int>& index() const { return index_; }
 

@@ -119,8 +119,8 @@ shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<Breit2I
 
 const vector<shared_ptr<ABcases>> DFHalfComplex::new_basis(shared_ptr<Breit2Index> bt) const {
   vector<shared_ptr<ABcases>> out;
-  for (auto i = basis().begin(); i != basis().end(); ++i)
-    out.push_back(shared_ptr<ABcases>(new ABcases((*i), bt->index().first)));
+  for (auto& i : basis_)
+    out.push_back(shared_ptr<ABcases>(new ABcases(i, bt->index().first)));
   return out;
 }
 
