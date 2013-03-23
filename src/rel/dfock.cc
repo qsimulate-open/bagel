@@ -116,7 +116,7 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 
       add_block(-scale, n*index0, n*index1, n, n, out);
 
-      if (!diagonal || i1 != i2) {
+      if (!diagonal || *i1 != *i2) {
         add_block(-scale, n*index1, n*index0, n, n, out->transpose_conjg());
       }
     }
