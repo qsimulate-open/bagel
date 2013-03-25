@@ -45,6 +45,19 @@ namespace bagel {
 
 typedef std::shared_ptr<Matrix> MatrixPtr;
 
+enum class Coupling {
+  none = 0,
+  diagonal = 1, // Probably won't be used
+  alphaET = 2,
+  inv_alphaET = -2,
+  betaET = 3,
+  inv_betaET = -3,
+  ABflip = 4,
+  BAflip = -4,
+  alphabetaET = 5,
+  inv_alphabetaET = -5
+};
+
 enum class ChargeSpin {
   SS = 0,
   T0T0 = 0,
@@ -120,6 +133,8 @@ class MultiExcitonHamiltonian {
       void print_adiabats(const std::string title = "Adiabats", const int nstates = 10);
       void print(const int nstates = 10);
 
+      Coupling coupling_type(DimerSubspace AB, DimerSubspace ApBp);
+
    private:
       void common_init();
 
@@ -133,6 +148,13 @@ class MultiExcitonHamiltonian {
       }
 
       template <int unit> int active(int a) const { return (a + unit*nact_.first); }
+
+      const int coupling_index(std::pair<int,int> AT, std::pair<int,int> BT) const {
+        return coupling_index(AT.first,AT.second,BT.first,BT.second);
+      }
+      const int coupling_index(const int a, const int b, const int c, const int d) const {
+        return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
+      }
 
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
 
