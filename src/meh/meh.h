@@ -133,7 +133,7 @@ class MultiExcitonHamiltonian {
       void print_adiabats(const std::string title = "Adiabats", const int nstates = 10);
       void print(const int nstates = 10);
 
-      Coupling coupling_type(DimerSubspace AB, DimerSubspace ApBp);
+      Coupling coupling_type(DimerSubspace& AB, DimerSubspace& ApBp);
 
    private:
       void common_init();
@@ -156,6 +156,7 @@ class MultiExcitonHamiltonian {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
+      // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
 
       MatrixPtr compute_closeclose(DimerSubspace& subspace);
@@ -175,6 +176,14 @@ class MultiExcitonHamiltonian {
       // gamma = < A' | a^\dagger c | A >
       MatrixPtr form_gamma_alpha(std::shared_ptr<const Dvec> ccvec) const;
       MatrixPtr form_gamma_beta(std::shared_ptr<const Dvec> ccvec) const;
+
+      // Off-diagonal stuff
+      MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver
+
+      MatrixPtr compute_alphaET(DimerSubspace& AB, DimerSubspace& ApBp);
+      MatrixPtr compute_betaET(DimerSubspace& AB, DimerSubspace& ApBp);
+      MatrixPtr compute_ABflip(DimerSubspace& AB, DimerSubspace& ApBp);
+      MatrixPtr compute_alphabetaET(DimerSubspace& AB, DimerSubspace& ApBp);
 
       template<int A, int B, int C, int D> std::pair<MatrixPtr, MatrixPtr> form_JKmatrices() const;
 };

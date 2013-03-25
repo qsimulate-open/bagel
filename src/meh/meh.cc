@@ -165,7 +165,7 @@ void MultiExcitonHamiltonian::common_init() {
   }
 }
 
-Coupling MultiExcitonHamiltonian::coupling_type(DimerSubspace AB, DimerSubspace ApBp) {
+Coupling MultiExcitonHamiltonian::coupling_type(DimerSubspace& AB, DimerSubspace& ApBp) {
   pair<int,int> neleaAB = make_pair(AB.ci<0>()->det()->nelea(), AB.ci<1>()->det()->nelea());
   pair<int,int> nelebAB = make_pair(AB.ci<0>()->det()->neleb(), AB.ci<1>()->det()->neleb());
 
@@ -206,6 +206,20 @@ void MultiExcitonHamiltonian::compute() {
   cout << "  o Computing diagonal blocks" << endl; 
   for (auto& subspace : subspaces_) {
     hamiltonian_->add_block(subspace.offset(), subspace.offset(), compute_diagonal_block(subspace));
+  }
+
+  cout << "  o Computing off-diagonal blocks" << endl;
+  const int spaceij = subspaces_.size();
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    const int ioff = iAB->offset();
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      const int joff = jAB->offset();
+
+      shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
+
+      hamiltonian_->add_block(ioff, joff, block);
+      hamiltonian_->add_block(joff, ioff, block->transpose());
+    }
   }
 
   adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
