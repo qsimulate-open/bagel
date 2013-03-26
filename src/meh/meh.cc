@@ -177,24 +177,30 @@ Coupling MultiExcitonHamiltonian::coupling_type(DimerSubspace& AB, DimerSubspace
   pair<int,int> BT = make_pair(nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second);
 
   /************************************************************
-  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1)                     *
+  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
   *-----------------------------------------------------------*
-  * ( 0, 0) |  diag   |  aET    |  -aET                       *
-  * (+1,-1) |  bET    |  dABT   |  ABflp                      *
-  * (-1,+1) | -bET    | BAflp   | -dABT                       *
+  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   *
+  * (+1,-1) |  bET    |  dABT   |  ABflp  |         |         *
+  * (-1,+1) | -bET    | BAflp   | -dABT   |         |         *
+  * (+2,-2) |  bbET   |         |         |         |         *
+  * (-2,+2) | -bbET   |         |         |         |         *
   ************************************************************/
 
   const int icouple = coupling_index(AT, BT);
 
   if      ( icouple == coupling_index( 0, 0, 0, 0) ) return Coupling::diagonal;
-  else if ( icouple == coupling_index( 0, 0,+1,-1) ) return Coupling::betaET;
-  else if ( icouple == coupling_index( 0, 0,-1,+1) ) return Coupling::inv_betaET;
-  else if ( icouple == coupling_index(+1,-1, 0, 0) ) return Coupling::alphaET;
-  else if ( icouple == coupling_index(+1,-1,+1,-1) ) return Coupling::alphabetaET;
-  else if ( icouple == coupling_index(+1,-1,-1,+1) ) return Coupling::BAflip;
-  else if ( icouple == coupling_index(-1,+1, 0, 0) ) return Coupling::inv_alphaET;
-  else if ( icouple == coupling_index(-1,+1,+1,-1) ) return Coupling::ABflip;
-  else if ( icouple == coupling_index(-1,+1,-1,+1) ) return Coupling::inv_alphabetaET;
+  else if ( icouple == coupling_index( 0, 0,+1,-1) ) return Coupling::bET;
+  else if ( icouple == coupling_index( 0, 0,-1,+1) ) return Coupling::inv_bET;
+  else if ( icouple == coupling_index(+1,-1, 0, 0) ) return Coupling::aET;
+  else if ( icouple == coupling_index(+1,-1,+1,-1) ) return Coupling::abET;
+  else if ( icouple == coupling_index(+1,-1,-1,+1) ) return Coupling::baFlip;
+  else if ( icouple == coupling_index(-1,+1, 0, 0) ) return Coupling::inv_aET;
+  else if ( icouple == coupling_index(-1,+1,+1,-1) ) return Coupling::abFlip;
+  else if ( icouple == coupling_index(-1,+1,-1,+1) ) return Coupling::inv_abET;
+  else if ( icouple == coupling_index(+2,-2, 0, 0) ) return Coupling::aaET;
+  else if ( icouple == coupling_index(-2,+2, 0, 0) ) return Coupling::inv_aaET;
+  else if ( icouple == coupling_index( 0, 0,+2,-2) ) return Coupling::bbET;
+  else if ( icouple == coupling_index( 0, 0,-2,+2) ) return Coupling::inv_bbET;
   else                                               return Coupling::none;
 }
 
@@ -226,6 +232,33 @@ void MultiExcitonHamiltonian::compute() {
 
   energies_ = vector<double>(dimerstates_, 0.0);
   adiabats_->diagonalize(energies_.data());
+}
+
+
+std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const { 
+  const int nstatesA = ccvecA->ij();
+  const int nstatesAp = ccvecAp->ij();
+
+  std::shared_ptr<const Determinants> detA = ccvecA->det();
+  const int norb = detA->norb();
+  const int ij = action->ij(norb);
+
+  Matrix tmp(ij, nstatesA*nstatesAp);
+
+  double *edata = tmp.data();
+
+  for(int state = 0; state < nstatesA; ++state) {
+    std::shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
+
+    // | C > ^A_ac is done
+    for(int statep = 0; statep < nstatesAp; ++statep) {
+      for(int ac = 0; ac < ij; ++ac, ++edata) {
+        *edata = c->data(ac)->ddot(*ccvecAp->data(statep)); 
+      }   
+    }   
+  }
+
+  return tmp.transpose();
 }
 
 void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target, 

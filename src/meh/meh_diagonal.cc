@@ -192,12 +192,14 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
   const int nstates = nstatesA * nstatesB;
 
   // alpha-alpha
-  Matrix gamma_AA_alpha = *form_gamma<0>(ccvecA);
-  Matrix gamma_BB_alpha = *form_gamma<0>(ccvecB);
+  shared_ptr<Quantization> alpha(new TwoBody<SQ::CreateAlpha,SQ::AnnihilateAlpha>());
+  Matrix gamma_AA_alpha = *form_gamma(ccvecA, alpha);
+  Matrix gamma_BB_alpha = *form_gamma(ccvecB, alpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *form_gamma<1>(ccvecA);
-  Matrix gamma_BB_beta = *form_gamma<1>(ccvecB);
+  shared_ptr<Quantization> beta(new TwoBody<SQ::CreateBeta,SQ::AnnihilateBeta>());
+  Matrix gamma_AA_beta = *form_gamma(ccvecA, beta);
+  Matrix gamma_BB_beta = *form_gamma(ccvecB, beta);
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix, Kmatrix;
