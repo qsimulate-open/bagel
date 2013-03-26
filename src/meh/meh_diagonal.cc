@@ -198,12 +198,12 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
   const int nstates = nstatesA * nstatesB;
 
   // alpha-alpha
-  Matrix gamma_AA_alpha = *form_gamma_alpha(ccvecA);
-  Matrix gamma_BB_alpha = *form_gamma_alpha(ccvecB);
+  Matrix gamma_AA_alpha = *form_gamma<0>(ccvecA);
+  Matrix gamma_BB_alpha = *form_gamma<0>(ccvecB);
 
   // beta-beta
-  Matrix gamma_AA_beta = *form_gamma_beta(ccvecA);
-  Matrix gamma_BB_beta = *form_gamma_beta(ccvecB);
+  Matrix gamma_AA_beta = *form_gamma<1>(ccvecA);
+  Matrix gamma_BB_beta = *form_gamma<1>(ccvecB);
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix, Kmatrix;
@@ -234,99 +234,4 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
   }
 
   return out;
-}
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma_alpha(shared_ptr<const Dvec> ccvec) const {
-  const int nstates = ccvec->ij();
-
-  shared_ptr<const Determinants> det = ccvec->det();
-  const int norb = det->norb();
-  const int ij = norb * norb;
-
-  Matrix tmp(ij, nstates*nstates);
-
-  double *edata = tmp.data();
-
-  Dvec c(det, ij);
-
-  const int la = det->lena();
-  const int lb = det->lenb();
-  const int lab = la*lb;
-
-  for(int state = 0; state < nstates; ++state) {
-    const double* source_base = ccvec->data(state)->data();
-
-    c.zero();
-
-    for(int ac = 0; ac < ij; ++ac) {
-      double* target_base = c.data(ac)->data();
-
-      // alpha-alpha
-      for(auto& iter : det->phia(ac) ) {
-        const double sign = static_cast<double>(iter.sign);
-        double* target = target_base + iter.target*lb;
-        const double* source = source_base + iter.source*lb;
-        daxpy_(lb, sign, source, 1, target, 1);
-      }
-    }
-
-    // | C > ^A_ac is done
-    for(int statep = 0; statep < nstates; ++statep) {
-      const double *adata = ccvec->data(statep)->data();
-      for(int ac = 0; ac < ij; ++ac, ++edata) {
-        const double *cdata = c.data(ac)->data();
-        *edata = ddot_(lab, adata, 1, cdata, 1);
-
-      }
-    }
-  }
-
-  return tmp.transpose();
-}
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma_beta(shared_ptr<const Dvec> ccvec) const{
-  const int nstates = ccvec->ij();
-
-  shared_ptr<const Determinants> det = ccvec->det();
-  const int norb = det->norb();
-  const int ij = norb * norb;
-
-  Matrix tmp(ij, nstates*nstates);
-
-  double *edata = tmp.data();
-
-  Dvec c(det, ij);
-
-  const int la = det->lena();
-  const int lb = det->lenb();
-  const int lab = la*lb;
-
-  for(int state = 0; state < nstates; ++state) {
-    const double* source_base = ccvec->data(state)->data();
-
-    c.zero();
-
-    for(int ac = 0; ac < ij; ++ac) {
-      double *target_base = c.data(ac)->data();
-
-      // beta-beta
-      for(auto& iter : det->phib(ac)) {
-        const double sign = static_cast<double>(iter.sign);
-        double* target = target_base + iter.target;
-        const double* source = source_base + iter.source;
-        daxpy_(la, sign, source, lb, target, lb);
-      }
-    }
-
-    // | C > ^A_ac is done
-    for(int statep = 0; statep < nstates; ++statep) {
-      const double *adata = ccvec->data(statep)->data();
-      for(int ac = 0; ac < ij; ++ac, ++edata) {
-        const double *cdata = c.data(ac)->data();
-        *edata = ddot_(lab, adata, 1, cdata, 1);
-      }
-    }
-  }
-
-  return tmp.transpose();
 }
