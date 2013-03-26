@@ -228,6 +228,27 @@ void MultiExcitonHamiltonian::compute() {
   adiabats_->diagonalize(energies_.data());
 }
 
+void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target, 
+  const int nA, const int nAp, const int nB, const int nBp) const
+{
+  const int nstatesAB = nA * nB;
+  const int nstatesAA = nA * nAp;
+
+  for (int Bp = 0; Bp < nBp; ++Bp) {
+    for (int Ap = 0; Ap < nAp; ++Ap) {
+      const int ABp = Ap + nAp * Bp;
+      for (int B = 0; B < nB; ++B) {
+        const int BBp = B + nB * Bp;
+        for (int A = 0; A < nA; ++A) {
+          const int AAp = A + nA * Ap;
+          const int AB = A + nA * B;
+          target[AB + nstatesAB * ABp] = source[AAp + nstatesAA * BBp];
+        }
+      }
+    }
+  }
+}
+
 void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) {
   hamiltonian_->print(title, nstates);
 }

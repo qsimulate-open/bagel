@@ -143,6 +143,8 @@ class MultiExcitonHamiltonian {
 
    private:
       void common_init();
+      void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
+      void reorder_matrix(const double* source, double* target, const int nA, const int nB) { reorder_matrix(source,target,nA,nA,nB,nB); }
 
       template <int A, int B, int C, int D> std::pair<int, int> index(int a, int b, int c, int d) const {
         int iA = 0, jB = 0;
@@ -180,7 +182,8 @@ class MultiExcitonHamiltonian {
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
       // gamma = < A' | a^\dagger c | A >
-      template<int spin> MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvec) const;
+      template<int spin> MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvec) const { return form_gamma<spin,spin>(ccvec,ccvec); }
+      template<int spin1, int spin2> MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp) const;
 
       // Off-diagonal stuff
       MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver
@@ -198,29 +201,26 @@ class MultiExcitonHamiltonian {
       template<int spin1, int spin2> std::shared_ptr<Dvec> operator_ca(std::shared_ptr<const Civec>) const;
 };
 
-template<int spin>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(std::shared_ptr<const Dvec> ccvec) const {
-  const int nstates = ccvec->ij();
+template<int spin1, int spin2>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp) const {
+  const int nstatesA = ccvecA->ij();
+  const int nstatesAp = ccvecAp->ij();
 
-  std::shared_ptr<const Determinants> det = ccvec->det();
-  const int norb = det->norb();
+  std::shared_ptr<const Determinants> detA = ccvecA->det();
+  const int norb = detA->norb();
   const int ij = norb * norb;
 
-  Matrix tmp(ij, nstates*nstates);
+  Matrix tmp(ij, nstatesA*nstatesAp);
 
   double *edata = tmp.data();
 
-  const int la = det->lena();
-  const int lb = det->lenb();
-  const int lab = la*lb;
-
-  for(int state = 0; state < nstates; ++state) {
-    std::shared_ptr<Dvec> c = operator_ca<spin,spin>(ccvec->data(state));
+  for(int state = 0; state < nstatesA; ++state) {
+    std::shared_ptr<Dvec> c = operator_ca<spin1,spin2>(ccvecA->data(state));
 
     // | C > ^A_ac is done
-    for(int statep = 0; statep < nstates; ++statep) {
+    for(int statep = 0; statep < nstatesAp; ++statep) {
       for(int ac = 0; ac < ij; ++ac, ++edata) {
-        *edata = c->data(ac)->ddot(*ccvec->data(statep)); 
+        *edata = c->data(ac)->ddot(*ccvecAp->data(statep)); 
       }   
     }   
   }

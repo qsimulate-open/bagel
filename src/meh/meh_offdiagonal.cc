@@ -60,7 +60,6 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::couple_blocks(DimerSubspace& AB, Dim
 
   if (flip) out = out->transpose();
 
-  // fake return statement for now
   return out;
 }
 
@@ -76,11 +75,28 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_betaET(DimerSubspace& AB, Di
   return out;
 }
 
+// Currently defined as an alpha->beta flip in A and a beta->alpha flip in B
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_ABflip(DimerSubspace& AB, DimerSubspace& ApBp) {
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
 
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesAp = ApBp.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
+  const int nstatesBp = ApBp.nstates<1>();
+
+  shared_ptr<Matrix> gamma_A = form_gamma<Beta,Alpha>(AB.ci<0>(), ApBp.ci<0>());
+  shared_ptr<Matrix> gamma_B = form_gamma<Alpha,Beta>(AB.ci<1>(), ApBp.ci<1>());
+  shared_ptr<Matrix> Jmatrix, Kmatrix;
+  tie(Jmatrix,Kmatrix) = form_JKmatrices<1,0,1,0>();
+
+  Matrix tmp = (*gamma_A) * (*Kmatrix) ^ (*gamma_B);
+  tmp *= -1.0;
+
+  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
+
   return out;
 }
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_alphabetaET(DimerSubspace& AB, DimerSubspace& ApBp) {
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));

@@ -187,14 +187,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
   shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
   shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
 
-  const int nactA = nact_.first;
-  const int ijA = nactA*nactA;
   const int nstatesA = subspace.nstates<0>();
-
-  const int nactB = nact_.second;
-  const int ijB = nactB*nactB;
   const int nstatesB = subspace.nstates<1>();
-
   const int nstates = nstatesA * nstatesB;
 
   // alpha-alpha
@@ -216,22 +210,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  // reorder, currently (AA',BB'), want (AB, A'B')
   shared_ptr<Matrix> out(new Matrix(nstates, nstates));
-
-  for(int B = 0; B < nstatesB; ++B) {
-    for(int A = 0; A < nstatesA; ++A) {
-      const int AB = subspace.dimerindex(A,B);
-      for(int Bp = 0; Bp < nstatesB; ++Bp) {
-        const int BBp = Bp + B*nstatesB;
-        for(int Ap = 0; Ap < nstatesA; ++Ap) {
-          const int ABp = subspace.dimerindex(Ap,Bp);
-          const int AAp = Ap + A*nstatesA;
-          out->element(AB,ABp) = tmp(AAp,BBp);
-        }
-      }
-    }
-  }
+  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesB);
 
   return out;
 }
