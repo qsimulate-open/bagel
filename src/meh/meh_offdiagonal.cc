@@ -92,7 +92,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, Di
   Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), ab_oper);
   Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), ba_oper);
   shared_ptr<Matrix> Jmatrix, Kmatrix;
-  tie(Jmatrix,Kmatrix) = form_JKmatrices<1,0,1,0>();
+  tie(Jmatrix,Kmatrix) = form_JKmatrices<0,1,0,1>();
 
   Matrix tmp = gamma_A * (*Kmatrix) ^ gamma_B;
   tmp *= -1.0;
@@ -106,17 +106,55 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, Di
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, DimerSubspace& ApBp) {
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
 
+  shared_ptr<Quantization> creation(new TwoBody<SQ::CreateAlpha,SQ::CreateBeta>());
+  shared_ptr<Quantization> annihilation(new TwoBody<SQ::AnnihilateBeta,SQ::AnnihilateAlpha>());
+
+  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
+  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  shared_ptr<Matrix> Jmatrix, Kmatrix;
+  tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
+
+  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
+
   return out;
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp) {
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
 
+  shared_ptr<Quantization> creation(new TwoBody<SQ::CreateAlpha,SQ::CreateAlpha>());
+  shared_ptr<Quantization> annihilation(new TwoBody<SQ::AnnihilateAlpha,SQ::AnnihilateAlpha>());
+
+  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
+  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  shared_ptr<Matrix> Jmatrix, Kmatrix;
+  tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
+
+  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+  tmp *= 0.5;
+
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
+
   return out;
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp) {
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+
+  shared_ptr<Quantization> creation(new TwoBody<SQ::CreateBeta,SQ::CreateBeta>());
+  shared_ptr<Quantization> annihilation(new TwoBody<SQ::AnnihilateBeta,SQ::AnnihilateBeta>());
+
+  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
+  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  shared_ptr<Matrix> Jmatrix, Kmatrix;
+  tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
+
+  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+  tmp *= 0.5;
+
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
 
   return out;
 }

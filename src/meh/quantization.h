@@ -113,7 +113,7 @@ class TwoBody : public Quantization {
 
     const int ij(const int norb) const override { return norb*norb; }
     std::shared_ptr<Dvec> compute(std::shared_ptr<const Civec> ccvec) const override {
-      if ( (static_cast<int>(oper1) == -1*static_cast<int>(oper2)) && (static_cast<int>(oper2) < 0) ) {
+      if ( ((static_cast<int>(oper1) + static_cast<int>(oper2)) == 0) && (static_cast<int>(oper2) < 0) ) {
         const int spin = (oper1==SQ::CreateAlpha ? Alpha : Beta);
         std::shared_ptr<const Determinants> det = ccvec->det();
         const int norb = det->norb();
@@ -160,6 +160,59 @@ class TwoBody : public Quantization {
         for (int i = 0; i < norb; ++i) {
           for (int j = 0; j < norb; ++j, ++ij) {
             out->data(ij) = tmp_vec.at(j)->data(i);
+          }
+        }
+
+        return out;
+      }
+    }
+};
+
+template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : Quantization {
+  public:
+    ThreeBody() {}
+  
+    const int ij(const int norb) const override { return norb*norb*norb; }
+    std::shared_ptr<Dvec> compute(std::shared_ptr<const Civec> ccvec) const override {
+      if ( ((static_cast<int>(oper2) + static_cast<int>(oper3)) == 0) && (static_cast<int>(oper3) < 0) ) { // Can start with an optimized TwoBody
+        TwoBody<oper2,oper3> two;
+        OneBody<oper1> one;
+
+        std::shared_ptr<Dvec> tmp = two.compute(ccvec);
+        const int sizejk = tmp->ij();
+
+        std::vector<std::shared_ptr<Dvec>> tmp_vec;
+        for (int i = 0; i < sizejk; ++i) {
+          tmp_vec.push_back(one.compute(tmp->data(i)));
+        }
+        const int sizei = tmp_vec.front()->ij();
+
+        std::shared_ptr<Dvec> out(new Dvec(tmp_vec.front()->det(), sizei*sizejk));
+        for (int i = 0; i < sizei; ++i) {
+          for (int jk = 0; jk < sizejk; ++jk) {
+            out->data(i * sizejk + jk) = tmp_vec.at(jk)->data(i);
+          }
+        }
+
+        return out;
+      }
+      else {
+        OneBody<oper3> one;
+        TwoBody<oper1,oper2> two;
+
+        std::shared_ptr<Dvec> tmp = one.compute(ccvec);
+        const int sizek = tmp->ij();
+
+        std::vector<std::shared_ptr<Dvec>> tmp_vec;
+        for (int k = 0; k < sizek; ++k) {
+          tmp_vec.push_back(two.compute(tmp->data(k)));
+        }
+        const int sizeij = tmp_vec.front()->ij();
+
+        std::shared_ptr<Dvec> out(new Dvec(tmp_vec.front()->det(), sizeij*sizek));
+        for (int ij = 0; ij < sizeij; ++ij) {
+          for (int k = 0; k < sizek; ++k) {
+            out->data(ij * sizek + k) = tmp_vec.at(k)->data(ij);
           }
         }
 

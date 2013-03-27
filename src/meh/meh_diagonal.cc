@@ -203,7 +203,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubs
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix, Kmatrix;
-  tie(Jmatrix, Kmatrix) = form_JKmatrices<1,0,1,0>();
+  tie(Jmatrix, Kmatrix) = form_JKmatrices<0,1,0,1>();
 
   Matrix tmp(nstatesA*nstatesA, nstatesB*nstatesB);
 
