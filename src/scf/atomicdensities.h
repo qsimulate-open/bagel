@@ -35,6 +35,8 @@ class AtomicDensities : public Matrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
 
+    std::shared_ptr<const Matrix> compute_atomic(std::shared_ptr<const Geometry> ga) const;
+
   public:
     AtomicDensities(std::shared_ptr<const Geometry> g);
 
