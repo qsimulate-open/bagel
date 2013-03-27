@@ -57,8 +57,8 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
   thresh_scf_ = read_input<double>(idata_, "thresh_scf", thresh_scf_);
   string dd = read_input<string>(idata_, "diis", "gradient");
 
-  const int nact    = read_input<int>(idata_, "nact", 0);
-  const int ncharge = read_input<int>(idata_, "charge", 0); 
+  const int ncharge = read_input<int>(idata_, "charge", 0);
+  const int nact    = read_input<int>(idata_, "nact", (geom_->nele()-ncharge)%2);
   nocc_ = read_input<int>(idata_, "nocc", (geom_->nele()-ncharge+nact)/2);
   noccB_ = nocc_ - nact;
 

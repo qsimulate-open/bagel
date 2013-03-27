@@ -382,6 +382,10 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
   spherical_ = atoms.front()->spherical();
   // basis
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  if (!auxfile_.empty()) {
+    for (auto& i : atoms_)
+      aux_atoms_.push_back(shared_ptr<const Atom>(new Atom(i->spherical(), i->name(), i->position(), auxfile_)));
+  }
   // symmetry
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
