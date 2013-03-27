@@ -43,6 +43,8 @@ class DimerJop : public Jop {
     std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_; 
     std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_; 
 
+    std::shared_ptr<Matrix> cross_mo1e_;
+
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB, 
       std::shared_ptr<const Coeff> coeff); // note that in DimerJop, I'm forcing a HZ Jop
@@ -54,6 +56,8 @@ class DimerJop : public Jop {
 
     double* mo2e_first() const { return monomer_mo2es_.first.get(); };
     double* mo2e_second() const { return monomer_mo2es_.second.get(); };
+
+    std::shared_ptr<Matrix> cross_mo1e() const { return cross_mo1e_; }
 };
 
 }

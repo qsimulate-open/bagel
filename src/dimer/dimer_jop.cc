@@ -108,4 +108,19 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
   }
 
   monomer_mo2es_ = make_pair( move(mo2eA), move(mo2eB) );
+
+  /************************************************************
+  * Package cross_mo1e integrals into a matrix                *
+  ************************************************************/
+
+  cross_mo1e_ = shared_ptr<Matrix>(new Matrix(norbA, norbB));
+
+  {
+    double* modata = cross_mo1e_->data();
+    for (int i = 0; i < norbB; ++i) {
+      for (int j = 0; j < norbA; ++j, ++modata) {
+        *modata = mo1e(j,i+norbA);
+      }   
+    }
+  }
 }
