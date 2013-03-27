@@ -251,11 +251,11 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
   auto range = contraction_ranges_.begin();
   const int nang = angular_number();
 
-  double tmp0[50];
-  double tmpx[50];
-  double tmpy[50];
-  double tmpz[50];
-  assert(50 > (ANG_HRR_END+1)*(ANG_HRR_END+1));
+  double tmp0[65];
+  double tmpx[65];
+  double tmpy[65];
+  double tmpz[65];
+  static_assert(65 > (ANG_HRR_END+1)*(ANG_HRR_END+1), "ANG_HRR_END is assumed to be 7");
   double powx[11], powy[11], powz[11];
   powx[0] =  powy[0] = powz[0] = 0.0;
   for (int i = 0; i != angular_number()+1; ++i) {

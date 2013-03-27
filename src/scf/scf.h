@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/timer.h>
+#include <src/scf/atomicdensities.h>
 
 namespace bagel {
 
@@ -74,7 +75,16 @@ class SCF : public SCF_base {
       std::shared_ptr<const DistMatrix> aodensity;
 
       if (coeff_ == nullptr) {
-        DistMatrix intermediate = *tildex % *hcore * *tildex;
+        std::shared_ptr<const DistMatrix> fock;
+        if (DF == 0) {
+          std::shared_ptr<const Matrix> aden(new AtomicDensities(geom_));
+          aodensity_ = aden->distmatrix();
+          std::shared_ptr<const Matrix> focka(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_));
+          fock = focka->distmatrix();
+        } else {
+          fock = hcore;
+        }
+        DistMatrix intermediate = *tildex % *fock * *tildex;
         intermediate.diagonalize(eig());
         coeff = std::shared_ptr<const DistMatrix>(new DistMatrix(*tildex * intermediate));
       } else {
