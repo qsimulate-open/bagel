@@ -112,7 +112,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       // Utility functions
       std::shared_ptr<Coeff> overlap() const; 
-      std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const;
+      std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const { return std::shared_ptr<Matrix>(); };
 
       void set_active(std::multimap<std::string, std::string> idata);
       void localize(std::multimap<std::string, std::string> idata);

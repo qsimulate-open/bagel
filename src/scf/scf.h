@@ -78,8 +78,7 @@ class SCF : public SCF_base {
         std::shared_ptr<const DistMatrix> fock;
         if (DF == 0) {
           std::shared_ptr<const Matrix> aden(new AtomicDensities(geom_));
-          aodensity_ = aden->distmatrix();
-          std::shared_ptr<const Matrix> focka(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_));
+          std::shared_ptr<const Matrix> focka(new Fock<DF>(geom_, hcore_, aden, schwarz_));
           fock = focka->distmatrix();
         } else {
           fock = hcore;
