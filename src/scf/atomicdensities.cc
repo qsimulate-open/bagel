@@ -34,10 +34,12 @@ const static AtomMap atommap_;
 
 AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
   // first make a list of unique atoms
-  string basis = geom_->basisfile();
+  const string basis = geom_->basisfile();
+  const string dfbasis = geom_->auxfile();
   map<string, shared_ptr<const Matrix>> atoms;
 
-  for (auto& i : geom_->atoms())
+  int offset = 0;
+  for (auto& i : geom_->atoms()) {
     if (atoms.find(i->name()) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
@@ -48,7 +50,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
       multimap<string,string> geomop;
       geomop.insert(make_pair("basis", basis));
-      geomop.insert(make_pair("df_basis", basis));
+      geomop.insert(make_pair("df_basis", dfbasis.empty() ? basis : dfbasis));
       shared_ptr<const Geometry> ga(new Geometry({atom}, geomop));
 
       multimap<string, string> options;
@@ -60,5 +62,8 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       // restore cout
       cout.rdbuf(cout_orig);
     }
+    copy_block(offset, offset, i->nbasis(), i->nbasis(), atoms[i->name()]->data());
+    offset += i->nbasis();
+  }
 
 }
