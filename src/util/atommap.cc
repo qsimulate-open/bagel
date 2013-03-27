@@ -26,6 +26,7 @@
 
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
+#include <sstream>
 #include <stdexcept>
 
 using namespace std;
@@ -290,7 +291,8 @@ AtomMap::AtomMap () {
 
 int AtomMap::angular_number(const string input) const {
   auto miter = angmap.find(input);
-  if (miter == angmap.end()) throw runtime_error("Unknown angular number in a basis set file.");
+  stringstream ss; ss << "Unknown angular number in a basis set file. Requested: " << input << endl;
+  if (miter == angmap.end()) throw runtime_error(ss.str());
   return miter->second;
 }
 
@@ -304,7 +306,8 @@ double AtomMap::radius(const string input) const {
 
 int AtomMap::atom_number(const string input) const {
   auto miter = atommap.find(input);
-  if (miter == atommap.end()) throw runtime_error("Unknown Atom number in a basis set file.");
+  stringstream ss; ss << "Unknown Atom number in a basis set file. Requested: " << input << endl;
+  if (miter == atommap.end()) throw runtime_error(ss.str());
   return miter->second;
 }
 
