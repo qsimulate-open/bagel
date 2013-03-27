@@ -45,9 +45,9 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
     if (i->dummy()) continue;
     if (atoms.find(i->name()) == atoms.end()) {
       // dummy buffer to suppress the output
-//    stringstream ss;
-//    std::streambuf* cout_orig = cout.rdbuf();
-//    cout.rdbuf(ss.rdbuf());
+      stringstream ss;
+      std::streambuf* cout_orig = cout.rdbuf();
+      cout.rdbuf(ss.rdbuf());
 
       shared_ptr<const Atom> atom(new Atom(i->spherical(), i->name(), {{0.0,0.0,0.0}}, basis));
 
@@ -58,7 +58,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 
       // restore cout
-//    cout.rdbuf(cout_orig);
+      cout.rdbuf(cout_orig);
     }
     auto iter = atoms.find(i->name());
     assert(iter != atoms.end());
