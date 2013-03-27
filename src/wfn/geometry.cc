@@ -383,6 +383,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
   // basis
   auxfile_ = read_input<string>(geominfo, "df_basis", "");
   if (!auxfile_.empty()) {
+    if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)
       aux_atoms_.push_back(shared_ptr<const Atom>(new Atom(i->spherical(), i->name(), i->position(), auxfile_)));
   }
@@ -390,7 +391,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
   symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
 
   common_init1();
-
 
   print_atoms();
 
