@@ -43,6 +43,7 @@ typedef std::shared_ptr<const Reference> RefReference;
 typedef std::shared_ptr<const Coeff> RefCoeff;
 typedef std::shared_ptr<const Dvec> RefDvec;
 typedef std::shared_ptr<const CIWfn> RefCIWfn;
+typedef std::multimap<std::string,std::string> MultimapInput;
 
 /************************************************************************************
 *  This class describes a homodimer.                                                *
@@ -52,6 +53,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
    protected:
       std::pair<RefGeometry,RefGeometry> geoms_;
       std::pair<RefReference, RefReference> refs_;
+      std::pair<RefReference, RefReference> embedded_refs_;
 
       std::pair<RefCoeff, RefCoeff> coeffs_;
       std::pair<RefDvec, RefDvec> ccvecs_;
@@ -77,8 +79,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       // Constructors
       Dimer(RefGeometry a, RefGeometry b);
       Dimer(RefGeometry a, std::array<double,3> displacement);
-      Dimer(RefReference a, std::array<double,3> displacement);
       Dimer(RefReference A, RefReference B);
+      Dimer(RefReference a, std::array<double,3> displacement);
       Dimer(RefCIWfn a, std::array<double,3> displacement);
 
       // Return functions
@@ -114,18 +116,19 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Coeff> overlap() const; 
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const { return std::shared_ptr<Matrix>(); };
 
-      void set_active(std::multimap<std::string, std::string> idata);
-      void localize(std::multimap<std::string, std::string> idata);
+      void set_active(MultimapInput idata);
+      void localize(MultimapInput idata);
 
 
       // Calculations
-      void scf(std::multimap<std::string, std::string> idata); // SCF on dimer and then localize
-      void fci(std::multimap<std::string, std::string> idata); // Do two FCI calculations to generate individual excited states of monomers
-      std::shared_ptr<DimerCISpace> compute_cispace(std::multimap<std::string, std::string> idata);
+      void scf(MultimapInput idata); // SCF on dimer and then localize
+      std::pair<RefDvec,RefDvec> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
+      std::shared_ptr<DimerCISpace> compute_cispace(MultimapInput idata);
 
    private:
       void construct_geometry();
       void construct_coeff();
+      void embed_refs();
       void orthonormalize();
 };
 

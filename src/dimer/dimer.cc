@@ -34,6 +34,7 @@
 #include <src/fci/knowles.h>
 #include <src/wfn/reference.h>
 #include <src/util/localization.h>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -262,7 +263,7 @@ void Dimer::orthonormalize() {
    scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
 }
 
-void Dimer::fci(multimap<string,string> idata) {
+void Dimer::embed_refs() {
   const int noccA = nele_.first/2;
   const int noccB = nele_.second/2;
   const int nocc  = noccA + noccB;
@@ -282,8 +283,7 @@ void Dimer::fci(multimap<string,string> idata) {
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
 
-  { // Start FCI on unit A
-    // Move occupied orbitals of unit B to form the core orbitals
+  { // Move occupied orbitals of unit B to form the core orbitals
     shared_ptr<Matrix> Amatrix(new Matrix(dimerbasis_, dimerbasis_));
     Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff_->element_ptr(0,nclosed + nactA)); // FilledActive B
@@ -294,16 +294,10 @@ void Dimer::fci(multimap<string,string> idata) {
     const int ncore = nclosed + filled_activeB;
     const int norb  = nactA;
 
-    shared_ptr<Reference> Aref(new Reference(sgeom_, Acoeff, ncore, norb, 0));
-
-    // for now let's just hardcode in HZ. This can maybe be changed later
-    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Aref, ncore, norb));
-
-    fci->compute();
-    ccvecs_.first = fci->civectors();
+    embedded_refs_.first = shared_ptr<Reference>(new Reference(sgeom_, Acoeff, ncore, norb, 0));
   }
 
-  { // Start FCI on unit B
+  { // Move occupied orbitals of unit A to form core of unit B
     shared_ptr<Matrix> Bmatrix(new Matrix(dimerbasis_, dimerbasis_));
     Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff_->element_ptr(0,nclosed)); // FilledActive A
@@ -314,14 +308,30 @@ void Dimer::fci(multimap<string,string> idata) {
     const int ncore = nclosed + filled_activeA;
     const int norb  = nactB;
 
-    shared_ptr<Reference> Bref(new Reference(sgeom_, Bcoeff, ncore, norb, 0));
-
-    // HZ fci
-    shared_ptr<FCI> fci(new HarrisonZarrabian(idata, Bref, ncore, norb));
-
-    fci->compute();
-    ccvecs_.second = fci->civectors();
+    embedded_refs_.second = shared_ptr<Reference>(new Reference(sgeom_, Bcoeff, ncore, norb, 0));
   }
+}
+
+pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(multimap<string,string> idata, const int charge, const int nspin, const int nstates) const {
+  const int nclosed = ncore_.first + ncore_.second;
+  const int ncoreA = nclosed + nfilledactive_.second;
+  const int ncoreB = nclosed + nfilledactive_.first;
+  const int nactA = nact_.first;
+  const int nactB = nact_.second;
+
+  // Make new input data, set charge and spin to what I want
+  multimap<string,string> input = idata;
+  input.erase("charge"); input.erase("nspin");
+  input.insert(make_pair(string("charge"), lexical_cast<string>(charge)));
+  input.insert(make_pair(string("nspin"), lexical_cast<string>(nspin)));
+
+  shared_ptr<FCI> fciA(new HarrisonZarrabian(input, embedded_refs_.first, ncoreA, nactA, nstates));
+  fciA->compute();
+
+  shared_ptr<FCI> fciB(new HarrisonZarrabian(input, embedded_refs_.second, ncoreB, nactB, nstates));
+  fciB->compute();
+
+  return make_pair(fciA->civectors(), fciB->civectors());
 }
 
 void Dimer::localize(multimap<string, string> idata) {
@@ -497,26 +507,33 @@ void Dimer::scf(multimap<string, string> idata) {
 }
 
 shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) {
+  embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
   shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
 
+  const int nsinglets = read_input<int>(idata, "nsinglets", 1);
+  const int ntriplets = read_input<int>(idata, "ntriplets", 0);
+  const int nanions = read_input<int>(idata, "nanions", 0);
+  const int ncations = read_input<int>(idata, "ncations", 0);
+
   // Neutrals are always calculated
-  fci(idata); // A really really ugly way to do this for now. fci() needs to be removed and replaced
-  out->insert(ccvecs_);
+  out->insert(embedded_casci(idata, 0, 0, nsinglets));
   
-  if (read_input<bool>(idata, "anions", false)) {
+  if (nanions != 0) {
     out->set_anions();
-
+    out->insert(embedded_casci(idata, -1, 1, nanions));
   }
-  if (read_input<bool>(idata, "cations", false)) {
+
+  if (ncations != 0) {
     out->set_cations();
-
+    out->insert(embedded_casci(idata, +1, 1, ncations));
   }
-  if (read_input<bool>(idata, "triplets", false)) {
-    out->set_triplets();
 
+  if (ntriplets != 0) {
+    out->set_triplets();
+    out->insert(embedded_casci(idata, 0, 2, ntriplets));
   }
 
   return out;
