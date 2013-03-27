@@ -75,13 +75,11 @@ class SCF : public SCF_base {
       std::shared_ptr<const DistMatrix> aodensity;
 
       if (coeff_ == nullptr) {
-        std::shared_ptr<const DistMatrix> fock;
-        if (DF == 0) {
+        std::shared_ptr<const DistMatrix> fock = hcore;
+        if (DF == 1 && geom_->spherical()) {
           std::shared_ptr<const Matrix> aden(new AtomicDensities(geom_));
           std::shared_ptr<const Matrix> focka(new Fock<DF>(geom_, hcore_, aden, schwarz_));
           fock = focka->distmatrix();
-        } else {
-          fock = hcore;
         }
         DistMatrix intermediate = *tildex % *fock * *tildex;
         intermediate.diagonalize(eig());

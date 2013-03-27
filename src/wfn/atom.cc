@@ -308,6 +308,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
   } // end of batch loop
 
   // shuffle, but deterministic 
+  // FIXME this breaks the atomic density guess, since it relies on the shell ordering
 #if 0
   srand(0);
   random_shuffle(shells_.begin(), shells_.end(), [](const int& i) { return rand()%i; });
