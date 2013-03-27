@@ -168,7 +168,7 @@ class TwoBody : public Quantization {
     }
 };
 
-template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : Quantization {
+template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
   public:
     ThreeBody() {}
   
