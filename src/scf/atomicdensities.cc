@@ -79,7 +79,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     const int ang = i->angular_number();
     if (ang < 4) num[ang] += i->nbasis();
   }
-  num[4] = ga->nbasis() - accumulate(&num[0], &num[3], 0);
+  num[4] = ga->nbasis() - accumulate(&num[0], &num[4], 0);
 
   // overlap matrix
   shared_ptr<Overlap> overlap(new Overlap(ga));
