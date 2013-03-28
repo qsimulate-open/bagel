@@ -115,6 +115,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     if (nope[i]) {
       const int n = orb[i];
       const double occupation = std::sqrt(static_cast<double>(nope[i])/n);
+      if (nclo[i]+n > num[i]) throw runtime_error("The basis set is smaller than the minimal basis set for " + atom->name() + ". Please check.");
       for (int jj = nclo[i]; jj != nclo[i]+n; ++jj) {
         daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,jj-nclo[i]),1);
       }
