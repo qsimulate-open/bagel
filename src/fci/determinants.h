@@ -144,7 +144,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return out;
     }
 
-    int sign(std::bitset<nbit__> bit, int i) {
+    int sign(std::bitset<nbit__> bit, int i) const {
       const std::bitset<nbit__> ii( (1 << (i)) - 1 );
       bit = bit & ii; 
       return (1 - ((bit.count() & 1 ) << 1));
@@ -181,6 +181,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     int norb()  const { return norb_; }
     int nelea() const { return nelea_; }
     int neleb() const { return neleb_; }
+    bool compress() const { return compress_; }
 
     const std::vector<DetMap>& phia(const int i) const { return phia_[i]; }
     const std::vector<DetMap>& phib(const int i) const { return phib_[i]; }

@@ -183,6 +183,32 @@ shared_ptr<Dvec> Dvec::spinflip(shared_ptr<Determinants> det) const {
   return out;
 }
 
+shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<Determinants> det) const {
+  if(det == nullptr)
+    det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
+
+  vector<shared_ptr<Civec>> ccvec;
+  for (auto& cc : dvec_) {
+    ccvec.push_back(cc->spin_lower(det));
+  }
+
+  shared_ptr<Dvec> out(new Dvec(ccvec));
+  return out;
+}
+
+shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<Determinants> det) const {
+  if(det == nullptr)
+    det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
+
+  vector<shared_ptr<Civec>> ccvec;
+  for (auto& cc : dvec_) {
+    ccvec.push_back(cc->spin_raise(det));
+  }
+
+  shared_ptr<Dvec> out(new Dvec(ccvec));
+  return out;
+}
+
 void Dvec::print(const double thresh) const {
   int j = 0;
   for (auto& iter : dvec_) {

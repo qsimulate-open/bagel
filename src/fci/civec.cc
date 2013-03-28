@@ -137,6 +137,13 @@ shared_ptr<DistCivec> Civec::distcivec() const {
   return dist;
 }
 
+double Civec::spin_expectation() const {
+  shared_ptr<Civec> S2 = spin();
+  double out = ddot(*S2);
+
+  return out;
+}
+
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<Civec> Civec::spin() const {
   shared_ptr<Civec> out(new Civec(det_));
@@ -192,9 +199,97 @@ shared_ptr<Civec> Civec::spin() const {
   return out;
 }
 
-double Civec::spin_expectation() const {
-  shared_ptr<Civec> S2 = spin();
-  double out = ddot(*S2);
+// S_- = \sum_i i_beta^\dagger i_alpha
+shared_ptr<Civec> Civec::spin_lower(shared_ptr<Determinants> target_det) const {
+  if (target_det == nullptr)
+    target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
+  assert( (target_det->nelea() == det_->nelea()-1) && (target_det->nelea() == det_->nelea()+1) );
+  shared_ptr<Civec> out(new Civec(target_det));
+
+  shared_ptr<const Determinants> source_det = det_;
+  const int norb = source_det->norb();
+
+  const int source_lena = source_det->lena();
+  const int source_lenb = source_det->lenb();
+
+  double* source_data = cc_ptr_;
+  // This is a safe but probably slow implementation
+  for (int aiter = 0; aiter < source_lena; ++aiter) {
+    auto alphastring = source_det->stringa(aiter);
+    for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
+      auto betastring = source_det->stringb(biter);
+      for (int i = 0; i < norb; ++i) {
+        bitset<nbit__> abit = alphastring;
+        bitset<nbit__> bbit = betastring;
+        if (abit[i]) {
+          abit.reset(i);
+          if (!bbit[i]) {
+            bbit.set(i);
+
+            const int atarget = target_det->lexical<0>(abit);
+            const int btarget = target_det->lexical<1>(bbit);
+                  // Now the computation begins
+
+            const int aphase = source_det->sign(alphastring, i);
+            const int bphase = source_det->sign(betastring, i);
+
+            out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
+          }
+        }
+      }
+    }
+  }
+
+  const double norm = out->norm();
+  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+  out->scale(scal);
+
+  return out;
+}
+
+// S_+ = \sum_i i_alpha^\dagger i_beta
+shared_ptr<Civec> Civec::spin_raise(shared_ptr<Determinants> target_det) const {
+  if (target_det == nullptr)
+    target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
+  assert( (target_det->nelea() == det_->nelea()+1) && (target_det->nelea() == det_->nelea()-1) );
+  shared_ptr<Civec> out(new Civec(target_det));
+
+  shared_ptr<const Determinants> source_det = det_;
+  const int norb = source_det->norb();
+
+  const int source_lena = source_det->lena();
+  const int source_lenb = source_det->lenb();
+
+  double* source_data = cc_ptr_;
+  // This is a safe but probably slow implementation
+  for (int aiter = 0; aiter < source_lena; ++aiter) {
+    auto alphastring = source_det->stringa(aiter);
+    for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
+      auto betastring = source_det->stringb(biter);
+      for (int i = 0; i < norb; ++i) {
+        bitset<nbit__> abit = alphastring;
+        bitset<nbit__> bbit = betastring;
+        if (bbit[i]) {
+          bbit.reset(i);
+          if (!abit[i]) {
+            abit.set(i);
+
+            const int atarget = target_det->lexical<0>(abit);
+            const int btarget = target_det->lexical<1>(bbit);
+
+            const int aphase = source_det->sign(alphastring, i);
+            const int bphase = source_det->sign(betastring, i);
+
+            out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
+          }
+        }
+      }
+    }
+  }
+
+  const double norm = out->norm();
+  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+  out->scale(scal);
 
   return out;
 }

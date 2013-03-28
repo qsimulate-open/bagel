@@ -107,7 +107,9 @@ class Dvec {
 
     std::shared_ptr<Dvec> clone() const { return std::shared_ptr<Dvec>(new Dvec(det_, ij_)); };
     std::shared_ptr<Dvec> copy() const { return std::shared_ptr<Dvec>(new Dvec(*this)); };
-    std::shared_ptr<Dvec> spinflip (std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
+    std::shared_ptr<Dvec> spinflip(std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
+    std::shared_ptr<Dvec> spin_lower(std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
+    std::shared_ptr<Dvec> spin_raise(std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
 
     void orthog(std::shared_ptr<const Dvec> o);
     void project_out(std::shared_ptr<const Dvec> o);
