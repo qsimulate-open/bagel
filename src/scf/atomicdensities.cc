@@ -109,7 +109,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
 
   vector<int> orb{1,3,5,7};
 
-  for (int i = 0, j = 0, k = 0; i != 4; ++i) {
+  for (int i = 0, j = 0, k = 0, l = 0; i != 4; ++i) {
     for (int jj = 0; jj != nclo[i]; ++jj)
       copy_n(coeff->element_ptr(0,k+jj), ga->nbasis(), ocoeff->element_ptr(0,j+jj));
     if (nope[i]) {
@@ -117,7 +117,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
       const double occupation = std::sqrt(static_cast<double>(nope[i])/n);
       if (nclo[i]+n > num[i]) throw runtime_error("The basis set is smaller than the minimal basis set for " + atom->name() + ". Please check.");
       for (int jj = nclo[i]; jj != nclo[i]+n; ++jj) {
-        daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,jj-nclo[i]),1);
+        daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,l++),1);
       }
     }
     j += nclo[i];
@@ -149,14 +149,14 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     coeff  = shared_ptr<const Matrix>(new Matrix(tildex * ints));
     ocoeff = shared_ptr<Matrix>(new Matrix(ga->nbasis(), sclosed));
     vcoeff = shared_ptr<Matrix>(new Matrix(ga->nbasis(), ga->nbasis()));
-    for (int i = 0, j = 0, k = 0; i != 4; ++i) {
+    for (int i = 0, j = 0, k = 0, l = 0; i != 4; ++i) {
       for (int jj = 0; jj != nclo[i]; ++jj)
         copy_n(coeff->element_ptr(0,k+jj), ga->nbasis(), ocoeff->element_ptr(0,j+jj));
       if (nope[i]) {
         const int n = orb[i];
         const double occupation = std::sqrt(static_cast<double>(nope[i])/n);
         for (int jj = nclo[i]; jj != nclo[i]+n; ++jj) {
-          daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,jj-nclo[i]),1);
+          daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,l++),1);
         }
       }
       j += nclo[i];
