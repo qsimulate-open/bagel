@@ -57,7 +57,8 @@ ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2, st
 shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   shared_ptr<Matrix> out = (!swap) ? block_[0]->form_2index(o->block_[0], a) : o->block_[0]->form_2index(block_[0], a);
-  out->allreduce();
+  if (!serial_)
+    out->allreduce();
   return out;
 }
 
@@ -68,7 +69,8 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 
   // all reduce
   const size_t size = block_[0]->b2size()*o->block_[0]->b2size() * block_[0]->b1size()*o->block_[0]->b1size();
-  mpi__->allreduce(out.get(), size);
+  if (!serial_)
+    mpi__->allreduce(out.get(), size);
   return out;
 }
 
@@ -137,26 +139,24 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shared_ptr<const Shell>>& all) {
   int out1;
   vector<shared_ptr<const Shell>> out2;
-if (mpi__->size()*2 < all.size()) {
-  int start, end;
-  {
+  // TODO without *2, H does not work. Perhaps need to think a bit more
+  if (mpi__->size()*2 < all.size()) {
+    int start, end;
     StaticDist d(naux_, mpi__->size());
     tie(start, end) = d.range(mpi__->rank());
-  }
-
-  int num = 0;
-  for (auto iter = all.begin(); iter != all.end(); ++iter) {
-    if (num >= start && num < end) {
-      if (out2.empty()) out1 = num;
-      out2.push_back(*iter);
+    int num = 0;
+    for (auto iter = all.begin(); iter != all.end(); ++iter) {
+      if (num >= start && num < end) {
+        if (out2.empty()) out1 = num;
+        out2.push_back(*iter);
+      }
+      num += (*iter)->nbasis();
     }
-    num += (*iter)->nbasis();
+  } else {
+    out1 = 0;
+    out2 = all;
+    serial_ = true;
   }
-} else {
-  out1 = 0;
-  out2 = all;
-  serial_ = true;
-}
 
   return tie(out1, out2);
 }
@@ -178,7 +178,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   for (auto& b0 : ashell) {
     int o1 = 0;
     for (auto& b1 : ashell) {
-      if (o0 <= o1 && (u++ % mpi__->size() == mpi__->rank()))
+      if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
         tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this));
       o1 += b1->nbasis();
     }
@@ -242,7 +242,8 @@ shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const Matrix> tmp0
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
   shared_ptr<Matrix> out = block_[0]->form_mat(tmp0->data()+block_[0]->astart());
   // all reduce
-  out->allreduce();
+  if (!serial_)
+    out->allreduce();
   return out;
 }
 
@@ -258,7 +259,8 @@ shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, sh
   unique_ptr<double[]> tmp = block_[0]->form_vec(den);
   copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
   // All reduce
-  tmp0->allreduce();
+  if (!serial_)
+    tmp0->allreduce();
 
   tmp0 = shared_ptr<Matrix>(new Matrix(*dat2 * *tmp0));
   if (!onlyonce)
@@ -415,7 +417,8 @@ unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFul
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   unique_ptr<double[]> out = block_[0]->form_4index_1fixed(o->block_[0], a, n);
   const size_t size = block_[0]->b1size() * block_[0]->b2size() * o->block_[0]->b1size();
-  mpi__->allreduce(out.get(), size);
+  if (!serial_)
+    mpi__->allreduce(out.get(), size);
   return out;
 }
 

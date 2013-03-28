@@ -533,21 +533,25 @@ void Matrix::inverse_half(const double thresh) {
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
 
-#ifndef HAVE_SCALAPACK
-  diagonalize(vec.get());
-  for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
-    dscal_(n, s, data_.get()+i*n, 1);
+#ifdef HAVE_SCALAPACK
+  if (localized_) {
+#endif
+    diagonalize(vec.get());
+    for (int i = 0; i != n; ++i) {
+      double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+      dscal_(n, s, data_.get()+i*n, 1);
+    }
+    *this = *this ^ *this;
+#ifdef HAVE_SCALAPACK
+  } else {
+    unique_ptr<double[]> scal(new double[n]);
+    shared_ptr<DistMatrix> dist = distmatrix();
+    dist->diagonalize(vec.get());
+    for (int i = 0; i != n; ++i)
+      scal[i] = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+    dist->scale(scal.get());
+    *this = *(*dist ^ *dist).matrix();
   }
-  *this = *this ^ *this;
-#else
-  unique_ptr<double[]> scal(new double[n]);
-  shared_ptr<DistMatrix> dist = distmatrix();
-  dist->diagonalize(vec.get());
-  for (int i = 0; i != n; ++i)
-    scal[i] = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
-  dist->scale(scal.get());
-  *this = *(*dist ^ *dist).matrix();
 #endif
 
 //#ifndef NDEBUG

@@ -130,7 +130,6 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   }
 
   shared_ptr<Matrix> vden(new Matrix(*vcoeff ^ *vcoeff));
-  shared_ptr<const Matrix> prev_den;
 
   int iter = 0;
   const int maxiter = 100;
@@ -140,14 +139,11 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     *fock += *fock2 - *hcore;
 
     shared_ptr<const Matrix> aodensity(new Matrix((*ocoeff^*ocoeff)*2.0 + *vden));
-//  cout << setprecision(10) << ((*hcore+*fock) * *aodensity).trace()*0.5 << endl; 
+    cout << setprecision(10) << ((*hcore+*fock) * *aodensity).trace()*0.5 << endl; 
 
-    if (prev_den) {
-      shared_ptr<const Matrix> residual(new Matrix(*aodensity - *prev_den));
-      if (residual->rms() < 1.0e-2) break; 
-      fock = diis.extrapolate(make_pair(fock, residual));
-    }
-    prev_den = aodensity; 
+    shared_ptr<const Matrix> residual(new Matrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
+    if (residual->rms() < 1.0e-3) break; 
+    fock = diis.extrapolate(make_pair(fock, residual));
 
     Matrix ints = tildex % *fock * tildex;
 
