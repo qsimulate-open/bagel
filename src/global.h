@@ -31,6 +31,7 @@
 #include <fstream>
 #include <cassert>
 #include <stdexcept>
+#include <stdlib.h>
 #include <boost/regex.hpp>
 
 namespace bagel {
@@ -49,6 +50,20 @@ static void print_footer() {
   std::cout << "  " << std::endl;
   std::cout << "  ===============================================================" << std::endl;
   std::cout << std::endl;
+}
+
+
+template<typename T>
+std::string getenv_multiple(const T& head) {
+  char const* val = getenv(head);
+  return val ? std::string(val) : "";
+}
+
+
+template<typename T, typename ...args>
+std::string getenv_multiple(const T& head, const args&... tail) {
+  char const* val = getenv(head);
+  return val ? std::string(val) : getenv_multiple(tail...);
 }
 
 

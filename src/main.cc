@@ -93,8 +93,11 @@ int main(int argc, char** argv) {
   // setup MPI interface. It does nothing for serial runs
   mpi__ = new MPI_Interface(argc, argv);
   {
-    // TODO will be interfaced to input
-    int num_threads = 32;
+    std::string snum_threads = getenv_multiple("BAGEL_NUM_THREADS", "OMP_NUM_THREADS");
+    const int num_threads = snum_threads.empty() ? std::thread::hardware_concurrency() : lexical_cast<int>(snum_threads);
+    if (num_threads < 1)
+      throw std::runtime_error("Set BAGEL_NUM_THREADS for the number of threads used");
+    cout << "  * using " << num_threads << " threads per process" << endl;
 #ifdef _OPENMP
     omp_set_num_threads(num_threads);
 #endif
