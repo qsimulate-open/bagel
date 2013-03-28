@@ -77,6 +77,7 @@ shared_ptr<Civec> Civec::transpose(shared_ptr<Determinants> det) const {
 
 
 double Civec::ddot(const Civec& other) const {
+  assert( (lena_ == other.lena_) && (lenb_ == other.lenb_) );
   return ddot_(lena_*lenb_, cc(), 1, other.data(), 1);
 }
 
