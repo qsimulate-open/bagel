@@ -149,11 +149,8 @@ void MultiExcitonHamiltonian::common_init() {
 
   if (cispace_->triplets()) {
     shared_ptr<Dvec> Ta_A(new Dvec(collection_A.at(static_cast<int>(CS::Ta))));
-    Ta_A->print();
     shared_ptr<Dvec> T0_A(new Dvec(collection_A.at(static_cast<int>(CS::T0))));
-    T0_A->print();
     shared_ptr<Dvec> Tb_A(new Dvec(collection_A.at(static_cast<int>(CS::Tb))));
-    Tb_A->print();
 
     shared_ptr<Dvec> Ta_B(new Dvec(collection_B.at(static_cast<int>(CS::Ta))));
     shared_ptr<Dvec> T0_B(new Dvec(collection_B.at(static_cast<int>(CS::T0))));
