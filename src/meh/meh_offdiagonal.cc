@@ -79,7 +79,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
 
     shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
 
-    tmp += gamma_A * (*Fmatrix) * gamma_B;
+    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
   }
 
   //Two-body aET, type 1
@@ -131,7 +131,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
 
     shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
 
-    tmp += gamma_A * (*Fmatrix) * gamma_B;
+    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
   }
 
 
@@ -207,7 +207,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, Dime
   shared_ptr<Matrix> Jmatrix, Kmatrix;
   tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
 
-  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
 
@@ -225,7 +225,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, Dime
   shared_ptr<Matrix> Jmatrix, Kmatrix;
   tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
 
-  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
   tmp *= 0.5;
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
@@ -244,7 +244,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, Dime
   shared_ptr<Matrix> Jmatrix, Kmatrix;
   tie(Jmatrix,Kmatrix) = form_JKmatrices<0,0,1,1>();
 
-  Matrix tmp = gamma_A * (*Jmatrix) * gamma_B;
+  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
   tmp *= 0.5;
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());

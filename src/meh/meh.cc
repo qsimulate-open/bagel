@@ -58,7 +58,6 @@ void MultiExcitonHamiltonian::common_init() {
   dimerstates_ = nstates_.first * nstates_.second;
 
   jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
-  cispace_->complete();
 
   // Process DimerCISpace to form and organize needed Civecs
   vector<shared_ptr<Civec>> vec_m0_q0_A;
@@ -95,6 +94,7 @@ void MultiExcitonHamiltonian::common_init() {
 
       shared_ptr<Determinants> det = cispace_->add_det<0>(-1,0);
       tmpvec = tmpvec->spinflip(det);
+      cispace_->insert<0>(tmpvec);
       vec_m_1_qC_A.insert(vec_m_1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
     }
 
@@ -104,6 +104,7 @@ void MultiExcitonHamiltonian::common_init() {
 
       shared_ptr<Determinants> det = cispace_->add_det<1>(-1,0);
       tmpvec = tmpvec->spinflip(det);
+      cispace_->insert<1>(tmpvec);
       vec_m_1_qC_B.insert(vec_m_1_qC_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
     }
   }
@@ -116,6 +117,7 @@ void MultiExcitonHamiltonian::common_init() {
 
       shared_ptr<Determinants> det = cispace_->add_det<0>(0,1);
       tmpvec = tmpvec->spinflip(det);
+      cispace_->insert<0>(tmpvec);
       vec_m_1_qA_A.insert(vec_m_1_qA_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
     }
 
@@ -125,6 +127,7 @@ void MultiExcitonHamiltonian::common_init() {
 
       shared_ptr<Determinants> det = cispace_->add_det<1>(0,1);
       tmpvec = tmpvec->spinflip(det);
+      cispace_->insert<1>(tmpvec);
       vec_m_1_qA_B.insert(vec_m_1_qA_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
     }
   }
@@ -163,6 +166,8 @@ void MultiExcitonHamiltonian::common_init() {
     subspaces_.push_back(DimerSubspace(ChargeSpin::CbAa, dimerstates_, make_pair(Cbeta_A,Aalpha_B)));
     dimerstates_ += subspaces_.back().dimerstates();
   }
+
+  cispace_->complete();
 }
 
 Coupling MultiExcitonHamiltonian::coupling_type(DimerSubspace& AB, DimerSubspace& ApBp) {
