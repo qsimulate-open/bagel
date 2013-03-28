@@ -80,7 +80,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     if (ang < 4) num[ang] += i->nbasis();
   }
 
-  const static double offset = 1.0e5;
+  const static double offset = 1.0e6;
 
   // overlap matrix
   shared_ptr<Overlap> overlap(new Overlap(ga));
