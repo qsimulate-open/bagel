@@ -51,6 +51,7 @@ class SCF : public SCF_base {
       : SCF_base(idata_, geom, re, DF==0) {
 
       std::cout << indent << "*** RHF ***" << std::endl << std::endl;
+      if (nocc_ != noccB_) throw std::runtime_error("Closed shell SCF was called with nact != 0");
 
       // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
       // In the future, this should probably be moved to SCF_base and designed to work properly there
