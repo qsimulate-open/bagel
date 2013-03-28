@@ -365,7 +365,7 @@ AtomMap::AtomMap () {
   nclosed.insert(make_pair("os", make_tuple(12,24,20,14)));
   nclosed.insert(make_pair("ir", make_tuple(12,24,20,14)));
   nclosed.insert(make_pair("pt", make_tuple(10,24,20,14)));
-  nclosed.insert(make_pair("au", make_tuple(10,24,20,14)));
+  nclosed.insert(make_pair("au", make_tuple(10,24,30,14)));
   nclosed.insert(make_pair("hg", make_tuple(12,24,30,14)));
   nclosed.insert(make_pair("tl", make_tuple(12,24,30,14)));
   nclosed.insert(make_pair("pb", make_tuple(12,24,30,14)));
@@ -484,7 +484,7 @@ AtomMap::AtomMap () {
   nopen.insert(make_pair("os", make_tuple(0,0,6,0)));
   nopen.insert(make_pair("ir", make_tuple(0,0,7,0)));
   nopen.insert(make_pair("pt", make_tuple(1,0,9,0)));
-  nopen.insert(make_pair("au", make_tuple(1,0,10,0)));
+  nopen.insert(make_pair("au", make_tuple(1,0,0,0)));
   nopen.insert(make_pair("hg", make_tuple(0,0,0,0)));
   nopen.insert(make_pair("tl", make_tuple(0,1,0,0)));
   nopen.insert(make_pair("pb", make_tuple(0,2,0,0)));
