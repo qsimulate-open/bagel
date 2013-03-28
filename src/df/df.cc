@@ -49,7 +49,7 @@ using namespace bagel;
 
 
 ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2, std::shared_ptr<const ParallelDF> df, std::shared_ptr<Matrix> dat)
- : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat) {
+ : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat), serial_(df ? df->serial_ : false) {
 
 }
 
@@ -76,12 +76,16 @@ unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, con
 shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
 #ifdef HAVE_MPI_H
-  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
-  shared_ptr<DFDistT> work2(new DFDistT(o));
-  return work->form_aux_2index(work2, a).front();
+  if (!serial_) {
+    shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+    shared_ptr<DFDistT> work2(new DFDistT(o));
+    return work->form_aux_2index(work2, a).front();
+  } else {
 #else
-  return block_[0]->form_aux_2index(o->block_[0], a);
+  {
 #endif
+    return block_[0]->form_aux_2index(o->block_[0], a);
+  }
 }
 
 
@@ -130,15 +134,15 @@ void DFDist::add_direct_product(const vector<const double*> cd, const vector<con
 }
 
 
-tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shared_ptr<const Shell>>& all) const {
+tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shared_ptr<const Shell>>& all) {
+  int out1;
+  vector<shared_ptr<const Shell>> out2;
+if (mpi__->size()*2 < all.size()) {
   int start, end;
   {
     StaticDist d(naux_, mpi__->size());
     tie(start, end) = d.range(mpi__->rank());
   }
-
-  int out1;
-  vector<shared_ptr<const Shell>> out2;
 
   int num = 0;
   for (auto iter = all.begin(); iter != all.end(); ++iter) {
@@ -148,6 +152,11 @@ tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shar
     }
     num += (*iter)->nbasis();
   }
+} else {
+  out1 = 0;
+  out2 = all;
+  serial_ = true;
+}
 
   return tie(out1, out2);
 }
@@ -160,7 +169,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   vector<DFIntTask_OLD<DFDist>> tasks;
   tasks.reserve(ashell.size()*ashell.size());
 
-  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_));
+  data2_ = shared_ptr<Matrix>(new Matrix(naux_, naux_, serial_));
   const shared_ptr<const Shell> b3(new Shell(ashell.front()->spherical()));
 
   // naive static distribution
@@ -179,7 +188,9 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   // these shell loops will be distributed across threads
   TaskQueue<DFIntTask_OLD<DFDist>> tq(tasks);
   tq.compute(resources__->max_num_threads());
-  data2_->allreduce();
+
+  if (!serial_)
+    data2_->allreduce();
 
   time.tick_print("2-index ints");
 
@@ -421,21 +432,25 @@ void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFFullDist> out = clone();
 #ifdef HAVE_MPI_H
-  Timer mult(3);
-  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
-  mult.tick_print("Form DFDistT");
-  work = work->apply_J(d);
-  mult.tick_print("Application of Inverse");
-  work->get_paralleldf(out);
-  mult.tick_print("Return DFDist");
+  if (!serial_) {
+    Timer mult(3);
+    shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+    mult.tick_print("Form DFDistT");
+    work = work->apply_J(d);
+    mult.tick_print("Application of Inverse");
+    work->get_paralleldf(out);
+    mult.tick_print("Return DFDist");
+  } else {
 #else
-  auto j = block_.begin();
-  for (auto& i : out->block_) {
-    i->zero();
-    i->contrib_apply_J(*j, d);
-    ++j;
-  }
+  {
 #endif
+    auto j = block_.begin();
+    for (auto& i : out->block_) {
+      i->zero();
+      i->contrib_apply_J(*j, d);
+      ++j;
+    }
+  }
   return out; 
 }
 
@@ -443,21 +458,25 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
 shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
   shared_ptr<DFHalfDist> out = clone();
 #ifdef HAVE_MPI_H
-  Timer mult(3);
-  shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
-  mult.tick_print("Form DFDistT");
-  work = work->apply_J(d);
-  mult.tick_print("Applicatoin of Inverse");
-  work->get_paralleldf(out);
-  mult.tick_print("Return DFDist");
+  if (!serial_) {
+    Timer mult(3);
+    shared_ptr<DFDistT> work(new DFDistT(shared_from_this()));
+    mult.tick_print("Form DFDistT");
+    work = work->apply_J(d);
+    mult.tick_print("Applicatoin of Inverse");
+    work->get_paralleldf(out);
+    mult.tick_print("Return DFDist");
+  } else {
 #else
-  auto j = block_.begin();
-  for (auto& i : out->block_) {
-    i->zero();
-    i->contrib_apply_J(*j, d);
-    ++j;
-  }
+  {
 #endif
+    auto j = block_.begin();
+    for (auto& i : out->block_) {
+      i->zero();
+      i->contrib_apply_J(*j, d);
+      ++j;
+    }
+  }
   return out;
 }
 

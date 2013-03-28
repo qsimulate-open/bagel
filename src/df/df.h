@@ -62,6 +62,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     // AO two-index integrals ^ -1/2
     std::shared_ptr<Matrix> data2_;
 
+    bool serial_;
 
   public:
     ParallelDF(const size_t, const size_t, const size_t,
@@ -114,7 +115,7 @@ class DFDist : public ParallelDF {
     // compute 2-index integrals ERI
     void compute_2index(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
 
-    std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all) const;
+    std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
     DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>(),
@@ -195,8 +196,9 @@ class DFDist_ints : public DFDist {
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
-      for (auto& i : block_)
-        i->average();
+      if (!serial_)
+        for (auto& i : block_)
+          i->average();
       time.tick_print("3-index ints post");
     }
 
@@ -237,7 +239,7 @@ class DFHalfDist : public ParallelDF {
   protected:
 
   public:
-    DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2()) { df_ = df; }
+    DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2(), df) { }
 
     size_t nocc() const { return nindex1_; };
     size_t nbasis() const { return nindex2_; };
@@ -269,7 +271,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
   public:
-    DFFullDist(const std::shared_ptr<const ParallelDF> df, const int nocc1, const int nocc2) : ParallelDF(df->naux(), nocc1, nocc2) { df_ = df; }
+    DFFullDist(const std::shared_ptr<const ParallelDF> df, const int nocc1, const int nocc2) : ParallelDF(df->naux(), nocc1, nocc2, df) { }
 
     int nocc1() const { return nindex1_; }
     int nocc2() const { return nindex2_; }
