@@ -297,7 +297,6 @@ void Matrix::diagonalize(double* eig) {
 shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
   if ( !( (ndim_ == mdim_) && (ndim_ == accumulate(blocks.begin(), blocks.end(), 0))) ) throw logic_error("illegal call of Matrix::diagonalize_blocks");
 
-#ifndef HAVE_SCALAPACK
   shared_ptr<Matrix> out(new Matrix(ndim_,ndim_));
 
   int location = 0;
@@ -308,10 +307,6 @@ shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
     out->copy_block(location,location,submat);
     location += block_size;
   }
-#else
-  assert(false);
-  shared_ptr<Matrix> out = shared_ptr<Matrix>();
-#endif
 
   return out;
 }
@@ -606,7 +601,7 @@ void Matrix::copy_block(const int nstart, const int mstart, const shared_ptr<con
 
 
 shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
-  shared_ptr<Matrix> out(new Matrix(nsize, msize));
+  shared_ptr<Matrix> out(new Matrix(nsize, msize, localized_));
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
     copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
   return out;

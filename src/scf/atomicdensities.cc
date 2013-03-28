@@ -74,11 +74,12 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   assert(ga->spherical());
   // first the number of s, p, d, f orbitals
   shared_ptr<const Atom> atom = ga->atoms().front();
-  int num[4] = {0};
+  vector<int> num(5);
   for (auto& i : atom->shells()) {
     const int ang = i->angular_number();
     if (ang < 4) num[ang] += i->nbasis();
   }
+  num[4] = ga->nbasis() - accumulate(&num[0], &num[3], 0);
 
   const static double offset = 1.0e6;
 
@@ -92,12 +93,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   unique_ptr<double[]> eig(new double[ga->nbasis()]);
   {
     Matrix ints = tildex % *hcore * tildex;
-    for (int i = 0, k = 0; i != 4; ++i) {
-      for (int j = k; j != k+num[i]; ++j)
-        ints.element(j,j) -= (4-i)*offset; // stupid way of enforcing the symmetry
-      k += num[i];
-    }
-    ints.diagonalize(eig.get());
+    ints = *ints.diagonalize_blocks(eig.get(), num);
     coeff = shared_ptr<const Matrix>(new Matrix(tildex * ints));
   }
 
@@ -149,13 +145,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     fock = diis.extrapolate(make_pair(fock, residual));
 
     Matrix ints = tildex % *fock * tildex;
-
-    for (int i = 0, k = 0; i != 4; ++i) {
-      for (int j = k; j != k+num[i]; ++j)
-        ints.element(j,j) -= (4-i)*offset; // stupid way of enforcing the symmetry
-      k += num[i];
-    }
-    ints.diagonalize(eig.get());
+    ints = *ints.diagonalize_blocks(eig.get(), num);
 
     coeff  = shared_ptr<const Matrix>(new Matrix(tildex * ints));
     ocoeff = shared_ptr<Matrix>(new Matrix(ga->nbasis(), sclosed));
