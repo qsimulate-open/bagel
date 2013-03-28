@@ -81,8 +81,6 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   }
   num[4] = ga->nbasis() - accumulate(&num[0], &num[3], 0);
 
-  const static double offset = 1.0e6;
-
   // overlap matrix
   shared_ptr<Overlap> overlap(new Overlap(ga));
   // block diagonal structure is (should be)  maintained
