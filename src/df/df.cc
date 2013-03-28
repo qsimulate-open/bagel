@@ -153,6 +153,7 @@ tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shar
       num += (*iter)->nbasis();
     }
   } else {
+    cout << endl << "   *** Warning *** Since the number of auxiliary shells is too small, we do not parallelize the Fock builder." << endl << endl;
     out1 = 0;
     out2 = all;
     serial_ = true;
