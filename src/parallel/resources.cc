@@ -34,7 +34,7 @@
 using namespace std;
 using namespace bagel;
 
-StackMem::StackMem() : pointer_(0LU), total_(10000000LU) { // TODO 80MByte
+StackMem::StackMem() : pointer_(0LU), total_(20000000LU) { // TODO 80MByte
   stack_area_ = unique_ptr<double[]>(new double[total_]);
 
   // in case we use Libint for ERI
