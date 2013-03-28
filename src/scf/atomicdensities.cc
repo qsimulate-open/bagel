@@ -70,7 +70,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
 
 shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geometry> ga) const {
-  // this thing does not work with cartesian basis 
+  // this thing does not work with cartesian basis
   assert(ga->spherical());
   // first the number of s, p, d, f orbitals
   shared_ptr<const Atom> atom = ga->atoms().front();
@@ -83,10 +83,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   const static double offset = 1.0e5;
 
   // overlap matrix
-  shared_ptr<const Overlap> overlap(new Overlap(ga));
+  shared_ptr<Overlap> overlap(new Overlap(ga));
   // block diagonal structure is (should be)  maintained
-  TildeX tildex(overlap, 1.0e-8);
-  shared_ptr<const Hcore> hcore(new Hcore(ga));
+  TildeX tildex(overlap, 1.0e-5);
+  shared_ptr<Hcore> hcore(new Hcore(ga));
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
   unique_ptr<double[]> eig(new double[ga->nbasis()]);
@@ -108,7 +108,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   const int sclosed = get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed);
   const int sopen   = get<0>(nopen)  +get<1>(nopen)  +get<2>(nopen)  +get<3>(nopen);
   if (sclosed+sopen != ga->nele())
-    throw logic_error("Inconsistent nclosed and nopen. See AtomMap"); 
+    throw logic_error("Inconsistent nclosed and nopen. See AtomMap");
 
   shared_ptr<Matrix> ocoeff(new Matrix(ga->nbasis(), ga->nbasis()));
   shared_ptr<Matrix> vcoeff(new Matrix(ga->nbasis(), ga->nbasis()));
@@ -125,7 +125,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
         daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,jj-nclo[i]),1);
       }
     }
-    j += nclo[i];  
+    j += nclo[i];
     k += num[i];
   }
 
@@ -133,16 +133,19 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
 
   int iter = 0;
   const int maxiter = 100;
+  double prev_energy = 0.0;
   for (; iter != maxiter; ++iter) {
     shared_ptr<Matrix> fock = sclosed ? shared_ptr<Matrix>(new Fock<1>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), true)) : shared_ptr<Matrix>(new Matrix(*hcore));
     shared_ptr<Matrix> fock2(new Fock<1>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false, 0.0));
     *fock += *fock2 - *hcore;
 
     shared_ptr<const Matrix> aodensity(new Matrix((*ocoeff^*ocoeff)*2.0 + *vden));
-    cout << setprecision(10) << ((*hcore+*fock) * *aodensity).trace()*0.5 << endl; 
+    const double energy = ((*hcore+*fock) * *aodensity).trace()*0.5;
+    cout << setprecision(10) << energy << endl;
 
     shared_ptr<const Matrix> residual(new Matrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
-    if (residual->rms() < 1.0e-3) break; 
+    if (residual->rms() < 1.0e-2 || fabs(energy-prev_energy) < 1.0e-4) break;
+    prev_energy = energy;
     fock = diis.extrapolate(make_pair(fock, residual));
 
     Matrix ints = tildex % *fock * tildex;
@@ -167,7 +170,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
           daxpy_(ga->nbasis(), occupation, coeff->element_ptr(0,k+jj), 1, vcoeff->element_ptr(0,jj-nclo[i]),1);
         }
       }
-      j += nclo[i];  
+      j += nclo[i];
       k += num[i];
     }
     vden = shared_ptr<Matrix>(new Matrix(*vcoeff ^ *vcoeff));
