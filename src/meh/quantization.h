@@ -155,15 +155,15 @@ class TwoBody : public Quantization {
           tmp_vec.push_back(second.compute(intermediate->data(i)));
         }
 
-        std::shared_ptr<Dvec> out(new Dvec(tmp_vec.front()->det(), norb*norb));
+        std::vector<std::shared_ptr<Civec>> out_vec;
         int ij = 0;
         for (int i = 0; i < norb; ++i) {
           for (int j = 0; j < norb; ++j, ++ij) {
-            out->data(ij) = tmp_vec.at(j)->data(i);
+            out_vec.push_back(tmp_vec.at(j)->data(i));
           }
         }
 
-        return out;
+        return std::shared_ptr<Dvec>(new Dvec(out_vec));
       }
     }
 };
@@ -187,14 +187,15 @@ template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
         }
         const int sizei = tmp_vec.front()->ij();
 
-        std::shared_ptr<Dvec> out(new Dvec(tmp_vec.front()->det(), sizei*sizejk));
+        std::vector<std::shared_ptr<Civec>> out_vec;
+        int ijk = 0;
         for (int i = 0; i < sizei; ++i) {
-          for (int jk = 0; jk < sizejk; ++jk) {
-            out->data(i * sizejk + jk) = tmp_vec.at(jk)->data(i);
+          for (int jk = 0; jk < sizejk; ++jk, ++ijk) {
+            out_vec.push_back(tmp_vec.at(jk)->data(i));
           }
         }
 
-        return out;
+        return std::shared_ptr<Dvec>(new Dvec(out_vec));
       }
       else {
         OneBody<oper3> one;
@@ -209,14 +210,16 @@ template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
         }
         const int sizeij = tmp_vec.front()->ij();
 
-        std::shared_ptr<Dvec> out(new Dvec(tmp_vec.front()->det(), sizeij*sizek));
+        std::vector<std::shared_ptr<Civec>> out_vec;
+
+        int ijk = 0;
         for (int ij = 0; ij < sizeij; ++ij) {
-          for (int k = 0; k < sizek; ++k) {
-            out->data(ij * sizek + k) = tmp_vec.at(k)->data(ij);
+          for (int k = 0; k < sizek; ++k, ++ijk) {
+            out_vec.push_back(tmp_vec.at(k)->data(ij));
           }
         }
 
-        return out;
+        return std::shared_ptr<Dvec>(new Dvec(out_vec));
       }
     }
 };

@@ -123,8 +123,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
 
   // One-body bET
   {
-    shared_ptr<Quantization> creation(new OneBody<SQ::CreateAlpha>());
-    shared_ptr<Quantization> annihilation(new OneBody<SQ::AnnihilateAlpha>());
+    shared_ptr<Quantization> creation(new OneBody<SQ::CreateBeta>());
+    shared_ptr<Quantization> annihilation(new OneBody<SQ::AnnihilateBeta>());
 
     Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
     Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);

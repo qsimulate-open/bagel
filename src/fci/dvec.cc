@@ -74,7 +74,9 @@ Dvec::Dvec(shared_ptr<const Dvec> o) : det_(o->det_), lena_(o->lena_), lenb_(o->
 Dvec::Dvec(vector<shared_ptr<Civec>> o) : det_(o.front()->det()), ij_(o.size()) {
   lena_ = det_->lena();
   lenb_ = det_->lenb();
-  dvec_ = o;
+  for (int i = 0; i != ij_; ++i) {
+    dvec_.push_back(shared_ptr<Civec>(new Civec(*(o.at(i)))));
+  }
 }
 
 

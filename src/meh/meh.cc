@@ -220,7 +220,6 @@ void MultiExcitonHamiltonian::compute() {
   }
 
   cout << "  o Computing off-diagonal blocks" << endl;
-  const int spaceij = subspaces_.size();
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -276,9 +275,9 @@ void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* targe
     for (int Ap = 0; Ap < nAp; ++Ap) {
       const int ABp = Ap + nAp * Bp;
       for (int B = 0; B < nB; ++B) {
-        const int BBp = B + nB * Bp;
+        const int BBp = Bp + nBp * B;
         for (int A = 0; A < nA; ++A) {
-          const int AAp = A + nA * Ap;
+          const int AAp = Ap + nAp * A;
           const int AB = A + nA * B;
           target[AB + nstatesAB * ABp] = source[AAp + nstatesAA * BBp];
         }
