@@ -42,26 +42,14 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace
 
   shared_ptr<Matrix> out(new Matrix(nstates, nstates));
 
-  *out += *compute_closeclose(subspace);
-  *out += *compute_closeactive(subspace);
-  *out += *compute_intra_activeactive(subspace);
-  *out += *compute_inter_activeactive(subspace);
+  *out += *compute_0e_1e(subspace);
+  *out += *compute_intra_2e(subspace);
+  *out += *compute_inter_2e(subspace, subspace);
 
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeclose(DimerSubspace& subspace) {
-  const int nstates = subspace.dimerstates();
-
-  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
-
-  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
-  out->add_diag(core);
-
-  return out;
-}
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive(DimerSubspace& subspace) {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_0e_1e(DimerSubspace& subspace) {
   const int nclosed = dimerclosed_;
   const int nact = dimeractive_;
 
@@ -74,6 +62,11 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive(DimerSubspace& s
 
   shared_ptr<Matrix> out(new Matrix(nstates, nstates));
 
+  // 0e
+  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
+  out->add_diag(core);
+
+  // 1e
   {
     shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
     shared_ptr<const Determinants> detA = ccvecA->det();
@@ -121,7 +114,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_closeactive(DimerSubspace& s
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive(DimerSubspace& subspace) {
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subspace) {
 
   const int nstatesA = subspace.nstates<0>();
   const int nstatesB = subspace.nstates<1>();
@@ -183,37 +176,44 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_activeactive(DimerSubs
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_activeactive(DimerSubspace& subspace) {
-  shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
-  shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
+// This term will couple off-diagonal blocks since it has no delta functions involved
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp) {
+  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
+  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
+  shared_ptr<const Dvec> ccvecAp = ApBp.ci<0>();
+  shared_ptr<const Dvec> ccvecBp = ApBp.ci<1>();
 
-  const int nstatesA = subspace.nstates<0>();
-  const int nstatesB = subspace.nstates<1>();
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
   const int nstates = nstatesA * nstatesB;
+
+  const int nstatesAp = ApBp.nstates<0>();
+  const int nstatesBp = ApBp.nstates<1>();
+  const int nstatesp = nstatesAp * nstatesBp;
 
   // alpha-alpha
   shared_ptr<Quantization> alpha(new TwoBody<SQ::CreateAlpha,SQ::AnnihilateAlpha>());
-  Matrix gamma_AA_alpha = *form_gamma(ccvecA, alpha);
-  Matrix gamma_BB_alpha = *form_gamma(ccvecB, alpha);
+  Matrix gamma_AA_alpha = *form_gamma(ccvecA, ccvecAp, alpha);
+  Matrix gamma_BB_alpha = *form_gamma(ccvecB, ccvecBp, alpha);
 
   // beta-beta
   shared_ptr<Quantization> beta(new TwoBody<SQ::CreateBeta,SQ::AnnihilateBeta>());
-  Matrix gamma_AA_beta = *form_gamma(ccvecA, beta);
-  Matrix gamma_BB_beta = *form_gamma(ccvecB, beta);
+  Matrix gamma_AA_beta = *form_gamma(ccvecA, ccvecAp, beta);
+  Matrix gamma_BB_beta = *form_gamma(ccvecB, ccvecBp, beta);
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix, Kmatrix;
   tie(Jmatrix, Kmatrix) = form_JKmatrices<0,1,0,1>();
 
-  Matrix tmp(nstatesA*nstatesA, nstatesB*nstatesB);
+  Matrix tmp(nstatesA*nstatesAp, nstatesB*nstatesBp);
 
   tmp += (gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta);
 
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
-  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesB);
+  shared_ptr<Matrix> out(new Matrix(nstates, nstatesp));
+  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
 
   return out;
 }

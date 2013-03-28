@@ -51,7 +51,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::couple_blocks(DimerSubspace& AB, Dim
   shared_ptr<Matrix> out;
 
   if (term_type == Coupling::none) { out = shared_ptr<Matrix>(new Matrix(space1->dimerstates(), space2->dimerstates())); }
-  else if (term_type == Coupling::diagonal) { throw logic_error("Diagonal blocks are being called from the offdiagonal code. Why?"); }
+  else if (term_type == Coupling::diagonal) { out = compute_inter_2e(*space1, *space2); }
   else if (term_type == Coupling::aET)      { out = compute_aET(*space1, *space2); }
   else if (term_type == Coupling::bET)      { out = compute_bET(*space1, *space2); }
   else if (term_type == Coupling::abFlip)   { out = compute_abFlip(*space1, *space2); }

@@ -74,25 +74,41 @@ enum class ChargeSpin {
   TbTa = 6
 };
 
+// This enum may supercede the above eventually. Or it may just be removed.
+enum class CS {
+  S  = 0,
+  Aa = 1,
+  Ab = 2,
+  Ca = 3,
+  Cb = 4,
+  Ta = 5,
+  T0 = 6,
+  Tb = 7
+};
+
 // What started off as a simple structure is now becoming a bonafide helper class
 class DimerSubspace {
   protected:
-    const ChargeSpin chargespin_;
-
     const int offset_;
     const int nstatesA_;
     const int nstatesB_;
+    const std::string stringA_;
+    const std::string stringB_;
 
     std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> ci_;
 
   public:
-    DimerSubspace(const ChargeSpin _cs, const int _offset, std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> _ci) : 
-      chargespin_(_cs), offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), ci_(_ci) {}
+    DimerSubspace(int& _offset, const std::string _stringA, const std::string _stringB, std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> _ci) : 
+      offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(_stringA), stringB_(_stringB),
+       ci_(_ci) { _offset += dimerstates(); }
 
-    const ChargeSpin chargespin() const { return chargespin_; }
     const int offset() const { return offset_; }
     const int dimerstates() const { return nstatesA_ * nstatesB_; }
     const int dimerindex(const int iA, const int iB) { return (iA + iB*nstatesA_); }
+    const std::string string(const int i, const int j) {
+      std::string out = stringA_ + lexical_cast<std::string>(i) + std::string(" ") + stringB_ + lexical_cast<std::string>(j);
+      return out;
+    }
 
     template <int unit> const int nstates() { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
     template <int unit> std::shared_ptr<const Dvec> ci() { return ( unit == 0 ? ci_.first : ci_.second ); }
@@ -140,16 +156,14 @@ class MultiExcitonHamiltonian {
       void compute();
 
       void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10);
-      void print_energies(const std::string title = "Adiabatic state energies", const int nstates = 10);
-      void print_adiabats(const std::string title = "Adiabats", const int nstates = 10);
-      void print(const int nstates = 10);
+      void print_adiabats(const double thresh = 0.05, const std::string title = "Adiabats", const int nstates = 10);
+      void print(const int nstates = 10, const double thresh = 0.0001);
 
       Coupling coupling_type(DimerSubspace& AB, DimerSubspace& ApBp);
 
    private:
       void common_init();
       void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
-      void reorder_matrix(const double* source, double* target, const int nA, const int nB) { reorder_matrix(source,target,nA,nA,nB,nB); }
 
       template <int A, int B, int C, int D> std::pair<int, int> index(int a, int b, int c, int d) const {
         int iA = 0, jB = 0;
@@ -162,20 +176,15 @@ class MultiExcitonHamiltonian {
 
       template <int unit> int active(int a) const { return (a + unit*nact_.first); }
 
-      const int coupling_index(std::pair<int,int> AT, std::pair<int,int> BT) const {
-        return coupling_index(AT.first,AT.second,BT.first,BT.second);
-      }
-      const int coupling_index(const int a, const int b, const int c, const int d) const {
+      int coupling_index(std::pair<int,int> AT, std::pair<int,int> BT) const { return coupling_index(AT.first,AT.second,BT.first,BT.second); }
+      int coupling_index(const int a, const int b, const int c, const int d) const {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-
-      MatrixPtr compute_closeclose(DimerSubspace& subspace);
-      MatrixPtr compute_closeactive(DimerSubspace& subspace);
-      MatrixPtr compute_intra_activeactive(DimerSubspace& subspace);
-      MatrixPtr compute_inter_activeactive(DimerSubspace& subspace);
+      MatrixPtr compute_0e_1e(DimerSubspace& subspace);
+      MatrixPtr compute_intra_2e(DimerSubspace& subspace);
 
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata) const;
       std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr) const;
@@ -186,13 +195,19 @@ class MultiExcitonHamiltonian {
       void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, double* mo2e_ptr) const;
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
-      // gamma = < A' | a^\dagger c | A >
+      // Helper functions
+      void state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, CS cs, std::shared_ptr<const Dvec> dvec) {
+        auto& vec = ccvec.at(static_cast<int>(cs));
+        vec.insert(vec.end(), dvec->dvec().begin(), dvec->dvec().end());
+      }
+
+      template<int A, int B, int C, int D> std::pair<MatrixPtr, MatrixPtr> form_JKmatrices() const;
       MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
-      MatrixPtr form_gamma(std::shared_ptr<const Dvec> a, std::shared_ptr<Quantization> b) const { return form_gamma(a,a,b); }
 
       // Off-diagonal stuff
       MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver
 
+      MatrixPtr compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_aET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_bET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_abFlip(DimerSubspace& AB, DimerSubspace& ApBp);
@@ -200,8 +215,6 @@ class MultiExcitonHamiltonian {
       MatrixPtr compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
 
-      // Helper functions
-      template<int A, int B, int C, int D> std::pair<MatrixPtr, MatrixPtr> form_JKmatrices() const;
 };
 
 template<int A, int B, int C, int D>

@@ -36,6 +36,7 @@
 #include <src/dimer/dimer_cispace.h>
 #include <src/dimer/dimer.h>
 #include <src/util/matrix.h>
+#include <src/util/lexical_cast.h>
 #include <src/meh/meh.h>
 
 using namespace std;
@@ -60,75 +61,62 @@ void MultiExcitonHamiltonian::common_init() {
   jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
 
   // Process DimerCISpace to form and organize needed Civecs
-  vector<shared_ptr<Civec>> vec_m0_q0_A;
-  vector<shared_ptr<Civec>> vec_m0_q0_B;
-
-  vector<shared_ptr<Civec>> vec_m1_qC_A;
-  vector<shared_ptr<Civec>> vec_m_1_qC_A;
-
-  vector<shared_ptr<Civec>> vec_m1_qC_B;
-  vector<shared_ptr<Civec>> vec_m_1_qC_B;
-
-  vector<shared_ptr<Civec>> vec_m1_qA_A;
-  vector<shared_ptr<Civec>> vec_m_1_qA_A;
-
-  vector<shared_ptr<Civec>> vec_m1_qA_B;
-  vector<shared_ptr<Civec>> vec_m_1_qA_B;
+  vector<vector<shared_ptr<Civec>>> collection_A(8);
+  vector<vector<shared_ptr<Civec>>> collection_B(8);
 
   // Start by processing the singlet states
-  {
-    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,0);
-    vec_m0_q0_A.insert(vec_m0_q0_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-  }
-
-  {
-    shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(0,0);
-    vec_m0_q0_B.insert(vec_m0_q0_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-  }
+  state_inserter(collection_A, CS::S, cispace_->ccvec<0>(0,0));
+  state_inserter(collection_B, CS::S, cispace_->ccvec<1>(0,0));
 
   // Now add in cation states
   if (cispace_->cations()) {
-    {
-      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(0,-1);
-      vec_m1_qC_A.insert(vec_m1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    state_inserter(collection_A, CS::Ca, cispace_->ccvec<0>(0,-1));
+    auto flippedA = cispace_->ccvec<0>(0,-1)->spinflip(cispace_->add_det<0>(-1,0));
+    cispace_->insert<0>(flippedA);
+    state_inserter(collection_A, CS::Cb, flippedA);
 
-      shared_ptr<Determinants> det = cispace_->add_det<0>(-1,0);
-      tmpvec = tmpvec->spinflip(det);
-      cispace_->insert<0>(tmpvec);
-      vec_m_1_qC_A.insert(vec_m_1_qC_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-    }
-
-    {
-      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(0,-1);
-      vec_m1_qC_B.insert(vec_m1_qC_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-
-      shared_ptr<Determinants> det = cispace_->add_det<1>(-1,0);
-      tmpvec = tmpvec->spinflip(det);
-      cispace_->insert<1>(tmpvec);
-      vec_m_1_qC_B.insert(vec_m_1_qC_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
-    }
+    state_inserter(collection_B, CS::Ca, cispace_->ccvec<1>(0,-1));
+    auto flippedB = cispace_->ccvec<1>(0,-1)->spinflip(cispace_->add_det<1>(-1,0));
+    cispace_->insert<1>(flippedB);
+    state_inserter(collection_B, CS::Cb, flippedB);
   }
 
   // Now for the anion states
-  if(cispace_->anions()) {
-    {
-      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<0>(1,0);
-      vec_m1_qA_A.insert(vec_m1_qA_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+  if (cispace_->anions()) {
+    state_inserter(collection_A, CS::Aa, cispace_->ccvec<0>(1,0));
+    auto flippedA = cispace_->ccvec<0>(1,0)->spinflip(cispace_->add_det<0>(0,1));
+    cispace_->insert<0>(flippedA);
+    state_inserter(collection_A, CS::Ab, flippedA);
 
-      shared_ptr<Determinants> det = cispace_->add_det<0>(0,1);
-      tmpvec = tmpvec->spinflip(det);
-      cispace_->insert<0>(tmpvec);
-      vec_m_1_qA_A.insert(vec_m_1_qA_A.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+    state_inserter(collection_B, CS::Aa, cispace_->ccvec<1>(1,0));
+    auto flippedB = cispace_->ccvec<1>(1,0)->spinflip(cispace_->add_det<1>(0,1));
+    cispace_->insert<1>(flippedB);
+    state_inserter(collection_B, CS::Ab, flippedB);
+  }
+
+  // And finally triplet states
+  if (cispace_->triplets()) {
+    {
+      state_inserter(collection_A, CS::Ta, cispace_->ccvec<0>(1,-1));
+
+      auto T0A = cispace_->ccvec<0>(1,-1)->spin_lower(cispace_->add_det<0>(0,0));
+      cispace_->insert<0>(T0A);
+      state_inserter(collection_A, CS::T0, T0A);
+
+      auto TbA = cispace_->ccvec<0>(1,-1)->spinflip(cispace_->add_det<0>(-1,1));
+      cispace_->insert<0>(TbA);
+      state_inserter(collection_A, CS::Tb, TbA);
     }
-
     {
-      shared_ptr<const Dvec> tmpvec = cispace_->ccvec<1>(1,0);
-      vec_m1_qA_B.insert(vec_m1_qA_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+      state_inserter(collection_B, CS::Ta, cispace_->ccvec<1>(1,-1));
 
-      shared_ptr<Determinants> det = cispace_->add_det<1>(0,1);
-      tmpvec = tmpvec->spinflip(det);
-      cispace_->insert<1>(tmpvec);
-      vec_m_1_qA_B.insert(vec_m_1_qA_B.end(), tmpvec->dvec().begin(), tmpvec->dvec().end());
+      auto T0B = cispace_->ccvec<1>(1,-1)->spin_lower(cispace_->add_det<1>(0,0));
+      cispace_->insert<1>(T0B);
+      state_inserter(collection_B, CS::T0, T0B);
+
+      auto TbB = cispace_->ccvec<1>(1,-1)->spinflip(cispace_->add_det<1>(-1,1));
+      cispace_->insert<1>(TbB);
+      state_inserter(collection_B, CS::Tb, TbB);
     }
   }
 
@@ -136,35 +124,44 @@ void MultiExcitonHamiltonian::common_init() {
   dimerstates_ = 0;
 
   // First, singlets
-  shared_ptr<Dvec> S_A(new Dvec(vec_m0_q0_A));
-  shared_ptr<Dvec> S_B(new Dvec(vec_m0_q0_B));
+  shared_ptr<Dvec> SA(new Dvec(collection_A.at(static_cast<int>(CS::S))));
+  shared_ptr<Dvec> SB(new Dvec(collection_B.at(static_cast<int>(CS::S))));
 
-  subspaces_.push_back(DimerSubspace(ChargeSpin::SS, dimerstates_, make_pair(S_A,S_B)));
-  dimerstates_ += subspaces_.back().dimerstates();
+  subspaces_.push_back(DimerSubspace(dimerstates_, " S", " S", make_pair(SA,SB)));
 
   // Now, AC, if we've got em
   if (cispace_->anions() && cispace_->cations()) {
-    shared_ptr<Dvec> Aalpha_A(new Dvec(vec_m1_qA_A));
-    shared_ptr<Dvec> Abeta_A(new Dvec(vec_m_1_qA_A));
-    shared_ptr<Dvec> Aalpha_B(new Dvec(vec_m1_qA_B));
-    shared_ptr<Dvec> Abeta_B(new Dvec(vec_m_1_qA_B));
+    shared_ptr<Dvec> Aa_A(new Dvec(collection_A.at(static_cast<int>(CS::Aa))));
+    shared_ptr<Dvec> Ab_A(new Dvec(collection_A.at(static_cast<int>(CS::Ab))));
+    shared_ptr<Dvec> Aa_B(new Dvec(collection_B.at(static_cast<int>(CS::Aa))));
+    shared_ptr<Dvec> Ab_B(new Dvec(collection_B.at(static_cast<int>(CS::Ab))));
 
-    shared_ptr<Dvec> Calpha_A(new Dvec(vec_m1_qC_A));
-    shared_ptr<Dvec> Cbeta_A(new Dvec(vec_m_1_qC_A));
-    shared_ptr<Dvec> Calpha_B(new Dvec(vec_m1_qC_B));
-    shared_ptr<Dvec> Cbeta_B(new Dvec(vec_m_1_qC_B));
+    shared_ptr<Dvec> Ca_A(new Dvec(collection_A.at(static_cast<int>(CS::Ca))));
+    shared_ptr<Dvec> Cb_A(new Dvec(collection_A.at(static_cast<int>(CS::Cb))));
+    shared_ptr<Dvec> Ca_B(new Dvec(collection_B.at(static_cast<int>(CS::Ca))));
+    shared_ptr<Dvec> Cb_B(new Dvec(collection_B.at(static_cast<int>(CS::Cb))));
 
-    subspaces_.push_back(DimerSubspace(ChargeSpin::AaCb, dimerstates_, make_pair(Aalpha_A,Cbeta_B)));
-    dimerstates_ += subspaces_.back().dimerstates();
+    subspaces_.emplace_back(dimerstates_, "Aa", "Cb", make_pair(Aa_A, Cb_B));
+    subspaces_.emplace_back(dimerstates_, "Ab", "Ca", make_pair(Ab_A, Ca_B));
+    subspaces_.emplace_back(dimerstates_, "Ca", "Ab", make_pair(Ca_A, Ab_B));
+    subspaces_.emplace_back(dimerstates_, "Cb", "Aa", make_pair(Cb_A, Aa_B));
+  }
 
-    subspaces_.push_back(DimerSubspace(ChargeSpin::AbCa, dimerstates_, make_pair(Abeta_A,Calpha_B)));
-    dimerstates_ += subspaces_.back().dimerstates();
-    
-    subspaces_.push_back(DimerSubspace(ChargeSpin::CaAb, dimerstates_, make_pair(Calpha_A,Abeta_B)));
-    dimerstates_ += subspaces_.back().dimerstates();
+  if (cispace_->triplets()) {
+    shared_ptr<Dvec> Ta_A(new Dvec(collection_A.at(static_cast<int>(CS::Ta))));
+    Ta_A->print();
+    shared_ptr<Dvec> T0_A(new Dvec(collection_A.at(static_cast<int>(CS::T0))));
+    T0_A->print();
+    shared_ptr<Dvec> Tb_A(new Dvec(collection_A.at(static_cast<int>(CS::Tb))));
+    Tb_A->print();
 
-    subspaces_.push_back(DimerSubspace(ChargeSpin::CbAa, dimerstates_, make_pair(Cbeta_A,Aalpha_B)));
-    dimerstates_ += subspaces_.back().dimerstates();
+    shared_ptr<Dvec> Ta_B(new Dvec(collection_B.at(static_cast<int>(CS::Ta))));
+    shared_ptr<Dvec> T0_B(new Dvec(collection_B.at(static_cast<int>(CS::T0))));
+    shared_ptr<Dvec> Tb_B(new Dvec(collection_B.at(static_cast<int>(CS::Tb))));
+
+    subspaces_.emplace_back(dimerstates_, "Ta", "Tb", make_pair(Ta_A, Tb_B));
+    subspaces_.emplace_back(dimerstates_, "T_", "T_", make_pair(T0_A, T0_B));
+    subspaces_.emplace_back(dimerstates_, "Tb", "Ta", make_pair(Tb_A, Ta_B));
   }
 
   cispace_->complete();
@@ -290,21 +287,27 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
   hamiltonian_->print(title, nstates);
 }
 
-void MultiExcitonHamiltonian::print_energies(const string title, const int nstates) {
+void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) {
   const int end = std::min(nstates, dimerstates_);
   cout << endl << " ===== " << title << " =====" << endl;
-  for (int istate = 0; istate < end; ++istate)
+  for (int istate = 0; istate < end; ++istate) {
     cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << endl;
+    double *eigendata = adiabats_->element_ptr(0,istate);
+    for(auto& subspace : subspaces_) {
+      const int nA = subspace.nstates<0>();
+      const int nB = subspace.nstates<1>();
+      for(int i = 0; i < nA; ++i) {
+        for(int j = 0; j < nB; ++j, ++eigendata) {
+          if ( (*eigendata)*(*eigendata) > thresh ) {
+            cout << "      " << subspace.string(i,j) << setprecision(12) << setw(20) << *eigendata << endl;
+          }
+        }
+      }
+    }
+    cout << endl;
+  }
 }
 
-void MultiExcitonHamiltonian::print_adiabats(const string title, const int nstates) {
-  adiabats_->print(title, nstates);
-}
-
-void MultiExcitonHamiltonian::print(const int nstates) {
-  print_hamiltonian("ME Hamiltonian", nstates);
-  cout << endl;
-  print_energies("Adiabatic Energies", nstates);
-  cout << endl;
-  print_adiabats("Adiabatic States", nstates);
+void MultiExcitonHamiltonian::print(const int nstates, const double thresh) {
+  print_adiabats(thresh, "Adiabatic States", nstates);
 }
