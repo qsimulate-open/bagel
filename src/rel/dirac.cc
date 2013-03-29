@@ -35,13 +35,19 @@ using namespace std;
 using namespace bagel;
 
 Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const Reference> re) : geom_(geom->relativistic()), ref_(re) {
+             const shared_ptr<const Reference> re) : ref_(re) {
+  gaunt_ = read_input<bool>(idata, "gaunt", true);
+  breit_ = read_input<bool>(idata, "breit", gaunt_);
+  geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
 Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const RelReference> re) : geom_(geom->relativistic()), relref_(re) {
+             const shared_ptr<const RelReference> re) : relref_(re) {
+  gaunt_ = read_input<bool>(idata, "gaunt", true);
+  breit_ = read_input<bool>(idata, "breit", gaunt_);
+  geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
@@ -61,9 +67,6 @@ void Dirac::common_init(const multimap<string, string>& idata) {
   ncharge_ = read_input<int>(idata, "charge", 0);
   nele_ = geom_->nele()-ncharge_;
   nneg_ = geom_->nbasis()*2;
-
-  gaunt_ = read_input<bool>(idata, "gaunt", true);
-  breit_ = read_input<bool>(idata, "breit", gaunt_);
 
   if (breit_ && !gaunt_) throw runtime_error("Breit cannot be turned on if Gaunt is off");
 }

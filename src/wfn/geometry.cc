@@ -836,7 +836,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
 }
 
 
-shared_ptr<const Geometry> Geometry::relativistic() const {
+shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   cout << "  *** Geometry (Relativistic) ***" << endl;
   Timer timer;
   // basically the same
@@ -847,8 +847,9 @@ shared_ptr<const Geometry> Geometry::relativistic() const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
-  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true);
-  geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true);
+  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+  if (do_gaunt) 
+    geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);

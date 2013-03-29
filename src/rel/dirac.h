@@ -44,7 +44,7 @@ namespace bagel {
 
 class Dirac {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const Reference> ref_;
     const std::shared_ptr<const RelReference> relref_;
 

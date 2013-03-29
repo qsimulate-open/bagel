@@ -165,8 +165,8 @@ class Geometry {
 
     // type T should be a derived class of DFDist
     template<typename T>
-    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0) const {
-      return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam));
+    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
+      return std::shared_ptr<T>(new T(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average));
     }
 
     std::shared_ptr<const Matrix> xyz() const;
@@ -182,7 +182,7 @@ class Geometry {
     std::array<std::unique_ptr<double[]>,2> compute_internal_coordinate() const;
 
     // initialize relativistic components
-    std::shared_ptr<const Geometry> relativistic() const;
+    std::shared_ptr<const Geometry> relativistic(const bool) const;
 
 };
 

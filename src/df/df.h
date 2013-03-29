@@ -196,6 +196,10 @@ class DFDist_ints : public DFDist {
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
+    }
+
+    void average_3index() { 
+      Timer time;
       if (!serial_)
         for (auto& i : block_)
           i->average();
@@ -204,7 +208,7 @@ class DFDist_ints : public DFDist {
 
   public:
     DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum) : DFDist(nbas, naux) {
+                const double thr, const bool inverse, const double dum, const bool average = false) : DFDist(nbas, naux) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
@@ -218,18 +222,22 @@ class DFDist_ints : public DFDist {
       std::tie(astart, myashell) = get_ashell(ashell);
 
       std::shared_ptr<const StaticDist> adist = make_table(astart);
+      std::shared_ptr<const StaticDist> adist_averaged = average ? std::shared_ptr<const StaticDist>(new StaticDist(naux_, mpi__->size())) : adist; 
 
       // make empty dfblocks
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       for (int i = 0; i != TBatch::nblocks(); ++i)
-        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist, adist, asize, b1size, b2size, astart, 0, 0)));
+        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist, adist_averaged, asize, b1size, b2size, astart, 0, 0)));
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
       // 2-index integrals
       compute_2index(ashell, thr, inverse);
+      // 3-index integrals, post process
+      if (average)
+        average_3index();
     }
 
 };

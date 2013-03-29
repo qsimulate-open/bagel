@@ -35,7 +35,7 @@ using namespace bagel;
 Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
 
   for (int i = 0; i != nblocks(); ++i)
-    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->naux(), geom->naux())));
+    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->naux(), geom->naux(), true)));
 
   init();
 
@@ -71,7 +71,6 @@ void Breit::computebatch(const array<shared_ptr<const Shell>,4>& input, const in
 
   for (int i = 0; i != nblocks(); ++i)
     matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
-
 
 }
 
