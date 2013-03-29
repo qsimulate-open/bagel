@@ -50,15 +50,26 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::couple_blocks(DimerSubspace& AB, Dim
 
   shared_ptr<Matrix> out;
 
-  if (term_type == Coupling::none) { out = shared_ptr<Matrix>(new Matrix(space1->dimerstates(), space2->dimerstates())); }
-  else if (term_type == Coupling::diagonal) { out = compute_inter_2e(*space1, *space2); }
-  else if (term_type == Coupling::aET)      { out = compute_aET(*space1, *space2); }
-  else if (term_type == Coupling::bET)      { out = compute_bET(*space1, *space2); }
-  else if (term_type == Coupling::abFlip)   { out = compute_abFlip(*space1, *space2); }
-  else if (term_type == Coupling::abET)     { out = compute_abET(*space1, *space2); }
-  else if (term_type == Coupling::aaET)     { out = compute_aaET(*space1, *space2); }
-  else if (term_type == Coupling::bbET)     { out = compute_bbET(*space1, *space2); }
-  else { throw logic_error("Blocks with an unknown relationship are being coupled"); }
+  switch(term_type) {
+    case Coupling::none :
+      out = shared_ptr<Matrix>(new Matrix(space1->dimerstates(), space2->dimerstates())); break;
+    case Coupling::diagonal :
+      out = compute_inter_2e(*space1, *space2); break;
+    case Coupling::aET :
+      out = compute_aET(*space1, *space2); break;
+    case Coupling::bET :
+      out = compute_bET(*space1, *space2); break;
+    case Coupling::abFlip :
+      out = compute_abFlip(*space1, *space2); break;
+    case Coupling::abET :
+      out = compute_abET(*space1, *space2); break;
+    case Coupling::aaET :
+      out = compute_aaET(*space1, *space2); break;
+    case Coupling::bbET :
+      out = compute_bbET(*space1, *space2); break;
+    default :
+      throw logic_error("Asking for a coupling type that has not been written.");
+  }
 
   if (flip) out = out->transpose();
 
