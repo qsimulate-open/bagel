@@ -151,7 +151,13 @@ class DFDist : public ParallelDF {
       return out;
     }
 
-
+    void average_3index() { 
+      Timer time;
+      if (!serial_)
+        for (auto& i : block_)
+          i->average();
+      time.tick_print("3-index ints post");
+    }
 };
 
 
@@ -196,14 +202,6 @@ class DFDist_ints : public DFDist {
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
-    }
-
-    void average_3index() { 
-      Timer time;
-      if (!serial_)
-        for (auto& i : block_)
-          i->average();
-      time.tick_print("3-index ints post");
     }
 
   public:
