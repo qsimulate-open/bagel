@@ -32,28 +32,39 @@
 using namespace std;
 using namespace bagel;
 
+// TODO batch size should be automatically determined by the memory size etc.
+const static int batchsize = 250;
+
 void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_exchange) {
 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
   assert(geom_->nbasis()*4 == coeff->ndim());
 
-  // Separate Coefficients into real and imaginary
-  array<shared_ptr<const Matrix>, 4> rocoeff;
-  array<shared_ptr<const Matrix>, 4> iocoeff;
-  array<shared_ptr<const Matrix>, 4> trocoeff;
-  array<shared_ptr<const Matrix>, 4> tiocoeff;
+  shared_ptr<ZMatrix> ocoeffall(new ZMatrix(*coeff));
+  const int nocc = coeff->mdim();
+  const int nbatch = (nocc-1) / batchsize+1;
+  StaticDist dist(nocc, nbatch);
+  vector<pair<size_t, size_t>> table = dist.atable();
 
-  for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), coeff->mdim());
-    rocoeff[i] = ocoeff->get_real_part();
-    iocoeff[i] = ocoeff->get_imag_part();
-    trocoeff[i] = rocoeff[i]->transpose();
-    tiocoeff[i] = iocoeff[i]->transpose();
-  }
+  for (auto& itable : table) {
+    // Separate Coefficients into real and imaginary
+    array<shared_ptr<const Matrix>, 4> rocoeff;
+    array<shared_ptr<const Matrix>, 4> iocoeff;
+    array<shared_ptr<const Matrix>, 4> trocoeff;
+    array<shared_ptr<const Matrix>, 4> tiocoeff;
 
-  driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
-  if (gaunt_) {
-    driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
+    for (int i = 0; i != 4; ++i) {
+      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
+      rocoeff[i] = ocoeff->get_real_part();
+      iocoeff[i] = ocoeff->get_imag_part();
+      trocoeff[i] = rocoeff[i]->transpose();
+      tiocoeff[i] = iocoeff[i]->transpose();
+    }
+
+    driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
+    if (gaunt_) {
+      driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
+    }
   }
 }
 
@@ -191,7 +202,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   // split
   list<shared_ptr<DFHalfComplex>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
-    list<shared_ptr<DFHalfComplex>> tmp = i->split(!breit);
+    list<shared_ptr<DFHalfComplex>> tmp = i->split(false);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
   }
   half_complex.clear();
@@ -218,9 +229,10 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
     for (auto& i : half_complex_exch) {
       for (auto& j : breit_2index) {
-        if (i->alpha_matches(j))
+        if (i->alpha_matches(j)) {
           half_complex_exch2.push_back(i->multiply_breit2index(j));
-        factorize(half_complex_exch2);
+          factorize(half_complex_exch2);
+        }
       }
     }
     timer.tick_print("Breit: 2-index mulitplied");
