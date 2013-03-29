@@ -37,9 +37,9 @@ using namespace bagel;
 using namespace std;
 
 
-DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist, std::shared_ptr<const StaticDist> adist_shell,
+DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
- : adist_(adist), adist_shell_(adist_shell), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
+ : adist_shell_(adist_shell), adist_(adist), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
   size_alloc_ = max(adist_->size(mpi__->rank()), asize_) * b1size_*b2size_; 
   data_ = unique_ptr<double[]>(new double[size_alloc_]);
