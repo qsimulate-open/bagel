@@ -38,16 +38,19 @@ using namespace std;
 
 
 DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
-                 const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
- : adist_shell_(adist_shell), adist_(adist), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
+                 const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
+ : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  size_alloc_ = max(adist_->size(mpi__->rank()), asize_) * b1size_*b2size_; 
+  size_alloc_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_)) * b1size_*b2size_; 
   data_ = unique_ptr<double[]>(new double[size_alloc_]);
 
 }
 
 
 void DFBlock::average() {
+  if (averaged_) throw runtime_error("illegal call of DFBlock::average");
+  averaged_ = true;
+
   // first make a send and receive buffer
   const size_t o_start = astart_;
   const size_t o_end   = o_start + asize_;
@@ -139,7 +142,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int n
       dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
   }
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, nocc, b2size_, astart_, 0, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_));
 }
 
 
@@ -153,20 +156,20 @@ shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int no
   else  // trans -> back transform
     dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, nocc, astart_, b1start_, 0));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_));
 }
 
 
 shared_ptr<DFBlock> DFBlock::clone() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_));
 }
 
 
 shared_ptr<DFBlock> DFBlock::copy() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
   copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_, adist_shell_, asize_, b1size_, b2size_, astart_, b1start_, b2start_));
+  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_));
 }
 
 
@@ -206,7 +209,7 @@ shared_ptr<DFBlock> DFBlock::swap() const {
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
       copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
 
-  shared_ptr<DFBlock> out(new DFBlock(dat, adist_, adist_shell_, asize_, b2size_, b1size_, astart_, b2start_, b1start_));
+  shared_ptr<DFBlock> out(new DFBlock(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_));
   return out;
 }
 

@@ -118,7 +118,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
           for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
             auto o2 = oa2->begin();
             for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
-              tuple<size_t, size_t> info = o->adist()->locate(*o2);
+              tuple<size_t, size_t> info = o->adist_now()->locate(*o2);
               if (get<0>(info) != mpi__->rank()) continue;
 
               array<shared_ptr<const Shell>,4> input = {{b3, *b2, *b1, *b0}};

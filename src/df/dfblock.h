@@ -47,6 +47,8 @@ class DFBlock {
     // distribution information
     const std::shared_ptr<const StaticDist> adist_shell_;
     const std::shared_ptr<const StaticDist> adist_;
+    // if true, asize is evenly distributed. If false, asize is at the shell boundary
+    bool averaged_;
  
     // dimensions of the block
     size_t asize_;
@@ -63,14 +65,14 @@ class DFBlock {
 
   public:
     // construction of a block from AO integrals
-    DFBlock(std::shared_ptr<const StaticDist> adist, std::shared_ptr<const StaticDist> adist_shell,
-            const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s);
+    DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
+            const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged = false);
 
     // construction of a block from data (unique_ptr<double[]>)
-    DFBlock(std::unique_ptr<double[]>& d, 
-            std::shared_ptr<const StaticDist> adist, std::shared_ptr<const StaticDist> adist_shell,
-            const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s)
-     : data_(std::move(d)), adist_shell_(adist_shell), adist_(adist), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { }
+    DFBlock(std::unique_ptr<double[]>& d,
+            std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
+            const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool av)
+     : data_(std::move(d)), adist_shell_(adist_shell), adist_(adist), averaged_(av), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) { }
 
     // average the asize between MPI processes (block will be described by dist_)
     void average();
@@ -83,8 +85,7 @@ class DFBlock {
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
     // dist
-    const std::shared_ptr<const StaticDist>& adist() const { return adist_; }
-    const std::shared_ptr<const StaticDist>& adist_shell() const { return adist_shell_; }
+    const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; } 
 
     // dimensions of the block
     size_t asize() const { return asize_; }

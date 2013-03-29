@@ -78,8 +78,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }
     std::shared_ptr<const DFBlock> block(const size_t i) const { return block_[i]; }
 
-    std::shared_ptr<const StaticDist> adist_shell() const { return block_[0]->adist_shell(); }
-    std::shared_ptr<const StaticDist> adist() const { return block_[0]->adist(); }
+    std::shared_ptr<const StaticDist> adist_now() const { return block_[0]->adist_now(); }
 
     void add_block(std::shared_ptr<DFBlock> o);
 
@@ -219,15 +218,15 @@ class DFDist_ints : public DFDist {
       std::vector<std::shared_ptr<const Shell>> myashell;
       std::tie(astart, myashell) = get_ashell(ashell);
 
-      std::shared_ptr<const StaticDist> adist = make_table(astart);
-      std::shared_ptr<const StaticDist> adist_averaged = average ? std::shared_ptr<const StaticDist>(new StaticDist(naux_, mpi__->size())) : adist; 
+      std::shared_ptr<const StaticDist> adist_shell = make_table(astart);
+      std::shared_ptr<const StaticDist> adist_averaged(new StaticDist(naux_, mpi__->size())); 
 
       // make empty dfblocks
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       for (int i = 0; i != TBatch::nblocks(); ++i)
-        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist, adist_averaged, asize, b1size, b2size, astart, 0, 0)));
+        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0)));
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
