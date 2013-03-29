@@ -48,7 +48,7 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
 
 
 void DFBlock::average() {
-  if (averaged_) throw runtime_error("illegal call of DFBlock::average");
+  if (averaged_) return;
   averaged_ = true;
 
   // first make a send and receive buffer
