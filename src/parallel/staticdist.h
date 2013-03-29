@@ -41,11 +41,13 @@ class StaticDist {
 
   public:
     StaticDist(const size_t nele, const size_t np) : nele_(nele), nproc_(np) {
+#if 0
       if (nele_ < nproc_) {
         std::stringstream ss;
         ss << "Parallelization with StaticDist is only supported with Nproc smaller than the number of elements. Nele " << nele_ << " Nproc " << nproc_;
         throw std::runtime_error(ss.str());
       }
+#endif
 
       const size_t maxsize = (nele_-1) / nproc_ + 1;
       const size_t ares = (nele_-1) % nproc_ + 1;
