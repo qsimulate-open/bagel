@@ -515,8 +515,11 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
 
   const int nsinglets = read_input<int>(idata, "nsinglets", 1);
   const int ntriplets = read_input<int>(idata, "ntriplets", 0);
+  const int nquintets = read_input<int>(idata, "nquintets", 0);
   const int nanions = read_input<int>(idata, "nanions", 0);
+  const int ndianions = read_input<int>(idata, "ndianions", 0);
   const int ncations = read_input<int>(idata, "ncations", 0);
+  const int ndications = read_input<int>(idata, "ndications", 0);
 
   // Neutrals are always calculated
   out->insert(embedded_casci(idata, 0, 0, nsinglets));
@@ -525,15 +528,25 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
     out->set_anions();
     out->insert(embedded_casci(idata, -1, 1, nanions));
   }
-
+  if (ndianions != 0) {
+    out->set_dianions();
+    out->insert(embedded_casci(idata, -2, 2, nanions));
+  }
   if (ncations != 0) {
     out->set_cations();
     out->insert(embedded_casci(idata, +1, 1, ncations));
   }
-
+  if (ndications != 0) {
+    out->set_dications();
+    out->insert(embedded_casci(idata, +2, 2, nanions));
+  }
   if (ntriplets != 0) {
     out->set_triplets();
     out->insert(embedded_casci(idata, 0, 2, ntriplets));
+  }
+  if (nquintets != 0) {
+    out->set_quintets();
+    out->insert(embedded_casci(idata, 0, 4, nquintets));
   }
 
   return out;

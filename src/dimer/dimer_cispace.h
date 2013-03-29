@@ -54,8 +54,11 @@ class DimerCISpace {
     MapDets detspaceB_;
 
     bool anions_;
+    bool dianions_;
     bool cations_;
+    bool dications_;
     bool triplets_;
+    bool quintets_;
 
   public:
     // This constructor will build the infrastructure; civecs need to be added later
@@ -76,13 +79,25 @@ class DimerCISpace {
     void set_anions() { anions_ = true; }
     void reset_anions() { anions_ = false; }
 
+    bool dianions() { return dianions_; }
+    void set_dianions() { dianions_ = true; }
+    void reset_dianions() { dianions_ = false; }
+
     bool cations() { return cations_; }
     void set_cations() { cations_ = true; }
     void reset_cations() { cations_ = false; }
 
+    bool dications() { return dications_; }
+    void set_dications() { dications_ = true; }
+    void reset_dications() { dications_ = false; }
+
     bool triplets() { return triplets_; }
     void set_triplets() { triplets_ = true; }
     void reset_triplets() { triplets_ = false; }
+
+    bool quintets() { return quintets_; }
+    void set_quintets() { quintets_ = true; }
+    void reset_quintets() { quintets_ = false; }
 
     template<int unit> std::shared_ptr<Dvec> ccvec(int qa = 0, int qb = 0) {
       MapCIs& space = (unit == 0 ? cispaceA_ : cispaceB_);
