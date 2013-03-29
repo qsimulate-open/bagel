@@ -194,6 +194,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     list<shared_ptr<DFHalfComplex>> tmp = i->split(!breit);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
   }
+  half_complex.clear();
 
   // before computing K operators, we factorize half_complex
   factorize(half_complex_exch);
@@ -219,11 +220,11 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
       for (auto& j : breit_2index) {
         if (i->alpha_matches(j))
           half_complex_exch2.push_back(i->multiply_breit2index(j));
+        factorize(half_complex_exch2);
       }
     }
     timer.tick_print("Breit: 2-index mulitplied");
 
-    factorize(half_complex_exch2);
   } else {
     half_complex_exch2 = half_complex_exch;
   }
