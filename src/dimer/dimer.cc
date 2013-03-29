@@ -515,26 +515,54 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
 
   const int nsinglets = read_input<int>(idata, "nsinglets", 1);
   const int ntriplets = read_input<int>(idata, "ntriplets", 0);
+  const int nquintets = read_input<int>(idata, "nquintets", 0);
   const int nanions = read_input<int>(idata, "nanions", 0);
+  const int ndianions = read_input<int>(idata, "ndianions", 0);
   const int ncations = read_input<int>(idata, "ncations", 0);
+  const int ndications = read_input<int>(idata, "ndications", 0);
+
+  // Hide normal cout. I'll still print to screen, but I don't want FCI to.
+  stringstream ss;
+  std::streambuf* saved_cout = cout.rdbuf();
+  cout.rdbuf(ss.rdbuf());
+  ostream hacked_cout(saved_cout);
 
   // Neutrals are always calculated
+  hacked_cout << "   Dimer: starting computation of " << nsinglets << " singlets in each unit." << endl;
   out->insert(embedded_casci(idata, 0, 0, nsinglets));
   
   if (nanions != 0) {
     out->set_anions();
+    hacked_cout << "   Dimer: starting computation of " << nanions << " anions in each unit." << endl;
     out->insert(embedded_casci(idata, -1, 1, nanions));
   }
-
+  if (ndianions != 0) {
+    out->set_dianions();
+    hacked_cout << "   Dimer: starting computation of " << ndianions << " dianions in each unit." << endl;
+    out->insert(embedded_casci(idata, -2, 2, nanions));
+  }
   if (ncations != 0) {
     out->set_cations();
+    hacked_cout << "   Dimer: starting computation of " << ncations << " cations in each unit." << endl;
     out->insert(embedded_casci(idata, +1, 1, ncations));
   }
-
+  if (ndications != 0) {
+    out->set_dications();
+    hacked_cout << "   Dimer: starting computation of " << ndications << " dications in each unit." << endl;
+    out->insert(embedded_casci(idata, +2, 2, nanions));
+  }
   if (ntriplets != 0) {
     out->set_triplets();
+    hacked_cout << "   Dimer: starting computation of " << ntriplets << " triplets in each unit." << endl;
     out->insert(embedded_casci(idata, 0, 2, ntriplets));
   }
+  if (nquintets != 0) {
+    out->set_quintets();
+    hacked_cout << "   Dimer: starting computation of " << nquintets << " quintets in each unit." << endl;
+    out->insert(embedded_casci(idata, 0, 4, nquintets));
+  }
+
+  cout.rdbuf(saved_cout);
 
   return out;
 }

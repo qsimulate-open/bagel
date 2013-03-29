@@ -63,27 +63,8 @@ enum class Coupling {
   inv_bbET = -7
 };
 
-enum class ChargeSpin {
-  SS = 0,
-  T0T0 = 0,
-  AaCb = 1,
-  AbCa = 2,
-  CaAb = 3,
-  CbAa = 4,
-  TaTb = 5,
-  TbTa = 6
-};
-
-// This enum may supercede the above eventually. Or it may just be removed.
 enum class CS {
-  S  = 0,
-  Aa = 1,
-  Ab = 2,
-  Ca = 3,
-  Cb = 4,
-  Ta = 5,
-  T0 = 6,
-  Tb = 7
+  S, Aa, Ab, dAa, dA0, dAb, Ca, Cb, dCa, dC0, dCb, Ta, T0, Tb, Qaa, Qa, Q0, Qb, Qbb, MAX
 };
 
 // What started off as a simple structure is now becoming a bonafide helper class
@@ -196,10 +177,8 @@ class MultiExcitonHamiltonian {
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
       // Helper functions
-      void state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, CS cs, std::shared_ptr<const Dvec> dvec) {
-        auto& vec = ccvec.at(static_cast<int>(cs));
-        vec.insert(vec.end(), dvec->dvec().begin(), dvec->dvec().end());
-      }
+      template<int unit>
+      void state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, const CS cs, const int qa, const int qb);
 
       template<int A, int B, int C, int D> std::pair<MatrixPtr, MatrixPtr> form_JKmatrices() const;
       MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
@@ -216,6 +195,39 @@ class MultiExcitonHamiltonian {
       MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
 
 };
+
+template<int unit>
+void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, const CS cs, const int qa, const int qb) {
+  const double thresh = 1.0e-3;
+  std::shared_ptr<Dvec> currentvec = cispace_->ccvec<unit>(qa,qb);
+
+  const int nspin = currentvec->det()->nspin();
+  const int mult = nspin + 1;
+
+  // assuming high spin, expectation value should be
+  double expectation = static_cast<double>(nspin) * 0.5;
+  expectation = expectation * (expectation + 1.0);
+
+  const int cs_int = static_cast<int>(cs);
+  const int size = currentvec->ij();
+  for(int i = 0; i < size; ++i) {
+    if ( std::abs(expectation - currentvec->data(i)->spin_expectation()) < thresh ) {
+      ccvec.at(cs_int).push_back(currentvec->data(i));
+    }
+  }
+
+
+  for(int i = 1; i < mult; ++i) {
+    currentvec = currentvec->spin_lower(cispace_->add_det<unit>(qa-i,qb+i));
+    cispace_->insert<unit>(currentvec);
+    const int cs_position = static_cast<int>(cs) + i;
+    for(int j = 0; j < size; ++j) {
+      if ( std::abs(expectation - currentvec->data(j)->spin_expectation()) < thresh ) {
+        ccvec.at(cs_position).push_back(currentvec->data(j));
+      }
+    }
+  }
+}
 
 template<int A, int B, int C, int D>
 std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const {
