@@ -222,6 +222,9 @@ void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared
     cispace_->insert<unit>(currentvec);
     const int cs_position = static_cast<int>(cs) + i;
     for(int j = 0; j < size; ++j) {
+      const double norm = currentvec->data(j)->norm();
+      if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
+      currentvec->data(j)->scale(1.0/norm);
       if ( std::abs(expectation - currentvec->data(j)->spin_expectation()) < thresh ) {
         ccvec.at(cs_position).push_back(currentvec->data(j));
       }

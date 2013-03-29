@@ -240,10 +240,6 @@ shared_ptr<Civec> Civec::spin_lower(shared_ptr<Determinants> target_det) const {
     }
   }
 
-  const double norm = out->norm();
-  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-  out->scale(scal);
-
   return out;
 }
 
@@ -286,10 +282,6 @@ shared_ptr<Civec> Civec::spin_raise(shared_ptr<Determinants> target_det) const {
       }
     }
   }
-
-  const double norm = out->norm();
-  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-  out->scale(scal);
 
   return out;
 }
