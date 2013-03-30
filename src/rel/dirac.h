@@ -74,6 +74,8 @@ class Dirac {
     Dirac(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const RelReference> re);
 
+    ~Dirac() { geom_->discard_relativistic(); }
+
     void compute();
 
     std::shared_ptr<RelReference> conv_to_ref() const;

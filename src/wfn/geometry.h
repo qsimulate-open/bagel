@@ -83,9 +83,9 @@ class Geometry {
     // for DF calculations
     std::shared_ptr<DFDist> df_;
     // small component
-    std::shared_ptr<DFDist> dfs_;
+    mutable std::shared_ptr<DFDist> dfs_;
     // small-large component
-    std::shared_ptr<DFDist> dfsl_;
+    mutable std::shared_ptr<DFDist> dfsl_;
 
     // external field
     std::vector<double> external_;
@@ -183,6 +183,7 @@ class Geometry {
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool) const;
+    void discard_relativistic() const;
 
 };
 

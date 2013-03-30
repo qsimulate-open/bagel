@@ -859,3 +859,9 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   cout << endl;
   return geom;
 }
+
+
+void Geometry::discard_relativistic() const {
+  dfs_ = shared_ptr<DFDist>(); 
+  dfsl_ = shared_ptr<DFDist>();
+}
