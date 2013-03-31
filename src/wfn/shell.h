@@ -103,6 +103,8 @@ class Shell {
 
     std::shared_ptr<const Shell> cartesian_shell() const;
 
+    std::vector<std::shared_ptr<const Shell>> split_if_possible(const size_t batchsize) const;
+
     void init_relativistic();
 
     // Relativistic 

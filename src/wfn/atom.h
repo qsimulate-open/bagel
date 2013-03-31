@@ -51,6 +51,8 @@ class Atom {
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
+    // if needed and possible, we split shells whose nbasis are bigger than batchsize
+    void split_shells(const size_t batchsize);
 
     void common_init();
 

@@ -314,7 +314,25 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
   random_shuffle(shells_.begin(), shells_.end(), [](const int& i) { return rand()%i; });
 #endif
 
+  // TODO size is not optimized!
+  split_shells(40);
+
 }
+
+
+void Atom::split_shells(const size_t batchsize) {
+  vector<shared_ptr<const Shell>> out;
+  for (auto& i : shells_) {
+    const int nbasis = i->nbasis();
+    if (nbasis >= batchsize) { 
+      vector<shared_ptr<const Shell>> tmp = i->split_if_possible(batchsize);
+      out.insert(out.end(), tmp.begin(), tmp.end());
+    } else {
+      out.push_back(i);
+    }
+  }
+  shells_ = out;
+} 
 
 
 void Atom::print_basis() const {

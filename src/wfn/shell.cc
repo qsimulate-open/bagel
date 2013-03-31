@@ -124,6 +124,45 @@ bool Shell::operator==(const Shell& o) const {
 }
 
 
+vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize) const {
+  vector<shared_ptr<const Shell>> out;
+  // first see if there are disconnected shells
+  const int nb = nbasis_ / contraction_upper_.size();
+  assert(nbasis_%contraction_upper_.size() == 0);
+  
+  int smallest = 0;
+  int largest = contraction_upper_.front();
+  auto upper = contraction_upper_.begin();
+  auto lower = contraction_lower_.begin();
+  int nstart = 0;
+  int nend = 0;
+  while (1) {
+    ++upper;
+    ++lower;
+    ++nend;
+    // if this condition is met, we make a shell object
+    if (upper == contraction_upper_.end() || (*lower >= largest && (nend-nstart)*nb >= batchsize)) {
+      vector<double> expo(exponents_.begin()+smallest, exponents_.begin()+largest);
+      vector<vector<double>> contr;
+      vector<pair<int,int>>  range;
+      for (int i = nstart; i != nend; ++i) {
+        contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
+        range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
+      }
+      out.push_back(shared_ptr<const Shell>(new Shell(spherical_, position_, angular_number_, expo, contr, range)));
+      smallest = *lower;
+      nstart = nend;
+      if (upper == contraction_upper_.end()) break;
+    } else {
+      if (*lower < smallest) throw runtime_error("This type of basis set is not supported yet.");
+    }
+    largest = max(*upper, largest);
+  }
+  assert(nend == contraction_upper_.size());
+  return out;
+}
+
+
 // returns uncontracted cartesian shell with one higher or lower angular number if inc is + or - 1 respectively
 shared_ptr<const Shell> Shell::kinetic_balance_uncont(int inc) const {
   assert(abs(inc)==1);
