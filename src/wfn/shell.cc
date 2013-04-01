@@ -58,9 +58,8 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 }
 
 
-Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_(1,0.0), contraction_ranges_(1,make_pair(0,1)),
-        dummy_(true) {
-  contractions_.push_back(vector<double>(1,1.0));
+Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_{0.0},
+                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)}, dummy_(true) {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -121,6 +120,45 @@ bool Shell::operator==(const Shell& o) const {
   out &= contraction_upper_ == o.contraction_upper_;
   out &= contraction_lower_ == o.contraction_lower_;
   out &= nbasis_ == o.nbasis_;
+  return out;
+}
+
+
+vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize) const {
+  vector<shared_ptr<const Shell>> out;
+  // first see if there are disconnected shells
+  const int nb = nbasis_ / contraction_upper_.size();
+  assert(nbasis_%contraction_upper_.size() == 0);
+  
+  int smallest = 0;
+  int largest = contraction_upper_.front();
+  auto upper = contraction_upper_.begin();
+  auto lower = contraction_lower_.begin();
+  int nstart = 0;
+  int nend = 0;
+  while (1) {
+    ++upper;
+    ++lower;
+    ++nend;
+    // if this condition is met, we make a shell object
+    if (upper == contraction_upper_.end() || (*lower >= largest && (nend-nstart)*nb >= batchsize)) {
+      vector<double> expo(exponents_.begin()+smallest, exponents_.begin()+largest);
+      vector<vector<double>> contr;
+      vector<pair<int,int>>  range;
+      for (int i = nstart; i != nend; ++i) {
+        contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
+        range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
+      }
+      out.push_back(shared_ptr<const Shell>(new Shell(spherical_, position_, angular_number_, expo, contr, range)));
+      smallest = *lower;
+      nstart = nend;
+      if (upper == contraction_upper_.end()) break;
+    } else {
+      if (*lower < smallest) throw runtime_error("This type of basis set is not supported yet.");
+    }
+    largest = max(*upper, largest);
+  }
+  assert(nend == contraction_upper_.size());
   return out;
 }
 

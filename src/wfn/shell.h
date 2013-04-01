@@ -39,13 +39,13 @@ namespace bagel {
 class Shell {
 
   protected:
-    bool spherical_;
+    const bool spherical_;
 
     std::array<double,3> position_;
-    int angular_number_;
-    std::vector<double> exponents_;     // length of primitive basis function
-    std::vector<std::vector<double>> contractions_;  // length of contracted basis function
-    std::vector<std::pair<int, int>> contraction_ranges_;
+    const int angular_number_;
+    const std::vector<double> exponents_;     // length of primitive basis function
+    const std::vector<std::vector<double>> contractions_;  // length of contracted basis function
+    const std::vector<std::pair<int, int>> contraction_ranges_;
 
     const bool dummy_;
     std::vector<int> contraction_upper_;
@@ -102,6 +102,8 @@ class Shell {
     std::shared_ptr<const Shell> kinetic_balance_uncont(int) const;
 
     std::shared_ptr<const Shell> cartesian_shell() const;
+
+    std::vector<std::shared_ptr<const Shell>> split_if_possible(const size_t batchsize) const;
 
     void init_relativistic();
 
