@@ -109,6 +109,8 @@ class MultiExcitonHamiltonian {
 
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
+      MatrixPtr spin_; //S^2 matrix
+      MatrixPtr spinadiabats_; // S^2 matrix transformed into adiabatic basis
 
       std::vector<double> energies_; // Adiabatic energies
 
@@ -164,8 +166,11 @@ class MultiExcitonHamiltonian {
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
+      MatrixPtr compute_diagonal_spin_block(DimerSubspace& subspace);
+
       MatrixPtr compute_0e_1e(DimerSubspace& subspace);
       MatrixPtr compute_intra_2e(DimerSubspace& subspace);
+
 
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata) const;
       std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr) const;
@@ -184,7 +189,8 @@ class MultiExcitonHamiltonian {
       MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
 
       // Off-diagonal stuff
-      MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver
+      MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for H
+      MatrixPtr spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for S^2
 
       MatrixPtr compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_aET(DimerSubspace& AB, DimerSubspace& ApBp);
@@ -193,7 +199,6 @@ class MultiExcitonHamiltonian {
       MatrixPtr compute_abET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
-
 };
 
 template<int unit>
@@ -214,6 +219,7 @@ void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared
     if ( std::abs(expectation - currentvec->data(i)->spin_expectation()) < thresh ) {
       ccvec.at(cs_int).push_back(currentvec->data(i));
     }
+    else {std::cout << "Removing one state of type (qa,qb) = (" << qa << "," << qb << ") due to spin contamination." << std::endl;}
   }
 
 

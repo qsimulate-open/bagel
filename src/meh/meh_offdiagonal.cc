@@ -262,3 +262,79 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, Dime
 
   return out;
 }
+
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp) {
+  const Coupling term_type = coupling_type(AB, ApBp);
+
+  shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+
+  if ( (term_type == Coupling::abFlip) || (term_type == Coupling::baFlip) ) {
+    shared_ptr<Dvec> SA, SB;
+
+    shared_ptr<const Dvec> Ap = ApBp.ci<0>();
+    shared_ptr<const Dvec> Bp = ApBp.ci<1>();
+    switch (term_type) {
+      case Coupling::abFlip :
+        SA = AB.ci<0>()->spin_lower(Ap->det());
+        SB = AB.ci<1>()->spin_raise(Bp->det());
+        break;
+      case Coupling::baFlip :
+        SA = AB.ci<0>()->spin_raise(Ap->det());
+        SB = AB.ci<1>()->spin_lower(Bp->det());
+        break;
+      default: break;
+    }
+
+    const int nA = AB.nstates<0>();
+    const int nB = AB.nstates<1>();
+    const int nAp = ApBp.nstates<0>();
+    const int nBp = ApBp.nstates<1>();
+
+    for (int iBp = 0; iBp < nBp; ++iBp) {
+      for (int iAp = 0; iAp < nAp; ++iAp) {
+        for (int iB = 0; iB < nB; ++iB) {
+          for (int iA = 0; iA < nA; ++iA) {
+            // This is wasteful, but I'll come back to it
+            out->element(AB.dimerindex(iA,iB),ApBp.dimerindex(iAp,iBp)) += SA->data(iA)->ddot(*Ap->data(iAp)) * SB->data(iB)->ddot(*Bp->data(iBp));
+          }
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspace) {
+  shared_ptr<const Dvec> Ap = subspace.ci<0>();
+  shared_ptr<const Dvec> Bp = subspace.ci<1>();
+  shared_ptr<const Dvec> SA = Ap->spin_raise()->spin_lower(); // TODO: provide dets so they don't get recomputed
+  shared_ptr<const Dvec> SB = Bp->spin_raise()->spin_lower();
+
+  const int nA = subspace.nstates<0>();
+  const int nB = subspace.nstates<1>();
+
+  const double sz = 0.5*static_cast<int>(Ap->det()->nspin() + Bp->det()->nspin());
+  const double diag = sz*sz + sz;
+
+  shared_ptr<Matrix> out(new Matrix(nA*nB, nA*nB));
+
+  for (int iBp = 0; iBp < nB; ++iBp) {
+    for (int iAp = 0; iAp < nA; ++iAp) {
+      for (int iA = 0; iA < nA; ++iA) {
+        // iB = iBp
+        out->element(subspace.dimerindex(iA,iBp),subspace.dimerindex(iAp,iBp)) += SA->data(iA)->ddot(*Ap->data(iAp));
+      }
+
+      for (int iB = 0; iB < nB; ++iB) {
+        // iA = iAp
+        out->element(subspace.dimerindex(iAp,iB),subspace.dimerindex(iAp,iBp)) += SB->data(iB)->ddot(*Bp->data(iBp));
+      }
+
+      out->element(subspace.dimerindex(iAp,iBp), subspace.dimerindex(iAp,iBp)) += diag;
+    }
+  }
+
+  return out;
+}

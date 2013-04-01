@@ -67,7 +67,7 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 }
 
 
-shared_ptr<Civec> Civec::transpose(shared_ptr<Determinants> det) const {
+shared_ptr<Civec> Civec::transpose(shared_ptr<const Determinants> det) const {
   if (det == nullptr) det = det_->transpose();
   shared_ptr<Civec> ct(new Civec(det));
   double* cct = ct->data();
@@ -200,10 +200,10 @@ shared_ptr<Civec> Civec::spin() const {
 }
 
 // S_- = \sum_i i_beta^\dagger i_alpha
-shared_ptr<Civec> Civec::spin_lower(shared_ptr<Determinants> target_det) const {
+shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
     target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
-  assert( (target_det->nelea() == det_->nelea()-1) && (target_det->nelea() == det_->nelea()+1) );
+  assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
   shared_ptr<Civec> out(new Civec(target_det));
 
   shared_ptr<const Determinants> source_det = det_;
@@ -244,10 +244,10 @@ shared_ptr<Civec> Civec::spin_lower(shared_ptr<Determinants> target_det) const {
 }
 
 // S_+ = \sum_i i_alpha^\dagger i_beta
-shared_ptr<Civec> Civec::spin_raise(shared_ptr<Determinants> target_det) const {
+shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
     target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
-  assert( (target_det->nelea() == det_->nelea()+1) && (target_det->nelea() == det_->nelea()-1) );
+  assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );
   shared_ptr<Civec> out(new Civec(target_det));
 
   shared_ptr<const Determinants> source_det = det_;

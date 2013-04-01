@@ -95,7 +95,7 @@ class Civec {
 
     size_t size() const { return lena_*lenb_; }
 
-    std::shared_ptr<Civec> transpose(std::shared_ptr<Determinants> det = std::shared_ptr<Determinants>()) const;
+    std::shared_ptr<Civec> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
@@ -109,8 +109,8 @@ class Civec {
 
     double spin_expectation() const; // returns < S^2 >
     std::shared_ptr<Civec> spin() const; // returns S^2 | civec >
-    std::shared_ptr<Civec> spin_lower(std::shared_ptr<Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_-
-    std::shared_ptr<Civec> spin_raise(std::shared_ptr<Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_+
+    std::shared_ptr<Civec> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_-
+    std::shared_ptr<Civec> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_+
 
     Civec& operator*=(const double& a) { scale(a); return *this; }
     Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }

@@ -208,12 +208,12 @@ void MultiExcitonHamiltonian::compute() {
 
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 
-  cout << "  o Computing diagonal blocks" << endl; 
+  cout << "  o Computing diagonal blocks." << endl;
   for (auto& subspace : subspaces_) {
     hamiltonian_->add_block(subspace.offset(), subspace.offset(), compute_diagonal_block(subspace));
   }
 
-  cout << "  o Computing off-diagonal blocks" << endl;
+  cout << "  o Computing off-diagonal blocks." << endl;
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -226,10 +226,28 @@ void MultiExcitonHamiltonian::compute() {
     }
   }
 
+  spin_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
+
+  cout << "  o Constructing spin matrix." << endl;
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    const int ioff = iAB->offset();
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      const int joff = jAB->offset();
+
+      shared_ptr<Matrix> spin_block = spin_couple_blocks(*iAB, *jAB);
+
+      spin_->add_block(ioff, joff, spin_block);
+      spin_->add_block(joff, ioff, spin_block->transpose());
+    }
+    spin_->add_block(ioff, ioff, compute_diagonal_spin_block(*iAB));
+  }
+
   adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
 
   energies_ = vector<double>(dimerstates_, 0.0);
   adiabats_->diagonalize(energies_.data());
+
+  spinadiabats_ = shared_ptr<Matrix>(new Matrix( (*adiabats_) % (*spin_) * (*adiabats_) ));
 }
 
 
@@ -288,7 +306,7 @@ void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string t
   const int end = std::min(nstates, dimerstates_);
   cout << endl << " ===== " << title << " =====" << endl;
   for (int istate = 0; istate < end; ++istate) {
-    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << endl;
+    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << ", <S^2> = " << setprecision(4) << setw(6) << spinadiabats_->element(istate,istate) << endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
     for(auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();

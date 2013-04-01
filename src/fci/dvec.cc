@@ -171,7 +171,16 @@ void Dvec::project_out(shared_ptr<const Dvec> o) {
 #endif
 }
 
-shared_ptr<Dvec> Dvec::spinflip(shared_ptr<Determinants> det) const {
+shared_ptr<Dvec> Dvec::spin() const {
+  vector<shared_ptr<Civec>> ccvec;
+  for (auto& cc : dvec_) {
+    ccvec.push_back(cc->spin());
+  }
+
+  return shared_ptr<Dvec>(new Dvec(ccvec));
+}
+
+shared_ptr<Dvec> Dvec::spinflip(shared_ptr<const Determinants> det) const {
   if(det == nullptr) det = det_->transpose();
 
   vector<shared_ptr<Civec>> ccvec;
@@ -183,7 +192,7 @@ shared_ptr<Dvec> Dvec::spinflip(shared_ptr<Determinants> det) const {
   return out;
 }
 
-shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<Determinants> det) const {
+shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<const Determinants> det) const {
   if(det == nullptr)
     det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
 
@@ -196,7 +205,7 @@ shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<Determinants> det) const {
   return out;
 }
 
-shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<Determinants> det) const {
+shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<const Determinants> det) const {
   if(det == nullptr)
     det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
 
