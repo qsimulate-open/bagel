@@ -309,14 +309,13 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspace) {
   shared_ptr<const Dvec> Ap = subspace.ci<0>();
   shared_ptr<const Dvec> Bp = subspace.ci<1>();
-  shared_ptr<const Dvec> SA = Ap->spin_raise()->spin_lower(); // TODO: provide dets so they don't get recomputed
-  shared_ptr<const Dvec> SB = Bp->spin_raise()->spin_lower();
+  shared_ptr<const Dvec> SA = Ap->spin();
+  shared_ptr<const Dvec> SB = Bp->spin();
 
   const int nA = subspace.nstates<0>();
   const int nB = subspace.nstates<1>();
 
-  const double sz = 0.5*static_cast<int>(Ap->det()->nspin() + Bp->det()->nspin());
-  const double diag = sz*sz + sz;
+  const double sz_AB = 0.5 * static_cast<double>(Ap->det()->nspin() * Bp->det()->nspin());
 
   shared_ptr<Matrix> out(new Matrix(nA*nB, nA*nB));
 
@@ -332,7 +331,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSub
         out->element(subspace.dimerindex(iAp,iB),subspace.dimerindex(iAp,iBp)) += SB->data(iB)->ddot(*Bp->data(iBp));
       }
 
-      out->element(subspace.dimerindex(iAp,iBp), subspace.dimerindex(iAp,iBp)) += diag;
+      out->element(subspace.dimerindex(iAp,iBp), subspace.dimerindex(iAp,iBp)) += sz_AB;
     }
   }
 

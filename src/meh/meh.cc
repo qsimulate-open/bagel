@@ -97,7 +97,7 @@ void MultiExcitonHamiltonian::common_init() {
     state_inserter<1>(collection_B, CS::Ta, 1, -1);
   }
 
-  // triplet states
+  // quintets states
   if (cispace_->quintets()) {
     state_inserter<0>(collection_A, CS::Qaa, 2, -2);
     state_inserter<1>(collection_B, CS::Qaa, 2, -2);

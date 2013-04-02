@@ -63,7 +63,7 @@ class DimerCISpace {
   public:
     // This constructor will build the infrastructure; civecs need to be added later
     DimerCISpace(std::pair<int, int> nelea, std::pair<int, int> neleb, std::pair<int, int> norb) : norb_(norb), nelea_(nelea), neleb_(neleb),
-      anions_(false), cations_(false), triplets_(false) {}
+      anions_(false), dianions_(false), cations_(false), dications_(false), triplets_(false), quintets_(false) {}
 
     template<int unit> int norb() const { return (unit == 0 ? norb_.first : norb_.second); }
     template<int unit> int nelea() const { return (unit == 0 ? nelea_.first : nelea_.second); }

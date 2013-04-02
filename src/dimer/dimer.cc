@@ -540,7 +540,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
   if (ndianions > 0) {
     out->set_dianions();
     hacked_cout << "   Dimer: starting computation of " << ndianions << " dianions in each unit." << endl;
-    out->insert(embedded_casci(idata, -2, 2, nanions));
+    out->insert(embedded_casci(idata, -2, 2, ndianions));
   }
   if (ncations > 0) {
     out->set_cations();
@@ -550,7 +550,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
   if (ndications > 0) {
     out->set_dications();
     hacked_cout << "   Dimer: starting computation of " << ndications << " dications in each unit." << endl;
-    out->insert(embedded_casci(idata, +2, 2, nanions));
+    out->insert(embedded_casci(idata, +2, 2, ndications));
   }
   if (ntriplets > 0) {
     out->set_triplets();
