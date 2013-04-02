@@ -110,7 +110,7 @@ class Matrix_base {
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
 
-    void fill_upper() {
+    virtual void fill_upper() {
       assert(ndim_ == mdim_);
       for (size_t i = 0; i != mdim_; ++i)
         for (size_t j = i+1; j != ndim_; ++j)
