@@ -159,7 +159,7 @@ void Dirac::print_eig(const unique_ptr<double[]>& eig) {
 shared_ptr<RelReference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const int npos = geom_->nbasis()*2;
-  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg_, nneg_+npos)));
+  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg_, nneg_+npos), energy_));
 }
 
 

@@ -39,14 +39,16 @@ class RelReference : public std::enable_shared_from_this<RelReference> {
   protected:
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const ZMatrix> coeff_; 
+    const double energy_;
 
   public:
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c)
-     : geom_(g), coeff_(c) {
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en)
+     : geom_(g), coeff_(c), energy_(en) {
     }
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::shared_ptr<const ZMatrix> coeff() const { return coeff_; }
+    double energy() const { return energy_; }
 
     std::shared_ptr<const RelReference> project_coeff(std::shared_ptr<const Geometry> geomin) const;
 
