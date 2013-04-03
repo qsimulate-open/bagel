@@ -42,6 +42,8 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : Matrix1eArray<6>(geom, geo
       if (i <= j)
         index_.push_back(make_pair(i,j));
   }
+
+  localize();
   assert(matrices_.size() == index_.size());
 }
 

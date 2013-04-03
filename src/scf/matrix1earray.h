@@ -47,9 +47,11 @@ class Matrix1eArray {
 
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
 
+    bool localized_;
+
   public:
-    Matrix1eArray(const std::shared_ptr<const Geometry>);
-    Matrix1eArray(const std::shared_ptr<const Geometry>, const int n, const int m);
+    Matrix1eArray(const std::shared_ptr<const Geometry>, const bool loc = false);
+    Matrix1eArray(const std::shared_ptr<const Geometry>, const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
@@ -65,10 +67,15 @@ class Matrix1eArray {
     virtual void print(const std::string name = "") const;
     virtual void init();
 
+    void localize() {
+      localized_ = true;
+      for (auto& i : matrices_) i->localize();
+    }
+
 };
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom) : geom_(geom) {
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const bool loc) : geom_(geom), localized_(loc) {
   for(int i = 0; i < N; ++i) {
     matrices_[i] = std::shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis()));
   }
@@ -76,7 +83,7 @@ Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom) : ge
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const int n, const int m) : geom_(geom) {
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const int n, const int m, const bool loc) : geom_(geom), localized_(loc) {
   for(int i = 0; i < N; ++i) {
     matrices_[i] = std::shared_ptr<Matrix>(new Matrix(n, m));
   }
@@ -84,7 +91,7 @@ Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, cons
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.geom()) {
+Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.geom(), o.localized_) {
   const int ndim = matrices_.front()->ndim();
   const int mdim = matrices_.front()->mdim();
   for (int i = 0; i < N; ++i) {
@@ -138,7 +145,7 @@ void Matrix1eArray<N>::init() {
       }   
     }   
   }
-  //mpi__->allreduce(data_.get(), size());
+  for (auto& i : matrices_) i->allreduce();
 
 }
 
