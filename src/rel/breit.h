@@ -32,11 +32,11 @@
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/nmatrix1e.h>
+#include <src/scf/matrix1earray.h>
 
 namespace bagel {
 
-class Breit : public NMatrix1e {
+class Breit : public Matrix1eArray<6> {
   protected:
     void init() override;
     std::vector<std::pair<const int, const int>> index_;
@@ -44,12 +44,9 @@ class Breit : public NMatrix1e {
   public:
     Breit(const std::shared_ptr<const Geometry>);
 
-    void computebatch(const std::array<std::shared_ptr<const Shell>,4>&, const int, const int);
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
-    void print() const;
-
-    // 6 blocks for breit
-    constexpr static int nblocks() { return 6; }
+    void print(const std::string name) const override { Matrix1eArray<6>::print(name.empty() ? "Breit" : name); }
 
     std::pair<const int, const int> index(const int i) const { return index_[i]; }
     std::vector<std::pair<const int, const int>> index() const { return index_; }

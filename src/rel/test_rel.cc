@@ -60,7 +60,7 @@ double rel_energy(std::string filename) {
 
 BOOST_AUTO_TEST_SUITE(TEST_REL)
 
-BOOST_AUTO_TEST_CASE(DF_HF) {
+BOOST_AUTO_TEST_CASE(BREIT) {
     BOOST_CHECK(compare(rel_energy("hf_svp_breit"),          -99.92755305));
 }
 

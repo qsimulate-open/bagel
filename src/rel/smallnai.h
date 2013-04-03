@@ -30,26 +30,22 @@
 #include <memory>
 #include <array>
 #include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/nmatrix1e.h>
+#include <src/scf/matrix1earray.h>
 
 namespace bagel {
 
-class SmallNAI : public NMatrix1e {
+class SmallNAI : public Matrix1eArray<4> {
   protected:
     void init() override;
 
   public:
     SmallNAI(const std::shared_ptr<const Geometry>);
-    ~SmallNAI() {};
   
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
 
-    void print() const;
+    void print(const std::string n = "") const override;
 
-    // 4 blocks for smallnai
-    constexpr static int nblocks() { return 4; }
 };
 
 }

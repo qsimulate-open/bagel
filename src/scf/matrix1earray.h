@@ -53,9 +53,14 @@ class Matrix1eArray : public Matrix1e {
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
     std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
+    std::shared_ptr<Matrix>& operator[](const int i) { return data(i); }
+    std::shared_ptr<const Matrix>& data(const int i) const { return matrices_[i]; }
+    std::shared_ptr<const Matrix> operator[](const int i) const { return std::shared_ptr<const Matrix>(matrices_[i]); }
     constexpr const int nblocks() { return N; }
 
     void fill_upper() override { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
+
+    virtual void print(const std::string name = "") const;
 
 };
 
@@ -63,7 +68,16 @@ template <int N>
 Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom) : Matrix1e(geom) {
   for(int i = 0; i < N; ++i) {
     matrices_[i] = std::shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis()));
-    matrices_[i]->zero();
+//  matrices_[i]->zero(); // done in Matrix_base
+  }
+}
+
+
+template <int N>
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const int n, const int m) : Matrix1e(geom) {
+  for(int i = 0; i < N; ++i) {
+    matrices_[i] = std::shared_ptr<Matrix>(new Matrix(n, m));
+//  matrices_[i]->zero(); // done in Matrix_base
   }
 }
 
@@ -72,6 +86,16 @@ template <int N>
 Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.geom()) {
   for (int i = 0; i < N; ++i) {
     copy_n(o.data(i)->data(), ndim_*mdim_, this->data(i)->data()); 
+  }
+}
+
+
+template <int N>
+void Matrix1eArray<N>::print(const std::string name) const {
+  int j = 0;
+  for (auto& i : matrices_) {
+    std::stringstream ss; ss << name << " " << j++;
+    i->print(ss.str());
   }
 }
 

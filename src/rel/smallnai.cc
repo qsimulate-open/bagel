@@ -31,23 +31,15 @@
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
-
-  for (int i = 0; i != nblocks(); ++i)
-    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis())));
+SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : Matrix1eArray<4>(geom) {
 
   init();
 
 }
 
 
-void SmallNAI::print() const {
-  int j = 0;
-  for (auto& i : matrix_data_) {
-    stringstream ss;
-    ss << "SmallNAI " << j++;
-    i->print(ss.str());
-  }
+void SmallNAI::print(const string name) const {
+  Matrix1eArray<4>::print(name.empty() ? "SmallNAI" : name);
 }
 
 
@@ -61,7 +53,7 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   batch.compute();
 
   for (int i = 0; i != nblocks(); ++i)
-    matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
 
 }
 

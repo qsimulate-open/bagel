@@ -32,10 +32,7 @@
 using namespace std;
 using namespace bagel;
 
-Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
-
-  for (int i = 0; i != nblocks(); ++i)
-    matrix_data_.push_back(shared_ptr<Matrix>(new Matrix(geom->naux(), geom->naux(), true)));
+Breit::Breit(const shared_ptr<const Geometry> geom) : Matrix1eArray<6>(geom, geom->naux(), geom->naux()) {
 
   init();
 
@@ -45,32 +42,25 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : NMatrix1e(geom) {
       if (i <= j)
         index_.push_back(make_pair(i,j));
   }
-  assert (matrix_data_.size() == index_.size());
+  assert(matrices_.size() == index_.size());
 }
 
 
-void Breit::print() const {
-  int j = 0;
-  for (auto& i : matrix_data_) {
-    stringstream ss;
-    ss << "Breit " << j++;
-    i->print(ss.str());
-  }
-}
 
+void Breit::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
-void Breit::computebatch(const array<shared_ptr<const Shell>,4>& input, const int offsetb0, const int offsetb1) {
+  const shared_ptr<const Shell> dum0(new Shell(input[0]->spherical()));
+  const shared_ptr<const Shell> dum1(new Shell(input[1]->spherical()));
 
   // input = [b1, b0]
-  assert(input.size() == 4);
   const int dimb1 = input[0]->nbasis();
-  const int dimb0 = input[2]->nbasis();
-  assert(input[1]->dummy() && input[3]->dummy());
-  BreitBatch batch(input, 1.0);
+  const int dimb0 = input[1]->nbasis();
+  const array<shared_ptr<const Shell>,4> in{{input[0], dum0, input[1], dum1}};
+  BreitBatch batch(in, 1.0);
   batch.compute();
 
   for (int i = 0; i != nblocks(); ++i)
-    matrix_data_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
+    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
 
 }
 
@@ -81,14 +71,12 @@ void Breit::init() {
   for (auto& i : geom_->aux_atoms())
     shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
-  const shared_ptr<const Shell> dum(new Shell(shells.front()->spherical()));
-
   // TODO thread, parallel
   int o0 = 0;
   for (auto& a0 : shells) {
     int o1 = 0;
     for (auto& a1 : shells) {
-      array<shared_ptr<const Shell>,4> input = {{a1, dum, a0, dum}};
+      array<shared_ptr<const Shell>,2> input = {{a1, a0}};
       computebatch(input, o0, o1);
       o1 += a1->nbasis();
     }
