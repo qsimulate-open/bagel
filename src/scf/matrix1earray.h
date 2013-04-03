@@ -92,10 +92,8 @@ Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, cons
 
 template <int N>
 Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.geom(), o.localized_) {
-  const int ndim = matrices_.front()->ndim();
-  const int mdim = matrices_.front()->mdim();
   for (int i = 0; i < N; ++i) {
-    copy_n(o.data(i)->data(), ndim*mdim, this->data(i)->data()); 
+    *data(i) = *o.data(i);
   }
 }
 
