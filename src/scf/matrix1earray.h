@@ -54,8 +54,8 @@ class Matrix1eArray : public Matrix1e {
 
     std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
     std::shared_ptr<Matrix>& operator[](const int i) { return data(i); }
-    std::shared_ptr<const Matrix>& data(const int i) const { return matrices_[i]; }
-    std::shared_ptr<const Matrix> operator[](const int i) const { return std::shared_ptr<const Matrix>(matrices_[i]); }
+    std::shared_ptr<const Matrix> data(const int i) const { return matrices_[i]; }
+    std::shared_ptr<const Matrix> operator[](const int i) const { return matrices_[i]; }
     constexpr const int nblocks() { return N; }
 
     void fill_upper() override { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
