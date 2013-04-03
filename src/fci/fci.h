@@ -35,6 +35,7 @@
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>
 #include <src/fci/determinants.h>
+#include <src/fci/properties.h>
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
@@ -64,6 +65,9 @@ class FCI {
 
     // number of states
     int nstate_;
+
+    // properties to be calculated
+    std::vector<std::shared_ptr<CIProperties>> properties_;
 
     // total energy
     std::vector<double> energy_;

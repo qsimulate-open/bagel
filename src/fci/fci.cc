@@ -68,6 +68,9 @@ void FCI::common_init() {
     if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
   }
 
+  // Configure properties to be calculated on the final wavefunctions
+  if (read_input<bool>(idata_, "dipole", true)) properties_.push_back(shared_ptr<CIProperties>(new CIDipole(ref_, ncore_, ncore_+norb_)));
+
   // additional charge
   const int charge = read_input<int>(idata_, "charge", 0);
 
@@ -258,4 +261,9 @@ void FCI::compute() {
   shared_ptr<Dvec> s(new Dvec(davidson.civec()));
   s->print(print_thresh_);
   cc_ = shared_ptr<Dvec>(new Dvec(s));
+
+  for (auto& iprop : properties_) {
+    iprop->compute(cc_);
+    iprop->print();
+  }
 }

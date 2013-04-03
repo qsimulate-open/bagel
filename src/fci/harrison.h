@@ -50,8 +50,6 @@ namespace bagel {
 class HarrisonZarrabian : public FCI {
 
   protected:
-    //void create_Jiiii();
-
     std::shared_ptr<Space> space_;
 
     virtual void const_denom() override;
