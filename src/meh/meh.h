@@ -48,7 +48,7 @@ typedef std::shared_ptr<Matrix> MatrixPtr;
 
 enum class Coupling {
   none = 0,
-  diagonal = 1, // Probably won't be used
+  diagonal = 1,
   aET = 2,
   inv_aET = -2,
   bET = 3,
@@ -85,14 +85,14 @@ class DimerSubspace {
 
     const int offset() const { return offset_; }
     const int dimerstates() const { return nstatesA_ * nstatesB_; }
-    const int dimerindex(const int iA, const int iB) { return (iA + iB*nstatesA_); }
-    const std::string string(const int i, const int j) {
+    const int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA_); }
+    const std::string string(const int i, const int j) const {
       std::string out = stringA_ + lexical_cast<std::string>(i) + std::string(" ") + stringB_ + lexical_cast<std::string>(j);
       return out;
     }
 
-    template <int unit> const int nstates() { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
-    template <int unit> std::shared_ptr<const Dvec> ci() { return ( unit == 0 ? ci_.first : ci_.second ); }
+    template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
+    template <int unit> std::shared_ptr<const Dvec> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
     
 };
 
@@ -111,6 +111,7 @@ class MultiExcitonHamiltonian {
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
       MatrixPtr spin_; //S^2 matrix
       MatrixPtr spinadiabats_; // S^2 matrix transformed into adiabatic basis
+      std::vector<std::pair<std::string, MatrixPtr>> properties_;
 
       std::vector<double> energies_; // Adiabatic energies
 
@@ -119,12 +120,6 @@ class MultiExcitonHamiltonian {
       const int dimerclosed_;
       const int dimeractive_;
       int dimerstates_;
-
-      // Static variables (for a little extra clarity)
-      static const int Alpha = 0;
-      static const int Beta = 1;
-      static const int Annihilate = 0;
-      static const int Create = 1;
 
       // Localized quantities
       std::pair<const int, const int> nact_;
@@ -142,7 +137,7 @@ class MultiExcitonHamiltonian {
       void print_adiabats(const double thresh = 0.05, const std::string title = "Adiabats", const int nstates = 10);
       void print(const int nstates = 10, const double thresh = 0.0001);
 
-      Coupling coupling_type(DimerSubspace& AB, DimerSubspace& ApBp);
+      const Coupling coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const;
 
    private:
       void common_init();
@@ -164,21 +159,23 @@ class MultiExcitonHamiltonian {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
+      MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
+      MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;
+      MatrixPtr compute_diagonal_1e(const DimerSubspace& subspace, const double* hAA, const double* hBB, const double diag) const;
+
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
       MatrixPtr compute_diagonal_spin_block(DimerSubspace& subspace);
 
-      MatrixPtr compute_0e_1e(DimerSubspace& subspace);
       MatrixPtr compute_intra_2e(DimerSubspace& subspace);
 
+      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* hdata) const;
+      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, const double* mo2e_ptr) const;
 
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, double* hdata) const;
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, double* mo2e_ptr) const;
-
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, double* mo2e_ptr, const int nact) const;
+      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
+      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
       void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, double* mo2e_ptr) const;
+      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
       
       // Helper functions

@@ -42,74 +42,11 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace
 
   shared_ptr<Matrix> out(new Matrix(nstates, nstates));
 
-  *out += *compute_0e_1e(subspace);
+  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
+  *out += *compute_diagonal_1e(subspace, jop_->mo1e_first(), jop_->mo1e_second(), core);
+
   *out += *compute_intra_2e(subspace);
   *out += *compute_inter_2e(subspace, subspace);
-
-  return out;
-}
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_0e_1e(DimerSubspace& subspace) {
-  const int nclosed = dimerclosed_;
-  const int nact = dimeractive_;
-
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  const int nstatesA = subspace.nstates<0>();
-  const int nstatesB = subspace.nstates<1>();
-  const int nstates = subspace.dimerstates();
-
-  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
-
-  // 0e
-  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
-  out->add_diag(core);
-
-  // 1e
-  {
-    shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
-    shared_ptr<const Determinants> detA = ccvecA->det();
-
-    const int lenab = detA->lena() * detA->lenb();
-
-    shared_ptr<Dvec> sigmavecA = form_sigma_1e(ccvecA, jop_->mo1e_first());
-
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = subspace.dimerindex(stateA, stateB);
-        const double *sdataA = sigmavecA->data(stateA)->data();
-        for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-          const int stateABp = subspace.dimerindex(stateAp, stateB);
-          const double *cdataAp = ccvecA->data(stateAp)->data();
-          double value = ddot_(lenab, sdataA, 1, cdataAp, 1); 
-          out->element(stateAB, stateABp) += value;
-        }
-      }
-    }
-  }
-
-  {
-    shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
-    shared_ptr<const Determinants> detB = ccvecB->det();
-
-    const int lenab = detB->lena() * detB->lenb();
-
-    shared_ptr<Dvec> sigmavecB = form_sigma_1e(ccvecB, jop_->mo1e_second());
-
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = subspace.dimerindex(stateA, stateB);
-        const double *sdataB = sigmavecB->data(stateB)->data();
-        for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-          const int stateABp = subspace.dimerindex(stateA, stateBp);
-          const double *cdataBp = ccvecB->data(stateBp)->data();
-          double value = ddot_(lenab, sdataB, 1, cdataBp, 1);
-          out->element(stateAB, stateABp) += value;
-        }
-      }
-    }
-  }
 
   return out;
 }

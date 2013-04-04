@@ -164,7 +164,7 @@ void MultiExcitonHamiltonian::common_init() {
   cispace_->complete();
 }
 
-Coupling MultiExcitonHamiltonian::coupling_type(DimerSubspace& AB, DimerSubspace& ApBp) {
+const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
   pair<int,int> neleaAB = make_pair(AB.ci<0>()->det()->nelea(), AB.ci<1>()->det()->nelea());
   pair<int,int> nelebAB = make_pair(AB.ci<0>()->det()->neleb(), AB.ci<1>()->det()->neleb());
 
@@ -250,12 +250,102 @@ void MultiExcitonHamiltonian::compute() {
   spinadiabats_ = shared_ptr<Matrix>(new Matrix( (*adiabats_) % (*spin_) * (*adiabats_) ));
 }
 
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Matrix> hAA, shared_ptr<const Matrix> hBB, shared_ptr<const Matrix> hAB, const double core) const {
 
-std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const { 
+  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    const int ioff = iAB->offset();
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      const int joff = jAB->offset();
+
+      shared_ptr<Matrix> out_block = compute_offdiagonal_1e(*iAB, *jAB, hAB);
+
+      out->add_block(ioff, joff, out_block);
+      out->add_block(joff, ioff, out_block->transpose());
+    }
+    out->add_block(ioff, ioff, compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core));
+  }
+
+  return out;
+}
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubspace& AB, const double* hAA, const double* hBB, const double diag) const {
+  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
+  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
+  shared_ptr<const Dvec> sigmavecA = form_sigma_1e(ccvecA, hAA);
+  shared_ptr<const Dvec> sigmavecB = form_sigma_1e(ccvecB, hBB);
+
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
+  const int dimerstates = AB.dimerstates();
+
+  shared_ptr<Matrix> out(new Matrix(dimerstates, dimerstates));
+
+  for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
+    for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
+      const int stateApBp = AB.dimerindex(stateAp,stateBp);
+      // hAA
+      for(int stateA = 0; stateA < nstatesA; ++stateA) {
+        // stateB = stateBp
+        const int stateAB = AB.dimerindex(stateA,stateBp);
+        out->element(stateAB, stateApBp) += sigmavecA->data(stateAp)->ddot(*ccvecA->data(stateA));
+      }
+
+      // hBB
+      for(int stateB = 0; stateB < nstatesB; ++stateB) {
+        // stateA = stateAp
+        const int stateAB = AB.dimerindex(stateAp, stateB);
+        out->element(stateAB, stateApBp) += sigmavecB->data(stateBp)->ddot(*ccvecB->data(stateB));
+      }
+    }
+  }
+
+  out->add_diag(diag);
+
+  return out;
+}
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, shared_ptr<const Matrix> hAB) const {
+  Coupling term_type = coupling_type(AB,ApBp);
+
+  shared_ptr<Quantization> operatorA;
+  shared_ptr<Quantization> operatorB;
+
+  switch(term_type) {
+    case Coupling::aET :
+      operatorA = shared_ptr<Quantization>(new OneBody<SQ::CreateAlpha>());
+      operatorB = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateAlpha>());
+      break;
+    case Coupling::inv_aET :
+      operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateAlpha>());
+      operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateAlpha>());
+      break;
+    case Coupling::bET :
+      operatorA = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
+      operatorB = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateBeta>());
+      break;
+    case Coupling::inv_bET :
+      operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateBeta>());
+      operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
+      break;
+    default :
+      return shared_ptr<Matrix>(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+  }
+
+  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorA);
+  Matrix gamma_B = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorB);
+
+  return shared_ptr<Matrix>(new Matrix( gamma_A * (*hAB) ^ gamma_B ));
+
+}
+
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const { 
   const int nstatesA = ccvecA->ij();
   const int nstatesAp = ccvecAp->ij();
 
-  std::shared_ptr<const Determinants> detA = ccvecA->det();
+  shared_ptr<const Determinants> detA = ccvecA->det();
   const int norb = detA->norb();
   const int ij = action->ij(norb);
 
@@ -264,7 +354,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(std::shared_ptr<cons
   double *edata = tmp.data();
 
   for(int state = 0; state < nstatesA; ++state) {
-    std::shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
+    shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
 
     // | C > ^A_ac is done
     for(int statep = 0; statep < nstatesAp; ++statep) {
@@ -303,7 +393,7 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
 }
 
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) {
-  const int end = std::min(nstates, dimerstates_);
+  const int end = min(nstates, dimerstates_);
   cout << endl << " ===== " << title << " =====" << endl;
   for (int istate = 0; istate < end; ++istate) {
     cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << ", <S^2> = " << setprecision(4) << setw(6) << spinadiabats_->element(istate,istate) << endl;

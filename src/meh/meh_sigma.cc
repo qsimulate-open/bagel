@@ -40,7 +40,7 @@ static const bool tprint = false;
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> ccvec, double* hdata) const {
+shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> ccvec, const double* hdata) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -79,7 +79,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
 }
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_2e(shared_ptr<const Dvec> ccvec, double* mo2e_ptr) const {
+shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_2e(shared_ptr<const Dvec> ccvec, const double* mo2e_ptr) const {
   const int nstate = ccvec->ij();
   shared_ptr<const Determinants> base_det = ccvec->det();
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
@@ -116,7 +116,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_2e(shared_ptr<const Dvec> c
   return sigmavec;
 }
 
-void MultiExcitonHamiltonian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, double* mo2e_ptr, const int norb) const {
+void MultiExcitonHamiltonian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, const double* mo2e_ptr, const int norb) const {
   shared_ptr<const Determinants> base_det = cc->det();
 
   const double* source_base = cc->data();
@@ -129,7 +129,7 @@ void MultiExcitonHamiltonian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<C
       if (!nstring[i]) continue;
       for (int j = 0; j < i; ++j) {
         if(!nstring[j]) continue;
-        double* mo2e_ij = mo2e_ptr + norb*norb*j + norb*norb*norb*i;
+        const double* mo2e_ij = mo2e_ptr + norb*norb*j + norb*norb*norb*i;
         const int ij_phase = base_det->sign(nstring,i,j);
         bitset<nbit__> string_ij = nstring; 
         string_ij.reset(i); string_ij.reset(j);
@@ -151,7 +151,7 @@ void MultiExcitonHamiltonian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<C
   }
 }
 
-void MultiExcitonHamiltonian::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, double* mo2e_ptr, const int norb) const {
+void MultiExcitonHamiltonian::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, const double* mo2e_ptr, const int norb) const {
   shared_ptr<const Determinants> base_det = cc->det();
 
   const double* source_base = cc->data();
@@ -166,7 +166,7 @@ void MultiExcitonHamiltonian::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<C
       for (int j = 0; j < i; ++j) {
         if(!nstring[j]) continue;
         const int ij_phase = base_det->sign(nstring,i,j);
-        double* mo2e_ij = mo2e_ptr + norb*norb*j + norb*norb*norb*i;
+        const double* mo2e_ij = mo2e_ptr + norb*norb*j + norb*norb*norb*i;
         bitset<nbit__> string_ij = nstring;
         string_ij.reset(i); string_ij.reset(j);
         for (int l = 0; l != norb; ++l) {
@@ -211,7 +211,7 @@ void MultiExcitonHamiltonian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr
   }
 }
 
-void MultiExcitonHamiltonian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, double* mo2e_ptr) const {
+void MultiExcitonHamiltonian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {
   const int lenab = d->lena() * d->lenb();
   const int ij = d->ij();
 
