@@ -26,8 +26,11 @@
 #ifndef __SRC_UTIL_SERVERFLUSH_H
 #define __SRC_UTIL_SERVERFLUSH_H
 
-// TODO until GCC fixes this bug
+#ifdef __GNUC__ 
+#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
 #define _GLIBCXX_USE_NANOSLEEP
+#endif
+#endif
 #include <atomic>
 #include <thread>
 #include <src/util/constants.h>
