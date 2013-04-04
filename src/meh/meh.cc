@@ -115,7 +115,7 @@ void MultiExcitonHamiltonian::common_init() {
   }
 
   // First, singlets
-  int ss = static_cast<int>(ss);
+  int ss = static_cast<int>(CS::S);
   subspaces_.emplace_back(dimerstates_, "  S", "  S", make_pair(dvecs_A.at(ss),dvecs_B.at(ss)));
 
   // Now, AC, if we've got em
