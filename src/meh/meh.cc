@@ -34,6 +34,7 @@
 #include <src/wfn/geometry.h>
 #include <src/scf/coeff.h>
 #include <src/dimer/dimer_cispace.h>
+#include <src/dimer/dimer_prop.h>
 #include <src/dimer/dimer.h>
 #include <src/util/matrix.h>
 #include <src/util/lexical_cast.h>
@@ -248,6 +249,17 @@ void MultiExcitonHamiltonian::compute() {
   adiabats_->diagonalize(energies_.data());
 
   spinadiabats_ = shared_ptr<Matrix>(new Matrix( (*adiabats_) % (*spin_) * (*adiabats_) ));
+
+  cout << "  o Computing properties" << endl;
+  DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
+  array<string,3> mu_labels = {{"x", "y", "z"}};
+  for (int i = 0; i < 3; ++i) {
+    string label("mu_");
+    label += mu_labels[i];
+    shared_ptr<Matrix> tmp = compute_1e_prop(dipole.dipoles<0>(i), dipole.dipoles<1>(i), dipole.cross_dipole(i), dipole.core_dipole(i));
+    shared_ptr<Matrix> prop(new Matrix( (*adiabats_) % (*tmp) * (*adiabats_) ));
+    properties_.push_back(make_pair(label, prop));
+  }
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Matrix> hAA, shared_ptr<const Matrix> hBB, shared_ptr<const Matrix> hAB, const double core) const {
@@ -289,14 +301,14 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         // stateB = stateBp
         const int stateAB = AB.dimerindex(stateA,stateBp);
-        out->element(stateAB, stateApBp) += sigmavecA->data(stateAp)->ddot(*ccvecA->data(stateA));
+        out->element(stateAB, stateApBp) += sigmavecA->data(stateA)->ddot(*ccvecA->data(stateAp));
       }
 
       // hBB
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         // stateA = stateAp
         const int stateAB = AB.dimerindex(stateAp, stateB);
-        out->element(stateAB, stateApBp) += sigmavecB->data(stateBp)->ddot(*ccvecB->data(stateB));
+        out->element(stateAB, stateApBp) += sigmavecB->data(stateB)->ddot(*ccvecB->data(stateBp));
       }
     }
   }
@@ -334,10 +346,13 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
   }
 
   Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorA);
-  Matrix gamma_B = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorB);
+  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), operatorB);
+  Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
-  return shared_ptr<Matrix>(new Matrix( gamma_A * (*hAB) ^ gamma_B ));
+  shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<0>());
 
+  return out;
 }
 
 
@@ -388,11 +403,11 @@ void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* targe
   }
 }
 
-void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) {
+void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) const {
   hamiltonian_->print(title, nstates);
 }
 
-void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) {
+void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
   const int end = min(nstates, dimerstates_);
   cout << endl << " ===== " << title << " =====" << endl;
   for (int istate = 0; istate < end; ++istate) {
@@ -413,6 +428,24 @@ void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string t
   }
 }
 
-void MultiExcitonHamiltonian::print(const int nstates, const double thresh) {
+void MultiExcitonHamiltonian::print_property(const string label, shared_ptr<const Matrix> property , const int nstates) const {
+  const string indent("   ");
+  const int nprint = min(nstates, property->ndim());
+
+  cout << indent << " " << label << "    |0>";
+  for (int istate = 1; istate < nprint; ++istate) cout << "         |" << istate << ">";
+  cout << endl;
+  for (int istate = 0; istate < nprint; ++istate) {
+    cout << indent << "<" << istate << "|";
+    for (int jstate = 0; jstate < nprint; ++jstate) {
+      cout << setw(12) << setprecision(6) << property->element(jstate, istate);
+    }   
+    cout << endl;
+  }
+  cout << endl;
+}
+
+void MultiExcitonHamiltonian::print(const int nstates, const double thresh) const {
   print_adiabats(thresh, "Adiabatic States", nstates);
+  for (auto& prop : properties_) print_property(prop.first, prop.second, nstates);
 }

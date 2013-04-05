@@ -283,7 +283,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB
         SA = AB.ci<0>()->spin_raise(Ap->det());
         SB = AB.ci<1>()->spin_lower(Bp->det());
         break;
-      default: break;
+      default: assert(false); break; // Control should never be able to reach here...
     }
 
     const int nA = AB.nstates<0>();

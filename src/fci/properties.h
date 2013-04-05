@@ -96,13 +96,14 @@ class CIDipole : public Prop1e {
       : Prop1e(ref, nstart, nfence, coeff) { init(nstart, nfence); }
 
     void init(const int nstart, const int nfence) override;
-    void compute(std::shared_ptr<const Dvec> ccvec) override;
+    virtual void compute(std::shared_ptr<const Dvec> ccvec) override;
 
     std::array<double,3> core_dipole() const { return core_dipole_; }
+    double core_dipole(const int i) const { return core_dipole_[i]; }
     std::array<std::shared_ptr<Matrix>, 3> dipoles() const { return dipole_matrices_; }
     std::shared_ptr<Matrix> dipoles(const int i) const { return dipole_matrices_[i]; }
 
-    void print() const override;
+    virtual void print() const override;
 };
 
 }
