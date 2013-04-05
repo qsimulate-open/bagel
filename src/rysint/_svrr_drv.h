@@ -54,9 +54,15 @@ void svrr_driver(double* out, const double* const roots, const double* const wei
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
 
-  double iyiz[rank_]__attribute__((aligned(32)));
+#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+  double iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated
   double womt[rank_]__attribute__((aligned(32)));
   double wt[rank_]__attribute__((aligned(32)));
+#else
+  alignas(32) double iyiz[rank_];
+  alignas(32) double womt[rank_];
+  alignas(32) double wt[rank_];
+#endif
 
   const double oxp2 = 0.5 / xp;
   const double oxq2 = 0.5 / xq;
@@ -117,9 +123,15 @@ void usvrr_driver(double* out, double* out2, const double* const roots, const do
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
 
-  double iyiz[rank_]__attribute__((aligned(32)));
+#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+  double iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated
   double womt[rank_]__attribute__((aligned(32)));
   double wt[rank_]__attribute__((aligned(32)));
+#else
+  alignas(32) double iyiz[rank_];
+  alignas(32) double womt[rank_];
+  alignas(32) double wt[rank_];
+#endif
 
   const double oxp2 = 0.5 / xp;
   const double oxq2 = 0.5 / xq;

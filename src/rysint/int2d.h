@@ -34,11 +34,19 @@ template <int a_, int c_, int rank_>
 void int2d(const double& P, const double& Q, const double& A, const double& B, const double& C, const double& D,
            const double& xp, const double& xq, const double& one_2p, const double& one_2q, const double& one_pq, const double* roots, double* const data) {
   /// for recursion
-  double C00_[rank_]__attribute__((aligned(32)));
+#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+  double C00_[rank_]__attribute__((aligned(32))); // TODO deprecated
   double D00_[rank_]__attribute__((aligned(32)));
   double B00_[rank_]__attribute__((aligned(32)));
   double B10_[rank_]__attribute__((aligned(32)));
   double B01_[rank_]__attribute__((aligned(32)));
+#else
+  alignas(32) double C00_[rank_]; 
+  alignas(32) double D00_[rank_]; 
+  alignas(32) double B00_[rank_]; 
+  alignas(32) double B10_[rank_]; 
+  alignas(32) double B01_[rank_]; 
+#endif
 
   const double xqopq = xq * one_pq;
   const double xpopq = xp * one_pq;

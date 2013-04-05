@@ -54,7 +54,11 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
   const int isize = (amax_ + 1) * (cmax_ + 1);
   const int worksize = rank_ * isize;
 
-  double iyiz[rank_]__attribute__((aligned(32)));
+#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+  double iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated
+#else
+  alignas(32) double iyiz[rank_];
+#endif
 
   const double oxp2 = 0.5 / xp;
   const double oxq2 = 0.5 / xq;
