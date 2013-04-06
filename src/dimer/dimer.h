@@ -44,21 +44,17 @@ namespace bagel {
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
 
-   using RefGeometry =  std::shared_ptr<const Geometry>;
-   using RefReference =  std::shared_ptr<const Reference>;
-   using RefCoeff = std::shared_ptr<const Coeff>;
-   using RefDvec = std::shared_ptr<const Dvec>;
-   using RefCIWfn = std::shared_ptr<const CIWfn>;
+   template <class T> using Ref = std::shared_ptr<const T>;
    using MultimapInput = std::multimap<std::string,std::string>;
 
    protected:
-      std::pair<RefGeometry,RefGeometry> geoms_;
-      std::pair<RefReference, RefReference> refs_;
-      std::pair<RefReference, RefReference> embedded_refs_;
+      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
+      std::pair<Ref<Reference>, Ref<Reference>> refs_;
+      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_;
 
-      std::pair<RefCoeff, RefCoeff> coeffs_;
-      std::pair<RefDvec, RefDvec> ccvecs_;
-      std::pair<RefCIWfn, RefCIWfn> ci_;
+      std::pair<Ref<Coeff>, Ref<Coeff>> coeffs_;
+      std::pair<Ref<Dvec>, Ref<Dvec>> ccvecs_;
+      std::pair<Ref<CIWfn>, Ref<CIWfn>> ci_;
 
       std::shared_ptr<Geometry>   sgeom_;
       std::shared_ptr<Reference>  sref_;
@@ -78,16 +74,16 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
    public:
       // Constructors
-      Dimer(RefGeometry a, RefGeometry b);
-      Dimer(RefGeometry a, std::array<double,3> displacement);
-      Dimer(RefReference A, RefReference B);
-      Dimer(RefReference a, std::array<double,3> displacement);
-      Dimer(RefCIWfn a, std::array<double,3> displacement);
+      Dimer(Ref<Geometry> a, Ref<Geometry> b);
+      Dimer(Ref<Geometry> a, std::array<double,3> displacement);
+      Dimer(Ref<Reference> A, Ref<Reference> B);
+      Dimer(Ref<Reference> a, std::array<double,3> displacement);
+      Dimer(Ref<CIWfn> a, std::array<double,3> displacement);
 
       // Return functions
-      std::pair<RefGeometry, RefGeometry> geoms() const { return geoms_; };
-      std::pair<RefCoeff, RefCoeff> coeffs() const { return coeffs_; };
-      std::pair<RefDvec, RefDvec> ccvec() const { return ccvecs_; };
+      std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
+      std::pair<Ref<Coeff>, Ref<Coeff>> coeffs() const { return coeffs_; };
+      std::pair<Ref<Dvec>, Ref<Dvec>> ccvec() const { return ccvecs_; };
 
       std::shared_ptr<Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<Reference> sref() const { return sref_; };
@@ -123,7 +119,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       // Calculations
       void scf(MultimapInput idata); // SCF on dimer and then localize
-      std::pair<RefDvec,RefDvec> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
+      std::pair<Ref<Dvec>,Ref<Dvec>> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
       std::shared_ptr<DimerCISpace> compute_cispace(MultimapInput idata);
 
    private:
