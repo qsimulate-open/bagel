@@ -86,11 +86,10 @@ class RDM : public RDM_base {
     }
 
   public:
-    RDM(const int n) : RDM_base(n, rank) { };
-    RDM(const RDM& o) : RDM_base(o) {};
-    ~RDM() {  };
+    RDM(const int n) : RDM_base(n, rank) { }
+    RDM(const RDM& o) : RDM_base(o) { }
 
-    std::shared_ptr<RDM<rank>> clone() const { return std::shared_ptr<RDM<rank>>(new RDM<rank>(norb_)); };
+    std::shared_ptr<RDM<rank>> clone() const { return std::shared_ptr<RDM<rank>>(new RDM<rank>(norb_)); }
 
     template<typename ...args>
     double& element(const args&... index) { return data_[address_<0>(index...)]; }
@@ -100,10 +99,7 @@ class RDM : public RDM_base {
 
 
     // returns if this is natural orbitals - only for rank 1
-    bool natural_orbitals() const {
-      assert(false);
-      return true;
-    }
+    bool natural_orbitals() const { assert(false); return true; }
 
 
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
@@ -124,9 +120,7 @@ class RDM : public RDM_base {
       return out;
     }
 
-    void print(const double thresh = 1.0e-3) const {
-      assert(false);
-    }
+    void print(const double thresh = 1.0e-3) const { assert(false); }
 };
 
 template<> bool RDM<1>::natural_orbitals() const;
