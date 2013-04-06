@@ -38,18 +38,19 @@
 
 namespace bagel {
 
-typedef std::shared_ptr<const Geometry> RefGeometry;
-typedef std::shared_ptr<const Reference> RefReference;
-typedef std::shared_ptr<const Coeff> RefCoeff;
-typedef std::shared_ptr<const Dvec> RefDvec;
-typedef std::shared_ptr<const CIWfn> RefCIWfn;
-typedef std::multimap<std::string,std::string> MultimapInput;
-
 /************************************************************************************
 *  This class describes a homodimer.                                                *
 ************************************************************************************/
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
+
+   using RefGeometry =  std::shared_ptr<const Geometry>;
+   using RefReference =  std::shared_ptr<const Reference>;
+   using RefCoeff = std::shared_ptr<const Coeff>;
+   using RefDvec = std::shared_ptr<const Dvec>;
+   using RefCIWfn = std::shared_ptr<const CIWfn>;
+   using MultimapInput = std::multimap<std::string,std::string>;
+
    protected:
       std::pair<RefGeometry,RefGeometry> geoms_;
       std::pair<RefReference, RefReference> refs_;
