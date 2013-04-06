@@ -101,60 +101,22 @@ class RDM : public RDM_base {
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
-      if (rank != 1) throw std::logic_error("RDM::natural_orbitals() is implemented only for rank 1");
-      const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
-      const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1);
-      return ::fabs(a-b) < 1.0e-12;
+      assert(false);
+      return true;
     }
 
 
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
-      static_assert(rank == 1, "RDM::rdm1_mat is only implemented for rank == 1");
-      std::shared_ptr<Matrix> out(new Matrix(nclosed+norb_, nclosed+norb_));
-      if (all)
-        for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
-      for (int i = 0; i != norb_; ++i)
-        for (int j = 0; j != norb_; ++j)
-          out->element(j+nclosed, i+nclosed) = element(j,i);
-      return out;
+      assert(false);
+      return std::shared_ptr<Matrix>();
     }
 
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {
-      static_assert(rank == 1, "RDM::generate_natural_orbitals is only implemented for rank == 1");
-      std::shared_ptr<Matrix> buf(new Matrix(dim_,dim_,true));
-      buf->add_diag(2.0);
-      daxpy_(dim_*dim_, -1.0, data(), 1, buf->data(), 1);
-
-      std::vector<double> vec(dim_);
-      buf->diagonalize(&vec[0]);
-
-      for (auto& i : vec) i = 2.0-i;
-      return std::make_pair(buf, vec);
+      assert(false);
+      return std::pair<std::shared_ptr<Matrix>, std::vector<double>>();
     }
 
-    void transform(const std::shared_ptr<Matrix>& coeff) {
-      const double* start = coeff->data();
-      std::unique_ptr<double[]> buf(new double[dim_*dim_]);
-      if (rank == 1) {
-        dgemm_("N", "N", dim_, dim_, dim_, 1.0, data(), dim_, start, dim_, 0.0, buf.get(), dim_);
-        dgemm_("T", "N", dim_, dim_, dim_, 1.0, start, dim_, buf.get(), dim_, 0.0, data(), dim_);
-      } else if (rank == 2) {
-        // first half transformation
-        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, data(), dim_*norb_, start, norb_, 0.0, buf.get(), dim_*norb_);
-        for (int i = 0; i != norb_; ++i)
-          dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf.get()+i*dim_*norb_, dim_, start, norb_, 0.0, data()+i*dim_*norb_, dim_);
-        // then tranpose
-        mytranspose_(data(), dim_, dim_, buf.get());
-        // and do it again
-        dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf.get(), dim_*norb_, start, norb_, 0.0, data(), dim_*norb_);
-        for (int i = 0; i != norb_; ++i)
-          dgemm_("N", "N", dim_, norb_, norb_, 1.0, data()+i*dim_*norb_, dim_, start, norb_, 0.0, buf.get()+i*dim_*norb_, dim_);
-        // to make sure for non-symmetric density matrices (and anyway this should be cheap).
-        mytranspose_(buf.get(), dim_, dim_, data());
-      } else {
-        assert(false);
-      }
-    }
+    void transform(const std::shared_ptr<Matrix>& coeff) { assert(false); }
 
     std::vector<double> diag() const {
       std::vector<double> out(dim_);
@@ -162,40 +124,23 @@ class RDM : public RDM_base {
       return out;
     }
 
-
-    // What is the best way to implement this for general rank??
     void print(const double thresh = 1.0e-3) const {
-      static_assert(rank <= 3, "RDM::print is so far only implemented for RDM1 and 2");
-      const double* ptr = data_.get();
-      if (rank == 1) {
-        for (int i = 0; i != norb_; ++i) {
-          for (int j = 0; j != norb_; ++j, ++ptr)
-            std::cout << std::setw(12) << std::setprecision(7) << *ptr;
-          std::cout << std::endl;
-        }
-      } else if (rank == 2) {
-        for (int i = 0; i != norb_; ++i) {
-          for (int j = 0; j != norb_; ++j) {
-            for (int k = 0; k != norb_; ++k) {
-              for (int l = 0; l != norb_; ++l, ++ptr) {
-                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << l << std::setw(3)
-                      << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
-        } } } }
-      } else if (rank == 3) {
-        for (int i = 0; i != norb_; ++i) {
-          for (int j = 0; j != norb_; ++j) {
-            for (int k = 0; k != norb_; ++k) {
-              for (int l = 0; l != norb_; ++l) {
-              for (int m = 0; m != norb_; ++m) {
-              for (int n = 0; n != norb_; ++n, ++ptr) {
-                if (std::abs(*ptr) > thresh) std::cout << std::setw(3) << n << std::setw(3) << m << std::setw(3) << l << std::setw(3)
-                      << k << std::setw(3) << j << std::setw(3) << i
-                      << std::setw(12) << std::setprecision(7) << *ptr << std::endl;
-        } } } } } }
-      }
+      assert(false);
     }
 };
+
+template<> bool RDM<1>::natural_orbitals() const;
+
+template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1>::generate_natural_orbitals() const;
+
+template<> void RDM<1>::transform(const std::shared_ptr<Matrix>& coeff);
+template<> void RDM<2>::transform(const std::shared_ptr<Matrix>& coeff);
+
+template<> std::shared_ptr<Matrix> RDM<1>::rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all) const;
+
+template<> void RDM<1>::print(const double thresh) const;
+template<> void RDM<2>::print(const double thresh) const;
+template<> void RDM<3>::print(const double thresh) const;
 
 }
 
