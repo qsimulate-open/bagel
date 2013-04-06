@@ -144,10 +144,11 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return out;
     }
 
+    template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
       const std::bitset<nbit__> ii( (1 << (i)) - 1 );
       bit = bit & ii; 
-      return (1 - ((bit.count() & 1 ) << 1));
+      return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
     int sign(std::bitset<nbit__> bit, int i, int j) const {
@@ -294,7 +295,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
         const unsigned int source = det->lexical<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
         const unsigned int target = plusdet->lexical<spin>(nbit);
-        phiup[i].push_back(DetMap(target, sign(nbit, i), source));
+        phiup[i].push_back(DetMap(target, sign<spin>(nbit, i), source));
       }
     }
   }
@@ -305,7 +306,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
         const unsigned int source = plusdet->lexical<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
         const unsigned int target = det->lexical<spin>(nbit);
-        phidown[i].push_back(DetMap(target, sign(nbit, i), source));
+        phidown[i].push_back(DetMap(target, sign<spin>(nbit, i), source));
       }
     }
   }

@@ -228,10 +228,10 @@ shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) c
 
             const int atarget = target_det->lexical<0>(abit);
             const int btarget = target_det->lexical<1>(bbit);
-                  // Now the computation begins
+            // Now the computation begins
 
-            const int aphase = source_det->sign(alphastring, i);
-            const int bphase = source_det->sign(betastring, i);
+            const int aphase = source_det->sign<0>(alphastring, i);
+            const int bphase = -1*source_det->sign<1>(betastring, i);
 
             out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
           }
@@ -273,8 +273,8 @@ shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) c
             const int atarget = target_det->lexical<0>(abit);
             const int btarget = target_det->lexical<1>(bbit);
 
-            const int aphase = source_det->sign(alphastring, i);
-            const int bphase = source_det->sign(betastring, i);
+            const int aphase = source_det->sign<0>(alphastring, i);
+            const int bphase = source_det->sign<1>(betastring, i);
 
             out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
           }
