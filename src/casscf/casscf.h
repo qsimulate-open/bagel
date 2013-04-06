@@ -77,7 +77,7 @@ class CASSCF {
 
     const std::shared_ptr<const Matrix> hcore_;
 
-    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Coeff>, std::shared_ptr<Matrix>) const;
+    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<Matrix> form_natural_orbs();
 
     std::vector<double> schwarz_;
@@ -92,7 +92,6 @@ class CASSCF {
 
     virtual void compute() = 0;
 
-    std::shared_ptr<const Reference> ref() { return ref_; };
     std::shared_ptr<const Reference> ref() const { return ref_; };
     virtual std::shared_ptr<const Reference> conv_to_ref() const;
 
@@ -109,6 +108,9 @@ class CASSCF {
     std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<RDM<1>> rdm1, const bool inactive_only = false) const;
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
+#if 0
+    void coeff_orthog();
+#endif
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
 };
 

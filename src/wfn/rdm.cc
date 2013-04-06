@@ -61,7 +61,35 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
   buf->diagonalize(&vec[0]);
 
   for (auto& i : vec) i = 2.0-i;
-  return make_pair(buf, vec);
+
+  map<int,int> emap;
+  shared_ptr<Matrix> buf2(new Matrix(dim_,dim_,true));
+  vector<double> vec2(dim_);
+  // sort eigenvectors so that buf is close to a unit matrix
+  // target column
+  for (int i = 0; i != dim_; ++i) {
+    // first find the source column 
+    tuple<int, double> max = make_tuple(-1, 0.0);
+    for (int j = 0; j != dim_; ++j)
+      if (fabs(buf->element(i,j)) > get<1>(max))
+        max = make_tuple(j, fabs(buf->element(i,j)));
+
+    // register to emap
+    if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
+    emap.insert(make_pair(get<0>(max), i));
+
+    // copy to the target
+    copy_n(buf->element_ptr(0,get<0>(max)), dim_, buf2->element_ptr(0,i));
+    vec2[i] = vec[get<0>(max)];
+  }
+
+  // fix the phase
+  for (int i = 0; i != dim_; ++i) {
+    if (buf2->element(i,i) < 0.0)
+      dscal_(dim_, -1.0, buf2->element_ptr(0,i), 1);
+  }
+
+  return make_pair(buf2, vec2);
 }
 
 

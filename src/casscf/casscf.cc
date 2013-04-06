@@ -66,6 +66,10 @@ void CASSCF::common_init() {
   coeff_ = ref_->coeff();
   if (coeff_->mdim() != geom_->nbasis())
     throw runtime_error("CASSCF requires a Reference object with the same number of basis functions so far"); // TODO
+#if 0
+  // make sure that coefficient diagonalizes overlap // TODO I think this is very dangerous
+  coeff_orthog();
+#endif
 
   // get maxiter from the input
   max_iter_ = read_input<int>(idata_, "maxiter", 100);
@@ -146,19 +150,15 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 void CASSCF::mute_stdcout() {
-#if 1
   ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
-#endif
 }
 
 
 void CASSCF::resume_stdcout() {
-#if 1
   cout.rdbuf(backup_stream_);
   delete ofs_;
-#endif
 }
 
 
@@ -270,27 +270,37 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 }
 
 
-shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Coeff> cold, shared_ptr<Matrix> mat) const {
-  shared_ptr<const Matrix> cnew(new const Matrix(*dynamic_cast<const Matrix*>(cold.get())));
+shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
+  shared_ptr<Coeff> cnew(new Coeff(*cold));
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
-  return shared_ptr<const Coeff>(new Coeff(*cnew));
+  return cnew; 
 }
 
 
 
 shared_ptr<Matrix> CASSCF::form_natural_orbs() {
-    // here make a natural orbitals and update the coefficients
-    // this effectively updates 1,2RDM and integrals
-    const pair<shared_ptr<Matrix>, vector<double>> natorb = fci_->natorb_convert();
-    // new coefficients
-    shared_ptr<const Coeff> new_coeff = update_coeff(coeff_, natorb.first);
-    coeff_ = new_coeff;
-    // occupation number of the natural orbitals
-    occup_ = natorb.second;
-    return natorb.first;
+  // here make a natural orbitals and update the coefficients
+  // this effectively updates 1,2RDM and integrals
+  const pair<shared_ptr<Matrix>, vector<double>> natorb = fci_->natorb_convert();
+  // new coefficients
+  coeff_ = update_coeff(coeff_, natorb.first);
+  // occupation number of the natural orbitals
+  occup_ = natorb.second;
+  return natorb.first;
 }
+
+
+
+#if 0
+void CASSCF::coeff_orthog() {
+  Overlap o(geom_);
+  shared_ptr<Matrix> a(new Matrix(*coeff_ % o * *coeff_));
+  a->inverse_half();
+  coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *a));
+}
+#endif
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {

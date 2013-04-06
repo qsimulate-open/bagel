@@ -64,6 +64,7 @@ void CASBFGS::compute() {
 
     // here make a natural orbitals and update the coefficients. Closed and virtual orbitals remain canonical
     shared_ptr<Matrix> natorb = form_natural_orbs();
+    x = shared_ptr<Matrix>(new Matrix(*update_coeff(x, natorb)));
 
     shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_, false));
     sigma_->zero();
@@ -97,8 +98,8 @@ void CASBFGS::compute() {
     grad_ca(cfock, afock, qxr, sigma_);
 
     // if this is the first time, set up the BFGS solver
+    shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
     if (iter == 0) {
-      shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
     }
     // extrapolation using BFGS
@@ -108,7 +109,7 @@ void CASBFGS::compute() {
 
     // restore the matrix from RotFile
     shared_ptr<const Matrix> amat = a->unpack();
-    shared_ptr<Matrix> expa = amat->exp(2);
+    shared_ptr<Matrix> expa = amat->exp(6);
     expa->purify_unitary();
     coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
 
@@ -144,7 +145,6 @@ void CASBFGS::compute() {
 
 shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr) const {
   shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, false));
-  out->fill(1.0);
   const double tiny = 1.0e-15;
 
   // ia part (4.7a)
@@ -181,8 +181,10 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
 
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh)
+    if (fabs(out->data(i)) < thresh) {
+assert(false);
       out->data(i) = 1.0e10;
+    }
   return out;
 }
 
