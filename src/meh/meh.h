@@ -44,7 +44,7 @@ namespace bagel {
 * CAS calculations                                                                  *
 ************************************************************************************/
 
-typedef std::shared_ptr<Matrix> MatrixPtr;
+using MatrixPtr = std::shared_ptr<Matrix>;
 
 enum class Coupling {
   none = 0,

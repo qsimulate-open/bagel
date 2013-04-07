@@ -36,8 +36,8 @@
 
 namespace bagel {
 
-typedef std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>> MapCIs;
-typedef std::map<std::pair<int,int>, std::shared_ptr<Determinants>> MapDets;
+using MapCIs = std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>>;
+using MapDets = std::map<std::pair<int,int>, std::shared_ptr<Determinants>>;
 
 class DimerCISpace {
   protected:
