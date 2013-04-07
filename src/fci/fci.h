@@ -46,7 +46,7 @@ class FCI {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_; 
+    std::multimap<std::string, std::string> idata_;
     // reference
     std::shared_ptr<const Reference> ref_;
     // geometry file
@@ -81,7 +81,7 @@ class FCI {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
-    // MO integrals 
+    // MO integrals
     std::shared_ptr<MOFile> jop_;
 
     // Determinant space
@@ -103,9 +103,9 @@ class FCI {
     virtual void const_denom() = 0;
 
     // functions related to natural orbitals
-    void update_rdms(const std::shared_ptr<Matrix>& coeff); 
+    void update_rdms(const std::shared_ptr<Matrix>& coeff);
 
-    // internal function for RDM1 and RDM2 computations 
+    // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 
@@ -122,15 +122,15 @@ class FCI {
     virtual void update(std::shared_ptr<const Coeff> ) = 0;
 
     // returns members
-    int norb() const { return norb_; };
-    int nelea() const { return nelea_; };
-    int neleb() const { return neleb_; };
-    int ncore() const { return ncore_; };
-    double core_energy() const { return jop_->core_energy(); };
+    int norb() const { return norb_; }
+    int nelea() const { return nelea_; }
+    int neleb() const { return neleb_; }
+    int ncore() const { return ncore_; }
+    double core_energy() const { return jop_->core_energy(); }
 
-    virtual int nij() const { return norb_*(norb_+1)/2; };
+    virtual int nij() const { return norb_*(norb_+1)/2; }
 
-    double weight(const int i) const { return weight_[i]; };
+    double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
@@ -146,35 +146,35 @@ class FCI {
       compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>,
                                  std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
 
-    std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; };
-    std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; };
-    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1_.at(i); };
-    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2_.at(i); };
-    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1_.at(i); };
-    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2_.at(i); };
-    std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; };
-    std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; };
-    std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; };
-    std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; };
+    std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
+    std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; }
+    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1_.at(i); }
+    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2_.at(i); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1_.at(i); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2_.at(i); }
+    std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
+    std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
+    std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
+    std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
 
-    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+    const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
-    std::shared_ptr<const Determinants> det() const { return det_; };
+    std::shared_ptr<const Determinants> det() const { return det_; }
 
     // returns integral files
-    std::shared_ptr<const MOFile> jop() const { return jop_; };
+    std::shared_ptr<const MOFile> jop() const { return jop_; }
 
     // returns a denominator
-    std::shared_ptr<const Civec> denom() const { return denom_; };
+    std::shared_ptr<const Civec> denom() const { return denom_; }
 
     // returns total energy
-    std::vector<double> energy() const { return energy_; };
-    double energy(const int i) const { return energy_.at(i); };
+    std::vector<double> energy() const { return energy_; }
+    double energy(const int i) const { return energy_.at(i); }
 
     // returns CI vectors
-    std::shared_ptr<Dvec> civectors() const { return cc_; };
+    std::shared_ptr<Dvec> civectors() const { return cc_; }
 
     // These are needed for the RDM stuff, apparently
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
