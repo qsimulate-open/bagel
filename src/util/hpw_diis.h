@@ -42,7 +42,7 @@ namespace bagel {
 
 template<class T>
 class HPW_DIIS  {
-  typedef std::shared_ptr<const T> RefT;
+  using RefT = std::shared_ptr<const T>;
   protected:
     DIIS<T> diis_;
     RefT base_;
@@ -53,19 +53,19 @@ class HPW_DIIS  {
     HPW_DIIS(const int n, RefT o, const bool test = false) : diis_(n), orig_(o), testing_(test) {
       std::shared_ptr<T> b = o->clone();
       b->unit();
-      RefT tmp(new T(*b));
-      base_ = tmp;
-    };
-    ~HPW_DIIS() {};
+      base_ = b;
+    }
 
-    std::shared_ptr<T> extrapolate(const RefT rot) {
-#ifndef NDEBUG
-      if (testing_) return std::shared_ptr<T>(new T(*rot));
-#endif
+    RefT extrapolate(const RefT rot, const RefT errin = RefT()) {
       // prev = log(base)
       RefT expo = (*base_**rot).log();
       RefT prev_ = base_->log();
-      RefT err(new T(prev_ != nullptr ? (*expo-*prev_) : (*expo)));
+      RefT err;
+      if (errin) {
+        err = errin;
+      } else {
+        err = RefT(new T(prev_ != nullptr ? (*expo-*prev_) : (*expo)));
+      }
 
       std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
       // this is important
@@ -74,7 +74,9 @@ class HPW_DIIS  {
       std::shared_ptr<T> out(new T(*orig_* *extrap));
       base_ = extrap;
       return out;
-    };
+    }
+
+    RefT extrap() const { return base_; } 
 
 };
 

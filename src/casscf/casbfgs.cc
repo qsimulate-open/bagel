@@ -33,6 +33,7 @@
 #include <src/scf/fock.h>
 #include <src/util/f77.h>
 #include <src/util/bfgs.h>
+#include <src/util/hpw_diis.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,6 +43,7 @@ void CASBFGS::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
   shared_ptr<BFGS<RotFile>> bfgs;
+  shared_ptr<HPW_DIIS<Matrix>> diis;
 
   // ============================
   // macro iteration from here
@@ -49,7 +51,6 @@ void CASBFGS::compute() {
   Timer timer;
 
   shared_ptr<Matrix> x(new Matrix(nbasis_, nbasis_));
-  x->unit();
 
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -100,7 +101,14 @@ void CASBFGS::compute() {
     // if this is the first time, set up the BFGS solver
     shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
     if (iter == 0) {
+      // BFGS and DIIS should start at the same time
+      x->unit();
+#if 1
       bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
+      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, coeff_));
+#else
+      bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
+#endif
     }
     // extrapolation using BFGS
     shared_ptr<RotFile> xrot(new RotFile(x->log(), nclosed_, nact_, nvirt_, false));
@@ -109,12 +117,22 @@ void CASBFGS::compute() {
 
     // restore the matrix from RotFile
     shared_ptr<const Matrix> amat = a->unpack();
-    shared_ptr<Matrix> expa = amat->exp(6);
+    shared_ptr<Matrix> expa = amat->exp(10);
     expa->purify_unitary();
-    coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
 
-    // for next BFGS extrapolation
-    *x *= *expa;
+    if (!diis) {
+      coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
+      // for next BFGS extrapolation
+      *x *= *expa;
+    } else {
+      shared_ptr<Matrix> tmp(new Matrix(*expa));
+      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, expa->element_ptr(nclosed_, 0), nbasis_, 0.0, tmp->element_ptr(nclosed_, 0), nbasis_);
+      shared_ptr<const Matrix> mcc = diis->extrapolate(tailor_rotation(tmp));
+      coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
+      // update x
+      x = shared_ptr<Matrix>(new Matrix(*diis->extrap()));
+    }
+
 
     // setting error of macro iteration
     const double gradient = sigma_->ddot(*sigma_) / sigma_->size();
@@ -224,4 +242,26 @@ void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
     }
   }
 }
+
+
+// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
+shared_ptr<const Matrix> CASBFGS::tailor_rotation(shared_ptr<const Matrix> seed) {
+
+  shared_ptr<Matrix> out = seed->clone();
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nclosed_; ++j)
+      out->element(j,i) = seed->element(j,i);
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nact_; ++j)
+      out->element(j+nclosed_,i+nclosed_) = seed->element(j+nclosed_,i+nclosed_);
+  for (int i = 0; i != nvirt_; ++i)
+    for (int j = 0; j != nvirt_; ++j)
+      out->element(j+nocc_,i+nocc_) = seed->element(j+nocc_,i+nocc_);
+  out->inverse();
+  out->purify_unitary();
+  *out = *seed * *out;
+
+  return out;
+}
+
 

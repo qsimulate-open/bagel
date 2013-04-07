@@ -178,7 +178,7 @@ void SuperCI::compute() {
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                           tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix> tmp2(new Matrix(*tailor_rotation(tmp)));
-      shared_ptr<Matrix> mcc = diis->extrapolate(tmp2);
+      shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
     }
 
