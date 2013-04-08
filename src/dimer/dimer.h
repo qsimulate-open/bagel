@@ -43,7 +43,6 @@ namespace bagel {
 ************************************************************************************/
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
-
    template <class T> using Ref = std::shared_ptr<const T>;
    using MultimapInput = std::multimap<std::string,std::string>;
 

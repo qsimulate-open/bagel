@@ -36,10 +36,9 @@
 
 namespace bagel {
 
-using MapCIs = std::multimap<std::pair<int,int>, std::shared_ptr<Dvec>>;
-using MapDets = std::map<std::pair<int,int>, std::shared_ptr<Determinants>>;
-
 class DimerCISpace {
+  template<class T> using MMap = std::multimap<std::pair<int,int>, std::shared_ptr<T>>;
+
   protected:
     // These are stored values of the neutral species
     std::pair<int, int> norb_;
@@ -47,11 +46,11 @@ class DimerCISpace {
     std::pair<int, int> neleb_;
     std::pair<int, int> nstates_;
 
-    MapCIs cispaceA_;
-    MapCIs cispaceB_;
+    MMap<Dvec> cispaceA_;
+    MMap<Dvec> cispaceB_;
 
-    MapDets detspaceA_;
-    MapDets detspaceB_;
+    MMap<Determinants> detspaceA_;
+    MMap<Determinants> detspaceB_;
 
     bool anions_;
     bool dianions_;
@@ -100,12 +99,12 @@ class DimerCISpace {
     void reset_quintets() { quintets_ = false; }
 
     template<int unit> std::shared_ptr<Dvec> ccvec(int qa = 0, int qb = 0) {
-      MapCIs& space = (unit == 0 ? cispaceA_ : cispaceB_);
+      MMap<Dvec>& space = (unit == 0 ? cispaceA_ : cispaceB_);
       return space.find(std::make_pair(qa,qb))->second;
     }
 
     template<int unit> std::shared_ptr<Determinants> det(int qa = 0, int qb = 0) { 
-      MapDets& dets = (unit == 0 ? detspaceA_ : detspaceB_);
+      MMap<Determinants>& dets = (unit == 0 ? detspaceA_ : detspaceB_);
       return dets.find(std::make_pair(qa,qb))->second; 
     }
 
@@ -137,7 +136,7 @@ template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) 
   std::shared_ptr<Determinants> det = add_det<unit>(qa,qb);
   new_civec->set_det(det);
 
-  MapCIs& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
+  auto& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
   cispace.insert(std::make_pair(std::make_pair(qa,qb), new_civec));
 
   const int ij = new_civec->ij();
@@ -149,7 +148,7 @@ template<int unit>
 std::shared_ptr<Determinants> DimerCISpace::add_det(const int qa, const int qb) {
   const int nact = norb<unit>();
 
-  MapDets& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
+  auto& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
 
   auto idet = detspace.find(std::make_pair(qa,qb));
   if ( idet != detspace.end()) {

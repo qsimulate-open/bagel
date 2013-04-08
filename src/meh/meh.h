@@ -67,7 +67,6 @@ enum class CS {
   S, Aa, Ab, dAa, dA0, dAb, Ca, Cb, dCa, dC0, dCb, Ta, T0, Tb, Qaa, Qa, Q0, Qb, Qbb, MAX
 };
 
-// What started off as a simple structure is now becoming a bonafide helper class
 class DimerSubspace {
   protected:
     const int offset_;
@@ -252,7 +251,6 @@ std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const
   MatrixPtr Jout(new Matrix(ijA, ijB));
   MatrixPtr Kout(new Matrix(ijA, ijB));
 
-  // Because of the templating, all of the index mess SHOULD be done at compile time
   for(int d = 0; d < (D == 0 ? nactA : nactB); ++d) {
     for(int c = 0; c < (C == 0 ? nactA : nactB); ++c) {
       for(int b = 0; b < (B == 0 ? nactA : nactB); ++b) {
