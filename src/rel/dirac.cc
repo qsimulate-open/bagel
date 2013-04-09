@@ -125,6 +125,8 @@ void Dirac::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
+      //coeff->print("R", "", 56);
+      cout << coeff->ndim() << "  " << coeff->mdim() << endl;
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;

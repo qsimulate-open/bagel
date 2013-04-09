@@ -59,6 +59,7 @@
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
+#include <src/rel/relfci.h>
 #include <src/transp/transp.h>
 #include <src/smith/storage.h>
 #include <src/smith/MP2.h>
@@ -163,6 +164,10 @@ int main(int argc, char** argv) {
                                               : std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
         dirac->compute();
         relref = dirac->conv_to_ref();
+
+      } else if (method == "relfci") {
+        std::shared_ptr<RelFCI> relfci = std::shared_ptr<RelFCI>(new RelFCI(iter->second, relref));
+        relfci->compute();
 
       } else if (method == "df-hf") {
 
