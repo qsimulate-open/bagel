@@ -227,9 +227,14 @@ void MultiExcitonHamiltonian::compute() {
     }
   }
 
-  spin_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
+  cout << "  o Diagonalizing ME Hamiltonian" << endl;
+  adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
+  energies_ = vector<double>(dimerstates_, 0.0);
+  adiabats_->diagonalize(energies_.data());
 
   cout << "  o Constructing spin matrix." << endl;
+
+  spin_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -243,10 +248,6 @@ void MultiExcitonHamiltonian::compute() {
     spin_->add_block(ioff, ioff, compute_diagonal_spin_block(*iAB));
   }
 
-  adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
-
-  energies_ = vector<double>(dimerstates_, 0.0);
-  adiabats_->diagonalize(energies_.data());
 
   spinadiabats_ = shared_ptr<Matrix>(new Matrix( (*adiabats_) % (*spin_) * (*adiabats_) ));
 
@@ -323,6 +324,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
 
   shared_ptr<Quantization> operatorA;
   shared_ptr<Quantization> operatorB;
+  int neleA = AB.ci<0>()->det()->nelea() + AB.ci<0>()->det()->neleb();
 
   switch(term_type) {
     case Coupling::aET :
@@ -332,6 +334,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
     case Coupling::inv_aET :
       operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateAlpha>());
       operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateAlpha>());
+      --neleA;
       break;
     case Coupling::bET :
       operatorA = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
@@ -340,6 +343,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
     case Coupling::inv_bET :
       operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateBeta>());
       operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
+      --neleA;
       break;
     default :
       return shared_ptr<Matrix>(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
@@ -351,6 +355,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
 
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<0>());
+
+  if ( (neleA % 2) == 1 ) out->scale(-1.0);
 
   return out;
 }

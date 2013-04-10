@@ -125,6 +125,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
 
+  const int neleA = AB.ci<0>()->det()->nelea() + AB.ci<0>()->det()->neleb();
+  if ((neleA % 2) == 1) out->scale(-1.0);
+
   return out;
 }
 
@@ -177,6 +180,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
   }
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
+
+  const int neleA = AB.ci<0>()->det()->nelea() + AB.ci<0>()->det()->neleb();
+  if ((neleA % 2) == 1) out->scale(-1.0);
 
   return out;
 }
@@ -291,12 +297,28 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB
     const int nAp = ApBp.nstates<0>();
     const int nBp = ApBp.nstates<1>();
 
+    vector<double> AdotAp, BdotBp;
+
+    for (int iAp = 0; iAp < nAp; ++iAp) {
+      for (int iA = 0; iA < nA; ++iA) {
+        AdotAp.push_back(SA->data(iA)->ddot(*Ap->data(iAp)));
+      }
+    }
+
+    for (int iBp = 0; iBp < nBp; ++iBp) {
+      for (int iB = 0; iB < nB; ++iB) {
+        BdotBp.push_back(SB->data(iB)->ddot(*Bp->data(iBp)));
+      }
+    }
+
+    
     for (int iBp = 0; iBp < nBp; ++iBp) {
       for (int iAp = 0; iAp < nAp; ++iAp) {
+        const int iABp = ApBp.dimerindex(iAp,iBp);
+        int iAB = 0;
         for (int iB = 0; iB < nB; ++iB) {
-          for (int iA = 0; iA < nA; ++iA) {
-            // This is wasteful, but I'll come back to it
-            out->element(AB.dimerindex(iA,iB),ApBp.dimerindex(iAp,iBp)) += SA->data(iA)->ddot(*Ap->data(iAp)) * SB->data(iB)->ddot(*Bp->data(iBp));
+          for (int iA = 0; iA < nA; ++iA, ++iAB) {
+            out->element(iAB,iABp) += AdotAp[iA+ nA*iAp] * BdotBp[iB + nB*iBp];
           }
         }
       }
@@ -319,19 +341,35 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSub
 
   shared_ptr<Matrix> out(new Matrix(nA*nB, nA*nB));
 
+  vector<double> AdotAp;
+  vector<double> BdotBp;
+
+  for (int iAp = 0; iAp < nA; ++iAp) {
+    for (int iA = 0; iA < nA; ++iA) {
+      AdotAp.push_back(SA->data(iA)->ddot(*Ap->data(iAp)));
+    }
+  }
+
+  for (int iBp = 0; iBp < nB; ++iBp) {
+    for (int iB = 0; iB < nB; ++iB) {
+      BdotBp.push_back(SB->data(iB)->ddot(*Bp->data(iBp)));
+    }
+  }
+
   for (int iBp = 0; iBp < nB; ++iBp) {
     for (int iAp = 0; iAp < nA; ++iAp) {
+      const int iABp = subspace.dimerindex(iAp, iBp);
       for (int iA = 0; iA < nA; ++iA) {
         // iB = iBp
-        out->element(subspace.dimerindex(iA,iBp),subspace.dimerindex(iAp,iBp)) += SA->data(iA)->ddot(*Ap->data(iAp));
+        out->element(subspace.dimerindex(iA,iBp),iABp) += AdotAp[iA+ nA*iAp];
       }
 
       for (int iB = 0; iB < nB; ++iB) {
         // iA = iAp
-        out->element(subspace.dimerindex(iAp,iB),subspace.dimerindex(iAp,iBp)) += SB->data(iB)->ddot(*Bp->data(iBp));
+        out->element(subspace.dimerindex(iAp,iB),iABp) += BdotBp[iB+ nB*iBp];
       }
 
-      out->element(subspace.dimerindex(iAp,iBp), subspace.dimerindex(iAp,iBp)) += sz_AB;
+      out->element(iABp, iABp) += sz_AB;
     }
   }
 
