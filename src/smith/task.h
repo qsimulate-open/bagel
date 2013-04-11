@@ -92,6 +92,16 @@ class EnergyTask : public Task<T> {
 
 };
 
+
+template <typename T>
+class DensityTask : public Task<T> {
+  protected:
+  public:
+    DensityTask() : Task<T>() {}
+    ~DensityTask() {}
+
+};
+
 }
 }
 
