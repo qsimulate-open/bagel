@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_REL_KRAMERS_H
+#define __SRC_REL_KRAMERS_H
+
 #include <src/util/zmatrix.h>
 #include <src/util/constants.h>
 
@@ -50,3 +53,4 @@ class Kramers : public ZMatrix {
 
 }
 
+#endif
