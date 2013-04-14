@@ -126,7 +126,7 @@ void Dirac::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
-#if 1
+#if 0
       unique_ptr<double[]> eig2(new double[hcore->ndim()]);
       shared_ptr<Kramers> kramers(new Kramers(n));
       DistZMatrix int2(*coeff % *kramers * *coeff);
