@@ -58,7 +58,7 @@ Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff
       /* Step past first zeros */
       cdata += cur_nstart;
       /* Copy elements from current Coeff */
-      cdata = copy(cur_data, cur_data + cur_nbasis, cdata);
+      cdata = copy_n(cur_data, cur_nbasis, cdata);
       cur_data += cur_nbasis;
       /* Step past empty elements at the end */
       cdata += cur_nend;
@@ -121,8 +121,8 @@ pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const
   double* data2 = out2->data();
 
   for (int m = 0; m != mdim_; ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim_) {
-    copy(source,       source+nrow1,       data1);
-    copy(source+nrow1, source+nrow1+nrow2, data2);
+    copy_n(source,       nrow1, data1);
+    copy_n(source+nrow1, nrow2, data2);
   }
 
   return make_pair(out1, out2);

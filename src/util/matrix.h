@@ -103,6 +103,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix operator/(const Matrix&) const;
 
     std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_, localized_)); }
+    std::shared_ptr<Matrix> copy() const { return std::shared_ptr<Matrix>(new Matrix(*this)); }
 
     // returns exp(*this)
     std::shared_ptr<Matrix> exp(const int deg = 6) const;
