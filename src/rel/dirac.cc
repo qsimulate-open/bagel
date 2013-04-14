@@ -126,24 +126,16 @@ void Dirac::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
+#if 1
       unique_ptr<double[]> eig2(new double[hcore->ndim()]);
       shared_ptr<Kramers> kramers(new Kramers(n));
-      //shared_ptr<ZMatrix> coeff2 = coeff->matrix()->slice(nneg_, nele_+nneg_);
-      //DistZMatrix int2(*coeff2 % *kramers * *coeff2);
       DistZMatrix int2(*coeff % *kramers * *coeff);
-      //int2.print_col("T", "Before", 56, 56);
       int2.diagonalize(eig2.get());
-      //int2.print_col("T", "After", 56, 56);
-      //DistZMatrix intermediate(*coeff % *coeff);
-      //intermediate.print_col("T", "Coeff B", 56, 56);
-      //intermediate.diagonalize(eig.get());
-      //intermediate.print_col("T", "Coeff A", 56, 56);
       print_eig(eig2);
       DistZMatrix int3(int2 % *distfock * int2);
       int3.diagonalize(eig2.get());
       print_eig(eig2);
-      //cout << "LOL " << endl;
-      //print_eig(eig);
+#endif
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
