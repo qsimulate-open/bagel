@@ -82,7 +82,7 @@ shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
   shared_ptr<Matrix> out(new Matrix(ndim_, fence - start, localized_));
   assert(fence <= mdim_);
 
-  copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
+  std::copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
   return out;
 }
 
@@ -92,8 +92,8 @@ shared_ptr<Matrix> Matrix::merge(const shared_ptr<const Matrix> o) const {
 
   shared_ptr<Matrix> out(new Matrix(ndim_, mdim_ + o->mdim_, localized_));
 
-  copy(data_.get(), data_.get() + ndim_*mdim_, out->data_.get());
-  copy(o->data_.get(), o->data_.get()+o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
+  copy_n(data_.get(), ndim_*mdim_, out->data_.get());
+  copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
   return out;
 }
 
