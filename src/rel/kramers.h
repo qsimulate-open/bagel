@@ -26,9 +26,6 @@
 #include <src/util/zmatrix.h>
 #include <src/util/constants.h>
 
-using namespace std;
-using namespace bagel;
-
 namespace bagel {
 
 class Kramers : public ZMatrix {
