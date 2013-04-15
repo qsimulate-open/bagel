@@ -40,30 +40,44 @@
 #include <src/wfn/reference.h>
 #include <src/rel/relreference.h>
 #include <src/wfn/ciwfn.h>
+#include <src/util/zmatrix.h>
 
 namespace bagel {
 
 class RelFCI {
 
   protected:
-    // input
     std::multimap<std::string, std::string> idata_; 
-    // reference
-    std::shared_ptr<const RelReference> ref_;
-    // geometry file
-    const std::shared_ptr<const Geometry> geom_;
-    // max #iteration
-    int max_iter_;
-    // threshold for variants
+
     double thresh_;
     double print_thresh_;
+    std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const RelReference> relref_;
+
+    int max_iter_;
+    int diis_start_;
+    double thresh_scf_;
+    double energy_;
+    int ncharge_;
+    int nele_;
+    int nneg_;
+
+    bool gaunt_;
+    bool breit_;
+
+    std::shared_ptr<const ZMatrix> coeff_;
+
+    void common_init(const std::multimap<std::string, std::string>&);
+
+    std::shared_ptr<const ZMatrix> time_reversal_operator();
 
   public:
-    // this constructor is ugly... to be fixed some day...
-    RelFCI(const std::multimap<std::string, std::string>, std::shared_ptr<const RelReference>);
-        
+    RelFCI(const std::multimap<std::string, std::string>&, const std::shared_ptr<const Geometry> geom,
+             const std::shared_ptr<const RelReference> re); 
 
     void compute();
+
+    void print_eig(const std::unique_ptr<double[]>&);
 
 };
 

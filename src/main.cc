@@ -166,7 +166,13 @@ int main(int argc, char** argv) {
         relref = dirac->conv_to_ref();
 
       } else if (method == "relfci") {
-        std::shared_ptr<RelFCI> relfci = std::shared_ptr<RelFCI>(new RelFCI(iter->second, relref));
+        //currently under construction
+        std::shared_ptr<Dirac> dirac = relref ? std::shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
+                                              : std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        dirac->compute();
+        relref = dirac->conv_to_ref();
+
+        std::shared_ptr<RelFCI> relfci = std::shared_ptr<RelFCI>(new RelFCI(iter->second, geom, relref));
         relfci->compute();
 
       } else if (method == "df-hf") {

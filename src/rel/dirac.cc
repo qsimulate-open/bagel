@@ -30,7 +30,6 @@
 #include <src/util/zmatrix.h>
 #include <src/util/matrix.h>
 #include <src/util/diis.h>
-#include <src/rel/kramers.h>
 
 using namespace std;
 using namespace bagel;
@@ -126,16 +125,6 @@ void Dirac::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
-#if 0
-      unique_ptr<double[]> eig2(new double[hcore->ndim()]);
-      shared_ptr<Kramers> kramers(new Kramers(n));
-      DistZMatrix int2(*coeff % *kramers * *coeff);
-      int2.diagonalize(eig2.get());
-      print_eig(eig2);
-      DistZMatrix int3(int2 % *distfock * int2);
-      int3.diagonalize(eig2.get());
-      print_eig(eig2);
-#endif
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
@@ -156,7 +145,7 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
-//print_eig(eig);
+  //print_eig(eig);
 }
 
 
