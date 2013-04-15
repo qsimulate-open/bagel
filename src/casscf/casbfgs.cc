@@ -42,7 +42,7 @@ void CASBFGS::compute() {
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<BFGS<RotFile>> bfgs;
+  shared_ptr<BFGS<Matrix>> bfgs;
   shared_ptr<HPW_DIIS<Matrix>> diis;
 
   // ============================
@@ -51,8 +51,13 @@ void CASBFGS::compute() {
   Timer timer;
 
   shared_ptr<Matrix> x(new Matrix(nbasis_, nbasis_));
+  x->unit();
+  shared_ptr<const Matrix> xstart;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
+
+    const shared_ptr<const Coeff> cold = coeff_;
+    const shared_ptr<const Matrix> xold(new Matrix(*x));
 
     // first perform CASCI to obtain RDMs
     mute_stdcout();
@@ -63,12 +68,16 @@ void CASBFGS::compute() {
     energy_ = fci_->energy();
     resume_stdcout();
 
-    // here make a natural orbitals and update the coefficients. Closed and virtual orbitals remain canonical
-    shared_ptr<Matrix> natorb = form_natural_orbs();
-    x = shared_ptr<Matrix>(new Matrix(*update_coeff(x, natorb)));
+    shared_ptr<Matrix> natorb_mat = x->clone();
+    {
+      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
+      shared_ptr<const Matrix> natorb = form_natural_orbs();
+      natorb_mat->unit();
+      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+    }
 
-    shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_, false));
-    sigma_->zero();
+    shared_ptr<RotFile> sigma(new RotFile(nclosed_, nact_, nvirt_, false));
+    sigma->zero();
 
     // compute one-boedy operators
     // * preparation
@@ -92,32 +101,34 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
-    grad_vc(cfock, afock, sigma_);
+    grad_vc(cfock, afock, sigma);
     // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at 
-    grad_va(cfock, qxr, sigma_);
+    grad_va(cfock, qxr, sigma);
     // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir 
-    grad_ca(cfock, afock, qxr, sigma_);
+    grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
-    shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
     if (iter == 0) {
+//if (true) {
       // BFGS and DIIS should start at the same time
-      x->unit();
-#if 1
-      bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
-      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, coeff_));
-#else
-      bfgs = shared_ptr<BFGS<RotFile>>(new BFGS<RotFile>(denom));
-#endif
+      shared_ptr<const Matrix> denom = compute_denom(cfock, afock, qxr)->unpack(1.0e10);
+      bfgs = shared_ptr<BFGS<Matrix>>(new BFGS<Matrix>(denom));
+    }
+    if (iter == 0) {
+//if (false) {
+      xstart = shared_ptr<const Matrix>(new Matrix(*xold));
+      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, cold));
     }
     // extrapolation using BFGS
-    shared_ptr<RotFile> xrot(new RotFile(x->log(), nclosed_, nact_, nvirt_, false));
-    shared_ptr<RotFile> a = bfgs->extrapolate(sigma_, xrot);
+    *x *= *natorb_mat;
+    shared_ptr<Matrix> xlog(new Matrix(*x->log(100)));
+    shared_ptr<const Matrix> sigma_mat = sigma->unpack();
+    shared_ptr<Matrix> a = bfgs->extrapolate(sigma_mat, xlog);
     *a *= -1.0;
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack();
-    shared_ptr<Matrix> expa = amat->exp(10);
+    shared_ptr<const Matrix> amat = a;
+    shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
     if (!diis) {
@@ -125,17 +136,16 @@ void CASBFGS::compute() {
       // for next BFGS extrapolation
       *x *= *expa;
     } else {
-      shared_ptr<Matrix> tmp(new Matrix(*expa));
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, expa->element_ptr(nclosed_, 0), nbasis_, 0.0, tmp->element_ptr(nclosed_, 0), nbasis_);
-      shared_ptr<const Matrix> mcc = diis->extrapolate(tailor_rotation(tmp));
+      shared_ptr<const Matrix> tmp3(new Matrix(*natorb_mat * *expa ^ *natorb_mat));
+      shared_ptr<const Matrix> mcc = diis->extrapolate(tmp3);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
       // update x
-      x = shared_ptr<Matrix>(new Matrix(*diis->extrap()));
+      x = shared_ptr<Matrix>(new Matrix(*xstart * *diis->extrap()));
+//    cout << setprecision(10) << (*coeff_ - *diis->start()**x).norm() << endl;
     }
 
-
     // setting error of macro iteration
-    const double gradient = sigma_->ddot(*sigma_) / sigma_->size();
+    const double gradient = sigma->ddot(*sigma) / sigma->size();
 
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
@@ -148,16 +158,11 @@ void CASBFGS::compute() {
   // macro iteration to here
   // ============================
 
-#if 0
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   fci_->update(coeff_);
   fci_->compute();
   fci_->compute_rdm12();
-#endif
-
-  throw logic_error("not yet fully implemented");
-
 }
 
 
@@ -200,7 +205,6 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
     if (fabs(out->data(i)) < thresh) {
-assert(false);
       out->data(i) = 1.0e10;
     }
   return out;
@@ -242,26 +246,4 @@ void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
     }
   }
 }
-
-
-// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
-shared_ptr<const Matrix> CASBFGS::tailor_rotation(shared_ptr<const Matrix> seed) {
-
-  shared_ptr<Matrix> out = seed->clone();
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nclosed_; ++j)
-      out->element(j,i) = seed->element(j,i);
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nact_; ++j)
-      out->element(j+nclosed_,i+nclosed_) = seed->element(j+nclosed_,i+nclosed_);
-  for (int i = 0; i != nvirt_; ++i)
-    for (int j = 0; j != nvirt_; ++j)
-      out->element(j+nocc_,i+nocc_) = seed->element(j+nocc_,i+nocc_);
-  out->inverse();
-  out->purify_unitary();
-  *out = *seed * *out;
-
-  return out;
-}
-
 

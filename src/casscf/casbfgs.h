@@ -51,7 +51,6 @@ class CASBFGS : public CASSCF {
 
     // compute diagonal denominators
     std::shared_ptr<const RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
-    std::shared_ptr<const Matrix> tailor_rotation(std::shared_ptr<const Matrix> seed);
 
   public:
     CASBFGS(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)

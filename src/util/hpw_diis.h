@@ -77,6 +77,7 @@ class HPW_DIIS  {
     }
 
     RefT extrap() const { return base_; } 
+    RefT start() const { return orig_; }
 
 };
 
