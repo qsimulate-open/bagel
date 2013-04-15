@@ -26,8 +26,7 @@
 #ifndef __io_fileio_h
 #define __io_fileio_h
 
-#include <fstream>
-#include <vector>
+#include <string>
 
 namespace bagel {
 

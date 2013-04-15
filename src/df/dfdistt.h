@@ -27,7 +27,6 @@
 #ifndef __SRC_DF_DFBLOCKT_H
 #define __SRC_DF_DFBLOCKT_H
 
-#include <map>
 #include <cassert>
 #include <src/df/df.h>
 

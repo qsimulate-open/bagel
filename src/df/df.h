@@ -28,8 +28,6 @@
 
 #include <vector>
 #include <memory>
-#include <list>
-#include <map>
 #include <stdexcept>
 #include <stddef.h>
 #include <src/df/dfblock.h>

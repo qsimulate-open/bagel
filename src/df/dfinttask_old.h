@@ -29,7 +29,6 @@
 #include <array>
 #include <memory>
 #include <src/wfn/shell.h>
-#include <vector>
 #include <src/rysint/rysint.h>
 
 namespace bagel {

@@ -29,7 +29,6 @@
 
 #include <src/wfn/geometry.h>
 #include <src/scf/matrix1e.h>
-#include <src/scf/hcore.h>
 #include <memory>
 #include <vector>
 

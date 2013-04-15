@@ -31,10 +31,8 @@
 #include <memory>
 #include <vector>
 #include <src/scf/coeff.h>
-#include <src/scf/hcore.h>
 #include <src/wfn/geometry.h>
 #include <src/fci/dvec.h>
-#include <src/wfn/rdm.h>
 
 // Stores the result of some CI type wavefunction (FCI, CASSCF, etc.)
 // Right now only contains the bare minimum needed in the Dimer class
@@ -63,25 +61,23 @@ class CIWfn {
               const int ncore, const int nact, const int nvirt,
               std::vector<double> en, std::shared_ptr<const Dvec> ccvec)
       : geom_(g), coeff_(c), ncore_(ncore), nact_(nact), nvirt_(nvirt), nstates_(ccvec->ij()),
-         det_(ccvec->det()), ccvec_(ccvec), energies_(en) {};
+         det_(ccvec->det()), ccvec_(ccvec), energies_(en) {}
 
-    ~CIWfn() {};
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
+    const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
-    std::shared_ptr<const Geometry> geom() const { return geom_; };
-    const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
+    int ncore() const { return ncore_; }
+    int nact() const { return nact_; }
+    int nvirt() const {return nvirt_; }
 
-    int ncore() const { return ncore_; };
-    int nact() const { return nact_; };
-    int nvirt() const {return nvirt_; };
+    int nstates() const { return nstates_; }
 
-    int nstates() const { return nstates_; };
-
-    std::vector<double> energies() const { return energies_; };
-    double energy(int i) const {return energies_[i];};
+    std::vector<double> energies() const { return energies_; }
+    double energy(int i) const {return energies_[i];}
 
     // function to return a CI vectors from orbital info
-    std::shared_ptr<const Determinants> det() const { return det_; };
-    std::shared_ptr<const Dvec> civectors() const { return ccvec_; };
+    std::shared_ptr<const Determinants> det() const { return det_; }
+    std::shared_ptr<const Dvec> civectors() const { return ccvec_; }
 };
 
 }
