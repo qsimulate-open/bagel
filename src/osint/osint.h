@@ -66,7 +66,7 @@ class OSInt : public Integral {
 
     double* stack_save_;
 
-    virtual void perform_VRR(double*) {};
+    virtual void perform_VRR(double*) { throw std::logic_error("OSInt::perform_VRR should not be called"); }
     void perform_contraction(const int, const double*, const int, const int, double*,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
@@ -81,12 +81,12 @@ class OSInt : public Integral {
 
     constexpr static int nblocks() { return 1; }
     double* data(const int i) override { return data_; }
-    const double* data() const { return data_; };
+    const double* data() const { return data_; }
 
     // since this is convenient for gradient evaluation....
-    bool swap01() const { return swap01_; };
+    bool swap01() const { return swap01_; }
 
-    size_t size_block() const { return size_block_; };
+    size_t size_block() const { return size_block_; }
 };
 
 }

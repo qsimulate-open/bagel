@@ -38,13 +38,13 @@ struct AtomMap {
     AtomMap();
 
     std::map<std::string, int> atommap;
-    std::map<std::string, double> bsradii; 
+    std::map<std::string, double> bsradii;
     std::map<std::string, int> angmap;
     std::map<std::string, std::tuple<int,int,int,int>> nclosed;
     std::map<std::string, std::tuple<int,int,int,int>> nopen;
 
     int angular_number(const std::string) const;
-    int max_angular_number() const { return angmap.size()-1; };
+    int max_angular_number() const { return angmap.size()-1; }
 
     int atom_number(const std::string) const;
     double radius(const std::string) const;

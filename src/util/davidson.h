@@ -86,7 +86,7 @@ class DavidsonDiag {
         }
       }
       // diagonalize matrix to get
-      *scr_ = *mat_; 
+      *scr_ = *mat_;
       scr_->diagonalize(vec_.get());
       eig_ = scr_->slice(0,nstate_);
 

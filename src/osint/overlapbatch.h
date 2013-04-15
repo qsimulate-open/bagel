@@ -34,7 +34,7 @@ namespace bagel {
 
 class OverlapBatch : public OSInt {
   protected:
-    void perform_VRR(double*);
+    void perform_VRR(double*) override;
 
   public:
     OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());

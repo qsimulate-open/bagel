@@ -57,7 +57,6 @@ class CPCASSCF {
     CPCASSCF(const std::shared_ptr<const PairFile<Matrix, Dvec>> grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix> eig,
              const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const DFHalfDist> halfjj,
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
-    ~CPCASSCF() {};
 
     std::shared_ptr<PairFile<Matrix, Dvec>> solve() const;
 

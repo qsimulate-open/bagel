@@ -39,12 +39,11 @@ namespace bagel {
 
 class InputData {
   protected:
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>>data_;
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> data_;
     const std::string inputfile_;
 
   public:
     InputData(const std::string filename);
-    ~InputData() {};
 
     std::multimap<std::string, std::string> get_input(const std::string t) const {
       auto iter = data_.begin();
@@ -52,15 +51,15 @@ class InputData {
       if (iter == data_.end())
         throw std::runtime_error(t + " does not appear to be present in your input");
       return iter->second;
-    };
+    }
 
     bool exist (const std::string t) const {
       auto iter = data_.begin();
       for (; iter != data_.end(); ++iter) if (iter->first == t) break;
       return data_.end() != iter;
-    };
+    }
 
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> data() { return data_; };
+    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> data() { return data_; }
 
 };
 
@@ -69,7 +68,7 @@ template <typename T> T read_input(const std::multimap<std::string, std::string>
   auto iter = idat.find(key);
   if (iter != idat.end()) out = lexical_cast<T>(iter->second);
   return out;
-};
+}
 
 }
 

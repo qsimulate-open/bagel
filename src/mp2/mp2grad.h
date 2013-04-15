@@ -39,11 +39,10 @@ class MP2Grad : public MP2 {
 
   public:
     MP2Grad(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry>);
-    ~MP2Grad() {};
 
     void compute();
 
-    std::shared_ptr<Reference> conv_to_ref() const { return ref_; };
+    std::shared_ptr<Reference> conv_to_ref() const { return ref_; }
 };
 
 }

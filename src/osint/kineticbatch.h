@@ -34,7 +34,7 @@ namespace bagel {
 
 class KineticBatch : public OSInt {
   protected:
-    void perform_VRR(double*);
+    void perform_VRR(double*) override;
 
   public:
     KineticBatch(const std::array<std::shared_ptr<const Shell>,2>&);

@@ -48,9 +48,8 @@ class GradFile {
 
   public:
     GradFile(const size_t natom, const double a = 0.0) : data_(new Matrix(3, natom)) { data_->fill(a); }
-    GradFile(const std::shared_ptr<const Matrix> a) : data_(new Matrix(*a)) { }
-    GradFile(const GradFile& o) : data_(new Matrix(*o.data_)) {}
-    ~GradFile() {}
+    GradFile(const std::shared_ptr<const Matrix> a) : data_(a->copy()) { }
+    GradFile(const GradFile& o) : data_(o.data_->copy()) {}
 
     double ddot(const GradFile& o) const { return data_->ddot(o.data_); }
     double ddot(const std::shared_ptr<const GradFile> o) const { return ddot(*o); }

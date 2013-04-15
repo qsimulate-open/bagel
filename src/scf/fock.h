@@ -254,7 +254,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
     Timer pdebug(2);
 
-    std::shared_ptr<Matrix> coeff(new Matrix(*den_ex));
+    std::shared_ptr<Matrix> coeff = den_ex->copy();
     *coeff *= -1.0;
     int nocc = 0;
     {

@@ -37,7 +37,7 @@ namespace bagel {
 class DipoleBatch : public OSInt {
   protected:
     const std::array<double,3> center_;
-    void perform_VRR(double*);
+    void perform_VRR(double*) override;
 
   public:
     DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<double,3>& c);

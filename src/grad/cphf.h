@@ -46,7 +46,6 @@ class CPHF {
   public:
     CPHF(const std::shared_ptr<const Matrix> grad, const std::vector<double>& eig,
          const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const Reference> g);
-    ~CPHF() {};
 
     std::shared_ptr<Matrix> solve() const;
 
