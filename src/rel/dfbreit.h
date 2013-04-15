@@ -27,15 +27,8 @@
 #ifndef __SRC_REL_DFBREIT_H
 #define __SRC_REL_DFBREIT_H
 
-#include <memory>
-#include <string>
-#include <map>
 #include <src/df/df.h>
-#include <src/wfn/reference.h>
 #include <src/rel/alpha.h>
-#include <src/util/zmatrix.h>
-#include <src/rel/reldfbase.h>
-#include <src/rel/dfhalfcomplex.h>
 
 namespace bagel {
 

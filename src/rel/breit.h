@@ -27,10 +27,6 @@
 #ifndef __SRC_REL_BREIT_H
 #define __SRC_REL_BREIT_H
 
-#include <memory>
-#include <array>
-#include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/scf/matrix1earray.h>
 

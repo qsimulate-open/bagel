@@ -33,7 +33,6 @@
 #include <src/util/matrix.h>
 #include <src/util/zmatrix.h>
 #include <src/rel/smallnai.h>
-#include <src/util/input.h>
 
 namespace bagel {
 

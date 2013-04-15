@@ -27,11 +27,7 @@
 #ifndef __SRC_REL_CDMATRIX_H
 #define __SRC_REL_CDMATRIX_H
 
-#include <cassert>
-#include <list>
-#include <memory>
 #include <src/util/zmatrix.h>
-#include <src/rel/breit2index.h>
 
 namespace bagel {
 

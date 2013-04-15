@@ -27,18 +27,13 @@
 #ifndef __SRC_REL_DIRAC_H
 #define __SRC_REL_DIRAC_H
 
-#include <memory>
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
 #include <src/rel/relreference.h>
 #include <src/wfn/geometry.h>
-#include <src/scf/kinetic.h>
-#include <src/util/matrix.h>
-#include <src/rel/smallnai.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/reloverlap.h>
-#include <src/util/input.h>
 
 namespace bagel {
 

@@ -27,20 +27,13 @@
 #ifndef __SRC_REL_DFOCK_H
 #define __SRC_REL_DFOCK_H
 
-#include <memory>
-#include <string>
-#include <map>
 #include <src/wfn/reference.h>
 #include <src/wfn/geometry.h>
 #include <src/util/zmatrix.h>
-#include <src/df/df.h>
 #include <src/rel/dfhalfcomplex.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>
-#include <src/rel/breit.h>
-#include <src/rel/breit2index.h>
 #include <src/rel/cdmatrix.h>
-#include <src/util/timer.h>
 
 namespace bagel {
 

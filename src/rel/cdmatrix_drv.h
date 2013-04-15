@@ -27,7 +27,6 @@
 #ifndef __SRC_REL_CDMATRIX_DRV_H
 #define __SRC_REL_CDMATRIX_DRV_H
 
-#include <cassert>
 #include <src/rel/dfhalfcomplex.h>
 #include <src/rel/cdmatrix.h>
 
