@@ -76,7 +76,7 @@ void SuperCI::grad_ca(const shared_ptr<Matrix> f, shared_ptr<Matrix> fact, share
 // sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab
 void SuperCI::sigma_at_at_(const shared_ptr<RotFile> cc, shared_ptr<RotFile> sigma, const shared_ptr<Matrix> gaa, const shared_ptr<Matrix> f) {
   if (!nact_ || !nvirt_) return;
-  shared_ptr<Matrix> gtup(new Matrix(*gaa));
+  shared_ptr<Matrix> gtup = gaa->copy();
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
 #if 0

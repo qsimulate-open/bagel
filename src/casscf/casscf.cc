@@ -208,7 +208,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
-    fact = shared_ptr<Matrix>(new Matrix(*qxr));// nbasis_ runs first
+    fact = qxr->copy();// nbasis_ runs first
     for (int i = 0; i != nact_; ++i)
       daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }

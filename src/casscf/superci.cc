@@ -59,7 +59,7 @@ void SuperCI::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
-      shared_ptr<Matrix> tmp(new Matrix(*coeff_));
+      shared_ptr<Matrix> tmp = coeff_->copy();
       diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, tmp));
     }
 
@@ -174,10 +174,10 @@ void SuperCI::compute() {
       coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *rot));
     } else {
       // including natorb.first to rot so that they can be processed at once
-      shared_ptr<Matrix> tmp(new Matrix(*rot));
+      shared_ptr<Matrix> tmp = rot->copy();
       dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                           tmp->element_ptr(nclosed_, 0), nbasis_);
-      shared_ptr<const Matrix> tmp2(new Matrix(*tailor_rotation(tmp)));
+      shared_ptr<const Matrix> tmp2 = tailor_rotation(tmp)->copy();
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
     }

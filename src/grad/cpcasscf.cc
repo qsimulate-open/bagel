@@ -76,7 +76,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   shared_ptr<PairFile<Matrix, Dvec>> denom;
   const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
   {
-    shared_ptr<Matrix> d0(new Matrix(*eig_));
+    shared_ptr<Matrix> d0 = eig_->copy();
     for (int i = 0; i != d0->size(); ++i)
       if (::fabs(d0->data(i)) < 1.0e-10) d0->data(i) = 1.0;
     shared_ptr<const Civec> d1_tmp(new Civec(*fci_->denom()));

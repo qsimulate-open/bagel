@@ -73,7 +73,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   *ortho_density = (*T) % (*ortho_density) * (*T);
 
   // U matrix will collect the transformations. It should start as the identity.
-  shared_ptr<Matrix> U(new Matrix(nbasis, nbasis)); U->add_diag(1.0);
+  shared_ptr<Matrix> U(new Matrix(nbasis, nbasis)); U->unit();
 
   // Classify each eigenvalue as occupied, mixed, or virtual. All of these classifications may need to be revisited at some point.
   vector<int> occupied, mixed, virt;
@@ -174,7 +174,7 @@ void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
 shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double thresh) {
   iter_ = iter; thresh_ = thresh;
 
-  shared_ptr<Matrix> new_coeff(new Matrix(*coeff_));
+  shared_ptr<Matrix> new_coeff = coeff_->copy();
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
 
   // Localize occupied space

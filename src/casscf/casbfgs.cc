@@ -57,7 +57,7 @@ void CASBFGS::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     const shared_ptr<const Coeff> cold = coeff_;
-    const shared_ptr<const Matrix> xold(new Matrix(*x));
+    const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform CASCI to obtain RDMs
     mute_stdcout();
@@ -116,7 +116,7 @@ void CASBFGS::compute() {
     }
     if (iter == 0) {
 //if (false) {
-      xstart = shared_ptr<const Matrix>(new Matrix(*xold));
+      xstart = xold->copy(); 
       diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, cold));
     }
     // extrapolation using BFGS
