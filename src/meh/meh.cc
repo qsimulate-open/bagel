@@ -205,7 +205,7 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
 }
 
 void MultiExcitonHamiltonian::compute() {
-  cout << endl << " ===== Starting construction of dimer Hamiltonian ===== " << endl;
+  cout << endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << endl;
 
   hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
 

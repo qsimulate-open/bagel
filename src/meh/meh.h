@@ -182,7 +182,7 @@ class MultiExcitonHamiltonian {
       template<int unit>
       void state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, const CS cs, const int qa, const int qb);
 
-      template<int A, int B, int C, int D> std::pair<MatrixPtr, MatrixPtr> form_JKmatrices() const;
+      template<int A, int B, int C, int D> MatrixPtr form_coulomb_matrix() const;
       MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
 
       // Off-diagonal stuff
@@ -236,7 +236,7 @@ void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared
 }
 
 template<int A, int B, int C, int D>
-std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const {
+MatrixPtr MultiExcitonHamiltonian::form_coulomb_matrix() const {
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
@@ -248,8 +248,7 @@ std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const
   int unitB = A + B + C + D;
   for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
 
-  MatrixPtr Jout(new Matrix(ijA, ijB));
-  MatrixPtr Kout(new Matrix(ijA, ijB));
+  MatrixPtr out(new Matrix(ijA, ijB));
 
   for(int d = 0; d < (D == 0 ? nactA : nactB); ++d) {
     for(int c = 0; c < (C == 0 ? nactA : nactB); ++c) {
@@ -258,14 +257,13 @@ std::pair<MatrixPtr, MatrixPtr> MultiExcitonHamiltonian::form_JKmatrices() const
           int iA, jB;
           std::tie(iA, jB) = index<A,B,C,D>(a,b,c,d);
 
-          Jout->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<C>(c), active<D>(d));
-          Kout->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<D>(d), active<C>(c));
+          out->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<C>(c), active<D>(d));
         }
       }
     }
   }
 
-  return std::make_pair(Jout,Kout);
+  return out;
 }
 
 }
