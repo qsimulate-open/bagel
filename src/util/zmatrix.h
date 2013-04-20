@@ -88,6 +88,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<Matrix> get_real_part() const;
     std::shared_ptr<Matrix> get_imag_part() const;
 
+    std::shared_ptr<ZMatrix> get_conjg() const;
+
     std::shared_ptr<ZMatrix> get_submatrix(const int, const int, const int, const int) const;
 
     ZMatrix operator*(const ZMatrix&) const;

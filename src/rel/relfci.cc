@@ -69,35 +69,50 @@ shared_ptr<const ZMatrix> RelFCI::time_reversal_operator() {
 
   const int n = geom_->nbasis();
   std::complex<double> one  (1.0, 0.0);
+  std::complex<double> coeffi  (0.0, 1.0);
   
-  std::shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
-  std::shared_ptr<ZMatrix> unit(new ZMatrix(n, n));
+  shared_ptr<ZMatrix> kramers(new ZMatrix(4*n, 4*n));
+
+  shared_ptr<ZMatrix> unit(new ZMatrix(n, n));
   unit->unit();
 
-  out->add_block(one, 0, n, n, n, (*unit * (-1.0)).data());
-  out->add_block(one, n, 0, n, n, unit);
-  out->add_block(one, 2*n, 3*n, n, n, (*unit * (-1.0)).data());
-  out->add_block(one, 3*n, 2*n, n, n, unit);
+  kramers->add_block(one, 0, n, n, n, (*unit * (-1.0)).data());
+  kramers->add_block(one, n, 0, n, n, unit);
+  kramers->add_block(one, 2*n, 3*n, n, n, (*unit * (-1.0)).data());
+  kramers->add_block(one, 3*n, 2*n, n, n, unit);
 
-  return out;
+  shared_ptr<RelOverlap> overlap(new RelOverlap(geom_, false));
+
+  return shared_ptr<const ZMatrix>(new ZMatrix(*kramers * *overlap * coeffi));
 }
 
-void RelFCI::print_eig(const unique_ptr<double[]>& eig) {
-  const int n = geom_->nbasis();
-  for (int i = 0; i != 4*n; ++(++i)) cout << setprecision(10) << setw(15) << eig[i] <<  "    " << eig[i+1] << endl;
+void RelFCI::print_eig(const unique_ptr<double[]>& eig, const int n) {
+  for (int i = 0; i != n; ++i) cout << setprecision(10) << setw(15) << eig[i] << "    " <<  i << endl;
 }
 
 void RelFCI::compute() {
   cout << "Nothing here yet... " << endl;
+  unique_ptr<double[]> eig(new double[relref_->coeff()->ndim()]);
+  unique_ptr<double[]> eig2(new double[relref_->coeff()->ndim()]);
 
   coeff_ = relref_->coeff();
-  unique_ptr<double[]> eig(new double[coeff_->ndim()]);
-  shared_ptr<const ZMatrix> time_reversal = time_reversal_operator();
-  time_reversal->print_row("T");
-  ZMatrix tmp(*coeff_ % *time_reversal * *coeff_);
-  tmp.diagonalize(eig.get());
-  print_eig(eig);
+  shared_ptr<const ZMatrix> coeff = coeff_;
+  nocc_ = relref_->nocc();
+  nvirt_ = relref_->nvirt();
+  shared_ptr<const ZMatrix> coeff_occ = coeff->slice(0, nocc_);
+  shared_ptr<const ZMatrix> coeff_virt = coeff->slice(nocc_, nocc_+nvirt_);
 
+  shared_ptr<ZMatrix> time_reversal(shared_ptr<ZMatrix>(new ZMatrix(*time_reversal_operator())));
+//time_reversal->hermite();
+//ZMatrix tmp1(*coeff_ % *time_reversal * *coeff_);
+  ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ);
+  ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt);
+  tmp1.diagonalize(eig.get());
+  tmp2.diagonalize(eig2.get());
+  cout << " OCCUPIED " << endl;
+  print_eig(eig, tmp1.mdim());
+  cout << " VIRTUAL " << endl;
+  print_eig(eig2, tmp2.mdim());
 
   cout << "Just Kidding!" << endl;
 }
