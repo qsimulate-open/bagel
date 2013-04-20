@@ -58,8 +58,8 @@ class HPW_DIIS  {
 
     RefT extrapolate(const RefT rot, const RefT errin = RefT()) {
       // prev = log(base)
-      RefT expo = (*base_**rot).log();
-      RefT prev_ = base_->log();
+      RefT expo = (*base_**rot).log(100);
+      RefT prev_ = base_->log(100);
       RefT err;
       if (errin) {
         err = errin;
@@ -67,7 +67,7 @@ class HPW_DIIS  {
         err = RefT(new T(prev_ != nullptr ? (*expo-*prev_) : (*expo)));
       }
 
-      std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp();
+      std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp(100);
       // this is important
       extrap->purify_unitary();
       // returns unitary matrix with respect to the original matrix

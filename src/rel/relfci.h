@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: relfci.h
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2013 Matthew Kelley
 //
-// Author: Matthew Kelley matthewkelley2013@u.northwestern.edu
+// Author: Matthew Kelley <matthewkelley2013@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_RELFCI_FCI_H
-#define __BAGEL_RELFCI_FCI_H
+#ifndef __BAGEL_FCI_RELFCI_H
+#define __BAGEL_FCI_RELFCI_H
 
 #include <tuple>
 #include <cassert>
@@ -47,7 +47,7 @@ namespace bagel {
 class RelFCI {
 
   protected:
-    std::multimap<std::string, std::string> idata_; 
+    std::multimap<std::string, std::string> idata_;
 
     double thresh_;
     double print_thresh_;
@@ -73,7 +73,7 @@ class RelFCI {
 
   public:
     RelFCI(const std::multimap<std::string, std::string>&, const std::shared_ptr<const Geometry> geom,
-             const std::shared_ptr<const RelReference> re); 
+             const std::shared_ptr<const RelReference> re);
 
     void compute();
 

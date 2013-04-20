@@ -3,7 +3,7 @@
 // Filename: relfci.cc
 // Copyright (C) 2013 Matthew Kelley
 //
-// Author: Matthew Kelley matthewkelley2017@u.northwestern.edu
+// Author: Matthew Kelley <matthewkelley2017@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
