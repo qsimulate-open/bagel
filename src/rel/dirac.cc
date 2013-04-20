@@ -145,21 +145,22 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
-  //print_eig(eig);
+//print_eig(eig);
 }
 
 
 //Print non dirac sea eigenvalues
 void Dirac::print_eig(const unique_ptr<double[]>& eig) {
   const int n = geom_->nbasis();
-  for (int i = 2*n; i != 4*n; ++(++i)) cout << setprecision(10) << setw(15) << eig[i] <<  "    " << eig[i+1] << endl;
+  for (int i = 0*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig[i] <<  endl;
 }
 
 
 shared_ptr<RelReference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const int npos = geom_->nbasis()*2;
-  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg_, nneg_+npos), energy_));
+  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_));
+//return shared_ptr<RelReference>(new RelReference(geom_, coeff_, energy_, nele_, npos-nele_));
 }
 
 

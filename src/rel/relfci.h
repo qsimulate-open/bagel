@@ -60,6 +60,8 @@ class RelFCI {
     double energy_;
     int ncharge_;
     int nele_;
+    int nvirt_;
+    int nocc_;
     int nneg_;
 
     bool gaunt_;
@@ -77,7 +79,7 @@ class RelFCI {
 
     void compute();
 
-    void print_eig(const std::unique_ptr<double[]>&);
+    void print_eig(const std::unique_ptr<double[]>&, const int);
 
 };
 

@@ -726,6 +726,15 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
 }
 
 
+shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
+  shared_ptr<ZMatrix> out(new ZMatrix(ndim_, mdim_));
+  for (int i = 0; i != size(); ++i) {
+    out->data(i) = conj(data(i));
+  }
+  return out;
+}
+
+
 shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
   shared_ptr<ZMatrix> out(new ZMatrix(nsize, msize));
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
