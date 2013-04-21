@@ -101,12 +101,14 @@ void RelFCI::compute() {
   nvirt_ = relref_->nvirt();
   shared_ptr<const ZMatrix> coeff_occ = coeff->slice(0, nocc_);
   shared_ptr<const ZMatrix> coeff_virt = coeff->slice(nocc_, nocc_+nvirt_);
+  shared_ptr<const ZMatrix> coeff_occ_conjg = coeff_occ->get_conjg();
+  shared_ptr<const ZMatrix> coeff_virt_conjg = coeff_virt->get_conjg();
 
   shared_ptr<ZMatrix> time_reversal(shared_ptr<ZMatrix>(new ZMatrix(*time_reversal_operator())));
 //time_reversal->hermite();
 //ZMatrix tmp1(*coeff_ % *time_reversal * *coeff_);
-  ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ);
-  ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt);
+  ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ_conjg);
+  ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt_conjg);
   tmp1.diagonalize(eig.get());
   tmp2.diagonalize(eig2.get());
   cout << " OCCUPIED " << endl;
