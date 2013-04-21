@@ -63,6 +63,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix>) const;
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(double* vec);
+    void diagonalize_skew(double* vec);
+
     void svd(std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();

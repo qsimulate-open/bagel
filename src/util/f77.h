@@ -187,4 +187,7 @@ static void zheev_(const char* a, const char* b, const int c, std::complex<doubl
 static void zheev_(const char* a, const char* b, const int c, std::unique_ptr<std::complex<double> []>& d, const int e,
                    std::unique_ptr<double []>& f, std::unique_ptr<std::complex<double> []>& g, const int h, std::unique_ptr<double[]>& i, int& j)
                   { zheev_(a,b,&c,d.get(),&e,f.get(),g.get(),&h,i.get(),&j); }
+static void zgeev_(const char* a, const char* b, const int c, std::complex<double>* d, const int e, std::complex<double>* f,
+                   std::complex<double>* g, const int h, std::complex<double>* i, const int j, std::complex<double>* k, const int l, double* m, int& n)
+                  { zgeev_(a,b,&c,d,&e,f,g,&h,i,&j,k,&l,m,&n); }
 #endif

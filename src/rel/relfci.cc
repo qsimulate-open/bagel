@@ -76,22 +76,24 @@ shared_ptr<const ZMatrix> RelFCI::time_reversal_operator() {
   shared_ptr<ZMatrix> unit(new ZMatrix(n, n));
   unit->unit();
 
-  kramers->add_block(one, 0, n, n, n, (*unit * (-1.0)).data());
-  kramers->add_block(one, n, 0, n, n, unit);
-  kramers->add_block(one, 2*n, 3*n, n, n, (*unit * (-1.0)).data());
-  kramers->add_block(one, 3*n, 2*n, n, n, unit);
+  kramers->add_block(-1, 0, n, n, n, unit);
+  kramers->add_block( 1, n, 0, n, n, unit);
+  kramers->add_block(-1, 2*n, 3*n, n, n, unit);
+  kramers->add_block( 1, 3*n, 2*n, n, n, unit);
 
   shared_ptr<RelOverlap> overlap(new RelOverlap(geom_, false));
 
   return shared_ptr<const ZMatrix>(new ZMatrix(*kramers * *overlap * coeffi));
 }
 
+
 void RelFCI::print_eig(const unique_ptr<double[]>& eig, const int n) {
   for (int i = 0; i != n; ++i) cout << setprecision(10) << setw(15) << eig[i] << "    " <<  i << endl;
 }
 
+
 void RelFCI::compute() {
-  cout << "Nothing here yet... " << endl;
+  cout << "Debug print out in RelFCI::compute()... " << endl;
   unique_ptr<double[]> eig(new double[relref_->coeff()->ndim()]);
   unique_ptr<double[]> eig2(new double[relref_->coeff()->ndim()]);
 
@@ -105,17 +107,25 @@ void RelFCI::compute() {
   shared_ptr<const ZMatrix> coeff_virt_conjg = coeff_virt->get_conjg();
 
   shared_ptr<ZMatrix> time_reversal(shared_ptr<ZMatrix>(new ZMatrix(*time_reversal_operator())));
-//time_reversal->hermite();
-//ZMatrix tmp1(*coeff_ % *time_reversal * *coeff_);
+#if 1
   ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ_conjg);
   ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt_conjg);
+#else
+  ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ);
+  ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt);
+#endif
+tmp1.print("T");
+#if 0
+  tmp1.diagonalize_skew(eig.get());
+  tmp2.diagonalize_skew(eig2.get());
+#else
   tmp1.diagonalize(eig.get());
   tmp2.diagonalize(eig2.get());
+#endif
   cout << " OCCUPIED " << endl;
   print_eig(eig, tmp1.mdim());
   cout << " VIRTUAL " << endl;
   print_eig(eig2, tmp2.mdim());
 
-  cout << "Just Kidding!" << endl;
 }
 
