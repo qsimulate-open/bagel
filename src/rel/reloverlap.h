@@ -48,10 +48,7 @@ class RelOverlap : public ZMatrix {
   public:
     RelOverlap(const std::shared_ptr<const Geometry> geom, bool half_inverse) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4),
             geom_(geom), kinetic_(new Kinetic(geom)), overlap_(new Overlap(geom)), half_inverse_(half_inverse) {
-
-//      overlap_ = std::shared_ptr<const Overlap>(new Overlap(geom_));
       compute_();
-
     }
 
     ~RelOverlap() {};
