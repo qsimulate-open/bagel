@@ -285,3 +285,28 @@ shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) c
 
   return out;
 }
+
+void Civec::spin_decontaminate(const double thresh) {
+  const int nspin = det_->nspin();
+  const int max_spin = det_->nelea() + det_->neleb();
+
+  const double expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
+
+  shared_ptr<Civec> S2 = spin();
+
+  int k = nspin + 2;
+  while( abs(ddot(*S2) - expectation) > thresh ) {
+    if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
+
+    const double factor = -4.0/(static_cast<double>(k*(k+2)));
+    daxpy(factor, *S2);
+
+    const double norm = this->norm();
+    const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
+    scale(rescale);
+
+    S2 = spin();
+
+    k += 2;
+  }
+}
