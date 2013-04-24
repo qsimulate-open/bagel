@@ -58,6 +58,7 @@ class DimerCISpace {
     bool dications_;
     bool triplets_;
     bool quintets_;
+    bool septets_;
 
   public:
     // This constructor will build the infrastructure; civecs need to be added later
@@ -74,29 +75,13 @@ class DimerCISpace {
     std::pair<int, int> neleb() const { return neleb_; }
     std::pair<int, int> nstates() const { return nstates_; }
 
-    bool anions() { return anions_; }
-    void set_anions() { anions_ = true; }
-    void reset_anions() { anions_ = false; }
-
-    bool dianions() { return dianions_; }
-    void set_dianions() { dianions_ = true; }
-    void reset_dianions() { dianions_ = false; }
-
-    bool cations() { return cations_; }
-    void set_cations() { cations_ = true; }
-    void reset_cations() { cations_ = false; }
-
-    bool dications() { return dications_; }
-    void set_dications() { dications_ = true; }
-    void reset_dications() { dications_ = false; }
-
-    bool triplets() { return triplets_; }
-    void set_triplets() { triplets_ = true; }
-    void reset_triplets() { triplets_ = false; }
-
-    bool quintets() { return quintets_; }
-    void set_quintets() { quintets_ = true; }
-    void reset_quintets() { quintets_ = false; }
+    bool& anions() { return anions_; }
+    bool& dianions() { return dianions_; }
+    bool& cations() { return cations_; }
+    bool& dications() { return dications_; }
+    bool& triplets() { return triplets_; }
+    bool& quintets() { return quintets_; }
+    bool& septets() { return septets_; }
 
     template<int unit> std::shared_ptr<Dvec> ccvec(int qa = 0, int qb = 0) {
       MMap<Dvec>& space = (unit == 0 ? cispaceA_ : cispaceB_);

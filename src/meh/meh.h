@@ -64,7 +64,7 @@ enum class Coupling {
 };
 
 enum class CS {
-  S, Aa, Ab, dAa, dA0, dAb, Ca, Cb, dCa, dC0, dCb, Ta, T0, Tb, Qaa, Qa, Q0, Qb, Qbb, MAX
+  S, Aa, Ab, dAa, dA0, dAb, Ca, Cb, dCa, dC0, dCb, Ta, T0, Tb, Qaa, Qa, Q0, Qb, Qbb, Saaa, Saa, Sa, S0, Sb, Sbb, Sbbb, MAX
 };
 
 class DimerSubspace {

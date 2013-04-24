@@ -516,6 +516,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
   const int nsinglets = read_input<int>(idata, "nsinglets", 1);
   const int ntriplets = read_input<int>(idata, "ntriplets", 0);
   const int nquintets = read_input<int>(idata, "nquintets", 0);
+  const int nseptets = read_input<int>(idata, "nseptets", 0);
   const int nanions = read_input<int>(idata, "nanions", 0);
   const int ndianions = read_input<int>(idata, "ndianions", 0);
   const int ncations = read_input<int>(idata, "ncations", 0);
@@ -533,34 +534,39 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
   out->insert(embedded_casci(idata, 0, 0, nsinglets));
   
   if (nanions > 0) {
-    out->set_anions();
+    out->anions() = true;
     hacked_cout << "   Dimer: starting computation of " << nanions << " anions in each unit." << endl;
     out->insert(embedded_casci(idata, -1, 1, nanions));
   }
   if (ndianions > 0) {
-    out->set_dianions();
+    out->dianions() = true;
     hacked_cout << "   Dimer: starting computation of " << ndianions << " dianions in each unit." << endl;
     out->insert(embedded_casci(idata, -2, 2, ndianions));
   }
   if (ncations > 0) {
-    out->set_cations();
+    out->cations() = true;
     hacked_cout << "   Dimer: starting computation of " << ncations << " cations in each unit." << endl;
     out->insert(embedded_casci(idata, +1, 1, ncations));
   }
   if (ndications > 0) {
-    out->set_dications();
+    out->dications() = true;
     hacked_cout << "   Dimer: starting computation of " << ndications << " dications in each unit." << endl;
     out->insert(embedded_casci(idata, +2, 2, ndications));
   }
   if (ntriplets > 0) {
-    out->set_triplets();
+    out->triplets() = true;
     hacked_cout << "   Dimer: starting computation of " << ntriplets << " triplets in each unit." << endl;
     out->insert(embedded_casci(idata, 0, 2, ntriplets));
   }
   if (nquintets > 0) {
-    out->set_quintets();
+    out->quintets() = true;
     hacked_cout << "   Dimer: starting computation of " << nquintets << " quintets in each unit." << endl;
     out->insert(embedded_casci(idata, 0, 4, nquintets));
+  }
+  if (nseptets > 0) {
+    out->septets() = true;
+    hacked_cout << "   Dimer: starting computation of " << nseptets << " septets in each unit." << endl;
+    out->insert(embedded_casci(idata, 0, 6, nseptets));
   }
 
   cout.rdbuf(saved_cout);

@@ -104,6 +104,12 @@ void MultiExcitonHamiltonian::common_init() {
     state_inserter<1>(collection_B, CS::Qaa, 2, -2);
   }
 
+  // septets states
+  if (cispace_->septets()) {
+    state_inserter<0>(collection_A, CS::Saaa, 3, -3);
+    state_inserter<1>(collection_B, CS::Saaa, 3, -3);
+  }
+
   // Package like civecs into Dvecs
   dimerstates_ = 0;
 
@@ -160,6 +166,19 @@ void MultiExcitonHamiltonian::common_init() {
     subspaces_.emplace_back(dimerstates_, "Q0 ", "Q0 ", make_pair(dvecs_A.at(qa+2), dvecs_B.at(qb-2)));
     subspaces_.emplace_back(dimerstates_, "Qb ", "Qa ", make_pair(dvecs_A.at(qa+3), dvecs_B.at(qb-3)));
     subspaces_.emplace_back(dimerstates_, "Qbb", "Qaa", make_pair(dvecs_A.at(qa+4), dvecs_B.at(qb-4)));
+  }
+
+  // Septets
+  if (cispace_->septets()) {
+    int qa = static_cast<int>(CS::Saaa);
+    int qb = static_cast<int>(CS::Sbbb);
+    subspaces_.emplace_back(dimerstates_, "Saaa", "Sbbb", make_pair(dvecs_A.at(qa), dvecs_B.at(qb)));
+    subspaces_.emplace_back(dimerstates_, "Saa ", "Sbb ", make_pair(dvecs_A.at(qa+1), dvecs_B.at(qb-1)));
+    subspaces_.emplace_back(dimerstates_, "Sa  ", "Sb  ", make_pair(dvecs_A.at(qa+2), dvecs_B.at(qb-2)));
+    subspaces_.emplace_back(dimerstates_, "S0  ", "S0  ", make_pair(dvecs_A.at(qa+3), dvecs_B.at(qb-3)));
+    subspaces_.emplace_back(dimerstates_, "Sb  ", "Sa  ", make_pair(dvecs_A.at(qa+4), dvecs_B.at(qb-4)));
+    subspaces_.emplace_back(dimerstates_, "Sbb ", "Saa ", make_pair(dvecs_A.at(qa+5), dvecs_B.at(qb-5)));
+    subspaces_.emplace_back(dimerstates_, "Sbbb", "Saaa", make_pair(dvecs_A.at(qa+6), dvecs_B.at(qb-6)));
   }
 
   cispace_->complete();
@@ -354,7 +373,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
   Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
   shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
-  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<0>());
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
 
   if ( (neleA % 2) == 1 ) out->scale(-1.0);
 
