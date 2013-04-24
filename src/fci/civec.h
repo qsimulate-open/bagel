@@ -111,7 +111,7 @@ class Civec {
     std::shared_ptr<Civec> spin() const; // returns S^2 | civec >
     std::shared_ptr<Civec> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_-
     std::shared_ptr<Civec> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_+
-    void spin_decontaminate(const double thresh = 1.0e-16);
+    void spin_decontaminate(const double thresh = 1.0e-12);
 
     Civec& operator*=(const double& a) { scale(a); return *this; }
     Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }
