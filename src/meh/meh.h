@@ -213,7 +213,7 @@ void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared
   const int cs_int = static_cast<int>(cs);
   const int size = currentvec->ij();
   for(int i = 0; i < size; ++i) {
-    if ( std::abs(expectation - currentvec->data(i)->spin_expectation()) < thresh ) {
+    if ( std::fabs(expectation - currentvec->data(i)->spin_expectation()) < thresh ) {
       ccvec.at(cs_int).push_back(currentvec->data(i));
     }
     else {std::cout << "Removing one state of type (qa,qb) = (" << qa << "," << qb << ") due to spin contamination." << std::endl;}
@@ -228,7 +228,7 @@ void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared
       const double norm = currentvec->data(j)->norm();
       if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
       currentvec->data(j)->scale(1.0/norm);
-      if ( std::abs(expectation - currentvec->data(j)->spin_expectation()) < thresh ) {
+      if ( std::fabs(expectation - currentvec->data(j)->spin_expectation()) < thresh ) {
         ccvec.at(cs_position).push_back(currentvec->data(j));
       }
     }
