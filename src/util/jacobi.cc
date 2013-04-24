@@ -52,7 +52,7 @@ void JacobiDiag::rotate(const int k, const int l) {
   const double ll = A_->element(l,l);
 
   const double beta = 0.5*(ll - kk)/kl;
-  const double t = copysign(1.0,beta)/(abs(beta) + sqrt(beta*beta + 1.0));
+  const double t = copysign(1.0,beta)/(fabs(beta) + sqrt(beta*beta + 1.0));
   const double c = 1.0/(sqrt(t*t + 1.0));
   const double s = c*t;
   const double rho = (1.0 - c)/s;
@@ -111,7 +111,7 @@ void JacobiPM::rotate(const int k, const int l) {
   double Ast = ddot_(natoms, Qkl_A.data(), 1, Qkl_A.data(), 1) - 0.25 * ddot_(natoms, Qkminusl_A.data(), 1, Qkminusl_A.data(), 1);
   double Bst = ddot_(natoms, Qkl_A.data(), 1, Qkminusl_A.data(), 1);
 
-  if( abs(Bst) < numerical_zero__ && Ast > 0.0 ) return;
+  if( fabs(Bst) < numerical_zero__ && Ast > 0.0 ) return;
 
   double gamma = copysign(0.25, Bst) * acos( -Ast/hypot(Ast,Bst) );
 

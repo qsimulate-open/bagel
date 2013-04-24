@@ -228,7 +228,7 @@ void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, 
     cout << setw(3) << i+1 << setw(16) << setprecision(10) << tmp_P
                            << setw(16) << setprecision(10) << dP << endl;
     P = tmp_P;
-    if (abs(dP) < thresh_) {
+    if (fabs(dP) < thresh_) {
       cout << "Converged!" << endl;
       break;
     }

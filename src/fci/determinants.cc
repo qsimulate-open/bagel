@@ -119,8 +119,8 @@ void Determinants::print(const double* const civec, const double thr) const {
   multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
   for (auto& ia : stringa_) {
     for (auto& ib : stringb_) {
-      if (abs(*i) > thr) {
-        tmp.insert(make_pair(-abs(*i), make_tuple(*i, ia, ib)));
+      if (fabs(*i) > thr) {
+        tmp.insert(make_pair(-fabs(*i), make_tuple(*i, ia, ib)));
       }
       ++i;
     }

@@ -165,7 +165,7 @@ void RDM<3>::print(const double thresh) const {
         for (int l = 0; l != norb_; ++l)
         for (int m = 0; m != norb_; ++m)
         for (int n = 0; n != norb_; ++n, ++ptr)
-          if (abs(*ptr) > thresh)
+          if (fabs(*ptr) > thresh)
             cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
                  << k << setw(3) << j << setw(3) << i
                  << setw(12) << setprecision(7) << *ptr << endl;

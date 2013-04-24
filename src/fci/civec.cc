@@ -295,7 +295,7 @@ void Civec::spin_decontaminate(const double thresh) {
   shared_ptr<Civec> S2 = spin();
 
   int k = nspin + 2;
-  while( abs(ddot(*S2) - expectation) > thresh ) {
+  while( fabs(ddot(*S2) - expectation) > thresh ) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
