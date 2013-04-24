@@ -98,14 +98,13 @@ void FCI::common_init() {
 //   - nspin: #alpha - #beta
 //   - out:
 void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec> out) {
-  int ndet = nstate_ * 10;
-  vector<bitset<nbit__>> done;
-  int oindex = 0;
-
+  int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
 
   // Spin adapt detseeds
+  int oindex = 0;
+  vector<bitset<nbit__>> done;
   for (auto& it : bits) {
     bitset<nbit__> alpha = it.second;
     bitset<nbit__> beta = it.first;
