@@ -125,6 +125,7 @@ void FCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
+    out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
