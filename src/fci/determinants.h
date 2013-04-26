@@ -125,6 +125,8 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     size_t lena() const { return stringa_.size(); }
     size_t lenb() const { return stringb_.size(); }
 
+    size_t ncsfs() const;
+
     std::shared_ptr<Determinants> transpose() const { return std::shared_ptr<Determinants>(new Determinants(norb_, neleb_, nelea_, compress_, true)); }
 
     std::string print_bit(std::bitset<nbit__> bit) const {

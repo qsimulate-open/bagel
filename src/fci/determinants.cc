@@ -50,8 +50,33 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
   if (!mute) cout << "      length: " << setw(13) << phia_.size()*phia_.front().size() << endl;
   if (!mute) cout << "  o single displacement lists (beta)" << endl;
   const_phis_<1>(stringb_, phib_);
-  if (!mute) cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl << endl;
+  if (!mute) cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
+  if (!mute) cout << "  o size of the space " << endl;
+  if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
+  if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
 
+}
+
+size_t Determinants::ncsfs() const {
+  const long double S = 0.5*static_cast<long double>(nspin());
+  const long double N = static_cast<long double>(nelea() + neleb());
+  const long double M = static_cast<long double>(norb());
+
+  long double out = (2.0L * S + 1.0L)/(M + 1.0L);
+
+  const int k1 = static_cast<int>(0.5*N - S);
+  for (int i = 1; i <= k1; ++i) {
+    const long double il = static_cast<long double>(i);
+    out *= (M + 1.0L - (static_cast<long double>(k1) - il))/il;
+  }
+
+  const int k2 = static_cast<int>(M-0.5*N-S);
+  for (int i = 1; i <= k2; ++i) {
+    const long double il = static_cast<long double>(i);
+    out *= (M + 1.0L - (static_cast<long double>(k1) - il))/il;
+  }
+  
+  return static_cast<size_t>(out + 0.5L);
 }
 
 
