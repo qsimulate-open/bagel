@@ -58,25 +58,14 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
 }
 
 size_t Determinants::ncsfs() const {
-  const long double S = 0.5*static_cast<long double>(nspin());
-  const long double N = static_cast<long double>(nelea() + neleb());
-  const long double M = static_cast<long double>(norb());
+  const int twoS = nspin();
+  const int N = nelea() + neleb();
+  const int M = norb();
 
-  long double out = (2.0L * S + 1.0L)/(M + 1.0L);
+  size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
+  out /= M + 1;
 
-  const int k1 = static_cast<int>(0.5*N - S);
-  for (int i = 1; i <= k1; ++i) {
-    const long double il = static_cast<long double>(i);
-    out *= (M + 1.0L - (static_cast<long double>(k1) - il))/il;
-  }
-
-  const int k2 = static_cast<int>(M-0.5*N-S);
-  for (int i = 1; i <= k2; ++i) {
-    const long double il = static_cast<long double>(i);
-    out *= (M + 1.0L - (static_cast<long double>(k1) - il))/il;
-  }
-  
-  return static_cast<size_t>(out + 0.5L);
+  return out;
 }
 
 
