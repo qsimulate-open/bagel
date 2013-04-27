@@ -41,16 +41,16 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
                 const int* const amap, const int* const cmap, const int& asize_, double* const workx, double* const worky, double* const workz,
                 double* const worktx, double* const workty, double* const worktz, double* const worksx, double* const worksy, double* const worksz) {
 
-  const int amin_ = a_;
-  const int cmin_ = c_;
-  const int amax_ = a_+b_;
-  const int cmax_ = c_+d_;
-  const int amax1_ = amax_+1;
-  const int cmax1_ = cmax_+1;
-  const int amax2 = amax_+2;
-  const int cmax2 = cmax_+2;
-  const int isize = amax2 * cmax2;
-  const int worksize = rank_ * isize;
+  constexpr int amin_ = a_;
+  constexpr int cmin_ = c_;
+  constexpr int amax_ = a_+b_;
+  constexpr int cmax_ = c_+d_;
+  constexpr int amax1_ = amax_+1;
+  constexpr int cmax1_ = cmax_+1;
+  constexpr int amax2 = amax_+2;
+  constexpr int cmax2 = cmax_+2;
+  constexpr int isize = amax2 * cmax2;
+  constexpr int worksize = rank_ * isize;
 
   double iyiz_nn[rank_];
   double iyiz_tn[rank_];

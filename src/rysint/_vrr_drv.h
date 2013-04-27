@@ -44,15 +44,15 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
                 const int* const amap, const int* const cmap, const int& asize_, double* const workx, double* const worky, double* const workz) {
 
   // compile time
-  const int amax_ = a_+b_;
-  const int cmax_ = c_+d_;
-  const int amax1_ = a_+b_+1;
-  const int cmax1_ = c_+d_+1;
-  const int amin_ = a_;
-  const int cmin_ = c_;
+  constexpr int amax_ = a_+b_;
+  constexpr int cmax_ = c_+d_;
+  constexpr int amax1_ = a_+b_+1;
+  constexpr int cmax1_ = c_+d_+1;
+  constexpr int amin_ = a_;
+  constexpr int cmin_ = c_;
 
-  const int isize = (amax_ + 1) * (cmax_ + 1);
-  const int worksize = rank_ * isize;
+  constexpr int isize = (amax_ + 1) * (cmax_ + 1);
+  constexpr int worksize = rank_ * isize;
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
   double iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated

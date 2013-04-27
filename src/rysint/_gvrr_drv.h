@@ -47,16 +47,16 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
                  double* const final_za, double* const final_zb, double* const final_zc,
                  double* const workx, double* const worky, double* const workz) {
 
-  const int amax_ = a_+b_+1;
-  const int cmax_ = c_+d_+1;
+  constexpr int amax_ = a_+b_+1;
+  constexpr int cmax_ = c_+d_+1;
 
-  const int a2 = a_+2;
-  const int b2 = b_+2;
-  const int c2 = c_+2;
-  const int d2 = d_+2;
+  constexpr int a2 = a_+2;
+  constexpr int b2 = b_+2;
+  constexpr int c2 = c_+2;
+  constexpr int d2 = d_+2;
 
-  const int isize = (amax_+1) * (cmax_+1);
-  const int worksize = rank_ * isize;
+  constexpr int isize = (amax_+1) * (cmax_+1);
+  constexpr int worksize = rank_ * isize;
 
   const double oxp2 = 0.5 / xp;
   const double oxq2 = 0.5 / xq;

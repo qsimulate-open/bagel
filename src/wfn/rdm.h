@@ -99,20 +99,22 @@ class RDM : public RDM_base {
 
 
     // returns if this is natural orbitals - only for rank 1
-    bool natural_orbitals() const { assert(false); return true; }
-
+    bool natural_orbitals() const {
+      throw std::logic_error("RDM<N>::natural_orbitals() should not be called with N>1");
+      return true;
+    }
 
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
-      assert(false);
+      throw std::logic_error("RDM<N>::rdm1_mat() should not be called with N>1");
       return std::shared_ptr<Matrix>();
     }
 
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {
-      assert(false);
+      throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
       return std::pair<std::shared_ptr<Matrix>, std::vector<double>>();
     }
 
-    void transform(const std::shared_ptr<Matrix>& coeff) { assert(false); }
+    void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
 
     std::vector<double> diag() const {
       std::vector<double> out(dim_);
@@ -120,7 +122,7 @@ class RDM : public RDM_base {
       return out;
     }
 
-    void print(const double thresh = 1.0e-3) const { assert(false); }
+    void print(const double thresh = 1.0e-3) const { throw std::logic_error("RDM<N>::print() (N>3) not implemented yet"); }
 };
 
 template<> bool RDM<1>::natural_orbitals() const;

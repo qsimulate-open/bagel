@@ -569,7 +569,7 @@ class Comb {
       c_[31*max_+30] = 31;
       c_[31*max_+31] = 1;
     }
-    unsigned long c(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; }
+    size_t c(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; }
 };
 
 #endif
