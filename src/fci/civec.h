@@ -130,7 +130,7 @@ class Civec {
     double orthog(std::shared_ptr<const Civec> o);
     void project_out(std::shared_ptr<const Civec> o) { daxpy(-ddot(*o), *o); }
 
-    void print(const double thresh) const { det_->print(data(), thresh); }
+    void print(const double thresh) const;
 
     std::shared_ptr<DistCivec> distcivec() const;
 };

@@ -172,7 +172,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return out;
     }
 
-    void print(const double* const civec, const double thr) const;
     const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
     const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
     const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }

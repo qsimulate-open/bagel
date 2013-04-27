@@ -127,24 +127,6 @@ void Determinants::const_lexical_mapping_() {
 }
 
 
-void Determinants::print(const double* const civec, const double thr) const {
-  const double* i = civec;
-  // multimap sorts elements so that they will be shown in the descending order in magnitude
-  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
-  for (auto& ia : stringa_) {
-    for (auto& ib : stringb_) {
-      if (fabs(*i) > thr) {
-        tmp.insert(make_pair(-fabs(*i), make_tuple(*i, ia, ib)));
-      }
-      ++i;
-    }
-  }
-  for (auto& iter : tmp) {
-    cout << "       " << print_bit(get<1>(iter.second), get<2>(iter.second))
-         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
-  }
-}
-
 pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
   vector<tuple<int, int, int>> out;
 

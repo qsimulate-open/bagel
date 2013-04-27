@@ -144,6 +144,26 @@ double Civec::spin_expectation() const {
   return out;
 }
 
+
+void Civec::print(const double thr) const {
+  const double* i = cc();
+  // multimap sorts elements so that they will be shown in the descending order in magnitude
+  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
+  for (auto& ia : det_->stringa()) {
+    for (auto& ib : det_->stringb()) {
+      if (fabs(*i) > thr) {
+        tmp.insert(make_pair(-fabs(*i), make_tuple(*i, ia, ib)));
+      }
+      ++i;
+    }
+  }
+  for (auto& iter : tmp) {
+    cout << "       " << det_->print_bit(get<1>(iter.second), get<2>(iter.second))
+         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
+  }
+}
+
+
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<Civec> Civec::spin() const {
   shared_ptr<Civec> out(new Civec(det_));
