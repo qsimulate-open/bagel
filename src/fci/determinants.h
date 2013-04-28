@@ -90,7 +90,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
 
     std::bitset<nbit__> numbers_to_bit(const std::vector<int>& num) const {
       std::bitset<nbit__> out(0);
-      for (auto i = num.begin(); i != num.end(); ++i) out.set(*i);
+      for (auto& i : num) out.set(i);
       return out;
     }
 
