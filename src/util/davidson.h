@@ -30,8 +30,8 @@
 //  - void orthog(list<shared_ptr<T>>)
 //
 
-#ifndef __NEWINT_UTIL_DAVIDSON
-#define __NEWINT_UTIL_DAVIDSON
+#ifndef __BAGEL_UTIL_DAVIDSON
+#define __BAGEL_UTIL_DAVIDSON
 
 #include <list>
 #include <memory>
@@ -46,6 +46,8 @@ class DavidsonDiag {
     const int nstate_;
     const int max_;
     int size_;
+    bool orthogonalize_; // has linear dependence been encountered yet?
+
     std::list<std::shared_ptr<const T>> c_;
     std::list<std::shared_ptr<const T>> sigma_;
 
@@ -56,13 +58,17 @@ class DavidsonDiag {
     std::unique_ptr<double[]> vec_;
     // an eigenvector
     std::shared_ptr<Matrix> eig_;
+    // overlap matrix
+    std::shared_ptr<Matrix> overlap_;
+    std::shared_ptr<Matrix> ovlp_scr_;
 
     // for convenience below
     double& mat(int i, int j) { return mat_->element(i,j); }
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), mat_(new Matrix(max_,max_,true)),
-                                 scr_(new Matrix(max_,max_,true)), vec_(new double[max_]) {
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(new Matrix(max_,max_,true)),
+                                 scr_(new Matrix(max_,max_,true)), vec_(new double[max_]), overlap_(new Matrix(max_,max_,true)),
+                                 ovlp_scr_(new Matrix(max_,max_,true)) {
     }
     ~DavidsonDiag(){}
 
@@ -77,17 +83,34 @@ class DavidsonDiag {
       // add entry
       for (auto& it : cc) c_.push_back(it);
       for (auto& it : cs) sigma_.push_back(it);
+
       // adding new matrix elements
-      for (auto& s : cs) {
-        auto iter = c_.begin();
+      auto icivec = cc.begin();
+      for (auto isigma = cs.begin(); isigma != cs.end(); ++isigma, ++icivec) {
         ++size_;
-        for (int i = 0; i != size_; ++iter, ++i) {
-          mat(i,size_-1) = mat(size_-1,i) = (*iter)->ddot(*s);
+        double overlap_row = 0.0;
+        auto cciter = c_.begin();
+        for (int i = 0; i != size_; ++i, ++cciter) {
+          mat(i, size_-1) = mat(size_-1,i) = (*isigma)->ddot(**cciter);
+          overlap_->element(i, size_-1) = overlap_->element(size_-1,i) = (*icivec)->ddot(**cciter);
+          if (!orthogonalize_) overlap_row += fabs(overlap_->element(i, size_-1));
         }
+        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) orthogonalize_ = true;
       }
+
+      if (orthogonalize_) {
+        std::shared_ptr<Matrix> tmp = overlap_->get_submatrix(0, 0, size_, size_);
+        tmp->inverse_half();
+
+        ovlp_scr_->copy_block(0, 0, tmp);
+      }
+
       // diagonalize matrix to get
-      *scr_ = *mat_;
-      scr_->diagonalize(vec_.get());
+      *scr_ = orthogonalize_ ? *ovlp_scr_ % *mat_ * *ovlp_scr_ : *mat_;
+      std::shared_ptr<Matrix> tmp = scr_->get_submatrix(0, 0, size_, size_);
+      tmp->diagonalize(vec_.get());
+      scr_->copy_block(0, 0, tmp);
+      if ( orthogonalize_ ) *scr_ = *ovlp_scr_ * *scr_;
       eig_ = scr_->slice(0,nstate_);
 
       return std::vector<double>(vec_.get(), vec_.get()+nstate_);
