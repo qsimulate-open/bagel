@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __NEWINT_UTIL_TIMER_H
-#define __NEWINT_UTIL_TIMER_H
+#ifndef __BAGEL_UTIL_TIMER_H
+#define __BAGEL_UTIL_TIMER_H
 
 #include <chrono>
 #include <iostream>

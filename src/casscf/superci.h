@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_CASSCF_SUPERCI_H
-#define __NEWINT_CASSCF_SUPERCI_H
+#ifndef __BAGEL_CASSCF_SUPERCI_H
+#define __BAGEL_CASSCF_SUPERCI_H
 
 #include <memory>
 #include <string>

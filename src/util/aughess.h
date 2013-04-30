@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_SRC_UTIL_AUGHESS_H
-#define __NEWINT_SRC_UTIL_AUGHESS_H
+#ifndef __BAGEL_SRC_UTIL_AUGHESS_H
+#define __BAGEL_SRC_UTIL_AUGHESS_H
 
 #include <memory>
 #include <list>

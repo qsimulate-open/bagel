@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_CASSCF_SUPERCIGRAD_H
-#define __NEWINT_CASSCF_SUPERCIGRAD_H
+#ifndef __BAGEL_CASSCF_SUPERCIGRAD_H
+#define __BAGEL_CASSCF_SUPERCIGRAD_H
 
 #include <memory>
 #include <string>

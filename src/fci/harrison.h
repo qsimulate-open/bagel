@@ -26,8 +26,8 @@
 // Desc :: The implementation closely follows Harrison and Zarrabian
 //
 
-#ifndef __NEWINT_FCI_HARRISONZARRABIAN_H
-#define __NEWINT_FCI_HARRISONZARRABIAN_H
+#ifndef __BAGEL_FCI_HARRISONZARRABIAN_H
+#define __BAGEL_FCI_HARRISONZARRABIAN_H
 
 #include <tuple>
 #include <src/scf/scf.h>

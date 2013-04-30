@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_CASSCF_CASBFGS_H
-#define __NEWINT_CASSCF_CASBFGS_H
+#ifndef __BAGEL_CASSCF_CASBFGS_H
+#define __BAGEL_CASSCF_CASBFGS_H
 
 #include <memory>
 #include <string>

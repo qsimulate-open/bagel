@@ -32,8 +32,8 @@
 // Also operator "*=" should be overloaded in T.
 // Copy constructor is needed as well.
 
-#ifndef __NEWINT_UTIL_HPW_DIIS_H
-#define __NEWINT_UTIL_HPW_DIIS_H
+#ifndef __BAGEL_UTIL_HPW_DIIS_H
+#define __BAGEL_UTIL_HPW_DIIS_H
 
 #include <src/util/diis.h>
 #include <src/util/bfgs.h>

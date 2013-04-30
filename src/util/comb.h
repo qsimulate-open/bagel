@@ -25,8 +25,8 @@
 
 //
 
-#ifndef __NEWINT_UTIL_COMB_H
-#define __NEWINT_UTIL_COMB_H
+#ifndef __BAGEL_UTIL_COMB_H
+#define __BAGEL_UTIL_COMB_H
 
 #include <algorithm>
 #include <array>

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_WFN_RDM_H
-#define __NEWINT_WFN_RDM_H
+#ifndef __BAGEL_WFN_RDM_H
+#define __BAGEL_WFN_RDM_H
 
 #include <algorithm>
 #include <iostream>
