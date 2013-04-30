@@ -34,22 +34,6 @@
 using namespace std;
 using namespace bagel;
 
-static vector<string> split(const string& s, const string& delimiters) {
-  vector<string> out;
-  size_t current;
-  size_t next = -1;
-  do {
-    current = next + 1;
-    next = s.find_first_of(delimiters, current);
-    const string now = s.substr(current, next - current);
-    out.push_back(now);
-  } while (next != std::string::npos);
-  return out;
-}
-static string &ltrim(string &s) { s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace)))); return s; }
-static string &rtrim(string &s) { s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end()); return s; }
-static string &trim(string &s) { return ltrim(rtrim(s)); }
-
 InputData::InputData(const string filename) : inputfile_(filename) {
   ifstream ifs;
   ifs.open(inputfile_);

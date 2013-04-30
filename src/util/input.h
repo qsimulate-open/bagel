@@ -32,6 +32,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <vector>
 #include <stdexcept>
 #include <src/util/lexical_cast.h>
 
@@ -63,10 +64,42 @@ class InputData {
 
 };
 
+static std::vector<std::string> split(const std::string& s, const std::string& delimiters) {
+  std::vector<std::string> out;
+  size_t current;
+  size_t next = -1;
+  do {
+    current = next + 1;
+    next = s.find_first_of(delimiters, current);
+    const std::string now = s.substr(current, next - current);
+    out.push_back(now);
+  } while (next != std::string::npos);
+  return out;
+}
+static std::string &ltrim(std::string &s) { s.erase(s.begin(), find_if(s.begin(), s.end(), not1(std::ptr_fun<int, int>(isspace)))); return s; }
+static std::string &rtrim(std::string &s) { s.erase(find_if(s.rbegin(), s.rend(), not1(std::ptr_fun<int, int>(isspace))).base(), s.end()); return s; }
+static std::string &trim(std::string &s) { return ltrim(rtrim(s)); }
+
 template <typename T> T read_input(const std::multimap<std::string, std::string> idat, const std::string key, const T defvalue) {
   T out = defvalue;
   auto iter = idat.find(key);
   if (iter != idat.end()) out = lexical_cast<T>(iter->second);
+  return out;
+}
+
+template<typename T> std::vector<std::vector<T>> read_input_vector_range(const std::multimap<std::string, std::string> idat, const std::string key, const std::string defvalue) {
+  std::vector<std::vector<T>> out;
+
+  auto range = idat.equal_range(key);
+  for (auto iter = range.first; iter != range.second; ++iter) {
+    std::vector<std::string> vecstring = split(iter->second, ",");
+    std::vector<T> tmp;
+    for ( auto& i : vecstring ) {
+      tmp.push_back(lexical_cast<T>(i));
+    }
+    out.push_back(tmp);
+  }
+
   return out;
 }
 
