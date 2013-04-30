@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_CASSCF_ROTFILE_H
-#define __NEWINT_CASSCF_ROTFILE_H
+#ifndef __BAGEL_CASSCF_ROTFILE_H
+#define __BAGEL_CASSCF_ROTFILE_H
 
 #include <list>
 #include <memory>

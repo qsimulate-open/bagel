@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __NEWINT_FCI_DISTFCI_H
-#define __NEWINT_FCI_DISTFCI_H
+#ifndef __BAGEL_FCI_DISTFCI_H
+#define __BAGEL_FCI_DISTFCI_H
 
 #include <memory>
 #include <vector>

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef _NEWINT_WFN_REFERENCE_H
-#define _NEWINT_WFN_REFERENCE_H
+#ifndef _BAGEL_WFN_REFERENCE_H
+#define _BAGEL_WFN_REFERENCE_H
 
 #include <cassert>
 #include <memory>

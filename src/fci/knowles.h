@@ -27,8 +27,8 @@
 //         It is amazing how easy it is to implement FCI !!
 //
 
-#ifndef __NEWINT_FCI_KNOWLESHANDY_H
-#define __NEWINT_FCI_KNOWLESHANDY_H
+#ifndef __BAGEL_FCI_KNOWLESHANDY_H
+#define __BAGEL_FCI_KNOWLESHANDY_H
 
 #include <tuple>
 #include <src/scf/scf.h>

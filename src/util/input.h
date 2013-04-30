@@ -26,8 +26,8 @@
 
 // new interface to the input
 
-#ifndef __NEWINT_UTIL_INPUT_H
-#define __NEWINT_UTIL_INPUT_H
+#ifndef __BAGEL_UTIL_INPUT_H
+#define __BAGEL_UTIL_INPUT_H
 
 #include <map>
 #include <list>

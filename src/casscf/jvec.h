@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_SRC_CASSCF_JVEC_H
-#define __NEWINT_SRC_CASSCF_JVEC_H
+#ifndef __BAGEL_SRC_CASSCF_JVEC_H
+#define __BAGEL_SRC_CASSCF_JVEC_H
 
 #include <src/fci/fci.h>
 #include <src/scf/coeff.h>

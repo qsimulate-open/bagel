@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_SRC_CASSCF_QVEC
-#define __NEWINT_SRC_CASSCF_QVEC
+#ifndef __BAGEL_SRC_CASSCF_QVEC
+#define __BAGEL_SRC_CASSCF_QVEC
 
 #include <memory>
 #include <src/df/df.h>

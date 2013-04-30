@@ -25,8 +25,8 @@
 
 
 
-#ifndef __NEWINT_FCI_MOFILE_H
-#define __NEWINT_FCI_MOFILE_H
+#ifndef __BAGEL_FCI_MOFILE_H
+#define __BAGEL_FCI_MOFILE_H
 
 #include <fstream>
 #include <string>

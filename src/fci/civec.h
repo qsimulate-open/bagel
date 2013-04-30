@@ -24,8 +24,8 @@
 //
 
 
-#ifndef NEWINT_FCI_CIVEC_H
-#define NEWINT_FCI_CIVEC_H
+#ifndef BAGEL_FCI_CIVEC_H
+#define BAGEL_FCI_CIVEC_H
 
 #include <stddef.h>
 #include <list>

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __NEWINT_CASSCF_WERNER_H
-#define __NEWINT_CASSCF_WERNER_H
+#ifndef __BAGEL_CASSCF_WERNER_H
+#define __BAGEL_CASSCF_WERNER_H
 
 #include <src/casscf/casscf.h>
 #include <src/casscf/rotfile.h>

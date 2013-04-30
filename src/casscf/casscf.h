@@ -28,8 +28,8 @@
 // This should be a good strategy in large systems.
 //
 
-#ifndef __NEWINT_CASSCF_CASSCF_H
-#define __NEWINT_CASSCF_CASSCF_H
+#ifndef __BAGEL_CASSCF_CASSCF_H
+#define __BAGEL_CASSCF_CASSCF_H
 
 #include <cassert>
 #include <vector>
