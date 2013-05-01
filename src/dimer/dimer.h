@@ -44,7 +44,7 @@ namespace bagel {
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
    template <class T> using Ref = std::shared_ptr<const T>;
-   using MultimapInput = std::multimap<std::string,std::string>;
+   using TreeInput = const boost::property_tree::ptree&;
 
    protected:
       std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
@@ -112,14 +112,14 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Coeff> overlap() const; 
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const { return std::shared_ptr<Matrix>(); };
 
-      void set_active(MultimapInput idata);
-      void localize(MultimapInput idata);
+      void set_active(TreeInput idata);
+      void localize(TreeInput idata);
 
 
       // Calculations
-      void scf(MultimapInput idata); // SCF on dimer and then localize
-      std::pair<Ref<Dvec>,Ref<Dvec>> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
-      std::shared_ptr<DimerCISpace> compute_cispace(MultimapInput idata);
+      void scf(TreeInput idata); // SCF on dimer and then localize
+      std::pair<Ref<Dvec>,Ref<Dvec>> embedded_casci(TreeInput idata, const int charge, const int spin, const int nstates) const;
+      std::shared_ptr<DimerCISpace> compute_cispace(TreeInput idata);
 
    private:
       void construct_geometry();

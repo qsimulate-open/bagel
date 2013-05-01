@@ -46,7 +46,7 @@ class CASSCF {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_;
+    boost::property_tree::ptree idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
 
@@ -86,7 +86,7 @@ class CASSCF {
     std::vector<double> energy_;
 
   public:
-    CASSCF(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom,
+    CASSCF(const boost::property_tree::ptree& idat, const std::shared_ptr<const Geometry> geom,
            const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     virtual ~CASSCF();
 

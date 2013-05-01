@@ -46,7 +46,7 @@ class SCF : public SCF_base {
     std::shared_ptr<LevelShift<DistMatrix>> levelshift_;
 
   public:
-    SCF(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+    SCF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re, DF==0) {
 
@@ -55,7 +55,7 @@ class SCF : public SCF_base {
 
       // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
       // In the future, this should probably be moved to SCF_base and designed to work properly there
-      double lshift = read_input<double>(idata_, "levelshift", 0.0);
+      double lshift = idata_.get<double>("levelshift", 0.0);
       if (lshift != 0.0) {
         std::cout << "  level shift : " << std::setprecision(3) << lshift << std::endl << std::endl;
         levelshift_ = std::shared_ptr<LevelShift<DistMatrix>>(new ShiftVirtual<DistMatrix>(nocc_, lshift));

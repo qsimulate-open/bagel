@@ -41,8 +41,7 @@ class DimerSCF : public SCF_base {
     std::shared_ptr<ShiftDimer> levelshift_;
 
   public:
-    DimerSCF(const std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Dimer> dimer);
-    ~DimerSCF() {};
+    DimerSCF(const boost::property_tree::ptree& idata, const std::shared_ptr<const Dimer> dimer);
 
     void compute() override;
 

@@ -35,21 +35,27 @@ double pm_localization(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(ss.str(), idata);
   std::shared_ptr<const Reference> ref;
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  auto keys = idata.get_child("bagel");
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf") {
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "df-hf") {
       std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
 
-    } else if (iter->first == "localize") {
+    } else if (method == "localize") {
       if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
 
-      std::string localizemethod = read_input<std::string>(iter->second,"algorithm", "pm");
+      std::string localizemethod = iter->second.get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
         std::vector<int> sizes;
@@ -62,8 +68,8 @@ double pm_localization(std::string filename) {
         localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
       else throw std::runtime_error("Unrecognized orbital localization method");
 
-      const int max_iter = read_input<int>(iter->second,"max_iter", 50);
-      const double thresh = read_input<double>(iter->second,"thresh", 1.0e-6);
+      const int max_iter = iter->second.get<int>("max_iter", 50);
+      const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
       std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter, thresh);
       ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff )); 

@@ -29,6 +29,7 @@
 #include <src/parallel/resources.h>
 #include <src/parallel/mpi_interface.h>
 #include <array>
+#include <boost/property_tree/ptree.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -144,7 +145,7 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
-  shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), multimap<string,string>()));
+  shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), boost::property_tree::ptree()));
 
   // using symmetry (b0 <-> b1)
   int cnt = 0;

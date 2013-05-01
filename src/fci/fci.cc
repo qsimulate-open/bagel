@@ -40,7 +40,7 @@
 using namespace std;
 using namespace bagel;
 
-FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+FCI::FCI(const boost::property_tree::ptree& idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
@@ -48,34 +48,34 @@ FCI::FCI(std::multimap<std::string, std::string> idat, shared_ptr<const Referenc
 void FCI::common_init() {
   print_header();
 
-  const bool frozen = read_input<bool>(idata_, "frozen", false);
-  max_iter_ = read_input<int>(idata_, "maxiter", 100);
-  max_iter_ = read_input<int>(idata_, "maxiter_fci", max_iter_);
-  thresh_ = read_input<double>(idata_, "thresh", 1.0e-20);
-  thresh_ = read_input<double>(idata_, "thresh_fci", thresh_);
-  print_thresh_ = read_input<double>(idata_, "print_thresh", 0.05);
+  const bool frozen = idata_.get<bool>("frozen", false);
+  max_iter_ = idata_.get<int>("maxiter", 100);
+  max_iter_ = idata_.get<int>("maxiter_fci", max_iter_);
+  thresh_ = idata_.get<double>("thresh", 1.0e-20);
+  thresh_ = idata_.get<double>("thresh_fci", thresh_);
+  print_thresh_ = idata_.get<double>("print_thresh", 0.05);
 
-  if (nstate_ < 0) nstate_ = read_input<int>(idata_, "nstate", 1);
+  if (nstate_ < 0) nstate_ = idata_.get<int>("nstate", 1);
 
-  auto iactive = idata_.find("active");
-  if ( iactive != idata_.end() ) {
-    ref_ = ref_->set_active(iactive->second);
+  const string iactive = idata_.get<string>("active", "");
+  if (!iactive.empty()) {
+    ref_ = ref_->set_active(iactive);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();
   }
   else {
-    if (ncore_ < 0) ncore_ = read_input<int>(idata_, "ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    if (norb_  < 0) norb_ = read_input<int>(idata_, "norb", ref_->coeff()->ndim()-ncore_);
+    if (ncore_ < 0) ncore_ = idata_.get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+    if (norb_  < 0) norb_ = idata_.get<int>("norb", ref_->coeff()->ndim()-ncore_);
   }
 
   // Configure properties to be calculated on the final wavefunctions
-  if (read_input<bool>(idata_, "dipole", true)) properties_.push_back(shared_ptr<CIProperties>(new CIDipole(ref_, ncore_, ncore_+norb_)));
+  if (idata_.get<bool>("dipole", true)) properties_.push_back(shared_ptr<CIProperties>(new CIDipole(ref_, ncore_, ncore_+norb_)));
 
   // additional charge
-  const int charge = read_input<int>(idata_, "charge", 0);
+  const int charge = idata_.get<int>("charge", 0);
 
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
-  const int nspin = read_input<int>(idata_, "nspin", 0);
+  const int nspin = idata_.get<int>("nspin", 0);
   if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;

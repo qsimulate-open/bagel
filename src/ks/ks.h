@@ -42,14 +42,14 @@ class KS : public SCF_base {
     std::shared_ptr<DFTGrid_base> grid_;
 
   public:
-    KS(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+    KS(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re) {
 
       std::cout << indent << "*** Kohn-Sham DFT ***" << std::endl << std::endl;
 
       // default is now B3LYP
-      name_ = read_input<std::string>(idata_, "xc_func", "b3lyp"); 
+      name_ = idata_.get<std::string>("xc_func", "b3lyp"); 
       func_ = std::shared_ptr<XCFunc>(new XCFunc(name_));
 
       Timer preptime; 

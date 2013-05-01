@@ -36,12 +36,13 @@
 #include <src/scf/fock.h>
 #include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
+#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 
 class SCF_base {
   protected:
-    const std::multimap<std::string, std::string> idata_;
+    const boost::property_tree::ptree idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<TildeX> tildex_;
     std::shared_ptr<const Overlap> overlap_;
@@ -66,7 +67,7 @@ class SCF_base {
     const std::string indent = "  ";
 
   public:
-    SCF_base(const std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry>,
+    SCF_base(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
     ~SCF_base() {};
 

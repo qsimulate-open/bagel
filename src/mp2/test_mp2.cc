@@ -33,12 +33,20 @@ double mp2_energy() {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/benzene_svp_mp2.in"));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  std::string filename = "../../test/benzene_svp_mp2.in";
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(filename, idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "mp2") {
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "mp2") {
       std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
       mp2->compute();
 

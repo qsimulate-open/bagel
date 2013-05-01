@@ -41,9 +41,8 @@ class SuperCIGrad : public SuperCI {
   protected:
 
   public:
-    SuperCIGrad(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom)
+    SuperCIGrad(const boost::property_tree::ptree& idat, const std::shared_ptr<const Geometry> geom)
       : SuperCI(idat, geom) { };
-    ~SuperCIGrad() {};
 
     void compute() {
       // compute CASSCF fist

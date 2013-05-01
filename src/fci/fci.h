@@ -39,6 +39,7 @@
 #include <src/wfn/rdm.h>
 #include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
+#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 
@@ -46,7 +47,7 @@ class FCI {
 
   protected:
     // input
-    std::multimap<std::string, std::string> idata_;
+    boost::property_tree::ptree idata_;
     // reference
     std::shared_ptr<const Reference> ref_;
     // geometry file
@@ -114,7 +115,7 @@ class FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    FCI(const std::multimap<std::string, std::string>, std::shared_ptr<const Reference>,
+    FCI(const boost::property_tree::ptree&, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     virtual void compute();

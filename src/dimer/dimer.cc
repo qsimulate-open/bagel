@@ -312,7 +312,7 @@ void Dimer::embed_refs() {
   }
 }
 
-pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(multimap<string,string> idata, const int charge, const int nspin, const int nstates) const {
+pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(const boost::property_tree::ptree& idata, const int charge, const int nspin, const int nstates) const {
   const int nclosed = ncore_.first + ncore_.second;
   const int ncoreA = nclosed + nfilledactive_.second;
   const int ncoreB = nclosed + nfilledactive_.first;
@@ -320,10 +320,10 @@ pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(multi
   const int nactB = nact_.second;
 
   // Make new input data, set charge and spin to what I want
-  multimap<string,string> input = idata;
+  boost::property_tree::ptree input = idata;
   input.erase("charge"); input.erase("nspin");
-  input.insert(make_pair(string("charge"), lexical_cast<string>(charge)));
-  input.insert(make_pair(string("nspin"), lexical_cast<string>(nspin)));
+  input.put("charge", charge);
+  input.put("nspin", nspin);
 
   shared_ptr<FCI> fciA(new HarrisonZarrabian(input, embedded_refs_.first, ncoreA, nactA, nstates));
   fciA->compute();
@@ -334,8 +334,8 @@ pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(multi
   return make_pair(fciA->civectors(), fciB->civectors());
 }
 
-void Dimer::localize(multimap<string, string> idata) {
-  string localizemethod = read_input<string>(idata,"localization", "pm");
+void Dimer::localize(const boost::property_tree::ptree& idata) {
+  string localizemethod = idata.get<string>("localization", "pm");
 
   shared_ptr<OrbitalLocalization> localization;
   if (localizemethod == "region") {
@@ -404,21 +404,21 @@ void Dimer::localize(multimap<string, string> idata) {
   set_coeff(out);
 }
 
-void Dimer::set_active(multimap<string, string> idata) {
-  auto Aiter = idata.find("active_A");
-  auto Biter = idata.find("active_B");
-  auto iter = idata.find("dimer_active");
+void Dimer::set_active(const boost::property_tree::ptree& idata) {
+  auto Ai = idata.get<string>("active_A", "");
+  auto Bi = idata.get<string>("active_B", "");
+  auto it = idata.get<string>("dimer_active", "");
 
   string Alist, Blist;
 
-  if(iter == idata.end() && Aiter == idata.end() && Biter == idata.end())
+  if(it.empty() && Ai.empty() && Bi.empty())
     throw runtime_error("Active space of the dimer MUST be specified in some way.");
-  if(iter != idata.end()) {
-    Alist = iter->second;
-    Blist = iter->second;
+  if(!it.empty()) {
+    Alist = it;
+    Blist = it;
   }
-  if(Aiter != idata.end()) Alist = Aiter->second;
-  if(Biter != idata.end()) Blist = Biter->second;
+  if(!Ai.empty()) Alist = Ai;
+  if(!Bi.empty()) Blist = Bi;
 
   // Make new References
   pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs = 
@@ -470,7 +470,7 @@ void Dimer::set_active(multimap<string, string> idata) {
 }
 
 // RHF and then localize
-void Dimer::scf(multimap<string, string> idata) {
+void Dimer::scf(const boost::property_tree::ptree& idata) {
   // SCF
   shared_ptr<SCF_base> rhf(new SCF<1>(idata, sgeom_, sref_));
   rhf->compute();
@@ -506,21 +506,21 @@ void Dimer::scf(multimap<string, string> idata) {
   sref_->set_eig(subeigs);
 }
 
-shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) {
+shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptree& idata) {
   embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
   shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
 
-  const int nsinglets = read_input<int>(idata, "nsinglets", 1);
-  const int ntriplets = read_input<int>(idata, "ntriplets", 0);
-  const int nquintets = read_input<int>(idata, "nquintets", 0);
-  const int nseptets = read_input<int>(idata, "nseptets", 0);
-  const int nanions = read_input<int>(idata, "nanions", 0);
-  const int ndianions = read_input<int>(idata, "ndianions", 0);
-  const int ncations = read_input<int>(idata, "ncations", 0);
-  const int ndications = read_input<int>(idata, "ndications", 0);
+  const int nsinglets = idata.get<int>("nsinglets", 1);
+  const int ntriplets = idata.get<int>("ntriplets", 0);
+  const int nquintets = idata.get<int>("nquintets", 0);
+  const int nseptets = idata.get<int>("nseptets", 0);
+  const int nanions = idata.get<int>("nanions", 0);
+  const int ndianions = idata.get<int>("ndianions", 0);
+  const int ncations = idata.get<int>("ncations", 0);
+  const int ndications = idata.get<int>("ndications", 0);
 
   // Hide normal cout.
   stringstream ss;

@@ -33,13 +33,20 @@ double cas_energy(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(ss.str(), idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "casscf") {
-      std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "casscf") {
+      std::string algorithm = iter->second.get<std::string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "") {
         std::shared_ptr<CASSCF> cas(new SuperCI(iter->second, geom));
         cas->compute();

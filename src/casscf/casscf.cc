@@ -41,7 +41,7 @@ static string tostring(const T i) {
   return ss.str();
 };
 
-CASSCF::CASSCF(multimap<string, string> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
+CASSCF::CASSCF(const boost::property_tree::ptree& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : idata_(idat), geom_(geom), hcore_(new Hcore(geom)) {
 
   if (!re) {
@@ -72,24 +72,24 @@ void CASSCF::common_init() {
 #endif
 
   // get maxiter from the input
-  max_iter_ = read_input<int>(idata_, "maxiter", 100);
+  max_iter_ = idata_.get<int>("maxiter", 100);
   // get maxiter from the input
-  max_micro_iter_ = read_input<int>(idata_, "maxiter_micro", 100);
+  max_micro_iter_ = idata_.get<int>("maxiter_micro", 100);
   // get nstate from the input
-  nstate_ = read_input<int>(idata_, "nstate", 1);
+  nstate_ = idata_.get<int>("nstate", 1);
   // get istate from the input (for geometry optimization)
-  istate_ = read_input<int>(idata_, "istate", 0);
+  istate_ = idata_.get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
-  thresh_ = read_input<double>(idata_, "thresh", 1.0e-10);
+  thresh_ = idata_.get<double>("thresh", 1.0e-10);
   // get thresh (for micro iteration) from the input
-  thresh_micro_ = read_input<double>(idata_, "thresh_micro", thresh_);
+  thresh_micro_ = idata_.get<double>("thresh_micro", thresh_);
 
   // nocc from the input. If not present, full valence active space is generated.
-  nact_ = read_input<int>(idata_, "nact", 0);
-  nact_ = read_input<int>(idata_, "nact_cas", nocc_);
+  nact_ = idata_.get<int>("nact", 0);
+  nact_ = idata_.get<int>("nact_cas", nocc_);
 
   // nclosed from the input. If not present, full core space is generated.
-  nclosed_ = read_input<int>(idata_, "nclosed", -1);
+  nclosed_ = idata_.get<int>("nclosed", -1);
   if (nclosed_ < -1) {
     throw runtime_error("It appears that nclosed < 0. Check nocc value.");
   } else if (nclosed_ == -1) {

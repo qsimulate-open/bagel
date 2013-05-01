@@ -33,26 +33,33 @@ std::vector<double> fci_energy(std::string inp) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData("../../test/" + inp + ".in"));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
-
+  std::string filename = "../../test/" + inp + ".in";
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(filename, idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
   std::shared_ptr<Reference> ref;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf") {
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "df-hf") {
       std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
-    } else if (iter->first == "df-rohf"){
+    } else if (method == "df-rohf"){
       std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
       scf->compute();
       ref = scf->conv_to_ref();
-    } else if (iter->first == "fci") {
+    } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
-      std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+      std::string algorithm = iter->second.get<std::string>("algorithm", "");
       if (algorithm == "harrison") fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
-      else if (algorithm == "knowles") fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second,ref));
+      else if (algorithm == "knowles") fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
       else assert(false);
      
       fci->compute();

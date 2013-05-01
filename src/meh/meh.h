@@ -36,6 +36,7 @@
 #include <src/fci/dvec.h>
 #include <src/util/matrix.h>
 #include <src/meh/quantization.h>
+#include <src/util/lexical_cast.h>
 
 namespace bagel {
 

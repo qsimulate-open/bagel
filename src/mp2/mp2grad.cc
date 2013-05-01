@@ -36,7 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-MP2Grad::MP2Grad(const multimap<string, string> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
+MP2Grad::MP2Grad(const boost::property_tree::ptree& input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
 
 }
 

@@ -35,12 +35,19 @@ std::array<double,3> dipole(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(ss.str(), idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf") {
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "df-hf") {
       std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());

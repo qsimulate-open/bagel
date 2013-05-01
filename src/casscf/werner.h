@@ -52,11 +52,11 @@ class WernerKnowles : public CASSCF {
     int max_mmicro_iter_;
 
   public:
-    WernerKnowles(const std::multimap<std::string, std::string> idat, const std::shared_ptr<const Geometry> geom)
+    WernerKnowles(const boost::property_tree::ptree& idat, const std::shared_ptr<const Geometry> geom)
       : CASSCF(idat, geom) {common_init();
       // get thresh (for micro iteration) from the input
-      thresh_mmicro_ = read_input<double>(idat, "thresh_mmicro", thresh_micro_);
-      max_mmicro_iter_ = read_input<int>(idat, "maxiter_mmicro", 3);
+      thresh_mmicro_ = idat.get<double>("thresh_mmicro", thresh_micro_);
+      max_mmicro_iter_ = idat.get<int>("maxiter_mmicro", 3);
     };
     ~WernerKnowles() {};
 

@@ -34,14 +34,20 @@ std::vector<double> run_opt(std::string filename) {
   std::shared_ptr<std::ofstream> ofs(new std::ofstream(outputname, std::ios::trunc));
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
-  // a bit ugly to hardwire an input file, but anyway...
-  std::shared_ptr<InputData> idata(new InputData(inputname));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(filename, idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf-opt") {
-      std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (iter->first == "df-hf-opt") {
+      std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
@@ -49,7 +55,7 @@ std::vector<double> run_opt(std::string filename) {
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "df-uhf-opt") {
-      std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
+      std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
@@ -57,7 +63,7 @@ std::vector<double> run_opt(std::string filename) {
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "df-rohf-opt") {
-      std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
+      std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
@@ -65,7 +71,7 @@ std::vector<double> run_opt(std::string filename) {
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "df-ks-opt") {
-      std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
+      std::shared_ptr<Opt<KS>> opt(new Opt<KS>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
@@ -73,7 +79,7 @@ std::vector<double> run_opt(std::string filename) {
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "mp2-opt") {
-      std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
+      std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 
@@ -81,7 +87,7 @@ std::vector<double> run_opt(std::string filename) {
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
       return std::vector<double>(out->data(), out->data()+out->size());
     } else if (iter->first == "casscf-opt") {
-      std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
+      std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(iter->second, iter->second, geom));
       for (int i = 0; i != 20; ++i)
         if (opt->next()) break;
 

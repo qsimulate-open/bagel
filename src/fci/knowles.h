@@ -36,7 +36,6 @@
 #include <iostream>
 #include <memory>
 #include <bitset>
-#include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>
@@ -64,7 +63,7 @@ class KnowlesHandy : public FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    KnowlesHandy(const std::multimap<std::string, std::string> a, std::shared_ptr<const Reference> b,
+    KnowlesHandy(const boost::property_tree::ptree& a, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI( a, b, ncore, nocc, nstate){
       update(ref_->coeff());
     }

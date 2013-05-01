@@ -53,7 +53,6 @@
 #include <src/global.h>
 #include <src/parallel/resources.h>
 #include <src/opt/opt.h>
-#include <src/util/input.h>
 #include <src/util/constants.h>
 #include <src/util/localization.h>
 #include <src/util/timer.h>
@@ -73,6 +72,10 @@
 
 #include <config.h>
 
+// input parser
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
 
 // TODO they are ugly
 // TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
@@ -90,7 +93,6 @@ using std::endl;
 using namespace bagel;
 
 int main(int argc, char** argv) {
-
   // setup MPI interface. It does nothing for serial runs
   mpi__ = new MPI_Interface(argc, argv);
   {
@@ -116,7 +118,8 @@ int main(int argc, char** argv) {
     }
     const std::string input = argv[1];
 
-    std::shared_ptr<InputData> idata(new InputData(input));
+    boost::property_tree::ptree idata;
+    boost::property_tree::json_parser::read_json(input, idata);
 
     bool scf_done = false;
     bool casscf_done = false;
@@ -128,18 +131,19 @@ int main(int argc, char** argv) {
     std::shared_ptr<const RelReference> relref;
     std::shared_ptr<Dimer> dimer;
 
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
-
     // timer for each method
     Timer timer(-1);
 
+    boost::property_tree::ptree keys = idata.get_child("bagel"); 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      const std::string method = iter->first;
+      std::string method = iter->second.get<std::string>("title", "");
+      std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+      if (method.empty()) throw std::logic_error("section is missing in one of the input blocks");
 
       if (method == "molecule") {
         if (ref != nullptr) geom->discard_df(); 
         geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
-        if (read_input<bool>(iter->second, "restart", false)) {
+        if (iter->second.get<bool>("restart", false)) {
           ref = std::shared_ptr<const Reference>();
           relref = std::shared_ptr<const RelReference>();
         }
@@ -226,7 +230,7 @@ int main(int argc, char** argv) {
       } else if (method == "casscf") {
 
         std::shared_ptr<CASSCF> casscf;
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        std::string algorithm = iter->second.get<std::string>("algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
           casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom, ref));
         } else if (algorithm == "werner" || algorithm == "knowles") {
@@ -241,9 +245,9 @@ int main(int argc, char** argv) {
         ref = casscf->conv_to_ref();
 
       } else if (method == "casscf-opt") {
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        std::string algorithm = iter->second.get<std::string>("algorithm", "");
         // in case of SS-CASSCF
-        if (read_input<int>(iter->second, "nstate", 1) == 1) {
+        if (iter->second.get<int>("nstate", 1) == 1) {
           if (algorithm == "superci" || algorithm == "") {
             std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
@@ -285,7 +289,7 @@ int main(int argc, char** argv) {
 
       } else if (method == "smith") {
 
-        std::string method = read_input<std::string>(iter->second, "method", "mp2");
+        std::string method = iter->second.get<std::string>("method", "mp2");
         if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
         if (method == "mp2") {
           std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore>> mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
@@ -305,7 +309,7 @@ int main(int argc, char** argv) {
         if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
         std::shared_ptr<FCI> fci;
 
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        std::string algorithm = iter->second.get<std::string>("algorithm", "");
         if (algorithm == "" || algorithm == "auto") {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
@@ -327,9 +331,10 @@ int main(int argc, char** argv) {
         fci->compute();
 
       } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-        std::multimap<std::string,std::string> dimdata = iter->second;
+#if 0
+        const boost::property_tree::ptree dimdata = iter->second;
 
-        std::string form = read_input<std::string>(dimdata, "form", "displace");
+        const std::string form = dimdata.get<std::string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
           double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
@@ -384,6 +389,9 @@ int main(int argc, char** argv) {
 
         geom = dimer->sgeom();
         ref = dimer->sref();
+#else
+throw std::logic_error("broken!");
+#endif
       } else if (method == "meh") {
           std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
@@ -391,9 +399,10 @@ int main(int argc, char** argv) {
           meh->compute();
           meh->print();
       } else if (method == "localize") {
+#if 0
         if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
 
-        std::string localizemethod = read_input<std::string>(iter->second,"algorithm", "pm");
+        std::string localizemethod = iter->second.get<std::string>("algorithm", "pm");
         std::shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
           std::vector<int> sizes;
@@ -406,17 +415,20 @@ int main(int argc, char** argv) {
           localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
         else throw std::runtime_error("Unrecognized orbital localization method");
 
-        const int max_iter = read_input<int>(iter->second,"max_iter", 50);
-        const double thresh = read_input<double>(iter->second,"thresh", 1.0e-6);
+        const int max_iter = iter->second.get<int>("max_iter", 50);
+        const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
         std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
         ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
+#else
+throw std::logic_error("broken!");
+#endif
         
       } else if (method == "print") {
 
-        std::multimap<std::string, std::string> pdata = iter->second;
-        bool orbitals = read_input<bool>(pdata, "orbitals", false);
-        std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
+        const boost::property_tree::ptree pdata = iter->second;
+        const bool orbitals = pdata.get<bool>("orbitals", false);
+        const std::string out_file = pdata.get<std::string>("file", "out.molden");
 
         MoldenOut mfs(out_file);
         mfs << geom;
@@ -424,6 +436,7 @@ int main(int argc, char** argv) {
         mfs.close();
 
       } else if (method == "save") {
+#if 0
         auto sdata = iter->second;
 
         auto igeom = sdata.find("geom");
@@ -431,6 +444,9 @@ int main(int argc, char** argv) {
 
         auto iref = sdata.find("ref");
           if ( iref != sdata.end() ) saved_refs.insert(make_pair(iref->second, ref));
+#else
+throw std::logic_error("broken!");
+#endif
       }
       #if 0 // <---- Testing environment
       else if (method == "testing") {

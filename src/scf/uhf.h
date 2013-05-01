@@ -47,7 +47,7 @@ class UHF : public SCF_base {
     void print_S2(const std::string) const;
 
   public:
-    UHF(std::multimap<std::string, std::string>& idata_, const std::shared_ptr<const Geometry> geom,
+    UHF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata_, geom, re) {
 

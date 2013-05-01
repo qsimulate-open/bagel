@@ -48,27 +48,29 @@ using namespace bagel;
 
 const static AtomMap atommap_;
 
-Geometry::Geometry(const multimap<string, string> geominfo)
+Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   : spherical_(true), input_(""), lmax_(0) {
 
-  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
 
   // symmetry
-  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+  symmetry_ = geominfo.get<string>("symmetry", "c1");
+  transform(symmetry_.begin(), symmetry_.end(), symmetry_.begin(), ::tolower);
 
   // cartesian or not.
-  const bool cart = read_input<bool>(geominfo, "cartesian", false);
+  const bool cart = geominfo.get<bool>("cartesian", false);
   if (cart) {
     cout << "  Cartesian basis functions are used" << endl;
     spherical_ = false;
   }
 
   /* Set up atoms_ */
-  basisfile_ = read_input<string>(geominfo, "basis", "");
+  basisfile_ = geominfo.get<string>("basis", "");
+  transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
   if (basisfile_ == "") throw runtime_error("There is no basis specification");
   else if (basisfile_ == "molden") {
-    string molden_file = read_input<string>(geominfo, "molden_file", "");
+    string molden_file = geominfo.get<string>("molden_file", "");
     if (molden_file == "") throw runtime_error("No molden_in file provided");
 
     MoldenIn mfs(molden_file, spherical_);
@@ -77,54 +79,39 @@ Geometry::Geometry(const multimap<string, string> geominfo)
     mfs.close();
   }
   else {
-    const bool angstrom = read_input<bool>(geominfo, "angstrom", false);
+    const bool angstrom = geominfo.get<bool>("angstrom", false);
 
-    pair<multimap<string,string>::const_iterator, multimap<string,string>::const_iterator> bound = geominfo.equal_range("atom");
-    for (auto iter = bound.first; iter != bound.second; ++iter) {
-      boost::smatch what;
-      const boost::regex atom_reg("\\(\\s*([A-Za-z]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+),\\s*([0-9\\.-]+)\\s*");
-      auto start = iter->second.begin();
-      auto end = iter->second.end();
-      if (regex_search(start, end, what, atom_reg)) {
-        const string aname(what[1].first, what[1].second);
-        const string x_str(what[2].first, what[2].second);
-        const string y_str(what[3].first, what[3].second);
-        const string z_str(what[4].first, what[4].second);
-        const double prefac = angstrom ? ang2bohr__ : 1.0 ;
-        array<double,3> positions
-          = {{lexical_cast<double>(x_str)*prefac, lexical_cast<double>(y_str)*prefac, lexical_cast<double>(z_str)*prefac}};
-        if (aname != "q") {
-          // standard atom construction
-          auto next = what[0].second;
-          const boost::regex end_reg("\\)");
-          if (!regex_search(next, end, what, end_reg))
-            throw runtime_error("One of the atom lines is corrupt");
-          shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, basisfile_));
-          atoms_.push_back(catom);
-        } else {
-          // dummy atom construction
-          if (symmetry_ != "c1")
-            throw runtime_error("External point charges are only allowed in C1 calculations so far.");
-          auto next = what[0].second;
-          const boost::regex charge_reg(",\\s*([0-9\\.-]+)\\s*\\)");
-          if (regex_search(next, end, what, charge_reg)) {
-            const string charge_str(what[1].first, what[1].second);
-            const double charge = lexical_cast<double>(charge_str);
-            shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, charge));
-            atoms_.push_back(catom);
-          } else {
-            throw runtime_error("No charge specified for dummy atom(s)");
-          }
-        }
+    auto atoms = geominfo.get_child("geometry");
+    for (auto iter = atoms.begin(); iter != atoms.end(); ++iter) {
+      string aname = iter->second.get<string>("atom");
+      transform(aname.begin(), aname.end(), aname.begin(), ::tolower);
+      auto xyz = iter->second.get_child("xyz");
+      if (xyz.size() < 3)
+        throw runtime_error("XYZ coordinate was not specified correctly");
+      array<double,3> positions;
+      auto p = positions.begin();
+      const double prefac = angstrom ? ang2bohr__ : 1.0;
+      for (auto& i : xyz)
+        *p++ = lexical_cast<double>(i.second.data()) * prefac;
+
+      if (aname != "q") {
+        shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, basisfile_));
+        atoms_.push_back(catom);
       } else {
-        throw runtime_error("One of the atom lines is corrupt");
+        if (symmetry_ != "c1")
+          throw runtime_error("External point charges are only allowed in C1 calculations so far.");
+        const double charge = lexical_cast<double>(iter->second.get<double>("chrage"));
+        shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, charge));
+        atoms_.push_back(catom);
       }
+
     }
   }
   if(atoms_.empty()) throw runtime_error("No atoms specified at all");
 
   /* Set up aux_atoms_ */
-  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  auxfile_ = geominfo.get<string>("df_basis", "");
+  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
@@ -148,9 +135,9 @@ Geometry::Geometry(const multimap<string, string> geominfo)
 
   // static external field
   external_ = vector<double>(3);
-  external_[0] = read_input<double>(geominfo, "ex", 0.0);
-  external_[1] = read_input<double>(geominfo, "ey", 0.0);
-  external_[2] = read_input<double>(geominfo, "ez", 0.0);
+  external_[0] = geominfo.get<double>("ex", 0.0);
+  external_[1] = geominfo.get<double>("ey", 0.0);
+  external_[2] = geominfo.get<double>("ez", 0.0);
   if (external())
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
@@ -232,7 +219,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 
 // suitable for geometry updates in optimization
-Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const multimap<string, string> geominfo, const bool rotate, const bool nodf)
+Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const boost::property_tree::ptree& geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
 
@@ -279,7 +266,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   }
 
   common_init1();
-  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8);
+  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
   common_init2(false, overlap_thresh_, nodf);
 }
 
@@ -372,23 +359,23 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
                                                                           << setw(7) << external_[2] << ") a.u." << endl << endl;
 }
 
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<string, string> geominfo)
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::property_tree::ptree& geominfo)
   : spherical_(true), input_(""), atoms_(atoms), lmax_(0) {
 
-  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
 
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
   // basis
-  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  auxfile_ = geominfo.get<string>("df_basis", "");
   if (!auxfile_.empty()) {
     if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)
       aux_atoms_.push_back(shared_ptr<const Atom>(new Atom(i->spherical(), i->name(), i->position(), auxfile_)));
   }
   // symmetry
-  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+  symmetry_ = geominfo.get<string>("symmetry", "c1");
 
   common_init1();
 
@@ -398,9 +385,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
 
   // static external field
   external_ = vector<double>(3);
-  external_[0] = read_input<double>(geominfo, "ex", 0.0);
-  external_[1] = read_input<double>(geominfo, "ey", 0.0);
-  external_[2] = read_input<double>(geominfo, "ez", 0.0);
+  external_[0] = geominfo.get<double>("ex", 0.0);
+  external_[1] = geominfo.get<double>("ey", 0.0);
+  external_[2] = geominfo.get<double>("ez", 0.0);
   if (external())
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
@@ -408,22 +395,22 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
 }
 
 
-void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, const multimap<string, string> geominfo){
+void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, const boost::property_tree::ptree& geominfo){
 
-  schwarz_thresh_ = read_input<double>(geominfo, "schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = read_input<double>(geominfo, "thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
 
   // cartesian or not.
-  const bool cart = read_input<bool>(geominfo, "cartesian", false);
+  const bool cart = geominfo.get<bool>("cartesian", false);
   if (cart) {
     cout << "  Cartesian basis functions are used" << endl;
     spherical_ = false;
   }
 
   // basis
-  auxfile_ = read_input<string>(geominfo, "df_basis", "");
+  auxfile_ = geominfo.get<string>("df_basis", "");
   // symmetry
-  symmetry_ = read_input<string>(geominfo, "symmetry", "c1");
+  symmetry_ = geominfo.get<string>("symmetry", "c1");
 
 }
 

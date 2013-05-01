@@ -35,18 +35,25 @@ double rel_energy(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  std::shared_ptr<InputData> idata(new InputData(ss.str()));
-  std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-  std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+  boost::property_tree::ptree idata;
+  boost::property_tree::json_parser::read_json(ss.str(), idata);
+  auto keys = idata.get_child("bagel");
+  std::shared_ptr<Geometry> geom;
 
   std::shared_ptr<Reference> ref_;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    if (iter->first == "df-hf") {
+    std::string method = iter->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+    if (method == "molecule") {
+      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+
+    } else if (method == "df-hf") {
       std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
       scf->compute();
       ref_ = scf->conv_to_ref();
-    } else if (iter->first == "dhf") {
+    } else if (method == "dhf") {
       std::shared_ptr<Dirac> rel(new Dirac(iter->second, geom, ref_));
       rel->compute();
       std::shared_ptr<RelReference> ref = rel->conv_to_ref();

@@ -34,37 +34,37 @@
 using namespace std;
 using namespace bagel;
 
-Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
+Dirac::Dirac(const boost::property_tree::ptree& idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const Reference> re) : ref_(re) {
-  gaunt_ = read_input<bool>(idata, "gaunt", true);
-  breit_ = read_input<bool>(idata, "breit", gaunt_);
+  gaunt_ = idata.get<bool>("gaunt", true);
+  breit_ = idata.get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
-Dirac::Dirac(const multimap<string, string>& idata, const shared_ptr<const Geometry> geom,
+Dirac::Dirac(const boost::property_tree::ptree& idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const RelReference> re) : relref_(re) {
-  gaunt_ = read_input<bool>(idata, "gaunt", true);
-  breit_ = read_input<bool>(idata, "breit", gaunt_);
+  gaunt_ = idata.get<bool>("gaunt", true);
+  breit_ = idata.get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
-void Dirac::common_init(const multimap<string, string>& idata) {
+void Dirac::common_init(const boost::property_tree::ptree& idata) {
   cout << "  *** Dirac HF ***" << endl << endl;
 
   hcore_ = shared_ptr<const RelHcore>(new RelHcore(geom_));
   overlap_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, false));
   s12_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, true));
   // reading input keywords
-  max_iter_ = read_input<int>(idata, "maxiter", 100);
-  max_iter_ = read_input<int>(idata, "maxiter_scf", max_iter_);
-  diis_start_ = read_input<int>(idata, "diis_start", 1);
-  thresh_scf_ = read_input<double>(idata, "thresh", 1.0e-8);
-  thresh_scf_ = read_input<double>(idata, "thresh_scf", thresh_scf_);
-  ncharge_ = read_input<int>(idata, "charge", 0);
+  max_iter_ = idata.get<int>("maxiter", 100);
+  max_iter_ = idata.get<int>("maxiter_scf", max_iter_);
+  diis_start_ = idata.get<int>("diis_start", 1);
+  thresh_scf_ = idata.get<double>("thresh", 1.0e-8);
+  thresh_scf_ = idata.get<double>("thresh_scf", thresh_scf_);
+  ncharge_ = idata.get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
   nneg_ = geom_->nbasis()*2;
 
@@ -145,7 +145,7 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
-//print_eig(eig);
+  print_eig(eig);
 }
 
 

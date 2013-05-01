@@ -35,6 +35,8 @@
 #include <boost/test/unit_test.hpp>
 #include <src/parallel/resources.h>
 #include <src/parallel/mpi_interface.h>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace bagel;
 
@@ -73,6 +75,8 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/opt/test_opt.cc>
 
+#if 0
 #include <src/io/test_molden.cc>
 
 #include <src/util/test_localize.cc>
+#endif
