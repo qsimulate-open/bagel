@@ -100,7 +100,7 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
       } else {
         if (symmetry_ != "c1")
           throw runtime_error("External point charges are only allowed in C1 calculations so far.");
-        const double charge = lexical_cast<double>(iter->second.get<double>("chrage"));
+        const double charge = lexical_cast<double>(iter->second.get<double>("charge"));
         shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, charge));
         atoms_.push_back(catom);
       }
