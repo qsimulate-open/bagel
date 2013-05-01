@@ -69,7 +69,7 @@ void FCI::common_init() {
   }
 
   // Configure properties to be calculated on the final wavefunctions
-  if (idata_.get<bool>("dipole", true)) properties_.push_back(shared_ptr<CIProperties>(new CIDipole(ref_, ncore_, ncore_+norb_)));
+  if (idata_.get<bool>("dipole", true)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
 
   // additional charge
   const int charge = idata_.get<int>("charge", 0);
@@ -90,7 +90,7 @@ void FCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = shared_ptr<const Determinants>(new Determinants(norb_, nelea_, neleb_));
+  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 }
 
 // generate initial vectors
@@ -170,8 +170,7 @@ void FCI::print_header() const {
 }
 
 shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
-  shared_ptr<const CIWfn> out(new const CIWfn(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_));
-  return out;
+  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
 }
 
 
@@ -185,7 +184,7 @@ void FCI::compute() {
   //const int ij = nij();
 
   // Creating an initial CI vector
-  cc_ = shared_ptr<Dvec>(new Dvec(det_, nstate_)); // B runs first
+  cc_ = make_shared<Dvec>(det_, nstate_); // B runs first
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_);
@@ -210,8 +209,8 @@ void FCI::compute() {
     pdebug.tick_print("sigma vector");
 
     // constructing Dvec's for Davidson
-    shared_ptr<const Dvec> ccn(new Dvec(cc_));
-    shared_ptr<const Dvec> sigman(new Dvec(sigma));
+    auto ccn = make_shared<const Dvec>(cc_);
+    auto sigman = make_shared<const Dvec>(sigma);
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
@@ -260,9 +259,9 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  shared_ptr<Dvec> s(new Dvec(davidson.civec()));
+  auto s = make_shared<Dvec>(davidson.civec());
   s->print(print_thresh_);
-  cc_ = shared_ptr<Dvec>(new Dvec(s));
+  cc_ = make_shared<Dvec>(s);
 
   for (auto& iprop : properties_) {
     iprop->compute(cc_);

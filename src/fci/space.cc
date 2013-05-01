@@ -50,7 +50,7 @@ void Space::common_init() {
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
-      shared_ptr<Determinants> tmpdet(new Determinants(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true));
+      auto tmpdet = make_shared<Determinants>(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true);
       detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i,j), tmpdet));
     }
   }

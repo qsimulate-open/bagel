@@ -53,7 +53,7 @@ DistFCI::DistFCI(const boost::property_tree::ptree& a, shared_ptr<const Referenc
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  space_ = std::shared_ptr<Space>(new Space(det_, 1));
+  space_ = make_shared<Space>(det_, 1);
   update(ref_->coeff());
 
 }
@@ -128,7 +128,7 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
     const bitset<nbit__> astring = int_det->stringa(a);
 
-    tasks.push_back(shared_ptr<DistABTask>(new DistABTask(astring, base_det, int_det, jop, cc, sigma)));
+    tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
 
     for (auto i = tasks.begin(); i != tasks.end(); ) {
       if ((*i)->test()) {
@@ -273,7 +273,7 @@ void DistFCI::compute() {
   // Creating an initial CI vector
   vector<shared_ptr<DistCivec>> cc(nstate_);
   for (auto& i : cc)
-    i = shared_ptr<DistCivec>(new DistCivec(det_));
+    i = make_shared<DistCivec>(det_);
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc);
@@ -366,7 +366,7 @@ void DistFCI::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
@@ -392,7 +392,7 @@ void DistFCI::const_denom() {
   }
   denom_t.tick_print("jop, kop");
 
-  denom_ = shared_ptr<DistCivec>(new DistCivec(det_));
+  denom_ = make_shared<DistCivec>(det_);
 
   double* iter = denom_->local();
   vector<HZDenomTask> tasks;
