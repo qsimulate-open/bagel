@@ -71,7 +71,7 @@ Shell::~Shell() {
 
 
 std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
-  std::shared_ptr<Shell> out(new Shell(*this));
+  auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];
   out->position_[2] += displacement[2];
@@ -80,7 +80,7 @@ std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacemen
 
 
 std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
-  std::shared_ptr<Shell> out(new Shell(*this));
+  auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];
   out->position_[2] += displacement[2];
@@ -149,7 +149,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
         contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
         range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
       }
-      out.push_back(shared_ptr<const Shell>(new Shell(spherical_, position_, angular_number_, expo, contr, range)));
+      out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range));
       smallest = *lower;
       nstart = nend;
       if (upper == contraction_upper_.end()) break;
@@ -175,12 +175,12 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont(int inc) const {
     conts.push_back(cont);
     ranges.push_back(make_pair(i,i+1));
   }
-  return angular_number_+inc < 0 ? shared_ptr<const Shell>() : shared_ptr<const Shell>(new Shell(false, position_, angular_number_+inc, exponents_, conts, ranges));
+  return angular_number_+inc < 0 ? shared_ptr<const Shell>() : make_shared<const Shell>(false, position_, angular_number_+inc, exponents_, conts, ranges);
 }
 
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  shared_ptr<Shell> out(new Shell(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_));
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
   return out;
 }
 
@@ -204,7 +204,7 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
-  shared_ptr<Matrix> overlap(new Matrix(a,a, true));
+  auto overlap = make_shared<Matrix>(a,a, true);
 
   {
     OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_inc_}});
@@ -238,12 +238,12 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
-  shared_ptr<MomentBatch> coeff0(new MomentBatch(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_inc_}}));
+  auto coeff0 = make_shared<MomentBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_inc_}});
   coeff0->compute();
 
   shared_ptr<MomentBatch> coeff1;
   if (aux_dec_) {
-    coeff1 = shared_ptr<MomentBatch>(new MomentBatch(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}}));
+    coeff1 = make_shared<MomentBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}});
     coeff1->compute();
   } else {
     // just to run. coeff1 is not referenced in the code
@@ -253,7 +253,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
   const double* carea0 = coeff0->data();
   const double* carea1 = coeff1->data();
 
-  shared_ptr<Matrix> tmparea(new Matrix(ssize,a, true));
+  auto tmparea = make_shared<Matrix>(ssize,a, true);
   array<shared_ptr<const Matrix>,3> out;
 
   const static CarSphList carsphlist;
