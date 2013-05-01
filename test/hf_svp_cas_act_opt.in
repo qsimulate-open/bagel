@@ -13,10 +13,13 @@
 },
 
 {
-  "title" : "casscf-opt",
-  "nact" : 0,
-  "nact_cas" : 6,
-  "nclosed" : 0
+  "title" : "optimize",
+  "method" : {
+    "title" : "casscf",
+    "nact" : 0,
+    "nact_cas" : 6,
+    "nclosed" : 0
+  }
 }
 
 ]}

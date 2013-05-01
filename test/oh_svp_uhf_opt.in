@@ -13,9 +13,12 @@
 },
 
 {
-  "title" : "df-uhf-opt",
-  "nact" : 1,
-  "thresh" : 1.0e-10
+  "title" : "optimize",
+  "method" : {
+    "title" : "df-uhf",
+    "nact" : 1,
+    "thresh" : 1.0e-10
+  }
 }
 
 ]}

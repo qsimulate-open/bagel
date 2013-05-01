@@ -13,8 +13,11 @@
 },
 
 {
-  "title" : "df-ks-opt",
-  "xc_func" : "b3lyp"
+  "title" : "optimize",
+  "method" : {
+    "title" : "df-ks",
+    "xc_func" : "b3lyp"
+  }
 }
 
 ]}

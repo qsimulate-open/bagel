@@ -46,7 +46,7 @@ class Opt {
     const boost::property_tree::ptree idata_;
     // options for T
     boost::property_tree::ptree input_;
-    std::shared_ptr<Geometry> current_;
+    std::shared_ptr<const Geometry> current_;
     std::shared_ptr<BFGS<GradFile>> bfgs_;
 
     int iter_;
@@ -71,7 +71,7 @@ class Opt {
     bool internal_;
 
   public:
-    Opt(const boost::property_tree::ptree& idat, const boost::property_tree::ptree& inp, const std::shared_ptr<Geometry> geom)
+    Opt(const boost::property_tree::ptree& idat, const boost::property_tree::ptree& inp, const std::shared_ptr<const Geometry> geom)
       : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(new GradFile(geom->xyz())) {
       std::shared_ptr<const GradFile> denom(new GradFile(geom->natom(), 1.0));
       bfgs_ = std::shared_ptr<BFGS<GradFile>>(new BFGS<GradFile>(denom));
@@ -79,7 +79,6 @@ class Opt {
 
       internal_ = inp.get<bool>("internal", true);
     }
-    ~Opt() {}
 
     bool next() {
       if (iter_ > 0) mute_stdcout();
@@ -115,7 +114,7 @@ class Opt {
       if (!converged) {
         displ->scale(-1.0);
         if (iter_ == 0) displ->scale(0.01);
-        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), input_));
+        current_ = std::shared_ptr<const Geometry>(new Geometry(*current_, displ->xyz(), input_));
         current_->print_atoms();
       }
 

@@ -13,9 +13,12 @@
 },
 
 {
-  "title" : "mp2-opt",
-  "thresh" : 1.0e-10,
-  "frozen" : true
+  "title" : "optimize",
+  "method" : {
+    "title" : "mp2",
+    "thresh" : 1.0e-10,
+    "frozen" : true
+  }
 }
 
 ]}

@@ -14,8 +14,11 @@
 },
 
 {
-  "title" : "df-hf-opt",
-  "thresh" : 1.0e-10
+  "title" : "optimize",
+  "method" : {
+    "title" : "df-hf",
+    "thresh" : 1.0e-10
+  }
 }
 
 ]}

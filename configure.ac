@@ -116,7 +116,6 @@ AC_CONFIG_FILES([Makefile
                  src/parallel/Makefile
                  src/dimer/Makefile
                  src/meh/Makefile
-                 src/opt/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
                  src/rysint/Makefile
@@ -134,5 +133,6 @@ AC_CONFIG_FILES([Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile
                  src/ks/Makefile
+                 src/opt/Makefile
                  src/transp/Makefile])
 AC_OUTPUT

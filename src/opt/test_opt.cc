@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/opt/opt.h>
+#include <src/opt/optimize.h>
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
 
@@ -37,59 +37,17 @@ std::vector<double> run_opt(std::string filename) {
   boost::property_tree::ptree idata;
   boost::property_tree::json_parser::read_json(inputname, idata);
   auto keys = idata.get_child("bagel");
-  std::shared_ptr<Geometry> geom;
+  std::shared_ptr<const Geometry> geom;
 
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     std::string method = iter->second.get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
-
-    } else if (method == "df-hf-opt") {
-      std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
-
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
-    } else if (method == "df-uhf-opt") {
-      std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
-
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
-    } else if (method == "df-rohf-opt") {
-      std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
-
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
-    } else if (method == "df-ks-opt") {
-      std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
-
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
-    } else if (method == "mp2-opt") {
-      std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
-
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
-    } else if (method == "casscf-opt") {
-      std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
-      for (int i = 0; i != 20; ++i)
-        if (opt->next()) break;
+      geom = std::shared_ptr<const Geometry>(new Geometry(iter->second));
+    } else {
+      std::shared_ptr<Optimize> opt(new Optimize(iter->second, geom));
+      opt->compute();
 
       std::cout.rdbuf(backup_stream);
       std::shared_ptr<const Matrix> out = opt->geometry()->xyz();

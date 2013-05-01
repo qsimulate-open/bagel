@@ -1,4 +1,4 @@
-#lib_LIBRARIES = libopt.a
-#libopt_a_SOURCES = opt_base.cc
-#AM_CXXFLAGS=-I$(top_srcdir)
+lib_LTLIBRARIES = libbagel_opt.la
+libbagel_opt_la_SOURCES = optimize.cc
+AM_CXXFLAGS=-I$(top_srcdir)
 

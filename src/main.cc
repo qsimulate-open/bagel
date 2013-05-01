@@ -52,7 +52,7 @@
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
 #include <src/parallel/resources.h>
-#include <src/opt/opt.h>
+#include <src/opt/optimize.h>
 #include <src/util/constants.h>
 #include <src/util/localization.h>
 #include <src/util/timer.h>
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       std::string method = iter->second.get<std::string>("title", "");
       std::transform(method.begin(), method.end(), method.begin(), ::tolower);
-      if (method.empty()) throw std::logic_error("section is missing in one of the input blocks");
+      if (method.empty()) throw std::runtime_error("title is missing in one of the input blocks");
 
       if (method == "molecule") {
         if (ref != nullptr) geom->discard_df(); 
@@ -203,29 +203,10 @@ int main(int argc, char** argv) {
         scf->compute();
         ref = scf->conv_to_ref();
 
-      } else if (method == "df-uhf-opt" || method == "uhf-opt") {
+      } else if (method == "optimize") {
 
-        std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
-        for (int i = 0; i != 100; ++i)
-          if (opt->next()) break;
-
-      } else if (method == "df-rohf-opt" || method == "rohf-opt") {
-
-        std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
-        for (int i = 0; i != 100; ++i)
-          if (opt->next()) break;
-
-      } else if (method == "df-hf-opt") {
-
-        std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
-        for (int i = 0; i != 100; ++i)
-          if (opt->next()) break;
-
-      } else if (method == "df-ks-opt") {
-
-        std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
-        for (int i = 0; i != 100; ++i)
-          if (opt->next()) break;
+        std::shared_ptr<Optimize> opt(new Optimize(iter->second, geom));
+        opt->compute();
 
       } else if (method == "casscf") {
 
@@ -244,43 +225,10 @@ int main(int argc, char** argv) {
         casscf->compute();
         ref = casscf->conv_to_ref();
 
-      } else if (method == "casscf-opt") {
-        std::string algorithm = iter->second.get<std::string>("algorithm", "");
-        // in case of SS-CASSCF
-        if (iter->second.get<int>("nstate", 1) == 1) {
-          if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
-            for (int i = 0; i != 100; ++i)
-              if (opt->next()) break;
-          } else if (algorithm == "werner" || algorithm == "knowles") {
-            std::shared_ptr<Opt<WernerKnowles>> opt(new Opt<WernerKnowles>(idata, iter->second, geom));
-            for (int i = 0; i != 100; ++i)
-              if (opt->next()) break;
-          } else {
-            throw std::runtime_error("unknown CASSCF algorithm specified.");
-          }
-        // in case of SA-CASSCF
-        } else {
-          if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCIGrad>> opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
-            for (int i = 0; i != 100; ++i)
-              if (opt->next()) break;
-          } else {
-            throw std::runtime_error("unknown CASSCF algorithm specified.");
-          }
-
-
-        }
       } else if (method == "mp2") {
 
         std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
         mp2->compute();
-
-      } else if (method == "mp2-opt") {
-
-        std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
-        for (int i = 0; i != 100; ++i)
-          if (opt->next()) break;
 
       } else if (method == "transp") {
 
