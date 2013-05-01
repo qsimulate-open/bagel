@@ -35,8 +35,8 @@ void ROHF::compute() {
   if (coeff_ == nullptr || coeffB_ == nullptr) {
     Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());
-    coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
-    coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
+    coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
+    coeffB_ = make_shared<Coeff>(*coeff_); // since this is obtained with hcore
   }
   tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
@@ -55,14 +55,14 @@ void ROHF::compute() {
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0,nocc_)));
-    shared_ptr<const Matrix> fockB = noccB_ ? shared_ptr<const Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_)))
-                                            : shared_ptr<const Matrix>(new Matrix(geom_->nbasis(), geom_->nbasis()));
+    shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0,nocc_));
+    shared_ptr<const Matrix> fockB = noccB_ ? make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_))
+                                            : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis()); 
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
-    shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *fockA * *natorb));
-    shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *fockB * *natorb));
+    auto intermediateA = make_shared<Matrix>(*natorb % *fockA * *natorb);
+    auto intermediateB = make_shared<Matrix>(*natorb % *fockB * *natorb);
 
     // Specific to ROHF:
     //   here we want to symmetrize closed-virtual blocks
@@ -73,8 +73,8 @@ void ROHF::compute() {
 
     shared_ptr<Matrix> new_density, new_densityA, new_densityB;
 
-    shared_ptr<Matrix> error_vector(new Matrix(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
-                                              +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB));
+    auto error_vector = make_shared<Matrix>(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
+                                           +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB);
 
     const double error = error_vector->rms();
 
@@ -95,9 +95,9 @@ void ROHF::compute() {
 
     if (iter >= diis_start_) {
       shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
-      shared_ptr<Matrix> intermediateA(new Matrix(*natorb % *tmp_fock * *natorb));
+      shared_ptr<Matrix> intermediateA = make_shared<Matrix>(*natorb % *tmp_fock * *natorb);
                          tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
-      shared_ptr<Matrix> intermediateB(new Matrix(*natorb % *tmp_fock * *natorb));
+      shared_ptr<Matrix> intermediateB = make_shared<Matrix>(*natorb % *tmp_fock * *natorb);
 
       // Specific to ROHF:
       //   here we want to symmetrize closed-virtual blocks
@@ -105,11 +105,11 @@ void ROHF::compute() {
 
       intermediateA->diagonalize(eig());
       intermediateB->diagonalize(eigB());
-      coeff_  = shared_ptr<Coeff>(new Coeff(*natorb**intermediateA));
-      coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb**intermediateB));
+      coeff_  = make_shared<Coeff>(*natorb**intermediateA);
+      coeffB_ = make_shared<Coeff>(*natorb**intermediateB);
     } else {
-      coeff_  = shared_ptr<Coeff>(new Coeff(*natorb * *intermediateA));
-      coeffB_ = shared_ptr<Coeff>(new Coeff(*natorb * *intermediateB));
+      coeff_  = make_shared<Coeff>(*natorb * *intermediateA);
+      coeffB_ = make_shared<Coeff>(*natorb * *intermediateB);
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 

@@ -78,7 +78,7 @@ template <int N>
 Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const bool loc) : geom_(geom), localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::shared_ptr<Matrix>(new Matrix(geom->nbasis(), geom->nbasis()));
+    matrices_[i] = std::make_shared<Matrix>(geom->nbasis(), geom->nbasis());
   }
 }
 
@@ -87,7 +87,7 @@ template <int N>
 Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const int n, const int m, const bool loc) : geom_(geom), localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::shared_ptr<Matrix>(new Matrix(n, m));
+    matrices_[i] = std::make_shared<Matrix>(n, m);
   }
 }
 

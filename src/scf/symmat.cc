@@ -34,7 +34,7 @@ using namespace bagel;
 
 SymMat::SymMat(const shared_ptr<const Geometry> gm, const int iop) : Matrix(gm->nbasis(), gm->nbasis()), petite_(gm->plist()) {
 
-  symrot_ = shared_ptr<SymRotAbel>(new SymRotAbel(petite_->symop(iop), gm->lmax(), gm->spherical()));
+  symrot_ = make_shared<SymRotAbel>(petite_->symop(iop), gm->lmax(), gm->spherical());
 
   const vector<shared_ptr<const Atom>> atoms = gm->atoms();
   const int natom = atoms.size();

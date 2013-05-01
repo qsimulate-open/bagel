@@ -99,7 +99,7 @@ class GradEval_base {
     std::vector<std::mutex> mutex_;
 
   public:
-    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(new GradFile(g->natom())), mutex_(g->natom()) { };
+    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(std::make_shared<GradFile>(g->natom())), mutex_(g->natom()) { };
     ~GradEval_base() {};
 
     /// compute gradient given density matrices

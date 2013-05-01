@@ -45,22 +45,21 @@ class DFData : public RelDFBase, public std::enable_shared_from_this<DFData> {
     bool swap_;
 
     void set_basis() override {
-      std::shared_ptr<const Sigma> sigma1(new Sigma(coord_.first));
-      std::shared_ptr<const Sigma> sigma2(new Sigma(coord_.second));
+      auto sigma1 = std::make_shared<const Sigma>(coord_.first);
+      auto sigma2 = std::make_shared<const Sigma>(coord_.second);
       std::array<int, 2> ab = {{Basis::a, Basis::b}};
       for (auto& i : ab)
         for (auto& j : ab)
           for (auto& a : alpha_) {
-            std::shared_ptr<const ABcases> tmp(new ABcases(std::make_pair(i,j), coord_, sigma1, sigma2, a));
+            auto tmp = std::make_shared<const ABcases>(std::make_pair(i,j), coord_, sigma1, sigma2, a);
             if (tmp->nonzero()) basis_.push_back(tmp);
           }
     }
 
-    DFData(const DFData&, bool);
-
   public:
     DFData(std::shared_ptr<const DFDist>, std::pair<int, int>, const std::vector<int>);
     DFData(const DFData&) = delete;
+    DFData(const DFData&, bool);
     DFData() = delete;
 
     std::shared_ptr<const DFDist> df() const { return dfdata_; }

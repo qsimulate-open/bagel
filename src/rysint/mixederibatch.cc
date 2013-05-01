@@ -104,16 +104,16 @@ void MixedERIBatch::eri_compute(double* eri) const {
   const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
   const int a1 = a1size_inc + a1size_dec;
 
-  const shared_ptr<const Shell> dummy(new Shell(shells_[0]->spherical()));
+  auto dummy = make_shared<const Shell>(shells_[0]->spherical());
   Address m(s0size, a1, s2size);
 
   {
     shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
     const int s2cart = cart2->nbasis();
 #ifndef LIBINT_INTERFACE
-    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0, 0.0, true, stack_));
+    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0, 0.0, true, stack_);
 #else
-    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0));
+    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0);
 #endif
     eric->compute();
 
@@ -141,10 +141,10 @@ void MixedERIBatch::eri_compute(double* eri) const {
     shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
     const int s2cart = cart2->nbasis();
 #ifndef LIBINT_INTERFACE 
-    shared_ptr<ERIBatch> eric(new ERIBatch(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}},
-                                           2.0, 0.0, true, stack_));
+    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}},
+                                      2.0, 0.0, true, stack_);
 #else
-    shared_ptr<Libint> eric(new Libint(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}}, 2.0));
+    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}}, 2.0);
 #endif
     eric->compute();
 

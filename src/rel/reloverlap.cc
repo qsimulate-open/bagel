@@ -34,9 +34,9 @@ void RelOverlap::compute_() {
   const int n = geom_->nbasis();
   const complex<double> coeff1 (1.0, 0.0);
 
-  shared_ptr<ZMatrix> out(new ZMatrix(4*n, 4*n));
-  shared_ptr<Matrix> ovl(new Overlap(*overlap_));
-  shared_ptr<Matrix> k12(new Matrix(*kinetic_));
+  auto out = make_shared<ZMatrix>(4*n, 4*n);
+  auto ovl = make_shared<Overlap>(*overlap_);
+  auto k12 = make_shared<Matrix>(*kinetic_);
 
   if (half_inverse_) {
     ovl->inverse_half();

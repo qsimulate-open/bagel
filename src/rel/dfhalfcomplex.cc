@@ -122,13 +122,13 @@ bool DFHalfComplex::alpha_matches(shared_ptr<const DFHalfComplex> o) const {
 // Another WARNING: basis(bt) assumes you are multiplying breit2index by 2nd integral, not first
 shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
-  return shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, new_basis(bt)));
+  return make_shared<DFHalfComplex>(d, coord_, new_basis(bt));
 }
 
 const vector<shared_ptr<const ABcases>> DFHalfComplex::new_basis(shared_ptr<const Breit2Index> bt) const {
   vector<shared_ptr<const ABcases>> out;
   for (auto& i : basis_)
-    out.push_back(shared_ptr<const ABcases>(new ABcases(*i, bt->index().first)));
+    out.push_back(make_shared<const ABcases>(*i, bt->index().first));
   return out;
 }
 
@@ -137,11 +137,11 @@ list<shared_ptr<DFHalfComplex>> DFHalfComplex::split(const bool docopy) {
   list<shared_ptr<DFHalfComplex>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
     if (i == basis().begin() && docopy) {
-      out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(dfhalf_, coord_, {*i})));
+      out.push_back(make_shared<DFHalfComplex>(dfhalf_, coord_, vector<std::shared_ptr<const ABcases>>{*i}));
     } else {
       // TODO Any way to avoid copying?
       array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
-      out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(d, coord_, {*i})));
+      out.push_back(make_shared<DFHalfComplex>(d, coord_, vector<std::shared_ptr<const ABcases>>{*i}));
     }
   }
   return out;

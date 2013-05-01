@@ -91,7 +91,7 @@ class Opt {
       }
       // current geom and grad in the cartesian coordinate
       std::shared_ptr<const GradFile> cgrad = eval.compute();
-      std::shared_ptr<const GradFile> cgeom(new GradFile(current_->xyz()));
+      std::shared_ptr<const GradFile> cgeom = std::make_shared<GradFile>(current_->xyz());
       std::shared_ptr<GradFile> displ;
       if (internal_) {
         std::shared_ptr<const GradFile> dgeom = cgeom->transform(bmat_[0], false);
@@ -115,7 +115,7 @@ class Opt {
       if (!converged) {
         displ->scale(-1.0);
         if (iter_ == 0) displ->scale(0.01);
-        current_ = std::shared_ptr<Geometry>(new Geometry(*current_, displ->xyz(), input_));
+        current_ = std::make_shared<Geometry>(*current_, displ->xyz(), input_);
         current_->print_atoms();
       }
 

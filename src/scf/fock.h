@@ -303,7 +303,7 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      std::shared_ptr<const Matrix> coeff(new Matrix(*ocoeff->transpose()*2.0));
+      auto coeff = std::make_shared<const Matrix>(*ocoeff->transpose()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

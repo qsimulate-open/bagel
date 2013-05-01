@@ -39,7 +39,7 @@ class DFIntTask {
     std::array<std::shared_ptr<DFBlock>,N> dfblocks_;
 
     std::shared_ptr<TBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
-      std::shared_ptr<TBatch> eribatch(new TBatch(input, 2.0));
+      auto eribatch = std::make_shared<TBatch>(input, 2.0);
       eribatch->compute();
       return eribatch;
     }

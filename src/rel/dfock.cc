@@ -40,7 +40,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
   if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
   assert(geom_->nbasis()*4 == coeff->ndim());
 
-  shared_ptr<ZMatrix> ocoeffall(new ZMatrix(*coeff));
+  auto ocoeffall = make_shared<ZMatrix>(*coeff);
   const int nocc = coeff->mdim();
   const int nbatch = (nocc-1) / batchsize+1;
   StaticDist dist(nocc, nbatch);
@@ -111,16 +111,16 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
     // the same as above
     shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), 0.5);
     shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), 0.5);
-    r = shared_ptr<Matrix>(new Matrix(*ss + *dd));
-    i = shared_ptr<Matrix>(new Matrix(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), -2.0)));
+    r = make_shared<Matrix>(*ss + *dd);
+    i = make_shared<Matrix>(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), -2.0));
   }
 
   const bool diagonal = diag || dfc1 == dfc2;
 
-  shared_ptr<ZMatrix> a(new ZMatrix(*r, *i));
+  auto a = make_shared<ZMatrix>(*r, *i);
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
-      shared_ptr<ZMatrix> out(new ZMatrix(*a * (conj(i1->fac())*i2->fac())));
+      auto out = make_shared<ZMatrix>(*a * (conj(i1->fac())*i2->fac()));
 
       const int index0 = i1->basis(1);
       const int index1 = i2->basis(1);
@@ -146,16 +146,16 @@ list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> df
     for (auto& i : xyz) {
       for (auto& j : xyz)
         if (i <= j)
-          dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,j), {Comp::L})));
+          dfdists.push_back(make_shared<DFData>(*k++, make_pair(i,j), vector<int>{Comp::L}));
     }
     // large-large
-    dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(Comp::L,Comp::L), {Comp::L})));
+    dfdists.push_back(make_shared<DFData>(*k++, make_pair(Comp::L,Comp::L), vector<int>{Comp::L}));
     assert(k == dfs.end());
 
   } else { // Gaunt Term
     auto k = dfs.begin();
     for (auto& i : xyz)
-      dfdists.push_back(shared_ptr<DFData>(new DFData(*k++, make_pair(i,Comp::L), xyz)));
+      dfdists.push_back(make_shared<DFData>(*k++, make_pair(i,Comp::L), xyz));
     assert(k == dfs.end());
   }
   return dfdists;
@@ -217,10 +217,10 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
 
-    shared_ptr<Breit> breit_matrix(new Breit(geom_));
+    auto breit_matrix = make_shared<Breit>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
     for (int i = 0; i != breit_matrix->nblocks(); ++i) {
-      breit_2index.push_back(shared_ptr<Breit2Index>(new Breit2Index(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2())));
+      breit_2index.push_back(make_shared<Breit2Index>(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
       if (breit_matrix->cross(i))
@@ -270,7 +270,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(shared_ptr<CDMatrix>(new CDMatrix_drv(j, i, trocoeff, tiocoeff, geom_->df()->data2())));
+      cd.push_back(make_shared<CDMatrix_drv>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
     }
   }
 

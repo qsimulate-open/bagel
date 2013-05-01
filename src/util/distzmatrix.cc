@@ -123,15 +123,14 @@ complex<double> DistZMatrix::zdotc(const DistZMatrix& o) const {
 
 
 shared_ptr<ZMatrix> DistZMatrix::matrix() const {
-  shared_ptr<ZMatrix> out(new ZMatrix(*this));
-  return out;
+  return make_shared<ZMatrix>(*this);
 }
 
 
 shared_ptr<const DistZMatrix> DistZMatrix::form_density_rhf(const int nocc, const int off) const {
   const int l = ndim_;
   const int n = ndim_;
-  shared_ptr<DistZMatrix> out(new DistZMatrix(l, n));
+  auto out = make_shared<DistZMatrix>(l, n);
   pzgemm_("N", "C", l, n, nocc, 1.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
   return out;
 }
