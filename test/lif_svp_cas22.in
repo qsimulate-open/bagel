@@ -1,17 +1,24 @@
-molecule {
-  symmetry = C1;
-  basis = svp;
-  df_basis = qzvpp-jkfit;
-  schwarz_thresh = 1.0e-12;
-  angstrom = false;
-  atom = ( Li,     -0.000000,     -0.000000,     10.000000);
-  atom = ( F,      0.000000,      0.000000,      0.000000);
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "qzvpp-jkfit",
+  "angstrom" : false,
+  "geometry" : [
+    {"atom" : "Li",  "xyz" : [  -0.000000,     -0.000000,     10.000000]},
+    {"atom" : "F",   "xyz" : [  -0.000000,     -0.000000,      0.000000]}
+  ]
+},
+
+{
+  "title" : "casscf",
+  "nact" : 0,
+  "nact_cas" : 2,
+  "nclosed" : 5,
+  "thresh_fci" : 1.0e-15,
+  "thresh" : 1.0e-15
 }
 
-casscf {
-  nact = 0;
-  nact_cas = 2; 
-  nclosed = 5;
-  thresh_fci = 1.0e-15;
-  thresh = 1.0e-15;
-}
+]}
