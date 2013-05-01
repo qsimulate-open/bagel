@@ -69,7 +69,7 @@ class TaskQueue {
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
       std::list<std::shared_ptr<std::thread>> threads;
       for (int i = 0; i != num_threads; ++i)
-        threads.push_back(std::shared_ptr<std::thread>(new std::thread(&TaskQueue<T>::compute_one_thread, this)));
+        threads.push_back(std::make_shared<std::thread>(&TaskQueue<T>::compute_one_thread, this));
       for (auto& i : threads) {
         i->join();
       }

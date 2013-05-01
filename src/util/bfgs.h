@@ -58,10 +58,10 @@ class BFGS {
     // returns a displacement
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       // to make sure, inputs are copied.
-      std::shared_ptr<const T> grad(new T(*_grad));
-      std::shared_ptr<const T> value(new T(*_value));
+      auto grad = std::make_shared<const T>(*_grad);
+      auto value = std::make_shared<const T>(*_value);
 
-      std::shared_ptr<T> out(new T(*grad));
+      auto out = std::make_shared<T>(*grad);
       // (1)
       *out /= *denom_;
 
@@ -69,12 +69,12 @@ class BFGS {
         // (3)
         std::shared_ptr<T> yy = grad->clone();
         {
-          std::shared_ptr<T> DD(new T(*grad - *prev_grad));
+          auto DD = std::make_shared<T>(*grad - *prev_grad);
           D.push_back(DD);
 
           *yy = *DD / *denom_;
 
-          std::shared_ptr<T> vv(new T(*value - *prev_value));
+          auto vv = std::make_shared<T>(*value - *prev_value);
           delta.push_back(vv);
 
         }

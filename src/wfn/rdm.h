@@ -89,7 +89,7 @@ class RDM : public RDM_base {
     RDM(const int n) : RDM_base(n, rank) { }
     RDM(const RDM& o) : RDM_base(o) { }
 
-    std::shared_ptr<RDM<rank>> clone() const { return std::shared_ptr<RDM<rank>>(new RDM<rank>(norb_)); }
+    std::shared_ptr<RDM<rank>> clone() const { return std::make_shared<RDM<rank>>(norb_); }
 
     template<typename ...args>
     double& element(const args&... index) { return data_[address_<0>(index...)]; }

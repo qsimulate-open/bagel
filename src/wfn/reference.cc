@@ -40,7 +40,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const double en,
                      const vector<shared_ptr<RDM<1>>>& _rdm1, const vector<shared_ptr<RDM<2>>>& _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av)
- : geom_(g), coeff_(c), energy_(en), hcore_(new Hcore(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
+ : geom_(g), coeff_(c), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
@@ -64,7 +64,7 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
     return active->rdm1_mat(geom_, nclosed_);
   else {
-    shared_ptr<Matrix> out(new Matrix(nocc(), nocc()));
+    auto out = make_shared<Matrix>(nocc(), nocc());
     for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
     return out;
   }
@@ -73,7 +73,7 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
 
 shared_ptr<Dvec> Reference::civectors() const {
   // Default to HarrisonZarrabian method
-  shared_ptr<FCI> fci(new KnowlesHandy(boost::property_tree::ptree(), shared_from_this(), nclosed_, nact_, nstate_));
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(boost::property_tree::ptree(), shared_from_this(), nclosed_, nact_, nstate_);
   fci->compute();
   return fci->civectors();
 }
@@ -82,7 +82,7 @@ shared_ptr<Dvec> Reference::civectors() const {
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method
-  shared_ptr<FCI> fci(new KnowlesHandy(boost::property_tree::ptree(), shared_from_this(), nclosed_, nact_, nstate_));
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(boost::property_tree::ptree(), shared_from_this(), nclosed_, nact_, nstate_);
   fci->compute();
   fci->compute_rdm12();
   return fci->compute_rdm34(i);
@@ -90,12 +90,12 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 
 
 shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
-  shared_ptr<Matrix> snew(new Overlap(geomin));
+  shared_ptr<Matrix> snew = make_shared<Overlap>(geomin);
   snew->inverse_symmetric();
   MixedBasis<OverlapBatch> mixed(geom_, geomin);
-  shared_ptr<Coeff> c(new Coeff(*snew * mixed * *coeff_));
+  auto c = make_shared<Coeff>(*snew * mixed * *coeff_);
 
-  return shared_ptr<const Reference>(new Reference(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_));
+  return make_shared<Reference>(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_);
 }
 
 
@@ -131,7 +131,7 @@ shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const
     else --nvirt;
   }
 
-  shared_ptr<Matrix> tmp_coeff(new Matrix(nbasis, nbasis));
+  auto tmp_coeff = make_shared<Matrix>(nbasis, nbasis);
 
   int iclosed = 0;
   int iactive = nclosed;
@@ -158,10 +158,8 @@ shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const
     }
   }
 
-  shared_ptr<const Coeff> out_coeff(new const Coeff(*tmp_coeff));
-  shared_ptr<Reference> out(new Reference(geom_, out_coeff, nclosed, nactive, nvirt));
-
-  return out;
+  auto out_coeff = make_shared<const Coeff>(*tmp_coeff);
+  return make_shared<Reference>(geom_, out_coeff, nclosed, nactive, nvirt);
 }
 
 shared_ptr<const Reference> Reference::set_active(string active_string) const {

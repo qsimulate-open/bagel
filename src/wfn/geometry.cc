@@ -95,14 +95,12 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
         *p++ = lexical_cast<double>(i.second.data()) * prefac;
 
       if (aname != "q") {
-        shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, basisfile_));
-        atoms_.push_back(catom);
+        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, basisfile_));
       } else {
         if (symmetry_ != "c1")
           throw runtime_error("External point charges are only allowed in C1 calculations so far.");
         const double charge = lexical_cast<double>(iter->second.get<double>("charge"));
-        shared_ptr<const Atom> catom(new Atom(spherical_, aname, positions, charge));
-        atoms_.push_back(catom);
+        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, charge));
       }
 
     }
@@ -115,8 +113,7 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   if (!auxfile_.empty()) {
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
-        shared_ptr<const Atom> catom(new Atom(spherical_, iatom->name(), iatom->position(), auxfile_));
-        aux_atoms_.push_back(catom);
+        aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_));
       } else {
         // we need a dummy atom here to be consistent in gradient computations
         aux_atoms_.push_back(iatom);
@@ -188,7 +185,7 @@ void Geometry::common_init1() {
 
 void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
   // symmetry set-up
-  plist_ = std::shared_ptr<Petite>(new Petite(atoms_, symmetry_));
+  plist_ = make_shared<Petite>(atoms_, symmetry_);
   nirrep_ = plist_->nirrep();
 
   if (print) {
@@ -226,8 +223,8 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   int iat = 0;
   for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, ++iat) {
     array<double,3> cdispl = {{displ->element(0,iat), displ->element(1,iat), displ->element(2,iat)}};
-    atoms_.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
-    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+    atoms_.push_back(make_shared<Atom>(**i, cdispl));
+    aux_atoms_.push_back(make_shared<Atom>(**j, cdispl));
   }
 
   // second find the unique frame.
@@ -257,8 +254,8 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
       Quatern<double> target = op * (source - mc) * opd + oc;
       array<double,3> cdispl = (target - source).ijk();
 
-      newatoms.push_back(shared_ptr<Atom>(new Atom(**i, cdispl)));
-      newauxatoms.push_back(shared_ptr<Atom>(new Atom(**j, cdispl)));
+      newatoms.push_back(make_shared<Atom>(**i, cdispl));
+      newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
     }
     atoms_ = newatoms;
     aux_atoms_ = newauxatoms;
@@ -278,11 +275,11 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   // first construct atoms using displacements
 
   for (auto& i : o.atoms_) {
-    atoms_.push_back(shared_ptr<Atom>(new Atom(*i, displ)));
+    atoms_.push_back(make_shared<Atom>(*i, displ));
   }
 
   for (auto& j : o.aux_atoms_) {
-    aux_atoms_.push_back(shared_ptr<Atom>(new Atom(*j, displ)));
+    aux_atoms_.push_back(make_shared<Atom>(*j, displ));
   }
 
   common_init1();
@@ -371,7 +368,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::prop
   if (!auxfile_.empty()) {
     if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)
-      aux_atoms_.push_back(shared_ptr<const Atom>(new Atom(i->spherical(), i->name(), i->position(), auxfile_)));
+      aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_));
   }
   // symmetry
   symmetry_ = geominfo.get<string>("symmetry", "c1");
@@ -462,7 +459,7 @@ int Geometry::num_count_full_valence_nocc() const {
 
 const shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
-  shared_ptr<Matrix> grad(new Matrix(3, natom()));
+  auto grad = make_shared<Matrix>(3, natom());
   int i = 0;
   for (auto& a : atoms_) {
     const double ac = a->atom_charge();
@@ -496,7 +493,7 @@ void Geometry::merge_obs_aux() {
 
 
 shared_ptr<const Matrix> Geometry::xyz() const {
-  shared_ptr<Matrix> out(new Matrix(3, natom())); 
+  auto out = make_shared<Matrix>(3, natom()); 
   int iat = 0;
   for (auto& i : atoms_) {
     out->element(0, iat) = i->position(0);
@@ -641,7 +638,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   int n = 0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
     if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
-    nodes.push_back(shared_ptr<Node>(new Node(*i, n)));
+    nodes.push_back(make_shared<Node>(*i, n));
   }
 
   // first pick up bonds
@@ -766,7 +763,7 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
-  shared_ptr<Matrix> bb(new Matrix(primsize,primsize,true));
+  auto bb = make_shared<Matrix>(primsize,primsize,true);
   dgemm_("T", "N", primsize, primsize, cartsize, -1.0, bdag.get(), cartsize, bdag.get(), cartsize, 0.0, bb->data(), primsize);
   unique_ptr<double[]> eig(new double[primsize]);
   bb->diagonalize(eig.get());
@@ -825,7 +822,7 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   cout << "  *** Geometry (Relativistic) ***" << endl;
   Timer timer;
   // basically the same
-  shared_ptr<Geometry> geom(new Geometry(*this));
+  auto geom = make_shared<Geometry>(*this);
 
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;

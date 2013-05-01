@@ -30,7 +30,7 @@
 using namespace bagel;
 
 double pm_localization(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -45,10 +45,10 @@ double pm_localization(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::shared_ptr<SCF<1>>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
 
@@ -62,17 +62,17 @@ double pm_localization(std::string filename) {
         auto bound = iter->second.equal_range("region");
         for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
-        localization = std::shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
+        localization = std::make_shared<RegionLocalization>(ref, sizes);
       }   
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-        localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
+        localization = std::make_shared<PMLocalization>(ref);
       else throw std::runtime_error("Unrecognized orbital localization method");
 
       const int max_iter = iter->second.get<int>("max_iter", 50);
       const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
       std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter, thresh);
-      ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff )); 
+      ref = std::make_shared<const Reference>( ref, new_coeff ); 
           
       std::cout.rdbuf(backup_stream);
       return localization->metric();

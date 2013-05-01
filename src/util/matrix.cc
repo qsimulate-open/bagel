@@ -57,7 +57,7 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 shared_ptr<Matrix> Matrix::cut(const int start, const int fence) const {
   const int n = fence - start;
   assert(fence <= ndim_ && n > 0);
-  shared_ptr<Matrix> out(new Matrix(n, mdim_, localized_));
+  auto out = make_shared<Matrix>(n, mdim_, localized_);
   for (int i = 0; i != mdim_; ++i)
     for (int j = 0; j != n; ++j)
       out->data_[j+i*n] = data_[(j+start)+i*ndim_];
@@ -68,7 +68,7 @@ shared_ptr<Matrix> Matrix::cut(const int start, const int fence) const {
 
 shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
   assert(n >= ndim_ && m >= mdim_);
-  shared_ptr<Matrix> out(new Matrix(n, m, localized_));
+  auto out = make_shared<Matrix>(n, m, localized_);
   for (int i = 0; i != mdim_; ++i) {
     for (int j = 0; j != ndim_; ++j) {
       out->data_[j+i*n] = data_[j+i*ndim_];
@@ -79,7 +79,7 @@ shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
 
 
 shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
-  shared_ptr<Matrix> out(new Matrix(ndim_, fence - start, localized_));
+  auto out = make_shared<Matrix>(ndim_, fence - start, localized_);
   assert(fence <= mdim_);
 
   std::copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
@@ -90,7 +90,7 @@ shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
 shared_ptr<Matrix> Matrix::merge(const shared_ptr<const Matrix> o) const {
   assert(ndim_ == o->ndim_ && localized_ == o->localized_);
 
-  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_ + o->mdim_, localized_));
+  auto out = make_shared<Matrix>(ndim_, mdim_ + o->mdim_, localized_);
 
   copy_n(data_.get(), ndim_*mdim_, out->data_.get());
   copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
@@ -297,7 +297,7 @@ void Matrix::diagonalize(double* eig) {
 shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
   if ( !( (ndim_ == mdim_) && (ndim_ == accumulate(blocks.begin(), blocks.end(), 0))) ) throw logic_error("illegal call of Matrix::diagonalize_blocks");
 
-  shared_ptr<Matrix> out(new Matrix(ndim_,ndim_));
+  auto out = make_shared<Matrix>(ndim_,ndim_);
 
   int location = 0;
   for(auto& block_size : blocks) {
@@ -366,7 +366,7 @@ double Matrix::trace() const {
 
 
 shared_ptr<Matrix> Matrix::exp(const int deg) const {
-  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
+  auto out = make_shared<Matrix>(ndim_, mdim_);
   Matrix buf(*this);
   assert(ndim_ == mdim_);
 
@@ -383,7 +383,7 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
 
 
 shared_ptr<Matrix> Matrix::log(const int deg) const {
-  shared_ptr<Matrix> out(new Matrix(ndim_, mdim_));
+  auto out = make_shared<Matrix>(ndim_, mdim_);
   Matrix buf(*this);
   for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
   assert(ndim_ == mdim_);
@@ -400,7 +400,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
-  shared_ptr<Matrix> out(new Matrix(mdim_, ndim_, localized_));
+  auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
   mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor); 
   return out;
 }
@@ -486,7 +486,7 @@ void Matrix::inverse() {
 // this is a vector B, and solve AC = B, returns C
 shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
-  shared_ptr<Matrix> out(new Matrix(*this));
+  auto out = make_shared<Matrix>(*this);
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
 
   unique_ptr<int[]> ipiv(new int[n]);
@@ -601,7 +601,7 @@ void Matrix::copy_block(const int nstart, const int mstart, const shared_ptr<con
 
 
 shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
-  shared_ptr<Matrix> out(new Matrix(nsize, msize, localized_));
+  auto out = make_shared<Matrix>(nsize, msize, localized_);
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
     copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
   return out;
@@ -626,8 +626,7 @@ void Matrix::add_block(const int nstart, const int mstart, const Matrix& o) {
 
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistMatrix> Matrix::distmatrix() const {
-  shared_ptr<DistMatrix> out(new DistMatrix(*this));
-  return out;
+  return make_shared<DistMatrix>(*this);
 }
 #else
 shared_ptr<const Matrix> Matrix::distmatrix() const {
@@ -640,7 +639,7 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 #ifndef HAVE_SCALAPACK
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
   shared_ptr<const Matrix> tmp = this->slice(offset, offset+n); 
-  shared_ptr<Matrix> out(new Matrix(*tmp ^ *tmp));
+  auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;
 }

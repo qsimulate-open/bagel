@@ -292,7 +292,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
         vector<vector<double>> cont(1, *iter);
         vector<pair<int, int>> cran(1, *citer);
-        shared_ptr<const Shell> current(new Shell(spherical_, position_, i, exponents, cont, cran));
+        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
@@ -300,8 +300,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto& d : *iter) d *= scal;
       }
 
-      shared_ptr<const Shell> currentbatch(new Shell(spherical_, position_, i, exponents, contractions, contranges));
-      shells_.push_back(currentbatch);
+      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges));
       lmax_ = i;
     }
 
@@ -420,11 +419,11 @@ shared_ptr<const Atom> Atom::relativistic() const {
   // except for shells_
   vector<shared_ptr<const Shell>> rshells;
   for (auto& i : shells_) {
-    shared_ptr<Shell> tmp(new Shell(*i));
+    auto tmp = make_shared<Shell>(*i);
     tmp->init_relativistic();
     rshells.push_back(tmp);
   }
-  shared_ptr<Atom> atom(new Atom(*this));
+  auto atom = make_shared<Atom>(*this);
   atom->shells_ = rshells;
   return atom;
 }

@@ -61,9 +61,9 @@ class AugHess {
 
   public:
     AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
-      mat_(new Matrix(ndim,ndim,true)),
+      mat_(std::make_shared<Matrix>(ndim,ndim,true)),
       prod_(new double[ndim]),
-      scr_(new Matrix(ndim,ndim,true)),
+      scr_(std::make_shared<Matrix>(ndim,ndim,true)),
       vec_(new double[ndim]),
       eig_(new double[ndim]) {
     }
@@ -96,7 +96,7 @@ class AugHess {
       for (int i = 0; i != size_; ++i)
         vec_[i] = scr_->element(i,0) / scr_->element(size_,0);
 
-      std::shared_ptr<T> out(new T(*grad_));
+      auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
         out->daxpy(vec_[cnt], *j);
