@@ -1,14 +1,21 @@
-molecule {
-  symmetry = C1;
-  basis = svp;
-  df_basis = svp-jkfit;
-  schwarz_thresh = 1.0e-12;
-  angstrom = false;
-  atom = ( C,     -0.000000,     -0.000000,      3.000000);
-  atom = ( H,      0.000000,      0.000000,      0.000000);
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "C",  "xyz" : [   -0.000000,     -0.000000,      3.000000] },
+    { "atom" : "H",  "xyz" : [    0.000000,      0.000000,      0.000000] }
+  ]
+},
+
+{
+  "title" : "df-rohf",
+  "nact" : 1,
+  "thresh" : 1.0e-10
 }
 
-df-rohf {
-  nact = 1;
-  thresh = 1.0e-10;
-}
+]}

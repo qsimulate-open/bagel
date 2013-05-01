@@ -1,17 +1,25 @@
-molecule {
-  symmetry = C1;
-  basis = sto-3g;
-  df_basis = svp-jkfit;
-  schwarz_thresh = 1.0e-12;
-  angstrom = false;
-  atom = ( F,     -0.000000,     -0.000000,      2.720616);
-  atom = ( H,      0.000000,      0.000000,      0.305956);
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "sto-3g",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : false,
+  "geometry" : [
+    { "atom" : "F",  "xyz" : [   -0.000000,     -0.000000,      2.720616]},
+    { "atom" : "H",  "xyz" : [   -0.000000,     -0.000000,      0.305956]}
+  ]
+},
+
+{
+  "title" : "df-hf",
+  "thresh" : 1.0e-10
+},
+
+{
+  "title" : "fci",
+  "nstate" : 2
 }
 
-df-hf {
-  thresh = 1.0e-10;
-}
-
-fci {
-  nstate = 2;
-}
+]}
