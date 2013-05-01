@@ -31,7 +31,7 @@ std::vector<double> run_opt(std::string filename) {
 
   std::string outputname = filename + ".testout";
   std::string inputname = "../../test/" + filename + ".in";
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(outputname, std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(outputname, std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   boost::property_tree::ptree idata;
@@ -44,9 +44,9 @@ std::vector<double> run_opt(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<const Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<const Geometry>(iter->second);
     } else {
-      std::shared_ptr<Optimize> opt(new Optimize(iter->second, geom));
+      auto opt = std::make_shared<Optimize>(iter->second, geom);
       opt->compute();
 
       std::cout.rdbuf(backup_stream);

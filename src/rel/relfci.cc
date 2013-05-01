@@ -71,9 +71,9 @@ shared_ptr<const ZMatrix> RelFCI::time_reversal_operator() {
   std::complex<double> one  (1.0, 0.0);
   std::complex<double> coeffi  (0.0, 1.0);
   
-  shared_ptr<ZMatrix> kramers(new ZMatrix(4*n, 4*n));
+  auto kramers = make_shared<ZMatrix>(4*n, 4*n);
 
-  shared_ptr<ZMatrix> unit(new ZMatrix(n, n));
+  auto unit = make_shared<ZMatrix>(n, n);
   unit->unit();
 
   kramers->add_block(-1, 0, n, n, n, unit);
@@ -81,9 +81,9 @@ shared_ptr<const ZMatrix> RelFCI::time_reversal_operator() {
   kramers->add_block(-1, 2*n, 3*n, n, n, unit);
   kramers->add_block( 1, 3*n, 2*n, n, n, unit);
 
-  shared_ptr<RelOverlap> overlap(new RelOverlap(geom_, false));
+  auto overlap = make_shared<RelOverlap>(geom_, false);
 
-  return shared_ptr<const ZMatrix>(new ZMatrix(*kramers * *overlap * coeffi));
+  return make_shared<const ZMatrix>(*kramers * *overlap * coeffi);
 }
 
 
@@ -106,7 +106,7 @@ void RelFCI::compute() {
   shared_ptr<const ZMatrix> coeff_occ_conjg = coeff_occ->get_conjg();
   shared_ptr<const ZMatrix> coeff_virt_conjg = coeff_virt->get_conjg();
 
-  shared_ptr<ZMatrix> time_reversal(shared_ptr<ZMatrix>(new ZMatrix(*time_reversal_operator())));
+  shared_ptr<ZMatrix> time_reversal(make_shared<ZMatrix>(*time_reversal_operator()));
 #if 1
   ZMatrix tmp1(*coeff_occ % *time_reversal * *coeff_occ_conjg);
   ZMatrix tmp2(*coeff_virt % *time_reversal * *coeff_virt_conjg);

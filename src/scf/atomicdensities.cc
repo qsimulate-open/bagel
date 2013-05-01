@@ -49,12 +49,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       std::streambuf* cout_orig = cout.rdbuf();
       cout.rdbuf(ss.rdbuf());
 
-      shared_ptr<const Atom> atom(new Atom(i->spherical(), i->name(), {{0.0,0.0,0.0}}, basis));
+      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis);
 
       boost::property_tree::ptree geomop;
       geomop.put("basis", basis);
       geomop.put("df_basis", dfbasis.empty() ? basis : dfbasis);
-      shared_ptr<const Geometry> ga(new Geometry({atom}, geomop));
+      auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 
       // restore cout
@@ -82,17 +82,17 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   num[4] = ga->nbasis() - accumulate(&num[0], &num[4], 0);
 
   // overlap matrix
-  shared_ptr<Overlap> overlap(new Overlap(ga));
+  auto overlap = make_shared<Overlap>(ga);
   // block diagonal structure is (should be)  maintained
   TildeX tildex(overlap, 1.0e-5);
-  shared_ptr<Hcore> hcore(new Hcore(ga));
+  auto hcore = make_shared<Hcore>(ga);
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
   unique_ptr<double[]> eig(new double[ga->nbasis()]);
   {
     Matrix ints = tildex % *hcore * tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
-    coeff = shared_ptr<const Matrix>(new Matrix(tildex * ints));
+    coeff = make_shared<const Matrix>(tildex * ints);
   }
 
   tuple<int,int,int,int> nclosed = atommap_.num_closed(ga->atoms().front()->name());
@@ -104,8 +104,8 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   if (sclosed+sopen != ga->nele())
     throw logic_error("Inconsistent nclosed and nopen. See AtomMap");
 
-  shared_ptr<Matrix> ocoeff(new Matrix(ga->nbasis(), ga->nbasis()));
-  shared_ptr<Matrix> vcoeff(new Matrix(ga->nbasis(), ga->nbasis()));
+  auto ocoeff = make_shared<Matrix>(ga->nbasis(), ga->nbasis());
+  auto vcoeff = make_shared<Matrix>(ga->nbasis(), ga->nbasis());
 
   vector<int> orb{1,3,5,7};
 
@@ -124,21 +124,21 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     k += num[i];
   }
 
-  shared_ptr<Matrix> vden(new Matrix(*vcoeff ^ *vcoeff));
+  auto vden = make_shared<Matrix>(*vcoeff ^ *vcoeff);
 
   int iter = 0;
   const int maxiter = 100;
   double prev_energy = 0.0;
   for (; iter != maxiter; ++iter) {
-    shared_ptr<Matrix> fock = sclosed ? shared_ptr<Matrix>(new Fock<1>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), true)) : hcore->copy();
-    shared_ptr<Matrix> fock2(new Fock<1>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false, 0.0));
+    shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), true) : hcore->copy();
+    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false, 0.0);
     *fock += *fock2 - *hcore;
 
-    shared_ptr<const Matrix> aodensity(new Matrix((*ocoeff^*ocoeff)*2.0 + *vden));
+    auto aodensity = make_shared<const Matrix>((*ocoeff^*ocoeff)*2.0 + *vden);
     const double energy = ((*hcore+*fock) * *aodensity).trace()*0.5;
     cout << setprecision(10) << energy << endl;
 
-    shared_ptr<const Matrix> residual(new Matrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
+    auto residual = make_shared<const Matrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     if (residual->rms() < 1.0e-2 || fabs(energy-prev_energy) < 1.0e-4) break;
     prev_energy = energy;
     fock = diis.extrapolate(make_pair(fock, residual));
@@ -146,9 +146,9 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     Matrix ints = tildex % *fock * tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
 
-    coeff  = shared_ptr<const Matrix>(new Matrix(tildex * ints));
-    ocoeff = shared_ptr<Matrix>(new Matrix(ga->nbasis(), sclosed));
-    vcoeff = shared_ptr<Matrix>(new Matrix(ga->nbasis(), ga->nbasis()));
+    coeff  = make_shared<const Matrix>(tildex * ints);
+    ocoeff = make_shared<Matrix>(ga->nbasis(), sclosed);
+    vcoeff = make_shared<Matrix>(ga->nbasis(), ga->nbasis());
     for (int i = 0, j = 0, k = 0, l = 0; i != 4; ++i) {
       for (int jj = 0; jj != nclo[i]; ++jj)
         copy_n(coeff->element_ptr(0,k+jj), ga->nbasis(), ocoeff->element_ptr(0,j+jj));
@@ -162,13 +162,13 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
       j += nclo[i];
       k += num[i];
     }
-    vden = shared_ptr<Matrix>(new Matrix(*vcoeff ^ *vcoeff));
+    vden = make_shared<Matrix>(*vcoeff ^ *vcoeff);
   }
   if (iter == maxiter) throw runtime_error("spin-averaged atomic HF did not converge");
 
   shared_ptr<Matrix> out = vden;
   if (sclosed) {
-    shared_ptr<const Coeff> c(new Coeff(*ocoeff));
+    auto c = make_shared<const Coeff>(*ocoeff);
     *out += *c->form_density_rhf(ocoeff->mdim());
   }
   return out;

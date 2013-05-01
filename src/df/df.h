@@ -144,7 +144,7 @@ class DFDist : public ParallelDF {
       std::vector<std::shared_ptr<const DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
-        out.push_back(std::shared_ptr<const DFDist>(new DFDist(nindex1_, naux_, i, df_, data2_)));
+        out.push_back(std::make_shared<const DFDist>(nindex1_, naux_, i, df_, data2_));
       return out;
     }
 
@@ -172,7 +172,7 @@ class DFDist_ints : public DFDist {
       std::vector<DFIntTask<TBatch,TBatch::nblocks()>> tasks;
       tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
 
-      const std::shared_ptr<const Shell> i3(new Shell(ashell.front()->spherical()));
+      auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
       // due to performance issue, we need to reshape it to array
       std::array<std::shared_ptr<DFBlock>,TBatch::nblocks()> blk;
@@ -217,14 +217,14 @@ class DFDist_ints : public DFDist {
       std::tie(astart, myashell) = get_ashell(ashell);
 
       std::shared_ptr<const StaticDist> adist_shell = make_table(astart);
-      std::shared_ptr<const StaticDist> adist_averaged(new StaticDist(naux_, mpi__->size())); 
+      std::shared_ptr<const StaticDist> adist_averaged = std::make_shared<const StaticDist>(naux_, mpi__->size()); 
 
       // make empty dfblocks
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       for (int i = 0; i != TBatch::nblocks(); ++i)
-        block_.push_back(std::shared_ptr<DFBlock>(new DFBlock(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0)));
+        block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
@@ -261,9 +261,9 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<Matrix> compute_Kop_1occ(const double* den, const double a) const;
 
     std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
-    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }
+    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2()); }
-    std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2()**d->data2()))); }
+    std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
 };
@@ -304,9 +304,9 @@ class DFFullDist : public ParallelDF {
     void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
 
     std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
-    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*df_->data2()**df_->data2()))); }
+    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
     std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const ParallelDF> d) const { return apply_J(d->data2()); }
-    std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::shared_ptr<Matrix>(new Matrix(*d->data2()**d->data2()))); }
+    std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
 
 };
 

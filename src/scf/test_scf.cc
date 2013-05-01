@@ -32,7 +32,7 @@
 using namespace bagel;
 
 double scf_energy(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -47,31 +47,31 @@ double scf_energy(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (method == "df-uhf") {
-      std::shared_ptr<UHF> scf(new UHF(iter->second, geom));
+      auto scf = std::make_shared<UHF>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (method == "df-rohf") {
-      std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
+      auto scf = std::make_shared<ROHF>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (method == "hf") {
-      std::shared_ptr<SCF<0>> scf(new SCF<0>(iter->second, geom));
+      auto scf = std::make_shared<SCF<0>>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

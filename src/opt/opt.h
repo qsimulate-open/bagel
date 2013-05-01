@@ -72,9 +72,8 @@ class Opt {
 
   public:
     Opt(const boost::property_tree::ptree& idat, const boost::property_tree::ptree& inp, const std::shared_ptr<const Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(new GradFile(geom->xyz())) {
-      std::shared_ptr<const GradFile> denom(new GradFile(geom->natom(), 1.0));
-      bfgs_ = std::shared_ptr<BFGS<GradFile>>(new BFGS<GradFile>(denom));
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
+      bfgs_ = std::make_shared<BFGS<GradFile>>(std::make_shared<const GradFile>(geom->natom(), 1.0));
       bmat_ = current_->compute_internal_coordinate();
 
       internal_ = inp.get<bool>("internal", true);
@@ -90,7 +89,7 @@ class Opt {
       }
       // current geom and grad in the cartesian coordinate
       std::shared_ptr<const GradFile> cgrad = eval.compute();
-      std::shared_ptr<const GradFile> cgeom(new GradFile(current_->xyz()));
+      std::shared_ptr<const GradFile> cgeom = std::make_shared<GradFile>(current_->xyz());
       std::shared_ptr<GradFile> displ;
       if (internal_) {
         std::shared_ptr<const GradFile> dgeom = cgeom->transform(bmat_[0], false);
@@ -114,7 +113,7 @@ class Opt {
       if (!converged) {
         displ->scale(-1.0);
         if (iter_ == 0) displ->scale(0.01);
-        current_ = std::shared_ptr<const Geometry>(new Geometry(*current_, displ->xyz(), input_));
+        current_ = std::make_shared<const Geometry>(*current_, displ->xyz(), input_);
         current_->print_atoms();
       }
 

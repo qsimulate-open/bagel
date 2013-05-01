@@ -43,35 +43,35 @@ void Optimize::compute() {
 
   if (method == "df-uhf" || method == "uhf") {
 
-    std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata_, methodblock, geom_));
+    auto opt = std::make_shared<Opt<UHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "df-rohf" || method == "rohf") {
 
-    std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata_, methodblock, geom_));
+    auto opt = std::make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "df-hf") {
 
-    std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata_, methodblock, geom_));
+    auto opt = std::make_shared<Opt<SCF<1>>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "df-ks") {
 
-    std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata_, methodblock, geom_));
+    auto opt = std::make_shared<Opt<KS>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "mp2") {
 
-    std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata_, methodblock, geom_));
+    auto opt = std::make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
@@ -81,12 +81,12 @@ void Optimize::compute() {
     // in case of SS-CASSCF
     if (methodblock.get<int>("nstate", 1) == 1) {
       if (algorithm == "superci" || algorithm == "") {
-        std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata_, methodblock, geom_));
+        auto opt = std::make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();
       } else if (algorithm == "werner" || algorithm == "knowles") {
-        std::shared_ptr<Opt<WernerKnowles>> opt(new Opt<WernerKnowles>(idata_, methodblock, geom_));
+        auto opt = std::make_shared<Opt<WernerKnowles>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();
@@ -96,7 +96,7 @@ void Optimize::compute() {
     // in case of SA-CASSCF
     } else {
       if (algorithm == "superci" || algorithm == "") {
-        std::shared_ptr<Opt<SuperCIGrad>> opt(new Opt<SuperCIGrad>(idata_, methodblock, geom_));
+        auto opt = std::make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();

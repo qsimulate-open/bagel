@@ -55,9 +55,9 @@ Dirac::Dirac(const boost::property_tree::ptree& idata, const shared_ptr<const Ge
 void Dirac::common_init(const boost::property_tree::ptree& idata) {
   cout << "  *** Dirac HF ***" << endl << endl;
 
-  hcore_ = shared_ptr<const RelHcore>(new RelHcore(geom_));
-  overlap_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, false));
-  s12_ = shared_ptr<const RelOverlap>(new RelOverlap(geom_, true));
+  hcore_ = make_shared<const RelHcore>(geom_);
+  overlap_ = make_shared<const RelOverlap>(geom_, false);
+  s12_ = make_shared<const RelOverlap>(geom_, true);
   // reading input keywords
   max_iter_ = idata.get<int>("maxiter", 100);
   max_iter_ = idata.get<int>("maxiter_scf", max_iter_);
@@ -99,7 +99,7 @@ void Dirac::compute() {
     Timer ptime(1);
 
     // fock construction
-    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_));
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_);
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
     fock->hermite();
@@ -116,7 +116,7 @@ void Dirac::compute() {
     }
     energy_ = 0.5*prod.real() + geom_->nuclear_repulsion();
 
-    shared_ptr<const DistZMatrix> error_vector(new DistZMatrix(*distfock**aodensity**distovl - *distovl**aodensity**distfock));
+    auto error_vector = make_shared<const DistZMatrix>(*distfock**aodensity**distovl - *distovl**aodensity**distfock);
     const double error = error_vector->rms();
 
     ptime.tick_print("Fock build");
@@ -138,7 +138,7 @@ void Dirac::compute() {
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
     intermediate.diagonalize(eig.get());
-    coeff = shared_ptr<DistZMatrix>(new DistZMatrix(*coeff * intermediate));
+    coeff = make_shared<DistZMatrix>(*coeff * intermediate);
 
     aodensity = coeff->form_density_rhf(nele_, nneg_);
 
@@ -159,8 +159,7 @@ void Dirac::print_eig(const unique_ptr<double[]>& eig) {
 shared_ptr<RelReference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const int npos = geom_->nbasis()*2;
-  return shared_ptr<RelReference>(new RelReference(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_));
-//return shared_ptr<RelReference>(new RelReference(geom_, coeff_, energy_, nele_, npos-nele_));
+  return make_shared<RelReference>(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_);
 }
 
 
@@ -172,33 +171,33 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   if (!ref_ && !relref_) {
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (relref_) {
-    shared_ptr<ZMatrix> fock(new DFock(geom_, hcore_, relref_->coeff()->slice(0, nele_), gaunt_, breit_));
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref_->coeff()->slice(0, nele_), gaunt_, breit_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (ref_->coeff()->ndim() == n) {
     // non-relativistic reference.
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
-      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, 2*nocc));
+      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_, breit_));
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
-      shared_ptr<ZMatrix> ocoeff(new ZMatrix(n*4, nocca+noccb));
+      auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = shared_ptr<ZMatrix>(new DFock(geom_, hcore_, ocoeff, gaunt_, breit_));
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
-    coeff = shared_ptr<const DistZMatrix>(new DistZMatrix(*s12 * interm));
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else {
     assert(ref_->coeff()->ndim() == n*4);
     throw logic_error("not yet implemented");

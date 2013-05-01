@@ -54,7 +54,7 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
  : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
-  shared_ptr<const Shell> dum(new Shell(spherical2_));
+  auto dum = make_shared<const Shell>(spherical2_);
   basisinfo_ = {{ info[0], info[1], dum, dum }};
 
   if (stack == nullptr) {

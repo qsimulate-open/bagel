@@ -50,10 +50,10 @@ class KS : public SCF_base {
 
       // default is now B3LYP
       name_ = idata_.get<std::string>("xc_func", "b3lyp"); 
-      func_ = std::shared_ptr<XCFunc>(new XCFunc(name_));
+      func_ = std::make_shared<XCFunc>(name_);
 
       Timer preptime; 
-      grid_ = std::shared_ptr<DFTGrid_base>(new DefaultGrid(geom));
+      grid_ = std::make_shared<DefaultGrid>(geom);
       preptime.tick_print("DFT grid generation");
 
       std::cout << std::endl;

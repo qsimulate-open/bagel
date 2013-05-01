@@ -33,8 +33,8 @@ void RelHcore::compute_() {
   // distributed hcore and overlap
   const int n = geom_->nbasis();
 
-  shared_ptr<ZMatrix> znai(new ZMatrix(2*n, 2*n));
-  shared_ptr<ZMatrix> zkinetic(new ZMatrix(2*n, 2*n));
+  auto znai = make_shared<ZMatrix>(2*n, 2*n);
+  auto zkinetic = make_shared<ZMatrix>(2*n, 2*n);
 
   array<shared_ptr<ZMatrix>,4> zsmallnai;
   for (auto& i : zsmallnai)
@@ -57,7 +57,7 @@ void RelHcore::compute_() {
   zsmallnai[3]->copy_real_block(coeff1, 0, n, n, n, (*smallnai_)[3]);
   zsmallnai[3]->copy_real_block(-coeff1, n, 0, n, n, (*smallnai_)[3]);
 
-  shared_ptr<ZMatrix> smallnai(new ZMatrix(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]));
+  auto smallnai = make_shared<ZMatrix>(*zsmallnai[0] + *zsmallnai[1] + *zsmallnai[2] + *zsmallnai[3]);
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
   const complex<double> w(0.25/(c__*c__), 0.0);
@@ -65,7 +65,7 @@ void RelHcore::compute_() {
   copy_block(0, 0, 2*n, 2*n, znai);
   copy_block(0, 2*n, 2*n, 2*n, zkinetic);
   copy_block(2*n, 0, 2*n, 2*n, zkinetic);
-  copy_block(2*n, 2*n, 2*n, 2*n, shared_ptr<ZMatrix>(new ZMatrix(*smallnai * w - *zkinetic)));
+  copy_block(2*n, 2*n, 2*n, 2*n, make_shared<ZMatrix>(*smallnai * w - *zkinetic));
 
 }
 

@@ -90,16 +90,16 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
       void set_sref(std::shared_ptr<const Reference> ref) { 
-        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*ref->coeff()));
-        sref_ = std::shared_ptr<Reference>(new Reference(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt()));
+        scoeff_ = std::make_shared<Coeff>(*ref->coeff());
+        sref_ = std::make_shared<Reference>(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt());
       }
       void set_coeff(std::shared_ptr<const Coeff> coeff) {
-        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*coeff));
+        scoeff_ = std::make_shared<Coeff>(*coeff);
         sref_->set_coeff(coeff);
       };
       void set_coeff(std::shared_ptr<const Matrix> mat) {
-        scoeff_ = std::shared_ptr<Coeff>(new Coeff(*mat));
-        sref_->set_coeff(std::shared_ptr<const Coeff>(new const Coeff(*mat)));
+        scoeff_ = std::make_shared<Coeff>(*mat);
+        sref_->set_coeff(std::make_shared<const Coeff>(*mat));
       };
 
       std::pair<const int, const int> nbasis() const { return nbasis_; }

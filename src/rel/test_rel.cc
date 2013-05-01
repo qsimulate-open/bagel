@@ -30,7 +30,7 @@
 using namespace bagel;
 
 double rel_energy(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -47,14 +47,14 @@ double rel_energy(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       ref_ = scf->conv_to_ref();
     } else if (method == "dhf") {
-      std::shared_ptr<Dirac> rel(new Dirac(iter->second, geom, ref_));
+      auto rel = std::make_shared<Dirac>(iter->second, geom, ref_);
       rel->compute();
       std::shared_ptr<RelReference> ref = rel->conv_to_ref();
       std::cout.rdbuf(backup_stream);

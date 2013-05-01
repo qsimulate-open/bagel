@@ -193,10 +193,10 @@ class DistCivec {
 
     void zero() { std::fill_n(local_.get(), size(), 0.0); }
 
-    std::shared_ptr<Civec> civec() const { return std::shared_ptr<Civec>(new Civec(*this)); }
+    std::shared_ptr<Civec> civec() const { return std::make_shared<Civec>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
 
-    std::shared_ptr<DistCivec> clone() const { return std::shared_ptr<DistCivec>(new DistCivec(det_)); }
+    std::shared_ptr<DistCivec> clone() const { return std::make_shared<DistCivec>(det_); }
 
     // MPI Isend Irecv
     void init_mpi_accumulate() const;
