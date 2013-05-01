@@ -147,7 +147,6 @@ Geometry::Geometry(const multimap<string, string> geominfo)
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_ = vector<double>(3);
   external_[0] = read_input<double>(geominfo, "ex", 0.0);
   external_[1] = read_input<double>(geominfo, "ey", 0.0);
   external_[2] = read_input<double>(geominfo, "ez", 0.0);
@@ -332,7 +331,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
    /* external field would hopefully match, but for now, if it doesn't, just disable */
    for(auto& inmer : nmer) {
       if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
-         external_.clear(); break;
+         fill(external_.begin(), external_.end(), 0.0); break;
       }
    }
 
@@ -397,7 +396,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const multimap<st
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_ = vector<double>(3);
   external_[0] = read_input<double>(geominfo, "ex", 0.0);
   external_[1] = read_input<double>(geominfo, "ey", 0.0);
   external_[2] = read_input<double>(geominfo, "ez", 0.0);

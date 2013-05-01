@@ -88,7 +88,7 @@ class Geometry {
     mutable std::shared_ptr<DFDist> dfsl_;
 
     // external field
-    std::vector<double> external_;
+    std::array<double,3> external_;
 
     // for R12 calculations
     double gamma_;
