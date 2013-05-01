@@ -34,8 +34,7 @@ Dvec::Dvec(shared_ptr<const Determinants> det, const size_t ij) : det_(det), len
   data_ = unique_ptr<double[]>(new double[lenb_*lena_*ij_]);
   double* tmp = data_.get();
   for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_) {
-    shared_ptr<Civec> c(new Civec(det_, tmp));
-    dvec_.push_back(c);
+    dvec_.push_back(make_shared<Civec>(det_, tmp));
   }
 }
 
@@ -44,8 +43,7 @@ Dvec::Dvec(const Dvec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.
   data_ = unique_ptr<double[]>(new double[lena_*lenb_*ij_]);
   double* tmp = data_.get();
   for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_) {
-    shared_ptr<Civec> c(new Civec(det_, tmp));
-    dvec_.push_back(c);
+    dvec_.push_back(make_shared<Civec>(det_, tmp));
   }
   copy_n(o.data(), lena_*lenb_*ij_, data());
 }
@@ -55,7 +53,7 @@ Dvec::Dvec(shared_ptr<const Civec> e, const size_t ij) : det_(e->det()), lena_(e
   data_ = unique_ptr<double[]>(new double[lena_*lenb_*ij]);
   double* tmp = data();
   for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
-    shared_ptr<Civec> c(new Civec(det_, tmp));
+    auto c = make_shared<Civec>(det_, tmp);
     copy_n(e->data(), lenb_*lena_, c->data());
     dvec_.push_back(c);
   }
@@ -65,8 +63,7 @@ Dvec::Dvec(shared_ptr<const Civec> e, const size_t ij) : det_(e->det()), lena_(e
 // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted.
 Dvec::Dvec(shared_ptr<const Dvec> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
   for (int i = 0; i != ij_; ++i) {
-    shared_ptr<Civec> c(new Civec(*(o->data(i))));
-    dvec_.push_back(c);
+    dvec_.push_back(make_shared<Civec>(*(o->data(i))));
   }
 }
 
@@ -75,7 +72,7 @@ Dvec::Dvec(vector<shared_ptr<Civec>> o) : det_(o.front()->det()), ij_(o.size()) 
   lena_ = det_->lena();
   lenb_ = det_->lenb();
   for (int i = 0; i != ij_; ++i) {
-    dvec_.push_back(shared_ptr<Civec>(new Civec(*(o.at(i)))));
+    dvec_.push_back(make_shared<Civec>(*(o.at(i))));
   }
 }
 
@@ -177,7 +174,7 @@ shared_ptr<Dvec> Dvec::spin() const {
     ccvec.push_back(cc->spin());
   }
 
-  return shared_ptr<Dvec>(new Dvec(ccvec));
+  return make_shared<Dvec>(ccvec);
 }
 
 shared_ptr<Dvec> Dvec::spinflip(shared_ptr<const Determinants> det) const {
@@ -188,34 +185,31 @@ shared_ptr<Dvec> Dvec::spinflip(shared_ptr<const Determinants> det) const {
     ccvec.push_back(cc->transpose(det));
   }
 
-  shared_ptr<Dvec> out(new Dvec(ccvec));
-  return out;
+  return make_shared<Dvec>(ccvec);
 }
 
 shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<const Determinants> det) const {
-  if(det == nullptr)
-    det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
+  if (det == nullptr)
+    det = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
 
   vector<shared_ptr<Civec>> ccvec;
   for (auto& cc : dvec_) {
     ccvec.push_back(cc->spin_lower(det));
   }
 
-  shared_ptr<Dvec> out(new Dvec(ccvec));
-  return out;
+  return make_shared<Dvec>(ccvec);
 }
 
 shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<const Determinants> det) const {
   if(det == nullptr)
-    det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
+    det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
 
   vector<shared_ptr<Civec>> ccvec;
   for (auto& cc : dvec_) {
     ccvec.push_back(cc->spin_raise(det));
   }
 
-  shared_ptr<Dvec> out(new Dvec(ccvec));
-  return out;
+  return make_shared<Dvec>(ccvec);
 }
 
 void Dvec::print(const double thresh) const {

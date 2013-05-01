@@ -55,7 +55,7 @@ void HarrisonZarrabian::const_denom() {
   }
   denom_t.tick_print("jop, kop");
 
-  denom_ = shared_ptr<Civec>(new Civec(det()));
+  denom_ = make_shared<Civec>(det());
 
   double* iter = denom_->data();
   vector<HZDenomTask> tasks;
@@ -74,7 +74,7 @@ void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = shared_ptr<MOFile>(new Jop(ref_, ncore_, ncore_+norb_, c, "HZ"));
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
 
   // right now full basis is used. 
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;

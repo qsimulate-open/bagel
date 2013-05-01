@@ -42,7 +42,7 @@ PutRequest::PutRequest(const double* d) : data_(d) {
 void PutRequest::init() {
   // we should compute the number of messnages to receive?
   // receives
-  shared_ptr<Call> call(new Call());
+  auto call = make_shared<Call>();
   // receives size,tag,rank
   const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__);
   {
@@ -95,7 +95,7 @@ RecvRequest::RecvRequest() : counter_(probe_key2__ + mpi__->rank() + 1) {
 int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off) {
   lock_guard<mutex> lock(block_);
   // sending size
-  shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
+  auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, buf);
   counter_ += mpi__->size();
   const int srq = mpi__->request_send(p->size, 4, dest, probe_key2__);
   probe_.push_back(srq);
