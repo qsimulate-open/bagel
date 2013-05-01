@@ -134,7 +134,6 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_ = vector<double>(3);
   external_[0] = geominfo.get<double>("ex", 0.0);
   external_[1] = geominfo.get<double>("ey", 0.0);
   external_[2] = geominfo.get<double>("ez", 0.0);
@@ -319,7 +318,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
    /* external field would hopefully match, but for now, if it doesn't, just disable */
    for(auto& inmer : nmer) {
       if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
-         external_.clear(); break;
+         fill(external_.begin(), external_.end(), 0.0); break;
       }
    }
 
@@ -384,7 +383,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::prop
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_ = vector<double>(3);
   external_[0] = geominfo.get<double>("ex", 0.0);
   external_[1] = geominfo.get<double>("ey", 0.0);
   external_[2] = geominfo.get<double>("ez", 0.0);
