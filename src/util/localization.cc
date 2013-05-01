@@ -56,15 +56,15 @@ void RegionLocalization::common_init(vector<int> sizes) {
 
   if (natom != geom_->natom()) throw runtime_error("Improper number of atoms in the defined regions of RegionLocalization");
 
-  sqrt_S_ = shared_ptr<Matrix>(new Overlap(geom_)); sqrt_S_->sqrt();
-  S_inverse_half_ = shared_ptr<Matrix>(new Overlap(geom_)); S_inverse_half_->inverse_half();
+  sqrt_S_ = make_shared<Overlap>(geom_); sqrt_S_->sqrt();
+  S_inverse_half_ = make_shared<Overlap>(geom_); S_inverse_half_->inverse_half();
 }
 
 shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density) {
   const int nbasis = geom_->nbasis();
 
   // Symmetric orthogonalized density matrix
-  shared_ptr<Matrix> ortho_density(new Matrix( (*sqrt_S_) * (*density) * (*sqrt_S_) ));
+  auto ortho_density = make_shared<Matrix>((*sqrt_S_) * (*density) * (*sqrt_S_));
 
   // transform will hold the eigenvectors of each block
   vector<double> eigenvalues(nbasis, 0.0);
@@ -73,7 +73,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   *ortho_density = (*T) % (*ortho_density) * (*T);
 
   // U matrix will collect the transformations. It should start as the identity.
-  shared_ptr<Matrix> U(new Matrix(nbasis, nbasis)); U->unit();
+  auto U = make_shared<Matrix>(nbasis, nbasis); U->unit();
 
   // Classify each eigenvalue as occupied, mixed, or virtual. All of these classifications may need to be revisited at some point.
   vector<int> occupied, mixed, virt;
@@ -88,7 +88,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
 
   // Starting rotations
   {
-    shared_ptr<JacobiDiag> jacobi(new JacobiDiag(ortho_density,U));
+    auto jacobi = make_shared<JacobiDiag>(ortho_density,U);
 
     for(int& iocc : occupied) {
       for(int& imixed : mixed) jacobi->rotate(iocc, imixed);
@@ -104,9 +104,9 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
 
 
   // Reorder so that the occupied orbitals come first, separated by fragment
-  shared_ptr<Matrix> tmp(new Matrix((*S_inverse_half_) * (*T) * (*U)));
+  auto tmp = make_shared<Matrix>((*S_inverse_half_) * (*T) * (*U));
 
-  shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
+  auto out = make_shared<Matrix>(nbasis, nbasis);
 
   {
     int imo = 0;
@@ -134,10 +134,10 @@ shared_ptr<const Coeff> RegionLocalization::localize(const int iter, const doubl
 
   shared_ptr<Matrix> closed_coeff = localize_space(coeff_->form_density_rhf(nclosed_));
   if (nact_ == 0) { // In this case, I'm done
-    out = shared_ptr<const Coeff>(new const Coeff(*closed_coeff));
+    out = make_shared<const Coeff>(*closed_coeff);
   }
   else {
-    shared_ptr<Matrix> tmp(new Matrix(nbasis, nbasis));
+    auto tmp = make_shared<Matrix>(nbasis, nbasis);
 
     vector<double> active_weights(nbasis, 0.0);
     fill_n(active_weights.begin() + nclosed_, nact_, 1.0);
@@ -151,14 +151,14 @@ shared_ptr<const Coeff> RegionLocalization::localize(const int iter, const doubl
     tmp->copy_block(0, nclosed_, nbasis, nact_, active_coeff);
     tmp->copy_block(0, nclosed_ + nact_, nbasis, nbasis - (nclosed_ + nact_), virt_coeff);
 
-    out = shared_ptr<const Coeff>(new const Coeff(*tmp));
+    out = make_shared<const Coeff>(*tmp);
   }
 
   return out;
 }
 
 void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
-  S_ = shared_ptr<Matrix>(new Overlap(geom));
+  S_ = make_shared<Overlap>(geom);
 
   vector<vector<int>> offsets = geom->offsets();
   for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
@@ -205,14 +205,14 @@ shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double th
     cout << "  No virtual space to localize" << endl << endl;
   }
 
-  shared_ptr<const Coeff> out(new const Coeff(*new_coeff));
+  auto out = make_shared<const Coeff>(*new_coeff);
   coeff_ = out;
 
   return out;
 }
 
 void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, const int norb) {
-  shared_ptr<JacobiPM> jacobi(new JacobiPM(coeff, nstart, norb, S_, atom_bounds_));
+  auto jacobi = make_shared<JacobiPM>(coeff, nstart, norb, S_, atom_bounds_);
 
   cout << "Iteration          P              dP" << endl;
 

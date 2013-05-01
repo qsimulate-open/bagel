@@ -58,8 +58,8 @@ class LinearRM {
     int info;
 
     // for convenience below
-    double& mat(int i, int j) { return mat_[i+j*max_]; };
-    double& scr(int i, int j) { return scr_[i+j*max_]; };
+    double& mat(int i, int j) { return mat_[i+j*max_]; }
+    double& scr(int i, int j) { return scr_[i+j*max_]; }
 
 
   public:
@@ -69,8 +69,8 @@ class LinearRM {
       vec_(new double[max_]),
       prod_(new double[max_]),
       ipiv_(new int[max_*2]) {
-    };
-    ~LinearRM() {};
+    }
+    ~LinearRM() {}
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
 
@@ -93,13 +93,13 @@ class LinearRM {
       dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
       if (info) throw std::runtime_error("dgesv failed in Linear");
 
-      std::shared_ptr<T> out(new T(*grad_));
+      auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
         out->daxpy(vec_[cnt], *j);
       assert(cnt == size_);
       return out;
-    };
+    }
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();
@@ -108,7 +108,7 @@ class LinearRM {
         out->daxpy(vec_[cnt], *i);
       }
       return out;
-    };
+    }
 
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }

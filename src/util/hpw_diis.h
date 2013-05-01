@@ -64,16 +64,15 @@ class HPW_DIIS  {
       if (errin) {
         err = errin;
       } else {
-        err = RefT(new T(prev_ != nullptr ? (*expo-*prev_) : (*expo)));
+        err = std::make_shared<T>(prev_ != nullptr ? (*expo-*prev_) : (*expo));
       }
 
       std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp(100);
       // this is important
       extrap->purify_unitary();
-      // returns unitary matrix with respect to the original matrix
-      std::shared_ptr<T> out(new T(*orig_* *extrap));
       base_ = extrap;
-      return out;
+      // returns unitary matrix with respect to the original matrix
+      return std::make_shared<T>(*orig_* *extrap);
     }
 
     RefT extrap() const { return base_; } 

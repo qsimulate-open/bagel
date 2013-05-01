@@ -66,9 +66,9 @@ class DavidsonDiag {
     double& mat(int i, int j) { return mat_->element(i,j); }
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(new Matrix(max_,max_,true)),
-                                 scr_(new Matrix(max_,max_,true)), vec_(new double[max_]), overlap_(new Matrix(max_,max_,true)),
-                                 ovlp_scr_(new Matrix(max_,max_,true)) {
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(std::make_shared<Matrix>(max_,max_,true)),
+                                 scr_(std::make_shared<Matrix>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<Matrix>(max_,max_,true)),
+                                 ovlp_scr_(std::make_shared<Matrix>(max_,max_,true)) {
     }
     ~DavidsonDiag(){}
 
@@ -120,7 +120,7 @@ class DavidsonDiag {
     std::vector<std::shared_ptr<T>> residual() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        std::shared_ptr<T> tmp(new T(*c_.front()));
+        auto tmp = std::make_shared<T>(*c_.front());
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
@@ -139,7 +139,7 @@ class DavidsonDiag {
     std::vector<std::shared_ptr<T>> civec() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        std::shared_ptr<T> tmp(new T(*c_.front()));
+        auto tmp = std::make_shared<T>(*c_.front());
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {

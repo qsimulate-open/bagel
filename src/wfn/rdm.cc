@@ -53,7 +53,7 @@ bool RDM<1>::natural_orbitals() const {
 
 template<>
 pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() const {
-  shared_ptr<Matrix> buf(new Matrix(dim_,dim_,true));
+  auto buf = make_shared<Matrix>(dim_,dim_,true);
   buf->add_diag(2.0);
   daxpy_(dim_*dim_, -1.0, data(), 1, buf->data(), 1);
 
@@ -63,7 +63,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
   for (auto& i : vec) i = 2.0-i;
 
   map<int,int> emap;
-  shared_ptr<Matrix> buf2(new Matrix(dim_,dim_,true));
+  auto buf2 = make_shared<Matrix>(dim_,dim_,true);
   vector<double> vec2(dim_);
   // sort eigenvectors so that buf is close to a unit matrix
   // target column
@@ -123,7 +123,7 @@ void RDM<2>::transform(const shared_ptr<Matrix>& coeff) {
 
 template<>
 shared_ptr<Matrix> RDM<1>::rdm1_mat(shared_ptr<const Geometry> g, const int nclosed, const bool all) const {
-  shared_ptr<Matrix> out(new Matrix(nclosed+norb_, nclosed+norb_));
+  auto out = make_shared<Matrix>(nclosed+norb_, nclosed+norb_);
   if (all)
     for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
   for (int i = 0; i != norb_; ++i)

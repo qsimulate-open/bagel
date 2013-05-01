@@ -58,7 +58,7 @@ class SCF : public SCF_base {
       double lshift = read_input<double>(idata_, "levelshift", 0.0);
       if (lshift != 0.0) {
         std::cout << "  level shift : " << std::setprecision(3) << lshift << std::endl << std::endl;
-        levelshift_ = std::shared_ptr<LevelShift<DistMatrix>>(new ShiftVirtual<DistMatrix>(nocc_, lshift));
+        levelshift_ = std::make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift);
       }
 
     }
@@ -78,26 +78,26 @@ class SCF : public SCF_base {
       if (coeff_ == nullptr) {
         std::shared_ptr<const DistMatrix> fock = hcore;
         if (DF == 1 && geom_->spherical()) {
-          std::shared_ptr<const Matrix> aden(new AtomicDensities(geom_));
-          std::shared_ptr<const Matrix> focka(new Fock<DF>(geom_, hcore_, aden, schwarz_));
+          auto aden = std::make_shared<const AtomicDensities>(geom_);
+          auto focka = std::make_shared<const Fock<DF>>(geom_, hcore_, aden, schwarz_);
           fock = focka->distmatrix();
         }
         DistMatrix intermediate = *tildex % *fock * *tildex;
         intermediate.diagonalize(eig());
-        coeff = std::shared_ptr<const DistMatrix>(new DistMatrix(*tildex * intermediate));
+        coeff = std::make_shared<const DistMatrix>(*tildex * intermediate);
       } else {
         std::shared_ptr<const Matrix> focka;
         if (DF == 0) {
           aodensity_ = coeff_->form_density_rhf(nocc_);
-          focka = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, aodensity_, schwarz_));
+          focka = std::make_shared<const Fock<DF>>(geom_, hcore_, aodensity_, schwarz_);
         } else {
-          focka = std::shared_ptr<const Matrix>(new Fock<DF>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true));
+          focka = std::make_shared<const Fock<DF>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
         }
         DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
         intermediate.diagonalize(eig());
-        coeff = std::shared_ptr<const DistMatrix>(new DistMatrix(*tildex * intermediate));
+        coeff = std::make_shared<const DistMatrix>(*tildex * intermediate);
       }
-      coeff_ = std::shared_ptr<const Coeff>(new Coeff(*coeff->matrix()));
+      coeff_ = std::make_shared<const Coeff>(*coeff->matrix());
 
       if (DF == 0) {
         aodensity_ = coeff_->form_density_rhf(nocc_);
@@ -122,10 +122,10 @@ class SCF : public SCF_base {
         Timer pdebug(1);
 
         if (DF == 0) {
-          previous_fock = std::shared_ptr<Matrix>(new Fock<DF>(geom_, previous_fock, densitychange, schwarz_));
+          previous_fock = std::make_shared<Fock<DF>>(geom_, previous_fock, densitychange, schwarz_);
           mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
         } else {
-          previous_fock = std::shared_ptr<Matrix>(new Fock<DF>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true));
+          previous_fock = std::make_shared<Fock<DF>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
         }
         std::shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -133,7 +133,7 @@ class SCF : public SCF_base {
 
         pdebug.tick_print("Fock build");
 
-        std::shared_ptr<const DistMatrix> error_vector(new DistMatrix(*fock**aodensity**overlap - *overlap**aodensity**fock));
+        auto error_vector = std::make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
         const double error = error_vector->rms();
 
         std::cout << indent << std::setw(5) << iter << std::setw(20) << std::fixed << std::setprecision(8) << energy_ << "   "
@@ -160,13 +160,13 @@ class SCF : public SCF_base {
         intermediate.diagonalize(eig());
         pdebug.tick_print("Diag");
 
-        coeff = std::shared_ptr<const DistMatrix>(new DistMatrix(*coeff * intermediate));
-        coeff_ = std::shared_ptr<const Coeff>(new Coeff(*coeff->matrix()));
+        coeff = std::make_shared<const DistMatrix>(*coeff * intermediate);
+        coeff_ = std::make_shared<const Coeff>(*coeff->matrix());
 
 
         if (DF == 0) {
           std::shared_ptr<const Matrix> new_density = coeff_->form_density_rhf(nocc_);
-          densitychange = std::shared_ptr<Matrix>(new Matrix(*new_density - *aodensity_));
+          densitychange = std::make_shared<Matrix>(*new_density - *aodensity_);
           aodensity_ = new_density;
           aodensity = aodensity_->distmatrix();
         } else {
@@ -183,7 +183,7 @@ class SCF : public SCF_base {
     }
 
     std::shared_ptr<Reference> conv_to_ref() const {
-      std::shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
+      auto out = std::make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
       std::vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
       out->set_eig(e);
       return out;
