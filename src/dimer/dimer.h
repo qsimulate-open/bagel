@@ -33,6 +33,7 @@
 #include <src/wfn/ciwfn.h>
 #include <src/scf/coeff.h>
 #include <src/fci/dvec.h>
+#include <src/fci/harrison.h>
 #include <src/util/matrix.h>
 #include <src/dimer/dimer_cispace.h>
 
@@ -118,7 +119,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       // Calculations
       void scf(MultimapInput idata); // SCF on dimer and then localize
-      std::pair<Ref<Dvec>,Ref<Dvec>> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
+      template <int unit> Ref<Dvec> embedded_casci(MultimapInput idata, const int charge, const int spin, const int nstates) const;
       std::shared_ptr<DimerCISpace> compute_cispace(MultimapInput idata);
 
    private:
@@ -127,6 +128,25 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       void embed_refs();
       void orthonormalize();
 };
+
+template<int unit>
+std::shared_ptr<const Dvec> Dimer::embedded_casci(std::multimap<std::string,std::string> idata, const int charge, const int nspin, const int nstates) const { 
+  const int nclosed = ncore_.first + ncore_.second;
+  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
+  const int nact = (unit == 0) ? nact_.first : nact_.second;
+  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
+
+  // Make new input data, set charge and spin to what I want
+  std::multimap<std::string,std::string> input = idata;
+  input.erase("charge"); input.erase("nspin");
+  input.insert(std::make_pair(std::string("charge"), lexical_cast<std::string>(charge)));
+  input.insert(std::make_pair(std::string("nspin"), lexical_cast<std::string>(nspin)));
+
+  std::shared_ptr<FCI> fci(new HarrisonZarrabian(input, embedded_ref, ncore, nact, nstates));
+  fci->compute();
+
+  return fci->civectors();
+}
 
 }
 

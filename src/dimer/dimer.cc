@@ -312,28 +312,6 @@ void Dimer::embed_refs() {
   }
 }
 
-pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(multimap<string,string> idata, const int charge, const int nspin, const int nstates) const {
-  const int nclosed = ncore_.first + ncore_.second;
-  const int ncoreA = nclosed + nfilledactive_.second;
-  const int ncoreB = nclosed + nfilledactive_.first;
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  // Make new input data, set charge and spin to what I want
-  multimap<string,string> input = idata;
-  input.erase("charge"); input.erase("nspin");
-  input.insert(make_pair(string("charge"), lexical_cast<string>(charge)));
-  input.insert(make_pair(string("nspin"), lexical_cast<string>(nspin)));
-
-  shared_ptr<FCI> fciA(new HarrisonZarrabian(input, embedded_refs_.first, ncoreA, nactA, nstates));
-  fciA->compute();
-
-  shared_ptr<FCI> fciB(new HarrisonZarrabian(input, embedded_refs_.second, ncoreB, nactB, nstates));
-  fciB->compute();
-
-  return make_pair(fciA->civectors(), fciB->civectors());
-}
-
 void Dimer::localize(multimap<string, string> idata) {
   string localizemethod = read_input<string>(idata,"localization", "pm");
 
@@ -513,14 +491,19 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
 
   shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
 
-  const int nsinglets = read_input<int>(idata, "nsinglets", 1);
-  const int ntriplets = read_input<int>(idata, "ntriplets", 0);
-  const int nquintets = read_input<int>(idata, "nquintets", 0);
-  const int nseptets = read_input<int>(idata, "nseptets", 0);
-  const int nanions = read_input<int>(idata, "nanions", 0);
-  const int ndianions = read_input<int>(idata, "ndianions", 0);
-  const int ncations = read_input<int>(idata, "ncations", 0);
-  const int ndications = read_input<int>(idata, "ndications", 0);
+  vector<vector<int>> spaces_A;
+  vector<vector<int>> spaces_B;
+  if (idata.find("space") != idata.end()) {
+    spaces_A = read_input_vector_range<int>(idata, "space", "()");
+    spaces_B = spaces_A;
+  }
+  else {
+    if ( (idata.find("space_a") == idata.end()) || (idata.find("space_b") == idata.end()) ) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    } 
+    spaces_A = read_input_vector_range<int>(idata, "space_a", "()");
+    spaces_B = read_input_vector_range<int>(idata, "space_b", "()");
+  }
 
   // Hide normal cout.
   stringstream ss;
@@ -528,45 +511,29 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
   cout.rdbuf(ss.rdbuf());
   ostream hacked_cout(saved_cout);
 
-  // Neutral singlets are always calculated
-  if ( nsinglets < 1 ) throw runtime_error("Singlets cannot be removed from MEH calculation");
-  hacked_cout << "   Dimer: starting computation of " << nsinglets << " singlets in each unit." << endl;
-  out->insert(embedded_casci(idata, 0, 0, nsinglets));
-  
-  if (nanions > 0) {
-    out->anions() = true;
-    hacked_cout << "   Dimer: starting computation of " << nanions << " anions in each unit." << endl;
-    out->insert(embedded_casci(idata, -1, 1, nanions));
+  // Embedded CAS-CI calculations
+  hacked_cout << "    Starting embedded CAS-CI calculations on monomer A" << endl;
+  for (auto& ispace : spaces_A) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
+
+    out->insert<0>(embedded_casci<0>(idata, charge, spin, nstate));
   }
-  if (ndianions > 0) {
-    out->dianions() = true;
-    hacked_cout << "   Dimer: starting computation of " << ndianions << " dianions in each unit." << endl;
-    out->insert(embedded_casci(idata, -2, 2, ndianions));
-  }
-  if (ncations > 0) {
-    out->cations() = true;
-    hacked_cout << "   Dimer: starting computation of " << ncations << " cations in each unit." << endl;
-    out->insert(embedded_casci(idata, +1, 1, ncations));
-  }
-  if (ndications > 0) {
-    out->dications() = true;
-    hacked_cout << "   Dimer: starting computation of " << ndications << " dications in each unit." << endl;
-    out->insert(embedded_casci(idata, +2, 2, ndications));
-  }
-  if (ntriplets > 0) {
-    out->triplets() = true;
-    hacked_cout << "   Dimer: starting computation of " << ntriplets << " triplets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 2, ntriplets));
-  }
-  if (nquintets > 0) {
-    out->quintets() = true;
-    hacked_cout << "   Dimer: starting computation of " << nquintets << " quintets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 4, nquintets));
-  }
-  if (nseptets > 0) {
-    out->septets() = true;
-    hacked_cout << "   Dimer: starting computation of " << nseptets << " septets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 6, nseptets));
+
+  hacked_cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
+  for (auto& ispace : spaces_B) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
+
+    out->insert<1>(embedded_casci<1>(idata, charge, spin, nstate));
   }
 
   cout.rdbuf(saved_cout);

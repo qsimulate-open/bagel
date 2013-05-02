@@ -57,131 +57,21 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<Dimer> dimer, shared
 }
 
 void MultiExcitonHamiltonian::common_init() {
-  dimerstates_ = nstates_.first * nstates_.second;
-
   jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
 
-  // Process DimerCISpace to form and organize needed Civecs
-  vector<vector<shared_ptr<Civec>>> collection_A(static_cast<int>(CS::MAX));
-  vector<vector<shared_ptr<Civec>>> collection_B(static_cast<int>(CS::MAX));
+  cispace_->complete();
 
-  // Start by processing the singlet states
-  state_inserter<0>(collection_A, CS::S, 0, 0);
-  state_inserter<1>(collection_B, CS::S, 0, 0);
-
-  // Now add in cation states
-  if (cispace_->cations()) {
-    state_inserter<0>(collection_A, CS::Ca, 0, -1);
-    state_inserter<1>(collection_B, CS::Ca, 0, -1);
-  }
-  // dication states
-  if (cispace_->dications()) {
-    state_inserter<0>(collection_A, CS::dCa, 0, -2);
-    state_inserter<1>(collection_B, CS::dCa, 0, -2);
-  }
-
-  // Now for the anion states
-  if (cispace_->anions()) {
-    state_inserter<0>(collection_A, CS::Aa, 1, 0);
-    state_inserter<1>(collection_B, CS::Aa, 1, 0);
-  }
-
-  // dianion states
-  if (cispace_->dianions()) {
-    state_inserter<0>(collection_A, CS::dAa, 2, 0);
-    state_inserter<1>(collection_B, CS::dAa, 2, 0);
-  }
-
-  // triplet states
-  if (cispace_->triplets()) {
-    state_inserter<0>(collection_A, CS::Ta, 1, -1);
-    state_inserter<1>(collection_B, CS::Ta, 1, -1);
-  }
-
-  // quintets states
-  if (cispace_->quintets()) {
-    state_inserter<0>(collection_A, CS::Qaa, 2, -2);
-    state_inserter<1>(collection_B, CS::Qaa, 2, -2);
-  }
-
-  // septets states
-  if (cispace_->septets()) {
-    state_inserter<0>(collection_A, CS::Saaa, 3, -3);
-    state_inserter<1>(collection_B, CS::Saaa, 3, -3);
-  }
-
-  // Package like civecs into Dvecs
   dimerstates_ = 0;
 
-  vector<shared_ptr<Dvec>> dvecs_A(static_cast<int>(CS::MAX));
-  vector<shared_ptr<Dvec>> dvecs_B(static_cast<int>(CS::MAX));
-
-  for(int i = 0; i < static_cast<int>(CS::MAX); ++i) {
-    if (!collection_A.at(i).empty()) dvecs_A.at(i) = shared_ptr<Dvec>(new Dvec(collection_A.at(i)));
-    if (!collection_B.at(i).empty()) dvecs_B.at(i) = shared_ptr<Dvec>(new Dvec(collection_B.at(i)));
+  // Process DimerCISpace to form and organize needed Civecs
+  for ( auto& aiter : cispace_->cispace<0>() ) {
+    SpaceKey akey = aiter.first;
+    SpaceKey bkey( akey.S, -akey.m_s, -akey.q );
+    shared_ptr<const Dvec> bspace = cispace_->ccvec<1>(bkey);
+    if ( bspace != nullptr ) {
+      subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
+    }
   }
-
-  // First, singlets
-  int ss = static_cast<int>(CS::S);
-  subspaces_.emplace_back(dimerstates_, "  S", "  S", make_pair(dvecs_A.at(ss),dvecs_B.at(ss)));
-
-  // Now, AC, if we've got em
-  if (cispace_->anions() && cispace_->cations()) {
-    int aa = static_cast<int>(CS::Aa);
-    int cb = static_cast<int>(CS::Cb);
-    subspaces_.emplace_back(dimerstates_, " Aa", " Cb", make_pair(dvecs_A.at(aa), dvecs_B.at(cb)));
-    subspaces_.emplace_back(dimerstates_, " Ab", " Ca", make_pair(dvecs_A.at(aa+1), dvecs_B.at(cb-1)));
-    subspaces_.emplace_back(dimerstates_, " Ca", " Ab", make_pair(dvecs_A.at(cb-1), dvecs_B.at(aa+1)));
-    subspaces_.emplace_back(dimerstates_, " Cb", " Aa", make_pair(dvecs_A.at(cb), dvecs_B.at(aa)));
-  }
-
-  // Now, dAC, if we've got em
-  if (cispace_->dianions() && cispace_->dications()) {
-    int aa = static_cast<int>(CS::dAa);
-    int cb = static_cast<int>(CS::dCb);
-    subspaces_.emplace_back(dimerstates_, "dAa", "dCb", make_pair(dvecs_A.at(aa), dvecs_B.at(cb)));
-    subspaces_.emplace_back(dimerstates_, "dA0", "dC0", make_pair(dvecs_A.at(aa+1), dvecs_B.at(cb-1)));
-    subspaces_.emplace_back(dimerstates_, "dAb", "dCa", make_pair(dvecs_A.at(aa+2), dvecs_B.at(cb-2)));
-
-    subspaces_.emplace_back(dimerstates_, "dCa", "dAb", make_pair(dvecs_A.at(cb-2), dvecs_B.at(aa+2)));
-    subspaces_.emplace_back(dimerstates_, "dC0", "dA0", make_pair(dvecs_A.at(cb-1), dvecs_B.at(aa+1)));
-    subspaces_.emplace_back(dimerstates_, "dCb", "dAa", make_pair(dvecs_A.at(cb), dvecs_B.at(aa)));
-  }
-
-  // Triplets
-  if (cispace_->triplets()) {
-    int ta = static_cast<int>(CS::Ta);
-    int tb = static_cast<int>(CS::Tb);
-    subspaces_.emplace_back(dimerstates_, " Ta", " Tb", make_pair(dvecs_A.at(ta), dvecs_B.at(tb)));
-    subspaces_.emplace_back(dimerstates_, " T_", " T_", make_pair(dvecs_A.at(ta+1), dvecs_B.at(tb-1)));
-    subspaces_.emplace_back(dimerstates_, " Tb", " Ta", make_pair(dvecs_A.at(ta+2), dvecs_B.at(tb-2)));
-  }
-
-  // Quintets
-  if (cispace_->quintets()) {
-    int qa = static_cast<int>(CS::Qaa);
-    int qb = static_cast<int>(CS::Qbb);
-    subspaces_.emplace_back(dimerstates_, "Qaa", "Qbb", make_pair(dvecs_A.at(qa), dvecs_B.at(qb)));
-    subspaces_.emplace_back(dimerstates_, "Qa ", "Qb ", make_pair(dvecs_A.at(qa+1), dvecs_B.at(qb-1)));
-    subspaces_.emplace_back(dimerstates_, "Q0 ", "Q0 ", make_pair(dvecs_A.at(qa+2), dvecs_B.at(qb-2)));
-    subspaces_.emplace_back(dimerstates_, "Qb ", "Qa ", make_pair(dvecs_A.at(qa+3), dvecs_B.at(qb-3)));
-    subspaces_.emplace_back(dimerstates_, "Qbb", "Qaa", make_pair(dvecs_A.at(qa+4), dvecs_B.at(qb-4)));
-  }
-
-  // Septets
-  if (cispace_->septets()) {
-    int qa = static_cast<int>(CS::Saaa);
-    int qb = static_cast<int>(CS::Sbbb);
-    subspaces_.emplace_back(dimerstates_, "Saaa", "Sbbb", make_pair(dvecs_A.at(qa), dvecs_B.at(qb)));
-    subspaces_.emplace_back(dimerstates_, "Saa ", "Sbb ", make_pair(dvecs_A.at(qa+1), dvecs_B.at(qb-1)));
-    subspaces_.emplace_back(dimerstates_, "Sa  ", "Sb  ", make_pair(dvecs_A.at(qa+2), dvecs_B.at(qb-2)));
-    subspaces_.emplace_back(dimerstates_, "S0  ", "S0  ", make_pair(dvecs_A.at(qa+3), dvecs_B.at(qb-3)));
-    subspaces_.emplace_back(dimerstates_, "Sb  ", "Sa  ", make_pair(dvecs_A.at(qa+4), dvecs_B.at(qb-4)));
-    subspaces_.emplace_back(dimerstates_, "Sbb ", "Saa ", make_pair(dvecs_A.at(qa+5), dvecs_B.at(qb-5)));
-    subspaces_.emplace_back(dimerstates_, "Sbbb", "Saaa", make_pair(dvecs_A.at(qa+6), dvecs_B.at(qb-6)));
-  }
-
-  cispace_->complete();
 }
 
 const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
