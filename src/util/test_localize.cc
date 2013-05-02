@@ -26,6 +26,7 @@
 #include <sstream>
 #include <src/wfn/reference.h>
 #include <src/util/localization.h>
+#include <src/util/lexical_cast.h>
 
 using namespace bagel;
 
@@ -40,6 +41,8 @@ double pm_localization(std::string filename) {
   std::shared_ptr<const Reference> ref;
   auto keys = idata.get_child("bagel");
 
+  std::shared_ptr<Geometry> geom;
+
   for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
     std::string method = iter->second.get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
@@ -48,7 +51,7 @@ double pm_localization(std::string filename) {
       geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      auto scf = std::shared_ptr<SCF<1>>(iter->second, geom);
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
 
@@ -58,11 +61,15 @@ double pm_localization(std::string filename) {
       std::string localizemethod = iter->second.get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
+#if 0
         std::vector<int> sizes;
         auto bound = iter->second.equal_range("region");
         for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
         localization = std::make_shared<RegionLocalization>(ref, sizes);
+#else
+throw std::logic_error("region localization test broken");
+#endif
       }   
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
         localization = std::make_shared<PMLocalization>(ref);
