@@ -294,7 +294,7 @@ void Dimer::embed_refs() {
     const int ncore = nclosed + filled_activeB;
     const int norb  = nactA;
 
-    embedded_refs_.first = shared_ptr<Reference>(new Reference(sgeom_, Acoeff, ncore, norb, 0));
+    embedded_refs_.first = make_shared<Reference>(sgeom_, Acoeff, ncore, norb, 0);
   }
 
   { // Move occupied orbitals of unit A to form core of unit B
@@ -308,7 +308,7 @@ void Dimer::embed_refs() {
     const int ncore = nclosed + filled_activeA;
     const int norb  = nactB;
 
-    embedded_refs_.second = shared_ptr<Reference>(new Reference(sgeom_, Bcoeff, ncore, norb, 0));
+    embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
   }
 }
 
@@ -318,10 +318,10 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
   shared_ptr<OrbitalLocalization> localization;
   if (localizemethod == "region") {
     vector<int> sizes = { geoms_.first->natom(), geoms_.second->natom() };
-    localization = shared_ptr<OrbitalLocalization>(new RegionLocalization(sref_, sizes));
+    localization = make_shared<RegionLocalization>(sref_, sizes);
   }
   else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey") {
-    localization = shared_ptr<OrbitalLocalization>(new PMLocalization(sref_));
+    localization = make_shared<PMLocalization>(sref_);
   }
   else throw std::runtime_error("Unrecognized orbital localization method");
 
@@ -383,20 +383,25 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
 }
 
 void Dimer::set_active(const boost::property_tree::ptree& idata) {
-  auto Ai = idata.get<string>("active_A", "");
-  auto Bi = idata.get<string>("active_B", "");
-  auto it = idata.get<string>("dimer_active", "");
+  // TODO needs clean up
+  auto Asp = idata.get_child_optional("active_A");
+  auto Bsp = idata.get_child_optional("active_B");
+  auto isp = idata.get_child_optional("dimer_active");
+  set<int> Ai, Bi, it;
+  if (Asp) for (auto& s : *Asp) { Ai.insert(lexical_cast<int>(s.second.data())-1); } // TODO I think this -1 is very confusing!
+  if (Bsp) for (auto& s : *Bsp) { Bi.insert(lexical_cast<int>(s.second.data())-1); }
+  if (isp) for (auto& s : *isp) { it.insert(lexical_cast<int>(s.second.data())-1); }
 
-  string Alist, Blist;
+  set<int> Alist, Blist;
 
-  if(it.empty() && Ai.empty() && Bi.empty())
+  if (it.empty() && Ai.empty() && Bi.empty())
     throw runtime_error("Active space of the dimer MUST be specified in some way.");
-  if(!it.empty()) {
+  if (!it.empty()) {
     Alist = it;
     Blist = it;
   }
-  if(!Ai.empty()) Alist = Ai;
-  if(!Bi.empty()) Blist = Bi;
+  if (!Ai.empty()) Alist = Ai;
+  if (!Bi.empty()) Blist = Bi;
 
   // Make new References
   pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs = 
@@ -458,7 +463,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   shared_ptr<Matrix> dimercoeff = scoeff_;
 
   // Set active space based on overlap
-  if(proj_coeff_ == nullptr) throw runtime_error("For Dimer::driver, Dimer must be constructed from a HF reference");
+  if (proj_coeff_ == nullptr) throw runtime_error("For Dimer::driver, Dimer must be constructed from a HF reference");
   else set_active(idata);
 
   // Localize
@@ -498,7 +503,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
   auto space = idata.get_child_optional("space");
   if (space) {
     // TODO make a function
-    for (auto& s : *space) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_A.push_back(tmp); }
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
     spaces_B = spaces_A;
   }
   else {
@@ -508,8 +513,8 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
       throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
     }
     // TODO make a function
-    for (auto& s : *spacea) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_A.push_back(tmp); }
-    for (auto& s : *spaceb) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_B.push_back(tmp); }
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
   }
 
   // Hide normal cout.

@@ -263,26 +263,26 @@ int main(int argc, char** argv) {
         fci->compute();
 
       } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-#if 0
         const boost::property_tree::ptree dimdata = iter->second;
 
         const string form = dimdata.get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
-          double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
+          double scale = (dimdata.get<bool>("angstrom", false) ? ang2bohr__ : 1.0 ) ;
 
-          double dx = read_input<double>(dimdata,"dx",0.0) * scale;
-          double dy = read_input<double>(dimdata,"dy",0.0) * scale;
-          double dz = read_input<double>(dimdata,"dz",0.0) * scale;
+          double dx = dimdata.get<double>("dx", 0.0) * scale;
+          double dy = dimdata.get<double>("dy", 0.0) * scale;
+          double dz = dimdata.get<double>("dz", 0.0) * scale;
           array<double,3> disp = {{dx,dy,dz}};
 
           if (static_cast<bool>(ref)) {
-            dimer = make_shared<Dimer>(ref,disp);
+            dimer = make_shared<Dimer>(ref, disp);
           }
           else {
             throw runtime_error("dimerize needs a reference calculation (for now)");
           }
         }
         else if (form == "r" || form == "refs") {
+#if 0
           shared_ptr<const Reference> refA;
           shared_ptr<const Reference> refB;
 
@@ -315,15 +315,15 @@ int main(int argc, char** argv) {
           }
 
           dimer = make_shared<Dimer>(refA, refB);
+#else
+throw logic_error("broken!");
+#endif
         }
 
         dimer->scf(iter->second);
 
         geom = dimer->sgeom();
         ref = dimer->sref();
-#else
-throw logic_error("broken!");
-#endif
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
@@ -331,17 +331,20 @@ throw logic_error("broken!");
           meh->compute();
           meh->print();
       } else if (method == "localize") {
-#if 0
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
         string localizemethod = iter->second.get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
+#if 0
           vector<int> sizes;
           auto bound = iter->second.equal_range("region");
           for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
           localization = make_shared<RegionLocalization>(ref, sizes);
+#else
+throw logic_error("broken!");
+#endif
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
           localization = make_shared<PMLocalization>(ref);
@@ -352,9 +355,6 @@ throw logic_error("broken!");
 
         shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
         ref = make_shared<const Reference>(ref, new_coeff);
-#else
-throw logic_error("broken!");
-#endif
         
       } else if (method == "print") {
 
