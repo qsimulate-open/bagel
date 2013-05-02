@@ -134,7 +134,7 @@ class DimerCISpace {
    template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
 };
 
-template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec) {
+template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec, const int spin) {
   auto new_civec = std::make_shared<Dvec>(civec);
 
   const int nelea = civec->det()->nelea();
@@ -167,7 +167,7 @@ std::shared_ptr<Determinants> DimerCISpace::add_det(const int qa, const int qb) 
   }
   else {
     int nelea, neleb;
-    std::tie(nelea, neleb) = unkey<unit>(qa,qb);
+    std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
     auto det = std::make_shared<Determinants>(nact, nelea, neleb, /*compress=*/false, /*mute=*/true);
 
     detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
