@@ -51,8 +51,8 @@ Breit::Breit(const shared_ptr<const Geometry> geom) : Matrix1eArray<6>(geom, geo
 
 void Breit::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
-  const shared_ptr<const Shell> dum0(new Shell(input[0]->spherical()));
-  const shared_ptr<const Shell> dum1(new Shell(input[1]->spherical()));
+  auto dum0 = make_shared<const Shell>(input[0]->spherical());
+  auto dum1 = make_shared<const Shell>(input[1]->spherical());
 
   // input = [b1, b0]
   const int dimb1 = input[0]->nbasis();
