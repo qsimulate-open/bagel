@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 
       if (method == "molecule") {
         if (ref != nullptr) geom->discard_df(); 
-        geom = shared_ptr<Geometry>(new Geometry(iter->second));
+        geom = make_shared<Geometry>(iter->second);
         if (iter->second.get<bool>("restart", false)) {
           ref = shared_ptr<const Reference>();
           relref = shared_ptr<const RelReference>();
@@ -154,54 +154,54 @@ int main(int argc, char** argv) {
 
       if (method == "hf") {
 
-        scf = shared_ptr<SCF<0>>(new SCF<0>(iter->second, geom, ref));
+        scf = make_shared<SCF<0>>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "dhf") {
 
-        shared_ptr<Dirac> dirac = relref ? shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
-                                              : shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        auto dirac = relref ? make_shared<Dirac>(iter->second, geom, relref)
+                            : make_shared<Dirac>(iter->second, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
 
       } else if (method == "relfci") {
         //currently under construction
-        shared_ptr<Dirac> dirac = relref ? shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
-                                              : shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        auto dirac = relref ? make_shared<Dirac>(iter->second, geom, relref)
+                            : make_shared<Dirac>(iter->second, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
 
-        shared_ptr<RelFCI> relfci = shared_ptr<RelFCI>(new RelFCI(iter->second, geom, relref));
+        auto relfci = make_shared<RelFCI>(iter->second, geom, relref);
         relfci->compute();
 
       } else if (method == "df-hf") {
 
-        scf = shared_ptr<SCF<1>>(new SCF<1>(iter->second, geom, ref));
+        scf = make_shared<SCF<1>>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-ks" || method == "ks") {
 
-        scf = shared_ptr<KS>(new KS(iter->second, geom, ref));
+        scf = make_shared<KS>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-uhf" || method == "uhf") {
 
-        scf = shared_ptr<UHF>(new UHF(iter->second, geom, ref));
+        scf = make_shared<UHF>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-rohf" || method == "rohf") {
 
-        scf = shared_ptr<ROHF>(new ROHF(iter->second, geom, ref));
+        scf = make_shared<ROHF>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "optimize") {
 
-        shared_ptr<Optimize> opt(new Optimize(iter->second, geom));
+        auto opt = make_shared<Optimize>(iter->second, geom);
         opt->compute();
 
       } else if (method == "casscf") {
@@ -209,11 +209,11 @@ int main(int argc, char** argv) {
         shared_ptr<CASSCF> casscf;
         string algorithm = iter->second.get<string>("algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
-          casscf = shared_ptr<CASSCF>(new SuperCI(iter->second, geom, ref));
+          casscf = make_shared<SuperCI>(iter->second, geom, ref);
         } else if (algorithm == "werner" || algorithm == "knowles") {
-          casscf = shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
+          casscf = make_shared<WernerKnowles>(iter->second, geom);
         } else if (algorithm == "bfgs") {
-          casscf = shared_ptr<CASSCF>(new CASBFGS(iter->second, geom, ref));
+          casscf = make_shared<CASBFGS>(iter->second, geom, ref);
         } else {
           stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
           throw runtime_error(ss.str());
@@ -223,18 +223,18 @@ int main(int argc, char** argv) {
 
       } else if (method == "mp2") {
 
-        shared_ptr<MP2> mp2(new MP2(iter->second, geom));
+        auto mp2 = make_shared<MP2>(iter->second, geom);
         mp2->compute();
 
       } else if (method == "transp") {
 
-        shared_ptr<Transp> tran(new Transp(iter->second, geom, ref));
+        auto tran = make_shared<Transp>(iter->second, geom, ref);
         tran->compute();
 
       } else if (method == "smith") {
 
         if (ref == nullptr) throw runtime_error("SMITH needs a reference");
-        shared_ptr<Smith> smith(new Smith(iter->second, ref));
+        auto smith = make_shared<Smith>(iter->second, ref);
         smith->compute();
 
       } else if (method == "fci") {
@@ -246,15 +246,15 @@ int main(int argc, char** argv) {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
           const int norb = ref->geom()->nbasis();
-          if ( nele <= norb ) fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
-          else fci = shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
+          if ( nele <= norb ) fci = make_shared<HarrisonZarrabian>(iter->second, ref);
+          else fci = make_shared<KnowlesHandy>(iter->second, ref);
         } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-          fci = shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
+          fci = make_shared<KnowlesHandy>(iter->second, ref);
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-          fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+          fci = make_shared<HarrisonZarrabian>(iter->second, ref);
 #ifdef HAVE_MPI_H
         } else if (algorithm == "parallel" || algorithm == "dist") {
-          fci = shared_ptr<FCI>(new DistFCI(iter->second, ref));
+          fci = make_shared<DistFCI>(iter->second, ref);
 #endif
         } else {
           throw runtime_error("unknown FCI algorithm specified.");
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
           array<double,3> disp = {{dx,dy,dz}};
 
           if (static_cast<bool>(ref)) {
-            dimer = shared_ptr<Dimer>(new Dimer(ref,disp));
+            dimer = make_shared<Dimer>(ref,disp);
           }
           else {
             throw runtime_error("dimerize needs a reference calculation (for now)");
@@ -314,7 +314,7 @@ int main(int argc, char** argv) {
             throw runtime_error("No input provided for unit B");
           }
 
-          dimer = shared_ptr<Dimer>(new Dimer(refA, refB));
+          dimer = make_shared<Dimer>(refA, refB);
         }
 
         dimer->scf(iter->second);
@@ -327,7 +327,7 @@ throw logic_error("broken!");
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
-          shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(dimer, cispace));
+          auto meh = make_shared<MultiExcitonHamiltonian>(dimer, cispace);
           meh->compute();
           meh->print();
       } else if (method == "localize") {
@@ -341,17 +341,17 @@ throw logic_error("broken!");
           auto bound = iter->second.equal_range("region");
           for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
-          localization = shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
+          localization = make_shared<RegionLocalization>(ref, sizes);
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-          localization = shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
+          localization = make_shared<PMLocalization>(ref);
         else throw runtime_error("Unrecognized orbital localization method");
 
         const int max_iter = iter->second.get<int>("max_iter", 50);
         const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
         shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
-        ref = shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
+        ref = make_shared<const Reference>(ref, new_coeff);
 #else
 throw logic_error("broken!");
 #endif
@@ -385,7 +385,7 @@ throw logic_error("broken!");
         multimap<string, string> geominfo = idata->get_input("molecule");
         multimap<string,string> dimdata = iter->second;
 
-        shared_ptr<FCI> fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+        shared_ptr<FCI> fci = make_shared<HarrisonZarrabian>(iter->second, ref);
         fci->compute();
 
         auto ciwfn = fci->conv_to_ciwfn();
@@ -397,7 +397,7 @@ throw logic_error("broken!");
         double dz = read_input<double>(dimdata,"dz",0.0) * scale;
         array<double,3> disp = {{dx,dy,dz}};
 
-        dimer = shared_ptr<Dimer>(new Dimer(ciwfn, disp));
+        dimer = make_shared<Dimer>(ciwfn, disp);
 
       }
       #endif
