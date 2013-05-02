@@ -44,7 +44,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
-  shared_ptr<Dvec> sigmavec(new Dvec(det, nstates));
+  auto sigmavec = make_shared<Dvec>(det, nstates);
 
   const int ij = det->norb() * det->norb();
   const int lb = det->lenb();
@@ -87,11 +87,11 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_2e(shared_ptr<const Dvec> c
   const int norb = base_det->norb();
   const int ij = norb*norb;
   
-  shared_ptr<Dvec> sigmavec(new Dvec(base_det, nstate));
+  auto sigmavec = make_shared<Dvec>(base_det, nstate);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  shared_ptr<Dvec> d(new Dvec(int_det, ij));
-  shared_ptr<Dvec> e(new Dvec(int_det, ij));
+  auto d = make_shared<Dvec>(int_det, ij);
+  auto e = make_shared<Dvec>(int_det, ij);
 
   for (int istate = 0; istate != nstate; ++istate) { 
     shared_ptr<const Civec> cc = ccvec->data(istate);  

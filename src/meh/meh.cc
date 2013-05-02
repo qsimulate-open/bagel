@@ -57,7 +57,7 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<Dimer> dimer, shared
 }
 
 void MultiExcitonHamiltonian::common_init() {
-  jop_ = shared_ptr<DimerJop>(new DimerJop(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_));
+  jop_ = make_shared<DimerJop>(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
 
   cispace_->complete();
 
@@ -116,7 +116,7 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
 void MultiExcitonHamiltonian::compute() {
   cout << endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << endl;
 
-  hamiltonian_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
+  hamiltonian_ = make_shared<Matrix>(dimerstates_, dimerstates_);
 
   cout << "  o Computing diagonal blocks." << endl;
   for (auto& subspace : subspaces_) {
@@ -137,13 +137,13 @@ void MultiExcitonHamiltonian::compute() {
   }
 
   cout << "  o Diagonalizing ME Hamiltonian" << endl;
-  adiabats_ = shared_ptr<Matrix>(new Matrix(*hamiltonian_));
+  adiabats_ = make_shared<Matrix>(*hamiltonian_);
   energies_ = vector<double>(dimerstates_, 0.0);
   adiabats_->diagonalize(energies_.data());
 
   cout << "  o Constructing spin matrix." << endl;
 
-  spin_ = shared_ptr<Matrix>(new Matrix(dimerstates_, dimerstates_));
+  spin_ = make_shared<Matrix>(dimerstates_, dimerstates_);
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -158,7 +158,7 @@ void MultiExcitonHamiltonian::compute() {
   }
 
 
-  spinadiabats_ = shared_ptr<Matrix>(new Matrix( (*adiabats_) % (*spin_) * (*adiabats_) ));
+  spinadiabats_ = make_shared<Matrix>((*adiabats_) % (*spin_) * (*adiabats_));
 
   cout << "  o Computing properties" << endl;
   DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
@@ -167,14 +167,14 @@ void MultiExcitonHamiltonian::compute() {
     string label("mu_");
     label += mu_labels[i];
     shared_ptr<Matrix> tmp = compute_1e_prop(dipole.dipoles<0>(i), dipole.dipoles<1>(i), dipole.cross_dipole(i), dipole.core_dipole(i));
-    shared_ptr<Matrix> prop(new Matrix( (*adiabats_) % (*tmp) * (*adiabats_) ));
+    auto prop = make_shared<Matrix>((*adiabats_) % (*tmp) * (*adiabats_));
     properties_.push_back(make_pair(label, prop));
   }
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Matrix> hAA, shared_ptr<const Matrix> hBB, shared_ptr<const Matrix> hAB, const double core) const {
 
-  shared_ptr<Matrix> out(new Matrix(dimerstates_, dimerstates_));
+  auto out = make_shared<Matrix>(dimerstates_, dimerstates_);
 
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
@@ -202,7 +202,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
   const int nstatesB = AB.nstates<1>();
   const int dimerstates = AB.dimerstates();
 
-  shared_ptr<Matrix> out(new Matrix(dimerstates, dimerstates));
+  auto out = make_shared<Matrix>(dimerstates, dimerstates);
 
   for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
     for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
@@ -237,32 +237,32 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
 
   switch(term_type) {
     case Coupling::aET :
-      operatorA = shared_ptr<Quantization>(new OneBody<SQ::CreateAlpha>());
-      operatorB = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateAlpha>());
+      operatorA = make_shared<OneBody<SQ::CreateAlpha>>();
+      operatorB = make_shared<OneBody<SQ::AnnihilateAlpha>>();
       break;
     case Coupling::inv_aET :
-      operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateAlpha>());
-      operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateAlpha>());
+      operatorA = make_shared<OneBody<SQ::AnnihilateAlpha>>();
+      operatorB = make_shared<OneBody<SQ::CreateAlpha>>();
       --neleA;
       break;
     case Coupling::bET :
-      operatorA = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
-      operatorB = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateBeta>());
+      operatorA = make_shared<OneBody<SQ::CreateBeta>>();
+      operatorB = make_shared<OneBody<SQ::AnnihilateBeta>>();
       break;
     case Coupling::inv_bET :
-      operatorA = shared_ptr<Quantization>(new OneBody<SQ::AnnihilateBeta>());
-      operatorB = shared_ptr<Quantization>(new OneBody<SQ::CreateBeta>());
+      operatorA = make_shared<OneBody<SQ::AnnihilateBeta>>();
+      operatorB = make_shared<OneBody<SQ::CreateBeta>>();
       --neleA;
       break;
     default :
-      return shared_ptr<Matrix>(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+      return make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   }
 
   Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorA);
   Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), operatorB);
   Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
-  shared_ptr<Matrix> out(new Matrix(AB.dimerstates(), ApBp.dimerstates()));
+  auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
 
   if ( (neleA % 2) == 1 ) out->scale(-1.0);

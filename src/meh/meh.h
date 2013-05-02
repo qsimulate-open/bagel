@@ -45,8 +45,6 @@ namespace bagel {
 * CAS calculations                                                                  *
 ************************************************************************************/
 
-using MatrixPtr = std::shared_ptr<Matrix>;
-
 enum class Coupling {
   none = 0,
   diagonal = 1,
@@ -65,6 +63,8 @@ enum class Coupling {
 };
 
 class DimerSubspace {
+  using MatrixPtr = std::shared_ptr<Matrix>;
+
   protected:
     const int offset_;
     const int nstatesA_;
@@ -93,6 +93,7 @@ class DimerSubspace {
 };
 
 class MultiExcitonHamiltonian {
+  using MatrixPtr = std::shared_ptr<Matrix>;
    protected:
       std::shared_ptr<const Dimer> dimer_;
       std::shared_ptr<const Reference> ref_;
@@ -195,7 +196,7 @@ class MultiExcitonHamiltonian {
 };
 
 template<int A, int B, int C, int D>
-MatrixPtr MultiExcitonHamiltonian::form_coulomb_matrix() const {
+std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_coulomb_matrix() const {
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
@@ -207,7 +208,7 @@ MatrixPtr MultiExcitonHamiltonian::form_coulomb_matrix() const {
   int unitB = A + B + C + D;
   for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
 
-  MatrixPtr out(new Matrix(ijA, ijB));
+  auto out = std::make_shared<Matrix>(ijA, ijB);
 
   for(int d = 0; d < (D == 0 ? nactA : nactB); ++d) {
     for(int c = 0; c < (C == 0 ? nactA : nactB); ++c) {

@@ -40,7 +40,7 @@ using namespace bagel;
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace& subspace) {
   const int nstates = subspace.dimerstates();
 
-  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
+  auto out = make_shared<Matrix>(nstates, nstates);
 
   const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
   *out += *compute_diagonal_1e(subspace, jop_->mo1e_first(), jop_->mo1e_second(), core);
@@ -61,7 +61,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subs
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
-  shared_ptr<Matrix> out(new Matrix(nstates, nstates));
+  auto out = make_shared<Matrix>(nstates, nstates);
 
   // first H^{AA}_{AA}
   {
@@ -129,12 +129,12 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   const int nstatesp = nstatesAp * nstatesBp;
 
   // alpha-alpha
-  shared_ptr<Quantization> alpha(new TwoBody<SQ::CreateAlpha,SQ::AnnihilateAlpha>());
+  auto alpha = make_shared<TwoBody<SQ::CreateAlpha,SQ::AnnihilateAlpha>>();
   Matrix gamma_AA_alpha = *form_gamma(ccvecA, ccvecAp, alpha);
   Matrix gamma_BB_alpha = *form_gamma(ccvecB, ccvecBp, alpha);
 
   // beta-beta
-  shared_ptr<Quantization> beta(new TwoBody<SQ::CreateBeta,SQ::AnnihilateBeta>());
+  auto beta = make_shared<TwoBody<SQ::CreateBeta,SQ::AnnihilateBeta>>();
   Matrix gamma_AA_beta = *form_gamma(ccvecA, ccvecAp, beta);
   Matrix gamma_BB_beta = *form_gamma(ccvecB, ccvecBp, beta);
 
@@ -149,7 +149,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  shared_ptr<Matrix> out(new Matrix(nstates, nstatesp));
+  auto out = make_shared<Matrix>(nstates, nstatesp);
   reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
 
   return out;
