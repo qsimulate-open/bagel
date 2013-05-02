@@ -78,6 +78,7 @@ class Task : public std::enable_shared_from_this<Task<T>> {
     }
 
     virtual double energy() const { return 0.0; }
+    virtual double correction() const { return 0.0; }
 };
 
 
@@ -92,6 +93,18 @@ class EnergyTask : public Task<T> {
 
 };
 
+#if 1
+template <typename T>
+class CorrectionTask : public Task<T> {
+  protected:
+    double correction_;
+  public:
+    CorrectionTask() : Task<T>() {}
+    ~CorrectionTask() {}
+    double correction() const { return correction_; }
+
+};
+#endif
 
 template <typename T>
 class DensityTask : public Task<T> {
