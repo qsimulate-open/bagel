@@ -312,28 +312,6 @@ void Dimer::embed_refs() {
   }
 }
 
-pair<shared_ptr<const Dvec>, shared_ptr<const Dvec>> Dimer::embedded_casci(const boost::property_tree::ptree& idata, const int charge, const int nspin, const int nstates) const {
-  const int nclosed = ncore_.first + ncore_.second;
-  const int ncoreA = nclosed + nfilledactive_.second;
-  const int ncoreB = nclosed + nfilledactive_.first;
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  // Make new input data, set charge and spin to what I want
-  boost::property_tree::ptree input = idata;
-  input.erase("charge"); input.erase("nspin");
-  input.put("charge", charge);
-  input.put("nspin", nspin);
-
-  shared_ptr<FCI> fciA(new HarrisonZarrabian(input, embedded_refs_.first, ncoreA, nactA, nstates));
-  fciA->compute();
-
-  shared_ptr<FCI> fciB(new HarrisonZarrabian(input, embedded_refs_.second, ncoreB, nactB, nstates));
-  fciB->compute();
-
-  return make_pair(fciA->civectors(), fciB->civectors());
-}
-
 void Dimer::localize(const boost::property_tree::ptree& idata) {
   string localizemethod = idata.get<string>("localization", "pm");
 
@@ -506,6 +484,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   sref_->set_eig(subeigs);
 }
 
+
 shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptree& idata) {
   embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
@@ -513,14 +492,25 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
 
   shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
 
-  const int nsinglets = idata.get<int>("nsinglets", 1);
-  const int ntriplets = idata.get<int>("ntriplets", 0);
-  const int nquintets = idata.get<int>("nquintets", 0);
-  const int nseptets = idata.get<int>("nseptets", 0);
-  const int nanions = idata.get<int>("nanions", 0);
-  const int ndianions = idata.get<int>("ndianions", 0);
-  const int ncations = idata.get<int>("ncations", 0);
-  const int ndications = idata.get<int>("ndications", 0);
+  vector<vector<int>> spaces_A;
+  vector<vector<int>> spaces_B;
+
+  auto space = idata.get_child_optional("space");
+  if (space) {
+    // TODO make a function
+    for (auto& s : *space) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_A.push_back(tmp); }
+    spaces_B = spaces_A;
+  }
+  else {
+    auto spacea = idata.get_child_optional("space_a");
+    auto spaceb = idata.get_child_optional("space_b");
+    if (!(spacea && spaceb)) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    }
+    // TODO make a function
+    for (auto& s : *spacea) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_A.push_back(tmp); }
+    for (auto& s : *spaceb) { vector<int> tmp; for (auto& t : s.second.data()) tmp.push_back(lexical_cast<int>(t)); spaces_B.push_back(tmp); }
+  }
 
   // Hide normal cout.
   stringstream ss;
@@ -528,45 +518,29 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
   cout.rdbuf(ss.rdbuf());
   ostream hacked_cout(saved_cout);
 
-  // Neutral singlets are always calculated
-  if ( nsinglets < 1 ) throw runtime_error("Singlets cannot be removed from MEH calculation");
-  hacked_cout << "   Dimer: starting computation of " << nsinglets << " singlets in each unit." << endl;
-  out->insert(embedded_casci(idata, 0, 0, nsinglets));
-  
-  if (nanions > 0) {
-    out->anions() = true;
-    hacked_cout << "   Dimer: starting computation of " << nanions << " anions in each unit." << endl;
-    out->insert(embedded_casci(idata, -1, 1, nanions));
+  // Embedded CAS-CI calculations
+  hacked_cout << "    Starting embedded CAS-CI calculations on monomer A" << endl;
+  for (auto& ispace : spaces_A) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
+
+    out->insert<0>(embedded_casci<0>(idata, charge, spin, nstate));
   }
-  if (ndianions > 0) {
-    out->dianions() = true;
-    hacked_cout << "   Dimer: starting computation of " << ndianions << " dianions in each unit." << endl;
-    out->insert(embedded_casci(idata, -2, 2, ndianions));
-  }
-  if (ncations > 0) {
-    out->cations() = true;
-    hacked_cout << "   Dimer: starting computation of " << ncations << " cations in each unit." << endl;
-    out->insert(embedded_casci(idata, +1, 1, ncations));
-  }
-  if (ndications > 0) {
-    out->dications() = true;
-    hacked_cout << "   Dimer: starting computation of " << ndications << " dications in each unit." << endl;
-    out->insert(embedded_casci(idata, +2, 2, ndications));
-  }
-  if (ntriplets > 0) {
-    out->triplets() = true;
-    hacked_cout << "   Dimer: starting computation of " << ntriplets << " triplets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 2, ntriplets));
-  }
-  if (nquintets > 0) {
-    out->quintets() = true;
-    hacked_cout << "   Dimer: starting computation of " << nquintets << " quintets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 4, nquintets));
-  }
-  if (nseptets > 0) {
-    out->septets() = true;
-    hacked_cout << "   Dimer: starting computation of " << nseptets << " septets in each unit." << endl;
-    out->insert(embedded_casci(idata, 0, 6, nseptets));
+
+  hacked_cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
+  for (auto& ispace : spaces_B) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
+
+    out->insert<1>(embedded_casci<1>(idata, charge, spin, nstate));
   }
 
   cout.rdbuf(saved_cout);

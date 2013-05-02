@@ -64,10 +64,6 @@ enum class Coupling {
   inv_bbET = -7
 };
 
-enum class CS {
-  S, Aa, Ab, dAa, dA0, dAb, Ca, Cb, dCa, dC0, dCb, Ta, T0, Tb, Qaa, Qa, Q0, Qb, Qbb, Saaa, Saa, Sa, S0, Sb, Sbb, Sbbb, MAX
-};
-
 class DimerSubspace {
   protected:
     const int offset_;
@@ -76,11 +72,11 @@ class DimerSubspace {
     const std::string stringA_;
     const std::string stringB_;
 
-    std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> ci_;
+    std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> ci_;
 
   public:
-    DimerSubspace(int& _offset, const std::string _stringA, const std::string _stringB, std::pair<std::shared_ptr<Dvec>, std::shared_ptr<Dvec>> _ci) : 
-      offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(_stringA), stringB_(_stringB),
+    DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> _ci) : 
+      offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
        ci_(_ci) { _offset += dimerstates(); }
 
     const int offset() const { return offset_; }
@@ -178,10 +174,6 @@ class MultiExcitonHamiltonian {
       void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
       void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
-      
-      // Helper functions
-      template<int unit>
-      void state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, const CS cs, const int qa, const int qb);
 
       template<int A, int B, int C, int D> MatrixPtr form_coulomb_matrix() const;
       MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
@@ -198,43 +190,6 @@ class MultiExcitonHamiltonian {
       MatrixPtr compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
 };
-
-template<int unit>
-void MultiExcitonHamiltonian::state_inserter(std::vector<std::vector<std::shared_ptr<Civec>>>& ccvec, const CS cs, const int qa, const int qb) {
-  const double thresh = 1.0e-3;
-  std::shared_ptr<Dvec> currentvec = cispace_->ccvec<unit>(qa,qb);
-
-  const int nspin = currentvec->det()->nspin();
-  const int mult = nspin + 1;
-
-  // assuming high spin, expectation value should be
-  double expectation = static_cast<double>(nspin) * 0.5;
-  expectation = expectation * (expectation + 1.0);
-
-  const int cs_int = static_cast<int>(cs);
-  const int size = currentvec->ij();
-  for(int i = 0; i < size; ++i) {
-    if ( std::fabs(expectation - currentvec->data(i)->spin_expectation()) < thresh ) {
-      ccvec.at(cs_int).push_back(currentvec->data(i));
-    }
-    else {std::cout << "Removing one state of type (qa,qb) = (" << qa << "," << qb << ") due to spin contamination." << std::endl;}
-  }
-
-
-  for(int i = 1; i < mult; ++i) {
-    currentvec = currentvec->spin_lower(cispace_->add_det<unit>(qa-i,qb+i));
-    cispace_->insert<unit>(currentvec);
-    const int cs_position = static_cast<int>(cs) + i;
-    for(int j = 0; j < size; ++j) {
-      const double norm = currentvec->data(j)->norm();
-      if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
-      currentvec->data(j)->scale(1.0/norm);
-      if ( std::fabs(expectation - currentvec->data(j)->spin_expectation()) < thresh ) {
-        ccvec.at(cs_position).push_back(currentvec->data(j));
-      }
-    }
-  }
-}
 
 template<int A, int B, int C, int D>
 MatrixPtr MultiExcitonHamiltonian::form_coulomb_matrix() const {
