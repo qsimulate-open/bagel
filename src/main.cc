@@ -79,7 +79,7 @@ namespace bagel {
 }
 
 // debugging
-extern void test_solvers(shared_ptr<bagel::Geometry>);
+extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
 
 using namespace std;
