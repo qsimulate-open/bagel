@@ -38,7 +38,7 @@ void CIDipole::init(const int nstart, const int nfence) {
   DipoleMatrix dipole(geom_);  
 
   for(int i = 0; i < dipole.nblocks(); ++i) {
-    dipole_mo_[i] = shared_ptr<Matrix>(new Matrix( (*coeff_) % (*dipole.data(i)) * (*coeff_) ));
+    dipole_mo_[i] = make_shared<Matrix>((*coeff_) % (*dipole.data(i)) * (*coeff_));
   }
 
   core_dipole_ = {{0.0, 0.0, 0.0}} ;
@@ -63,7 +63,7 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
-  shared_ptr<Dvec> sigma(new Dvec(det, nstates));
+  auto sigma = make_shared<Dvec>(det, nstates);
 
   const int sizeij = sizeij_;
   const int la = ccvec->lena();
@@ -89,7 +89,7 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
       }
     }
 
-    shared_ptr<Matrix> tmp(new Matrix(nstates, nstates));
+    auto tmp = make_shared<Matrix>(nstates, nstates);
     for (int i = 0; i < nstates; ++i) {
       for (int j = 0; j < nstates; ++j) {
         tmp->element(i,j) = sigma->data(i)->ddot(*ccvec->data(j));

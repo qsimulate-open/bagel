@@ -44,9 +44,9 @@ Momentum::~Momentum() {
 array<shared_ptr<Matrix>, 3> Momentum::compute() const {
 
   const int nbasis = geom_->nbasis();
-  const shared_ptr<Matrix> mat0(new Matrix(nbasis, nbasis));
-  const shared_ptr<Matrix> mat1(new Matrix(nbasis, nbasis));
-  const shared_ptr<Matrix> mat2(new Matrix(nbasis, nbasis));
+  auto mat0 = make_shared<Matrix>(nbasis, nbasis);
+  auto mat1 = make_shared<Matrix>(nbasis, nbasis);
+  auto mat2 = make_shared<Matrix>(nbasis, nbasis);
 
   // TODO perhaps we could reduce operation by a factor of 2
   auto o0 = geom_->offsets().begin();

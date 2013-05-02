@@ -45,12 +45,12 @@ shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_p
   const int ij = nij(); 
 
   const int nstate = ccvec->ij();
-  shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstate));
+  auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate);
   sigmavec->zero();
 
   // we need two vectors for intermediate quantities
-  shared_ptr<Dvec> d(new Dvec(ccvec->det(), ij));
-  shared_ptr<Dvec> e(new Dvec(ccvec->det(), ij));
+  auto d = make_shared<Dvec>(ccvec->det(), ij);
+  auto e = make_shared<Dvec>(ccvec->det(), ij);
 
 
   for (int istate = 0; istate != nstate; ++istate) {

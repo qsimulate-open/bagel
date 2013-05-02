@@ -69,7 +69,7 @@ Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det
 
 shared_ptr<Civec> Civec::transpose(shared_ptr<const Determinants> det) const {
   if (det == nullptr) det = det_->transpose();
-  shared_ptr<Civec> ct(new Civec(det));
+  auto ct = make_shared<Civec>(det);
   double* cct = ct->data();
   mytranspose_(cc(), lenb_, lena_, cct);
   return ct;
@@ -132,7 +132,7 @@ Civec Civec::operator/(const Civec& o) const {
 
 
 shared_ptr<DistCivec> Civec::distcivec() const {
-  shared_ptr<DistCivec> dist(new DistCivec(det_));
+  auto dist = make_shared<DistCivec>(det_);
   copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
   return dist;
 }
@@ -166,7 +166,7 @@ void Civec::print(const double thr) const {
 
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<Civec> Civec::spin() const {
-  shared_ptr<Civec> out(new Civec(det_));
+  auto out = make_shared<Civec>(det_);
 
   // First the easy part, S_z^2 + S_z
   const double sz = 0.5*static_cast<double>(det_->nspin());
@@ -222,9 +222,9 @@ shared_ptr<Civec> Civec::spin() const {
 // S_- = \sum_i i_beta^\dagger i_alpha
 shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
-    target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true));
+    target_det = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
-  shared_ptr<Civec> out(new Civec(target_det));
+  auto out = make_shared<Civec>(target_det);
 
   shared_ptr<const Determinants> source_det = det_;
   const int norb = source_det->norb();
@@ -266,9 +266,9 @@ shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) c
 // S_+ = \sum_i i_alpha^\dagger i_beta
 shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
-    target_det = shared_ptr<Determinants>(new Determinants(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true));
+    target_det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );
-  shared_ptr<Civec> out(new Civec(target_det));
+  auto out = make_shared<Civec>(target_det);
 
   shared_ptr<const Determinants> source_det = det_;
   const int norb = source_det->norb();

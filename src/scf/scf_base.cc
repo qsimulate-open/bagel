@@ -41,9 +41,9 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
  : idata_(idat), geom_(geom) {
 
   Timer scfb;
-  overlap_ = shared_ptr<const Overlap>(new Overlap(geom));
+  overlap_ = make_shared<const Overlap>(geom);
   scfb.tick_print("Overlap matrix");
-  hcore_ = shared_ptr<const Hcore>(new Hcore(geom));
+  hcore_ = make_shared<const Hcore>(geom);
   scfb.tick_print("Hcore matrix");
 
   eig_= unique_ptr<double[]>(new double[geom_->nbasis()]);
@@ -64,7 +64,7 @@ SCF_base::SCF_base(const multimap<string, string>& idat, const shared_ptr<const 
 
   if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
 
-  tildex_ = shared_ptr<TildeX>(new TildeX(overlap_, thresh_overlap_));
+  tildex_ = make_shared<TildeX>(overlap_, thresh_overlap_);
 
   scfb.tick_print("Overlap orthog");
 

@@ -111,8 +111,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
 
-    std::shared_ptr<ZMatrix> clone() const { return std::shared_ptr<ZMatrix>(new ZMatrix(ndim_, mdim_)); }
-    std::shared_ptr<ZMatrix> copy() const { return std::shared_ptr<ZMatrix>(new ZMatrix(*this)); }
+    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim_, mdim_); }
+    std::shared_ptr<ZMatrix> copy() const { return std::make_shared<ZMatrix>(*this); }
 
     // returns exp(*this)
     std::shared_ptr<ZMatrix> exp(const int deg = 6) const;
@@ -197,7 +197,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     DistZMatrix& operator-=(const DistZMatrix& o) { zaxpy(-1.0, o); return *this; }
     DistZMatrix& operator=(const DistZMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
 
-    std::shared_ptr<DistZMatrix> clone() const { return std::shared_ptr<DistZMatrix>(new DistZMatrix(ndim_, mdim_)); }
+    std::shared_ptr<DistZMatrix> clone() const { return std::make_shared<DistZMatrix>(ndim_, mdim_); }
 
     void zaxpy(const double a, const DistZMatrix& o) { const std::complex<double> b(a); zaxpy(b,o); }
     void zaxpy(const double a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a,*o); }

@@ -80,7 +80,7 @@ class File2 {
       std::unique_ptr<double[]> tmp2(new double[occ_*occ_*occ_*occ_]);
       for (size_t i = 0 ; i != occ_*occ_; ++i)
         dgemm_("N", "N", occ_, occ_, dim1_, 1.0, tmp.get()+dim1_*occ_*i, occ_, coeff2, dim1_, 0.0, tmp2.get()+occ_*occ_*i, occ_);
-      return std::shared_ptr<F12Mat>(new F12Mat(occ_, std::move(tmp2)));
+      return std::make_shared<F12Mat>(occ_, std::move(tmp2));
     };
     std::shared_ptr<F12Ten> f12ten(const double* const coeff, const double* const coeff2, const size_t n, const size_t n2) const {
       std::unique_ptr<double[]> tmp(new double[n*dim1_*occ_*occ_]);
@@ -88,7 +88,7 @@ class File2 {
       std::unique_ptr<double[]> tmp2(new double[n*n2*occ_*occ_]);
       for (size_t i = 0 ; i != occ_*occ_; ++i)
         dgemm_("N", "N", n, n2, dim1_, 1.0, tmp.get()+dim1_*n*i, n, coeff2, dim1_, 0.0, tmp2.get()+n*n2*i, n);
-      return std::shared_ptr<F12Ten>(new F12Ten(occ_, n, n2, std::move(tmp2)));
+      return std::make_shared<F12Ten>(occ_, n, n2, std::move(tmp2));
     };
 };
 
@@ -116,7 +116,7 @@ class File4 {
       std::unique_ptr<double[]> tmp(new double[n*n*dim0_*dim1_]);
         for (size_t i = 0; i != n; ++i)
           dgemm_("N", "N", dim0_*dim1_, n, dim_, 1.0, tmp2.get()+dim0_*dim1_*dim_*i, dim0_*dim1_, c, dim_, 0.0, tmp.get()+dim0_*dim1_*n*i, dim0_*dim1_);
-      return std::shared_ptr<File2>(new File2(tmp, dim0_, dim1_, n));
+      return std::make_shared<File2>(tmp, dim0_, dim1_, n);
     };
 };
 
@@ -243,8 +243,8 @@ template<typename T> class AOInt {
     };
     ~AOInt() {};
 
-    std::shared_ptr<File4> data()  { return std::shared_ptr<File4>(new File4(data_, dim_, dim0_, dim1_)); };
-    std::shared_ptr<File4> data2() { return std::shared_ptr<File4>(new File4(data2_, dim_, dim0_, dim1_)); };
+    std::shared_ptr<File4> data()  { return std::make_shared<File4>(data_, dim_, dim0_, dim1_); };
+    std::shared_ptr<File4> data2() { return std::make_shared<File4>(data2_, dim_, dim0_, dim1_); };
 
 };
 

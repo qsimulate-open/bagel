@@ -36,7 +36,7 @@ using namespace bagel;
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
-: geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
+: geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -46,7 +46,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
 
 
 MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
-: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(new Matrix(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
+: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -142,18 +142,18 @@ tuple<shared_ptr<const Matrix>, double> Jop::compute_mo1e(const int nstart, cons
   const int ncore = nstart;
   double core_energy = 0.0;
 
-  shared_ptr<Matrix> fock0(new Matrix(*ref_->hcore()));
+  auto fock0 = make_shared<Matrix>(*ref_->hcore());
   // if core fock operator is not the same as hcore...
   if (nstart != 0) {
     shared_ptr<Matrix> den = coeff_->form_density_rhf(ncore);
-    fock0 = shared_ptr<Matrix>(new Fock<1>(geom_, ref_->hcore(), den, ref_->schwarz()));
+    fock0 = make_shared<Fock<1>>(geom_, ref_->hcore(), den, ref_->schwarz());
     core_energy = (*den * (*ref_->hcore()+*fock0)).trace() * 0.5;
     *core_fock_ = *fock0;
   }
   fock0->fill_upper();
 
   shared_ptr<const Matrix> ocoeff = coeff_->slice(nstart, nfence);
-  shared_ptr<const Matrix> mat(new Matrix(*ocoeff % *fock0 * *ocoeff));
+  auto mat = make_shared<const Matrix>(*ocoeff % *fock0 * *ocoeff);
 
   return make_tuple(mat, core_energy);
 }

@@ -43,8 +43,8 @@ class ABcases {
       const int start2 = coord.second == Comp::L ? 0 : 2;
       const int index1 = start1 + basis_.first;
       const int index2 = start2 + basis_.second;
-      std::shared_ptr<ZMatrix> tmp0(new ZMatrix(4,1,true));
-      std::shared_ptr<ZMatrix> tmp1(new ZMatrix(4,1,true));
+      auto tmp0 = std::make_shared<ZMatrix>(4,1,true);
+      auto tmp1 = std::make_shared<ZMatrix>(4,1,true);
       tmp0->element(index1,0) = 1.0;
       tmp1->element(index2,0) = 1.0;
       spinor_[0] = tmp0;
@@ -71,7 +71,7 @@ class ABcases {
     bool operator!=(const ABcases& o) const { return !(*this == o); }
 
     std::shared_ptr<const ABcases> swap() const {
-      std::shared_ptr<ABcases> out(new ABcases(*this));
+      auto out = std::make_shared<ABcases>(*this);
       std::swap(out->basis_.first, out->basis_.second);
       out->fac_ = std::conj(out->fac_);
       std::swap(out->spinor_[0], out->spinor_[1]);

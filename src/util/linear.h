@@ -89,7 +89,7 @@ class Linear {
       dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
       if (info) throw std::runtime_error("dgesv failed in Linear");
 
-      std::shared_ptr<T> out(new T(*grad_));
+      auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
         out->daxpy(vec_[cnt], *j);

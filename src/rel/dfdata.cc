@@ -31,7 +31,7 @@ using namespace bagel;
 
 DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord), dfdata_(df), swap_(false) {
   for (auto& i : alpha)
-    alpha_.push_back(std::shared_ptr<const Alpha>(new Alpha(i)));
+    alpha_.push_back(std::make_shared<const Alpha>(i));
   common_init();
 }
 
@@ -52,7 +52,7 @@ DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfda
 
 //swap coord
 shared_ptr<const DFData> DFData::swap() const {
-  return shared_ptr<const DFData>(new DFData(*this, true));
+  return make_shared<const DFData>(*this, true);
 }
 
 
@@ -72,7 +72,7 @@ vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_pt
 
   // transform
   for (auto& i : subsets)
-    out.push_back(shared_ptr<DFHalfComplex>(new DFHalfComplex(shared_from_this(), i, rc, ic)));
+    out.push_back(make_shared<DFHalfComplex>(shared_from_this(), i, rc, ic));
   return out;
 }
 
@@ -92,7 +92,7 @@ vector<shared_ptr<ZMatrix>> DFData::compute_Jop(list<shared_ptr<const CDMatrix>>
   for (auto& i : sum) {
     shared_ptr<const Matrix> rdat = dfdata_->compute_Jop_from_cd(i->get_real_part());
     shared_ptr<const Matrix> idat = dfdata_->compute_Jop_from_cd(i->get_imag_part());
-    out.push_back(shared_ptr<ZMatrix>(new ZMatrix(*rdat, *idat)));
+    out.push_back(make_shared<ZMatrix>(*rdat, *idat));
   }
 
   return out;

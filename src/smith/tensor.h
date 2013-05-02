@@ -35,6 +35,7 @@
 #include <iomanip>
 #include <cassert>
 #include <type_traits>
+#include <src/util/matrix.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
@@ -46,6 +47,7 @@ namespace SMITH {
 const static int shift = 8;
 
 /* obsolete function */
+static
 size_t generate_hash_key(const std::vector<size_t>& o) {
   size_t out = 0;
   for (auto i = o.rbegin(); i != o.rend(); ++i) {
@@ -243,6 +245,26 @@ class Tensor {
               out->put_block(data0, i0, i1, i2, i3);
             }
           }
+        }
+      }
+      return out;
+    }
+
+
+    std::shared_ptr<Matrix> matrix() const {
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 2);
+      int dim1 = 0;
+      for (auto& i1 : o[1].range()) dim1 += i1.size(); 
+      int dim0 = 0;
+      for (auto& i0 : o[0].range()) dim0 += i0.size();
+
+      auto out = std::make_shared<Matrix>(dim0, dim1);
+
+      for (auto& i1 : o[1].range()) {
+        for (auto& i0 : o[0].range()) {
+          std::unique_ptr<double[]> target = get_block(i0, i1);
+          out->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), target);
         }
       }
       return out;

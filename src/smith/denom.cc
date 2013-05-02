@@ -56,7 +56,7 @@ void Denom::init_x_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, 
   Matrix fss = shalf % work2 * shalf;
   denom_x_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_x_.get());
-  shalf_x_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_x_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -87,7 +87,7 @@ void Denom::init_h_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, 
   Matrix fss = shalf % work2 * shalf;
   denom_h_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_h_.get());
-  shalf_h_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_h_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -109,7 +109,7 @@ void Denom::init_xx_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   Matrix fss = shalf % work * shalf;
   denom_xx_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_xx_.get());
-  shalf_xx_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_xx_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -181,7 +181,7 @@ void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   Matrix fss = shalf % work * shalf;
   denom_hh_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_hh_.get());
-  shalf_hh_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_hh_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -257,7 +257,7 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   Matrix fss = shalf % num * shalf;
   denom_xh_ = unique_ptr<double[]>(new double[2*dim]);
   fss.diagonalize(denom_xh_.get());
-  shalf_xh_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_xh_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -301,7 +301,7 @@ void Denom::init_xhh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
   fss = shalf % fss * shalf;
   denom_xhh_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_xhh_.get());
-  shalf_xhh_ = shared_ptr<const Matrix>(new Matrix(fss % shalf));
+  shalf_xhh_ = make_shared<const Matrix>(fss % shalf);
 }
 
 
@@ -376,6 +376,6 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
   fss = shalf % fss * shalf;
   denom_xxh_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_xxh_.get());
-  shalf_xxh_ = shared_ptr<const Matrix>(new Matrix(fss % shalf)); 
+  shalf_xxh_ = make_shared<const Matrix>(fss % shalf); 
 }
 

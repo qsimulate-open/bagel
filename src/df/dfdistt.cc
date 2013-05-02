@@ -55,7 +55,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
   // loop over DFBlocks
   for (auto& iblock : in->block()) {
     // Local matrix (true means local)
-    shared_ptr<Matrix> dat(new Matrix(naux_, size_, true));
+    auto dat = make_shared<Matrix>(naux_, size_, true);
 
     // second form a matrix
     shared_ptr<Matrix> buf = dat->clone();
@@ -100,14 +100,13 @@ DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<siz
 
   const int nblock = p->block().size();
   for (int i = 0; i != nblock; ++i)
-    data_.push_back(shared_ptr<Matrix>(new Matrix(naux_, size_, true)));
+    data_.push_back(make_shared<Matrix>(naux_, size_, true));
 
 }
 
 
 shared_ptr<DFDistT> DFDistT::clone() const {
-  shared_ptr<DFDistT> out(new DFDistT(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_)); 
-  return out;
+  return make_shared<DFDistT>(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_); 
 }
 
 
@@ -124,7 +123,7 @@ vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o,
   vector<shared_ptr<Matrix>> out;
   auto i = data_.begin();
   for (auto& j : o->data_) {
-    shared_ptr<Matrix> tmp(new Matrix(**i++ ^ *j)); 
+    auto tmp = make_shared<Matrix>(**i++ ^ *j); 
     tmp->allreduce();
     out.push_back(tmp);
   }

@@ -102,8 +102,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
 
-    std::shared_ptr<Matrix> clone() const { return std::shared_ptr<Matrix>(new Matrix(ndim_, mdim_, localized_)); }
-    std::shared_ptr<Matrix> copy() const { return std::shared_ptr<Matrix>(new Matrix(*this)); }
+    std::shared_ptr<Matrix> clone() const { return std::make_shared<Matrix>(ndim_, mdim_, localized_); }
+    std::shared_ptr<Matrix> copy() const { return std::make_shared<Matrix>(*this); }
 
     // returns exp(*this)
     std::shared_ptr<Matrix> exp(const int deg = 6) const;
@@ -169,7 +169,7 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix& operator-=(const DistMatrix& o) { daxpy(-1.0, o); return *this; }
     DistMatrix& operator=(const DistMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
 
-    std::shared_ptr<DistMatrix> clone() const { return std::shared_ptr<DistMatrix>(new DistMatrix(ndim_, mdim_)); }
+    std::shared_ptr<DistMatrix> clone() const { return std::make_shared<DistMatrix>(ndim_, mdim_); }
 
     using DistMatrix_base<double>::scale;
 

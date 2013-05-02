@@ -47,7 +47,7 @@ SendRequest::~SendRequest() {
 void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
   lock_guard<mutex> lock(mutex_);
   // sending size
-  shared_ptr<Probe> p(new Probe(size, counter_, mpi__->rank(), dest, off, buf));
+  auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, buf);
   counter_ += mpi__->size();
   mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
@@ -107,7 +107,7 @@ AccRequest::~AccRequest() {
 
 void AccRequest::init() {
   // receives
-  shared_ptr<Call> call(new Call());
+  auto call = make_shared<Call>();
   // receives size,tag,rank
   const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key__); 
   {
@@ -135,7 +135,7 @@ void AccRequest::flush_() {
         // sending back the buffer address
         mpi__->request_send(buffer.get(), 1, rank, tag);
         const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
-        auto m = requests_.insert(make_pair(rq, shared_ptr<Prep>(new Prep(size, off, move(buffer)))));
+        auto m = requests_.insert(make_pair(rq, make_shared<Prep>(size, off, move(buffer))));
         assert(m.second);
         i = calls_.erase(i);
         ++cnt;

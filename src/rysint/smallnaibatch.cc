@@ -36,7 +36,7 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
   : geom_(geom), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
   for (int i = 0; i != 4; ++i)
-     data_[i] = shared_ptr<Matrix>(new Matrix(shells_[0]->nbasis(), shells_[1]->nbasis(), true));
+     data_[i] = make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
 }
 
 
@@ -49,7 +49,7 @@ void SmallNAIBatch::compute() {
 
   std::array<shared_ptr<Matrix>,3> ints;
   for (int i = 0; i != 3; ++i)
-    ints[i] = shared_ptr<Matrix>(new Matrix(*shells_[0]->small(i) % *nai));
+    ints[i] = make_shared<Matrix>(*shells_[0]->small(i) % *nai);
 
   array<int,3> f = {{2,3,1}};
   array<int,3> b = {{3,1,2}};
@@ -80,24 +80,24 @@ shared_ptr<Matrix> SmallNAIBatch::nai_compute() const {
   const int a0 = a0size_inc + a0size_dec;
   const int a1 = a1size_inc + a1size_dec;
 
-  shared_ptr<Matrix> nai(new Matrix(a0, a1, true));
+  auto nai = make_shared<Matrix>(a0, a1, true);
   {
-    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, geom_));
+    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, geom_);
     naic->compute();
     nai->copy_block(0, 0, a0size_inc, a1size_inc, naic->data());
   }
   if (shells_[0]->aux_dec() && shells_[1]->aux_dec()) {
-    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, geom_));
+    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, geom_);
     naic->compute();
     nai->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, naic->data());
   }
   if (shells_[0]->aux_dec()) {
-    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, geom_));
+    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, geom_);
     naic->compute();
     nai->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, naic->data());
   }
   if (shells_[1]->aux_dec()) {
-    shared_ptr<NAIBatch> naic(new NAIBatch(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, geom_));
+    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, geom_);
     naic->compute();
     nai->copy_block(0, a1size_inc, a0size_inc, a1size_dec, naic->data());
   }

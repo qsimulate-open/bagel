@@ -35,8 +35,8 @@ void UHF::compute() {
   if (coeff_ == nullptr || coeffB_ == nullptr) {
     Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
     intermediate.diagonalize(eig());
-    coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
-    coeffB_ = shared_ptr<Coeff>(new Coeff(*coeff_)); // since this is obtained with hcore
+    coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
+    coeffB_ = make_shared<Coeff>(*coeff_); // since this is obtained with hcore
   }
   tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
@@ -55,13 +55,13 @@ void UHF::compute() {
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    shared_ptr<const Matrix> fockA(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_)));
-    shared_ptr<const Matrix> fockB(new Fock<1>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_)));
+    std::shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
+    std::shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
 
     energy_ = 0.5*(*aodensity_ * *hcore_+ (*fockA * *aodensityA_ + *fockB * *aodensityB_)*0.5).trace() + geom_->nuclear_repulsion();
 
-    shared_ptr<const Matrix> error_vector(new Matrix(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
-                                                    +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB));
+    auto error_vector = make_shared<const Matrix>(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
+                                                    +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB);
 
     const double error = error_vector->rms();
 
@@ -82,13 +82,13 @@ void UHF::compute() {
     }
 
     {
-      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *fockA * *tildex_));
+      auto intermediate = make_shared<Matrix>(*tildex_ % *fockA * *tildex_);
       intermediate->diagonalize(eig());
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
+      coeff_ = make_shared<const Coeff>(*tildex_**intermediate);
     }{
-      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *fockB * *tildex_));
+      auto intermediate = make_shared<Matrix>(*tildex_ % *fockB * *tildex_);
       intermediate->diagonalize(eigB());
-      coeffB_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
+      coeffB_ = make_shared<const Coeff>(*tildex_**intermediate);
     }
     tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
 
@@ -112,14 +112,14 @@ void UHF::print_S2(const string tag) const {
 
 
 tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals() const {
-  shared_ptr<Matrix> cinv(new Matrix(*coeff_ % *overlap_));
-  shared_ptr<Matrix> intermediate(new Matrix(*cinv * *aodensity_ ^ *cinv));
+  auto cinv = make_shared<Matrix>(*coeff_ % *overlap_);
+  auto intermediate = make_shared<Matrix>(*cinv * *aodensity_ ^ *cinv);
   *intermediate *= -1.0;
   unique_ptr<double[]> occup(new double[geom_->nbasis()]);
   intermediate->diagonalize(occup.get());
 
-  shared_ptr<Matrix> amat(new Matrix(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate));
-  shared_ptr<Matrix> bmat(new Matrix(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate));
+  auto amat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate);
+  auto bmat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate);
 
   int nocc = 0;
   // TODO adjust?
@@ -127,9 +127,9 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   for (int i = 0; i != geom_->nbasis(); ++i)
     if (occup[i] < -tiny) ++nocc;
 
-  shared_ptr<RDM<1>> r(new RDM<1>(nocc));
-  shared_ptr<RDM<1>> ra(new RDM<1>(nocc));
-  shared_ptr<RDM<1>> rb(new RDM<1>(nocc));
+  auto r = make_shared<RDM<1>>(nocc);
+  auto ra = make_shared<RDM<1>>(nocc);
+  auto rb = make_shared<RDM<1>>(nocc);
   r->zero();
   for (int i = 0; i != nocc; ++i) r->element(i,i) = occup[i] * (-1.0);
 
@@ -141,9 +141,8 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   }
 
   vector<shared_ptr<RDM<1>>> rdm = {r, ra, rb};
-  shared_ptr<Coeff> natorb(new Coeff(*coeff_ * *intermediate));
 
-  return make_tuple(natorb, nocc, rdm);
+  return make_tuple(make_shared<Coeff>(*coeff_ * *intermediate), nocc, rdm);
 }
 
 
@@ -152,7 +151,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
   int nocc;
   vector<shared_ptr<RDM<1>>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  shared_ptr<Reference> out(new Reference(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1));
+  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1);
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
@@ -176,7 +175,7 @@ shared_ptr<Reference> UHF::conv_to_ref() const {
 tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>> UHF::form_density_uhf() const {
   shared_ptr<Matrix> outA = coeff_->form_density_rhf(nocc_);
   shared_ptr<Matrix> outB = coeffB_->form_density_rhf(noccB_);
-  shared_ptr<Matrix> out(new Matrix(*outA+*outB));
+  auto out = make_shared<Matrix>(*outA+*outB);
   *out *= 0.5;
   return make_tuple(out, outA, outB);
 }

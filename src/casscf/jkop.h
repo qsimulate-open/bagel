@@ -131,7 +131,7 @@ class JKop {
     ~JKop() {};
 
     std::shared_ptr<Matrix> contract(const std::shared_ptr<Matrix> in) {
-      std::shared_ptr<Matrix> out(new Matrix(nbasis_, nbasis_));
+      auto out = std::make_shared<Matrix>(nbasis_, nbasis_);
       const int nocc = nocc_;
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
@@ -145,10 +145,10 @@ class JKop {
 
     std::shared_ptr<Matrix> denom() const {
       const size_t nbasis = nbasis_;
-      std::shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
+      auto out = std::make_shared<Matrix>(nbasis, nbasis);
       const int nocc = nocc_;
       const int nclosed = nclosed_;
-      std::shared_ptr<Matrix> tmp(new Matrix(nbasis, nocc));
+      auto tmp = std::make_shared<Matrix>(nbasis, nocc);
       // TODO this is an awful code.
       // first transform to MO
       {

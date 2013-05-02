@@ -86,7 +86,7 @@ class OneBody : public Quantization {
       const int source_stride = ( spin == Alpha ? 1 : source_lenb );
       const int target_stride = ( spin == Alpha ? 1 : target_lenb );
 
-      std::shared_ptr<Dvec> out(new Dvec(target_det, norb));
+      auto out = std::make_shared<Dvec>(target_det, norb);
 
       const double* source_base = ccvec->data();
 
@@ -126,7 +126,7 @@ class TwoBody : public Quantization {
         const int stride = ( spin == Alpha ? 1 : lenb );
 
         const int sizeij = norb * norb;
-        std::shared_ptr<Dvec> out(new Dvec(det, sizeij));
+        auto out = std::make_shared<Dvec>(det, sizeij);
 
         const double* source_base = ccvec->data();
 
@@ -163,7 +163,7 @@ class TwoBody : public Quantization {
           }
         }
 
-        return std::shared_ptr<Dvec>(new Dvec(out_vec));
+        return std::make_shared<Dvec>(out_vec);
       }
     }
 };
@@ -195,7 +195,7 @@ template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
           }
         }
 
-        return std::shared_ptr<Dvec>(new Dvec(out_vec));
+        return std::make_shared<Dvec>(out_vec);
       }
       else {
         OneBody<oper3> one;
@@ -219,7 +219,7 @@ template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
           }
         }
 
-        return std::shared_ptr<Dvec>(new Dvec(out_vec));
+        return std::make_shared<Dvec>(out_vec);
       }
     }
 };

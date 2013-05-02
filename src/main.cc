@@ -61,10 +61,7 @@
 #include <src/rel/dirac.h>
 #include <src/rel/relfci.h>
 #include <src/transp/transp.h>
-#include <src/smith/storage.h>
-#include <src/smith/MP2.h>
-#include <src/smith/CAS_all_active.h>
-#include <src/smith/CAS_test.h>
+#include <src/smith/smith.h>
 #include <src/meh/meh.h>
 #ifdef _OPENMP
   #include <omp.h>
@@ -85,8 +82,7 @@ namespace bagel {
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
 
-using std::cout;
-using std::endl;
+using namespace std;
 using namespace bagel;
 
 int main(int argc, char** argv) {
@@ -94,10 +90,10 @@ int main(int argc, char** argv) {
   // setup MPI interface. It does nothing for serial runs
   mpi__ = new MPI_Interface(argc, argv);
   {
-    std::string snum_threads = getenv_multiple("BAGEL_NUM_THREADS", "OMP_NUM_THREADS");
-    const int num_threads = snum_threads.empty() ? std::thread::hardware_concurrency() : lexical_cast<int>(snum_threads);
+    string snum_threads = getenv_multiple("BAGEL_NUM_THREADS", "OMP_NUM_THREADS");
+    const int num_threads = snum_threads.empty() ? thread::hardware_concurrency() : lexical_cast<int>(snum_threads);
     if (num_threads < 1)
-      throw std::runtime_error("Set BAGEL_NUM_THREADS for the number of threads used");
+      throw runtime_error("Set BAGEL_NUM_THREADS for the number of threads used");
     if (mpi__->rank() == 0)
       cout << "  * using " << num_threads << " threads per process" << endl;
 #ifdef _OPENMP
@@ -112,242 +108,230 @@ int main(int argc, char** argv) {
 
     const bool input_provided = argc == 2;
     if (!input_provided) {
-      throw std::runtime_error("no input file provided");
+      throw runtime_error("no input file provided");
     }
-    const std::string input = argv[1];
+    const string input = argv[1];
 
-    std::shared_ptr<InputData> idata(new InputData(input));
+    shared_ptr<InputData> idata(new InputData(input));
 
     bool scf_done = false;
     bool casscf_done = false;
-    std::shared_ptr<Geometry> geom;
-    std::multimap<std::string, std::shared_ptr<Geometry>> saved_geos;
-    std::shared_ptr<SCF_base> scf;
-    std::shared_ptr<const Reference> ref;
-    std::multimap<std::string, std::shared_ptr<const Reference>> saved_refs;
-    std::shared_ptr<const RelReference> relref;
-    std::shared_ptr<Dimer> dimer;
+    shared_ptr<Geometry> geom;
+    multimap<string, shared_ptr<Geometry>> saved_geos;
+    shared_ptr<SCF_base> scf;
+    shared_ptr<const Reference> ref;
+    multimap<string, shared_ptr<const Reference>> saved_refs;
+    shared_ptr<const RelReference> relref;
+    shared_ptr<Dimer> dimer;
 
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+    list<pair<string, multimap<string, string>>> keys = idata->data();
 
     // timer for each method
     Timer timer(-1);
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      const std::string method = iter->first;
+      const string method = iter->first;
 
       if (method == "molecule") {
         if (ref != nullptr) geom->discard_df(); 
-        geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+        geom = shared_ptr<Geometry>(new Geometry(iter->second));
         if (read_input<bool>(iter->second, "restart", false)) {
-          ref = std::shared_ptr<const Reference>();
-          relref = std::shared_ptr<const RelReference>();
+          ref = shared_ptr<const Reference>();
+          relref = shared_ptr<const RelReference>();
         }
         if (ref != nullptr) ref = ref->project_coeff(geom);
         if (relref != nullptr) relref = relref->project_coeff(geom);
       } else {
-        if (geom == nullptr) throw std::runtime_error("molecule block is missing");
+        if (geom == nullptr) throw runtime_error("molecule block is missing");
       }
 
       if (method.substr(0,3) == "df-" && geom->df() == nullptr)
-        throw std::runtime_error("It seems that DF basis was not specified in Geometry");
+        throw runtime_error("It seems that DF basis was not specified in Geometry");
 
       if (method == "hf") {
 
-        scf = std::shared_ptr<SCF<0>>(new SCF<0>(iter->second, geom, ref));
+        scf = shared_ptr<SCF<0>>(new SCF<0>(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "dhf") {
 
-        std::shared_ptr<Dirac> dirac = relref ? std::shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
-                                              : std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        shared_ptr<Dirac> dirac = relref ? shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
+                                              : shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
         dirac->compute();
         relref = dirac->conv_to_ref();
 
       } else if (method == "relfci") {
         //currently under construction
-        std::shared_ptr<Dirac> dirac = relref ? std::shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
-                                              : std::shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
+        shared_ptr<Dirac> dirac = relref ? shared_ptr<Dirac>(new Dirac(iter->second, geom, relref))
+                                              : shared_ptr<Dirac>(new Dirac(iter->second, geom, ref));
         dirac->compute();
         relref = dirac->conv_to_ref();
 
-        std::shared_ptr<RelFCI> relfci = std::shared_ptr<RelFCI>(new RelFCI(iter->second, geom, relref));
+        shared_ptr<RelFCI> relfci = shared_ptr<RelFCI>(new RelFCI(iter->second, geom, relref));
         relfci->compute();
 
       } else if (method == "df-hf") {
 
-        scf = std::shared_ptr<SCF<1>>(new SCF<1>(iter->second, geom, ref));
+        scf = shared_ptr<SCF<1>>(new SCF<1>(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-ks" || method == "ks") {
 
-        scf = std::shared_ptr<KS>(new KS(iter->second, geom, ref));
+        scf = shared_ptr<KS>(new KS(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-uhf" || method == "uhf") {
 
-        scf = std::shared_ptr<UHF>(new UHF(iter->second, geom, ref));
+        scf = shared_ptr<UHF>(new UHF(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-rohf" || method == "rohf") {
 
-        scf = std::shared_ptr<ROHF>(new ROHF(iter->second, geom, ref));
+        scf = shared_ptr<ROHF>(new ROHF(iter->second, geom, ref));
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "df-uhf-opt" || method == "uhf-opt") {
 
-        std::shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
+        shared_ptr<Opt<UHF>> opt(new Opt<UHF>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "df-rohf-opt" || method == "rohf-opt") {
 
-        std::shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
+        shared_ptr<Opt<ROHF>> opt(new Opt<ROHF>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "df-hf-opt") {
 
-        std::shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
+        shared_ptr<Opt<SCF<1>>> opt(new Opt<SCF<1>>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "df-ks-opt") {
 
-        std::shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
+        shared_ptr<Opt<KS>> opt(new Opt<KS>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "casscf") {
 
-        std::shared_ptr<CASSCF> casscf;
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        shared_ptr<CASSCF> casscf;
+        string algorithm = read_input<string>(iter->second, "algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
-          casscf = std::shared_ptr<CASSCF>(new SuperCI(iter->second, geom, ref));
+          casscf = shared_ptr<CASSCF>(new SuperCI(iter->second, geom, ref));
         } else if (algorithm == "werner" || algorithm == "knowles") {
-          casscf = std::shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
+          casscf = shared_ptr<CASSCF>(new WernerKnowles(iter->second, geom));
         } else if (algorithm == "bfgs") {
-          casscf = std::shared_ptr<CASSCF>(new CASBFGS(iter->second, geom, ref));
+          casscf = shared_ptr<CASSCF>(new CASBFGS(iter->second, geom, ref));
         } else {
-          std::stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
-          throw std::runtime_error(ss.str());
+          stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
+          throw runtime_error(ss.str());
         }
         casscf->compute();
         ref = casscf->conv_to_ref();
 
       } else if (method == "casscf-opt") {
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        string algorithm = read_input<string>(iter->second, "algorithm", "");
         // in case of SS-CASSCF
         if (read_input<int>(iter->second, "nstate", 1) == 1) {
           if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
+            shared_ptr<Opt<SuperCI>> opt(new Opt<SuperCI>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else if (algorithm == "werner" || algorithm == "knowles") {
-            std::shared_ptr<Opt<WernerKnowles>> opt(new Opt<WernerKnowles>(idata, iter->second, geom));
+            shared_ptr<Opt<WernerKnowles>> opt(new Opt<WernerKnowles>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else {
-            throw std::runtime_error("unknown CASSCF algorithm specified.");
+            throw runtime_error("unknown CASSCF algorithm specified.");
           }
         // in case of SA-CASSCF
         } else {
           if (algorithm == "superci" || algorithm == "") {
-            std::shared_ptr<Opt<SuperCIGrad>> opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
+            shared_ptr<Opt<SuperCIGrad>> opt(new Opt<SuperCIGrad>(idata, iter->second, geom));
             for (int i = 0; i != 100; ++i)
               if (opt->next()) break;
           } else {
-            throw std::runtime_error("unknown CASSCF algorithm specified.");
+            throw runtime_error("unknown CASSCF algorithm specified.");
           }
 
 
         }
       } else if (method == "mp2") {
 
-        std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
+        shared_ptr<MP2> mp2(new MP2(iter->second, geom));
         mp2->compute();
 
       } else if (method == "mp2-opt") {
 
-        std::shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
+        shared_ptr<Opt<MP2Grad>> opt(new Opt<MP2Grad>(idata, iter->second, geom));
         for (int i = 0; i != 100; ++i)
           if (opt->next()) break;
 
       } else if (method == "transp") {
 
-        std::shared_ptr<Transp> tran(new Transp(iter->second, geom, ref));
+        shared_ptr<Transp> tran(new Transp(iter->second, geom, ref));
         tran->compute();
 
       } else if (method == "smith") {
 
-        std::string method = read_input<std::string>(iter->second, "method", "mp2");
-        if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
-        if (method == "mp2") {
-          std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore>> mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
-          mp2->solve();
-        } else if (method == "caspt2") {
-          std::shared_ptr<SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>> cas(new SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>(ref));
-          cas->solve();
-        } else if (method == "caspt2-test") {
-          std::shared_ptr<SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>> cas(new SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>(ref));
-          cas->solve();
-        } else {
-          std::stringstream ss; ss << method << " method is not implemented in SMITH";
-          throw std::logic_error(ss.str());
-        }
+        if (ref == nullptr) throw runtime_error("SMITH needs a reference");
+        shared_ptr<Smith> smith(new Smith(iter->second, ref));
+        smith->compute();
 
       } else if (method == "fci") {
-        if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
-        std::shared_ptr<FCI> fci;
+        if (ref == nullptr) throw runtime_error("FCI needs a reference");
+        shared_ptr<FCI> fci;
 
-        std::string algorithm = read_input<std::string>(iter->second, "algorithm", "");
+        string algorithm = read_input<string>(iter->second, "algorithm", "");
         if (algorithm == "" || algorithm == "auto") {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
           const int norb = ref->geom()->nbasis();
-          if ( nele <= norb ) fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
-          else fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
+          if ( nele <= norb ) fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+          else fci = shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-          fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
+          fci = shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-          fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+          fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
 #ifdef HAVE_MPI_H
         } else if (algorithm == "parallel" || algorithm == "dist") {
-          fci = std::shared_ptr<FCI>(new DistFCI(iter->second, ref));
+          fci = shared_ptr<FCI>(new DistFCI(iter->second, ref));
 #endif
         } else {
-          throw std::runtime_error("unknown FCI algorithm specified.");
+          throw runtime_error("unknown FCI algorithm specified.");
         }
 
         fci->compute();
 
       } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-        std::multimap<std::string,std::string> dimdata = iter->second;
+        multimap<string,string> dimdata = iter->second;
 
-        std::string form = read_input<std::string>(dimdata, "form", "displace");
+        string form = read_input<string>(dimdata, "form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
           double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
           double dx = read_input<double>(dimdata,"dx",0.0) * scale;
           double dy = read_input<double>(dimdata,"dy",0.0) * scale;
           double dz = read_input<double>(dimdata,"dz",0.0) * scale;
-          std::array<double,3> disp = {{dx,dy,dz}};
+          array<double,3> disp = {{dx,dy,dz}};
 
           if (static_cast<bool>(ref)) {
-            dimer = std::shared_ptr<Dimer>(new Dimer(ref,disp));
+            dimer = shared_ptr<Dimer>(new Dimer(ref,disp));
           }
           else {
-            throw std::runtime_error("dimerize needs a reference calculation (for now)");
+            throw runtime_error("dimerize needs a reference calculation (for now)");
           }
         }
         else if (form == "r" || form == "refs") {
-          std::shared_ptr<const Reference> refA;
-          std::shared_ptr<const Reference> refB;
+          shared_ptr<const Reference> refA;
+          shared_ptr<const Reference> refB;
 
           auto iterA = dimdata.find("unita");
           if ( iterA != dimdata.end() ) {
@@ -356,11 +340,11 @@ int main(int argc, char** argv) {
               refA = irefA->second;
             }
             else {
-              throw std::runtime_error("Saved reference \"" + iterA->second + "\" not found");
+              throw runtime_error("Saved reference \"" + iterA->second + "\" not found");
             }
           }
           else {
-            throw std::runtime_error("No input provided for unit A");
+            throw runtime_error("No input provided for unit A");
           }
 
           auto iterB = dimdata.find("unitb");
@@ -370,14 +354,14 @@ int main(int argc, char** argv) {
               refB = irefB->second;
             }
             else {
-              throw std::runtime_error("Saved reference \"" + iterB->second + "\" not found");
+              throw runtime_error("Saved reference \"" + iterB->second + "\" not found");
             }
           }
           else {
-            throw std::runtime_error("No input provided for unit B");
+            throw runtime_error("No input provided for unit B");
           }
 
-          dimer = std::shared_ptr<Dimer>(new Dimer(refA, refB));
+          dimer = shared_ptr<Dimer>(new Dimer(refA, refB));
         }
 
         dimer->scf(iter->second);
@@ -385,38 +369,38 @@ int main(int argc, char** argv) {
         geom = dimer->sgeom();
         ref = dimer->sref();
       } else if (method == "meh") {
-          std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
+          shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
-          std::shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(dimer, cispace));
+          shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(dimer, cispace));
           meh->compute();
           meh->print();
       } else if (method == "localize") {
-        if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
+        if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
-        std::string localizemethod = read_input<std::string>(iter->second,"algorithm", "pm");
-        std::shared_ptr<OrbitalLocalization> localization;
+        string localizemethod = read_input<string>(iter->second,"algorithm", "pm");
+        shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
-          std::vector<int> sizes;
+          vector<int> sizes;
           auto bound = iter->second.equal_range("region");
           for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
-          localization = std::shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
+          localization = shared_ptr<OrbitalLocalization>(new RegionLocalization(ref, sizes));
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-          localization = std::shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
-        else throw std::runtime_error("Unrecognized orbital localization method");
+          localization = shared_ptr<OrbitalLocalization>(new PMLocalization(ref));
+        else throw runtime_error("Unrecognized orbital localization method");
 
         const int max_iter = read_input<int>(iter->second,"max_iter", 50);
         const double thresh = read_input<double>(iter->second,"thresh", 1.0e-6);
 
-        std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
-        ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
+        shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
+        ref = shared_ptr<const Reference>(new const Reference( ref, new_coeff ));
         
       } else if (method == "print") {
 
-        std::multimap<std::string, std::string> pdata = iter->second;
+        multimap<string, string> pdata = iter->second;
         bool orbitals = read_input<bool>(pdata, "orbitals", false);
-        std::string out_file = read_input<std::string>(pdata, "file", "out.molden");
+        string out_file = read_input<string>(pdata, "file", "out.molden");
 
         MoldenOut mfs(out_file);
         mfs << geom;
@@ -434,10 +418,10 @@ int main(int argc, char** argv) {
       }
       #if 0 // <---- Testing environment
       else if (method == "testing") {
-        std::multimap<std::string, std::string> geominfo = idata->get_input("molecule");
-        std::multimap<std::string,std::string> dimdata = iter->second;
+        multimap<string, string> geominfo = idata->get_input("molecule");
+        multimap<string,string> dimdata = iter->second;
 
-        std::shared_ptr<FCI> fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
+        shared_ptr<FCI> fci = shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
         fci->compute();
 
         auto ciwfn = fci->conv_to_ciwfn();
@@ -447,9 +431,9 @@ int main(int argc, char** argv) {
         double dx = read_input<double>(dimdata,"dx",0.0) * scale;
         double dy = read_input<double>(dimdata,"dy",0.0) * scale;
         double dz = read_input<double>(dimdata,"dz",0.0) * scale;
-        std::array<double,3> disp = {{dx,dy,dz}};
+        array<double,3> disp = {{dx,dy,dz}};
 
-        dimer = std::shared_ptr<Dimer>(new Dimer(ciwfn, disp));
+        dimer = shared_ptr<Dimer>(new Dimer(ciwfn, disp));
 
       }
       #endif
@@ -462,7 +446,7 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (const std::exception &e) {
+  } catch (const exception &e) {
     cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
     throw;
   } catch (...) {

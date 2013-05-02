@@ -46,15 +46,15 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
 
   const int nstate = ccvec->ij();
 
-  shared_ptr<Dvec> sigmavec(new Dvec(ccvec->det(), nstate));
+  auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate);
   sigmavec->zero();
 
   shared_ptr<Determinants> base_det = space_->finddet(0,0);
   shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  shared_ptr<Dvec> d(new Dvec(int_det, ij));
-  shared_ptr<Dvec> e(new Dvec(int_det, ij));
+  auto d = make_shared<Dvec>(int_det, ij);
+  auto e = make_shared<Dvec>(int_det, ij);
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);

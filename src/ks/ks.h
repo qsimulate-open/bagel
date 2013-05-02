@@ -53,7 +53,7 @@ class KS : public SCF_base {
       func_ = std::shared_ptr<XCFunc>(new XCFunc(name_));
 
       Timer preptime; 
-      grid_ = std::shared_ptr<DFTGrid_base>(new DefaultGrid(geom));
+      grid_ = std::make_shared<DefaultGrid>(geom);
       preptime.tick_print("DFT grid generation");
 
       std::cout << std::endl;

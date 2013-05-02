@@ -142,7 +142,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int n
       dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
   }
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_));
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_);
 }
 
 
@@ -156,20 +156,20 @@ shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int no
   else  // trans -> back transform
     dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
 
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_));
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_);
 }
 
 
 shared_ptr<DFBlock> DFBlock::clone() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_));
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
 }
 
 
 shared_ptr<DFBlock> DFBlock::copy() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
   copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
-  return shared_ptr<DFBlock>(new DFBlock(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_));
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
 }
 
 
@@ -209,8 +209,7 @@ shared_ptr<DFBlock> DFBlock::swap() const {
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
       copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
 
-  shared_ptr<DFBlock> out(new DFBlock(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_));
-  return out;
+  return make_shared<DFBlock>(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_);
 }
 
 
@@ -337,11 +336,11 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
   shared_ptr<Matrix> target;
 
   if (b1size_ == o->b1size_) {
-    target = shared_ptr<Matrix>(new Matrix(b2size_,o->b2size_));
+    target = make_shared<Matrix>(b2size_,o->b2size_);
     dgemm_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target->data(), b2size_);
   } else {
     assert(b2size_ == o->b2size_);
-    target = shared_ptr<Matrix>(new Matrix(b1size_,o->b1size_));
+    target = make_shared<Matrix>(b1size_,o->b1size_);
     for (int i = 0; i != b2size_; ++i)
       dgemm_("T", "N", b1size_, o->b1size_, asize_, a, data_.get()+i*asize_*b1size_, asize_, o->data_.get()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
   }
@@ -369,7 +368,7 @@ unique_ptr<double[]> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock>
 
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::form_aux_2index");
-  shared_ptr<Matrix> target(new Matrix(asize_, o->asize_));
+  auto target = make_shared<Matrix>(asize_, o->asize_);
   dgemm_("N", "T", asize_, o->asize_, b1size_*b2size_, a, data_.get(), asize_, o->data_.get(), o->asize_, 0.0, target->data(), asize_);
   return target;
 }
@@ -384,7 +383,7 @@ unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const
 
 
 shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
-  shared_ptr<Matrix> out(new Matrix(b1size_,b2size_));
+  auto out = make_shared<Matrix>(b1size_,b2size_);
   dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out->data(), 1);
   return out;
 }

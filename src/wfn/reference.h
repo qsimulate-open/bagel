@@ -95,7 +95,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     void set_coeff(std::shared_ptr<const Coeff> coeff) { coeff_ = coeff; }
-    void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::shared_ptr<const Coeff>(new const Coeff(*matrix)); }
+    void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }
     void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
 
     void set_eig(const std::vector<double>& eig);

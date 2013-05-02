@@ -60,7 +60,7 @@ class GradEval : public GradEval_base {
     // Constructor performs energy calculation
     GradEval(std::multimap<std::string, std::string>& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom) {
       if (geom->external()) throw std::logic_error("Gradients with external fields have not been implemented.");
-      task_ = std::shared_ptr<T>(new T(idata, geom));
+      task_ = std::make_shared<T>(idata, geom);
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy();

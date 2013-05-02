@@ -64,7 +64,7 @@ class ServerFlush {
       assert(!thread_alive_);
       thread_alive_ = true;
 #ifdef USE_SERVER_THREAD
-      server_ = std::shared_ptr<std::thread>(new std::thread(&ServerFlush::periodic, this));
+      server_ = std::make_shared<std::thread>(&ServerFlush::periodic, this);
 #endif
     }
 

@@ -62,14 +62,14 @@ DistCivec& DistCivec::operator=(const DistCivec& o) {
 
 
 void DistCivec::init_mpi_accumulate() const {
-  send_  = shared_ptr<SendRequest>(new SendRequest());
-  accum_ = shared_ptr<AccRequest>(new AccRequest(local_.get(), &mutex_));
+  send_  = make_shared<SendRequest>();
+  accum_ = make_shared<AccRequest>(local_.get(), &mutex_);
 }
 
 
 void DistCivec::init_mpi_recv() const {
-  put_   = shared_ptr<PutRequest>(new PutRequest(local_.get()));
-  recv_  = shared_ptr<RecvRequest>(new RecvRequest());
+  put_   = make_shared<PutRequest>(local_.get());
+  recv_  = make_shared<RecvRequest>();
 }
 
 
@@ -203,7 +203,7 @@ double DistCivec::variance() const {
 
 shared_ptr<DistCivec> DistCivec::transpose() const {
   shared_ptr<Determinants> det = det_->transpose();
-  shared_ptr<DistCivec> out(new DistCivec(det));
+  auto out = make_shared<DistCivec>(det);
 
   const size_t myrank = mpi__->rank();
 
