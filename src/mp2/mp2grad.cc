@@ -85,7 +85,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<double> eig_tm = ref_->eig();
   vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
 
-  shared_ptr<Matrix> dmp2(new Matrix(nbasis, nbasis));
+  auto dmp2 = make_shared<Matrix>(nbasis, nbasis);
   double* optr = dmp2->element_ptr(ncore, ncore);
   double* vptr = dmp2->element_ptr(nocca, nocca);
 
@@ -153,12 +153,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
-  const shared_ptr<const Matrix> dmp2ao_part(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
+  auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
   const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * *ocmat * 2.0;
   // -1*K_al(d_rs)
   const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part->data(), -1.0) * *vcmat;
 
-  shared_ptr<Matrix> grad(new Matrix(nbasis, nbasis));
+  auto grad = make_shared<Matrix>(nbasis, nbasis);
   for (int i = 0; i != nocca; ++i)
     for (int a = 0; a != nvirt; ++a)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
@@ -168,16 +168,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << endl;
 
   // solving CPHF
-  shared_ptr<CPHF> cphf(new CPHF(grad, ref_->eig(), halfjj, ref_));
+  auto cphf = make_shared<CPHF>(grad, ref_->eig(), halfjj, ref_);
   shared_ptr<Matrix> dia = cphf->solve();
   *dmp2 += *dia;
 
   // total density matrix
-  shared_ptr<Matrix> dtot(new Matrix(*dmp2));
+  auto dtot = make_shared<Matrix>(*dmp2);
   for (int i = 0; i != nocca; ++i) dtot->element(i,i) += 2.0;
 
   // computes dipole mements
-  shared_ptr<Matrix> dtotao(new Matrix(*ref_->coeff() * *dtot ^ *ref_->coeff()));
+  auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
   Dipole dipole(geom_, dtotao);
   dipole.compute();
 
@@ -186,9 +186,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   time.tick_print("CPHF solved");
 
   // one electron matrices
-  shared_ptr<Matrix> dmp2ao(new Matrix(*ref_->coeff() * *dmp2 ^ *ref_->coeff()));
-  shared_ptr<Matrix> d0ao(new Matrix(*dtotao - *dmp2ao));
-  shared_ptr<Matrix> dbarao(new Matrix(*dtotao - *d0ao*0.5));
+  auto dmp2ao = make_shared<Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
+  auto d0ao = make_shared<Matrix>(*dtotao - *dmp2ao);
+  auto dbarao = make_shared<Matrix>(*dtotao - *d0ao*0.5);
 
   // size of naux
   shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
@@ -210,13 +210,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   sep3->add_direct_product(cd, dd, 1.0);
 
   // two-index derivatives (seperable part)..
-  shared_ptr<Matrix> sep2(new Matrix(naux, naux));
+  auto sep2 = make_shared<Matrix>(naux, naux);
   dger_(naux, naux, 2.0, cd0->data(), 1, cdbar->data(), 1, sep2->data(), naux);
   *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
   *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
 
   // energy weighted density
-  shared_ptr<Matrix> wd(new Matrix(nbasis, nbasis));
+  auto wd = make_shared<Matrix>(nbasis, nbasis);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nocca; ++j)
       wd->element(j,i) += dtot->element(j,i) * eig_tm[j];
@@ -234,7 +234,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0) * *ocmat));
 
   wd->symmetrize();
-  shared_ptr<Matrix> wdao(new Matrix(*ref_->coeff() * *wd ^ *ref_->coeff()));
+  auto wdao = make_shared<Matrix>(*ref_->coeff() * *wd ^ *ref_->coeff());
 
   time.tick_print("Density matrices computed");
   cout << endl;

@@ -42,7 +42,7 @@ using namespace bagel;
 
 MP2::MP2(const boost::property_tree::ptree& input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
 
-  scf_ = std::shared_ptr<SCF<1>>(new SCF<1>(input, g, ref));
+  scf_ = make_shared<SCF<1>>(input, g, ref);
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 
@@ -113,9 +113,9 @@ void MP2::compute() {
     const double gamma = idata_.get<double>("gamma", 1.5);
     cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
 #if 0
-    shared_ptr<F12Int> f12int(new F12Int(idata_, geom_, ref_, gamma, ncore_));
+    auto f12int = make_shared<F12Int>(idata_, geom_, ref_, gamma, ncore_);
 #else
-    shared_ptr<F12Ref> f12ref(new F12Ref(geom_, ref_, ncore_, gamma));
+    auto f12ref = make_shared<F12Ref>(geom_, ref_, ncore_, gamma);
     f12ref->compute();
 #endif
 

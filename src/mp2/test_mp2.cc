@@ -29,7 +29,7 @@
 
 double mp2_energy() {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream("benzene_svp_mp2.testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>("benzene_svp_mp2.testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -44,10 +44,10 @@ double mp2_energy() {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "mp2") {
-      std::shared_ptr<MP2> mp2(new MP2(iter->second, geom));
+      auto mp2 = std::make_shared<MP2>(iter->second, geom);
       mp2->compute();
 
       std::cout.rdbuf(backup_stream);
