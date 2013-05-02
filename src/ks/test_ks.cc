@@ -32,7 +32,7 @@
 using namespace bagel;
 
 double ks_energy(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -47,10 +47,10 @@ double ks_energy(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-ks") {
-      std::shared_ptr<KS> scf(new KS(iter->second, geom));
+      auto scf = std::shared_ptr<KS>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

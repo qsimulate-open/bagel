@@ -92,10 +92,10 @@ using namespace bagel;
 
 void Grid::init() {
   const int ngrid = size();
-  basis_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
-  gradx_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
-  grady_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
-  gradz_ = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), ngrid));
+  basis_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
+  gradx_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
+  grady_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
+  gradz_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
 
   // TODO I guess this should be more efficient..
   vector<GridBasisTask> tasks;
@@ -112,7 +112,7 @@ void Grid::init() {
 array<shared_ptr<Matrix>,6> Grid::compute_grad2() const {
   array<shared_ptr<Matrix>,6> out;
   for (auto& i : out)
-   i = shared_ptr<Matrix>(new Matrix(geom_->nbasis(), size()));
+   i = make_shared<Matrix>(geom_->nbasis(), size());
 
   vector<GridDeriv2Task> tasks;
   tasks.reserve(size());

@@ -29,7 +29,7 @@
 
 std::vector<double> fci_energy(std::string inp) {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(inp + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -45,21 +45,21 @@ std::vector<double> fci_energy(std::string inp) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "df-rohf"){
-      std::shared_ptr<ROHF> scf(new ROHF(iter->second, geom));
+      auto scf = std::make_shared<ROHF>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
       std::string algorithm = iter->second.get<std::string>("algorithm", "");
-      if (algorithm == "harrison") fci = std::shared_ptr<FCI>(new HarrisonZarrabian(iter->second, ref));
-      else if (algorithm == "knowles") fci = std::shared_ptr<FCI>(new KnowlesHandy(iter->second, ref));
+      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(iter->second, ref);
+      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(iter->second, ref);
       else assert(false);
      
       fci->compute();

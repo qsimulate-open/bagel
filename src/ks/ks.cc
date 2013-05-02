@@ -34,7 +34,7 @@ void KS::compute() {
 
   Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
   intermediate.diagonalize(eig());
-  coeff_ = shared_ptr<Coeff>(new Coeff(*tildex_ * intermediate));
+  coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
   shared_ptr<Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -51,7 +51,7 @@ void KS::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // fock operator without DFT xc 
-    fock = shared_ptr<Matrix>(new Fock<1>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, func_->scale_ex()));
+    fock = make_shared<Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, func_->scale_ex());
 
     // add xc 
     shared_ptr<const Matrix> xc;
@@ -62,7 +62,7 @@ void KS::compute() {
 
     *fock += *xc;
 
-    shared_ptr<const Matrix> error_vector(new Matrix(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock));
+    auto error_vector = make_shared<const Matrix>(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock);
 
     const double error = error_vector->rms();
 
@@ -81,9 +81,9 @@ void KS::compute() {
       fock = diis.extrapolate(make_pair(fock, error_vector));
 
     {
-      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *fock * *tildex_));
+      auto intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
       intermediate->diagonalize(eig());
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*tildex_**intermediate));
+      coeff_ = make_shared<const Coeff>(*tildex_**intermediate);
     }
     aodensity_ = coeff_->form_density_rhf(nocc_);
 
@@ -98,7 +98,7 @@ void KS::compute() {
 
 
 shared_ptr<Reference> KS::conv_to_ref() const {
-  shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);
   return out;

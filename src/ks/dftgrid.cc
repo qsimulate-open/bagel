@@ -41,17 +41,17 @@ vector<shared_ptr<const Matrix>> DFTGrid_base::compute_rho_sigma(shared_ptr<cons
                                                          unique_ptr<double[]>& rho, unique_ptr<double[]>& sigma,
                                                          unique_ptr<double[]>& rhox, unique_ptr<double[]>& rhoy, unique_ptr<double[]>& rhoz) const {
   vector<shared_ptr<const Matrix>> out;
-  shared_ptr<Matrix> orb(new Matrix(*mat % *grid_->basis()));
-  if (func->lda()) { 
+  auto orb = make_shared<Matrix>(*mat % *grid_->basis());
+  if (func->lda()) {
     assert(orb->mdim() == grid_->size());
     for (size_t i = 0; i != orb->mdim(); ++i) {
       rho[i] = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orb->element_ptr(0, i), 1);
     }
     out = vector<shared_ptr<const Matrix>>{orb};
   } else {
-    shared_ptr<Matrix> orbx(new Matrix(*mat % *grid_->gradx()));
-    shared_ptr<Matrix> orby(new Matrix(*mat % *grid_->grady()));
-    shared_ptr<Matrix> orbz(new Matrix(*mat % *grid_->gradz()));
+    auto orbx = make_shared<Matrix>(*mat % *grid_->gradx());
+    auto orby = make_shared<Matrix>(*mat % *grid_->grady());
+    auto orbz = make_shared<Matrix>(*mat % *grid_->gradz());
     for (size_t i = 0; i != orb->mdim(); ++i) {
       rho[i] = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orb->element_ptr(0, i), 1);
       const double sigx = 2*ddot_(orb->ndim(), orb->element_ptr(0, i), 1, orbx->element_ptr(0, i), 1);
@@ -135,10 +135,10 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   tq.compute(resources__->max_num_threads());
   time.tick_print("exc+vxc");
 
-  shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  auto out = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
   double en = 0.0;
 
-  shared_ptr<Matrix> scal(new Matrix(geom_->nbasis(), grid_->size()));
+  auto scal = make_shared<Matrix>(geom_->nbasis(), grid_->size());
   if (func->lda()) {
     for (size_t i = 0; i != scal->mdim(); ++i) {
       daxpy_(scal->ndim(), vxc[i]*grid_->weight(i), grid_->basis()->element_ptr(0, i), 1, scal->element_ptr(0, i), 1);
@@ -162,7 +162,7 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
 
 
 shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc> func, shared_ptr<const Matrix> mat) const {
-  shared_ptr<GradFile> out(new GradFile(geom_->natom()));
+  auto out = make_shared<GradFile>(geom_->natom());
 
   unique_ptr<double[]> rho(new double[grid_->size()]);
   unique_ptr<double[]> sigma, rhox, rhoy, rhoz;
@@ -199,9 +199,9 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
   for (auto& b : geom_->atoms()) {
     shared_ptr<const Matrix> bmat = mat->cut(offset, offset+b->nbasis());
     array<shared_ptr<const Matrix>,3> d1mat;
-    d1mat[0] = shared_ptr<const Matrix>(new Matrix(*bmat % *grid_->gradx()->cut(offset, offset+b->nbasis())));
-    d1mat[1] = shared_ptr<const Matrix>(new Matrix(*bmat % *grid_->grady()->cut(offset, offset+b->nbasis())));
-    d1mat[2] = shared_ptr<const Matrix>(new Matrix(*bmat % *grid_->gradz()->cut(offset, offset+b->nbasis())));
+    d1mat[0] = make_shared<const Matrix>(*bmat % *grid_->gradx()->cut(offset, offset+b->nbasis()));
+    d1mat[1] = make_shared<const Matrix>(*bmat % *grid_->grady()->cut(offset, offset+b->nbasis()));
+    d1mat[2] = make_shared<const Matrix>(*bmat % *grid_->gradz()->cut(offset, offset+b->nbasis()));
 
     double sum[3] = {0.0};
     for (size_t i = 0; i != grid_->size(); ++i) {
@@ -212,7 +212,7 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
     if (!func->lda()) {
       array<shared_ptr<const Matrix>,6> d2mat;
       for (int i = 0; i != 6; ++i)
-        d2mat[i] = shared_ptr<const Matrix>(new Matrix(*bmat % *grad2[i]->cut(offset, offset+b->nbasis())));
+        d2mat[i] = make_shared<const Matrix>(*bmat % *grad2[i]->cut(offset, offset+b->nbasis()));
 
       unique_ptr<double[]> tmp2(new double[mat->mdim()]);
       for (size_t i = 0; i != grid_->size(); ++i) {
@@ -234,9 +234,9 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
         sum[2] += ddot_(mat->mdim(), tmp2.get(), 1, orb[0]->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
         // second term
         fill_n(tmp2.get(), mat->mdim(), 0.0);
-        daxpy_(mat->mdim(), rhox[i], orb[1]->element_ptr(0,i), 1, tmp2.get(), 1); 
-        daxpy_(mat->mdim(), rhoy[i], orb[2]->element_ptr(0,i), 1, tmp2.get(), 1); 
-        daxpy_(mat->mdim(), rhoz[i], orb[3]->element_ptr(0,i), 1, tmp2.get(), 1); 
+        daxpy_(mat->mdim(), rhox[i], orb[1]->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoy[i], orb[2]->element_ptr(0,i), 1, tmp2.get(), 1);
+        daxpy_(mat->mdim(), rhoz[i], orb[3]->element_ptr(0,i), 1, tmp2.get(), 1);
         for (int x = 0; x != 3; ++x)
           sum[x] += ddot_(mat->mdim(), tmp2.get(), 1, d1mat[x]->element_ptr(0,i), 1) * grid_->weight(i) * (2*vxc[i+grid_->size()]);
       }
@@ -250,7 +250,7 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
     ++n;
   }
 
-  return out; 
+  return out;
 }
 
 
@@ -267,7 +267,7 @@ double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& x
     const double distbg = (*b)->distance(xyz);
     int j = i+1;
     for (auto c = b+1; c != geom_->atoms().end(); ++c, ++j) {
-      const double distbc = (*b)->distance(*c); 
+      const double distbc = (*b)->distance(*c);
       const double distcg = (*c)->distance(xyz);
       // Stratmann CPL 1996
       double nuij = (distbg - distcg) / distbc / a_stratmann__;
@@ -306,7 +306,7 @@ class FuzzyTask {
      : data(d), atom(a), xg(x), yg(y), zg(z), coeff(c), parent(ptr), n(i) { }
 
     void compute() {
-      const double weight = coeff * parent->fuzzy_cell(atom, array<double,3>{{xg, yg, zg}}); 
+      const double weight = coeff * parent->fuzzy_cell(atom, array<double,3>{{xg, yg, zg}});
       data->element(0, n) = xg;
       data->element(1, n) = yg;
       data->element(2, n) = zg;
@@ -323,7 +323,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   const int ngrid = nrad*nang;
   const int nprev = grid_ ? grid_->size() : 0;
 
-  shared_ptr<Matrix> combined(new Matrix(4, nprev+ngrid*geom_->natom()));
+  auto combined = make_shared<Matrix>(4, nprev+ngrid*geom_->natom());
   if (nprev)
     copy_n(grid_->data()->data(), 4*nprev, combined->data());
 
@@ -337,7 +337,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
     double rib = 1.0e+10;
     for (auto& b : geom_->atoms())
       if (a != b)
-        rib = min(rib, a->distance(b)); 
+        rib = min(rib, a->distance(b));
 
     for (int i = 0; i != nrad; ++i) {
       const double rr = r_ch[i] * rbs;
@@ -346,9 +346,9 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
           const double xg = x[j] * rr + a->position(0);
           const double yg = y[j] * rr + a->position(1);
           const double zg = z[j] * rr + a->position(2);
-          combined->element(0, cnt) = xg; 
-          combined->element(1, cnt) = yg; 
-          combined->element(2, cnt) = zg; 
+          combined->element(0, cnt) = xg;
+          combined->element(1, cnt) = yg;
+          combined->element(2, cnt) = zg;
           combined->element(3, cnt) = w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__;
           ++cnt;
         }
@@ -357,7 +357,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
           const double xg = x[j] * rr + a->position(0);
           const double yg = y[j] * rr + a->position(1);
           const double zg = z[j] * rr + a->position(2);
-          tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__, this, cnt++)); 
+          tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__, this, cnt++));
         }
       }
     }
@@ -368,7 +368,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   }
 
   shared_ptr<const Matrix> o = combined;
-  grid_ = shared_ptr<Grid>(new Grid(geom_, o));
+  grid_ = make_shared<Grid>(geom_, o);
 
 }
 
@@ -377,8 +377,8 @@ void DFTGrid_base::remove_redgrid() {
   int size = 0;
   for (int i = 0; i != grid_->size(); ++i)
     if (grid_->data()->element(3, i) > grid_thresh_)
-      ++size; 
-  shared_ptr<Matrix> out(new Matrix(4, size));
+      ++size;
+  auto out = make_shared<Matrix>(4, size);
 
   if (size < grid_->size())
     cout << "    * Removing " << grid_->size()-size << " points whose weight is below " << scientific << setprecision(2) << grid_thresh_ << endl << fixed;
@@ -386,10 +386,10 @@ void DFTGrid_base::remove_redgrid() {
   size = 0;
   for (int i = 0; i != grid_->size(); ++i)
     if (grid_->data()->element(3, i) > grid_thresh_)
-      copy_n(grid_->data()->element_ptr(0, i), 4, out->element_ptr(0,size++)); 
+      copy_n(grid_->data()->element_ptr(0, i), 4, out->element_ptr(0,size++));
 
   shared_ptr<const Matrix> o = out;
-  grid_ = shared_ptr<Grid>(new Grid(geom_, o));
+  grid_ = make_shared<Grid>(geom_, o);
 
   cout <<  "    * Grid points: " << size << endl << endl;
 }
@@ -404,12 +404,12 @@ BLGrid::BLGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry> 
   unique_ptr<double[]> w(new double[nang]);
   lebedev.root(nang, x.get(), y.get(), z.get(), w.get());
 
-  // construct Chebyshev grid 
+  // construct Chebyshev grid
   unique_ptr<double[]> r_ch(new double[nrad]);
   unique_ptr<double[]> w_ch(new double[nrad]);
   for (int i = 0; i != nrad; ++i) {
-    const double t = cos((i+1)*pi__/(nrad+1)); 
-    r_ch[i] = (1.0+t)/(1.0-t); 
+    const double t = cos((i+1)*pi__/(nrad+1));
+    r_ch[i] = (1.0+t)/(1.0-t);
     w_ch[i] = 2.0 / pow(1.0-t, 2.0)                  // due to mapping from [0,infty) to [-1, 1]
             * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
             * r_ch[i]*r_ch[i];                       // due to r^2 in the spherical coordinate integration
@@ -429,11 +429,11 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry
   unique_ptr<double[]> w(new double[nang]);
   lebedev.root(nang, x.get(), y.get(), z.get(), w.get());
 
-  // construct Chebyshev grid 
+  // construct Chebyshev grid
   unique_ptr<double[]> r_ch(new double[nrad]);
   unique_ptr<double[]> w_ch(new double[nrad]);
   for (int i = 0; i != nrad; ++i) {
-    const double t = cos((i+1)*pi__/(nrad+1)); 
+    const double t = cos((i+1)*pi__/(nrad+1));
     r_ch[i] = 1.0/log(2.0)*pow(1.0+t, 0.6)*log(2.0/(1.0-t));
     w_ch[i] = (0.6*r_ch[i]/(1.0+t) + 1.0/log(2.0)*pow(1.0+t,0.6)/(1-t)) // due to mapping from [0,infty) to [-1, 1]
             * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
@@ -449,11 +449,11 @@ TALGrid::TALGrid(const size_t nrad, const size_t nang, shared_ptr<const Geometry
 DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   // the default radial grid has 75 points
   const int nrad = 75;
-  // construct Chebyshev grid 
+  // construct Chebyshev grid
   unique_ptr<double[]> r_ch(new double[nrad]);
   unique_ptr<double[]> w_ch(new double[nrad]);
   for (int i = 0; i != nrad; ++i) {
-    const double t = cos((i+1)*pi__/(nrad+1)); 
+    const double t = cos((i+1)*pi__/(nrad+1));
     r_ch[i] = 1.0/log(2.0)*pow(1.0+t, 0.6)*log(2.0/(1.0-t));
     w_ch[i] = (0.6*r_ch[i]/(1.0+t) + 1.0/log(2.0)*pow(1.0+t,0.6)/(1-t)) // due to mapping from [0,infty) to [-1, 1]
             * pi__/(nrad+1)*sin((i+1)*pi__/(nrad+1)) // Gauss-Chebyshev weight
@@ -461,7 +461,7 @@ DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   }
 
   // start, fence, nang
-  vector<tuple<int, int, int>> map; 
+  vector<tuple<int, int, int>> map;
   // TODO Decide how to partition
   map.push_back(make_tuple(0, 8, 194));
   map.push_back(make_tuple(8, 45, 302));
@@ -472,8 +472,8 @@ DefaultGrid::DefaultGrid(shared_ptr<const Geometry> geom) : DFTGrid_base(geom) {
   map.push_back(make_tuple(70, 75, 6));
   for (auto& i : map) {
     const int nang = get<2>(i);
-    unique_ptr<double[]> rr(new double[get<1>(i)-get<0>(i)]); 
-    unique_ptr<double[]> ww(new double[get<1>(i)-get<0>(i)]); 
+    unique_ptr<double[]> rr(new double[get<1>(i)-get<0>(i)]);
+    unique_ptr<double[]> ww(new double[get<1>(i)-get<0>(i)]);
     copy(r_ch.get()+get<0>(i), r_ch.get()+get<1>(i), rr.get());
     copy(w_ch.get()+get<0>(i), w_ch.get()+get<1>(i), ww.get());
     // construct Lebedev grid
