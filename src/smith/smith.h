@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: smith.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Matthew MacLeod
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Matthew K. MacLeod <matthew.macleod@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,27 +24,28 @@
 //
 
 
-// compiles some input data for the smith routines.
-#ifndef __SRC_SMITH_SMITH_INFO_H
-#define __SRC_SMITH_SMITH_INFO_H
+#ifndef __SRC_SMITH_SMITH_H
+#define __SRC_SMITH_SMITH_H
+
+#include <src/smith/storage.h>
+#include <src/smith/spinfreebase.h>
+#include <stddef.h>
+#include <map>
+#include <memory>
+#include <src/wfn/reference.h>
 
 namespace bagel {
-namespace SMITH {
 
-class SMITH_info {
+class Smith {
   protected:
-    int maxiter_;
-    double thresh_residual_;
+    std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
 
   public:
-    SMITH_info();
-    ~SMITH_info();
+    Smith(const boost::property_tree::ptree&, std::shared_ptr<const Reference>);
 
-    int maxiter() const { return maxiter_; };
-    double thresh_residual() const { return thresh_residual_; };
+    void compute();
+
 };
 
 }
-}
-
 #endif

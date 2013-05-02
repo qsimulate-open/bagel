@@ -64,6 +64,9 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm2_;
     std::shared_ptr<Tensor<T>> rdm3_;
     std::shared_ptr<Tensor<T>> rdm4_;
+  
+    // correlated density matrices
+    std::shared_ptr<Tensor<T>> den1_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -541,6 +544,7 @@ class SpinFreeMethod {
         K2ext<T> v2k(ref_, coeff, o);
         v2_ = v2k.tensor();
       }
+
       // rdms
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {active_, active_};
@@ -667,6 +671,10 @@ class SpinFreeMethod {
     double e0() const { return e0_; }
 
     virtual void solve() = 0;
+
+    std::shared_ptr<const Matrix> rdm1() const {
+      return den1_->matrix();
+    }
 
 };
 

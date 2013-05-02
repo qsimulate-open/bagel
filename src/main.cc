@@ -60,10 +60,7 @@
 #include <src/rel/dirac.h>
 #include <src/rel/relfci.h>
 #include <src/transp/transp.h>
-#include <src/smith/storage.h>
-#include <src/smith/MP2.h>
-#include <src/smith/CAS_all_active.h>
-#include <src/smith/CAS_test.h>
+#include <src/smith/smith.h>
 #include <src/meh/meh.h>
 #ifdef _OPENMP
   #include <omp.h>
@@ -237,21 +234,9 @@ int main(int argc, char** argv) {
 
       } else if (method == "smith") {
 
-        std::string method = iter->second.get<std::string>("method", "mp2");
         if (ref == nullptr) throw std::runtime_error("SMITH needs a reference");
-        if (method == "mp2") {
-          std::shared_ptr<SMITH::MP2::MP2<SMITH::Storage_Incore>> mp2(new SMITH::MP2::MP2<SMITH::Storage_Incore>(ref));
-          mp2->solve();
-        } else if (method == "caspt2") {
-          std::shared_ptr<SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>> cas(new SMITH::CAS_all_active::CAS_all_active<SMITH::Storage_Incore>(ref));
-          cas->solve();
-        } else if (method == "caspt2-test") {
-          std::shared_ptr<SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>> cas(new SMITH::CAS_test::CAS_test<SMITH::Storage_Incore>(ref));
-          cas->solve();
-        } else {
-          std::stringstream ss; ss << method << " method is not implemented in SMITH";
-          throw std::logic_error(ss.str());
-        }
+        std::shared_ptr<Smith> smith(new Smith(iter->second, ref));
+        smith->compute();
 
       } else if (method == "fci") {
         if (ref == nullptr) throw std::runtime_error("FCI needs a reference");
