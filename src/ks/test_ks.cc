@@ -50,7 +50,7 @@ double ks_energy(std::string filename) {
       geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-ks") {
-      auto scf = std::shared_ptr<KS>(iter->second, geom);
+      auto scf = std::make_shared<KS>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

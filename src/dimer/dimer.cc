@@ -48,7 +48,7 @@ Dimer::Dimer(shared_ptr<const Geometry> A, array<double,3> displacement) : dimer
    /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
-   shared_ptr<const Geometry> geomB(new const Geometry((*A), displacement));
+   auto geomB = make_shared<const Geometry>((*A), displacement);
 
    geoms_ = make_pair(A, geomB);
    nele_ = make_pair(A->nele(), geomB->nele());
@@ -66,7 +66,7 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
    coeffs_ = make_pair(A->coeff(), A->coeff());
 
    shared_ptr<const Geometry> geomA = A->geom();
-   shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
+   shared_ptr<const Geometry> geomB = make_shared<const Geometry>((*geomA), displacement);
 
    geoms_ = make_pair(geomA, geomB);
    nele_ = make_pair(geomA->nele(), geomB->nele());
@@ -82,11 +82,11 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
    int nact = 2*A->nact();
    int nvirt = 2*A->nvirt();
 
-   shared_ptr<const Reference> tmpref(new Reference(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
-            A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() ) );
+   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
+            A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
    refs_ = make_pair(A, tmpref);
 
-   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclo, nact, nvirt);
 }
 
 Dimer::Dimer(shared_ptr<const Reference> A, shared_ptr<const Reference> B) : dimerbasis_(A->geom()->nbasis() + B->geom()->nbasis()),
@@ -116,7 +116,7 @@ nbasis_(A->geom()->nbasis(), B->geom()->nbasis())
 
    refs_ = make_pair(A, B);
 
-   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclo, nact, nvirt);
 }
 
 Dimer::Dimer(shared_ptr<const CIWfn> A, array<double,3> displacement) : dimerbasis_(2*A->geom()->nbasis()),
@@ -128,7 +128,7 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
    coeffs_ = make_pair(A->coeff(), A->coeff());
 
    shared_ptr<const Geometry> geomA = A->geom();
-   shared_ptr<const Geometry> geomB(new const Geometry((*geomA), displacement));
+   shared_ptr<const Geometry> geomB = make_shared<const Geometry>((*geomA), displacement);
 
    geoms_ = make_pair(geomA, geomB);
    nele_ = make_pair(geomA->nele(), geomB->nele());
@@ -147,11 +147,11 @@ nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
    int nact = 2*A->nact();
    int nvirt = 2*A->nvirt();
 
-   shared_ptr<Reference> Aref(new Reference(geomA, coeffs_.first, ncore_.first, nact_.first, nvirt_.first));
-   shared_ptr<Reference> Bref(new Reference(geomB, coeffs_.second, ncore_.second, nact_.second, nvirt_.second));
+   auto Aref = make_shared<Reference>(geomA, coeffs_.first, ncore_.first, nact_.first, nvirt_.first);
+   auto Bref = make_shared<Reference>(geomB, coeffs_.second, ncore_.second, nact_.second, nvirt_.second);
    refs_ = make_pair(Aref, Bref);
 
-   sref_ = shared_ptr<Reference>(new Reference(sgeom_, scoeff_, nclo, nact, nvirt ));
+   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclo, nact, nvirt);
 }
 
 void Dimer::construct_geometry() {
@@ -161,7 +161,7 @@ void Dimer::construct_geometry() {
 
    nbasis_ = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
 
-   sgeom_ = shared_ptr<Geometry>(new Geometry(geo_vec));
+   sgeom_ = make_shared<Geometry>(geo_vec);
 }
 
 void Dimer::construct_coeff() {
@@ -200,7 +200,7 @@ void Dimer::construct_coeff() {
     nvirt_.second = (nbasisB - ncore_.second);
   }
 
-  proj_coeff_ = shared_ptr<Coeff>(new Coeff(sgeom_));
+  proj_coeff_ = make_shared<Coeff>(sgeom_);
   // TODO - Ideally, these would all be projections onto the new basis.
 
   double *Adata = coeffs_.first->data();
@@ -235,13 +235,12 @@ void Dimer::construct_coeff() {
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(ncloA+nactA, ncloA+nactA+nvirtA));
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
 
-  scoeff_ = shared_ptr<Coeff>(new Coeff(*tmpcoeff));
+  scoeff_ = make_shared<Coeff>(*tmpcoeff);
 } 
 
 shared_ptr<Coeff> Dimer::overlap() const {
    Overlap ovlp(sgeom_);
-   shared_ptr<Coeff> novlp(new Coeff( (*scoeff_) % ovlp * (*scoeff_) ));
-   return novlp;
+   return make_shared<Coeff>((*scoeff_) % ovlp * (*scoeff_));
 }
 
 void Dimer::orthonormalize() {
@@ -260,7 +259,7 @@ void Dimer::orthonormalize() {
 
    S_1_2 = S_1_2 ^ S;
 
-   scoeff_ = shared_ptr<Coeff>(new Coeff(*scoeff_ * S_1_2));
+   scoeff_ = make_shared<Coeff>(*scoeff_ * S_1_2);
 }
 
 void Dimer::embed_refs() {
@@ -284,11 +283,11 @@ void Dimer::embed_refs() {
   const int nbasisB = nbasis_.second;
 
   { // Move occupied orbitals of unit B to form the core orbitals
-    shared_ptr<Matrix> Amatrix(new Matrix(dimerbasis_, dimerbasis_));
+    auto Amatrix = make_shared<Matrix>(dimerbasis_, dimerbasis_);
     Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff_->element_ptr(0,nclosed + nactA)); // FilledActive B
     Amatrix->copy_block(0, nclosed + filled_activeB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed)); // Active A
-    shared_ptr<Coeff> Acoeff(new Coeff(*Amatrix));
+    auto Acoeff = make_shared<Coeff>(*Amatrix);
 
     // Set up variables for this fci
     const int ncore = nclosed + filled_activeB;
@@ -298,11 +297,11 @@ void Dimer::embed_refs() {
   }
 
   { // Move occupied orbitals of unit A to form core of unit B
-    shared_ptr<Matrix> Bmatrix(new Matrix(dimerbasis_, dimerbasis_));
+    auto Bmatrix = make_shared<Matrix>(dimerbasis_, dimerbasis_);
     Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff_->element_ptr(0,nclosed)); // FilledActive A
     Bmatrix->copy_block(0, nclosed + filled_activeA, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA)); // Active B
-    shared_ptr<Coeff> Bcoeff(new Coeff(*Bmatrix));
+    auto Bcoeff = make_shared<Coeff>(*Bmatrix);
 
     // Set up variables for this fci
     const int ncore = nclosed + filled_activeA;
@@ -326,8 +325,8 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
   else throw std::runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
-  shared_ptr<Matrix> S(new Overlap(sgeom_));
-  shared_ptr<Matrix> overlaps(new Matrix( (*proj_coeff_) % (*S) * (*local_coeff)));
+  auto S = make_shared<Overlap>(sgeom_);
+  auto overlaps = make_shared<Matrix>((*proj_coeff_) % (*S) * (*local_coeff));
 
   const int nclosed = ncore_.first + ncore_.second;
   const int nact = nact_.first + nact_.second;
@@ -354,7 +353,7 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
     else throw runtime_error("Trouble in classifying orbitals");
   }
 
-  shared_ptr<Matrix> new_coeff(new Matrix(dimerbasis_, dimerbasis_));
+  auto new_coeff = make_shared<Matrix>(dimerbasis_, dimerbasis_);
   int imo = 0;
 
   for(auto& iset : closed_setA) {
@@ -377,7 +376,7 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
 
   copy_n(local_coeff->element_ptr(0,nclosed + nact), dimerbasis_*nvirt, new_coeff->element_ptr(0,imo));
 
-  shared_ptr<const Coeff> out(new Coeff(*new_coeff));
+  auto out = make_shared<const Coeff>(*new_coeff);
 
   set_coeff(out);
 }
@@ -421,7 +420,7 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
   const int nvirtB = active_refs.second->nvirt();
   nvirt_ = make_pair(nvirtA, nvirtB);
 
-  shared_ptr<Matrix> active(new Matrix(dimerbasis_, nact));
+  auto active = make_shared<Matrix>(dimerbasis_, nact);
 
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
@@ -429,8 +428,8 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
   active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
   active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
 
-  shared_ptr<Matrix> S(new Overlap(sgeom_));
-  shared_ptr<Matrix> overlaps(new Matrix( (*sref_->coeff()) % (*S) * (*active)));
+  auto S = make_shared<Overlap>(sgeom_);
+  auto overlaps = make_shared<Matrix>((*sref_->coeff()) % (*S) * (*active));
   double* odata = overlaps->data();
 
   multimap<double, int> norms;
@@ -455,7 +454,7 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
 // RHF and then localize
 void Dimer::scf(const boost::property_tree::ptree& idata) {
   // SCF
-  shared_ptr<SCF_base> rhf(new SCF<1>(idata, sgeom_, sref_));
+  auto rhf = make_shared<SCF<1>>(idata, sgeom_, sref_);
   rhf->compute();
   set_sref(rhf->conv_to_ref());
 
@@ -470,8 +469,8 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   localize(idata);
 
   // Sub-diagonalize Fock Matrix
-  shared_ptr<const Matrix> hcore(new Hcore(sgeom_));
-  shared_ptr<Matrix> fock(new Fock<1>(sgeom_, hcore, dimerdensity, dimercoeff));
+  auto hcore = make_shared<const Hcore>(sgeom_);
+  auto fock  = make_shared<const Fock<1>>(sgeom_, hcore, dimerdensity, dimercoeff);
   Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
 
   Matrix transform(dimerbasis_, dimerbasis_);
@@ -484,7 +483,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
   transform.copy_block(0,0,diag_blocks);
 
-  shared_ptr<Matrix> ncoeff(new Matrix(*scoeff_ * transform));
+  auto ncoeff = make_shared<Matrix>(*scoeff_ * transform);
   set_coeff(ncoeff);
   sref_->set_eig(subeigs);
 }
@@ -495,7 +494,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
-  shared_ptr<DimerCISpace> out(new DimerCISpace(nelea, neleb, nact()));
+  auto out = make_shared<DimerCISpace>(nelea, neleb, nact());
 
   vector<vector<int>> spaces_A;
   vector<vector<int>> spaces_B;

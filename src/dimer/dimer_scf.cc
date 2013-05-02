@@ -41,7 +41,7 @@ DimerSCF::DimerSCF(const boost::property_tree::ptree& idata, const shared_ptr<co
   dimer_ = dimer;
 
   const double shiftparameter = idata.get<double>("levelshift", 1.0e7);
-  levelshift_ = shared_ptr<ShiftDimer>(new ShiftDimer(dimer_, shiftparameter));
+  levelshift_ = make_shared<ShiftDimer>(dimer_, shiftparameter);
 }
 
 void DimerSCF::compute() {
@@ -65,7 +65,7 @@ void DimerSCF::compute() {
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    shared_ptr<const Matrix> fock(new Fock<1>(geom_, hcore_, aodensity_, schwarz_));
+    auto fock = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, schwarz_);
 
     Matrix intermediate = *coeff_ % *fock * *coeff_;
 
@@ -74,10 +74,10 @@ void DimerSCF::compute() {
     levelshift_->shift(intermediate, coeff_);
 
     intermediate.diagonalize(eig());
-    coeff_ = shared_ptr<Coeff>(new Coeff((*coeff_) * intermediate));
+    coeff_ = make_shared<Coeff>((*coeff_) * intermediate);
     shared_ptr<Matrix> new_density = dimer_->form_density_rhf(coeff_);
 
-    shared_ptr<const Matrix> error_vector(new Matrix(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock));
+    auto error_vector = make_shared<const Matrix>(*fock**aodensity_**overlap_ - *overlap_**aodensity_**fock);
     const double error = error_vector->rms();
 
     // Note: the energy has to be computed this way since, by construction, the Fock matrix is NOT diagonal
@@ -100,15 +100,15 @@ void DimerSCF::compute() {
     shared_ptr<Matrix> diis_density;
     if (iter >= diis_start_) {
       shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fock, error_vector));
-      shared_ptr<Matrix> intermediate(new Matrix(*tildex_ % *tmp_fock * *tildex_));
+      shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *tmp_fock * *tildex_);
       intermediate->diagonalize(eig());
-      shared_ptr<Coeff> tmp_coeff(new Coeff(*tildex_**intermediate));
+      shared_ptr<Coeff> tmp_coeff = make_shared<Coeff>(*tildex_**intermediate);
       diis_density = tmp_coeff->form_density_rhf(nocc_);
     } else {
       diis_density = new_density;
     }
 
-    densitychange = shared_ptr<Matrix>(new Matrix(*diis_density - *aodensity_));
+    densitychange = make_shared<Matrix>(*diis_density - *aodensity_);
     aodensity_ = diis_density;
   }
 
@@ -123,7 +123,7 @@ void DimerSCF::compute() {
 
 shared_ptr<Reference> DimerSCF::conv_to_ref() const {
   // Reorder here?
-  shared_ptr<Reference> out(new Reference(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy()));
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);
   return out;

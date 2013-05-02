@@ -45,8 +45,8 @@ ShiftDimer::ShiftDimer(shared_ptr<const Dimer> dimer, const double shift_paramet
   const int nfence = nstart + nbasis_.second;
   subspace_ = dimer->proj_coeff()->slice(nstart, nfence);
 
-  S_ = shared_ptr<const Matrix>(new const Overlap(dimer->sgeom()));
-  subspace_projector_ = shared_ptr<const Matrix>(new const Matrix( (*S_) * (*dimer->proj_coeff()) ));
+  S_ = make_shared<const Overlap>(dimer->sgeom());
+  subspace_projector_ = make_shared<const Matrix>((*S_) * (*dimer->proj_coeff()));
 }
 
 void ShiftDimer::shift(Matrix& fock_mo, shared_ptr<const Coeff> coeff) {
