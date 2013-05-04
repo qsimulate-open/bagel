@@ -50,7 +50,7 @@ void CASBFGS::compute() {
   // ============================
   Timer timer;
 
-  shared_ptr<Matrix> x(new Matrix(nbasis_, nbasis_));
+  auto x = make_shared<Matrix>(nbasis_, nbasis_);
   x->unit();
   shared_ptr<const Matrix> xstart;
 
@@ -76,7 +76,7 @@ void CASBFGS::compute() {
       natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
     }
 
-    shared_ptr<RotFile> sigma(new RotFile(nclosed_, nact_, nvirt_, false));
+    auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_, false);
     sigma->zero();
 
     // compute one-boedy operators
@@ -84,21 +84,21 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> ccoeff = coeff_->slice(0, nclosed_);
     shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc_);
     // * core Fock operator
-    shared_ptr<const Matrix> cden = nclosed_ ? coeff_->form_density_rhf(nclosed_, 0) : shared_ptr<const Matrix>(new Matrix(nbasis_, nbasis_));
-    shared_ptr<const Matrix> cfockao = nclosed_ ? shared_ptr<const Matrix>(new Fock<1>(geom_, hcore_, cden, ccoeff)) : hcore_;
-    shared_ptr<const Matrix> cfock(new Matrix(*coeff_ % *cfockao * *coeff_));
+    shared_ptr<const Matrix> cden = nclosed_ ? coeff_->form_density_rhf(nclosed_, 0) : make_shared<const Matrix>(nbasis_, nbasis_);
+    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, cden, ccoeff) : hcore_;
+    shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice(nclosed_, nocc_);
     for (int i = 0; i != nact_; ++i)
       dscal_(acoeff->ndim(), sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), 1); 
     // then make a AO density matrix
-    shared_ptr<const Matrix> aden(new Matrix((*acoeff ^ *acoeff)*2.0));
-    shared_ptr<const Matrix> afockao(new Fock<1>(geom_, hcore_, aden, acoeff));
-    shared_ptr<const Matrix> afock(new Matrix(*coeff_ % (*afockao - *hcore_) * *coeff_));
+    shared_ptr<const Matrix> aden = make_shared<Matrix>((*acoeff ^ *acoeff)*2.0);
+    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_, aden, acoeff);
+    shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    shared_ptr<const Matrix> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
+    auto qxr = make_shared<const Qvec>(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
@@ -108,20 +108,20 @@ void CASBFGS::compute() {
     grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
-    if (iter == 0) {
-//if (true) {
+//  if (iter == 0) {
+  if (true) {
       // BFGS and DIIS should start at the same time
       shared_ptr<const Matrix> denom = compute_denom(cfock, afock, qxr)->unpack(1.0e10);
-      bfgs = shared_ptr<BFGS<Matrix>>(new BFGS<Matrix>(denom));
+      bfgs = make_shared<BFGS<Matrix>>(denom);
     }
     if (iter == 0) {
 //if (false) {
       xstart = xold->copy(); 
-      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, cold));
+      diis = make_shared<HPW_DIIS<Matrix>>(10, cold);
     }
     // extrapolation using BFGS
     *x *= *natorb_mat;
-    shared_ptr<Matrix> xlog(new Matrix(*x->log(100)));
+    auto xlog = make_shared<Matrix>(*x->log(100));
     shared_ptr<const Matrix> sigma_mat = sigma->unpack();
     shared_ptr<Matrix> a = bfgs->extrapolate(sigma_mat, xlog);
     *a *= -1.0;
@@ -132,15 +132,15 @@ void CASBFGS::compute() {
     expa->purify_unitary();
 
     if (!diis) {
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_**expa));
+      coeff_ = make_shared<const Coeff>(*coeff_**expa);
       // for next BFGS extrapolation
       *x *= *expa;
     } else {
-      shared_ptr<const Matrix> tmp3(new Matrix(*natorb_mat * *expa ^ *natorb_mat));
+      auto tmp3 = make_shared<const Matrix>(*natorb_mat * *expa ^ *natorb_mat);
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp3);
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
+      coeff_ = make_shared<const Coeff>(*mcc);
       // update x
-      x = shared_ptr<Matrix>(new Matrix(*xstart * *diis->extrap()));
+      x = make_shared<Matrix>(*xstart * *diis->extrap());
 //    cout << setprecision(10) << (*coeff_ - *diis->start()**x).norm() << endl;
     }
 
@@ -167,7 +167,7 @@ void CASBFGS::compute() {
 
 
 shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr) const {
-  shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, false));
+  auto out = make_shared<RotFile>(nclosed_, nact_, nvirt_, false);
   const double tiny = 1.0e-15;
 
   // ia part (4.7a)

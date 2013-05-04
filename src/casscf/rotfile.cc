@@ -51,15 +51,14 @@ RotFile::RotFile(std::shared_ptr<const Matrix> o, const int iclos, const int iac
 }
 
 shared_ptr<RotFile> RotFile::clone() const {
-  shared_ptr<RotFile> out(new RotFile(nclosed_, nact_, nvirt_, superci_));
+  auto out = make_shared<RotFile>(nclosed_, nact_, nvirt_, superci_);
   out->zero();
   return out;
 }
 
 
 shared_ptr<RotFile> RotFile::copy() const {
-  shared_ptr<RotFile> out(new RotFile(*this));
-  return out;
+  return make_shared<RotFile>(*this);
 }
 
 
@@ -67,7 +66,7 @@ shared_ptr<Matrix> RotFile::unpack(const double a) const {
 
   const int nocc = nclosed_ + nact_;
   const int nbasis = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
+  auto out = make_shared<Matrix>(nbasis, nbasis);
   fill_n(out->data(), out->size(), a);
 
   for (int i = 0; i != nact_; ++i) {
@@ -96,7 +95,7 @@ shared_ptr<Matrix> RotFile::unpack_sym(const double a) const {
 
   const int nocc = nclosed_ + nact_;
   const int nbasis = nclosed_ + nact_ + nvirt_;
-  shared_ptr<Matrix> out(new Matrix(nbasis, nbasis));
+  auto out = make_shared<Matrix>(nbasis, nbasis);
   fill_n(out->data(), out->size(), a);
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nvirt_;   ++j) {

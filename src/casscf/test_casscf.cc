@@ -28,7 +28,7 @@
 #include <src/wfn/reference.h>
 
 double cas_energy(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -43,12 +43,12 @@ double cas_energy(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "casscf") {
       std::string algorithm = iter->second.get<std::string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "") {
-        std::shared_ptr<CASSCF> cas(new SuperCI(iter->second, geom));
+        auto cas = std::make_shared<SuperCI>(iter->second, geom);
         cas->compute();
         std::shared_ptr<const Reference> ref = cas->conv_to_ref();
 

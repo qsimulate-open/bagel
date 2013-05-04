@@ -108,9 +108,6 @@ class CASSCF {
     std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<RDM<1>> rdm1, const bool inactive_only = false) const;
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
-#if 0
-    void coeff_orthog();
-#endif
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
 };
 

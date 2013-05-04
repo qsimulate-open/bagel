@@ -42,10 +42,10 @@ static string tostring(const T i) {
 };
 
 CASSCF::CASSCF(const boost::property_tree::ptree& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : idata_(idat), geom_(geom), hcore_(new Hcore(geom)) {
+  : idata_(idat), geom_(geom), hcore_(make_shared<Hcore>(geom)) {
 
   if (!re) {
-    std::shared_ptr<SCF<1>> scf(new SCF<1>(idat, geom));
+    auto scf = make_shared<SCF<1>>(idat, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
   } else {
@@ -114,7 +114,7 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  fci_ = shared_ptr<FCI>(new KnowlesHandy(idata_, ref_, nclosed_, nact_)); // nstate does not need to be specified as it is in idata_...
+  fci_ = make_shared<KnowlesHandy>(idata_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
   resume_stdcout();
 
 
@@ -164,7 +164,7 @@ void CASSCF::resume_stdcout() {
 
 shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
-  shared_ptr<Matrix> mo_rdm1(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  auto mo_rdm1 = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
   for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 2.0;
   if (!inactive_only) {
     for (int i = 0; i != nact_; ++i) {
@@ -174,7 +174,7 @@ shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_
     }
   }
   // transform into AO basis
-  return shared_ptr<Matrix>(new Matrix(*coeff_ * *mo_rdm1 ^ *coeff_));
+  return make_shared<Matrix>(*coeff_ * *mo_rdm1 ^ *coeff_);
 }
 
 
@@ -186,24 +186,24 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  shared_ptr<Qvec> qxr(new Qvec(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av()));
+  auto qxr = make_shared<Qvec>(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
 
   {
     // Fock operators
     if (nclosed_) {
       shared_ptr<Matrix> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *fci_->jop()->core_fock() * *coeff_));
+      finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
 
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Matrix> denact(new Matrix(*denall-*deninact));
-      shared_ptr<Fock<1>> fact_ao(new Fock<1>(geom_, hcore_, denact, schwarz_));
-      f = shared_ptr<Matrix>(new Matrix(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_));
+      auto denact = make_shared<Matrix>(*denall-*deninact);
+      auto fact_ao = make_shared<Fock<1>>(geom_, hcore_, denact, schwarz_);
+      f = make_shared<Matrix>(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_);
     } else {
       shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
-      shared_ptr<Fock<1>> f_ao(new Fock<1>(geom_, hcore_, denall, schwarz_));
-      f = shared_ptr<Matrix>(new Matrix(*coeff_ % *f_ao * *coeff_));
+      auto f_ao = make_shared<Fock<1>>(geom_, hcore_, denall, schwarz_);
+      f = make_shared<Matrix>(*coeff_ % *f_ao * *coeff_);
 
-      finact = shared_ptr<Matrix>(new Matrix(*coeff_ % *hcore_ * *coeff_));
+      finact = make_shared<Matrix>(*coeff_ % *hcore_ * *coeff_);
     }
   }
   {
@@ -215,7 +215,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
-    factp = shared_ptr<Matrix>(new Matrix(nact_, nact_));
+    factp = make_shared<Matrix>(nact_, nact_);
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
 #if 1
@@ -237,7 +237,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
 
   // denominator
-  shared_ptr<RotFile> denom(new RotFile(nclosed_, nact_, nvirt_));
+  auto denom = make_shared<RotFile>(nclosed_, nact_, nvirt_);
   fill(denom->data(), denom->data()+denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
@@ -271,7 +271,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
 
 shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
-  shared_ptr<Coeff> cnew(new Coeff(*cold));
+  auto cnew = make_shared<Coeff>(*cold);
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
@@ -293,19 +293,9 @@ shared_ptr<Matrix> CASSCF::form_natural_orbs() {
 
 
 
-#if 0
-void CASSCF::coeff_orthog() {
-  Overlap o(geom_);
-  shared_ptr<Matrix> a(new Matrix(*coeff_ % o * *coeff_));
-  a->inverse_half();
-  coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *a));
-}
-#endif
-
-
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  shared_ptr<Reference> out(new Reference(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
-                                          fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av()));
+  auto out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
+                                    fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av());
 
   // TODO
   // compute one-boedy operators
@@ -328,7 +318,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     }
   }
 
-  shared_ptr<Matrix> erdm(new Matrix(*coeff_ * *f ^ *coeff_));
+  auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
 
   out->set_erdm1(erdm);
   out->set_nstate(nstate_);

@@ -58,12 +58,12 @@ void WernerKnowles::compute() {
 
     // from natural orbitals from FCI::rdm1_av_ and set appropriate quantities.
     form_natural_orbs();
-    shared_ptr<Jvec> jvec(new Jvec(fci_, coeff_, nclosed_, nact_, nvirt_));
+    auto jvec = make_shared<Jvec>(fci_, coeff_, nclosed_, nact_, nvirt_);
 
     // denominator
 
     // start with U=1
-    shared_ptr<Matrix> U(new Matrix(geom_->nbasis(), geom_->nbasis()));
+    auto U = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
     U->unit();
 
 
@@ -75,7 +75,7 @@ void WernerKnowles::compute() {
       shared_ptr<Matrix> bvec = compute_bvec(jvec, U, coeff_);
 
       // compute gradient
-      shared_ptr<Matrix> grad(new Matrix(*U%*bvec-*bvec%*U));
+      auto grad = make_shared<Matrix>(*U%*bvec-*bvec%*U);
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
 
       const double error_micro = grad->ddot(*grad)/grad->size();
@@ -88,10 +88,10 @@ void WernerKnowles::compute() {
       SOLVER<Matrix> solver(max_mmicro_iter_+1, grad);
 
       // update C = 1/2(A+A^dagger) = 1/2(U^dagger B + B^dagger U)
-      shared_ptr<Matrix> C(new Matrix((*U % *bvec + *bvec % *U)*0.5));
+      auto C = make_shared<Matrix>((*U % *bvec + *bvec % *U)*0.5);
 
       // initial dR value.
-      shared_ptr<Matrix> dR(new Matrix(*grad));
+      auto dR = make_shared<Matrix>(*grad);
       shared_ptr<const Matrix> denom = compute_denom(C);
       *dR /= *denom;
 
@@ -124,7 +124,7 @@ void WernerKnowles::compute() {
     }
 
     U->purify_unitary();
-    shared_ptr<const Coeff> newcc(new Coeff(*coeff_ * *U));
+    auto newcc = make_shared<const Coeff>(*coeff_ * *U);
     coeff_ = newcc;
 
     resume_stdcout();

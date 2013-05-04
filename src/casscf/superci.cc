@@ -60,7 +60,7 @@ void SuperCI::compute() {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
       shared_ptr<Matrix> tmp = coeff_->copy();
-      diis = shared_ptr<HPW_DIIS<Matrix>>(new HPW_DIIS<Matrix>(10, tmp));
+      diis = make_shared<HPW_DIIS<Matrix>>(10, tmp);
     }
 
     // first perform CASCI to obtain RDMs
@@ -73,11 +73,11 @@ void SuperCI::compute() {
     // here make a natural orbitals and update the coefficients
     shared_ptr<Matrix> natorb = form_natural_orbs();
 
-    shared_ptr<RotFile> cc_(new RotFile(nclosed_, nact_, nvirt_));
+    auto cc_ = make_shared<RotFile>(nclosed_, nact_, nvirt_);
 
     // Davidson utility. We diagonalize a super CI matrix every macro iteration
     DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
-    shared_ptr<RotFile> sigma_(new RotFile(nclosed_, nact_, nvirt_));
+    auto sigma_ = make_shared<RotFile>(nclosed_, nact_, nvirt_);
 
 
     // compute one-boedy operators
@@ -86,9 +86,7 @@ void SuperCI::compute() {
     one_body_operators(f, fact, factp, gaa, denom_);
 
     // BFGS initialization
-    shared_ptr<BFGS<RotFile>> mbfgs(new BFGS<RotFile>(denom_));
-//  if (iter == 0) bfgs = shared_ptr<BFGS<RotFile>>(new BFGS(denom_));
-
+    auto mbfgs = make_shared<BFGS<RotFile>>(denom_);
 
     // first, <proj|H|0> is computed
     sigma_->zero();
@@ -108,7 +106,7 @@ void SuperCI::compute() {
 
     if (gradient < thresh_) break;
 
-    shared_ptr<RotFile> init_sigma(new RotFile(*sigma_));
+    auto init_sigma = make_shared<RotFile>(*sigma_);
 
     // ---------------------------------------
     // then microiteration for diagonalization
@@ -136,8 +134,8 @@ void SuperCI::compute() {
       }
 
       // enters davidson iteration
-      shared_ptr<const RotFile> ccp(new RotFile(*cc_));
-      shared_ptr<const RotFile> sigmap(new RotFile(*sigma_));
+      auto ccp = make_shared<const RotFile>(*cc_);
+      auto sigmap = make_shared<const RotFile>(*sigma_);
       const double mic_energy = davidson.compute(ccp, sigmap);
 
       // residual vector and error
@@ -171,7 +169,7 @@ void SuperCI::compute() {
     rot->purify_unitary();
 
     if (diis == nullptr) {
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*coeff_ * *rot));
+      coeff_ = make_shared<const Coeff>(*coeff_ * *rot);
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix> tmp = rot->copy();
@@ -179,13 +177,13 @@ void SuperCI::compute() {
                                                                           tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix> tmp2 = tailor_rotation(tmp)->copy();
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
-      coeff_ = shared_ptr<const Coeff>(new Coeff(*mcc));
+      coeff_ = make_shared<const Coeff>(*mcc);
     }
 
 #ifndef NDEBUG
     // checking orthonormaligy of orbitals.
-    shared_ptr<Overlap> o(new Overlap(geom_));
-    shared_ptr<Matrix> m(new Matrix(*coeff_ % *o * *coeff_));
+    auto o = make_shared<Overlap>(geom_);
+    auto m = make_shared<Matrix>(*coeff_ % *o * *coeff_);
     if (fabs(m->trace() - m->ddot(m)) > 1.0e-10) {
       stringstream ss; ss << "orbitals are not orthogonal with each other " << scientific << setprecision(3) << fabs(m->trace() - m->ddot(m));
       throw logic_error(ss.str());

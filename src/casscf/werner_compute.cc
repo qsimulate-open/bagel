@@ -32,30 +32,28 @@ using namespace bagel;
 
 #define DEBUG4INDEX
 
-
-
 shared_ptr<Matrix> WernerKnowles::compute_sigma_R(const shared_ptr<const Jvec> jvec, const shared_ptr<const Matrix> dR,
                 const shared_ptr<const Matrix> C, const shared_ptr<const Matrix> U) {
 
   // compute U dR
-  shared_ptr<Matrix> UdR(new Matrix(*U**dR));
+  auto UdR = make_shared<Matrix>(*U**dR);
 
   // compute  1/2 (C dR + dR C)
-  shared_ptr<Matrix> dRA(new Matrix(*C**dR+*dR**C));
+  auto dRA = make_shared<Matrix>(*C**dR+*dR**C);
 
   // update B
 //#ifndef DEBUG4INDEX
 #if 1
   shared_ptr<Matrix> new_bvec = compute_bvec(jvec, UdR, UdR, coeff_);
 #else
-  shared_ptr<Matrix> gg(new Matrix(*coeff_ * *UdR));
+  auto gg = make_shared<Matrix>(*coeff_ * *UdR);
   shared_ptr<Matrix> tmp = jk.contract(gg);
-  shared_ptr<Matrix> new_bvec(new Matrix(*coeff_ % *tmp));
+  auto newbvec = make_shared<Matrix>(*coeff_ % *tmp);
 #endif
 
   // compute U^dagger B - B^dagger U
   // compute Eq.29
-  shared_ptr<Matrix> sigma(new Matrix(*U%*new_bvec-*new_bvec%*U-*dRA));
+  auto sigma = make_shared<Matrix>(*U%*new_bvec-*new_bvec%*U-*dRA);
   sigma->purify_redrotation(nclosed_,nact_,nvirt_);
 
   return sigma;
@@ -94,7 +92,7 @@ shared_ptr<const Matrix> WernerKnowles::compute_denom(const shared_ptr<const Mat
 // compute B according to Eq. (19).
 // B = 2[h_rs U_sj D_ji + (rs|D)Usj <D|ji> + 2(rk|D)(D|ls)T_sj D_jl,ik]
 shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec, shared_ptr<Matrix> u, const shared_ptr<const Coeff> cc) {
-  shared_ptr<Matrix> t(new Matrix(*u));
+  auto t = make_shared<Matrix>(*u);
   for (int i = 0; i != u->ndim(); ++i) t->element(i,i) -= 1.0;
   return compute_bvec(jvec, u, t, cc);
 }
@@ -112,15 +110,15 @@ shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec
 // TODO make sure if this works
 if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
 
-  shared_ptr<Matrix> out(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  auto out = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
   {
-    shared_ptr<Matrix> hcore_mo_(new Matrix(*cc % *hcore_ * *cc));
+    auto hcore_mo_ = make_shared<Matrix>(*cc % *hcore_ * *cc);
 
     // first term
     Matrix all1(geom_->nbasis(), geom_->nbasis());
     for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
     for (int i = 0; i != nact_; ++i) copy_n(fci_->rdm1_av()->data()+nact_*i, nact_, all1.element_ptr(nclosed_, i+nclosed_));
-    shared_ptr<Matrix> buf(new Matrix(geom_->nbasis(), geom_->nbasis()));
+    auto buf = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
     dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbas, 0.0, buf->data(), nbas);
     dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);
   }
