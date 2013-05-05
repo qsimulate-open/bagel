@@ -164,6 +164,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
       grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
 
+  {
+    auto d_unrelaxed = make_shared<Matrix>(*dmp2);
+    for (int i = 0; i != nocca; ++i) d_unrelaxed->element(i,i) += 2.0;
+    auto dao_unrelaxed = make_shared<Matrix>(*ref_->coeff() * *d_unrelaxed ^ *ref_->coeff());
+    Dipole dipole(geom_, dao_unrelaxed, "MP2 unrelaxed");
+    dipole.compute();
+  }
   time.tick_print("Right hand side of CPHF");
   cout << endl;
 
@@ -178,8 +185,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // computes dipole mements
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
-  Dipole dipole(geom_, dtotao);
-  dipole.compute();
+  {
+    Dipole dipole(geom_, dtotao, "MP2 relaxed");
+    dipole.compute();
+  }
 
   ////////////////////////////////////////////////////////////////////////////
 
