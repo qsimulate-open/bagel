@@ -580,8 +580,8 @@ bool Geometry::operator==(const Geometry& o) const {
 // connectivity graph
 
 #include <set>
-namespace Bagel {
-namespace Geometry {
+namespace bagel {
+namespace geometry {
 class Node {
   protected:
     const std::shared_ptr<const Atom> myself_;
@@ -626,7 +626,7 @@ class Node {
 };
 } }
 
-using namespace Bagel::Geometry;
+using namespace bagel::geometry;
 
 array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;

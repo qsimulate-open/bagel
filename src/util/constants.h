@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_util_constants_h
-#define __src_util_constants_h
+#ifndef __SRC_UTIL_CONSTANTS_H
+#define __SRC_UTIL_CONSTANTS_H
 
 #include <cmath>
 #include <chrono>
@@ -36,30 +36,30 @@ namespace bagel {
 /************************************************************
 *  Physical/Mathematical constants                          *
 ************************************************************/
-static const double ang2bohr__ = 1.889725989;
-static const double pi__ = std::atan(1.0)*4.0;
-static const double rad2deg__ = 180.0 / pi__;
-static const double c__ = 137.0359996287515;
+static constexpr double ang2bohr__ = 1.889725989;
+static constexpr double pi__ = std::atan(1.0)*4.0;
+static constexpr double rad2deg__ = 180.0 / pi__;
+static constexpr double c__ = 137.0359996287515;
 
 /************************************************************
 *  Numerical constants                                      *
 ************************************************************/
-static const double numerical_zero__ = 1.0e-15;
-static const unsigned int large__ = 32;
-static const unsigned int nbit__ = 32;
+static constexpr double numerical_zero__ = 1.0e-15;
+static constexpr unsigned int large__ = 32;
+static constexpr unsigned int nbit__ = 32;
 
 /************************************************************
 *  Misc constants                                           *
 ************************************************************/
-static const double schwarz_thresh__ = 1.0e-12;  // TODO input
+static constexpr double schwarz_thresh__ = 1.0e-12;  // TODO input
 
 /************************************************************
 *  MPI parameters                                           *
 ************************************************************/
-const static size_t probe_key__  = (1 << 20);
-const static size_t probe_key2__ = (1 << 26);
-const static size_t pool_size__ = 100;
-const static std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
+static constexpr size_t probe_key__  = (1 << 20);
+static constexpr size_t probe_key2__ = (1 << 26);
+static constexpr size_t pool_size__ = 100;
+static constexpr std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
 
 }
 
