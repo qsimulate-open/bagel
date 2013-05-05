@@ -30,7 +30,7 @@
 #include <src/wfn/reference.h>
 
 std::array<double,3> dipole(std::string filename) {
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(filename + "_dipole.testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(filename + "_dipole.testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -45,10 +45,10 @@ std::array<double,3> dipole(std::string filename) {
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::shared_ptr<Geometry>(new Geometry(iter->second));
+      geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 

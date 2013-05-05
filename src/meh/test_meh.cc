@@ -29,7 +29,7 @@
 
 double meh_energy(std::string inp) {
 
-  std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp + ".testout", std::ios::trunc));
+  auto ofs = std::make_shared<std::ofstream>(inp + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -50,7 +50,7 @@ double meh_energy(std::string inp) {
       geom = std::make_shared<Geometry>(iter->second);
 
     } else if (method == "df-hf") {
-      std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
