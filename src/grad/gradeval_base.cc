@@ -111,7 +111,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
       auto oa2 = geom_->aux_offsets().begin();
       for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
         // dummy shell
-        const shared_ptr<const Shell> b3(new Shell((*a2)->shells().front()->spherical()));
+        auto b3 = make_shared<const Shell>((*a2)->shells().front()->spherical());
 
         auto o0 = oa0->begin();
         for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
@@ -145,7 +145,7 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
-  shared_ptr<Geometry> auxgeom(new Geometry(geom_->aux_atoms(), boost::property_tree::ptree()));
+  auto auxgeom = make_shared<Geometry>(geom_->aux_atoms(), boost::property_tree::ptree());
 
   // using symmetry (b0 <-> b1)
   int cnt = 0;
@@ -157,7 +157,7 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
     for (auto a1 = a0; a1 != geom_->aux_atoms().end(); ++a1, ++oa1, ++iatom1) {
 
       // dummy shell
-      const shared_ptr<const Shell> b3(new Shell((*a0)->shells().front()->spherical()));
+      auto b3 = make_shared<const Shell>((*a0)->shells().front()->spherical());
 
       auto o0 = oa0->begin();
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {

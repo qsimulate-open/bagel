@@ -358,9 +358,7 @@ void MoldenIn::read() {
   
      transform(iname->begin(), iname->end(), iname->begin(), ::tolower);
      /* For each atom, I need to make an atom object and stick it into a vector */
-     shared_ptr<const Atom> this_atom(new Atom(is_spherical_, *iname, *piter, binfo));
-  
-     all_atoms.push_back(this_atom);
+     all_atoms.push_back(make_shared<const Atom>(is_spherical_, *iname, *piter, binfo));
   }
 
   atoms_ = all_atoms;

@@ -75,9 +75,7 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/opt/test_opt.cc>
 
-#if 0
 #include <src/io/test_molden.cc>
-#endif
 
 #include <src/util/test_localize.cc>
 

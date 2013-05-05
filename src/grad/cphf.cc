@@ -36,7 +36,7 @@ using namespace bagel;
 
 CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const shared_ptr<const DFHalfDist> h,
            const shared_ptr<const Reference> r)
-: solver_(new LinearRM<Matrix>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
+: solver_(make_shared<LinearRM<Matrix>>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
 }
 
@@ -52,7 +52,7 @@ shared_ptr<Matrix> CPHF::solve() const {
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
   shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(nocca, nbasis);
 
-  shared_ptr<Matrix> t(new Matrix(nbasis, nbasis));
+  auto t = make_shared<Matrix>(nbasis, nbasis);
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
@@ -67,14 +67,14 @@ shared_ptr<Matrix> CPHF::solve() const {
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
     solver_->orthog(t);
 
-    shared_ptr<Matrix> sigma(new Matrix(nbasis, nbasis));
+    auto sigma = make_shared<Matrix>(nbasis, nbasis);
     // one electron part
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nocca+nvirt; ++a)
         (*sigma)(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
 
     // J part
-    shared_ptr<Matrix> pbmao(new Matrix(nbasis, nbasis));
+    auto pbmao = make_shared<Matrix>(nbasis, nbasis);
     {
       Matrix pms(nocca, nbasis);
       dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff->data(), nbasis, 0.0, pms.data(), nocca);

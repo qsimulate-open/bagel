@@ -43,7 +43,7 @@ GradFile GradFile::operator-(const GradFile& o) const {
 
 
 shared_ptr<GradFile> GradFile::clone() const {
-  return shared_ptr<GradFile>(new GradFile(data_->mdim()));
+  return make_shared<GradFile>(data_->mdim());
 }
 
 void GradFile::print() const {

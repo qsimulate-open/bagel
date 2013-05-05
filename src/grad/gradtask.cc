@@ -45,7 +45,7 @@ void GradTask::compute() {
     const int iatom0 = atomindex_[0];
     const int iatom1 = atomindex_[1];
     const int nbasis = ge_->geom_->nbasis();
-    shared_ptr<GradFile> grad_local(new GradFile(ge_->geom_->natom()));
+    auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
     const int dimb1 = shell2_[0]->nbasis();
     const int dimb0 = shell2_[1]->nbasis();
     {

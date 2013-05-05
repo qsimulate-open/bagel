@@ -36,7 +36,7 @@ shared_ptr<GradFile> GradEval<SCF<1>>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
   //- TWO ELECTRON PART -//
@@ -61,7 +61,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
@@ -86,7 +86,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
@@ -111,7 +111,7 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
   //- TWO ELECTRON PART -//
@@ -142,7 +142,7 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
@@ -166,7 +166,7 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1(new Matrix(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ));
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
 #if 0
   Dipole d(ref_->geom(), rdm1);
   d.compute();

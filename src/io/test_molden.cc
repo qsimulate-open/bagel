@@ -30,26 +30,34 @@
 
 double molden_out_energy(std::string inp1, std::string inp2) {
 
-    std::shared_ptr<std::ofstream> ofs(new std::ofstream(inp1 + ".testout", std::ios::trunc));
-    std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
+  auto ofs = std::make_shared<std::ofstream>(inp1 + ".testout", std::ios::trunc);
+  std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   {
-    std::shared_ptr<InputData> idata(new InputData("../../test/" + inp1 + ".in"));
-    std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+    std::stringstream ss; ss << "../../test/" << inp1 << ".in";
+    boost::property_tree::ptree idata;
+    boost::property_tree::json_parser::read_json(ss.str(), idata);
+    auto keys = idata.get_child("bagel");
+    std::shared_ptr<Geometry> geom;
 
     std::shared_ptr<Reference> ref;
 
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      if (iter->first == "df-hf") {
-        std::shared_ptr<SCF<1>> scf(new SCF<1>(iter->second, geom));
+      std::string method = iter->second.get<std::string>("title", "");
+      std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
+      if (method == "molecule") {
+        geom = std::make_shared<Geometry>(iter->second);
+
+      } else if (method == "df-hf") {
+        auto scf = std::make_shared<SCF<1>>(iter->second, geom);
         scf->compute();
         ref = scf->conv_to_ref();
       }
-      else if (iter->first == "print") {
-        std::multimap<std::string, std::string> pdata = iter->second;
-        bool orbitals = read_input<bool>(pdata, "orbitals", false);
-        std::string out_file = read_input<std::string>(pdata, "file", inp1 + ".molden");
+      else if (method == "print") {
+        const boost::property_tree::ptree pdata = iter->second;
+        bool orbitals = pdata.get<bool>("orbitals", false);
+        std::string out_file = pdata.get<std::string>("file", inp1 + ".molden");
      
         MoldenOut mfs(out_file);
         mfs << geom;
@@ -62,11 +70,17 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
   double energy = 0.0;
   {
-    std::shared_ptr<InputData> idata(new InputData("../../test/" + inp2 + ".in"));
-    std::shared_ptr<Geometry> geom(new Geometry(idata->get_input("molecule")));
-    std::list<std::pair<std::string, std::multimap<std::string, std::string>>> keys = idata->data();
+    std::stringstream ss; ss << "../../test/" << inp2 << ".in";
+    boost::property_tree::ptree idata;
+    boost::property_tree::json_parser::read_json(ss.str(), idata);
+    auto keys = idata.get_child("bagel");
+    auto mol = keys.begin();
+    std::string method = mol->second.get<std::string>("title", "");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    if (method != "molecule") throw std::logic_error("broken test case");
+    auto geom = std::make_shared<Geometry>(mol->second);
 
-    std::shared_ptr<const Coeff> coeff(new Coeff(geom));
+    auto coeff = std::make_shared<const Coeff>(geom);
 
     std::string filename = inp1 + ".molden";
     MoldenIn mfs(filename, geom->spherical());
@@ -74,10 +88,10 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     mfs >> coeff;
 
     std::shared_ptr<Matrix> ao_density = coeff->form_density_rhf(geom->nele()/2);
-    std::shared_ptr<const Matrix> hcore(new Hcore(geom));
-    std::shared_ptr<Fock<1>> fock(new Fock<1>(geom, hcore, ao_density, geom->schwarz()));
+    auto hcore = std::make_shared<const Hcore>(geom);
+    auto fock = std::make_shared<const Fock<1>>(geom, hcore, ao_density, geom->schwarz());
 
-    std::shared_ptr<Matrix> hcore_fock(new Matrix(*hcore + *fock));
+    auto hcore_fock = std::make_shared<const Matrix>(*hcore + *fock);
     energy = ((*ao_density)*(*hcore_fock)).trace();
     energy = 0.5*energy + geom->nuclear_repulsion();
 
