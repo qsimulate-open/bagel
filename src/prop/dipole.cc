@@ -33,12 +33,7 @@
 using namespace std;
 using namespace bagel;
 
-Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d) : geom_(g), den_(d) {
-
-}
-
-
-Dipole::~Dipole() {
+Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, const string jobn) : geom_(g), den_(d), jobname_(jobn) {
 
 }
 
@@ -82,8 +77,8 @@ array<double,3> Dipole::compute() const {
     }
   }
 
-  cout << "    * Permanent dipole moment: (" << setw(12) << setprecision(6) << out[0] << ", "
-                                             << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl;
+  cout << "    * Permanent dipole moment:" << (jobname_.empty() ? "" : " " + jobname_) << endl;
+  cout << "           (" << setw(12) << setprecision(6) << out[0] << ", " << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl;
 
   return out;
 }

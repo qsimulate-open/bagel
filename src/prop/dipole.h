@@ -37,10 +37,10 @@ class Dipole {
   protected:
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Matrix> den_;
+    std::string jobname_;
 
   public:
-    Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    ~Dipole();
+    Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, const std::string jobname = "");
 
     std::array<double,3> compute() const;
 };
