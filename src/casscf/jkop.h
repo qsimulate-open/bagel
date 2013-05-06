@@ -29,8 +29,6 @@
 
 // implements external operators.
 #include <src/fci/fci.h>
-#include <algorithm>
-#include <src/util/f77.h>
 
 namespace bagel {
 

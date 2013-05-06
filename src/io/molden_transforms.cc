@@ -10,11 +10,6 @@
 // f functions.
 //
 
-#include <cmath>
-#include <vector>
-#include <map>
-#include <cassert>
-
 #include <src/io/moldenin.h>
 
 using namespace std;

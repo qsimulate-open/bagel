@@ -27,13 +27,8 @@
 #ifndef __src_scf_matrix1e_h
 #define __src_scf_matrix1e_h
 
-#include <cassert>
-#include <src/wfn/shell.h>
 #include <src/wfn/geometry.h>
 #include <src/util/matrix.h>
-#include <string>
-#include <algorithm>
-#include <memory>
 
 namespace bagel {
 

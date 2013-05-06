@@ -27,11 +27,7 @@
 #ifndef __SRC_SCF_ATOM_H
 #define __SRC_SCF_ATOM_H
 
-#include <array>
-#include <vector>
-#include <string>
 #include <src/wfn/shell.h>
-#include <memory>
 
 namespace bagel {
 
@@ -64,7 +60,6 @@ class Atom {
     Atom(const std::string name, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const Atom&, const std::array<double,3>&);
     Atom(const Atom&, const double*);
-    ~Atom() {}
 
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}

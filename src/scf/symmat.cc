@@ -25,9 +25,6 @@
 
 
 #include <src/scf/symmat.h>
-#include <algorithm>
-#include <iostream>
-#include <cassert>
 
 using namespace std;
 using namespace bagel;

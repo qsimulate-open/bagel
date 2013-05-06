@@ -26,12 +26,8 @@
 #ifndef __SRC_KS_DFTGRID_H
 #define __SRC_KS_DFTGRID_H
 
-#include <array>
-#include <memory>
-#include <src/wfn/geometry.h>
 #include <src/ks/xcfunc.h>
 #include <src/ks/grid.h>
-#include <src/grad/gradfile.h>
 
 namespace bagel {
 

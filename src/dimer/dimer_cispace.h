@@ -29,7 +29,6 @@
 #define __BAGEL_DIMER_CISPACE_H
 
 #include <utility>
-#include <memory>
 
 #include <src/fci/dvec.h>
 #include <src/fci/determinants.h>

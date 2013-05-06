@@ -24,7 +24,6 @@
 //
 
 
-#include <stddef.h>
 #include <src/rel/breit.h>
 #include <src/rel/alpha.h>
 #include <src/rysint/breitbatch.h>

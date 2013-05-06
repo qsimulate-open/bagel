@@ -24,25 +24,9 @@
 //
 
 
-#include <memory>
-#include <stdexcept>
-#include <iostream>
-#include <numeric>
-#include <algorithm>
-#include <cassert>
-#include <iomanip>
-#include <list>
+#include <src/df/df.h>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/libint.h>
-#include <src/util/taskqueue.h>
-#include <src/util/constants.h>
-#include <src/util/f77.h>
-#include <src/util/timer.h>
-#include <src/df/df.h>
-#include <src/parallel/mpi_interface.h>
-
-#include <src/df/dfinttask_old.h>
-#include <src/df/dfdistt.h>
 
 using namespace std;
 using namespace bagel;

@@ -27,9 +27,6 @@
 #ifndef __BAGEL_SRC_CASSCF_QVEC
 #define __BAGEL_SRC_CASSCF_QVEC
 
-#include <memory>
-#include <src/df/df.h>
-#include <src/scf/coeff.h>
 #include <src/fci/fci.h> // 2RDM and half-transformed integrals
 #include <src/casscf/rotfile.h>
 

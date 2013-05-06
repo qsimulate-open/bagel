@@ -29,20 +29,8 @@
 #ifndef __BAGEL_FCI_HARRISONZARRABIAN_H
 #define __BAGEL_FCI_HARRISONZARRABIAN_H
 
-#include <tuple>
-#include <src/scf/scf.h>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <bitset>
-#include <src/util/constants.h>
-#include <src/fci/dvec.h>
-#include <src/fci/mofile.h>
 #include <src/fci/fci.h>
 #include <src/fci/space.h>
-#include <src/fci/determinants.h>
-#include <src/wfn/rdm.h>
-#include <src/wfn/reference.h>
 
 namespace bagel {
 

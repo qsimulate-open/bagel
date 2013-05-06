@@ -27,14 +27,7 @@
 #ifndef __BAGEL_CASSCF_ROTFILE_H
 #define __BAGEL_CASSCF_ROTFILE_H
 
-#include <list>
-#include <memory>
-#include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 #include <src/scf/matrix1e.h>
-#include <src/util/f77.h>
 
 namespace bagel {
 

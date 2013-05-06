@@ -27,18 +27,12 @@
 #ifndef BAGEL_FCI_CIVEC_H
 #define BAGEL_FCI_CIVEC_H
 
-#include <stddef.h>
 #include <list>
-#include <memory>
-#include <vector>
-#include <algorithm>
-#include <cassert>
 #include <src/parallel/staticdist.h>
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
 #include <src/parallel/accrequest.h>
 #include <src/parallel/recvrequest.h>
-#include <mutex>
 
 namespace bagel {
 

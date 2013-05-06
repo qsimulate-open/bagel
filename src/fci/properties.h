@@ -28,14 +28,8 @@
 #ifndef __BAGEL_FCI_PROPERTIES_H
 #define __BAGEL_FCI_PROPERTIES_H
 
-#include <fstream>
-#include <string>
-#include <memory>
-#include <cassert>
-#include <tuple>
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
-#include <src/wfn/geometry.h>
 #include <src/fci/dvec.h>
 
 namespace bagel {

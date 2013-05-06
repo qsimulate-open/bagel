@@ -26,9 +26,6 @@
 #ifndef __SRC_PARALLEL_RECVREQUEST_H
 #define __SRC_PARALLEL_RECVREQUEST_H
 
-#include <map>
-#include <memory>
-#include <mutex>
 #include <tuple>
 #include <cassert>
 #include <src/util/serverflush.h>

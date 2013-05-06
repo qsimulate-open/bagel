@@ -27,13 +27,7 @@
 #ifndef __BAGEL_CASSCF_CASBFGS_H
 #define __BAGEL_CASSCF_CASBFGS_H
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/scf/scf.h>
-#include <src/wfn/rdm.h>
 #include <src/casscf/casscf.h>
-#include <src/casscf/rotfile.h>
 
 namespace bagel {
 

@@ -28,8 +28,6 @@
 #define __src_scf_symmat_h
 
 #include <src/wfn/geometry.h>
-#include <src/util/matrix.h>
-#include <src/wfn/petite.h>
 #include <src/scf/symrot.h>
 
 namespace bagel {

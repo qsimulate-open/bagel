@@ -23,14 +23,11 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <numeric>
-#include <iomanip>
 #include <src/util/taskqueue.h>
 #include <src/df/dfblock.h>
 #include <src/rysint/libint.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/constants.h>
-#include <src/util/f77.h>
 #include <src/util/simple.h>
 
 using namespace bagel;

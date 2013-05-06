@@ -23,9 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 #include <cmath>
 #include <src/dimer/dimer_jop.h>
 

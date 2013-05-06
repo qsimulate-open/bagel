@@ -23,16 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <vector>
-#include <stdexcept>
-
 #include <src/meh/meh.h>
-#include <src/fci/harrison.h>
-#include <src/fci/space.h>
-#include <src/util/matrix.h>
 
 // toggle for timing print out.
 static const bool tprint = false;

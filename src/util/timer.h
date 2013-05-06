@@ -27,7 +27,6 @@
 #define __BAGEL_UTIL_TIMER_H
 
 #include <chrono>
-#include <iostream>
 #include <iomanip>
 #include <string>
 #include <algorithm>

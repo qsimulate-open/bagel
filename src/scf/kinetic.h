@@ -27,9 +27,7 @@
 #ifndef __src_scf_kinetic_h
 #define __src_scf_kinetic_h
 
-#include <src/wfn/geometry.h>
 #include <src/scf/matrix1e.h>
-#include <memory>
 
 namespace bagel {
 

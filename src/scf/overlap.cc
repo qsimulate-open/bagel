@@ -26,10 +26,6 @@
 
 #include <src/scf/overlap.h>
 #include <src/osint/overlapbatch.h>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 
 using namespace std;
 using namespace bagel;

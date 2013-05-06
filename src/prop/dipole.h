@@ -27,9 +27,7 @@
 #ifndef __SRC_PROP_DIPOLE_H
 #define __SRC_PROP_DIPOLE_H
 
-#include <memory>
 #include <src/wfn/geometry.h>
-#include <src/util/matrix.h>
 
 namespace bagel {
 

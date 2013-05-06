@@ -26,10 +26,6 @@
 
 #include <src/scf/dipole.h>
 #include <src/osint/dipolebatch.h>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 
 using namespace std;
 using namespace bagel;

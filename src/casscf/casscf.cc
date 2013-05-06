@@ -24,10 +24,7 @@
 //
 
 
-#include <stdexcept>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include <fstream>
 #include <src/casscf/casscf.h>
 #include <src/casscf/qvec.h>
 

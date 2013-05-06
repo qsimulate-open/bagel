@@ -23,15 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __io_moldenin_h
-#define __io_moldenin_h
-
-#include <fstream>
-#include <vector>
+#ifndef __SRC_IO_MOLDENIN_H
+#define __SRC_IO_MOLDENIN_H
 
 #include <src/io/moldenio.h>
-#include <src/wfn/atom.h>
-#include <src/wfn/reference.h>
 
 namespace bagel {
 

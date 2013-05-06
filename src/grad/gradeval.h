@@ -27,12 +27,6 @@
 #ifndef __SRC_GRAD_GRADEVAL_H
 #define __SRC_GRAD_GRADEVAL_H
 
-#include <map>
-#include <string>
-#include <vector>
-#include <memory>
-#include <src/wfn/reference.h>
-#include <src/scf/scf.h>
 #include <src/scf/rohf.h>
 #include <src/ks/ks.h>
 #include <src/mp2/mp2grad.h>

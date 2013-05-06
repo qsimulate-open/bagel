@@ -28,15 +28,8 @@
 #ifndef __BAGEL_FCI_MOFILE_H
 #define __BAGEL_FCI_MOFILE_H
 
-#include <fstream>
-#include <string>
-#include <memory>
-#include <cassert>
-#include <tuple>
 #include <src/wfn/reference.h>
-#include <src/util/filename.h>
 #include <src/scf/scf.h>
-#include <src/wfn/geometry.h>
 
 namespace bagel {
 
@@ -52,7 +45,6 @@ class MOFile {
 
     const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const Reference> ref_;
-    std::shared_ptr<std::fstream> file_;
     size_t sizeij_;
     long filesize_;
     std::string filename_;

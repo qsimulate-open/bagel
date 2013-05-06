@@ -26,17 +26,11 @@
 #ifndef __scf_scf_base_h
 #define __scf_scf_base_h
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/wfn/geometry.h>
 #include <src/scf/overlap.h>
 #include <src/scf/hcore.h>
 #include <src/scf/tildex.h>
 #include <src/scf/fock.h>
-#include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
-#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 

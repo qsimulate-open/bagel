@@ -24,8 +24,6 @@
 //
 
 #include <src/rysint/breitbatch.h>
-#include <src/parallel/resources.h>
-#include <src/util/f77.h>
 
 using namespace std;
 using namespace bagel;

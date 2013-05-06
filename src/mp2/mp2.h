@@ -27,12 +27,9 @@
 #ifndef __SRC_MP2_MP2_H
 #define __SRC_MP2_MP2_H
 
-#include <src/wfn/geometry.h>
 #include <src/mp2/f12int.h>
 #include <src/scf/scf.h>
 #include <src/wfn/reference.h>
-#include <string>
-#include <map>
 #include <mutex>
 
 namespace bagel {

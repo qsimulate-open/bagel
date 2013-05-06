@@ -26,12 +26,8 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
-#include <src/wfn/geometry.h>
-#include <src/util/zmatrix.h>
 #include <src/rel/reloverlap.h>
 #include <src/util/mixedbasis.h>
-#include <src/osint/overlapbatch.h>
-#include <src/osint/kineticbatch.h>
 
 namespace bagel {
 

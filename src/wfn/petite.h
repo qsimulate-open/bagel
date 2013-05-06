@@ -27,11 +27,7 @@
 #ifndef __src_scf_petite_h
 #define __src_scf_petite_h
 
-#include <vector>
-#include <string>
-#include <memory>
 #include <tuple>
-#include <algorithm>
 #include <src/wfn/atom.h>
 
 namespace bagel {

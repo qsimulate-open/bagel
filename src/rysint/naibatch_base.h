@@ -27,9 +27,6 @@
 #ifndef __SRC_RYSINT_NAIBATCH_BASE_H
 #define __SRC_RYSINT_NAIBATCH_BASE_H
 
-#include <memory>
-#include <tuple>
-#include <src/wfn/shell.h>
 #include <src/rysint/rysint.h>
 #include <src/wfn/geometry.h>
 

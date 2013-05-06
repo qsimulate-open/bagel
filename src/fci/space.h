@@ -29,7 +29,6 @@
 #define __SRC_FCI_SPACE_H
 
 #include <memory>
-#include <tuple>
 #include <string>
 #include <cmath>
 #include <iostream>

@@ -27,10 +27,8 @@
 #ifndef __SRC_UTIL_DISTMATRIX_BASE_H
 #define __SRC_UTIL_DISTMATRIX_BASE_H
 
-#include <config.h>
 #include <cassert>
 #include <algorithm>
-#include <memory>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 

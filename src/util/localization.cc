@@ -23,17 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <cassert>
-#include <string>
-#include <algorithm>
-#include <memory>
-#include <list>
-#include <iostream>
-#include <iomanip>
-#include <src/util/f77.h>
 #include <src/util/localization.h>
 #include <src/scf/overlap.h>
-#include <src/scf/coeff.h>
 #include <src/util/jacobi.h>
 
 using namespace bagel;

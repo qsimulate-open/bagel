@@ -31,6 +31,7 @@
 #include <tuple>
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 
 class StaticDist {
   protected:

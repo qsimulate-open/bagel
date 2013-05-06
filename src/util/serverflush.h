@@ -33,6 +33,7 @@
 #endif
 #include <atomic>
 #include <thread>
+#include <mutex>
 #include <src/util/constants.h>
 
 namespace bagel {

@@ -27,11 +27,6 @@
 #ifndef __BAGEL_DIMER_DIMER_LEVELSHIFT_H
 #define __BAGEL_DIMER_DIMER_LEVELSHIFT_H
 
-#include <array>
-#include <vector>
-#include <string>
-#include <memory>
-
 #include <src/scf/coeff.h>
 #include <src/scf/levelshift.h>
 #include <src/dimer/dimer.h>

@@ -27,11 +27,6 @@
 #ifndef __BAGEL_SCF_LEVELSHIFT_H
 #define __BAGEL_SCF_LEVELSHIFT_H
 
-#include <array>
-#include <vector>
-#include <string>
-#include <memory>
-
 #include <src/scf/coeff.h>
 
 /************************************************************************************

@@ -27,9 +27,6 @@
 #ifndef __src_util_diis_h
 #define __src_util_diis_h
 
-#include <list>
-#include <src/util/f77.h>
-#include <memory>
 #include <type_traits>
 #include <src/util/matrix.h>
 #include <src/util/zmatrix.h>

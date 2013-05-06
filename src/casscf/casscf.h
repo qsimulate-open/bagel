@@ -31,13 +31,8 @@
 #ifndef __BAGEL_CASSCF_CASSCF_H
 #define __BAGEL_CASSCF_CASSCF_H
 
-#include <cassert>
-#include <vector>
-#include <memory>
-#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
-#include <src/wfn/rdm.h>
 #include <src/casscf/rotfile.h>
 
 namespace bagel {

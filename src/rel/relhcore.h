@@ -27,11 +27,8 @@
 #ifndef __SRC_REL_RELHCORE_H
 #define __SRC_REL_RELHCORE_H
 
-#include <src/wfn/geometry.h>
 #include <src/scf/hcore.h>
 #include <src/scf/kinetic.h>
-#include <src/util/matrix.h>
-#include <src/util/zmatrix.h>
 #include <src/rel/smallnai.h>
 
 namespace bagel {

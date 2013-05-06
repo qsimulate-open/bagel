@@ -26,17 +26,10 @@
 #ifndef __meh_meh_h
 #define __meh_meh_h
 
-#include <utility>
-
-#include <src/scf/coeff.h>
-#include <src/wfn/reference.h>
 #include <src/dimer/dimer.h>
-#include <src/dimer/dimer_cispace.h>
 #include <src/dimer/dimer_jop.h>
-#include <src/fci/dvec.h>
-#include <src/util/matrix.h>
-#include <src/meh/quantization.h>
 #include <src/util/lexical_cast.h>
+#include <src/meh/quantization.h>
 
 namespace bagel {
 

@@ -27,9 +27,7 @@
 #ifndef __src_scf_dipole_h
 #define __src_scf_dipole_h
 
-#include <src/wfn/geometry.h>
 #include <src/scf/matrix1earray.h>
-#include <memory>
 
 namespace bagel {
 

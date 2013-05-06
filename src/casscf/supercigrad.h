@@ -27,12 +27,7 @@
 #ifndef __BAGEL_CASSCF_SUPERCIGRAD_H
 #define __BAGEL_CASSCF_SUPERCIGRAD_H
 
-#include <memory>
-#include <string>
-#include <map>
-#include <src/scf/scf.h>
 #include <src/casscf/superci.h>
-#include <src/wfn/rdm.h>
 
 namespace bagel {
 

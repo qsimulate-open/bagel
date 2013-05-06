@@ -27,11 +27,7 @@
 #ifndef __newint_scf_shell_h
 #define __newint_scf_shell_h
 
-#include <cassert>
 #include <array>
-#include <vector>
-#include <string>
-#include <memory>
 #include <src/util/matrix.h>
 
 namespace bagel {

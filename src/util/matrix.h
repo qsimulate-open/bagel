@@ -27,12 +27,8 @@
 #ifndef __SRC_UTIL_MATRIX_H
 #define __SRC_UTIL_MATRIX_H
 
-#include <cassert>
 #include <string>
-#include <algorithm>
-#include <memory>
 #include <list>
-#include <config.h>
 #include <src/util/f77.h>
 #include <src/util/matrix_base.h>
 #include <src/util/distmatrix_base.h>

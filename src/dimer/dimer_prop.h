@@ -26,8 +26,6 @@
 #ifndef __BAGEL_DIMER_PROP_H
 #define __BAGEL_DIMER_PROP_H
 
-#include <memory>
-#include <cassert>
 #include <array>
 #include <src/fci/properties.h>
 

@@ -27,18 +27,10 @@
 #ifndef __BAGEL_SRC_SCF_FOCK_H
 #define __BAGEL_SRC_SCF_FOCK_H
 
-#include <iostream>
-#include <iomanip>
-#include <memory>
-#include <algorithm>
-#include <stdexcept>
 #include <src/df/df.h>
-#include <src/util/f77.h>
 #include <src/rysint/libint.h>
 #include <src/rysint/eribatch.h>
-#include <src/util/matrix.h>
 #include <src/scf/fock_base.h>
-#include <src/util/timer.h>
 
 namespace bagel {
 

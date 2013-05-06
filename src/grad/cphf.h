@@ -27,8 +27,6 @@
 #ifndef __SRC_GRAD_CPHF_H
 #define __SRC_GRAD_CPHF_H
 
-#include <src/util/matrix.h>
-#include <memory>
 #include <src/util/linearRM.h>
 #include <src/wfn/reference.h>
 

@@ -27,8 +27,6 @@
 #ifndef __BAGEL_CASSCF_SUPERCI_H
 #define __BAGEL_CASSCF_SUPERCI_H
 
-#include <memory>
-#include <string>
 #include <map>
 #include <src/scf/scf.h>
 #include <src/casscf/casscf.h>

@@ -28,10 +28,6 @@
 #include <src/osint/kineticbatch.h>
 #include <src/osint/dipolebatch.h>
 #include <src/rysint/naibatch.h>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 
 using namespace std;
 using namespace bagel;

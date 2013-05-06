@@ -27,10 +27,6 @@
 #ifndef __SRC_GRAD_CPCASSCF_H
 #define __SRC_GRAD_CPCASSCF_H
 
-#include <src/util/matrix.h>
-#include <memory>
-#include <src/wfn/reference.h>
-#include <src/fci/civec.h>
 #include <src/fci/fci.h>
 #include <src/util/pairfile.h>
 

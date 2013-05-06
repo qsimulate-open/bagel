@@ -26,20 +26,10 @@
 #ifndef __BAGEL_FCI_FCI_H
 #define __BAGEL_FCI_FCI_H
 
-#include <tuple>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <bitset>
-#include <src/util/constants.h>
 #include <src/fci/dvec.h>
 #include <src/fci/mofile.h>
-#include <src/fci/determinants.h>
 #include <src/fci/properties.h>
-#include <src/wfn/rdm.h>
-#include <src/wfn/reference.h>
 #include <src/wfn/ciwfn.h>
-#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 

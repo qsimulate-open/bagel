@@ -27,10 +27,7 @@
 #ifndef __src_scf_fock_base_h
 #define __src_scf_fock_base_h
 
-#include <src/wfn/geometry.h>
 #include <src/scf/matrix1e.h>
-#include <memory>
-#include <vector>
 
 namespace bagel {
 

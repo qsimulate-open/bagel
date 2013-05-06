@@ -29,8 +29,6 @@
 #include <src/util/diis.h>
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
-#include <iostream>
-#include <iomanip>
 
 using namespace bagel;
 using namespace std;

@@ -28,12 +28,6 @@
 #ifndef __BAGEL_DIMER_JOP_H
 #define __BAGEL_DIMER_JOP_H
 
-#include <fstream>
-#include <string>
-#include <memory>
-#include <cassert>
-#include <tuple>
-#include <src/wfn/reference.h>
 #include <src/fci/mofile.h>
 
 namespace bagel {

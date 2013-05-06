@@ -26,19 +26,11 @@
 #ifndef __SRC_DF_DF_H
 #define __SRC_DF_DF_H
 
-#include <vector>
-#include <memory>
-#include <stdexcept>
-#include <stddef.h>
-#include <src/df/dfblock.h>
 #include <src/wfn/atom.h>
-#include <src/util/matrix.h>
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
-#include <src/wfn/shell.h>
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
-#include <src/rysint/rysint.h>
 
 namespace bagel {
 

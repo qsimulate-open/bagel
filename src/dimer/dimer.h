@@ -23,18 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __dimer_dimer_h
-#define __dimer_dimer_h
+#ifndef __SRC_DIMER_DIMER_H
+#define __SRC_DIMER_DIMER_H
 
-#include <array>
-
-#include <src/wfn/geometry.h>
-#include <src/wfn/reference.h>
-#include <src/wfn/ciwfn.h>
-#include <src/scf/coeff.h>
-#include <src/fci/dvec.h>
 #include <src/fci/harrison.h>
-#include <src/util/matrix.h>
 #include <src/dimer/dimer_cispace.h>
 
 namespace bagel {

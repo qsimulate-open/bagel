@@ -25,12 +25,7 @@
 
 
 #include <src/scf/fock.h>
-#include <src/util/f77.h>
 #include <src/scf/symmat.h>
-#include <cassert>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 
 using namespace std;
 using namespace bagel;

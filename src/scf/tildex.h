@@ -28,7 +28,6 @@
 #define __src_scf_tildex_h
 
 #include <src/util/matrix.h>
-#include <memory>
 
 namespace bagel {
 

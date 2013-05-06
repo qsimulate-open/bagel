@@ -30,10 +30,7 @@
 // a class for using the BFGS solver, which requires
 // "clone, ddot and daxpy, along with overloaded operators and a copy constructor"
 
-#include <vector>
-#include <memory>
 #include <cassert>
-#include <iostream>
 #include <iomanip>
 #include <src/util/matrix.h>
 #include <src/wfn/geometry.h>

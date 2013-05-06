@@ -26,9 +26,6 @@
 #ifndef __SRC_DF_DFINTTASK_OLD
 #define __SRC_DF_DFINTTASK_OLD
 
-#include <array>
-#include <memory>
-#include <src/wfn/shell.h>
 #include <src/rysint/rysint.h>
 
 namespace bagel {

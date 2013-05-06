@@ -29,7 +29,6 @@
 
 #include <src/fci/fci.h>
 #include <src/scf/coeff.h>
-#include <src/df/df.h>
 
 namespace bagel {
 
@@ -41,11 +40,10 @@ class Jvec {
 
   public:
     Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<const Coeff> c, const size_t, const size_t, const size_t);
-    ~Jvec() {};
 
-    const std::shared_ptr<const DFHalfDist> half() const { return half_; };
-    const std::shared_ptr<const DFFullDist> jvec() const { return jvec_; };
-    const double* rdm2_all() const { return rdm2_all_.get(); };
+    const std::shared_ptr<const DFHalfDist> half() const { return half_; }
+    const std::shared_ptr<const DFFullDist> jvec() const { return jvec_; }
+    const double* rdm2_all() const { return rdm2_all_.get(); }
 
 };
 

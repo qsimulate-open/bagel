@@ -31,7 +31,6 @@
 #include <src/scf/scf_base.h>
 #include <src/dimer/dimer_levelshift.h>
 #include <src/dimer/dimer.h>
-#include <src/wfn/reference.h>
 
 namespace bagel {
 

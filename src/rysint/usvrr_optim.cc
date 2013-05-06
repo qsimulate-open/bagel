@@ -25,12 +25,6 @@
 
 
 #include <src/rysint/slaterbatch.h>
-#include <iostream>
-#include <iomanip>
-#include <cmath>
-#include <cassert>
-#include <algorithm>
-#include <cstring>
 
 using namespace std;
 using namespace bagel;

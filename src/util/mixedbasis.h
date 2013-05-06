@@ -27,13 +27,6 @@
 #ifndef __SRC_UTIL_MIXED_MATRIX1E_H
 #define __SRC_UTIL_MIXED_MATRIX1E_H
 
-#include <iostream>
-#include <iomanip>
-#include <memory>
-#include <vector>
-#include <cassert>
-#include <string>
-#include <src/util/matrix.h>
 #include <src/wfn/geometry.h>
 
 namespace bagel {

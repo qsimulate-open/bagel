@@ -29,8 +29,6 @@
 
 #include <src/mp2/mp2.h>
 #include <src/wfn/reference.h>
-#include <string>
-#include <map>
 
 namespace bagel {
 

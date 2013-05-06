@@ -25,9 +25,6 @@
 
 
 #include <src/casscf/werner.h>
-#include <src/casscf/jvec.h>
-#include <src/scf/matrix1e.h>
-#include <src/casscf/rotfile.h>
 #include <src/util/aughess.h>
 #include <src/util/linear.h>
 #include <src/casscf/jkop.h>

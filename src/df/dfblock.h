@@ -27,8 +27,6 @@
 #define __SRC_DF_DFBLOCK_H
 
 #include <numeric>
-#include <memory>
-#include <cassert>
 #include <src/util/matrix.h>
 #include <src/util/timer.h>
 #include <src/parallel/staticdist.h>

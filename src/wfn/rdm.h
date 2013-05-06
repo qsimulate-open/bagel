@@ -27,15 +27,8 @@
 #ifndef __BAGEL_WFN_RDM_H
 #define __BAGEL_WFN_RDM_H
 
-#include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <cassert>
-#include <stdexcept>
 #include <type_traits>
 #include <src/wfn/geometry.h>
-#include <src/util/f77.h>
 #include <src/util/matrix.h>
 
 namespace bagel {

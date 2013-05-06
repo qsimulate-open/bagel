@@ -27,10 +27,8 @@
 #define __io_moldenio_h
 
 #include <fstream>
-#include <vector>
 
 #include <src/io/fileio.h>
-#include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {

@@ -23,22 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <array>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <algorithm>
-#include <map>
-
-#include <fstream>
-#include <vector>
-
 #include <src/io/moldenout.h>
-#include <src/wfn/atom.h>
-#include <src/wfn/geometry.h>
-#include <src/wfn/reference.h>
-#include <src/util/constants.h>
 #include <src/util/atommap.h>
 
 using namespace bagel;

@@ -24,16 +24,12 @@
 //
 
 
-#ifndef __src_scf_geometry_h
-#define __src_scf_geometry_h
+#ifndef __SRC_WFN_GEOMETRY_H
+#define __SRC_WFN_GEOMETRY_H
 
-#include <stddef.h>
-#include <string>
-#include <vector>
+#include <src/df/df.h>
 #include <src/wfn/atom.h>
 #include <src/wfn/petite.h>
-#include <memory>
-#include <src/df/df.h>
 #include <boost/property_tree/ptree.hpp>
 
 namespace bagel {

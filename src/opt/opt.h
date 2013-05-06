@@ -27,14 +27,9 @@
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
-#include <map>
-#include <memory>
-#include <string>
 #include <fstream>
 #include <src/util/bfgs.h>
 #include <src/util/timer.h>
-#include <src/wfn/geometry.h>
-#include <src/grad/gradfile.h>
 #include <src/grad/gradeval.h>
 
 namespace bagel {

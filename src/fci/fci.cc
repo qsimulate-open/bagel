@@ -23,18 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <string>
-#include <vector>
-#include <bitset>
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
-
 #include <src/fci/fci.h>
 #include <src/fci/space.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
-#include <src/util/constants.h>
 #include <src/util/davidson.h>
 
 using namespace std;

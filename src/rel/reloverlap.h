@@ -27,10 +27,8 @@
 #ifndef __SRC_REL_RELOVERLAP_H
 #define __SRC_REL_RELOVERLAP_H
 
-#include <src/wfn/geometry.h>
 #include <src/scf/overlap.h>
 #include <src/scf/kinetic.h>
-#include <src/util/matrix.h>
 #include <src/util/zmatrix.h>
 
 namespace bagel {

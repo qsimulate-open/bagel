@@ -27,11 +27,7 @@
 #ifndef _BAGEL_WFN_REFERENCE_H
 #define _BAGEL_WFN_REFERENCE_H
 
-#include <cassert>
-#include <memory>
-#include <vector>
 #include <set>
-
 #include <src/scf/coeff.h>
 #include <src/scf/hcore.h>
 #include <src/wfn/geometry.h>

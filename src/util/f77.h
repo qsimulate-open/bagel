@@ -22,12 +22,12 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-
 //
 
 #ifndef __SRC_UTIL_F77_H
 #define __SRC_UTIL_F77_H
 
+#include <config.h>
 #include <complex>
 #include <memory>
 

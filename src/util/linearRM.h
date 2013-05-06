@@ -27,6 +27,7 @@
 #ifndef __BAGEL_SRC_UTIL_LinearRM_H
 #define __BAGEL_SRC_UTIL_LinearRM_H
 
+#include <cassert>
 #include <memory>
 #include <list>
 #include <stdexcept>

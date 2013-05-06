@@ -42,6 +42,7 @@
 #include <src/util/constants.h>
 #include <src/util/atommap.h>
 #include <src/util/lexical_cast.h>
+#include <src/util/f77.h>
 
 using namespace bagel;
 using namespace std;

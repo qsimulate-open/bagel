@@ -31,11 +31,6 @@
 #include <src/scf/levelshift.h>
 #include <src/util/diis.h>
 #include <src/prop/dipole.h>
-#include <src/wfn/reference.h>
-#include <iostream>
-#include <iomanip>
-#include <src/parallel/mpi_interface.h>
-#include <src/util/timer.h>
 #include <src/scf/atomicdensities.h>
 
 namespace bagel {

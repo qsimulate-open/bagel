@@ -26,9 +26,6 @@
 #ifndef __SRC_PARALLEL_ACCREQUEST_H
 #define __SRC_PARALLEL_ACCREQUEST_H
 
-#include <map>
-#include <memory>
-#include <mutex>
 #include <tuple>
 #include <cassert>
 #include <src/parallel/mpi_interface.h>

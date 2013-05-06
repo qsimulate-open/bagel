@@ -28,7 +28,6 @@
 #define __BAGEL_CASSCF_WERNER_H
 
 #include <src/casscf/casscf.h>
-#include <src/casscf/rotfile.h>
 #include <src/casscf/jvec.h>
 
 namespace bagel {

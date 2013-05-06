@@ -27,15 +27,7 @@
 #ifndef __BAGEL_UTIL_LOCALIZE_H
 #define __BAGEL_UTIL_LOCALIZE_H
 
-#include <cassert>
-#include <string>
-#include <algorithm>
-#include <memory>
-#include <list>
-#include <src/wfn/geometry.h>
-#include <src/scf/coeff.h>
 #include <src/wfn/reference.h>
-#include <src/util/matrix.h>
 
 namespace bagel {
 

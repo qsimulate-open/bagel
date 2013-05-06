@@ -23,11 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/taskqueue.h>
-#include <src/util/f77.h>
-#include <src/parallel/mpi_interface.h>
 #include <src/df/dfdistt.h>
-#include <src/util/timer.h>
 #include <src/util/simple.h>
 
 using namespace std;

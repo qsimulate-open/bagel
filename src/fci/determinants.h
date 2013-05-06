@@ -27,11 +27,9 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
-#include <stddef.h>
 #include <memory>
 #include <tuple>
 #include <string>
-#include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <vector>

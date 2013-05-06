@@ -27,10 +27,7 @@
 #ifndef __SRC_REL_SMALLNAI_H
 #define __SRC_REL_SMALLNAI_H
 
-#include <memory>
-#include <array>
 #include <src/util/zmatrix.h>
-#include <src/wfn/geometry.h>
 #include <src/scf/matrix1earray.h>
 
 namespace bagel {
