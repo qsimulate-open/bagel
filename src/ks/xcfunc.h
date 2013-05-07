@@ -30,6 +30,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <cassert>
 #include <config.h>
 #ifdef HAVE_XC_H
 #include <xc.h> // header provided by libxc

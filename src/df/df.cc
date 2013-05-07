@@ -25,6 +25,7 @@
 
 
 #include <src/df/df.h>
+#include <src/df/dfdistt.h>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/libint.h>
 
