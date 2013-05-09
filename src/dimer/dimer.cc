@@ -466,26 +466,29 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   else set_active(idata);
 
   // Localize
-  localize(idata);
+  string localmethod = read_input<string>(idata, "localization", "pm");
+  if (localmethod != "none") {
+    localize(idata);
 
-  // Sub-diagonalize Fock Matrix
-  auto hcore = make_shared<const Hcore>(sgeom_);
-  auto fock  = make_shared<const Fock<1>>(sgeom_, hcore, dimerdensity, dimercoeff);
-  Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
+    // Sub-diagonalize Fock Matrix
+    auto hcore = make_shared<const Hcore>(sgeom_);
+    auto fock  = make_shared<const Fock<1>>(sgeom_, hcore, dimerdensity, dimercoeff);
+    Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
 
-  Matrix transform(dimerbasis_, dimerbasis_);
-  transform.add_diag(1.0);
+    Matrix transform(dimerbasis_, dimerbasis_);
+    transform.add_diag(1.0);
 
-  const int subsize = ncore_.first + ncore_.second + nact_.first + nact_.second;
-  vector<int> subsizes = {ncore_.first, ncore_.second, nact_.first, nact_.second};
-  vector<double> subeigs(dimerbasis_, 0.0);
+    const int subsize = ncore_.first + ncore_.second + nact_.first + nact_.second;
+    vector<int> subsizes = {ncore_.first, ncore_.second, nact_.first, nact_.second};
+    vector<double> subeigs(dimerbasis_, 0.0);
 
-  shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
-  transform.copy_block(0,0,diag_blocks);
+    shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
+    transform.copy_block(0,0,diag_blocks);
 
-  auto ncoeff = make_shared<Matrix>(*scoeff_ * transform);
-  set_coeff(ncoeff);
-  sref_->set_eig(subeigs);
+    auto ncoeff = make_shared<Matrix>(*scoeff_ * transform);
+    set_coeff(ncoeff);
+    sref_->set_eig(subeigs);
+  }
 }
 
 
