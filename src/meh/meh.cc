@@ -325,9 +325,11 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
   const int end = min(nstates, dimerstates_);
   cout << endl << " ===== " << title << " =====" << endl;
-  for (int istate = 0; istate < end; ++istate) {
-    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(istate) << ", <S^2> = " << setprecision(4) << setw(6) << spinadiabats_->element(istate,istate) << endl;
-    double *eigendata = adiabats_->element_ptr(0,istate);
+  int isinglet = 0;
+  for (int istate = 0; istate < end; ++istate, ++isinglet) {
+    while (spinadiabats_->element(isinglet,isinglet) > 1.0e-3) ++isinglet;
+    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(isinglet) << ", <S^2> = " << setprecision(4) << setw(6) << spinadiabats_->element(isinglet,isinglet) << endl;
+    double *eigendata = adiabats_->element_ptr(0,isinglet);
     for(auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
       const int nB = subspace.nstates<1>();
