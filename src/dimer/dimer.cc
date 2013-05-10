@@ -466,7 +466,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   else set_active(idata);
 
   // Localize
-  string localmethod = read_input<string>(idata, "localization", "pm");
+  const string localmethod = idata.get<string>("localization", "pm");
   if (localmethod != "none") {
     localize(idata);
 
