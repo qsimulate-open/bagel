@@ -322,8 +322,19 @@ throw logic_error("broken!");
 
         dimer->scf(iter->second);
 
-        geom = dimer->sgeom();
+        *geom = *dimer->sgeom();
         ref = dimer->sref();
+      } else if (method == "to-dimer") {
+        auto inputdata = iter->second;
+        auto stringiter = inputdata.find("dimer_active");
+        if (stringiter == inputdata.end()) throw runtime_error("Need to set dimer_active in to-dimer method");
+        ref = ref->set_active(stringiter->second);
+
+        vector<int> sizes;
+        auto bound = iter->second.equal_range("unit");
+        for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
+
+        dimer = make_shared<Dimer>(ref, make_pair(sizes.at(0), sizes.at(1)));
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
@@ -353,7 +364,7 @@ throw logic_error("broken!");
         const int max_iter = iter->second.get<int>("max_iter", 50);
         const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
-        shared_ptr<const Coeff> new_coeff = localization->localize(max_iter,thresh);
+        shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize(max_iter,thresh));
         ref = make_shared<const Reference>(ref, new_coeff);
         
       } else if (method == "print") {

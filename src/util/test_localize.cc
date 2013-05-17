@@ -78,9 +78,8 @@ throw std::logic_error("region localization test broken");
       const int max_iter = iter->second.get<int>("max_iter", 50);
       const double thresh = iter->second.get<double>("thresh", 1.0e-6);
 
-      std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter, thresh);
-      ref = std::make_shared<const Reference>( ref, new_coeff ); 
-          
+      localization->localize(max_iter, thresh);
+
       std::cout.rdbuf(backup_stream);
       return localization->metric();
     }

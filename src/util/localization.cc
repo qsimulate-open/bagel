@@ -67,15 +67,21 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   auto U = make_shared<Matrix>(nbasis, nbasis); U->unit();
 
   // Classify each eigenvalue as occupied, mixed, or virtual. All of these classifications may need to be revisited at some point.
+  vector<int> region_occupied(sizes_.size(), 0); // Will contain info on number of occ/virt orbitals in each region
   vector<int> occupied, mixed, virt;
   {
     int imo = 0;
-    for(auto eig_iter = eigenvalues.begin(); eig_iter != eigenvalues.end(); ++eig_iter, ++imo) {
-      if (*eig_iter > 1.5) occupied.push_back(imo);
-      else if (*eig_iter > 0.5) mixed.push_back(imo);
-      else virt.push_back(imo);
+    const int nregions = sizes_.size();
+    for (int iregion = 0; iregion < nregions; ++iregion) {
+      const int isize = sizes_.at(iregion);
+      for(int i = 0; i < isize; ++i, ++imo) {
+        if (eigenvalues.at(imo) > 1.5) { occupied.push_back(imo); region_occupied.at(iregion) += 1; }
+        else if (eigenvalues.at(imo) > 0.5) mixed.push_back(imo);
+        else { virt.push_back(imo); }
+      }
     }
   }
+  region_orbitals_.push_back(region_occupied);
 
   // Starting rotations
   {
@@ -118,31 +124,33 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   return out;
 }
 
-shared_ptr<const Coeff> RegionLocalization::localize(const int iter, const double thresh) {
+shared_ptr<const Matrix> RegionLocalization::localize(const int iter, const double thresh) {
   const int nbasis = geom_->nbasis();
 
-  shared_ptr<const Coeff> out;
+  shared_ptr<const Matrix> out;
 
-  shared_ptr<Matrix> closed_coeff = localize_space(coeff_->form_density_rhf(nclosed_));
+  shared_ptr<Coeff> coeff = make_shared<Coeff>(*coeff_);
+
+  shared_ptr<Matrix> closed_coeff = localize_space(coeff->form_density_rhf(nclosed_));
   if (nact_ == 0) { // In this case, I'm done
-    out = make_shared<const Coeff>(*closed_coeff);
+    out = make_shared<const Matrix>(*closed_coeff);
   }
   else {
     auto tmp = make_shared<Matrix>(nbasis, nbasis);
 
     vector<double> active_weights(nbasis, 0.0);
     fill_n(active_weights.begin() + nclosed_, nact_, 1.0);
-    shared_ptr<Matrix> active_coeff = localize_space(coeff_->form_weighted_density_rhf(nclosed_+nact_, active_weights));
+    shared_ptr<Matrix> active_coeff = localize_space(coeff->form_weighted_density_rhf(nclosed_+nact_, active_weights));
 
     vector<double> virt_weights(nbasis, 0.0);
     fill(virt_weights.begin() + nclosed_ + nact_, virt_weights.begin() + nbasis, 1.0);
-    shared_ptr<Matrix> virt_coeff = localize_space(coeff_->form_weighted_density_rhf(nbasis, virt_weights));
+    shared_ptr<Matrix> virt_coeff = localize_space(coeff->form_weighted_density_rhf(nbasis, virt_weights));
 
     tmp->copy_block(0, 0, nbasis, nclosed_, closed_coeff);
     tmp->copy_block(0, nclosed_, nbasis, nact_, active_coeff);
     tmp->copy_block(0, nclosed_ + nact_, nbasis, nbasis - (nclosed_ + nact_), virt_coeff);
 
-    out = make_shared<const Coeff>(*tmp);
+    out = make_shared<const Matrix>(*tmp);
   }
 
   return out;
@@ -162,7 +170,7 @@ void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
   }
 }
 
-shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double thresh) {
+shared_ptr<const Matrix> PMLocalization::localize(const int iter, const double thresh) {
   iter_ = iter; thresh_ = thresh;
 
   shared_ptr<Matrix> new_coeff = coeff_->copy();
@@ -196,7 +204,7 @@ shared_ptr<const Coeff> PMLocalization::localize(const int iter, const double th
     cout << "  No virtual space to localize" << endl << endl;
   }
 
-  auto out = make_shared<const Coeff>(*new_coeff);
+  auto out = make_shared<const Matrix>(*new_coeff);
   coeff_ = out;
 
   return out;
