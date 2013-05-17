@@ -56,13 +56,13 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<Ref<Dvec>, Ref<Dvec>> ccvecs_;
       std::pair<Ref<CIWfn>, Ref<CIWfn>> ci_;
 
-      std::shared_ptr<Geometry>   sgeom_;
+      std::shared_ptr<const Geometry>   sgeom_;
       std::shared_ptr<Reference>  sref_;
       std::shared_ptr<Coeff>      scoeff_;
       std::shared_ptr<Coeff>      proj_coeff_; // Basically the same thing as scoeff_, except purposefully non-orthogonal
 
       int dimerbasis_; // Basis size of both together
-      int dimerstates_;
+      int nclosed_;
 
       std::pair<int, int> ncore_;
       std::pair<int, int> nact_;
@@ -78,6 +78,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       Dimer(Ref<Geometry> a, std::array<double,3> displacement);
       Dimer(Ref<Reference> A, Ref<Reference> B);
       Dimer(Ref<Reference> a, std::array<double,3> displacement);
+      Dimer(Ref<Reference> superref, std::pair<int,int> regions);
       Dimer(Ref<CIWfn> a, std::array<double,3> displacement);
 
       // Return functions
@@ -85,7 +86,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<Ref<Coeff>, Ref<Coeff>> coeffs() const { return coeffs_; };
       std::pair<Ref<Dvec>, Ref<Dvec>> ccvec() const { return ccvecs_; };
 
-      std::shared_ptr<Geometry> sgeom() const { return sgeom_; };
+      std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<Reference> sref() const { return sref_; };
       std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
@@ -131,7 +132,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
 template<int unit>
 std::shared_ptr<const Dvec> Dimer::embedded_casci(std::multimap<std::string,std::string> idata, const int charge, const int nspin, const int nstates) const { 
-  const int nclosed = ncore_.first + ncore_.second;
+  const int nclosed = nclosed_;
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const int nact = (unit == 0) ? nact_.first : nact_.second;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;

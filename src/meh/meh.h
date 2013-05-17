@@ -134,7 +134,7 @@ class MultiExcitonHamiltonian {
       void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
       void print_adiabats(const double thresh = 0.05, const std::string title = "Adiabats", const int nstates = 10) const;
       void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
-      void print(const int nstates = 10, const double thresh = 0.0001) const;
+      void print(const int nstates = 10, const double thresh = 0.05) const;
 
       const Coupling coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const;
 

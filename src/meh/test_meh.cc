@@ -66,7 +66,7 @@ double meh_energy(std::string inp) {
       }   
       dimer->scf(iter->second);
 
-      geom = dimer->sgeom();
+      *geom = *dimer->sgeom();
       ref = dimer->sref();
     } else if (iter->first == "meh") {
       std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);

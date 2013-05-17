@@ -65,8 +65,7 @@ double pm_localization(std::string filename) {
       const int max_iter = read_input<int>(iter->second,"max_iter", 50);
       const double thresh = read_input<double>(iter->second,"thresh", 1.0e-6);
 
-      std::shared_ptr<const Coeff> new_coeff = localization->localize(max_iter, thresh);
-      ref = std::shared_ptr<const Reference>(new const Reference( ref, new_coeff )); 
+      localization->localize(max_iter, thresh);
           
       std::cout.rdbuf(backup_stream);
       return localization->metric();
