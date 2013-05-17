@@ -77,7 +77,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<std::bitset<nbit__>>& string,
-                     std::vector<std::vector<DetMap>>& target);
+                     std::vector<std::vector<DetMap>>& target, std::vector<std::vector<DetMap>>& uncompressed_target);
 
     // this is slow but robust implementation of bit to number converter.
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
@@ -96,9 +96,13 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
     const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
 
-    // configuration list i^dagger j
+    // configuration list i^dagger j compressed
     std::vector<std::vector<DetMap>> phia_;
     std::vector<std::vector<DetMap>> phib_;
+
+    // configuration list i^dagger j uncompressed
+    std::vector<std::vector<DetMap>> phia_uncompressed_;
+    std::vector<std::vector<DetMap>> phib_uncompressed_;
 
     // configuration list i^dagger
     std::vector<std::vector<DetMap>> phiupa_;
@@ -183,8 +187,13 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     int neleb() const { return neleb_; }
     bool compress() const { return compress_; }
 
+    // single index goes to normal versions (compressed based on compress_)
     const std::vector<DetMap>& phia(const int i) const { return phia_[i]; }
     const std::vector<DetMap>& phib(const int i) const { return phib_[i]; }
+
+    // two indices goes to uncompressed versions
+    const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_[i + j*norb_]; }
+    const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_[i + j*norb_]; }
 
     const std::vector<DetMap>& phiupa(const int i) const { return phiupa_[i]; }
     const std::vector<DetMap>& phiupb(const int i) const { return phiupb_[i]; }
@@ -208,12 +217,19 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
 
 // Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
 template <int spin>
-void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, std::vector<std::vector<DetMap>>& phi) {
+void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, std::vector<std::vector<DetMap>>& phi,
+    std::vector<std::vector<DetMap>>& uncompressed_phi) {
 
   phi.clear();
   phi.resize(compress_ ? norb_*(norb_+1)/2 : norb_*norb_);
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    iter->reserve(string.size());
+  for (auto& iter : phi ) {
+    iter.reserve(string.size());
+  }
+
+  uncompressed_phi.clear();
+  uncompressed_phi.resize(norb_*norb_);
+  for (auto& iter : uncompressed_phi ) {
+    iter.reserve(string.size());
   }
 
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
@@ -228,7 +244,9 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
             mbit.set(j);
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
-            phi[minij+((maxij*(maxij+1))>>1)].push_back(DetMap(lexical<spin>(mbit), sign(mbit, i, j), source));
+            auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
+            phi[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
+            uncompressed_phi[i + j*norb_].push_back(detmap);
           }
         }
       } else if ((*iter)[i]) {
@@ -238,7 +256,9 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
-            phi[i+j*norb_].push_back(DetMap(lexical<spin>(mbit), sign(mbit, i, j), source));
+            auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
+            phi[i + j*norb_].push_back(detmap);
+            uncompressed_phi[i + j*norb_].push_back(detmap);
           }
         }
       }
