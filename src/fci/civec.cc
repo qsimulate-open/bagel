@@ -171,47 +171,32 @@ shared_ptr<Civec> Civec::spin() const {
   // First the easy part, S_z^2 + S_z
   const double sz = 0.5*static_cast<double>(det_->nspin());
   *out = *this;
-  *out *= sz*sz + sz;
+  *out *= sz*sz + sz + det_->neleb();
 
   const int norb = det_->norb();
   const int lena = det_->lena();
   const int lenb = det_->lenb();
 
-  double* source = cc_ptr_;
-  // This is a safe but probably slow implementation
-  for (int aiter = 0; aiter < lena; ++aiter) {
-    auto alphastring = det_->stringa(aiter);
-    for (int biter = 0; biter < lenb; ++biter, ++source) {
-      auto betastring = det_->stringb(biter);
-      for (int i = 0; i < norb; ++i) {
-        for (int j = 0; j < norb; ++j) {
-          bitset<nbit__> abit = alphastring;
-          bitset<nbit__> bbit = betastring;
-          if (abit[i]) {
-            abit.reset(i);
-            if (!abit[j]) {
-              abit.set(j);
-              if (bbit[j]) {
-                bbit.reset(j);
-                if (!bbit[i]) {
-                  bbit.set(i);
+  auto intermediate = make_shared<Civec>(det_);
 
-                  // Now the computation begins
-                  const int atarget = det_->lexical<0>(abit);
-                  const int btarget = det_->lexical<1>(bbit);
-                  const int aphase = det_->sign(alphastring, j, i);
-                  const int bphase = det_->sign(betastring, i, j);
+  for (int i = 0; i < norb; ++i) {
+    for (int j = 0; j < norb; ++j) {
+      intermediate->zero();
 
-                  out->element(btarget, atarget) -= static_cast<double>(aphase*bphase) * (*source);
-                }
-              }
-            }
-          }
-        }
+      for ( auto& iter : det_->phia(i,j) ) {
+        const double* source = this->element_ptr(0, iter.source);
+        double* target = intermediate->element_ptr(0, iter.target);
+        double sign = static_cast<double>(iter.sign);
 
-        if (betastring[i]) {
-          out->element(biter,aiter) += *source;
-        }
+        daxpy_(lenb, sign, source, 1, target, 1);
+      }
+
+      for ( auto& iter : det_->phib(j,i) ) {
+        double* source = intermediate->element_ptr(iter.source, 0);
+        double* target = out->element_ptr(iter.target, 0);
+        double sign = static_cast<double>(-iter.sign);
+
+        daxpy_(lena, sign, source, lenb, target, lenb);
       }
     }
   }
