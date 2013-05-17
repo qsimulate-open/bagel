@@ -325,6 +325,7 @@ throw logic_error("broken!");
         *geom = *dimer->sgeom();
         ref = dimer->sref();
       } else if (method == "to-dimer") {
+#if 0
         auto inputdata = iter->second;
         auto stringiter = inputdata.find("dimer_active");
         if (stringiter == inputdata.end()) throw runtime_error("Need to set dimer_active in to-dimer method");
@@ -335,6 +336,9 @@ throw logic_error("broken!");
         for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
         dimer = make_shared<Dimer>(ref, make_pair(sizes.at(0), sizes.at(1)));
+#else
+throw logic_error("broken!");
+#endif
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
