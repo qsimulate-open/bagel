@@ -46,10 +46,10 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
   const_string_lists_();
   if (!mute) cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
   if (!mute) cout << "  o single displacement lists (alpha)" << endl;
-  const_phis_<0>(stringa_, phia_);
+  const_phis_<0>(stringa_, phia_, phia_uncompressed_);
   if (!mute) cout << "      length: " << setw(13) << phia_.size()*phia_.front().size() << endl;
   if (!mute) cout << "  o single displacement lists (beta)" << endl;
-  const_phis_<1>(stringb_, phib_);
+  const_phis_<1>(stringb_, phib_, phib_uncompressed_);
   if (!mute) cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
   if (!mute) cout << "  o size of the space " << endl;
   if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
