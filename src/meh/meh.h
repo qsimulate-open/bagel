@@ -100,6 +100,7 @@ class MultiExcitonHamiltonian {
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
       MatrixPtr spin_; //S^2 matrix
+      MatrixPtr spin_filter_; // spin filter
       MatrixPtr spinadiabats_; // S^2 matrix transformed into adiabatic basis
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
 
@@ -110,16 +111,21 @@ class MultiExcitonHamiltonian {
       const int dimerclosed_;
       const int dimeractive_;
       int dimerstates_;
+      int max_spin_;
 
       // Localized quantities
       std::pair<const int, const int> nact_;
       std::pair<const int, const int> nbasis_;
-      std::pair<const int, const int> nstates_;
+
+      // Options
+      int nstates_;
+      int max_iter_;
+      bool dipoles_;
+
+      double thresh_;
 
    public:
-      MultiExcitonHamiltonian(std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
-
-      int dimerstate(const int A, const int B) const { return (A + B*nstates_.first); };
+      MultiExcitonHamiltonian(const boost::property_tree::ptree& input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
 
       void compute();
 
@@ -152,6 +158,8 @@ class MultiExcitonHamiltonian {
       int coupling_index(const int a, const int b, const int c, const int d) const {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
+
+      void spin_decontaminate(Matrix& o);
 
       MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;

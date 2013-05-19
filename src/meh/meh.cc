@@ -24,6 +24,7 @@
 //
 
 #include <src/dimer/dimer_prop.h>
+#include <src/util/davidson.h>
 #include <src/meh/meh.h>
 
 using namespace std;
@@ -34,11 +35,16 @@ using namespace bagel;
 * debug, using as much code as possible from other functions already written. This  *
 * will eventually be fixed.                                                         *
 ************************************************************************************/
-MultiExcitonHamiltonian::MultiExcitonHamiltonian(shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
+MultiExcitonHamiltonian::MultiExcitonHamiltonian(const boost::property_tree::ptree& input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
   ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace), 
   dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
-  nact_(dimer->nact()), nbasis_(dimer->nbasis()), nstates_(cispace->nstates())
+  nact_(dimer->nact()), nbasis_(dimer->nbasis())
 {
+  nstates_ = input.get<int>("nstates", 10);
+  max_iter_ = input.get<int>("max_iter", 50);
+  dipoles_ = input.get<bool>("dipoles", false);
+  thresh_ = input.get<double>("thresh", 1.0e-12);
+
   common_init();
 }
 
@@ -58,6 +64,8 @@ void MultiExcitonHamiltonian::common_init() {
       subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
     }
   }
+
+  energies_ = vector<double>(nstates_, 0.0);
 }
 
 const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
@@ -122,13 +130,7 @@ void MultiExcitonHamiltonian::compute() {
     }
   }
 
-  cout << "  o Diagonalizing ME Hamiltonian" << endl;
-  adiabats_ = make_shared<Matrix>(*hamiltonian_);
-  energies_ = vector<double>(dimerstates_, 0.0);
-  adiabats_->diagonalize(energies_.data());
-
   cout << "  o Constructing spin matrix." << endl;
-
   spin_ = make_shared<Matrix>(dimerstates_, dimerstates_);
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
@@ -143,18 +145,148 @@ void MultiExcitonHamiltonian::compute() {
     spin_->add_block(ioff, ioff, compute_diagonal_spin_block(*iAB));
   }
 
+  // Forming spin filter
+  max_spin_ = 0;
+  for (auto& iAB : subspaces_) {
+    int spinA = iAB.ci<0>()->det()->nspin();
+    max_spin_ = max(max_spin_, spinA);
+  }
+  max_spin_ = 2*max_spin_ + 1;
 
-  spinadiabats_ = make_shared<Matrix>((*adiabats_) % (*spin_) * (*adiabats_));
+  spin_filter_ = make_shared<Matrix>(dimerstates_, dimerstates_);
+  spin_filter_->unit();
+  for (int ispin = 1; ispin != max_spin_; ++ispin) {
+    Matrix eye(dimerstates_, dimerstates_); eye.unit();
+    const double kk1 = 0.25 * static_cast<double>( ispin*(ispin + 2) );
+    eye.scale(kk1);
 
-  cout << "  o Computing properties" << endl;
-  DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
-  array<string,3> mu_labels = {{"x", "y", "z"}};
-  for (int i = 0; i < 3; ++i) {
-    string label("mu_");
-    label += mu_labels[i];
-    shared_ptr<Matrix> tmp = compute_1e_prop(dipole.dipoles<0>(i), dipole.dipoles<1>(i), dipole.cross_dipole(i), dipole.core_dipole(i));
-    auto prop = make_shared<Matrix>((*adiabats_) % (*tmp) * (*adiabats_));
-    properties_.push_back(make_pair(label, prop));
+    *spin_filter_ *= *spin_ - eye;
+  }
+
+  cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << endl << endl;
+  DavidsonDiag<Matrix> davidson(nstates_, max_iter_);
+
+  // Generate initial guesses
+  vector<shared_ptr<Matrix>> cc;
+  int trialsize = min(2*max_spin_*nstates_, dimerstates_);
+  {
+    int multiple = 1;
+    multimap<double,int> seeds;
+    while (seeds.size() < trialsize) {
+      seeds.clear();
+      for ( auto& iAB : subspaces_ ) {
+        const int ioff = iAB.offset();
+        const int nstatesA = iAB.nstates<0>();
+        const int nstatesB = iAB.nstates<1>();
+        for (int mult = 0; mult != multiple; ++mult) {
+          for (int i = 0; i != nstatesA; ++i) {
+            const int dindex = iAB.dimerindex(i,mult) + ioff;
+            seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
+          }
+          for (int i = 1; i != nstatesB; ++i) {
+            const int dindex = iAB.dimerindex(mult,i) + ioff;
+            seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
+          }
+        }
+      }
+      ++multiple;
+    }
+
+    auto iseed = seeds.begin();
+    Matrix initial(dimerstates_,trialsize);
+    for (int istate = 0; istate != trialsize; ++istate, ++iseed) {
+      initial(iseed->second, istate) = 1.0;
+    }
+
+    spin_decontaminate(initial);
+
+    Matrix overlap = initial % initial;
+    overlap.inverse_half();
+    initial = initial * overlap;
+    Matrix initialham = initial % *hamiltonian_ * initial;
+    multimap<double, int> tmpmap;
+    for (int i = 0; i < trialsize; ++i) {
+      tmpmap.insert(make_pair(initialham(i,i),i));
+    }
+
+    auto imap = tmpmap.begin();
+    for (int istate = 0; istate < nstates_; ++istate, ++imap) {
+      int ii = imap->second;
+      cc.push_back(initial.slice(ii,ii+1));
+    }
+  }
+
+  vector<int> conv(nstates_, static_cast<int>(false));
+
+  for (int iter = 0; iter != max_iter_; ++iter) {
+    vector<shared_ptr<const Matrix>> sigma;
+    vector<shared_ptr<const Matrix>> ccn;
+    for (int i = 0; i != nstates_; ++i) {
+      if (!conv[i]) {
+        sigma.push_back(make_shared<const Matrix>(*hamiltonian_ * *cc.at(i)));
+        ccn.push_back(make_shared<const Matrix>(*cc.at(i)));
+      }
+    }
+    const vector<double> energies = davidson.compute(ccn, sigma);
+
+    // residual
+    vector<shared_ptr<Matrix>> errvec = davidson.residual();
+    vector<double> errors;
+    for (int i = 0; i != nstates_; ++i) {
+      errors.push_back(errvec.at(i)->variance());
+      conv.at(i) = static_cast<int>(errors.at(i) < thresh_);
+    }
+
+    if(!*min_element(conv.begin(), conv.end())) {
+      for (int ist = 0; ist != nstates_; ++ist) {
+        if (conv.at(ist)) continue;
+        const int size = dimerstates_;
+        double* target_array = cc.at(ist)->data();
+        double* source_array = errvec.at(ist)->data();
+        const double en = energies.at(ist);
+        for (int i = 0; i != size; ++i) {
+          target_array[i] = source_array[i] / min(en - hamiltonian_->element(i,i), -0.1);
+        }
+        davidson.orthog(cc.at(ist));
+        list<shared_ptr<const Matrix>> tmp;
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc.at(jst));
+        cc.at(ist)->orthog(tmp);
+        spin_decontaminate(*cc.at(ist));
+        double nrm = cc.at(ist)->norm();
+        double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
+        cc.at(ist)->scale(scal);
+      }
+    }
+
+    if (nstates_ != 1 && iter) cout << endl;
+    for (int i = 0; i != nstates_; ++i) {
+      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                              << setw(17) << fixed << setprecision(8) << energies[i] << "   "
+                              << setw(10) << scientific << setprecision(2) << errors[i] << endl;
+      energies_.at(i) = energies[i];
+    }
+    if(*min_element(conv.begin(), conv.end())) break;
+  }
+
+  adiabats_ = make_shared<Matrix>(dimerstates_, nstates_);
+  vector<shared_ptr<Matrix>> advec = davidson.civec();
+  for (int i = 0; i != nstates_; ++i) {
+    copy_n(advec.at(i)->data(), dimerstates_, adiabats_->element_ptr(0, i));
+  }
+
+  spinadiabats_ = make_shared<Matrix>( (*adiabats_) % (*spin_) * (*adiabats_) );
+
+  if ( dipoles_ ) {
+    cout << "  o Computing properties" << endl;
+    DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
+    array<string,3> mu_labels = {{"x", "y", "z"}};
+    for (int i = 0; i < 3; ++i) {
+      string label("mu_");
+      label += mu_labels[i];
+      shared_ptr<Matrix> tmp = compute_1e_prop(dipole.dipoles<0>(i), dipole.dipoles<1>(i), dipole.cross_dipole(i), dipole.core_dipole(i));
+      shared_ptr<Matrix> prop(new Matrix( (*adiabats_) % (*tmp) * (*adiabats_) ));
+      properties_.push_back(make_pair(label, prop));
+    }
   }
 }
 
@@ -309,13 +441,13 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
 }
 
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
-  const int end = min(nstates, dimerstates_);
+  const int end = min(nstates, nstates_);
   cout << endl << " ===== " << title << " =====" << endl;
-  int isinglet = 0;
-  for (int istate = 0; istate < end; ++istate, ++isinglet) {
-    while (spinadiabats_->element(isinglet,isinglet) > 1.0e-3) ++isinglet;
-    cout << "   state  " << setw(3) << istate << ": " << setprecision(12) << setw(16) << energies_.at(isinglet) << ", <S^2> = " << setprecision(4) << setw(6) << spinadiabats_->element(isinglet,isinglet) << endl;
-    double *eigendata = adiabats_->element_ptr(0,isinglet);
+  for (int istate = 0; istate < end; ++istate) {
+    cout << "   state  " << setw(3) << istate << ": "
+         << setprecision(8) << setw(17) << fixed << energies_.at(istate) 
+         << "  <S^2> = " << fixed << setprecision(4) << setw(6) << spinadiabats_->element(istate,istate) << endl;
+    double *eigendata = adiabats_->element_ptr(0,istate);
     for(auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
       const int nB = subspace.nstates<1>();
@@ -350,5 +482,9 @@ void MultiExcitonHamiltonian::print_property(const string label, shared_ptr<cons
 
 void MultiExcitonHamiltonian::print(const int nstates, const double thresh) const {
   print_adiabats(thresh, "Adiabatic States", nstates);
-  for (auto& prop : properties_) print_property(prop.first, prop.second, nstates);
+  if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates); }
+}
+
+void MultiExcitonHamiltonian::spin_decontaminate(Matrix& o) {
+  o = *spin_filter_ * o;
 }

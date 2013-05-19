@@ -342,7 +342,7 @@ throw logic_error("broken!");
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
-          auto meh = make_shared<MultiExcitonHamiltonian>(dimer, cispace);
+          auto meh = make_shared<MultiExcitonHamiltonian>(iter->second, dimer, cispace);
           meh->compute();
           meh->print();
       } else if (method == "localize") {

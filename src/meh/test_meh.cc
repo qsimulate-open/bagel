@@ -79,7 +79,7 @@ double meh_energy(std::string inp) {
     } else if (method == "meh") {
       std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
 
-      auto meh = std::make_shared<MultiExcitonHamiltonian>(dimer, cispace);
+      auto meh = std::make_shared<MultiExcitonHamiltonian>(iter->second, dimer, cispace);
       meh->compute();
 
       std::cout.rdbuf(backup_stream);

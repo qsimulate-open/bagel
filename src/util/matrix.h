@@ -114,6 +114,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     double norm() const { return std::sqrt(ddot(*this)); }
     double ddot(const std::shared_ptr<const Matrix>) const;
     double rms() const;
+    double variance() const;
     double trace() const;
 
     void dscal(const double a) { dscal_(size(), a, data(), 1); }
