@@ -104,9 +104,7 @@ class MultiExcitonHamiltonian {
 
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
-      MatrixPtr spin_; //S^2 matrix
       MatrixPtr spin_filter_; // spin filter
-      MatrixPtr spinadiabats_; // S^2 matrix transformed into adiabatic basis
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
 
       std::vector<double> energies_; // Adiabatic energies

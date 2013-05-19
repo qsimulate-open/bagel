@@ -73,16 +73,22 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subs
     shared_ptr<Dvec> sigmavecAA = form_sigma_2e(ccvecA, jop_->mo2e_first());
 
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
+      const double* sdataA = sigmavecAA->data(stateA)->data();
+      for(int stateAp = 0; stateAp < stateA; ++stateAp) {
+        const double* cdataAp = ccvecA->data(stateAp)->data();
+        const double dotproduct = ddot_(lenab, sdataA, 1, cdataAp, 1);
+        for(int stateB = 0; stateB < nstatesB; ++stateB) {
+          const int stateApB = subspace.dimerindex(stateAp, stateB);
+          const int stateAB = subspace.dimerindex(stateA, stateB);
+          out->element(stateAB, stateApB) += dotproduct;
+          out->element(stateApB, stateAB) += dotproduct;
+        }
+      }
+      const double* cdataA = ccvecA->data(stateA)->data();
+      const double dotproduct = ddot_(lenab, sdataA, 1, cdataA, 1);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateAB = subspace.dimerindex(stateA, stateB);
-        const double *sdataA = sigmavecAA->data(stateA)->data();
-        for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-          const int stateABp = subspace.dimerindex(stateAp, stateB);
-          const double *cdataAp = ccvecA->data(stateAp)->data();
-          double value = ddot_(lenab, sdataA, 1, cdataAp, 1);
-          
-          out->element(stateAB, stateABp) += value;
-        }
+        out->element(stateAB,stateAB) += dotproduct;
       }
     }
   }
@@ -95,17 +101,23 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subs
     const int lenab = detB->lena() * detB->lenb();
     shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second());
 
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = subspace.dimerindex(stateA, stateB);
-        const double *sdataB = sigmavecBB->data(stateB)->data();
-        for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
+    for(int stateB = 0; stateB < nstatesB; ++stateB) {
+      const double* sdataB = sigmavecBB->data(stateB)->data();
+      for(int stateBp = 0; stateBp < stateB; ++stateBp) {
+        const double* cdataBp = ccvecB->data(stateBp)->data();
+        const double dotproduct = ddot_(lenab, sdataB, 1, cdataBp, 1);
+        for(int stateA = 0; stateA < nstatesA; ++stateA) {
+          const int stateAB = subspace.dimerindex(stateA, stateB);
           const int stateABp = subspace.dimerindex(stateA, stateBp);
-          const double *cdataBp = ccvecB->data(stateBp)->data();
-          double value = ddot_(lenab, sdataB, 1, cdataBp, 1);
-          
-          out->element(stateAB, stateABp) += value;
+          out->element(stateAB, stateABp) += dotproduct;
+          out->element(stateABp, stateAB) += dotproduct;
         }
+      }
+      const double* cdataB = ccvecB->data(stateB)->data();
+      const double dotproduct = ddot_(lenab, sdataB, 1, cdataB, 1);
+      for(int stateA = 0; stateA < nstatesA; ++stateA) {
+        const int stateAB = subspace.dimerindex(stateA, stateB);
+        out->element(stateAB,stateAB) += dotproduct;
       }
     }
   }
