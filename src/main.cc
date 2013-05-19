@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
     
-          shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(dimer, cispace));
+          shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(iter->second, dimer, cispace));
           meh->compute();
           meh->print();
       } else if (method == "localize") {

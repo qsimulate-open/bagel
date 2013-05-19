@@ -356,6 +356,10 @@ double Matrix::rms() const {
   return std::sqrt(ddot(*this) / (ndim_ * mdim_));
 }
 
+double Matrix::variance() const {
+  return ddot(*this) / (ndim_ * mdim_);
+}
+
 
 double Matrix::trace() const {
   double out = 0.0;
