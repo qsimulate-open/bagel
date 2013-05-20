@@ -3,8 +3,8 @@
 {
   "title" : "molecule",
   "symmetry" : "C1",
-  "basis" : "svp",
-  "df_basis" : "svp-jkfit",
+  "basis" : "sto-3g",
+  "df_basis" : "svp",
   "angstrom" : true,
   "geometry" : [
     {"atom" :"C", "xyz" : [ -1.204339000,  0.542851000, -0.047482000] },

@@ -91,7 +91,7 @@ throw std::logic_error("region localization test broken");
 BOOST_AUTO_TEST_SUITE(TEST_LOCALIZE)
 
 BOOST_AUTO_TEST_CASE(PML) {
-    BOOST_CHECK(compare(pm_localization("benzene_svp_pml"),13.5043846070, 1.0e-5));
+    BOOST_CHECK(compare(pm_localization("benzene_sto3g_pml"),13.2769000957, 1.0e-5));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
