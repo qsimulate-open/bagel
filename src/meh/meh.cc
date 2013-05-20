@@ -152,7 +152,7 @@ void MultiExcitonHamiltonian::compute() {
       int spinA = iAB.ci<0>()->det()->nspin();
       max_spin = max(max_spin, spinA);
     }
-    max_spin = 2*max_spin + 1;
+    max_spin_ = 2*max_spin + 1;
 
     spin_filter_ = make_shared<Matrix>(dimerstates_, dimerstates_);
     spin_filter_->unit();
