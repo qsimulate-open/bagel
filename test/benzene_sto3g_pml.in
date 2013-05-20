@@ -1,7 +1,7 @@
 molecule {
   symmetry = C1; // RI-HF is only for C1 symmetry.
-  basis = svp;
-  df_basis = svp-jkfit;
+  basis = sto-3g;
+  df_basis = svp;
   schwarz_thresh = 1.0e-12;
   angstrom = true;
   atom = (C, -1.204339000,  0.542851000, -0.047482000);
