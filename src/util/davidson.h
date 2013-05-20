@@ -110,7 +110,7 @@ class DavidsonDiag {
       std::shared_ptr<Matrix> tmp = scr_->get_submatrix(0, 0, size_, size_);
       tmp->diagonalize(vec_.get());
       scr_->copy_block(0, 0, tmp);
-      if ( orthogonalize_ ) *scr_ = *scr_ * *ovlp_scr_;
+      if ( orthogonalize_ ) *scr_ = *ovlp_scr_ * *scr_;
       eig_ = scr_->slice(0,nstate_);
 
       return std::vector<double>(vec_.get(), vec_.get()+nstate_);
