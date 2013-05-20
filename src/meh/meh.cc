@@ -132,7 +132,7 @@ void MultiExcitonHamiltonian::compute() {
 
   cout << "  o Building the spin filter." << endl;
   {
-    shared_ptr<Matrix> spin = make_shared<Matrix>(dimerstates_, dimerstates_);
+    spin_.diagonal() = vector<double>(dimerstates_, 0.0);
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       const int ioff = iAB->offset();
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -140,29 +140,36 @@ void MultiExcitonHamiltonian::compute() {
 
         shared_ptr<Matrix> spin_block = spin_couple_blocks(*iAB, *jAB);
 
-        spin->add_block(ioff, joff, spin_block);
-        spin->add_block(joff, ioff, spin_block->transpose());
+        const int n = spin_block->ndim();
+        const int m = spin_block->mdim();
+        for (int ispin = 0; ispin < n; ++ispin) {
+          for (int jspin = 0; jspin < m; ++jspin) {
+            if (fabs(spin_block->element(ispin,jspin)) > 1.0e-4) {
+              spin_.insert_offdiagonal(ispin+ioff,jspin+joff, spin_block->element(ispin,jspin));
+            }
+          }
+        }
       }
-      spin->add_block(ioff, ioff, compute_diagonal_spin_block(*iAB));
+      shared_ptr<Matrix> spin_block = compute_diagonal_spin_block(*iAB);
+      const int n = spin_block->ndim();
+      for (int ispin = 0; ispin < n; ++ispin) {
+        for (int jspin = 0; jspin < ispin; ++jspin) {
+          if (fabs(spin_block->element(ispin,jspin)) > 1.0e-4) {
+            spin_.insert_offdiagonal(ispin+ioff, jspin+ioff, spin_block->element(ispin,jspin));
+          }
+        }
+        spin_.diagonal().at(ispin + ioff) = spin_block->element(ispin,ispin);
+      }
     }
 
-    cout << "  o Building the spin filter." << endl;
-    int max_spin = 0;
+    cout << "    - offdiagonal spin elements: " << spin_.offdiagonal().size() << endl;
+
+    max_spin_ = 0;
     for (auto& iAB : subspaces_) {
       int spinA = iAB.ci<0>()->det()->nspin();
-      max_spin = max(max_spin, spinA);
+      max_spin_ = max(max_spin_, spinA);
     }
-    max_spin_ = 2*max_spin + 1;
-
-    spin_filter_ = make_shared<Matrix>(dimerstates_, dimerstates_);
-    spin_filter_->unit();
-    for (int ispin = 1; ispin != max_spin_; ++ispin) {
-      Matrix eye(dimerstates_, dimerstates_); eye.unit();
-      const double kk1 = 0.25 * static_cast<double>( ispin*(ispin + 2) );
-      eye.scale(kk1);
-
-      *spin_filter_ *= *spin - eye;
-    }
+    max_spin_ = 2*max_spin_ + 1;
   }
 
   cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << endl << endl;
@@ -185,7 +192,7 @@ void MultiExcitonHamiltonian::compute() {
             const int dindex = iAB.dimerindex(i,mult) + ioff;
             seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
           }
-          for (int i = 1; i != nstatesB; ++i) {
+          for (int i = mult + 1; i != nstatesB; ++i) {
             const int dindex = iAB.dimerindex(mult,i) + ioff;
             seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
           }
@@ -195,17 +202,17 @@ void MultiExcitonHamiltonian::compute() {
     }
 
     auto iseed = seeds.begin();
-    Matrix initial(dimerstates_,trialsize);
+    auto initial = make_shared<Matrix>(dimerstates_,trialsize);
     for (int istate = 0; istate != trialsize; ++istate, ++iseed) {
-      initial(iseed->second, istate) = 1.0;
+      initial->element(iseed->second, istate) = 1.0;
     }
 
-    spin_decontaminate(initial);
+    spin_decontaminate(*initial);
 
-    Matrix overlap = initial % initial;
+    Matrix overlap = *initial % *initial;
     overlap.inverse_half();
-    initial = initial * overlap;
-    Matrix initialham = initial % *hamiltonian_ * initial;
+    *initial = *initial * overlap;
+    Matrix initialham = *initial % *hamiltonian_ * *initial;
     multimap<double, int> tmpmap;
     for (int i = 0; i < trialsize; ++i) {
       tmpmap.insert(make_pair(initialham(i,i),i));
@@ -214,7 +221,7 @@ void MultiExcitonHamiltonian::compute() {
     auto imap = tmpmap.begin();
     for (int istate = 0; istate < nstates_; ++istate, ++imap) {
       int ii = imap->second;
-      cc.push_back(initial.slice(ii,ii+1));
+      cc.push_back(initial->slice(ii,ii+1));
     }
   }
 
@@ -442,10 +449,12 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
 
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
   const int end = min(nstates, nstates_);
+  shared_ptr<Matrix> spn = spin(*adiabats_);
   cout << endl << " ===== " << title << " =====" << endl;
   for (int istate = 0; istate < end; ++istate) {
     cout << "   state  " << setw(3) << istate << ": "
-         << setprecision(8) << setw(17) << fixed << energies_.at(istate) << endl;
+         << setprecision(8) << setw(17) << fixed << energies_.at(istate)
+         << "   " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
     for(auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
@@ -485,5 +494,48 @@ void MultiExcitonHamiltonian::print(const int nstates, const double thresh) cons
 }
 
 void MultiExcitonHamiltonian::spin_decontaminate(Matrix& o) {
-  o = *spin_filter_ * o;
+  const int ndim = o.ndim();
+  const int nmos = o.mdim();
+
+  Matrix tmp(ndim, nmos);
+  for (int ispin = 1; ispin != max_spin_; ++ispin) {
+    const double kk1 = 0.25 * static_cast<double>( ispin*(ispin+2) );
+
+    copy_n(o.data(), ndim * nmos, tmp.data());
+    // o = (SpinMatrix - eye*kk1) * o
+    for (int icc = 0; icc < nmos; ++icc) {
+      double* target = o.element_ptr(0,icc);
+      const double* source = tmp.element_ptr(0,icc);
+      vector<double> diag = spin_.diagonal();
+      for (int j = 0; j < ndim; ++j) {
+        target[j] = (diag[j] - kk1) * source[j];
+      }
+      for (auto& offdiag : spin_.offdiagonal() ) {
+        target[offdiag.i] += offdiag.value * source[offdiag.j];
+        target[offdiag.j] += offdiag.value * source[offdiag.i];
+      }
+    }
+  }
+}
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::spin(const Matrix& ci) const {
+  const int ndim = ci.ndim();
+  const int nmos = ci.mdim();
+
+  auto out = make_shared<Matrix>(ndim, nmos);
+  const vector<double> diag = spin_.diagonal();
+
+  for (int icc = 0; icc < nmos; ++icc) {
+    double* target = out->element_ptr(0,icc);
+    const double* source = ci.element_ptr(0,icc);
+    for (int j = 0; j < ndim; ++j) {
+      target[j] = diag[j] * source[j];
+    }
+    for (auto& offdiag : spin_.offdiagonal() ) {
+      target[offdiag.i] += offdiag.value * source[offdiag.j];
+      target[offdiag.j] += offdiag.value * source[offdiag.i];
+    }
+  }
+
+  return out;
 }

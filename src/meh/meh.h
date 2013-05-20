@@ -85,6 +85,29 @@ class DimerSubspace {
     
 };
 
+struct SpinMap {
+  const int i;
+  const int j;
+  const double value;
+
+  SpinMap(const int ii, const int jj, const double vv) : i(ii), j(jj), value(vv) {}
+};
+
+class SpinMatrix { // extremely sparse matrix of the spins
+  protected:
+    std::vector<double> diagonal_;
+    std::vector<SpinMap> offdiagonal_;
+
+  public:
+    SpinMatrix() {}
+
+    std::vector<double>& diagonal() { return diagonal_; }
+    const std::vector<double>& diagonal() const { return diagonal_; }
+    const std::vector<SpinMap>& offdiagonal() const { return offdiagonal_; }
+
+    void insert_offdiagonal(const int i, const int j, const double val) { offdiagonal_.emplace_back(i,j,val); }
+};
+
 class MultiExcitonHamiltonian {
   using MatrixPtr = std::shared_ptr<Matrix>;
    protected:
@@ -99,8 +122,9 @@ class MultiExcitonHamiltonian {
 
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
-      MatrixPtr spin_filter_; // spin filter
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
+
+      SpinMatrix spin_;
 
       std::vector<double> energies_; // Adiabatic energies
 
@@ -157,6 +181,7 @@ class MultiExcitonHamiltonian {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
+      MatrixPtr spin(const Matrix& o) const;
       void spin_decontaminate(Matrix& o);
 
       MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
