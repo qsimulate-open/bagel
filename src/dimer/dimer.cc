@@ -542,7 +542,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   dimertime.tick_print("Dimer SCF");
 
   shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
-  shared_ptr<Matrix> dimercoeff = scoeff_;
+  shared_ptr<Matrix> dimercoeff = scoeff_->slice(0,nclosed_);
 
   // Set active space based on overlap
   if (proj_coeff_ == nullptr) throw runtime_error("For Dimer::driver, Dimer must be constructed from a HF reference");
@@ -556,8 +556,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
     dimertime.tick_print("Dimer localization");
 
     // Sub-diagonalize Fock Matrix
-    auto hcore = make_shared<const Hcore>(sgeom_);
-    auto fock  = make_shared<const Fock<1>>(sgeom_, hcore, dimerdensity, dimercoeff);
+    auto fock  = make_shared<const Fock<1>>(sgeom_, sref_->hcore(), dimerdensity, dimercoeff);
     Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
     dimertime.tick_print("Dimer Fock matrix formation");
 
