@@ -69,7 +69,7 @@ void FCI::common_init() {
   }
 
   // Configure properties to be calculated on the final wavefunctions
-  if (read_input<bool>(idata_, "dipole", true)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
+  if (read_input<bool>(idata_, "dipoles", true)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
 
   // additional charge
   const int charge = read_input<int>(idata_, "charge", 0);

@@ -530,10 +530,12 @@ void Dimer::set_active(multimap<string, string> idata) {
 
 // RHF and then localize
 void Dimer::scf(multimap<string, string> idata) {
+  Timer dimertime;
   // SCF
   shared_ptr<SCF_base> rhf(new SCF<1>(idata, sgeom_, sref_));
   rhf->compute();
   set_sref(rhf->conv_to_ref());
+  dimertime.tick_print("Dimer SCF");
 
   shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
   shared_ptr<Matrix> dimercoeff = scoeff_;
@@ -544,13 +546,16 @@ void Dimer::scf(multimap<string, string> idata) {
 
   // Localize
   string localmethod = read_input<string>(idata, "localization", "pm");
+  dimertime.tick();
   if (localmethod != "none") {
     localize(idata);
+    dimertime.tick_print("Dimer localization");
 
     // Sub-diagonalize Fock Matrix
     shared_ptr<const Matrix> hcore(new Hcore(sgeom_));
     shared_ptr<Matrix> fock(new Fock<1>(sgeom_, hcore, dimerdensity, dimercoeff));
     Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
+    dimertime.tick_print("Dimer Fock matrix formation");
 
     Matrix transform(dimerbasis_, dimerbasis_); transform.unit();
 
@@ -564,6 +569,7 @@ void Dimer::scf(multimap<string, string> idata) {
     shared_ptr<Matrix> ncoeff(new Matrix(*scoeff_ * transform));
     set_coeff(ncoeff);
     sref_->set_eig(subeigs);
+    dimertime.tick_print("Fock block diagonalization");
   }
 }
 
