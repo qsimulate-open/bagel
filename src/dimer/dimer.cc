@@ -534,10 +534,12 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
 
 // RHF and then localize
 void Dimer::scf(const boost::property_tree::ptree& idata) {
+  Timer dimertime;
   // SCF
   auto rhf = make_shared<SCF<1>>(idata, sgeom_, sref_);
   rhf->compute();
   set_sref(rhf->conv_to_ref());
+  dimertime.tick_print("Dimer SCF");
 
   shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
   shared_ptr<Matrix> dimercoeff = scoeff_;
@@ -548,13 +550,16 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
 
   // Localize
   const string localmethod = idata.get<string>("localization", "pm");
+  dimertime.tick();
   if (localmethod != "none") {
     localize(idata);
+    dimertime.tick_print("Dimer localization");
 
     // Sub-diagonalize Fock Matrix
     auto hcore = make_shared<const Hcore>(sgeom_);
     auto fock  = make_shared<const Fock<1>>(sgeom_, hcore, dimerdensity, dimercoeff);
     Matrix intermediate((*scoeff_) % (*fock) * (*scoeff_));
+    dimertime.tick_print("Dimer Fock matrix formation");
 
     Matrix transform(dimerbasis_, dimerbasis_); transform.unit();
 
@@ -568,6 +573,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
     auto ncoeff = make_shared<Matrix>(*scoeff_ * transform);
     set_coeff(ncoeff);
     sref_->set_eig(subeigs);
+    dimertime.tick_print("Fock block diagonalization");
   }
 }
 
