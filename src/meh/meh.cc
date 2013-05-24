@@ -108,16 +108,18 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
 }
 
 void MultiExcitonHamiltonian::compute() {
+  Timer mehtime;
   cout << endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << endl;
 
   hamiltonian_ = make_shared<Matrix>(dimerstates_, dimerstates_);
 
-  cout << "  o Computing diagonal blocks." << endl;
+  cout << "  o Computing diagonal blocks" << endl;
   for (auto& subspace : subspaces_) {
     hamiltonian_->add_block(subspace.offset(), subspace.offset(), compute_diagonal_block(subspace));
   }
+  cout << "    - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
-  cout << "  o Computing off-diagonal blocks." << endl;
+  cout << "  o Computing off-diagonal blocks" << endl;
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
@@ -129,8 +131,9 @@ void MultiExcitonHamiltonian::compute() {
       hamiltonian_->add_block(joff, ioff, block->transpose());
     }
   }
+  cout << "    - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
-  cout << "  o Building the spin filter." << endl;
+  cout << "  o Building the spin filter" << endl;
   {
     spin_.diagonal() = vector<double>(dimerstates_, 0.0);
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
@@ -171,8 +174,9 @@ void MultiExcitonHamiltonian::compute() {
     }
     max_spin_ = 2*max_spin_ + 1;
   }
+  cout << "    - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
-  cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << endl << endl;
+  cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << endl;
   DavidsonDiag<Matrix> davidson(nstates_, max_iter_);
 
   // Generate initial guesses
@@ -225,6 +229,8 @@ void MultiExcitonHamiltonian::compute() {
     }
   }
 
+  cout << "    - initial guess time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl << endl;
+
   vector<int> conv(nstates_, static_cast<int>(false));
 
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -271,7 +277,8 @@ void MultiExcitonHamiltonian::compute() {
     for (int i = 0; i != nstates_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i] << "   "
-                              << setw(10) << scientific << setprecision(2) << errors[i] << endl;
+                              << setw(10) << scientific << setprecision(2) << errors[i] << "   " 
+                              << fixed << setw(10) << setprecision(2) << mehtime.tick() << endl;
       energies_.at(i) = energies[i];
     }
     if(*min_element(conv.begin(), conv.end())) break;
@@ -454,7 +461,7 @@ void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string t
   for (int istate = 0; istate < end; ++istate) {
     cout << "   state  " << setw(3) << istate << ": "
          << setprecision(8) << setw(17) << fixed << energies_.at(istate)
-         << "   " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
+         << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
     for(auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
