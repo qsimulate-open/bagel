@@ -588,38 +588,42 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(multimap<string, string> idata) 
     spaces_B = read_input_vector_range<int>(idata, "space_b", "()");
   }
 
+  Timer castime;
   // Hide normal cout.
   stringstream ss;
   std::streambuf* saved_cout = cout.rdbuf();
-  cout.rdbuf(ss.rdbuf());
-  ostream hacked_cout(saved_cout);
 
   // Embedded CAS-CI calculations
-  hacked_cout << "    Starting embedded CAS-CI calculations on monomer A" << endl;
+  cout << "    Starting embedded CAS-CI calculations on monomer A" << endl;
   for (auto& ispace : spaces_A) {
     if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
     const int charge = ispace.at(0);
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
-
+    cout.rdbuf(ss.rdbuf());
     out->insert<0>(embedded_casci<0>(idata, charge, spin, nstate));
+    cout.rdbuf(saved_cout);
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
   }
 
-  hacked_cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
+  cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
   for (auto& ispace : spaces_B) {
     if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
     const int charge = ispace.at(0);
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    hacked_cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate << endl;
-
+    cout.rdbuf(ss.rdbuf());
     out->insert<1>(embedded_casci<1>(idata, charge, spin, nstate));
+    cout.rdbuf(saved_cout);
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
   }
 
-  cout.rdbuf(saved_cout);
 
   return out;
 }
