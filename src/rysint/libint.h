@@ -35,14 +35,13 @@ namespace bagel {
 
 class Libint : public RysInt {
   protected:
-    void root_weight(int){};
-    void compute_ssss(double){};
+    void root_weight(int) {}
+    void compute_ssss(double) {}
 
   public:
-    Libint(const std::array<std::shared_ptr<const Shell>,4>&, const double dum = 0.0);
-    ~Libint() {};
+    Libint(const std::array<std::shared_ptr<const Shell>,4>&, const double dum = 0.0, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
 
-    void compute() {};
+    void compute() {}
 
     constexpr static int nblocks() { return 1; }
 

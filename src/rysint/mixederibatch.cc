@@ -113,7 +113,7 @@ void MixedERIBatch::eri_compute(double* eri) const {
 #ifndef LIBINT_INTERFACE
     auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0, 0.0, true, stack_);
 #else
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0);
+    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), cart2}}, 2.0, stack_);
 #endif
     eric->compute();
 
@@ -144,7 +144,7 @@ void MixedERIBatch::eri_compute(double* eri) const {
     auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}},
                                       2.0, 0.0, true, stack_);
 #else
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}}, 2.0);
+    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}}, 2.0, stack_);
 #endif
     eric->compute();
 
