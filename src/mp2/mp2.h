@@ -40,7 +40,7 @@ class MP2 {
     const boost::property_tree::ptree idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
-    std::shared_ptr<SCF<1>> scf_;
+    std::shared_ptr<SCF> scf_;
     int ncore_;
 
     double energy_;

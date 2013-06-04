@@ -35,15 +35,15 @@
 
 namespace bagel {
 
-template<int DF>
 class SCF : public SCF_base {
   protected:
     std::shared_ptr<LevelShift<DistMatrix>> levelshift_;
+    const bool dodf_;
 
   public:
     SCF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-      : SCF_base(idata_, geom, re, DF==0) {
+      : SCF_base(idata_, geom, re, !idata_.get<bool>("df",true)), dodf_(idata_.get<bool>("df",true)) {
 
       std::cout << indent << "*** RHF ***" << std::endl << std::endl;
       if (nocc_ != noccB_) throw std::runtime_error("Closed shell SCF was called with nact != 0");
@@ -72,9 +72,9 @@ class SCF : public SCF_base {
 
       if (coeff_ == nullptr) {
         std::shared_ptr<const DistMatrix> fock = hcore;
-        if (DF == 1 && geom_->spherical()) {
+        if (dodf_ && geom_->spherical()) {
           auto aden = std::make_shared<const AtomicDensities>(geom_);
-          auto focka = std::make_shared<const Fock<DF>>(geom_, hcore_, aden, schwarz_);
+          auto focka = std::make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
           fock = focka->distmatrix();
         }
         DistMatrix intermediate = *tildex % *fock * *tildex;
@@ -82,11 +82,11 @@ class SCF : public SCF_base {
         coeff = std::make_shared<const DistMatrix>(*tildex * intermediate);
       } else {
         std::shared_ptr<const Matrix> focka;
-        if (DF == 0) {
+        if (!dodf_) {
           aodensity_ = coeff_->form_density_rhf(nocc_);
-          focka = std::make_shared<const Fock<DF>>(geom_, hcore_, aodensity_, schwarz_);
+          focka = std::make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
         } else {
-          focka = std::make_shared<const Fock<DF>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
+          focka = std::make_shared<const Fock<1>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
         }
         DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
         intermediate.diagonalize(eig());
@@ -94,7 +94,7 @@ class SCF : public SCF_base {
       }
       coeff_ = std::make_shared<const Coeff>(*coeff->matrix());
 
-      if (DF == 0) {
+      if (!dodf_) {
         aodensity_ = coeff_->form_density_rhf(nocc_);
         aodensity = aodensity_->distmatrix(); 
       } else {
@@ -116,11 +116,11 @@ class SCF : public SCF_base {
       for (int iter = 0; iter != max_iter_; ++iter) {
         Timer pdebug(1);
 
-        if (DF == 0) {
-          previous_fock = std::make_shared<Fock<DF>>(geom_, previous_fock, densitychange, schwarz_);
+        if (!dodf_) {
+          previous_fock = std::make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
           mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
         } else {
-          previous_fock = std::make_shared<Fock<DF>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
+          previous_fock = std::make_shared<Fock<1>>(geom_, hcore_, std::shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
         }
         std::shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -159,7 +159,7 @@ class SCF : public SCF_base {
         coeff_ = std::make_shared<const Coeff>(*coeff->matrix());
 
 
-        if (DF == 0) {
+        if (!dodf_) {
           std::shared_ptr<const Matrix> new_density = coeff_->form_density_rhf(nocc_);
           densitychange = std::make_shared<Matrix>(*new_density - *aodensity_);
           aodensity_ = new_density;
@@ -171,7 +171,7 @@ class SCF : public SCF_base {
       }
       // by default we compute dipoles
       if (!geom_->external()) {
-        if (DF != 0) aodensity_ = aodensity->matrix();
+        if (dodf_) aodensity_ = aodensity->matrix();
         Dipole mu(geom_, aodensity_);
         mu.compute();
       }
@@ -183,6 +183,8 @@ class SCF : public SCF_base {
       out->set_eig(e);
       return out;
     }
+
+    bool dodf() const { return dodf_; }
 
 };
 

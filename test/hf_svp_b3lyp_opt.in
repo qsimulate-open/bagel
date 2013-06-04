@@ -15,7 +15,7 @@
 {
   "title" : "optimize",
   "method" : {
-    "title" : "df-ks",
+    "title" : "ks",
     "xc_func" : "b3lyp"
   }
 }

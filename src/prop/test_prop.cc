@@ -47,8 +47,8 @@ std::array<double,3> dipole(std::string filename) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(iter->second);
 
-    } else if (method == "df-hf") {
-      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
+    } else if (method == "hf") {
+      auto scf = std::make_shared<SCF>(iter->second, geom);
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 

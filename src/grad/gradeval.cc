@@ -31,7 +31,8 @@ using namespace std;
 using namespace bagel;
 
 template<>
-shared_ptr<GradFile> GradEval<SCF<1>>::compute() {
+shared_ptr<GradFile> GradEval<SCF>::compute() {
+  assert(task_->dodf());
   Timer timer;
 
   //- One ELECTRON PART -//

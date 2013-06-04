@@ -41,28 +41,28 @@ void Optimize::compute() {
   string method = methodblock.get<string>("title", ""); 
   if (method.empty()) throw std::runtime_error("title is missing in one of the input blocks (opt)");
 
-  if (method == "df-uhf" || method == "uhf") {
+  if (method == "uhf") {
 
     auto opt = std::make_shared<Opt<UHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
-  } else if (method == "df-rohf" || method == "rohf") {
+  } else if (method == "rohf") {
 
     auto opt = std::make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
-  } else if (method == "df-hf") {
+  } else if (method == "hf") {
 
-    auto opt = std::make_shared<Opt<SCF<1>>>(idata_, methodblock, geom_);
+    auto opt = std::make_shared<Opt<SCF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
-  } else if (method == "df-ks") {
+  } else if (method == "ks") {
 
     auto opt = std::make_shared<Opt<KS>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)

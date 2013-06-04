@@ -15,7 +15,7 @@
 {
   "title" : "optimize",
   "method" : {
-    "title" : "df-uhf",
+    "title" : "uhf",
     "nact" : 1,
     "thresh" : 1.0e-10
   }

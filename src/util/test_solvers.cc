@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#if 0
 
 #include <src/scf/matrix1e.h>
 #include <src/util/linear.h>
@@ -264,3 +265,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   answer->print();
 #endif
 }
+
+#else
+static int a = 0; // just to have something in this file
+#endif

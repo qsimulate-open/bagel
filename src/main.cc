@@ -149,12 +149,13 @@ int main(int argc, char** argv) {
         if (geom == nullptr) throw runtime_error("molecule block is missing");
       }
 
-      if (method.substr(0,3) == "df-" && geom->df() == nullptr)
+      // TODO we are checking this for non-DF methods...
+      if (geom->df() == nullptr)
         throw runtime_error("It seems that DF basis was not specified in Geometry");
 
       if (method == "hf") {
 
-        scf = make_shared<SCF<0>>(iter->second, geom, ref);
+        scf = make_shared<SCF>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
@@ -175,25 +176,19 @@ int main(int argc, char** argv) {
         auto relfci = make_shared<RelFCI>(iter->second, geom, relref);
         relfci->compute();
 
-      } else if (method == "df-hf") {
-
-        scf = make_shared<SCF<1>>(iter->second, geom, ref);
-        scf->compute();
-        ref = scf->conv_to_ref();
-
-      } else if (method == "df-ks" || method == "ks") {
+      } else if (method == "ks") {
 
         scf = make_shared<KS>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
-      } else if (method == "df-uhf" || method == "uhf") {
+      } else if (method == "uhf") {
 
         scf = make_shared<UHF>(iter->second, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
-      } else if (method == "df-rohf" || method == "rohf") {
+      } else if (method == "rohf") {
 
         scf = make_shared<ROHF>(iter->second, geom, ref);
         scf->compute();
