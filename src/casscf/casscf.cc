@@ -42,7 +42,7 @@ CASSCF::CASSCF(const boost::property_tree::ptree& idat, const shared_ptr<const G
   : idata_(idat), geom_(geom), hcore_(make_shared<Hcore>(geom)) {
 
   if (!re) {
-    auto scf = make_shared<SCF<1>>(idat, geom);
+    auto scf = make_shared<SCF>(idat, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
   } else {

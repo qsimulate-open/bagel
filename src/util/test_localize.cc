@@ -50,8 +50,8 @@ double pm_localization(std::string filename) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(iter->second);
 
-    } else if (method == "df-hf") {
-      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
+    } else if (method == "hf") {
+      auto scf = std::make_shared<SCF>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
 

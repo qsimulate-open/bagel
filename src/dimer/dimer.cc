@@ -536,7 +536,7 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
 void Dimer::scf(const boost::property_tree::ptree& idata) {
   Timer dimertime;
   // SCF
-  auto rhf = make_shared<SCF<1>>(idata, sgeom_, sref_);
+  auto rhf = make_shared<SCF>(idata, sgeom_, sref_);
   rhf->compute();
   set_sref(rhf->conv_to_ref());
   dimertime.tick_print("Dimer SCF");

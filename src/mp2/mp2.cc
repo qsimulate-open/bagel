@@ -42,7 +42,7 @@ using namespace bagel;
 
 MP2::MP2(const boost::property_tree::ptree& input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
 
-  scf_ = make_shared<SCF<1>>(input, g, ref);
+  scf_ = make_shared<SCF>(input, g, ref);
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 

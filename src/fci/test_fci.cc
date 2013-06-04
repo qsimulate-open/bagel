@@ -47,11 +47,11 @@ std::vector<double> fci_energy(std::string inp) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(iter->second);
 
-    } else if (method == "df-hf") {
-      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
+    } else if (method == "hf") {
+      auto scf = std::make_shared<SCF>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();
-    } else if (method == "df-rohf"){
+    } else if (method == "rohf"){
       auto scf = std::make_shared<ROHF>(iter->second, geom);
       scf->compute();
       ref = scf->conv_to_ref();

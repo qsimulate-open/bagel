@@ -49,29 +49,22 @@ double scf_energy(std::string filename) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(iter->second);
 
-    } else if (method == "df-hf") {
-      auto scf = std::make_shared<SCF<1>>(iter->second, geom);
+    } else if (method == "hf") {
+      auto scf = std::make_shared<SCF>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
-    } else if (method == "df-uhf") {
+    } else if (method == "uhf") {
       auto scf = std::make_shared<UHF>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
-    } else if (method == "df-rohf") {
+    } else if (method == "rohf") {
       auto scf = std::make_shared<ROHF>(iter->second, geom);
-      scf->compute();
-      std::shared_ptr<Reference> ref = scf->conv_to_ref();
-
-      std::cout.rdbuf(backup_stream);
-      return ref->energy();
-    } else if (method == "hf") {
-      auto scf = std::make_shared<SCF<0>>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

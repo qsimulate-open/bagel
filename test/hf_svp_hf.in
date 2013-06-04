@@ -13,6 +13,7 @@
 
 {
   "title" : "hf",
+  "df" : false,
   "thresh" : 1.0e-10
 }
 

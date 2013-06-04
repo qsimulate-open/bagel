@@ -49,7 +49,7 @@ double ks_energy(std::string filename) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(iter->second);
 
-    } else if (method == "df-ks") {
+    } else if (method == "ks") {
       auto scf = std::make_shared<KS>(iter->second, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
@@ -65,7 +65,7 @@ double ks_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_KS)
 
 BOOST_AUTO_TEST_CASE(DF_KS) {
-    BOOST_CHECK(compare(ks_energy("hf_svp_b3lyp"),         -100.28959804));
+    BOOST_CHECK(compare(ks_energy("hf_svp_b3lyp"),         -100.28959774));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

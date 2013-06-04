@@ -13,7 +13,7 @@
 },
 
 {
-  "title" : "df-rohf",
+  "title" : "rohf",
   "nact" : 1,
   "thresh" : 1.0e-12
 },
