@@ -24,6 +24,7 @@
 //
 
 #include <sstream>
+#include <src/prop/dipole.h>
 #include <src/scf/scf.h>
 #include <src/scf/rohf.h>
 #include <src/scf/uhf.h>

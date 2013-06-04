@@ -27,6 +27,7 @@
 #include <src/grad/gradeval.h>
 #include <src/grad/cpcasscf.h>
 #include <src/casscf/qvec.h>
+#include <src/prop/dipole.h>
 
 using namespace std;
 using namespace bagel;
