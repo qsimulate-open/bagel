@@ -30,10 +30,11 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(geometry)
 {
+  using namespace bagel; {
   class_<Geometry>("Geometry", init<const boost::property_tree::ptree&>())
     // .def(init<const boost::property_tree::ptree&()) alternate constructor?
     // .def(" ", &Geometry:: ) template function binding
-    ;
+  ;}
 
 }
 // implement a converter between json to boost::property_tree::ptree
