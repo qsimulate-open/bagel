@@ -34,6 +34,8 @@
 #include <src/smith/denom.h>
 #include <src/util/matrix.h>
 #include <src/wfn/reference.h>
+#include <src/prop/dipole.h>
+#include <src/grad/cphf.h>
 #include <chrono>
 
 namespace bagel {
@@ -55,6 +57,7 @@ class SpinFreeMethod {
 
     std::shared_ptr<const Reference> ref_;
 
+    std::shared_ptr<const Coeff> coeff_;
     double e0_;
 
     std::shared_ptr<Tensor<T>> v2_;
@@ -67,6 +70,9 @@ class SpinFreeMethod {
   
     // correlated density matrices
     std::shared_ptr<Tensor<T>> den1_;
+    double correct_den1_;
+    std::shared_ptr<Tensor<T>> den2_;
+
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -523,14 +529,13 @@ class SpinFreeMethod {
       rvirt_   = std::shared_ptr<const IndexRange>(new IndexRange(v));
 
       // f1 tensor.
-      std::shared_ptr<const Coeff> coeff;
       {
         std::vector<IndexRange> o = {all_, all_};
         MOFock<T> fock(ref_, o);
         f1_ = fock.tensor();
         h1_ = fock.hcore();
         // canonical orbitals within closed and virtual subspaces
-        coeff = fock.coeff();
+        coeff_ = fock.coeff();
       }
 
       // v2 tensor.
@@ -541,7 +546,7 @@ class SpinFreeMethod {
         virt.merge(virt_);
 
         std::vector<IndexRange> o = {occ, virt, occ, virt};
-        K2ext<T> v2k(ref_, coeff, o);
+        K2ext<T> v2k(ref_, coeff_, o);
         v2_ = v2k.tensor();
       }
 
@@ -675,6 +680,34 @@ class SpinFreeMethod {
     std::shared_ptr<const Matrix> rdm1() const {
       return den1_->matrix();
     }
+
+
+    Dipole dipole() const {
+      std::shared_ptr<const Matrix> dm1 =  den1_->matrix();
+      const size_t nclo = ref_->nclosed();
+      const size_t nact = ref_->nact();
+
+      // compute unrelaxed dipole moment
+      // total density matrix
+      auto dtot = std::make_shared<Matrix>(*dm1);
+      
+      // add correction to active space 
+      dtot->print();
+      for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correct_den1_*2.0;
+      dtot->print();
+
+      for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
+      // add to active space
+      dtot->print();
+      dtot->add_block(nclo, nclo, nact, nact, ref_->rdm1(0)->data());
+      dtot->print();
+      // convert to ao basis  
+      auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
+      Dipole dipole(ref_->geom(), dtotao);
+      return dipole;
+
+    }
+
 
 };
 

@@ -93,7 +93,6 @@ class EnergyTask : public Task<T> {
 
 };
 
-#if 1
 template <typename T>
 class CorrectionTask : public Task<T> {
   protected:
@@ -104,7 +103,6 @@ class CorrectionTask : public Task<T> {
     double correction() const { return correction_; }
 
 };
-#endif
 
 template <typename T>
 class DensityTask : public Task<T> {
@@ -112,6 +110,15 @@ class DensityTask : public Task<T> {
   public:
     DensityTask() : Task<T>() {}
     ~DensityTask() {}
+
+};
+
+template <typename T>
+class Density2Task : public Task<T> {
+  protected:
+  public:
+    Density2Task() : Task<T>() {}
+    ~Density2Task() {}
 
 };
 

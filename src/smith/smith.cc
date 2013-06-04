@@ -49,7 +49,12 @@ Smith::Smith(const boost::property_tree::ptree& idata, shared_ptr<const Referenc
 
 void Smith::compute() {
   algo_->solve();
-  shared_ptr<const Matrix> rdm1 = algo_->rdm1();
-  rdm1->print("aa");
-  cout << rdm1->ndim() << " " << rdm1->mdim() << endl;
+
+  shared_ptr<const Matrix> dm1 = algo_->rdm1();
+  dm1->print("dm1", 20);
+  cout << dm1->ndim() << " " << dm1->mdim() << endl;
+
+  // calculate unrelaxed dipole moment from dm
+  algo_->dipole().compute();
+
 } 
