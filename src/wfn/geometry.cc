@@ -31,7 +31,6 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/regex.hpp>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/smalleribatch.h>
 #include <src/rysint/mixederibatch.h>

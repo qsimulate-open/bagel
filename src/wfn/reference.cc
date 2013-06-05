@@ -161,21 +161,3 @@ shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const
   auto out_coeff = make_shared<const Coeff>(*tmp_coeff);
   return make_shared<Reference>(geom_, out_coeff, nclosed, nactive, nvirt);
 }
-
-shared_ptr<const Reference> Reference::set_active(string active_string) const {
-  boost::regex r("(\\d+)");
-  boost::smatch what;
-
-  auto start = active_string.cbegin();
-  auto end = active_string.cend();
-
-  set<int> active_set;
-
-  while( boost::regex_search(start, end, what, r) ) {
-    string int_string(what[1].first, what[1].second);
-    active_set.insert(lexical_cast<int>(int_string) - 1);
-    start = what[0].second;
-  }
-
-  return set_active(active_set);
-}

@@ -28,6 +28,7 @@
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <src/util/davidson.h>
+#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -49,9 +50,11 @@ void FCI::common_init() {
 
   if (nstate_ < 0) nstate_ = idata_.get<int>("nstate", 1);
 
-  const string iactive = idata_.get<string>("active", "");
-  if (!iactive.empty()) {
-    ref_ = ref_->set_active(iactive);
+  auto iactive = idata_.get_child_optional("active");
+  if (iactive) {
+    set<int> tmp;
+    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i.second.data()));
+    ref_ = ref_->set_active(tmp);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();
   }

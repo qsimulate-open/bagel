@@ -34,7 +34,6 @@
 #include <cassert>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/regex.hpp>
 #include <tuple>
 #include <src/util/quatern.h>
 #include <src/osint/overlapbatch.h>

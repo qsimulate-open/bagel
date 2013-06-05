@@ -110,7 +110,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int noccB() const { return noccB_; }
 
     std::shared_ptr<const Reference> set_active(std::set<int> active_indices) const;
-    std::shared_ptr<const Reference> set_active(std::string array_string) const;
 
     // used in SA-CASSCF
     void set_nstate(const int i) { nstate_ = i; }
